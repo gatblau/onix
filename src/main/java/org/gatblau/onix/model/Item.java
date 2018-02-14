@@ -1,7 +1,10 @@
 package org.gatblau.onix.model;
 
+import org.hibernate.annotations.Type;
+
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.ZonedDateTime;
 import java.util.Date;
 
 @NamedQueries(value= {
@@ -71,11 +74,13 @@ public class Item implements Serializable {
 //    @Column
 //    private String meta;
 
-    @Column
-    private Date created;
+    @Column(columnDefinition= "TIMESTAMP WITH TIME ZONE")
+    @Type(type="java.time.ZonedDateTime")
+    private ZonedDateTime created;
 
-    @Column
-    private Date updated;
+    @Column(columnDefinition= "TIMESTAMP WITH TIME ZONE")
+    @Type(type="java.time.ZonedDateTime")
+    private ZonedDateTime updated;
 
     @Column
     private String tag;
@@ -132,19 +137,19 @@ public class Item implements Serializable {
         this.tag = tag;
     }
     
-    public Date getCreated() {
+    public ZonedDateTime getCreated() {
         return created;
     }
 
-    public void setCreated(Date created) {
+    public void setCreated(ZonedDateTime created) {
         this.created = created;
     }
 
-    public Date getUpdated() {
+    public ZonedDateTime getUpdated() {
         return updated;
     }
 
-    public void setUpdated(Date updated) {
+    public void setUpdated(ZonedDateTime updated) {
         this.updated = updated;
     }
 

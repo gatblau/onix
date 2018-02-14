@@ -8,6 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -34,19 +37,22 @@ public class Repository {
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
         query.setParameter(Item.PARAM_KEY, key);
         Item item = null;
+        ZonedDateTime time = ZonedDateTime.now();
         try {
             item = query.getSingleResult();
         }
         catch (NoResultException e) {
-            ItemType itemType = em.getReference(ItemType.class, Long.parseLong(json.get("itemTypeId").toString()));
             item = new Item();
-            item.setKey(key);
-            item.setItemType(itemType);
-            item.setDescription((String)json.get("description"));
-            item.setTag((String)json.get("tag"));
-            item.setName((String)json.get("name"));
-            em.persist(item);
+            item.setCreated(time);
         }
+        ItemType itemType = em.getReference(ItemType.class, Long.parseLong(json.get("itemTypeId").toString()));
+        item.setKey(key);
+        item.setItemType(itemType);
+        item.setDescription((String)json.get("description"));
+        item.setTag((String)json.get("tag"));
+        item.setName((String)json.get("name"));
+        item.setUpdated(time);
+        em.persist(item);
     }
 
     /***
