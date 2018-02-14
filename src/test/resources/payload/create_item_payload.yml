@@ -1,0 +1,8 @@
+---
+name: 'Test Item'
+description: 'This is a CMDB item for testing purposes.'
+nodeTypeId: '2'
+meta: '{ }'
+tag: 'Test'
+key: 'Test_Item_1'
+...
