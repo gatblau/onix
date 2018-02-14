@@ -1,0 +1,8 @@
+{
+  "name": "Test Item UPDATED",
+  "description": "This is a CMDB item for testing purposes.",
+  "itemTypeId": "2",
+  "meta": "{ }",
+  "tag": "Test Host",
+  "key": "Test_Item_1"
+}

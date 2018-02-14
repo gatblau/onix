@@ -8,9 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.List;
 
 @Service
@@ -33,7 +31,8 @@ public class Repository {
     }
 
     @Transactional
-    public void createOrUpdateItem(String key, JSONObject json) {
+    public String createOrUpdateItem(String key, JSONObject json) {
+        String action = "UPDATED";
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
         query.setParameter(Item.PARAM_KEY, key);
         Item item = null;
@@ -44,6 +43,7 @@ public class Repository {
         catch (NoResultException e) {
             item = new Item();
             item.setCreated(time);
+            action = "CREATED";
         }
         ItemType itemType = em.getReference(ItemType.class, Long.parseLong(json.get("itemTypeId").toString()));
         item.setKey(key);
@@ -53,6 +53,7 @@ public class Repository {
         item.setName((String)json.get("name"));
         item.setUpdated(time);
         em.persist(item);
+        return action;
     }
 
     /***

@@ -5,7 +5,6 @@ import org.hibernate.annotations.Type;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.ZonedDateTime;
-import java.util.Date;
 
 @NamedQueries(value= {
     @NamedQuery(
@@ -22,22 +21,9 @@ import java.util.Date;
                 + "FROM Item i "
                 + "WHERE i.key = :key "
     ),
-//    @NamedQuery(
-//        name = "node.findLinkedNodesByTypeAndTag",
-//        query = "SELECT endNode " +
-//                "FROM link " +
-//                "INNER JOIN node endNode " +
-//                "ON endNode.id = link.end_node_id " +
-//                "AND endNode.tag LIKE '%:tag%' " +
-//                "AND endNode.node_type_id = :nodeTypeId " +
-//                "INNER JOIN node startNode " +
-//                "ON startNode.id = link.start_node_id " +
-//                "AND startNode.id = :nodeId " +
-//                "ORDER BY startNode.id ASC"
-//    ),
     @NamedQuery(
         name = "item.deleteAll",
-        query = "DELETE FROM Item"
+        query = "DELETE FROM Item "
     ),
 })
 @Entity

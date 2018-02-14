@@ -34,8 +34,8 @@ public class WebAPI {
     public ResponseEntity<Result> createOrUpdateItem(
             @PathVariable("key") String key,
             @RequestBody JSONObject payload) throws InterruptedException {
-        data.createOrUpdateItem(key, payload);
-        return ResponseEntity.ok(new Result("OK"));
+        String action = data.createOrUpdateItem(key, payload);
+        return ResponseEntity.ok(new Result(action));
     }
 
     @RequestMapping(path = "/clear/", method = RequestMethod.DELETE)
