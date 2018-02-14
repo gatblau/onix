@@ -94,3 +94,84 @@ CREATE INDEX fki_link_start_item_id_fk
     ON link USING btree
     (start_item_id)
     TABLESPACE pg_default;
+
+CREATE TABLE item_audit(
+    operation char(1)   NOT NULL,
+    stamp timestamp NOT NULL,
+    userid text NOT NULL,
+    id bigint,
+    name character varying(200) COLLATE pg_catalog."default",
+    description character varying(500) COLLATE pg_catalog."default",
+    item_type_id integer,
+    meta json,
+    version bigint,
+    created timestamp(6) with time zone,
+    updated timestamp(6) with time zone,
+    tag character varying(300) COLLATE pg_catalog."default",
+    key character varying(50) COLLATE pg_catalog."default"
+);
+
+CREATE OR REPLACE FUNCTION audit_item() RETURNS TRIGGER AS $item_audit$
+    BEGIN
+        --
+        -- Create a row in emp_audit to reflect the operation performed on emp,
+        -- make use of the special variable TG_OP to work out the operation.
+        --
+        IF (TG_OP = 'DELETE') THEN
+            INSERT INTO item_audit SELECT 'D', now(), user, OLD.*;
+            RETURN OLD;
+        ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO item_audit SELECT 'U', now(), user, NEW.*;
+            RETURN NEW;
+        ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO item_audit SELECT 'I', now(), user, NEW.*;
+            RETURN NEW;
+        END IF;
+        RETURN NULL; -- result is ignored since this is an AFTER trigger
+    END;
+$item_audit$ LANGUAGE plpgsql;
+
+CREATE TRIGGER item_audit
+AFTER INSERT OR UPDATE OR DELETE ON item
+    FOR EACH ROW EXECUTE PROCEDURE audit_item();
+
+CREATE TABLE link_audit(
+    operation char(1) NOT NULL,
+    stamp timestamp NOT NULL,
+    userid text NOT NULL,
+    id bigint,
+    meta json,
+    description character varying(500) COLLATE pg_catalog."default",
+    version bigint,
+    created timestamp(6) with time zone,
+    updated timestamp(6) with time zone,
+    start_item_id bigint,
+    end_item_id bigint,
+    role character varying(200) COLLATE pg_catalog."default",
+    key character varying(50) COLLATE pg_catalog."default",
+    tag character varying(300) COLLATE pg_catalog."default"
+);
+
+CREATE OR REPLACE FUNCTION audit_link() RETURNS TRIGGER AS $link_audit$
+    BEGIN
+        --
+        -- Create a row in emp_audit to reflect the operation performed on emp,
+        -- make use of the special variable TG_OP to work out the operation.
+        --
+        IF (TG_OP = 'DELETE') THEN
+            INSERT INTO link_audit SELECT 'D', now(), user, OLD.*;
+            RETURN OLD;
+        ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO link_audit SELECT 'U', now(), user, NEW.*;
+            RETURN NEW;
+        ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO link_audit SELECT 'I', now(), user, NEW.*;
+            RETURN NEW;
+        END IF;
+        RETURN NULL; -- result is ignored since this is an AFTER trigger
+    END;
+$link_audit$ LANGUAGE plpgsql;
+
+CREATE TRIGGER link_audit
+AFTER INSERT OR UPDATE OR DELETE ON item
+    FOR EACH ROW EXECUTE PROCEDURE audit_link();
