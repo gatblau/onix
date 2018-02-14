@@ -113,10 +113,6 @@ CREATE TABLE item_audit(
 
 CREATE OR REPLACE FUNCTION audit_item() RETURNS TRIGGER AS $item_audit$
     BEGIN
-        --
-        -- Create a row in emp_audit to reflect the operation performed on emp,
-        -- make use of the special variable TG_OP to work out the operation.
-        --
         IF (TG_OP = 'DELETE') THEN
             INSERT INTO item_audit SELECT 'D', now(), user, OLD.*;
             RETURN OLD;
@@ -154,10 +150,6 @@ CREATE TABLE link_audit(
 
 CREATE OR REPLACE FUNCTION audit_link() RETURNS TRIGGER AS $link_audit$
     BEGIN
-        --
-        -- Create a row in emp_audit to reflect the operation performed on emp,
-        -- make use of the special variable TG_OP to work out the operation.
-        --
         IF (TG_OP = 'DELETE') THEN
             INSERT INTO link_audit SELECT 'D', now(), user, OLD.*;
             RETURN OLD;
