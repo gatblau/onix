@@ -5,17 +5,20 @@ import java.io.Serializable;
 public class Result implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String value;
+    private String action;
 
-    public Result(String value) {
-        this.value = value;
+    public Result() {
     }
 
-    public String getValue() {
-        return value;
+    public Result(String action) {
+        this.action = action;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
     }
 }

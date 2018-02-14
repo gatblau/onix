@@ -2,6 +2,7 @@ package features;
 
 import cucumber.api.PendingException;
 import cucumber.api.java.en.And;
+import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import org.gatblau.onix.Info;
@@ -11,7 +12,6 @@ import org.springframework.http.*;
 import static features.Key.*;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,12 +45,6 @@ public class Steps extends BaseTest {
         util.put(Key.CREATE_URL, String.format("%s/item/{key}/", baseUrl));
     }
 
-    @And("^the service responds with the create node Id$")
-    public void theServiceRespondsWithTheCreateNodeId() throws Throwable {
-        ResponseEntity<Result> response = util.get(RESPONSE);
-        assert (Integer.parseInt(response.getBody().getValue()) > 0);
-    }
-
     @And("^the response code is (\\d+)$")
     public void theResponseCodeIs(int responseCode) throws Throwable {
         ResponseEntity<Result> response = util.get(RESPONSE);
@@ -69,14 +63,14 @@ public class Steps extends BaseTest {
         util.put(Key.PAYLOAD, payload);
     }
 
-    @And("^a json payload with node information exists$")
-    public void aJsonPayloadWithNodeInformationExists() throws Throwable {
+    @And("^a json payload with new item information exists$")
+    public void aJsonPayloadWithNewItemInformationExists() throws Throwable {
         String payload = util.getFile("payload/create_item_payload.json");
         util.put(Key.PAYLOAD, payload);
     }
 
-    @And("^the node does not exist in the database$")
-    public void theNodeDoesNotExistInTheDatabase() throws Throwable {
+    @And("^the item does not exist in the database$")
+    public void theItemDoesNotExistInTheDatabase() throws Throwable {
         theClearURLOfTheServiceIsKnown();
         aDeleteRequestToTheServiceIsDone();
     }
@@ -102,18 +96,13 @@ public class Steps extends BaseTest {
         }
     }
 
-    @Then("^there is not any error in the response$")
+    @And("^there is not any error in the response$")
     public void thereIsNotAnyErrorInTheResponse() throws Throwable {
         assert(!util.containsKey(EXCEPTION));
     }
 
-    @And("^a node key is known$")
-    public void aNodeKeyIsKnown() throws Throwable {
-        util.put(ITEM_KEY, "Test_Item_1");
-    }
-
-    @When("^a create JSON request to the service is done$")
-    public void aCreateJSONRequestToTheServiceIsDone() throws Throwable {
+    @And("^a PUT HTTP request with a JSON payload is done$")
+    public void aPUTTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
         String payload = util.get(PAYLOAD);
         String url = util.get(CREATE_URL);
         Map<String, Object> vars = new HashMap<>();
@@ -121,6 +110,39 @@ public class Steps extends BaseTest {
         headers.add("Content-Type", "application/json");
         HttpEntity<?> entity = new HttpEntity<>(payload, headers);
         vars.put("key", util.get(ITEM_KEY));
-        client.exchange(url, HttpMethod.PUT, entity, Void.class, vars);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.PUT, entity, Result.class, vars);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    @And("^a configuration item natural key is known$")
+    public void aConfigurationItemNaturalKeyIsKnown() throws Throwable {
+        util.put(ITEM_KEY, "Test_Item_1");
+    }
+
+    @And("^the service responds with action \"([^\"]*)\"$")
+    public void theServiceRespondsWithAction(String action) throws Throwable {
+        ResponseEntity<Result> response = util.get(RESPONSE);
+        assert (response.getBody().getAction().equals(action));
+    }
+
+    @And("^the item exist in the database$")
+    public void theItemExistInTheDatabase() throws Throwable {
+        theItemDoesNotExistInTheDatabase();
+        theCreateURLOfTheServiceIsKnown();
+        aJsonPayloadWithNewItemInformationExists();
+        aPUTTHTTPRequestWithAJSONPayloadIsDone();
+    }
+
+    @And("^a json payload with updated item information exists$")
+    public void aJsonPayloadWithUpdatedItemInformationExists() throws Throwable {
+        String payload = util.getFile("payload/update_item_payload.json");
+        util.put(Key.PAYLOAD, payload);
     }
 }
