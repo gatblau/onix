@@ -1,10 +1,12 @@
 package org.gatblau.onix.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 @NamedQueries(value= {
     @NamedQuery(
@@ -57,8 +59,14 @@ public class Item implements Serializable {
     @Column
     private String description;
 
-//    @Column
-//    private String meta;
+    @Column
+    @OneToMany(mappedBy = "item_id")
+    private List<DimValue> dimensions;
+
+    @SuppressWarnings("JpaAttributeTypeInspection")
+    @Column(name = "meta", nullable = true)
+    @Convert(converter = JSONBConverter.class)
+    private JsonNode meta;
 
     @Column(columnDefinition= "TIMESTAMP WITH TIME ZONE")
     @Type(type="java.time.ZonedDateTime")
@@ -107,13 +115,13 @@ public class Item implements Serializable {
         this.description = description;
     }
 
-//    public String getMeta() {
-//        return meta;
-//    }
-//
-//    public void setMeta(String meta) {
-//        this.meta = meta;
-//    }
+    public JsonNode getMeta() {
+        return meta;
+    }
+
+    public void setMeta(JsonNode meta) {
+        this.meta = meta;
+    }
 
     public String getTag(){
         return tag;
@@ -153,6 +161,14 @@ public class Item implements Serializable {
 
     public void setItemType(ItemType itemType) {
         this.itemType = itemType;
+    }
+
+    public List<DimValue> getDimensions() {
+        return dimensions;
+    }
+
+    public void setDimensions(List<DimValue> dimensions) {
+        this.dimensions = dimensions;
     }
 
     @Override
