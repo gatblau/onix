@@ -1,22 +1,12 @@
 package org.gatblau.onix.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
 
 @NamedQueries(value= {
-//    @NamedQuery(
-//        name = "link.findFromNodeId",
-//        query = "SELECT l FROM Link l "
-//                + "JOIN Node l.startNode s "
-//                + "WHERE s.id = :nodeId "
-//    ),
-//    @NamedQuery(
-//        name = "link.findToNodeId",
-//        query = "SELECT l FROM Link l "
-//                + "JOIN Node l.endNode e "
-//                + "WHERE e.id = :nodeId "
-//    ),
     @NamedQuery(
         name = "link.deleteAll",
         query = "DELETE FROM Link "
@@ -54,8 +44,10 @@ public class Link implements Serializable {
     @Column
     private String description;
 
-    @Column
-    private String meta;
+    @SuppressWarnings("JpaAttributeTypeInspection")
+    @Column(name = "meta", nullable = true)
+    @Convert(converter = JSONBConverter.class)
+    private JsonNode meta;
 
     @Column
     private Date created;
@@ -115,11 +107,11 @@ public class Link implements Serializable {
         this.description = description;
     }
 
-    public String getMeta() {
+    public JsonNode getMeta() {
         return meta;
     }
 
-    public void setMeta(String meta) {
+    public void setMeta(JsonNode meta) {
         this.meta = meta;
     }
 
