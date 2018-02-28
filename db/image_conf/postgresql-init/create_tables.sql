@@ -2,30 +2,6 @@ DO
 $$
 BEGIN
     ---------------------------------------------------------------------------
-    -- DB USER
-    ---------------------------------------------------------------------------
---    CREATE USER onix
---      WITH
---        LOGIN
---        SUPERUSER
---        INHERIT
---        NOCREATEDB
---        NOCREATEROLE
---        NOREPLICATION;
-
-    ---------------------------------------------------------------------------
-    -- DB
-    ---------------------------------------------------------------------------
---﻿   CREATE DATABASE onix
---      WITH
---        OWNER = onix
---        ENCODING = 'UTF8'
---        LC_COLLATE = 'en_US.utf8'
---        LC_CTYPE = 'en_US.utf8'
---        TABLESPACE = pg_default
---        CONNECTION LIMIT = -1;
-
-    ---------------------------------------------------------------------------
     -- ITEM TYPE
     ---------------------------------------------------------------------------
 	IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_type')
