@@ -2,6 +2,37 @@ DO
 $$
 BEGIN
     ---------------------------------------------------------------------------
+    -- ITEM STATUS
+    ---------------------------------------------------------------------------
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_status')
+	THEN
+	  CREATE SEQUENCE item_status_id_seq
+      	INCREMENT 1
+      	START 1
+      	MINVALUE 1
+      	MAXVALUE 9223372036854775807
+      	CACHE 1;
+
+      ALTER SEQUENCE item_status_id_seq
+      	OWNER TO onix;
+
+      CREATE TABLE item_status
+      (
+      	id integer NOT NULL DEFAULT nextval('item_status_id_seq'::regclass),
+      	name character varying(250) COLLATE pg_catalog."default" NOT NULL,
+      	description character varying(500) COLLATE pg_catalog."default",
+      	CONSTRAINT item_status_pkey PRIMARY KEY (id)
+      )
+      WITH (
+      	OIDS = FALSE
+      )
+      TABLESPACE pg_default;
+
+      ALTER TABLE item_status
+      	OWNER to onix;
+	END IF;
+
+    ---------------------------------------------------------------------------
     -- ITEM TYPE
     ---------------------------------------------------------------------------
 	IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_type')
@@ -40,7 +71,7 @@ BEGIN
 	THEN
         CREATE SEQUENCE item_id_seq
             INCREMENT 1
-            START 33
+            START 1
             MINVALUE 1
             MAXVALUE 9223372036854775807
             CACHE 1;
@@ -52,7 +83,7 @@ BEGIN
         (
             id bigint NOT NULL DEFAULT nextval('item_id_seq'::regclass),
             name CHARACTER VARYING(200) COLLATE pg_catalog."default",
-            description CHARACTER VARYING(500) COLLATE pg_catalog."default",
+            description text COLLATE pg_catalog."default",
             item_type_id INTEGER,
             meta json,
             version bigint NOT NULL DEFAULT 1,
@@ -60,10 +91,15 @@ BEGIN
             updated timestamp(6) with time zone,
             tag CHARACTER VARYING(300) COLLATE pg_catalog."default",
             key CHARACTER VARYING(50) COLLATE pg_catalog."default",
+            item_status_id integer,
             CONSTRAINT item_id_pk PRIMARY KEY (id),
             CONSTRAINT item_key_uc UNIQUE (key),
             CONSTRAINT item_item_type_id_fk FOREIGN KEY (item_type_id)
                 REFERENCES item_type (id) MATCH SIMPLE
+                ON UPDATE NO ACTION
+                ON DELETE NO ACTION,
+            CONSTRAINT item_item_status_id_fk FOREIGN KEY (item_status_id)
+                REFERENCES item_status (id) MATCH SIMPLE
                 ON UPDATE NO ACTION
                 ON DELETE NO ACTION
         )
@@ -74,6 +110,11 @@ BEGIN
 
         ALTER TABLE item
             OWNER to onix;
+
+        CREATE INDEX fki_item_item_status_id_fk
+            ON public.item USING btree
+            (item_status_id)
+            TABLESPACE pg_default;
 
         CREATE INDEX fki_item_item_type_id_fk
             ON item USING btree
@@ -100,7 +141,7 @@ BEGIN
         (
             id bigint NOT NULL DEFAULT nextval('link_id_seq'::regclass),
             meta json,
-            description CHARACTER VARYING(500) COLLATE pg_catalog."default",
+            description text COLLATE pg_catalog."default",
             version bigint,
             created TIMESTAMP(6) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP(6),
             updated timestamp(6) WITH TIME ZONE,
