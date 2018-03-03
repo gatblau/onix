@@ -6,7 +6,7 @@ Feature: Create Configuration Item
   Scenario: Create an Item using a JSON payload
     Given a configuration item natural key is known
     Given the item does not exist in the database
-    Given the create URL of the service is known
+    Given the item URL of the service is known
     Given a json payload with new item information exists
     When a PUT HTTP request with a JSON payload is done
     Then the response code is 200

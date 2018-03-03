@@ -4,5 +4,6 @@
   "itemTypeId": "2",
   "meta": "{ }",
   "tag": "Test Host",
-  "key": "Test_Item_1"
+  "key": "Test_Item_1",
+  "deployed" : true
 }

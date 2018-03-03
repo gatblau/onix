@@ -60,7 +60,7 @@ public class Item implements Serializable {
     private String description;
 
     @Column
-    @OneToMany(mappedBy = "item_id")
+    @OneToMany(mappedBy = "item")
     private List<DimValue> dimensions;
 
     @SuppressWarnings("JpaAttributeTypeInspection")
@@ -82,6 +82,10 @@ public class Item implements Serializable {
     @Version
     @Column
     private int version;
+
+    @Column
+    @Type(type = "org.hibernate.type.BooleanType")
+    private boolean deployed;
 
     public Long getId() {
         return id;
@@ -169,6 +173,14 @@ public class Item implements Serializable {
 
     public void setDimensions(List<DimValue> dimensions) {
         this.dimensions = dimensions;
+    }
+
+    public void setDeployed(boolean deployed) {
+        this.deployed = deployed;
+    }
+
+    public boolean isDeployed() {
+        return deployed;
     }
 
     @Override

@@ -3,7 +3,6 @@ package features;
 import cucumber.api.PendingException;
 import cucumber.api.java.en.And;
 import cucumber.api.java.en.Given;
-import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import org.gatblau.onix.Info;
 import org.gatblau.onix.Result;
@@ -40,9 +39,9 @@ public class Steps extends BaseTest {
         assert (response.getStatusCode().value() == 200);
     }
 
-    @And("^the create URL of the service is known$")
-    public void theCreateURLOfTheServiceIsKnown() throws Throwable {
-        util.put(Key.CREATE_URL, String.format("%s/item/{key}/", baseUrl));
+    @And("^the item URL of the service is known$")
+    public void theItemURLOfTheServiceIsKnown() throws Throwable {
+        util.put(Key.ITEM_URL, String.format("%s/item/{key}/", baseUrl));
     }
 
     @And("^the response code is (\\d+)$")
@@ -71,8 +70,8 @@ public class Steps extends BaseTest {
 
     @And("^the item does not exist in the database$")
     public void theItemDoesNotExistInTheDatabase() throws Throwable {
-        theClearURLOfTheServiceIsKnown();
-        aDeleteRequestToTheServiceIsDone();
+        theClearCMDBURLOfTheServiceIsKnown();
+        aClearCMDBRequestToTheServiceIsDone();
     }
 
     @And("^the database is cleared$")
@@ -80,13 +79,13 @@ public class Steps extends BaseTest {
         assert(!util.containsKey(EXCEPTION));
     }
 
-    @And("^the clear URL of the service is known$")
-    public void theClearURLOfTheServiceIsKnown() throws Throwable {
+    @And("^the clear cmdb URL of the service is known$")
+    public void theClearCMDBURLOfTheServiceIsKnown() throws Throwable {
         util.put(Key.CLEAR_URL, String.format("%s/clear/", baseUrl));
     }
 
-    @And("^a delete request to the service is done$")
-    public void aDeleteRequestToTheServiceIsDone() throws Throwable {
+    @And("^a clear cmdb request to the service is done$")
+    public void aClearCMDBRequestToTheServiceIsDone() throws Throwable {
         try {
             client.delete((String) util.get(CLEAR_URL));
             util.remove(EXCEPTION);
@@ -104,7 +103,7 @@ public class Steps extends BaseTest {
     @And("^a PUT HTTP request with a JSON payload is done$")
     public void aPUTTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
         String payload = util.get(PAYLOAD);
-        String url = util.get(CREATE_URL);
+        String url = util.get(ITEM_URL);
         Map<String, Object> vars = new HashMap<>();
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
@@ -135,7 +134,7 @@ public class Steps extends BaseTest {
     @And("^the item exist in the database$")
     public void theItemExistInTheDatabase() throws Throwable {
         theItemDoesNotExistInTheDatabase();
-        theCreateURLOfTheServiceIsKnown();
+        theItemURLOfTheServiceIsKnown();
         aJsonPayloadWithNewItemInformationExists();
         aPUTTHTTPRequestWithAJSONPayloadIsDone();
     }
@@ -144,5 +143,40 @@ public class Steps extends BaseTest {
     public void aJsonPayloadWithUpdatedItemInformationExists() throws Throwable {
         String payload = util.getFile("payload/update_item_payload.json");
         util.put(Key.PAYLOAD, payload);
+    }
+
+    @Given("^the item type does not exist in the database$")
+    public void theItemTypeDoesNotExistInTheDatabase() throws Throwable {
+        theItemTypeURLOfTheServiceIsKnown();
+        aDELETEHTTPRequestIsDone();
+        thereIsNotAnyErrorInTheResponse();
+    }
+
+    @Given("^a json payload with new item type information exists$")
+    public void aJsonPayloadWithNewItemTypeInformationExists() throws Throwable {
+        // Write code here that turns the phrase above into concrete actions
+        throw new PendingException();
+    }
+
+    @When("^a POST HTTP request with a JSON payload is done$")
+    public void aPOSTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
+        // Write code here that turns the phrase above into concrete actions
+        throw new PendingException();
+    }
+
+    @Given("^the item type URL of the service is known$")
+    public void theItemTypeURLOfTheServiceIsKnown() throws Throwable {
+        util.put(Key.ITEM_TYPE_URL, String.format("%s/itemtype/", baseUrl));
+    }
+
+    @When("^a DELETE HTTP request is done$")
+    public void aDELETEHTTPRequestIsDone() throws Throwable {
+        try {
+            client.delete((String) util.get(ITEM_TYPE_URL));
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
     }
 }

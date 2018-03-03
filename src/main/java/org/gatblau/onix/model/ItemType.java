@@ -3,10 +3,17 @@ package org.gatblau.onix.model;
 import javax.persistence.*;
 import java.io.Serializable;
 
+@NamedQueries(value= {
+    @NamedQuery(
+        name = "itemType.deleteAll",
+        query = "DELETE FROM ItemType "
+    )
+})
 @Entity()
 @Table(name = "item_type")
 public class ItemType implements Serializable {
     private static final long serialVersionUID = 1L;
+    public static final String DELETE_ALL = "itemType.deleteAll";
 
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)

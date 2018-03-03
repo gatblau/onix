@@ -19,7 +19,7 @@ public class DimValue implements Serializable {
     @JoinColumn(name="dim_type_id")
     private DimType dimType;
 
-    @ManyToOne
+    @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name="item_id")
     private Item item;
 

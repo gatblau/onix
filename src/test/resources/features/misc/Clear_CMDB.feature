@@ -4,7 +4,7 @@ Feature: Clear the Configuration Management Database
   So that I can prepare tests to run on a clear database
 
   Scenario: Clear CMDB
-    Given the clear URL of the service is known
-    When a delete request to the service is done
+    Given the clear cmdb URL of the service is known
+    When a clear cmdb request to the service is done
     Then there is not any error in the response
     Then the database is cleared
