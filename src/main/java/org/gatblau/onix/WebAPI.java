@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -33,7 +34,7 @@ public class WebAPI {
             produces = {"application/json" })
     public ResponseEntity<Result> createOrUpdateItem(
             @PathVariable("key") String key,
-            @RequestBody JSONObject payload) throws InterruptedException {
+            @RequestBody JSONObject payload) throws InterruptedException, IOException {
         String action = data.createOrUpdateItem(key, payload);
         return ResponseEntity.ok(new Result(action));
     }
@@ -41,5 +42,10 @@ public class WebAPI {
     @RequestMapping(path = "/clear/", method = RequestMethod.DELETE)
     public void clear() throws InterruptedException {
         data.clear();
+    }
+
+    @RequestMapping(path = "/itemtype/", method = RequestMethod.DELETE)
+    public void deleteItemTypes() throws InterruptedException {
+        data.deleteItemTypes();
     }
 }

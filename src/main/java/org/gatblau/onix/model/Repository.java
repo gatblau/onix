@@ -1,5 +1,7 @@
 package org.gatblau.onix.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -8,11 +10,13 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 
 @Service
 public class Repository {
+    private ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
     private EntityManager em;
@@ -31,7 +35,7 @@ public class Repository {
     }
 
     @Transactional
-    public String createOrUpdateItem(String key, JSONObject json) {
+    public String createOrUpdateItem(String key, JSONObject json) throws IOException {
         String action = "UPDATED";
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
         query.setParameter(Item.PARAM_KEY, key);
@@ -51,7 +55,9 @@ public class Repository {
         item.setDescription((String)json.get("description"));
         item.setTag((String)json.get("tag"));
         item.setName((String)json.get("name"));
+        item.setDeployed((boolean)json.get("deployed"));
         item.setUpdated(time);
+        item.setMeta(mapper.readTree((String)json.get("meta")));
         em.persist(item);
         return action;
     }
@@ -114,6 +120,12 @@ public class Repository {
         if (em != null) {
             em.createNamedQuery(Link.DELETE_ALL).executeUpdate();
             em.createNamedQuery(Item.DELETE_ALL).executeUpdate();
+        }
+    }
+
+    public void deleteItemTypes() {
+        if (em != null) {
+            em.createNamedQuery(ItemType.DELETE_ALL).executeUpdate();
         }
     }
 }

@@ -2,37 +2,6 @@ DO
 $$
 BEGIN
     ---------------------------------------------------------------------------
-    -- ITEM STATUS
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_status')
-	THEN
-	  CREATE SEQUENCE item_status_id_seq
-      	INCREMENT 1
-      	START 1
-      	MINVALUE 1
-      	MAXVALUE 9223372036854775807
-      	CACHE 1;
-
-      ALTER SEQUENCE item_status_id_seq
-      	OWNER TO onix;
-
-      CREATE TABLE item_status
-      (
-      	id integer NOT NULL DEFAULT nextval('item_status_id_seq'::regclass),
-      	name character varying(250) COLLATE pg_catalog."default" NOT NULL,
-      	description character varying(500) COLLATE pg_catalog."default",
-      	CONSTRAINT item_status_pkey PRIMARY KEY (id)
-      )
-      WITH (
-      	OIDS = FALSE
-      )
-      TABLESPACE pg_default;
-
-      ALTER TABLE item_status
-      	OWNER to onix;
-	END IF;
-
-    ---------------------------------------------------------------------------
     -- ITEM TYPE
     ---------------------------------------------------------------------------
 	IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_type')
@@ -62,6 +31,10 @@ BEGIN
 
         ALTER TABLE item_type
             OWNER to onix;
+
+        INSERT INTO item_type(name, description) VALUES ('INVENTORY', 'An Ansible inventory.');
+        INSERT INTO item_type(name, description) VALUES ('HOST-GROUP', 'An Ansible host group.');
+        INSERT INTO item_type(name, description) VALUES ('HOST', 'An Operating System Host.');
 	END IF;
 
     ---------------------------------------------------------------------------
@@ -90,16 +63,12 @@ BEGIN
             created timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
             updated timestamp(6) with time zone,
             tag CHARACTER VARYING(300) COLLATE pg_catalog."default",
-            key CHARACTER VARYING(50) COLLATE pg_catalog."default",
-            item_status_id integer,
+            key CHARACTER VARYING(50) COLLATE pg_catalog."default"﻿NOT NULL,
+            deployed bit,
             CONSTRAINT item_id_pk PRIMARY KEY (id),
             CONSTRAINT item_key_uc UNIQUE (key),
             CONSTRAINT item_item_type_id_fk FOREIGN KEY (item_type_id)
                 REFERENCES item_type (id) MATCH SIMPLE
-                ON UPDATE NO ACTION
-                ON DELETE NO ACTION,
-            CONSTRAINT item_item_status_id_fk FOREIGN KEY (item_status_id)
-                REFERENCES item_status (id) MATCH SIMPLE
                 ON UPDATE NO ACTION
                 ON DELETE NO ACTION
         )
@@ -110,11 +79,6 @@ BEGIN
 
         ALTER TABLE item
             OWNER to onix;
-
-        CREATE INDEX fki_item_item_status_id_fk
-            ON public.item USING btree
-            (item_status_id)
-            TABLESPACE pg_default;
 
         CREATE INDEX fki_item_item_type_id_fk
             ON item USING btree
@@ -281,7 +245,8 @@ BEGIN
             created TIMESTAMP(6) with time zone,
             updated TIMESTAMP(6) with time zone,
             tag CHARACTER VARYING(300) COLLATE pg_catalog."default",
-            key CHARACTER VARYING(50) COLLATE pg_catalog."default"
+            key CHARACTER VARYING(50) COLLATE pg_catalog."default",
+            deployed bit
         );
 
         ALTER TABLE item_audit
@@ -353,6 +318,45 @@ BEGIN
         CREATE TRIGGER link_audit
         AFTER INSERT OR UPDATE OR DELETE ON link
           FOR EACH ROW EXECUTE PROCEDURE audit_link();
+    END IF;
+
+    ---------------------------------------------------------------------------
+    -- ITEM_TYPE AUDIT
+    ---------------------------------------------------------------------------
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_type_audit')
+    THEN
+        CREATE TABLE item_type_audit
+        (
+            operation CHAR(1) NOT NULL,
+            stamp TIMESTAMP NOT NULL,
+            userid text NOT NULL,
+            id INTEGER,
+            name CHARACTER VARYING(200) COLLATE pg_catalog."default",
+            description CHARACTER VARYING(500) COLLATE pg_catalog."default"
+        );
+
+        ALTER TABLE item_type_audit
+            OWNER to onix;
+
+        CREATE OR REPLACE FUNCTION audit_item_type() RETURNS TRIGGER AS $item_type_audit$
+        BEGIN
+            IF (TG_OP = 'DELETE') THEN
+                INSERT INTO item_type_audit SELECT 'D', now(), user, OLD.*;
+                RETURN OLD;
+            ELSIF (TG_OP = 'UPDATE') THEN
+                INSERT INTO item_type_audit SELECT 'U', now(), user, NEW.*;
+                RETURN NEW;
+            ELSIF (TG_OP = 'INSERT') THEN
+                INSERT INTO item_type_audit SELECT 'I', now(), user, NEW.*;
+                RETURN NEW;
+            END IF;
+            RETURN NULL; -- result is ignored since this is an AFTER trigger
+        END;
+        $item_type_audit$ LANGUAGE plpgsql;
+
+        CREATE TRIGGER item_type_audit
+        AFTER INSERT OR UPDATE OR DELETE ON item_type
+          FOR EACH ROW EXECUTE PROCEDURE audit_item_type();
     END IF;
 END;
 $$
