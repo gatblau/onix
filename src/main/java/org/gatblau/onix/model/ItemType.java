@@ -6,7 +6,7 @@ import java.io.Serializable;
 @NamedQueries(value= {
     @NamedQuery(
         name = "itemType.deleteAll",
-        query = "DELETE FROM ItemType "
+        query = "DELETE FROM ItemType i WHERE i.custom = true "
     )
 })
 @Entity()
@@ -25,6 +25,9 @@ public class ItemType implements Serializable {
 
     @Column
     private String description;
+
+    @Column
+    private boolean custom;
 
     public Long getId() {
         return id;
@@ -48,6 +51,14 @@ public class ItemType implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isCustom() {
+        return custom;
+    }
+
+    public void setCustom(boolean custom) {
+        this.custom = custom;
     }
 
     @Override
