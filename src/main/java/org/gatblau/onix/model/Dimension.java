@@ -4,7 +4,7 @@ import javax.persistence.*;
 import java.io.Serializable;
 
 @Entity
-public class DimValue implements Serializable {
+public class Dimension implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -13,11 +13,10 @@ public class DimValue implements Serializable {
     private Long id = null;
 
     @Column
-    private String value;
+    private String key;
 
-    @ManyToOne
-    @JoinColumn(name="dim_type_id")
-    private DimType dimType;
+    @Column
+    private String value;
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name="item_id")
@@ -31,20 +30,20 @@ public class DimValue implements Serializable {
         this.id = id;
     }
 
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
     public String getValue() {
         return value;
     }
 
     public void setValue(String value) {
         this.value = value;
-    }
-
-    public DimType getDimType() {
-        return dimType;
-    }
-
-    public void setDimType(DimType dimType) {
-        this.dimType = dimType;
     }
 
     public Item getItem() {
@@ -67,7 +66,7 @@ public class DimValue implements Serializable {
             return false;
         }
         if (getId() != null) {
-            return getId().equals(((DimValue) that).getId());
+            return getId().equals(((Dimension) that).getId());
         }
         return super.equals(that);
     }

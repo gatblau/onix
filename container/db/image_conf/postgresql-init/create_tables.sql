@@ -146,64 +146,28 @@ BEGIN
     END IF;
 
     ---------------------------------------------------------------------------
-    -- DIMENSION TYPE
+    -- DIMENSION
     ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='dim_type')
-    THEN
-        CREATE SEQUENCE dim_type_id_seq
-            INCREMENT 1
-            START 1
-            MINVALUE 1
-            MAXVALUE 9223372036854775807
-            CACHE 1;
-
-        ALTER SEQUENCE dim_type_id_seq
-            OWNER TO onix;
-
-        CREATE TABLE dim_type
-        (
-            id INTEGER NOT NULL DEFAULT nextval('dim_type_id_seq'::regclass),
-            name CHARACTER VARYING COLLATE pg_catalog."default" NOT NULL,
-            description text COLLATE pg_catalog."default",
-            CONSTRAINT dim_type_pkey PRIMARY KEY (id),
-            CONSTRAINT dym_type_name_uc UNIQUE (name)
-        )
-        WITH (
-            OIDS = FALSE
-        )
-        TABLESPACE pg_default;
-
-        ALTER TABLE dim_type
-            OWNER to onix;
-    END IF;
-
-    ---------------------------------------------------------------------------
-    -- DIMENSION VALUE
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='dim_value')
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='dimension')
 	THEN
-        CREATE SEQUENCE dim_value_id_seq
+        CREATE SEQUENCE dimension_id_seq
             INCREMENT 1
             START 1
             MINVALUE 1
             MAXVALUE 9223372036854775807
             CACHE 1;
 
-        ALTER SEQUENCE dim_value_id_seq
+        ALTER SEQUENCE dimension_id_seq
             OWNER TO onix;
 
-        CREATE TABLE dim_value
+        CREATE TABLE dimension
         (
-            id bigint NOT NULL DEFAULT nextval('dim_value_id_seq'::regclass),
-            value CHARACTER VARYING(50) COLLATE pg_catalog."default" NOT NULL,
+            id bigint NOT NULL DEFAULT nextval('dimension_id_seq'::regclass),
             item_id bigint,
-            dim_type_id INTEGER,
+            key CHARACTER VARYING(50) NOT NULL,
+            value CHARACTER VARYING(100) COLLATE pg_catalog."default" NOT NULL,
             CONSTRAINT dim_value_pkey PRIMARY KEY (id),
-            CONSTRAINT dim_value_dim_type_id_fk FOREIGN KEY (dim_type_id)
-                REFERENCES dim_type (id) MATCH SIMPLE
-                ON UPDATE NO ACTION
-                ON DELETE NO ACTION,
-            CONSTRAINT dim_value_item_id_fk FOREIGN KEY (item_id)
+            CONSTRAINT dimension_item_id_fk FOREIGN KEY (item_id)
                 REFERENCES item (id) MATCH SIMPLE
                 ON UPDATE NO ACTION
                 ON DELETE NO ACTION
@@ -213,16 +177,11 @@ BEGIN
         )
         TABLESPACE pg_default;
 
-        ALTER TABLE dim_value
+        ALTER TABLE dimension
             OWNER to onix;
 
-        CREATE INDEX fki_dim_value_dim_type_id_fk
-            ON dim_value USING btree
-            (dim_type_id)
-            TABLESPACE pg_default;
-
-        CREATE INDEX fki_dim_value_item_id_fk
-            ON dim_value USING btree
+        CREATE INDEX fki_dimension_item_id_fk
+            ON dimension USING btree
             (item_id)
             TABLESPACE pg_default;
     END IF;
