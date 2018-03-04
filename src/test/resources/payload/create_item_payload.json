@@ -5,5 +5,9 @@
   "meta": "{ }",
   "tag": "Test",
   "key": "Test_Item_1",
-  "deployed": false
+  "deployed": false,
+  "dimensions": [
+    { "WBS" : "012csl" },
+    { "COMPANY" : "ACME" }
+  ]
 }
