@@ -12,7 +12,9 @@ import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import java.io.IOException;
 import java.time.ZonedDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class Repository {
@@ -58,7 +60,20 @@ public class Repository {
         item.setDeployed((boolean)json.get("deployed"));
         item.setUpdated(time);
         item.setMeta(mapper.readTree((String)json.get("meta")));
+
         em.persist(item);
+
+        List<LinkedHashMap<String, String>> dims =  (List<LinkedHashMap<String, String>>)json.get("dimensions");
+        if (dims != null && action.equals("CREATED")) {
+            for (LinkedHashMap<String, String> dim : dims) {
+                Map.Entry<String, String> entry = dim.entrySet().iterator().next();
+                Dimension d = new Dimension();
+                d.setItem(item);
+                d.setKey((String)entry.getKey());
+                d.setValue((String)entry.getValue());
+                em.persist(d);
+            }
+        }
         return action;
     }
 
@@ -118,6 +133,8 @@ public class Repository {
     @Transactional
     public void clear() {
         if (em != null) {
+            em.createNamedQuery(ItemType.DELETE_ALL).executeUpdate();
+            em.createNamedQuery(Dimension.DELETE_ALL).executeUpdate();
             em.createNamedQuery(Link.DELETE_ALL).executeUpdate();
             em.createNamedQuery(Item.DELETE_ALL).executeUpdate();
         }
