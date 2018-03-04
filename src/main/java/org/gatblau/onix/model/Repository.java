@@ -123,6 +123,7 @@ public class Repository {
         }
     }
 
+    @Transactional
     public void deleteItemTypes() {
         if (em != null) {
             em.createNamedQuery(ItemType.DELETE_ALL).executeUpdate();

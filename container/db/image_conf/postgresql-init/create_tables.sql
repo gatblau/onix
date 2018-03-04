@@ -21,6 +21,7 @@ BEGIN
             id INTEGER NOT NULL DEFAULT nextval('item_type_id_seq'::regclass),
             name CHARACTER VARYING(200) COLLATE pg_catalog."default",
             description CHARACTER VARYING(500) COLLATE pg_catalog."default",
+            custom boolean DEFAULT FALSE,
             CONSTRAINT item_type_id_pk PRIMARY KEY (id),
             CONSTRAINT item_type_name_uc UNIQUE (name)
         )
@@ -57,14 +58,14 @@ BEGIN
             id bigint NOT NULL DEFAULT nextval('item_id_seq'::regclass),
             name CHARACTER VARYING(200) COLLATE pg_catalog."default",
             description text COLLATE pg_catalog."default",
+            deployed boolean,
             item_type_id INTEGER,
             meta json,
             version bigint NOT NULL DEFAULT 1,
             created timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
             updated timestamp(6) with time zone,
             tag CHARACTER VARYING(300) COLLATE pg_catalog."default",
-            key CHARACTER VARYING(50) COLLATE pg_catalog."default"﻿NOT NULL,
-            deployed bit,
+            key CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
             CONSTRAINT item_id_pk PRIMARY KEY (id),
             CONSTRAINT item_key_uc UNIQUE (key),
             CONSTRAINT item_item_type_id_fk FOREIGN KEY (item_type_id)
@@ -239,14 +240,14 @@ BEGIN
             id bigint,
             name CHARACTER VARYING(200) COLLATE pg_catalog."default",
             description CHARACTER VARYING(500) COLLATE pg_catalog."default",
+            deployed boolean,
             item_type_id INTEGER,
             meta json,
             version bigint,
             created TIMESTAMP(6) with time zone,
             updated TIMESTAMP(6) with time zone,
             tag CHARACTER VARYING(300) COLLATE pg_catalog."default",
-            key CHARACTER VARYING(50) COLLATE pg_catalog."default",
-            deployed bit
+            key CHARACTER VARYING(50) COLLATE pg_catalog."default"
         );
 
         ALTER TABLE item_audit
@@ -332,7 +333,8 @@ BEGIN
             userid text NOT NULL,
             id INTEGER,
             name CHARACTER VARYING(200) COLLATE pg_catalog."default",
-            description CHARACTER VARYING(500) COLLATE pg_catalog."default"
+            description CHARACTER VARYING(500) COLLATE pg_catalog."default",
+            custom boolean
         );
 
         ALTER TABLE item_type_audit

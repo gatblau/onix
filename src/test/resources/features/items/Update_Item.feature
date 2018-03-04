@@ -6,7 +6,7 @@ Feature: Update Configuration Item
   Scenario: Update an existing Item using a JSON payload
     Given a configuration item natural key is known
     Given the item exist in the database
-    Given the create URL of the service is known
+    Given the item URL of the service is known
     Given a json payload with updated item information exists
     When a PUT HTTP request with a JSON payload is done
     Then the response code is 200

@@ -84,7 +84,6 @@ public class Item implements Serializable {
     private int version;
 
     @Column
-    @Type(type = "org.hibernate.type.BooleanType")
     private boolean deployed;
 
     public Long getId() {
@@ -180,7 +179,7 @@ public class Item implements Serializable {
     }
 
     public boolean isDeployed() {
-        return deployed;
+        return this.deployed;
     }
 
     @Override
