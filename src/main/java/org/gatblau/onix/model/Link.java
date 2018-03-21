@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.ZonedDateTime;
 import java.util.Date;
 
 @NamedQueries(value= {
@@ -11,6 +12,13 @@ import java.util.Date;
         name = "link.deleteAll",
         query = "DELETE FROM Link "
     ),
+    @NamedQuery(
+        name = "link.findByKeys",
+        query =   "SELECT L "
+                + "FROM Link L "
+                + "WHERE L.startItem.key = :startItemKey "
+                + "AND L.endItem.key = :endItemKey"
+    )
 })
 @Entity
 public class Link implements Serializable {
@@ -20,12 +28,18 @@ public class Link implements Serializable {
     public static final String FIND_TO_ITEM_ID = "link.findToItemId";
     public static final String DELETE_ALL = "link.deleteAll";
 
-    public static final String PARAM_ITEM_ID = "itemId";
+    public static final String FIND_BY_KEYS = "link.findByKeys";
+
+    public static final String KEY_START_ITEM = "startItemKey";
+    public static final String KEY_END_ITEM = "endItemKey";
 
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     @Column(name = "id", updatable = false, nullable = false)
     private Long id = null;
+
+    @Column
+    private String key;
 
     @ManyToOne(fetch= FetchType.LAZY)
     @JoinColumn(name="start_item_id")
@@ -34,9 +48,6 @@ public class Link implements Serializable {
     @ManyToOne(fetch= FetchType.LAZY)
     @JoinColumn(name="end_item_id")
     private Item endItem;
-
-    @Column
-    private String key;
 
     @Column
     private String tag;
@@ -50,10 +61,10 @@ public class Link implements Serializable {
     private JsonNode meta;
 
     @Column
-    private Date created;
+    private ZonedDateTime created;
 
     @Column
-    private Date updated;
+    private ZonedDateTime updated;
 
     @Version
     @Column
@@ -115,19 +126,19 @@ public class Link implements Serializable {
         this.meta = meta;
     }
 
-    public Date getCreated() {
+    public ZonedDateTime getCreated() {
         return created;
     }
 
-    public void setCreated(Date created) {
+    public void setCreated(ZonedDateTime created) {
         this.created = created;
     }
 
-    public Date getUpdated() {
+    public ZonedDateTime getUpdated() {
         return updated;
     }
 
-    public void setUpdated(Date updated) {
+    public void setUpdated(ZonedDateTime updated) {
         this.updated = updated;
     }
 

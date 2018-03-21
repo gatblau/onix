@@ -40,9 +40,30 @@ public class WebAPI {
         return ResponseEntity.ok(new Result(action));
     }
 
+    @ApiOperation(value = "Creates new link or updates an existing link based on two existing item keys.", notes = "")
+    @RequestMapping(
+            path = "/link/{fromItemKey}/{toItemKey}/", method = RequestMethod.PUT,
+            consumes = {"application/json" },
+            produces = {"application/json" })
+    public ResponseEntity<Result> createOrUpdateLink(
+            @PathVariable("fromItemKey") String fromItemKey,
+            @PathVariable("toItemKey") String toItemKey,
+            @RequestBody JSONObject payload) throws InterruptedException, IOException {
+        String action = data.createOrUpdateLink(fromItemKey, toItemKey, payload);
+        return ResponseEntity.ok(new Result(action));
+    }
+
     @RequestMapping(path = "/clear/", method = RequestMethod.DELETE)
     public void clear() throws InterruptedException {
         data.clear();
+    }
+
+    @RequestMapping(path = "/link/{fromItemKey}/{toItemKey}/", method = RequestMethod.DELETE)
+    public void deleteLink(
+            @PathVariable("fromItemKey") String fromItemKey,
+            @PathVariable("toItemKey") String toItemKey
+    ) throws InterruptedException {
+        data.deleteLink(fromItemKey, toItemKey);
     }
 
     @RequestMapping(path = "/itemtype/", method = RequestMethod.DELETE)

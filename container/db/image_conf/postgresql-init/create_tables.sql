@@ -65,7 +65,7 @@ BEGIN
             created timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
             updated timestamp(6) with time zone,
             tag CHARACTER VARYING(300) COLLATE pg_catalog."default",
-            key CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
+            key CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
             CONSTRAINT item_id_pk PRIMARY KEY (id),
             CONSTRAINT item_key_uc UNIQUE (key),
             CONSTRAINT item_item_type_id_fk FOREIGN KEY (item_type_id)
@@ -105,18 +105,17 @@ BEGIN
         CREATE TABLE link
         (
             id bigint NOT NULL DEFAULT nextval('link_id_seq'::regclass),
+            key CHARACTER VARYING(200) COLLATE pg_catalog."default" NOT NULL,
             meta json,
             description text COLLATE pg_catalog."default",
-            version bigint,
+            version bigint NOT NULL DEFAULT 1,
             created TIMESTAMP(6) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP(6),
             updated timestamp(6) WITH TIME ZONE,
-            start_item_id bigint,
-            end_item_id bigint,
             role CHARACTER VARYING(200) COLLATE pg_catalog."default" NOT NULL,
-            key CHARACTER VARYING(50) COLLATE pg_catalog."default" NOT NULL,
+            start_item_id bigint NOT NULL,
+            end_item_id bigint NOT NULL,
             tag CHARACTER VARYING(300) COLLATE pg_catalog."default",
             CONSTRAINT link_id_pk PRIMARY KEY (id),
-            CONSTRAINT link_key_uc UNIQUE (key),
             CONSTRAINT link_end_item_id_fk FOREIGN KEY (end_item_id)
                 REFERENCES item (id) MATCH SIMPLE
                 ON UPDATE NO ACTION
@@ -206,7 +205,7 @@ BEGIN
             created TIMESTAMP(6) with time zone,
             updated TIMESTAMP(6) with time zone,
             tag CHARACTER VARYING(300) COLLATE pg_catalog."default",
-            key CHARACTER VARYING(50) COLLATE pg_catalog."default"
+            key CHARACTER VARYING(100) COLLATE pg_catalog."default"
         );
 
         ALTER TABLE item_audit
@@ -244,15 +243,15 @@ BEGIN
             stamp TIMESTAMP NOT NULL,
             userid text NOT NULL,
             id bigint,
+            key CHARACTER VARYING(200) COLLATE pg_catalog."default",
             meta json,
             description CHARACTER VARYING(500) COLLATE pg_catalog."default",
             version bigint,
             created TIMESTAMP(6) with time zone,
             updated TIMESTAMP(6) with time zone,
+            role CHARACTER VARYING(200) COLLATE pg_catalog."default",
             start_item_id bigint,
             end_item_id bigint,
-            role CHARACTER VARYING(200) COLLATE pg_catalog."default",
-            key CHARACTER VARYING(50) COLLATE pg_catalog."default",
             tag CHARACTER VARYING(300) COLLATE pg_catalog."default"
         );
 

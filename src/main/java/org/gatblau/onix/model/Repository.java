@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.io.IOException;
 import java.time.ZonedDateTime;
@@ -91,43 +92,6 @@ public class Repository {
     }
 
     /***
-     * Finds links that depart from a specified node.
-     * @param itemId the Id of the node from where links depart.
-     * @return
-     */
-    public List<Link> findLinksFromItem(long itemId) {
-        TypedQuery<Link> query = em.createNamedQuery(Link.FIND_FROM_ITEM_ID, Link.class);
-        query.setParameter(Link.PARAM_ITEM_ID, itemId);
-        return query.getResultList();
-    }
-
-    /***
-     * Find links that arrive to a specified node.
-     * @param itemId the Id of the node where links arrive.
-     * @return
-     */
-    public List<Link> findLinksToItem(long itemId) {
-        TypedQuery<Link> query = em.createNamedQuery(Link.FIND_TO_ITEM_ID, Link.class);
-        query.setParameter(Link.PARAM_ITEM_ID, itemId);
-        return query.getResultList();
-    }
-
-    /***
-     * Finds nodes of a specified type with specified tags which are linked to the passed-in node.
-     * @param itemId the id of the node used to find linked nodes
-     * @param itemTypeId the type of linked nodes to find
-     * @param tag the tags associated to the linked nodes used as a filter for the search.
-     * @return
-     */
-    public List<Item> findLinkedItemsByTypeAndTag(long itemId, int itemTypeId, String tag) {
-        TypedQuery<Item> query = em.createNamedQuery(Item.FIND_LINKED_NODES_BY_TYPE_AND_TAG, Item.class);
-        query.setParameter(Link.PARAM_ITEM_ID, itemId);
-        query.setParameter(Item.PARAM_TAG, tag);
-        query.setParameter(Item.PARAM_ITEM_TYPE_ID, itemTypeId);
-        return query.getResultList();
-    }
-
-    /***
      * Removes all transactional data in the database.
      */
     @Transactional
@@ -144,6 +108,62 @@ public class Repository {
     public void deleteItemTypes() {
         if (em != null) {
             em.createNamedQuery(ItemType.DELETE_ALL).executeUpdate();
+        }
+    }
+
+    @Transactional
+    public String createOrUpdateLink(String fromItemKey, String toItemKey, JSONObject json) throws IOException {
+        String action = "UPDATED";
+        TypedQuery<Link> query = em.createNamedQuery(Link.FIND_BY_KEYS, Link.class);
+        query.setParameter(Link.KEY_START_ITEM, fromItemKey);
+        query.setParameter(Link.KEY_END_ITEM, toItemKey);
+        Link link = null;
+        ZonedDateTime time = ZonedDateTime.now();
+        try {
+            link = query.getSingleResult();
+        }
+        catch (NoResultException e) {
+            link = new Link();
+            link.setCreated(time);
+            action = "CREATED";
+
+            TypedQuery<Item> startItemQuery = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
+            query.setParameter(Item.PARAM_KEY, fromItemKey);
+            Item startItem = startItemQuery.getSingleResult();
+            assert (startItem != null);
+
+            TypedQuery<Item> endItemQuery = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
+            query.setParameter(Item.PARAM_KEY, toItemKey);
+            Item endItem = endItemQuery.getSingleResult();
+            assert (endItem != null);
+
+            link.setStartItem(startItem);
+            link.setEndItem(endItem);
+        }
+        link.setDescription((String)json.get("description"));
+        link.setMeta(mapper.readTree((String)json.get("meta")));
+        link.setTag((String)json.get("tag"));
+        link.setUpdated(time);
+
+        return action;
+    }
+
+    @Transactional
+    public void deleteLink(String fromItemKey, String toItemKey) {
+        if (em != null) {
+            TypedQuery<Link> query = em.createNamedQuery(Link.FIND_BY_KEYS, Link.class);
+            query.setParameter(Link.KEY_START_ITEM, fromItemKey);
+            query.setParameter(Link.KEY_END_ITEM, toItemKey);
+            Link link = null;
+            try {
+                query.getSingleResult();
+            }
+            catch (NoResultException nre){
+                // do nothing so link stays null
+            }
+            if (link != null) {
+                em.remove(link);
+            }
         }
     }
 }
