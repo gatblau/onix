@@ -108,7 +108,7 @@ public class Steps extends BaseTest {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
         HttpEntity<?> entity = new HttpEntity<>(payload, headers);
-        vars.put("key", util.get(ITEM_KEY));
+        vars.put("key", util.get(ITEM_ONE_KEY));
         ResponseEntity<Result> response = null;
         try {
             response = client.exchange(url, HttpMethod.PUT, entity, Result.class, vars);
@@ -122,7 +122,7 @@ public class Steps extends BaseTest {
 
     @And("^a configuration item natural key is known$")
     public void aConfigurationItemNaturalKeyIsKnown() throws Throwable {
-        util.put(ITEM_KEY, "Test_Item_1");
+        util.put(ITEM_ONE_KEY, "ITEM_ONE_KEY");
     }
 
     @And("^the service responds with action \"([^\"]*)\"$")
@@ -152,27 +152,48 @@ public class Steps extends BaseTest {
         thereIsNotAnyErrorInTheResponse();
     }
 
-    @Given("^a json payload with new item type information exists$")
-    public void aJsonPayloadWithNewItemTypeInformationExists() throws Throwable {
-        // Write code here that turns the phrase above into concrete actions
-        throw new PendingException();
-    }
-
-    @When("^a POST HTTP request with a JSON payload is done$")
-    public void aPOSTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
-        // Write code here that turns the phrase above into concrete actions
-        throw new PendingException();
-    }
-
     @Given("^the item type URL of the service is known$")
     public void theItemTypeURLOfTheServiceIsKnown() throws Throwable {
-        util.put(Key.ITEM_TYPE_URL, String.format("%s/itemtype/", baseUrl));
+        util.put(ITEM_TYPE_URL, String.format("%s/itemtype/", baseUrl));
     }
 
     @When("^a DELETE HTTP request is done$")
     public void aDELETEHTTPRequestIsDone() throws Throwable {
         try {
             client.delete((String) util.get(ITEM_TYPE_URL));
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    @Given("^the natural keys for two configuration items are known$")
+    public void theNaturalKeysForTwoConfigurationItemsAreKnown() throws Throwable {
+        util.put(ITEM_ONE_KEY, "ITEM_ONE_KEY");
+        util.put(ITEM_TWO_KEY, "ITEM_TWO_KEY");
+    }
+
+    @Given("^the link URL of the service is known$")
+    public void theLinkURLOfTheServiceIsKnown() throws Throwable {
+        util.put(LINK_URL, String.format("%s/link/{fromItemKey}/{toItemKey}/", baseUrl));
+    }
+
+    @Given("^a json payload with new link information exists$")
+    public void aJsonPayloadWithNewLinkInformationExists() throws Throwable {
+        String payload = util.getFile("payload/create_link_payload.json");
+        util.put(Key.PAYLOAD, payload);
+    }
+
+    @Given("^a link to the two configuration items does not exist in the database$")
+    public void aLinkToTheTwoConfigurationItemsDoesNotExistInTheDatabase() throws Throwable {
+        aDELETELinkRequestIsDone();
+    }
+
+    @When("^a DELETE Link request is done$")
+    public void aDELETELinkRequestIsDone() throws Throwable {
+        try {
+            client.delete((String) util.get(LINK_URL), (String)util.get(ITEM_ONE_KEY), (String)util.get(ITEM_TWO_KEY));
             util.remove(EXCEPTION);
         }
         catch (Exception ex) {

@@ -1,0 +1,8 @@
+{
+  "meta": "{ }",
+  "description": "This is a CMDB item for testing purposes.",
+  "role": "connect",
+  "start_item_key": "ITEM_ONE_KEY",
+  "end_item_key": "ITEM_TWO_KEY",
+  "tag": "Test"
+}
