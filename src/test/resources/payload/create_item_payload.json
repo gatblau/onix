@@ -4,7 +4,6 @@
   "itemTypeId": "2",
   "meta": "{ }",
   "tag": "Test",
-  "key": "ITEM_ONE_KEY",
   "deployed": false,
   "dimensions": [
     { "WBS" : "012csl" },

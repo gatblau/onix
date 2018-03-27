@@ -40,6 +40,8 @@ public class Item implements Serializable {
     public static final String PARAM_ITEM_TYPE_ID = "itemTypeId";
     public static final String PARAM_TAG = "tag";
     public static final String PARAM_KEY = "key";
+    public static final String PARAM_FROM_KEY = "fromItemKey";
+    public static final String PARAM_TO_KEY = "toItemKey";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -6,6 +6,7 @@ import cucumber.api.java.en.Given;
 import cucumber.api.java.en.When;
 import org.gatblau.onix.Info;
 import org.gatblau.onix.Result;
+import org.gatblau.onix.model.Item;
 import org.springframework.http.*;
 
 import static features.Key.*;
@@ -102,22 +103,7 @@ public class Steps extends BaseTest {
 
     @And("^a PUT HTTP request with a JSON payload is done$")
     public void aPUTTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
-        String payload = util.get(PAYLOAD);
-        String url = util.get(ITEM_URL);
-        Map<String, Object> vars = new HashMap<>();
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json");
-        HttpEntity<?> entity = new HttpEntity<>(payload, headers);
-        vars.put("key", util.get(ITEM_ONE_KEY));
-        ResponseEntity<Result> response = null;
-        try {
-            response = client.exchange(url, HttpMethod.PUT, entity, Result.class, vars);
-            util.put(RESPONSE, response);
-            util.remove(EXCEPTION);
-        }
-        catch (Exception ex) {
-            util.put(EXCEPTION, ex);
-        }
+        putItem(ITEM_ONE_KEY);
     }
 
     @And("^a configuration item natural key is known$")
@@ -194,6 +180,64 @@ public class Steps extends BaseTest {
     public void aDELETELinkRequestIsDone() throws Throwable {
         try {
             client.delete((String) util.get(LINK_URL), (String)util.get(ITEM_ONE_KEY), (String)util.get(ITEM_TWO_KEY));
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    @When("^a PUT HTTP request to the Link resource is done with a JSON payload$")
+    public void aPUTHTTPRequestToTheLinkResourceIsDoneWithAJSONPayload() throws Throwable {
+        String url = util.get(LINK_URL);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("fromItemKey", util.get(ITEM_ONE_KEY));
+        vars.put("toItemKey", util.get(ITEM_TWO_KEY));
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.PUT, getEntity(), Result.class, vars);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    private HttpEntity<?> getEntity() {
+        String payload = util.get(PAYLOAD);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+       return new HttpEntity<>(payload, headers);
+    }
+
+    @Given("^the configuration items to be linked exist in the database$")
+    public void theConfigurationItemsToBeLinkedExistInTheDatabase() throws Throwable {
+        putItem(ITEM_ONE_KEY);
+        putItem(ITEM_TWO_KEY);
+    }
+
+    @Given("^the item exists in the database$")
+    public void theItemExistsInTheDatabase() throws Throwable {
+        putItem(ITEM_ONE_KEY);
+    }
+
+    @When("^a GET HTTP request to the Item uri is done$")
+    public void aGETHTTPRequestToTheItemUriIsDone() throws Throwable {
+        String result = client.getForObject((String)util.get(ITEM_URL), String.class);
+
+    }
+
+    private void putItem(String itemKey) {
+        util.put(Key.ITEM_URL, String.format("%s/item/{key}/", baseUrl));
+        util.put(Key.PAYLOAD, util.getFile("payload/create_item_payload.json"));
+        String url = util.get(ITEM_URL);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("key", util.get(itemKey));
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.PUT, getEntity(), Result.class, vars);
+            util.put(RESPONSE, response);
             util.remove(EXCEPTION);
         }
         catch (Exception ex) {
