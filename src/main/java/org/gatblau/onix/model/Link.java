@@ -41,6 +41,9 @@ public class Link implements Serializable {
     @Column
     private String key;
 
+    @Column
+    private String role;
+
     @ManyToOne(fetch= FetchType.LAZY)
     @JoinColumn(name="start_item_id")
     private Item startItem;
@@ -86,6 +89,14 @@ public class Link implements Serializable {
         this.key = key;
     }
 
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
     public String getTag() {
         return tag;
     }
@@ -98,7 +109,7 @@ public class Link implements Serializable {
         return startItem;
     }
 
-    public void setStartItem(Item startNode) {
+    public void setStartItem(Item startItem) {
         this.startItem = startItem;
     }
 

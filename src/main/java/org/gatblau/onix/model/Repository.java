@@ -128,22 +128,38 @@ public class Repository {
             action = "CREATED";
 
             TypedQuery<Item> startItemQuery = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
-            query.setParameter(Item.PARAM_KEY, fromItemKey);
-            Item startItem = startItemQuery.getSingleResult();
-            assert (startItem != null);
+            startItemQuery.setParameter(Item.PARAM_KEY, fromItemKey);
+            Item startItem = null;
+            try {
+                startItem = startItemQuery.getSingleResult();
+            }
+            catch (NoResultException nre) {
+                throw new RuntimeException("Could create link to start configuration item with key '" + fromItemKey + "' as it does not exist.");
+            }
 
             TypedQuery<Item> endItemQuery = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
-            query.setParameter(Item.PARAM_KEY, toItemKey);
-            Item endItem = endItemQuery.getSingleResult();
-            assert (endItem != null);
+            endItemQuery.setParameter(Item.PARAM_KEY, toItemKey);
+            Item endItem = null;
+            try {
+                endItem = endItemQuery.getSingleResult();
+            }
+            catch (NoResultException nre) {
+                throw new RuntimeException("Could not create link to end configuration item with key '" + toItemKey + "' as it does not exist.");
+            }
 
             link.setStartItem(startItem);
             link.setEndItem(endItem);
+
+            link.setKey(String.format("%s_%s", startItem.getKey(), endItem.getKey()));
         }
         link.setDescription((String)json.get("description"));
         link.setMeta(mapper.readTree((String)json.get("meta")));
         link.setTag((String)json.get("tag"));
+        link.setRole((String)json.get("role"));
+
         link.setUpdated(time);
+
+        em.persist(link);
 
         return action;
     }
