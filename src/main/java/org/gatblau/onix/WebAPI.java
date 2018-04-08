@@ -2,18 +2,14 @@ package org.gatblau.onix;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.gatblau.onix.data.ItemData;
 import org.gatblau.onix.model.Item;
-import org.gatblau.onix.model.Repository;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.persistence.Persistence;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 @Api("ONIX CMDB Web API")
 @RestController
@@ -69,5 +65,15 @@ public class WebAPI {
     @RequestMapping(path = "/itemtype/", method = RequestMethod.DELETE)
     public void deleteItemTypes() throws InterruptedException {
         data.deleteItemTypes();
+    }
+
+    @ApiOperation(value = "Get a configuration item based on the specified key.", notes = "")
+    @RequestMapping(
+            path = "/item/{key}/", method = RequestMethod.GET,
+            consumes = {"application/json" },
+            produces = {"application/json" })
+    public ResponseEntity<ItemData> getItem(@PathVariable("key") String key) {
+        ItemData item = data.getItem(key);
+        return ResponseEntity.ok(item);
     }
 }

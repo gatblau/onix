@@ -6,6 +6,7 @@ import cucumber.api.java.en.Given;
 import cucumber.api.java.en.When;
 import org.gatblau.onix.Info;
 import org.gatblau.onix.Result;
+import org.gatblau.onix.data.ItemData;
 import org.gatblau.onix.model.Item;
 import org.springframework.http.*;
 
@@ -224,8 +225,10 @@ public class Steps extends BaseTest {
 
     @When("^a GET HTTP request to the Item uri is done$")
     public void aGETHTTPRequestToTheItemUriIsDone() throws Throwable {
-        String result = client.getForObject((String)util.get(ITEM_URL), String.class);
-
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<ItemData> result = client.exchange((String)util.get(ITEM_URL), HttpMethod.GET, new HttpEntity<>(null, headers), ItemData.class, (String)util.get(ITEM_ONE_KEY));
+        util.put(RESPONSE, result);
     }
 
     private void putItem(String itemKey) {
