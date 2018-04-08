@@ -15,23 +15,36 @@ import java.util.Date;
     @NamedQuery(
         name = "link.findByKeys",
         query =   "SELECT L "
-                + "FROM Link L "
-                + "WHERE L.startItem.key = :startItemKey "
-                + "AND L.endItem.key = :endItemKey"
+            + "FROM Link L "
+            + "WHERE L.startItem.key = :startItemKey "
+            + "AND L.endItem.key = :endItemKey"
+    ),
+    @NamedQuery(
+        name = "link.findFromItem",
+        query = "SELECT L "
+            + "FROM Link L "
+            + "WHERE L.startItem.id = :itemId"
+    ),
+    @NamedQuery(
+        name = "link.findToItem",
+        query = "SELECT L "
+            + "FROM Link L "
+            + "WHERE L.endItem.id = :itemId"
     )
 })
 @Entity
 public class Link implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    public static final String FIND_FROM_ITEM_ID = "link.findFromItemId";
-    public static final String FIND_TO_ITEM_ID = "link.findToItemId";
+    public static final String FIND_FROM_ITEM = "link.findFromItem";
+    public static final String FIND_TO_ITEM = "link.findToItem";
     public static final String DELETE_ALL = "link.deleteAll";
 
     public static final String FIND_BY_KEYS = "link.findByKeys";
 
     public static final String KEY_START_ITEM = "startItemKey";
     public static final String KEY_END_ITEM = "endItemKey";
+    public static final String KEY_ITEM_ID = "itemId";
 
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)

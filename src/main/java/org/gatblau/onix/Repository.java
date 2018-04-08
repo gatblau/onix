@@ -1,7 +1,13 @@
-package org.gatblau.onix.model;
+package org.gatblau.onix;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.gatblau.onix.data.ItemData;
+import org.gatblau.onix.data.LinkData;
+import org.gatblau.onix.data.LinkedItemData;
+import org.gatblau.onix.model.Dimension;
+import org.gatblau.onix.model.Item;
+import org.gatblau.onix.model.ItemType;
+import org.gatblau.onix.model.Link;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -9,13 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.io.IOException;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 @Service
 public class Repository {
@@ -170,16 +177,121 @@ public class Repository {
             TypedQuery<Link> query = em.createNamedQuery(Link.FIND_BY_KEYS, Link.class);
             query.setParameter(Link.KEY_START_ITEM, fromItemKey);
             query.setParameter(Link.KEY_END_ITEM, toItemKey);
-            Link link = null;
             try {
-                query.getSingleResult();
+                List<Link> links = query.getResultList();
+                for (Link link : links) {
+                    em.remove(link);
+                }
             }
             catch (NoResultException nre){
-                // do nothing so link stays null
-            }
-            if (link != null) {
-                em.remove(link);
             }
         }
+    }
+
+    @Transactional
+    public ItemData getItem(String key) {
+        Item item = getItemModel(key);
+
+        if (item == null) return null;
+
+        ItemData data = new ItemData();
+        data.setKey(item.getKey());
+        data.setName(item.getName());
+        data.setDescription(item.getDescription());
+
+        data.setCreated(item.getCreated().toString());
+        data.setUpdated(item.getUpdated().toString());
+        data.setVersion(item.getVersion());
+
+        data.setDeployed(item.isDeployed());
+        data.setItemType(item.getItemType().getName());
+        data.setMeta(item.getMeta());
+        data.setTag(item.getTag());
+
+        item.getDimensions().forEach(new Consumer<Dimension>() {
+            @Override
+            public void accept(Dimension dimension) {
+                data.getDimensions().add(String.format("%s=%s", dimension.getKey(), dimension.getValue()));
+            }
+        });
+
+        // populate linked items here
+        List<LinkData> links = new ArrayList<>();
+        links.addAll(getLinksData(item, true)); // to links
+        links.addAll(getLinksData(item, false)); // from links
+        data.setLinks(links);
+
+        return data;
+    }
+
+    private Item getItemModel(String key) {
+        Item item = null;
+        TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
+        query.setParameter(Item.PARAM_KEY, key);
+        try {
+            item = query.getSingleResult();
+        }
+        catch (NoResultException nre){
+        }
+        return item;
+    }
+
+    private LinkedItemData getLinkedItemData(Item item, boolean isParent) {
+        LinkedItemData liData = new LinkedItemData();
+        liData.setDescription(item.getDescription());
+        liData.setKey(item.getKey());
+        liData.setName(item.getName());
+        liData.setParent(isParent);
+        return liData;
+    }
+
+    /***
+     * Get a list of links departing from or arriving at the passed-in item.
+     * @param item the configuration item connected to the links to find.
+     * @param isParent true if the links arrive at the item and false if the links depart from the item.
+     * @return a list of @see org.gatblau.onix.data.LinkData.Class
+     */
+    private List<LinkData> getLinksData(Item item, boolean isParent) {
+        TypedQuery<Link> itemQuery = null;
+        if (isParent) {
+            itemQuery = em.createNamedQuery(Link.FIND_FROM_ITEM, Link.class);
+        } else {
+            itemQuery = em.createNamedQuery(Link.FIND_TO_ITEM, Link.class);
+        }
+        itemQuery.setParameter(Link.KEY_ITEM_ID, item.getId());
+        List<LinkData> linksData = new ArrayList<>();
+        List<Link> links = null;
+        try {
+            links = itemQuery.getResultList();
+            links.forEach(new Consumer<Link>() {
+                @Override
+                public void accept(Link link) {
+                    LinkData linkData = new LinkData();
+                    linkData.setDescription(link.getDescription());
+                    linkData.setKey(link.getKey());
+                    linkData.setMeta(link.getMeta());
+                    linkData.setTag(link.getTag());
+                    linkData.setRole(link.getRole());
+
+                    String itemKey = null;
+
+                    if (isParent) {
+                        itemKey = link.getStartItem().getKey();
+                    } else {
+                        itemKey = link.getEndItem().getKey();
+                    }
+
+                    linkData.setItem(
+                        getLinkedItemData(
+                            getItemModel(itemKey), !isParent)
+                    );
+
+                    linksData.add(linkData);
+                }
+            });
+        }
+        catch (NoResultException nre){
+        }
+        return linksData;
     }
 }
