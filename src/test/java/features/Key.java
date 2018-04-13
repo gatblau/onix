@@ -11,4 +11,8 @@ public class Key {
     public static final String PAYLOAD = "payload";
     public static final String ITEM_TYPE_URL = "item_type_url";
     public static final String LINK_URL = "link_url";
+    public static final String CONGIG_ITEM_TYPE_ID = "config_item_type_id";
+    public static final String CONFIG_ITEM_TAG = "config_item_tag";
+    public static final String CONFIG_ITEM_UPDATED_FROM = "config_item_updated_from";
+    public static final String CONFIG_ITEM_UPDATED_TO = "config_item_updated_to";
 }

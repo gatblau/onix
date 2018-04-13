@@ -10,18 +10,65 @@ import java.util.List;
 
 @NamedQueries(value= {
     @NamedQuery(
-        name = "item.findByTypeAndTag",
+        name = "item.findAllByDateDesc",
         query =   "SELECT i "
                 + "FROM Item i "
-                + "JOIN i.itemType t "
-                + "WHERE t.id = :itemTypeId "
-                + "AND i.tag = :tag "
+                + "ORDER BY i.updated DESC "
     ),
     @NamedQuery(
         name = "item.findByKey",
         query =   "SELECT i "
                 + "FROM Item i "
                 + "WHERE i.key = :key "
+    ),
+    @NamedQuery(
+        name = "item.findByTag",
+        query =   "SELECT i "
+                + "FROM Item i "
+                + "WHERE i.tag = :tag "
+                + "ORDER BY i.updated DESC "
+    ),
+    @NamedQuery(
+        name = "item.findByType",
+        query =   "SELECT i "
+                + "FROM Item i "
+                + "WHERE i.itemType.id = :itemTypeId "
+                + "ORDER BY i.updated DESC "
+    ),
+    @NamedQuery(
+            name = "item.findByDate",
+            query =   "SELECT i "
+                + "FROM Item i "
+                + "WHERE i.updated >= :fromDate "
+                + "AND i.updated <= :toDate "
+                + "ORDER BY i.updated DESC "
+    ),
+    @NamedQuery(
+        name = "item.findByTypeAndTag",
+        query =   "SELECT i "
+                + "FROM Item i "
+                + "WHERE i.itemType.id = :itemTypeId "
+                + "AND i.tag = :tag "
+                + "ORDER BY i.updated DESC "
+    ),
+    @NamedQuery(
+        name = "item.findByTypeAndDate",
+        query =   "SELECT i "
+                + "FROM Item i "
+                + "WHERE i.itemType.id = :itemTypeId "
+                + "AND i.updated >= :fromDate "
+                + "AND i.updated <= :toDate "
+                + "ORDER BY i.updated DESC "
+    ),
+    @NamedQuery(
+        name = "item.findByTypeTagAndDate",
+        query =   "SELECT i "
+            + "FROM Item i "
+            + "WHERE i.itemType.id = :itemTypeId "
+            + "AND i.tag = :tag "
+            + "AND i.updated >= :fromDate "
+            + "AND i.updated <= :toDate "
+            + "ORDER BY i.updated DESC "
     ),
     @NamedQuery(
         name = "item.deleteAll",
@@ -32,16 +79,21 @@ import java.util.List;
 public class Item implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    public static final String FIND_BY_TYPE_AND_TAG = "item.findByTypeAndTag";
-    public static final String FIND_LINKED_NODES_BY_TYPE_AND_TAG = "item.findLinkedNodesByTypeAndTag";
+    public static final String FIND_ALL_BY_DATE_DESC = "item.findAllByDateDesc";
     public static final String FIND_BY_KEY = "item.findByKey";
+    public static final String FIND_BY_TYPE = "item.findByType";
+    public static final String FIND_BY_TAG = "item.findByTag";
+    public static final String FIND_BY_DATE = "item.findByDate";
+    public static final String FIND_BY_TYPE_AND_TAG = "item.findByTypeAndTag";
+    public static final String FIND_BY_TYPE_AND_DATE = "item.findByTypeAndDate";
+    public static final String FIND_BY_TYPE_TAG_AND_DATE = "item.findByTypeTagAndDate";
     public static final String DELETE_ALL = "item.deleteAll";
 
     public static final String PARAM_ITEM_TYPE_ID = "itemTypeId";
     public static final String PARAM_TAG = "tag";
     public static final String PARAM_KEY = "key";
-    public static final String PARAM_FROM_KEY = "fromItemKey";
-    public static final String PARAM_TO_KEY = "toItemKey";
+    public static final String PARAM_FROM_DATE = "from";
+    public static final String PARAM_TO_DATE = "to";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

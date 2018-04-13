@@ -7,13 +7,18 @@ import cucumber.api.java.en.When;
 import org.gatblau.onix.Info;
 import org.gatblau.onix.Result;
 import org.gatblau.onix.data.ItemData;
+import org.gatblau.onix.data.Wrapper;
 import org.gatblau.onix.model.Item;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 
 import static features.Key.*;
 
 import javax.annotation.PostConstruct;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Steps extends BaseTest {
@@ -41,9 +46,14 @@ public class Steps extends BaseTest {
         assert (response.getStatusCode().value() == 200);
     }
 
-    @And("^the item URL of the service is known$")
-    public void theItemURLOfTheServiceIsKnown() throws Throwable {
-        util.put(Key.ITEM_URL, String.format("%s/item/{key}/", baseUrl));
+    @Given("^the item URL search by key is known$")
+    public void theItemURLSearchByKeyIsKnown() throws Throwable {
+        util.put(Key.ITEM_URL, String.format("%sitem/{key}/", baseUrl));
+    }
+
+    @Given("^the item URL search with query parameters is known$")
+    public void theItemURLSearchWithQueryParametersIsKnown() throws Throwable {
+        util.put(Key.ITEM_URL, String.format("%sitem/search", baseUrl));
     }
 
     @And("^the response code is (\\d+)$")
@@ -104,7 +114,7 @@ public class Steps extends BaseTest {
 
     @And("^a PUT HTTP request with a JSON payload is done$")
     public void aPUTTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
-        putItem(ITEM_ONE_KEY);
+        putItem(ITEM_ONE_KEY, "payload/create_item_payload.json");
     }
 
     @And("^a configuration item natural key is known$")
@@ -121,7 +131,7 @@ public class Steps extends BaseTest {
     @And("^the item exist in the database$")
     public void theItemExistInTheDatabase() throws Throwable {
         theItemDoesNotExistInTheDatabase();
-        theItemURLOfTheServiceIsKnown();
+        theItemURLSearchByKeyIsKnown();
         aJsonPayloadWithNewItemInformationExists();
         aPUTTHTTPRequestWithAJSONPayloadIsDone();
     }
@@ -214,29 +224,33 @@ public class Steps extends BaseTest {
 
     @Given("^the configuration items to be linked exist in the database$")
     public void theConfigurationItemsToBeLinkedExistInTheDatabase() throws Throwable {
-        putItem(ITEM_ONE_KEY);
-        putItem(ITEM_TWO_KEY);
+        putItem(ITEM_ONE_KEY, "payload/create_item_payload.json");
+        putItem(ITEM_TWO_KEY, "payload/create_item_payload.json");
     }
 
     @Given("^the item exists in the database$")
     public void theItemExistsInTheDatabase() throws Throwable {
-        putItem(ITEM_ONE_KEY);
+        putItem("item_one", "payload/update_item_payload.json");
     }
 
     @When("^a GET HTTP request to the Item uri is done$")
     public void aGETHTTPRequestToTheItemUriIsDone() throws Throwable {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
-        ResponseEntity<ItemData> result = client.exchange((String)util.get(ITEM_URL), HttpMethod.GET, new HttpEntity<>(null, headers), ItemData.class, (String)util.get(ITEM_ONE_KEY));
+        ResponseEntity<ItemData> result = client.exchange(
+                (String)util.get(ITEM_URL),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                ItemData.class,
+                (String)util.get(ITEM_ONE_KEY));
         util.put(RESPONSE, result);
     }
 
-    private void putItem(String itemKey) {
-        util.put(Key.ITEM_URL, String.format("%s/item/{key}/", baseUrl));
-        util.put(Key.PAYLOAD, util.getFile("payload/create_item_payload.json"));
-        String url = util.get(ITEM_URL);
+    private void putItem(String itemKey, String filename) {
+        util.put(Key.PAYLOAD, util.getFile(filename));
+        String url = String.format("%s/item/{key}/", baseUrl);
         Map<String, Object> vars = new HashMap<>();
-        vars.put("key", util.get(itemKey));
+        vars.put("key", itemKey);
         ResponseEntity<Result> response = null;
         try {
             response = client.exchange(url, HttpMethod.PUT, getEntity(), Result.class, vars);
@@ -246,5 +260,72 @@ public class Steps extends BaseTest {
         catch (Exception ex) {
             util.put(EXCEPTION, ex);
         }
+    }
+
+    @Given("^more than one item exist in the database$")
+    public void moreThanOneItemExistInTheDatabase() throws Throwable {
+        putItem("item_one", "payload/update_item_payload.json");
+        putItem("item_two", "payload/update_item_payload.json");
+        putItem("item_three", "payload/update_item_payload.json");
+    }
+
+    @When("^a GET HTTP request to the Item uri is done with query parameters$")
+    public void aGETHTTPRequestToTheItemUriIsDoneWithQueryParameters() throws Throwable {
+        StringBuilder uri = new StringBuilder();
+        uri.append((String)util.get(ITEM_URL));
+
+        if (util.containsKey(CONGIG_ITEM_TYPE_ID) || util.containsKey(CONFIG_ITEM_TAG) || util.containsKey(CONFIG_ITEM_UPDATED_FROM)) {
+            uri.append("?");
+        }
+
+        if (util.containsKey(CONGIG_ITEM_TYPE_ID)) {
+            Integer typeId = util.get(CONGIG_ITEM_TYPE_ID);
+            uri.append("typeId=").append(typeId).append("&");
+        }
+
+        if (util.containsKey(CONFIG_ITEM_TAG)) {
+            String tag = util.get(CONFIG_ITEM_TAG);
+            uri.append("tag=").append(tag).append("&");
+        }
+
+        if (util.containsKey(CONFIG_ITEM_UPDATED_FROM)) {
+            ZonedDateTime from = util.get(CONFIG_ITEM_UPDATED_FROM);
+            uri.append("from=").append(from).append("&");
+        }
+
+        if (util.containsKey(CONFIG_ITEM_UPDATED_TO)) {
+            ZonedDateTime to = util.get(CONFIG_ITEM_UPDATED_TO);
+            uri.append("to=").append(to).append("&");
+        }
+
+        String uriString = uri.toString();
+        if (uriString.endsWith("&")) {
+            uriString = uriString.substring(0, uriString.length() - 1);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<Wrapper> result = client.exchange(
+                uriString,
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                Wrapper.class);
+        util.put(RESPONSE, result);
+    }
+
+    @Given("^the filtering config item type is known$")
+    public void theFilteringConfigItemTypeIsKnown() throws Throwable {
+        util.put(CONGIG_ITEM_TYPE_ID, 2);
+    }
+
+    @Given("^the filtering config item tag is known$")
+    public void theFilteringConfigItemTagIsKnown() throws Throwable {
+        util.put(CONFIG_ITEM_TAG, "Test");
+    }
+
+    @Given("^the filtering config item date range is known$")
+    public void theFilteringConfigItemDateRangeIsKnown() throws Throwable {
+        util.put(CONFIG_ITEM_UPDATED_FROM, ZonedDateTime.of(ZonedDateTime.now().getYear() - 100, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()));
+        util.put(CONFIG_ITEM_UPDATED_TO, ZonedDateTime.of(ZonedDateTime.now().getYear(), 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()));
     }
 }

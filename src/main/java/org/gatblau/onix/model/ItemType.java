@@ -18,7 +18,7 @@ public class ItemType implements Serializable {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     @Column(name = "id", updatable = false, nullable = false)
-    private Long id = null;
+    private Integer id = null;
 
     @Column
     private String name;
@@ -29,11 +29,11 @@ public class ItemType implements Serializable {
     @Column
     private boolean custom;
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
