@@ -14,5 +14,5 @@ if [ ! -f "$JAVA_JAR" ]; then
     rm -rf $APP_REPO
 fi
 
-docker build -t onix:1.0 .
+docker build -t onix-svc:1.0 .
 

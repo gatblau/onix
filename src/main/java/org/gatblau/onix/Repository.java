@@ -17,11 +17,9 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 @Service
@@ -59,7 +57,7 @@ public class Repository {
             item.setCreated(time);
             action = "CREATED";
         }
-        ItemType itemType = em.getReference(ItemType.class, Long.parseLong(json.get("itemTypeId").toString()));
+        ItemType itemType = em.getReference(ItemType.class, Integer.parseInt(json.get("itemTypeId").toString()));
         item.setKey(key);
         item.setItemType(itemType);
         item.setDescription((String)json.get("description"));
@@ -191,37 +189,8 @@ public class Repository {
     @Transactional
     public ItemData getItem(String key) {
         Item item = getItemModel(key);
-
         if (item == null) return null;
-
-        ItemData data = new ItemData();
-        data.setKey(item.getKey());
-        data.setName(item.getName());
-        data.setDescription(item.getDescription());
-
-        data.setCreated(item.getCreated().toString());
-        data.setUpdated(item.getUpdated().toString());
-        data.setVersion(item.getVersion());
-
-        data.setDeployed(item.isDeployed());
-        data.setItemType(item.getItemType().getName());
-        data.setMeta(item.getMeta());
-        data.setTag(item.getTag());
-
-        item.getDimensions().forEach(new Consumer<Dimension>() {
-            @Override
-            public void accept(Dimension dimension) {
-                data.getDimensions().add(String.format("%s=%s", dimension.getKey(), dimension.getValue()));
-            }
-        });
-
-        // populate linked items here
-        List<LinkData> links = new ArrayList<>();
-        links.addAll(getLinksData(item, true)); // to links
-        links.addAll(getLinksData(item, false)); // from links
-        data.setLinks(links);
-
-        return data;
+        return mapItemDatum(item);
     }
 
     private Item getItemModel(String key) {
@@ -293,5 +262,110 @@ public class Repository {
         catch (NoResultException nre){
         }
         return linksData;
+    }
+
+    public List<ItemData> getItemsByType(Integer typeId, Integer top) {
+        TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TYPE, Item.class);
+        if (top != null) query.setMaxResults(top);
+        query.setParameter(Item.PARAM_ITEM_TYPE_ID, typeId);
+        List<ItemData> data = mapItemData(query.getResultList());
+        return data;
+    }
+
+    public List<ItemData> getItemsByTag(String tag, Integer top) {
+        TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TAG, Item.class);
+        if (top != null) query.setMaxResults(top);
+        query.setParameter(Item.PARAM_TAG, tag);
+        List<ItemData> data = mapItemData(query.getResultList());
+        return data;
+    }
+
+    public List<ItemData> getItemsByDate(ZonedDateTime from, ZonedDateTime to, Integer top) {
+        TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_DATE, Item.class);
+        if (top != null) query.setMaxResults(top);
+        query.setParameter(Item.PARAM_FROM_DATE, from);
+        query.setParameter(Item.PARAM_TO_DATE, to);
+        List<ItemData> data = mapItemData(query.getResultList());
+        return data;
+    }
+
+    public List<ItemData> getItemsByTypeAndTag(Integer typeId, String tag, Integer top) {
+        TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TYPE_AND_TAG, Item.class);
+        if (top != null) query.setMaxResults(top);
+        query.setParameter(Item.PARAM_ITEM_TYPE_ID, typeId);
+        query.setParameter(Item.PARAM_TAG, tag);
+        List<ItemData> data = mapItemData(query.getResultList());
+        return data;
+    }
+
+    public List<ItemData> getItemsByTypeAndDate(Integer typeId, ZonedDateTime from, ZonedDateTime to, Integer top) {
+        TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TYPE_AND_DATE, Item.class);
+        if (top != null) query.setMaxResults(top);
+        query.setParameter(Item.PARAM_FROM_DATE, from);
+        query.setParameter(Item.PARAM_TO_DATE, to);
+        List<ItemData> data = mapItemData(query.getResultList());
+        return data;
+    }
+
+    public List<ItemData> getItemsByTypeTagAndDate(Integer typeId, String tag, ZonedDateTime from, ZonedDateTime to, Integer top) {
+        TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TYPE_TAG_AND_DATE, Item.class);
+        if (top != null) query.setMaxResults(top);
+        query.setParameter(Item.PARAM_ITEM_TYPE_ID, typeId);
+        query.setParameter(Item.PARAM_TAG, tag);
+        query.setParameter(Item.PARAM_FROM_DATE, from);
+        query.setParameter(Item.PARAM_TO_DATE, to);
+        List<ItemData> data = mapItemData(query.getResultList());
+        return data;
+    }
+
+    public List<ItemData> getAllByDateDesc(int maxResultEntries) {
+        TypedQuery<Item> query = em.createNamedQuery(Item.FIND_ALL_BY_DATE_DESC, Item.class);
+        query.setMaxResults(maxResultEntries);
+        List<ItemData> data = mapItemData(query.getResultList());
+        return data;
+    }
+
+    private List<ItemData> mapItemData(List<Item> items) {
+        List<ItemData> data = new ArrayList<>();
+        items.forEach(new Consumer<Item> () {
+            @Override
+            public void accept(Item item) {
+                data.add(mapItemDatum(item));
+            }
+        });
+        return data;
+    }
+
+    private ItemData mapItemDatum(Item item) {
+        if (item == null) return null;
+
+        ItemData data = new ItemData();
+        data.setKey(item.getKey());
+        data.setName(item.getName());
+        data.setDescription(item.getDescription());
+
+        data.setCreated(item.getCreated().toString());
+        data.setUpdated(item.getUpdated().toString());
+        data.setVersion(item.getVersion());
+
+        data.setDeployed(item.isDeployed());
+        data.setItemType(item.getItemType().getName());
+        data.setMeta(item.getMeta());
+        data.setTag(item.getTag());
+
+        item.getDimensions().forEach(new Consumer<Dimension>() {
+            @Override
+            public void accept(Dimension dimension) {
+                data.getDimensions().add(String.format("%s=%s", dimension.getKey(), dimension.getValue()));
+            }
+        });
+
+        // populate linked items here
+        List<LinkData> links = new ArrayList<>();
+        links.addAll(getLinksData(item, true)); // to links
+        links.addAll(getLinksData(item, false)); // from links
+        data.setLinks(links);
+
+        return data;
     }
 }
