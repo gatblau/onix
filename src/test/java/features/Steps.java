@@ -15,8 +15,10 @@ import org.springframework.http.*;
 import static features.Key.*;
 
 import javax.annotation.PostConstruct;
+import java.net.URLEncoder;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -271,6 +273,8 @@ public class Steps extends BaseTest {
 
     @When("^a GET HTTP request to the Item uri is done with query parameters$")
     public void aGETHTTPRequestToTheItemUriIsDoneWithQueryParameters() throws Throwable {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+
         StringBuilder uri = new StringBuilder();
         uri.append((String)util.get(ITEM_URL));
 
@@ -290,12 +294,12 @@ public class Steps extends BaseTest {
 
         if (util.containsKey(CONFIG_ITEM_UPDATED_FROM)) {
             ZonedDateTime from = util.get(CONFIG_ITEM_UPDATED_FROM);
-            uri.append("from=").append(from).append("&");
+            uri.append("from=").append(from.format(formatter)).append("&");
         }
 
         if (util.containsKey(CONFIG_ITEM_UPDATED_TO)) {
             ZonedDateTime to = util.get(CONFIG_ITEM_UPDATED_TO);
-            uri.append("to=").append(to).append("&");
+            uri.append("to=").append(to.format(formatter)).append("&");
         }
 
         String uriString = uri.toString();

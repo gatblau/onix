@@ -92,8 +92,8 @@ public class Item implements Serializable {
     public static final String PARAM_ITEM_TYPE_ID = "itemTypeId";
     public static final String PARAM_TAG = "tag";
     public static final String PARAM_KEY = "key";
-    public static final String PARAM_FROM_DATE = "from";
-    public static final String PARAM_TO_DATE = "to";
+    public static final String PARAM_FROM_DATE = "fromDate";
+    public static final String PARAM_TO_DATE = "toDate";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
