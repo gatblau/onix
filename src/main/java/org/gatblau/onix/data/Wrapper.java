@@ -11,4 +11,8 @@ public class Wrapper {
     public Wrapper(List<ItemData> items) {
        this.items = items;
     }
+
+    public List<ItemData> getItems() {
+        return items;
+    }
 }

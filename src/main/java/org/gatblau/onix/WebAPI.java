@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 
@@ -75,10 +77,9 @@ public class WebAPI {
 
     @ApiOperation(value = "Get a configuration item based on the specified key.", notes = "")
     @RequestMapping(
-        path = "/item/{key}/",
-        method = RequestMethod.GET,
-        consumes = {"application/json" },
-        produces = {"application/json" }
+          path = "/item/{key}/"
+        , method = RequestMethod.GET
+        , produces = {"application/json"}
     )
     public ResponseEntity<ItemData> getItem(@PathVariable("key") String key) {
         ItemData item = data.getItem(key);
@@ -87,33 +88,42 @@ public class WebAPI {
 
     @ApiOperation(value = "Get a configuration item based on the specified key.", notes = "")
     @RequestMapping(
-        path = "/item/search"
+          path = "/item/search"
         , method = RequestMethod.GET
-        , consumes = {"application/json" }
-        , produces = {"application/json", "application/x-yaml" }
-        , headers = { "Accept: application/json" }
+        , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<Wrapper> getItems(
               @RequestParam(value = "typeId", required = false) Integer typeId
             , @RequestParam(value = "tag", required = false) String tag
-            , @RequestParam(value = "from", required = false) ZonedDateTime from
-            , @RequestParam(value = "to", required = false) ZonedDateTime to
-            , @RequestParam(value = "top", required = false, defaultValue = "100") Integer top) {
+            , @RequestParam(value = "from", required = false) String fromDate
+            , @RequestParam(value = "to", required = false) String toDate
+            , @RequestParam(value = "top", required = false, defaultValue = "100") Integer top
+    ) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+        ZonedDateTime from = null;
+        if (fromDate != null) {
+            from = ZonedDateTime.of(LocalDateTime.parse(fromDate, formatter), ZoneId.systemDefault());
+        }
+        ZonedDateTime to = null;
+        if (toDate != null) {
+            to = ZonedDateTime.of(LocalDateTime.parse(toDate, formatter), ZoneId.systemDefault());
+        }
+
         List<ItemData> items = null;
-        if (typeId != null && tag == null && from == null && to == null) {
-          items = data.getItemsByType(typeId, top);
-        } else if (typeId == null && tag != null && from == null && to == null) {
+        if (typeId != null && tag == null && fromDate == null && toDate == null) {
+            items = data.getItemsByType(typeId, top);
+        } else if (typeId == null && tag != null && fromDate == null && toDate == null) {
             items = data.getItemsByTag(tag, top);
-        } else if (typeId == null && tag == null && from != null && to == null) {
+        } else if (typeId == null && tag == null && fromDate != null && toDate == null) {
             to = ZonedDateTime.now();
             items = data.getItemsByDate(from, to, top);
-        } else if (typeId == null && tag == null && from != null && to != null) {
+        } else if (typeId == null && tag == null && fromDate != null && toDate != null) {
             items = data.getItemsByDate(from, to, top);
-        } else if (typeId != null && tag != null && from == null && to == null) {
+        } else if (typeId != null && tag != null && fromDate == null && toDate == null) {
             items = data.getItemsByTypeAndTag(typeId, tag, top);
-        } else if (typeId != null && tag == null && from != null && to != null) {
+        } else if (typeId != null && tag == null && fromDate != null && toDate != null) {
             items = data.getItemsByTypeAndDate(typeId, from, to, top);
-        } else if (typeId == null && tag != null && from == null && to == null) {
+        } else if (typeId != null && tag != null && fromDate != null && toDate != null) {
             items = data.getItemsByTypeTagAndDate(typeId, tag, from, to, top);
         }  else {
             items = data.getAllByDateDesc(top);
