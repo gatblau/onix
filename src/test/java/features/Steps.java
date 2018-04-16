@@ -7,6 +7,7 @@ import cucumber.api.java.en.When;
 import org.gatblau.onix.Info;
 import org.gatblau.onix.Result;
 import org.gatblau.onix.data.ItemData;
+import org.gatblau.onix.data.ItemList;
 import org.gatblau.onix.data.Wrapper;
 import org.gatblau.onix.model.Item;
 import org.springframework.core.ParameterizedTypeReference;
@@ -309,11 +310,11 @@ public class Steps extends BaseTest {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
-        ResponseEntity<Wrapper> result = client.exchange(
+        ResponseEntity<ItemList> result = client.exchange(
                 uriString,
                 HttpMethod.GET,
                 new HttpEntity<>(null, headers),
-                Wrapper.class);
+                ItemList.class);
         util.put(RESPONSE, result);
     }
 
