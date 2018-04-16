@@ -10,7 +10,7 @@ import java.io.Serializable;
     ),
     @NamedQuery(
         name = "itemType.findAll",
-        query = "SELECT FROM ItemType i "
+        query = "SELECT i FROM ItemType i "
     )
 })
 @Entity()
