@@ -7,6 +7,10 @@ import java.io.Serializable;
     @NamedQuery(
         name = "itemType.deleteAll",
         query = "DELETE FROM ItemType i WHERE i.custom = true "
+    ),
+    @NamedQuery(
+        name = "itemType.findAll",
+        query = "SELECT FROM ItemType i "
     )
 })
 @Entity()
@@ -14,6 +18,7 @@ import java.io.Serializable;
 public class ItemType implements Serializable {
     private static final long serialVersionUID = 1L;
     public static final String DELETE_ALL = "itemType.deleteAll";
+    public static final String FIND_ALL = "itemType.findAll";
 
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)

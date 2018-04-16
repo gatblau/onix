@@ -2,10 +2,11 @@ package org.gatblau.onix;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.models.auth.In;
 import org.gatblau.onix.data.ItemData;
+import org.gatblau.onix.data.ItemList;
+import org.gatblau.onix.data.ItemTypeList;
 import org.gatblau.onix.data.Wrapper;
-import org.gatblau.onix.model.Item;
+import org.gatblau.onix.model.ItemType;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +17,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.List;
 
 @Api("ONIX CMDB Web API")
@@ -93,6 +93,15 @@ public class WebAPI {
     }
 
     @ApiOperation(
+            value = "Get a list of available configuration item types.",
+            notes = "Only item types marked as custom can be deleted.")
+    @RequestMapping(path = "/itemtype/", method = RequestMethod.GET)
+    public ResponseEntity<ItemTypeList> getItemTypes() throws InterruptedException {
+        List<ItemType> itemTypes = data.getItemTypes();
+        return ResponseEntity.ok(new ItemTypeList(itemTypes));
+    }
+
+    @ApiOperation(
         value = "Get a configuration item based on the specified key.",
         notes = "Use this search to retrieve a specific configuration item when its natural key is known.")
     @RequestMapping(
@@ -150,6 +159,6 @@ public class WebAPI {
         }  else {
             items = data.getAllByDateDesc(top);
         }
-        return ResponseEntity.ok(new Wrapper(items));
+        return ResponseEntity.ok(new ItemList(items));
     }
 }

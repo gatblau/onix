@@ -2,6 +2,7 @@ package org.gatblau.onix;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.gatblau.onix.data.ItemData;
+import org.gatblau.onix.data.ItemTypeList;
 import org.gatblau.onix.data.LinkData;
 import org.gatblau.onix.data.LinkedItemData;
 import org.gatblau.onix.model.Dimension;
@@ -367,5 +368,10 @@ public class Repository {
         data.setLinks(links);
 
         return data;
+    }
+
+    public List<ItemType> getItemTypes() {
+        TypedQuery<ItemType> itemTypesQuery = em.createNamedQuery(ItemType.FIND_ALL, ItemType.class);
+        return itemTypesQuery.getResultList();
     }
 }
