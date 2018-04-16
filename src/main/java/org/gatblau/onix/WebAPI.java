@@ -26,13 +26,18 @@ public class WebAPI {
     @Autowired
     private Repository data;
 
-    @ApiOperation(value = "Returns OK if the service is up and running.", notes = "Use it as a readiness probe for the service.", response = String.class)
+    @ApiOperation(
+        value = "Returns OK if the service is up and running.",
+        notes = "Use it as a readiness probe for the service.",
+        response = String.class)
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<Info> index() {
         return ResponseEntity.ok(new Info("Onix Configuration Management Database Service.", "1.0"));
     }
 
-    @ApiOperation(value = "Creates new item or updates an existing item based on the specified key.", notes = "")
+    @ApiOperation(
+        value = "Creates new item or updates an existing item based on the specified key.",
+        notes = "Use this operation to create configuration item if it's not there or update it if it's there.")
     @RequestMapping(
             path = "/item/{key}/", method = RequestMethod.PUT,
             consumes = {"application/json" },
@@ -44,7 +49,10 @@ public class WebAPI {
         return ResponseEntity.ok(new Result(action));
     }
 
-    @ApiOperation(value = "Creates new link or updates an existing link based on two existing item keys.", notes = "")
+    @ApiOperation(
+        value = "Creates new link or updates an existing link based on two existing item keys.",
+        notes = "Use this operation to create a new link between two existing configuration items or to update such link if it already exists." +
+                "It requires the natural keys of the two configuration items to link.")
     @RequestMapping(
             path = "/link/{fromItemKey}/{toItemKey}/", method = RequestMethod.PUT,
             consumes = {"application/json" },
@@ -57,11 +65,17 @@ public class WebAPI {
         return ResponseEntity.ok(new Result(action));
     }
 
+    @ApiOperation(
+        value = "Removes ALL configuration items and links from the database.",
+        notes = "Use at your own risk ONLY for testing of the CMDB!")
     @RequestMapping(path = "/clear/", method = RequestMethod.DELETE)
     public void clear() throws InterruptedException {
         data.clear();
     }
 
+    @ApiOperation(
+        value = "Deletes a link between two existing configuration items.",
+        notes = "Use this operation to delete links between existing items.")
     @RequestMapping(path = "/link/{fromItemKey}/{toItemKey}/", method = RequestMethod.DELETE)
     public void deleteLink(
             @PathVariable("fromItemKey") String fromItemKey,
@@ -70,12 +84,17 @@ public class WebAPI {
         data.deleteLink(fromItemKey, toItemKey);
     }
 
+    @ApiOperation(
+        value = "Deletes a configuration item type.",
+        notes = "")
     @RequestMapping(path = "/itemtype/", method = RequestMethod.DELETE)
     public void deleteItemTypes() throws InterruptedException {
         data.deleteItemTypes();
     }
 
-    @ApiOperation(value = "Get a configuration item based on the specified key.", notes = "")
+    @ApiOperation(
+        value = "Get a configuration item based on the specified key.",
+        notes = "Use this search to retrieve a specific configuration item when its natural key is known.")
     @RequestMapping(
           path = "/item/{key}/"
         , method = RequestMethod.GET
@@ -86,7 +105,10 @@ public class WebAPI {
         return ResponseEntity.ok(item);
     }
 
-    @ApiOperation(value = "Get a configuration item based on the specified key.", notes = "")
+    @ApiOperation(
+        value = "Search for configuration items based on the specified filters (provided via a query string).",
+        notes = "Use this function to retrieve configuration items based on type, tags and date range as required. " +
+                "Results are limited by the top parameter.")
     @RequestMapping(
           path = "/item/search"
         , method = RequestMethod.GET
