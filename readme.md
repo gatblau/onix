@@ -34,12 +34,53 @@ where:
 - DB_NAME: database name
 
 #### On Container
-- For an example of how to install the web service a a Docker container see [here](install/container/svc/build.sh).
+- For an example of how to install the web service on a Docker container see [here](install/container/svc/build.sh).
 
-## Web API
+## Web API Documentation
 
 Onix uses Swagger to document its web API.
 
 To see the Swagger UI go to http://localhost:8080/swagger-ui.html.
 
 To see the API documentation in JSON format go to http://localhost:8080/v2/api-docs.
+
+## Testing the service
+
+#### Querying the service for version information
+
+```bash
+# replace the password with the password for the user
+$ curl user:password@localhost:8080/
+```
+
+#### Creating a configuration item
+```json
+# create a payload.json file with the following content
+# NOTE: the 'meta' value can be any json object, in this case is empty {}
+# Use the 'meta' value to describe any specific property of your configuration item.
+{
+  "name": "Test Item",
+  "description": "This is a CMDB item for testing purposes.",
+  "itemTypeId": "2",
+  "meta": "{ }",
+  "tag": "Test",
+  "deployed": false,
+  "dimensions": [
+    { "WBS" : "012csl" },
+    { "COMPANY" : "ACME" }
+  ]
+}
+```
+
+```bash
+# execute the PUT operation on the item URI passing a natural key and the payload.json file
+$ curl -X PUT "user:password@localhost:8080/item/my_item_key" -F "payload.json"
+```
+
+#### Retrieving the configuration item using the natural key
+
+```bash
+# execute the GET operation on the item URI passing its item natural key
+$ curl "user:password@localhost:8080/item/my_item_key" 
+```
+
