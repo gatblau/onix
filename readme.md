@@ -26,9 +26,15 @@ To run the service simply do:
 ```bash
 $ java -jar -DDB_USER=onix -DDB_PWD=onix -DDB_HOST=localhost -DDB_PORT=5432 -DDB_NAME=onix onix-1.0-SNAPSHOT.jar 
 ```
+where:
+- DB_USER: database username
+- DB_PWD: database user password
+- DB_HOST: database server hostname
+- DB_PORT: database server port
+- DB_NAME: database name
 
 #### On Container
-- For an example of how to install the web service on RHEL/CentOS VM see [here](install/container/svc/build.sh).
+- For an example of how to install the web service a a Docker container see [here](install/container/svc/build.sh).
 
 ## Web API
 
