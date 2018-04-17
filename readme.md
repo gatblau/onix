@@ -1,5 +1,7 @@
 # Onix 
 
+Onix is a configuration management database (CMDB) exposed via a RESTful API.
+
 ## Installation Notes
 
 ### Installing the database
@@ -20,6 +22,18 @@ The web service is a SpringBoot Restful service running an embedded web server i
 #### On VM
 - For an example of how to install the web service on RHEL/CentOS VM see [here](install/vm/svc/build.sh).
 
+To run the service simply do:
+```bash
+$ java -jar -DDB_USER=onix -DDB_PWD=onix -DDB_HOST=localhost -DDB_PORT=5432 -DDB_NAME=onix onix-1.0-SNAPSHOT.jar 
+```
+
 #### On Container
 - For an example of how to install the web service on RHEL/CentOS VM see [here](install/container/svc/build.sh).
 
+## Web API
+
+Onix uses Swagger to document its web API.
+
+To see the Swagger UI go to http://localhost:8080/swagger-ui.html.
+
+To see the API documentation in JSON format go to http://localhost:8080/v2/api-docs.
