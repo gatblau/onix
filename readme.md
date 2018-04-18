@@ -55,7 +55,7 @@ $ curl user:password@localhost:8080/
 
 #### Creating a configuration item
 ```json
-# create a payload.json file with the following content
+# Create a item_payload.json file with the following content
 # NOTE: the 'meta' value can be any json object, in this case is empty {}
 # Use the 'meta' value to describe any specific property of your configuration item.
 {
@@ -74,13 +74,46 @@ $ curl user:password@localhost:8080/
 
 ```bash
 # execute the PUT operation on the item URI passing a natural key and the payload.json file
-$ curl -X PUT "user:password@localhost:8080/item/my_item_key" -F "payload.json"
+$ curl -X PUT "user:password@localhost:8080/item/my_item_key" -F "item_payload.json"
 ```
 
 #### Retrieving the configuration item using the natural key
 
 ```bash
-# execute the GET operation on the item URI passing its item natural key
+# execute the GET operation on the item URI passing its natural key
 $ curl "user:password@localhost:8080/item/my_item_key" 
 ```
 
+#### Creating a link between two items
+
+```json
+# Create a link_payload.json file with the following content
+# NOTE: the 'meta' value can be any json object, in this case is empty {}
+# Use the 'meta' value to describe any specific property of your configuration item.
+{
+  "meta": "{ }",
+  "description": "This is a CMDB item for testing purposes.",
+  "role": "connect",
+  "start_item_key": "ITEM_ONE_KEY",
+  "end_item_key": "ITEM_TWO_KEY",
+  "tag": "Test"
+}
+```
+
+```bash
+# execute the PUT operation on the item URI passing the link natural key and the payload.json file
+$ curl -X PUT "user:password@localhost:8080/link/my_link_key/" -F "link_payload.json"
+```
+
+#### Retrieving a link between two items
+```bash
+# execute the GET operation on the item URI passing the link natural key 
+$ curl "user:password@localhost:8080/link/my_link_key/" 
+```
+
+```bash
+curl -X POST -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application/json" -H "Cache-Control: no-cache" -d '{  
+    "username": "svlada@gmail.com",
+    "password": "test1234"
+}' "http://localhost:9966/api/auth/login"
+```

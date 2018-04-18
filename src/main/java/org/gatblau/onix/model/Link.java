@@ -13,11 +13,10 @@ import java.util.Date;
         query = "DELETE FROM Link "
     ),
     @NamedQuery(
-        name = "link.findByKeys",
+        name = "link.findByKey",
         query =   "SELECT L "
             + "FROM Link L "
-            + "WHERE L.startItem.key = :startItemKey "
-            + "AND L.endItem.key = :endItemKey"
+            + "WHERE L.key = :key "
     ),
     @NamedQuery(
         name = "link.findFromItem",
@@ -40,10 +39,9 @@ public class Link implements Serializable {
     public static final String FIND_TO_ITEM = "link.findToItem";
     public static final String DELETE_ALL = "link.deleteAll";
 
-    public static final String FIND_BY_KEYS = "link.findByKeys";
+    public static final String FIND_BY_KEY = "link.findByKey";
 
-    public static final String KEY_START_ITEM = "startItemKey";
-    public static final String KEY_END_ITEM = "endItemKey";
+    public static final String KEY_LINK = "key";
     public static final String KEY_ITEM_ID = "itemId";
 
     @Id

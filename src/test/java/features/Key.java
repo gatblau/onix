@@ -15,4 +15,5 @@ public class Key {
     public static final String CONFIG_ITEM_TAG = "config_item_tag";
     public static final String CONFIG_ITEM_UPDATED_FROM = "config_item_updated_from";
     public static final String CONFIG_ITEM_UPDATED_TO = "config_item_updated_to";
+    public static final String LINK_KEY = "link_key";
 }
