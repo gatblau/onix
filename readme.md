@@ -110,10 +110,3 @@ $ curl -X PUT "user:password@localhost:8080/link/my_link_key/" -F "link_payload.
 # execute the GET operation on the item URI passing the link natural key 
 $ curl "user:password@localhost:8080/link/my_link_key/" 
 ```
-
-```bash
-curl -X POST -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application/json" -H "Cache-Control: no-cache" -d '{  
-    "username": "svlada@gmail.com",
-    "password": "test1234"
-}' "http://localhost:9966/api/auth/login"
-```
