@@ -118,11 +118,12 @@ public class Repository {
     }
 
     @Transactional
-    public String createOrUpdateLink(String fromItemKey, String toItemKey, JSONObject json) throws IOException {
+    public String createOrUpdateLink(String key, JSONObject json) throws IOException {
+        String fromItemKey = (String)json.get("start_item_key");
+        String toItemKey = (String)json.get("end_item_key");
         String action = "UPDATED";
-        TypedQuery<Link> query = em.createNamedQuery(Link.FIND_BY_KEYS, Link.class);
-        query.setParameter(Link.KEY_START_ITEM, fromItemKey);
-        query.setParameter(Link.KEY_END_ITEM, toItemKey);
+        TypedQuery<Link> query = em.createNamedQuery(Link.FIND_BY_KEY, Link.class);
+        query.setParameter(Link.KEY_LINK, key);
         Link link = null;
         ZonedDateTime time = ZonedDateTime.now();
         try {
@@ -156,7 +157,7 @@ public class Repository {
             link.setStartItem(startItem);
             link.setEndItem(endItem);
 
-            link.setKey(String.format("%s_%s", startItem.getKey(), endItem.getKey()));
+            link.setKey(key);
         }
         link.setDescription((String)json.get("description"));
         link.setMeta(mapper.readTree((String)json.get("meta")));
@@ -171,11 +172,10 @@ public class Repository {
     }
 
     @Transactional
-    public void deleteLink(String fromItemKey, String toItemKey) {
+    public void deleteLink(String key) {
         if (em != null) {
-            TypedQuery<Link> query = em.createNamedQuery(Link.FIND_BY_KEYS, Link.class);
-            query.setParameter(Link.KEY_START_ITEM, fromItemKey);
-            query.setParameter(Link.KEY_END_ITEM, toItemKey);
+            TypedQuery<Link> query = em.createNamedQuery(Link.FIND_BY_KEY, Link.class);
+            query.setParameter(Link.KEY_LINK, key);
             try {
                 List<Link> links = query.getResultList();
                 for (Link link : links) {

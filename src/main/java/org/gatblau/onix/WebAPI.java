@@ -50,18 +50,16 @@ public class WebAPI {
     }
 
     @ApiOperation(
-        value = "Creates new link or updates an existing link based on two existing item keys.",
-        notes = "Use this operation to create a new link between two existing configuration items or to update such link if it already exists." +
-                "It requires the natural keys of the two configuration items to link.")
+        value = "Creates new link or updates an existing link based on its natural key.",
+        notes = "Use this operation to create a new link between two existing configuration items or to update such link if it already exists.")
     @RequestMapping(
-            path = "/link/{fromItemKey}/{toItemKey}/", method = RequestMethod.PUT,
+            path = "/link/{key}", method = RequestMethod.PUT,
             consumes = {"application/json" },
             produces = {"application/json" })
     public ResponseEntity<Result> createOrUpdateLink(
-            @PathVariable("fromItemKey") String fromItemKey,
-            @PathVariable("toItemKey") String toItemKey,
+            @PathVariable("key") String key,
             @RequestBody JSONObject payload) throws InterruptedException, IOException {
-        String action = data.createOrUpdateLink(fromItemKey, toItemKey, payload);
+        String action = data.createOrUpdateLink(key, payload);
         return ResponseEntity.ok(new Result(action));
     }
 
@@ -76,12 +74,11 @@ public class WebAPI {
     @ApiOperation(
         value = "Deletes a link between two existing configuration items.",
         notes = "Use this operation to delete links between existing items.")
-    @RequestMapping(path = "/link/{fromItemKey}/{toItemKey}/", method = RequestMethod.DELETE)
+    @RequestMapping(path = "/link/{key}/", method = RequestMethod.DELETE)
     public void deleteLink(
-            @PathVariable("fromItemKey") String fromItemKey,
-            @PathVariable("toItemKey") String toItemKey
+            @PathVariable("key") String key
     ) throws InterruptedException {
-        data.deleteLink(fromItemKey, toItemKey);
+        data.deleteLink(key);
     }
 
     @ApiOperation(

@@ -4,7 +4,7 @@ Feature: Create Link Between two Configuration Items
   So that a I can record and association in the CMDB
 
   Scenario: Create a link using a JSON payload
-    Given the natural keys for two configuration items are known
+    Given the natural key for the link is known
     Given the link URL of the service is known
     Given the configuration items to be linked exist in the database
     Given a link to the two configuration items does not exist in the database

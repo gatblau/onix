@@ -1,6 +1,5 @@
 package features;
 
-import cucumber.api.PendingException;
 import cucumber.api.java.en.And;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.When;
@@ -8,21 +7,19 @@ import org.gatblau.onix.Info;
 import org.gatblau.onix.Result;
 import org.gatblau.onix.data.ItemData;
 import org.gatblau.onix.data.ItemList;
-import org.gatblau.onix.data.Wrapper;
-import org.gatblau.onix.model.Item;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
-
-import static features.Key.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 
 import javax.annotation.PostConstruct;
-import java.net.URLEncoder;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+
+import static features.Key.*;
 
 public class Steps extends BaseTest {
     private String baseUrl;
@@ -168,15 +165,9 @@ public class Steps extends BaseTest {
         }
     }
 
-    @Given("^the natural keys for two configuration items are known$")
-    public void theNaturalKeysForTwoConfigurationItemsAreKnown() throws Throwable {
-        util.put(ITEM_ONE_KEY, "ITEM_ONE_KEY");
-        util.put(ITEM_TWO_KEY, "ITEM_TWO_KEY");
-    }
-
     @Given("^the link URL of the service is known$")
     public void theLinkURLOfTheServiceIsKnown() throws Throwable {
-        util.put(LINK_URL, String.format("%s/link/{fromItemKey}/{toItemKey}/", baseUrl));
+        util.put(LINK_URL, String.format("%s/link/{key}/", baseUrl));
     }
 
     @Given("^a json payload with new link information exists$")
@@ -193,7 +184,7 @@ public class Steps extends BaseTest {
     @When("^a DELETE Link request is done$")
     public void aDELETELinkRequestIsDone() throws Throwable {
         try {
-            client.delete((String) util.get(LINK_URL), (String)util.get(ITEM_ONE_KEY), (String)util.get(ITEM_TWO_KEY));
+            client.delete((String) util.get(LINK_URL), (String)util.get(LINK_KEY));
             util.remove(EXCEPTION);
         }
         catch (Exception ex) {
@@ -205,8 +196,7 @@ public class Steps extends BaseTest {
     public void aPUTHTTPRequestToTheLinkResourceIsDoneWithAJSONPayload() throws Throwable {
         String url = util.get(LINK_URL);
         Map<String, Object> vars = new HashMap<>();
-        vars.put("fromItemKey", util.get(ITEM_ONE_KEY));
-        vars.put("toItemKey", util.get(ITEM_TWO_KEY));
+        vars.put("key", util.get(LINK_KEY));
         ResponseEntity<Result> response = null;
         try {
             response = client.exchange(url, HttpMethod.PUT, getEntity(), Result.class, vars);
@@ -332,5 +322,10 @@ public class Steps extends BaseTest {
     public void theFilteringConfigItemDateRangeIsKnown() throws Throwable {
         util.put(CONFIG_ITEM_UPDATED_FROM, ZonedDateTime.of(ZonedDateTime.now().getYear() - 100, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()));
         util.put(CONFIG_ITEM_UPDATED_TO, ZonedDateTime.of(ZonedDateTime.now().getYear(), 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()));
+    }
+
+    @Given("^the natural key for the link is known$")
+    public void theNaturalKeyForTheLinkIsKnown() throws Throwable {
+        util.put(LINK_KEY, "LINK_KEY");
     }
 }
