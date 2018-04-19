@@ -24,14 +24,19 @@ The web service is a SpringBoot Restful service running an embedded web server i
 
 To run the service simply do:
 ```bash
-$ java -jar -DDB_USER=onix -DDB_PWD=onix -DDB_HOST=localhost -DDB_PORT=5432 -DDB_NAME=onix onix-1.0-SNAPSHOT.jar 
+$ java -jar -DHTTP_PORT=8080 -DDB_USER=onix -DDB_PWD=onix -DDB_HOST=localhost -DDB_PORT=5432 -DDB_NAME=onix onix-1.0-SNAPSHOT.jar 
 ```
-where:
-- DB_USER: database username
-- DB_PWD: database user password
-- DB_HOST: database server hostname
-- DB_PORT: database server port
-- DB_NAME: database name
+where the following configuration variables are available:
+
+| Var  | Description  | Default  |
+|---|---|---|
+| **HTTP_PORT** | the web service port number  | 8080  |
+| **DB_USER**  | the user the service uses to connect to the database  | onix  |
+| **DB_PWD**  | the database user password  | onix  |
+| **DB_HOST**  | database server hostname  | localhost  |
+| **DB_PORT**  | database server port  | 5432  |
+| **DB_NAME**  | the name of the cmdb database  | onix  |
+
 
 #### On Container
 - For an example of how to install the web service on a Docker container see [here](install/container/svc/build.sh).
