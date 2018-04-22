@@ -1,0 +1,26 @@
+version: '2'
+services:
+  onixdb:
+    image: onix-db:0.0.1-0
+    ports:
+      - 5432:5432
+    volumes:
+      - data:/var/lib/postgresql/data
+    environment:
+      POSTGRESQL_ADMIN_PASSWORD: 'onix'
+  onixsvc:
+    image: onix-svc:0.0.1-0
+    ports:
+      - 8080:8080
+    depends_on:
+      - onixdb
+    environment:
+      HTTP_PORT: '8080'
+      DB_HOST: 'onixdb'
+      DB_USER: 'onix'
+      DB_PWD: 'onix'
+      DB_PORT: '5432'
+      DB_NAME: 'onix'
+
+volumes:
+  data: {}
