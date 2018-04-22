@@ -9,6 +9,6 @@ Onix is a configuration management database (CMDB) exposed via a RESTful API.
 - [Installing Onix CMDB](./docs/installation.md)
 - [Building the docker images](./docs/building_images.md)
 - [CMDB Model](./docs/model.md)
-- [Web API Documentation](#i./docs/wapi.md)
+- [Web API Documentation](./docs/wapi.md)
 
 
