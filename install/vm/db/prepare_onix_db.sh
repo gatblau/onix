@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
-# pass the following variables in...
+#
+# Name: prepare_onix_db.sh
+# Description:
+#   Creates user, database and tables required by the Onix CMDB application
+#   Requires the pgsql client tool
+#
+# Usage:
+#   $ sh configure_pgsql.sh localhost 5432 onix
+# ----------------------------------------------------
+#
+# the database server hostname
 HOST=$1
+
+# the database server port
 PORT=$2
+
+# the password of the onix user
 DB_PWD=$3
 
 echo 'creating the database user...'
