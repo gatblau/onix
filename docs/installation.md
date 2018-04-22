@@ -25,10 +25,10 @@ To install Onix using this method follow the steps below:
 $ mkdir onix && cd onix
 $ wget https://raw.githubusercontent.com/gatblau/onix/master/install/container/docker-compose.yml
 $ wget https://raw.githubusercontent.com/gatblau/onix/master/install/container/up.sh
-$ sh up.sh <<onix-tag>>
+$ sh up.sh {{onix-tag}}
 ```
 
-where the **<<onix-tag>>** is a combination of the git abbreviated last commit hash, and the time of the build:
+where the **{{onix-tag}}** is a combination of the git abbreviated last commit hash, and the time of the build:
  
  **[abbreviated last commit hash].[ddmmYY-hhMMss]** (e.g. 692e36a.220418-190211)
  
