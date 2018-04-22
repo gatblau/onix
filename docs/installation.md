@@ -19,16 +19,16 @@ In order to configure Onix's services, a YAML file called [docker-compose.yml](.
 In order to install Onix using Compose, a docker host is required. 
 The current installation runs two containers on the same host: the Onix database using a named data volume for persistent storage and the Onix web service providing an API that is connected to the database.
 To install Onix using this method follow the steps below:
-- Clone the onix repository (requires git client).
-- Go to the installation folder where the [up.sh](../install/container/up.sh) file is located.
 - Ensure you have [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/overview/) installed on the Docker host.
-- Execute the [up.sh](../install/container/up.sh) shell script passing a docker image tag as shwon below.
-
+- Execute the commands below:
 ```bash
-$ sh up.sh [onix-tag]
+$ mkdir onix && cd onix
+$ wget https://raw.githubusercontent.com/gatblau/onix/master/install/container/docker-compose.yml
+$ wget https://raw.githubusercontent.com/gatblau/onix/master/install/container/up.sh
+$ sh up.sh <<onix-tag>>
 ```
 
-where the [onix-tag] is a combination of the git abbreviated last commit hash, and the time of the build:
+where the **<<onix-tag>>** is a combination of the git abbreviated last commit hash, and the time of the build:
  
  **[abbreviated last commit hash].[ddmmYY-hhMMss]** (e.g. 692e36a.220418-190211)
  
