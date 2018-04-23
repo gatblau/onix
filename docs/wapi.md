@@ -7,8 +7,11 @@ This section explains how to use Onix Web API.
 ## Table of Contents [(index)](./../readme.md)
 
 - [Using Swagger](#using-swagger)
-- [Getting Service Information](#getting-service-information)
-
+- [Getting service information](#getting-service-information)
+- [Creating a configuration item](#creating-a-configuration-item)
+- [Retrieving a configuration item by key](#retrieving-a-configuration-item-by-key)
+- [Linking two items](#linking-two-items)
+- [Retrieving a link](#retrieving-a-link)
 
 <a name="using-swagger"></a>
 ## Using Swagger [(up)](#toc)
@@ -44,7 +47,7 @@ Similarly, a JSON representation of the Web API documentation can be obtained fr
 # replace the password with the password for the user
 $ curl user:password@localhost:8080/
 ```
-
+<a name="creating-a-configuration-item"></a>
 ## Creating a configuration item [(up)](#toc)
 
 | Item  | Value  | 
@@ -97,7 +100,8 @@ The following example shows how to execute a PUT request to the service using [c
 $ curl -X PUT -H 'ContentType: application/json' -d '@item_payload.json' 'user:password@localhost:8080/item/KEYDEMOM001' 
 ```
 
-## Retrieving the configuration item by key [(up)](#toc)
+<a name="retrieving-a-configuration-item-by-key"/></a>
+## Retrieving a configuration item by key [(up)](#toc)
 
 | Item  | Value  | 
 |---|---|
@@ -110,6 +114,7 @@ $ curl -X PUT -H 'ContentType: application/json' -d '@item_payload.json' 'user:p
 $ curl 'user:password@localhost:8080/item/KEYDEMOM001' 
 ```
 
+<a name="linking-two-items"/></a>
 ## Linking two items [(up)](#toc)
 
 | Item  | Value  | 
@@ -155,7 +160,7 @@ The following example shows how to execute a PUT request to the service using [c
 # execute the PUT operation on the item URI passing the link natural key and the payload.json file
 $ curl -X PUT -H 'ContentType: application/json' -d '@link_payload.json' 'user:password@localhost:8080/link/my_link_key/' 
 ```
-
+<a name="retrieving-a-link"></a>
 ## Retrieving a link [(up)](#toc)
 
 | Item  | Value  | 
