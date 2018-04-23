@@ -49,15 +49,15 @@ $ curl user:password@localhost:8080/
 
 | Item  | Value  | 
 |---|---|
-| Method | GET | 
+| Method | PUT | 
 | Path | /item/**{item_key}**/|
 | Response Content Type | application/json |
  
 
-### Sample Payload:
+### Sample Payload
 
-**NOTE**: the 'meta' value can be any json object, in this case is empty {}.
-Use the 'meta' property value to describe any specific property of your configuration item.
+The PUT request requires a payload in JSON format as the one shown below.
+Note that the natural key for the configuration item is not part of the payload but specified in the URI.
 
 ```json
 {
@@ -74,28 +74,56 @@ Use the 'meta' property value to describe any specific property of your configur
 }
 ```
 
-### Usage example:
+### Payload fields
 
-**NOTE**: 
+The following table describes the fields in the payload and provides some examples of use:
+
+| Field  | Description  | Example |
+|---|---|---|
+| name | The name associated with the configuration item. | "OCP Demo Master 1" |
+| description | A description of the configuration item. | "OpenShift Demo platform first master in zone A."
+| itemTypeId | The unique Id of the configuration item type. It must exist as a valid item type. | "2" |
+| meta | Stores any well-formed json object. This is the primary mechanism to store configuration item information. | { "host":"OCP-DEMO-M-01", "region":"Ireland", "provider":"AWS" } |
+| tag | Used for annotating the item for searching. For example, a search can be done by items having the EUROPE tag.| "TEST RELEASE-B EUROPE" |
+| deployed | Indicates if this item has been deployed or is waiting to be deployed. | true/false |
+| dimensions | A JSON array of key and value pairs used for reporting. | As per sample payload above. |
+
+### Example
+
+The following example shows how to execute a PUT request to the service using [cURL](https://curl.haxx.se/):
 
 ```bash
-# execute the PUT operation on the item URI passing a natural key and the payload.json file
-$ curl -X PUT "user:password@localhost:8080/item/my_item_key" -f "item_payload.json"
+# execute the PUT operation on the item URI passing a natural key (e.g. KEYDEMOM001) and a payload via json file with contents as per sample above.
+$ curl -X PUT -H 'ContentType: application/json' -d '@item_payload.json' 'user:password@localhost:8080/item/KEYDEMOM001' 
 ```
 
-#### Retrieving the configuration item using the natural key
+## Retrieving the configuration item by key [(up)](#toc)
+
+| Item  | Value  | 
+|---|---|
+| Method | GET | 
+| Path | /item/**{item_key}**/|
+| Response Content Type | application/json or application/x-yaml |
 
 ```bash
 # execute the GET operation on the item URI passing its natural key
-$ curl "user:password@localhost:8080/item/my_item_key" 
+$ curl 'user:password@localhost:8080/item/KEYDEMOM001' 
 ```
 
-#### Creating a link between two items
+## Linking two items [(up)](#toc)
+
+| Item  | Value  | 
+|---|---|
+| Method | PUT | 
+| Path | /link/**{link_key}**/|
+| Response Content Type | application/json |
+
+### Sample Payload
+
+The PUT request requires a payload in JSON format as the one shown below.
+Note that the natural key for the configuration item is not part of the payload but specified in the URI.
 
 ```json
-# Create a link_payload.json file with the following content
-# NOTE: the 'meta' value can be any json object, in this case is empty {}
-# Use the 'meta' value to describe any specific property of your configuration item.
 {
   "meta": "{ }",
   "description": "This is a CMDB item for testing purposes.",
@@ -106,13 +134,39 @@ $ curl "user:password@localhost:8080/item/my_item_key"
 }
 ```
 
+### Payload fields
+
+The following table describes the fields in the payload and provides some examples of use:
+
+| Field  | Description  | Example |
+|---|---|---|
+| description | A description of the link. | "Link A to B."
+| meta | Stores any well-formed json object. This is the primary mechanism to store link configuration information. | { "key1":"value1", "key2":"value2", "key3":"value3" } |
+| tag | Used for annotating the link for searching. For example, a search can be done by links having the TEST tag.| "TEST RELEASE-B EUROPE" |
+| role | Indicates the role of the link. | "is installed on", "connects to" |
+| start_item_key | The key of the item from which the link starts. | A configuration item key. |
+| end_item_key | The key of the item to which the link ends. | A configuration item key. |
+
+### Example
+
+The following example shows how to execute a PUT request to the service using [cURL](https://curl.haxx.se/):
+
 ```bash
 # execute the PUT operation on the item URI passing the link natural key and the payload.json file
-$ curl -X PUT "user:password@localhost:8080/link/my_link_key/" -F "link_payload.json"
+$ curl -X PUT -H 'ContentType: application/json' -d '@link_payload.json' 'user:password@localhost:8080/link/my_link_key/' 
 ```
 
-#### Retrieving a link between two items
+## Retrieving a link [(up)](#toc)
+
+| Item  | Value  | 
+|---|---|
+| Method | GET | 
+| Path | /link/**{link_key}**/|
+| Response Content Type | application/json or application/x-yaml |
+
+### Example
+
 ```bash
 # execute the GET operation on the item URI passing the link natural key 
-$ curl "user:password@localhost:8080/link/my_link_key/" 
+$ curl 'user:password@localhost:8080/link/my_link_key/' 
 ```

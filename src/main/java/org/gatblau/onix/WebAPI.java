@@ -104,7 +104,7 @@ public class WebAPI {
     @RequestMapping(
           path = "/item/{key}/"
         , method = RequestMethod.GET
-        , produces = {"application/json"}
+        , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<ItemData> getItem(@PathVariable("key") String key) {
         ItemData item = data.getItem(key);
