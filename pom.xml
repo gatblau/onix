@@ -157,6 +157,7 @@
     </dependencyManagement>
 
     <build>
+        <!--
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -167,6 +168,7 @@
                 </includes>
             </resource>
         </resources>
+        -->
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -212,7 +214,7 @@
                 </executions>
                 <configuration>
                     <dateFormat>ddMMyy-HHmmss</dateFormat>
-                    <dotGitDirectory>${basedir}/.git</dotGitDirectory>
+                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
                     <generateGitPropertiesFile>false</generateGitPropertiesFile><!-- somehow necessary. otherwise the variables are not available in the pom -->
                 </configuration>
             </plugin>
