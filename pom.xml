@@ -219,7 +219,7 @@
                 <configuration>
                     <dateFormat>ddMMyy-HHmmss</dateFormat>
                     <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
-                    <generateGitPropertiesFile>false</generateGitPropertiesFile><!-- somehow necessary. otherwise the variables are not available in the pom -->
+                    <generateGitPropertiesFile>false</generateGitPropertiesFile>
                 </configuration>
             </plugin>
             -->
