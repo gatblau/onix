@@ -7,6 +7,7 @@ This section explains how to use Onix Web API.
 ## Table of Contents [(index)](./../readme.md)
 
 - [Using Swagger](#using-swagger)
+- [Identity and Access Management](#identity-and-access-management)
 - [Getting service information](#getting-service-information)
 - [Creating a configuration item](#creating-a-configuration-item)
 - [Retrieving a configuration item by key](#retrieving-a-configuration-item-by-key)
@@ -30,6 +31,29 @@ Similarly, a JSON representation of the Web API documentation can be obtained fr
  
 **http://onix_host_name:onix_port_number/v2/api-docs**
 
+<a name="identity-and-access-management"></a>
+## Identity and Access Management [(up)](#toc)
+
+If the Onix Service is configured with '**AUTH_ENABLED = true**', then a bearer token must be passed with every request via an authorisation header.
+The following example shows how to obtain a token and pass it to the service:
+
+```bash
+
+# gets a token from the Auth server
+# NOTE: replace the payload attributes depending on the configuration of the Auth server
+TOKEN=`curl -d "client_id=onix-cmdb" -d "username=onix" -d "password=onix" -d "grant_type=password" "http://localhost:8081/auth/realms/onix/protocol/openid-connect/token"`
+
+# constructs an authorization header
+# NOTE: check the access_token substrings below is OK for your case
+AUTH_HEADER='Authorization: bearer '${TOKEN:17:1135} 
+
+# executes the request passing the bearer toke via the AUTH_HEADER
+curl \
+    -H '${AUTH_HEADER}' \
+    'http://localhost:8080/itemtype/'
+```
+
+For more information on authentication see the [IDAM section](idam.md).
 
 <a name="getting-service-information"></a>
 ## Getting Service Information [(up)](#toc)
@@ -45,7 +69,9 @@ Similarly, a JSON representation of the Web API documentation can be obtained fr
 
 ```bash
 # replace the password with the password for the user
-$ curl user:password@localhost:8080/
+$ curl \
+    -H '${AUTH_HEADER}' \
+    'http:localhost:8080'
 ```
 <a name="creating-a-configuration-item"></a>
 ## Creating a configuration item [(up)](#toc)
@@ -97,7 +123,12 @@ The following example shows how to execute a PUT request to the service using [c
 
 ```bash
 # execute the PUT operation on the item URI passing a natural key (e.g. KEYDEMOM001) and a payload via json file with contents as per sample above.
-$ curl -X PUT -H 'ContentType: application/json' -d '@item_payload.json' 'user:password@localhost:8080/item/KEYDEMOM001' 
+$ curl \
+    -X PUT \
+    -H 'ContentType: application/json' \
+    -H '${AUTH_HEADER}' \
+    -d '@item_payload.json' \
+    'http://localhost:8080/item/KEYDEMOM001' 
 ```
 
 <a name="retrieving-a-configuration-item-by-key"/></a>
@@ -111,7 +142,9 @@ $ curl -X PUT -H 'ContentType: application/json' -d '@item_payload.json' 'user:p
 
 ```bash
 # execute the GET operation on the item URI passing its natural key
-$ curl 'user:password@localhost:8080/item/KEYDEMOM001' 
+$ curl \
+    -H '${AUTH_HEADER}' \
+    'http://localhost:8080/item/KEYDEMOM001' 
 ```
 
 <a name="linking-two-items"/></a>
@@ -158,7 +191,12 @@ The following example shows how to execute a PUT request to the service using [c
 
 ```bash
 # execute the PUT operation on the item URI passing the link natural key and the payload.json file
-$ curl -X PUT -H 'ContentType: application/json' -d '@link_payload.json' 'user:password@localhost:8080/link/my_link_key/' 
+$ curl \
+    -X PUT 
+    -H 'ContentType: application/json' \
+    -H '${AUTH_HEADER}' \
+    -d '@link_payload.json' \
+    'http://localhost:8080/link/my_link_key/' 
 ```
 <a name="retrieving-a-link"></a>
 ## Retrieving a link [(up)](#toc)
@@ -173,5 +211,7 @@ $ curl -X PUT -H 'ContentType: application/json' -d '@link_payload.json' 'user:p
 
 ```bash
 # execute the GET operation on the item URI passing the link natural key 
-$ curl 'user:password@localhost:8080/link/my_link_key/' 
+$ curl \
+    -H '${AUTH_HEADER}' \
+    'http://localhost:8080/link/my_link_key/' 
 ```

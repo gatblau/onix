@@ -83,7 +83,11 @@ $ java -jar \
        -DDB_HOST=localhost \
        -DDB_PORT=5432 \
        -DDB_NAME=onix \
-       onix-1.0-SNAPSHOT.jar 
+       -DAUTH_SERVER_URL='http://localhost:8081/auth' \
+       -DAUTH_REALM=onix \
+       -DAUTH_RESX=onix-cmdb \
+       -DAUTH_ENABLED=true \
+       onix-version.jar 
 ```
 Where the following configuration variables are available to configure the jar file:
 
@@ -95,5 +99,8 @@ Where the following configuration variables are available to configure the jar f
 | **DB_HOST**  | the database server hostname.  | localhost  |
 | **DB_PORT**  | the posrt number the database server is listening on.  | 5432  |
 | **DB_NAME**  | the name of the cmdb database the service attempts to connect.  | onix  |
-
+| **AUTH_SERVER_URL** | The location of Keycloak auth endpoint. | http://localhost:8081/auth |
+| **AUTH_REALM** | The application security realm. | onix |
+| **AUTH_RESX** | The application to be authenticated (client_id). | onix-cmdb |
+| **AUTH_ENABLED** | Whether IDAM is enabled. | false | 
 
