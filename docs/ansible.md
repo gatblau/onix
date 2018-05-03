@@ -11,7 +11,7 @@ In order to facilitate this, a set of Ansible modules are provided in the [libra
 |---|---|
 | [**onix_login**](../ansible/library/onix_login.py)| Connects to an OpenId enabled authentication server and requests an access token to authenticate requests to the Onix RESTful API. This module does not currently support automatic token refreshes after expiration. |
 | [**onix_item**](../ansible/library/onix_item.py)| Creates a new or updates an existing configuration item. |
-| [**onix_link**](../ansible/library/onix_item.py)| Creates a new or updates an existing link between two existing configuration items. |
+| [**onix_link**](../ansible/library/onix_link.py)| Creates a new or updates an existing link between two existing configuration items. |
 
  More modules will be added in the future.
  
