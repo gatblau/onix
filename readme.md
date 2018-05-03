@@ -1,6 +1,6 @@
 # Onix 
 
-Onix is a configuration management database (CMDB) exposed via a RESTful API.
+Onix is a lightweight configuration management database (CMDB) accessible via a [RESTful Web API](./docs/wapi.md), that provides close integration with [Ansible](https://www.ansible.com) via custom [modules](./docs/ansible.md).
 
 <a name="toc"></a>
 ## Table of Contents
@@ -9,6 +9,7 @@ Onix is a configuration management database (CMDB) exposed via a RESTful API.
 - [Installing Onix CMDB](./docs/installation.md)
 - [Building the docker images](./docs/building_images.md)
 - [CMDB Model](./docs/model.md)
-- [Web API Documentation](./docs/wapi.md)
+- [Web API](./docs/wapi.md)
+- [Ansible modules](./docs/ansible.md)
 
 

@@ -15,23 +15,23 @@ services:
       - data:/var/lib/pgsql/data
     environment:
       POSTGRESQL_ADMIN_PASSWORD: 'onix'
-  onixsvc:
-    image: "gatoazul/onix-svc:${ONIXTAG}"
-    ports:
-      - 8080:8080
-    depends_on:
-      - onixdb
-    environment:
-      HTTP_PORT: '8080'
-      DB_HOST: 'onixdb'
-      DB_USER: 'onix'
-      DB_PWD: 'onix'
-      DB_PORT: '5432'
-      DB_NAME: 'onix'
-      AUTH_SERVER_URL: 'http://localhost:8081/auth'
-      AUTH_REALM: 'onix'
-      AUTH_RESX: 'onix-cmdb'
-      AUTH_ENABLED: 'true'
+#  onixsvc:
+#    image: "gatoazul/onix-svc:${ONIXTAG}"
+#    ports:
+#      - 8080:8080
+#    depends_on:
+#      - onixdb
+#    environment:
+#      HTTP_PORT: '8080'
+#      DB_HOST: 'onixdb'
+#      DB_USER: 'onix'
+#      DB_PWD: 'onix'
+#      DB_PORT: '5432'
+#      DB_NAME: 'onix'
+#      AUTH_SERVER_URL: 'http://localhost:8081/auth'
+#      AUTH_REALM: 'onix'
+#      AUTH_RESX: 'onix-cmdb'
+#      AUTH_ENABLED: 'true'
 
 volumes:
   data: {}

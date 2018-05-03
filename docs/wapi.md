@@ -1,4 +1,4 @@
-# Web API Documentation 
+# Web API 
 
 This section explains how to use Onix Web API. 
 
