@@ -14,10 +14,14 @@ This section discusses a few different ways of deploying Onix CMDB services.
 
 [Docker Compose](https://docs.docker.com/compose/overview/) is a tool for defining and running multi-container Docker applications. 
 
-In order to configure Onix's services, a YAML file called [docker-compose.yml](../install/container/docker-compose.yml) is used.
+In order to configure Onix's services, a docker compose YAML configuration file like [this](../install/container/docker-compose.yml) can be used.
 
 In order to install Onix using Compose, a docker host is required. 
-The current installation runs two containers on the same host: the Onix database using a named data volume for persistent storage and the Onix web service providing an API that is connected to the database.
+The current installation is for demo purposes only and runs two containers on the same host: the Onix database using a named data volume for persistent storage and the Keycloak server.
+The Onix web service providing an API currently runs from the java runtime on the host.
+
+**NOTE**: There is an issue when running Onix service in a container which prevents it from successfully authenticating with Keycloak. Further investigation is required.
+
 To install Onix using this method follow the steps below:
 - Ensure you have [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/overview/) installed on the Docker host.
 - Execute the commands below:
@@ -26,6 +30,7 @@ $ mkdir onix && cd onix
 $ wget https://raw.githubusercontent.com/gatblau/onix/master/install/container/docker-compose.yml
 $ wget https://raw.githubusercontent.com/gatblau/onix/master/install/container/up.sh
 $ sh up.sh {{onix-tag}}
+$ java -jar -DAUTH_ENABLED=true onix-svc.jar
 ```
 
 where the **{{onix-tag}}** is a combination of the git abbreviated last commit hash, and the time of the build:
