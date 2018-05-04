@@ -23,7 +23,7 @@ def createOrUpdateLink(data):
 
     payload = {
         "description": description,
-        "meta": json.dumps(meta),
+        "meta": meta,
         "tag": tag,
         "start_item_key": parent,
         "end_item_key": child,
@@ -37,6 +37,8 @@ def createOrUpdateLink(data):
         # if an access token exists then add it to the request headers
         headers = {"Content-Type": "application/json", "Authorization": "bearer {}".format(access_token)}
 
+    payloadStr = json.dumps(payload).replace('"{','{').replace('}"', '}').replace('\'', '\"')
+
     # use line below for testing posting payload
     # link_uri = "https://httpbin.org/put"
 
@@ -44,7 +46,7 @@ def createOrUpdateLink(data):
     link_uri = "{}/link/{}/".format(cmdb_host, key)
 
     # put the payload to the cmdb service
-    stream = open_url(link_uri, method="PUT", data=json.dumps(payload), headers=headers)
+    stream = open_url(link_uri, method="PUT", data=payloadStr, headers=headers)
 
     # reads the returned stream
     result = json.loads(stream.read())

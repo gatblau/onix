@@ -26,10 +26,10 @@ def createOrUpdateItem(data):
         "name": name,
         "description": description,
         "itemTypeId": type,
-        "meta": json.dumps(meta),
+        "meta": meta,
         "tag": tag,
         "deployed": deployed,
-        # "dimensions": dimensions
+        "dimensions": dimensions
     }
 
     if access_token == "":
@@ -39,6 +39,8 @@ def createOrUpdateItem(data):
         # if an access token exists then add it to the request headers
         headers = {"Content-Type": "application/json", "Authorization": "bearer {}".format(access_token)}
 
+    payloadStr = json.dumps(payload).replace('"{','{').replace('}"', '}').replace('\'', '\"')
+
     # use line below for testing posting payload
     # item_uri = "https://httpbin.org/put"
 
@@ -46,7 +48,7 @@ def createOrUpdateItem(data):
     item_uri = "{}/item/{}/".format(cmdb_host, key)
 
     # put the payload to the cmdb service
-    stream = open_url(item_uri, method="PUT", data=json.dumps(payload), headers=headers)
+    stream = open_url(item_uri, method="PUT", data=payloadStr, headers=headers)
 
     # reads the returned stream
     result = json.loads(stream.read())
@@ -69,7 +71,7 @@ def main():
         "type": {"required": True, "type": "int"},
         "meta": {"required": False, "type": "str", "default": "{}"},
         "tag": {"required": False, "type": "str", "default": ""},
-        "dimensions": dict(required=False, default=None)
+        "dimensions": {"required": False, "type": "str", "default": "{}"}
     }
 
     # handle incoming parameters

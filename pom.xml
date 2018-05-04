@@ -235,7 +235,7 @@
                         </goals>
                         <configuration>
                             <name>build.time</name>
-                            <pattern>yyMMdd-HHmmss</pattern>
+                            <pattern>ddMMyy-HHmmss</pattern>
                             <locale>en_GB</locale>
                             <timeZone>GMT+1</timeZone>
                         </configuration>
