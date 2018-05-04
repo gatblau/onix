@@ -1,5 +1,6 @@
 package org.gatblau.onix;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.gatblau.onix.data.ItemData;
 import org.gatblau.onix.data.ItemTypeList;
@@ -66,14 +67,15 @@ public class Repository {
         item.setName((String)json.get("name"));
         item.setDeployed((boolean)json.get("deployed"));
         item.setUpdated(time);
-        item.setMeta(mapper.readTree((String)json.get("meta")));
+        item.setMeta(mapper.valueToTree(json.get("meta")));
 
         em.persist(item);
 
-        List<LinkedHashMap<String, String>> dims =  (List<LinkedHashMap<String, String>>)json.get("dimensions");
+        LinkedHashMap<String, String> dims =  (LinkedHashMap<String, String>)json.get("dimensions");
         if (dims != null && action.equals("CREATED")) {
-            for (LinkedHashMap<String, String> dim : dims) {
-                Map.Entry<String, String> entry = dim.entrySet().iterator().next();
+            Iterator<Map.Entry<String, String>> iterator = dims.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, String> entry = iterator.next();
                 Dimension d = new Dimension();
                 d.setItem(item);
                 d.setKey((String)entry.getKey());
@@ -160,7 +162,7 @@ public class Repository {
             link.setKey(key);
         }
         link.setDescription((String)json.get("description"));
-        link.setMeta(mapper.readTree((String)json.get("meta")));
+        link.setMeta(mapper.valueToTree(json.get("meta")));
         link.setTag((String)json.get("tag"));
         link.setRole((String)json.get("role"));
 

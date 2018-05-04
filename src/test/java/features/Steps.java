@@ -68,12 +68,6 @@ public class Steps extends BaseTest {
         assert (response.hasBody());
     }
 
-    @And("^a yaml payload with node information exists$")
-    public void aYamlPayloadWithNodeInformationExists() throws Throwable {
-        String payload = util.getFile("payload/create_item_payload.yml");
-        util.put(Key.PAYLOAD, payload);
-    }
-
     @And("^a json payload with new item information exists$")
     public void aJsonPayloadWithNewItemInformationExists() throws Throwable {
         String payload = util.getFile("payload/create_item_payload.json");
@@ -199,7 +193,7 @@ public class Steps extends BaseTest {
         vars.put("key", util.get(LINK_KEY));
         ResponseEntity<Result> response = null;
         try {
-            response = client.exchange(url, HttpMethod.PUT, getEntity(), Result.class, vars);
+            response = client.exchange(url, HttpMethod.PUT, getEntity(PAYLOAD), Result.class, vars);
             util.put(RESPONSE, response);
             util.remove(EXCEPTION);
         }
@@ -208,8 +202,8 @@ public class Steps extends BaseTest {
         }
     }
 
-    private HttpEntity<?> getEntity() {
-        String payload = util.get(PAYLOAD);
+    private HttpEntity<?> getEntity(String payloadKey) {
+        String payload = util.get(payloadKey);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
        return new HttpEntity<>(payload, headers);
@@ -246,7 +240,7 @@ public class Steps extends BaseTest {
         vars.put("key", itemKey);
         ResponseEntity<Result> response = null;
         try {
-            response = client.exchange(url, HttpMethod.PUT, getEntity(), Result.class, vars);
+            response = client.exchange(url, HttpMethod.PUT, getEntity(PAYLOAD), Result.class, vars);
             util.put(RESPONSE, response);
             util.remove(EXCEPTION);
         }

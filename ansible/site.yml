@@ -25,8 +25,8 @@
         }
         tag: "test vm"
         dimensions:
-          - WBS: "AAAA0001"
-          - PROJECT: "MyProject"
+          WBS: "AAAA0001"
+          PROJECT: "MyProject"
 
     - name: Creates a configuration item for Middleware 1
       onix_item:
@@ -44,8 +44,8 @@
         }
         tag: "test middleware"
         dimensions:
-          - WBS: "AAAA0001"
-          - PROJECT: "MyProject"
+          WBS: "AAAA0001"
+          PROJECT: "MyProject"
 
     - name: Creates a link between Host 1 and Software 1
       onix_link:

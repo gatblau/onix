@@ -93,15 +93,23 @@ Note that the natural key for the configuration item is not part of the payload 
   "name": "This is the name associated with the configuration item.",
   "description": "This a description of the configuration item.",
   "itemTypeId": "2",  
-  "meta": "{ }",
+  "meta": { 
+    "a_custom_key" : "a_custom_value",
+    "another_custom_key" : "another_custom_value",  
+    "a_custom_complex_object" : {
+      "a_custom_key" : "a_custom_value",
+      "another_custom_key" : "another_custom_value"
+    }
+  },
   "tag": "Test",
   "deployed": false,
-  "dimensions": [
-    { "WBS" : "012csl" },
-    { "COMPANY" : "ACME" }
-  ]
+  "dimensions": { 
+    "WBS" : "012csl", 
+    "COMPANY" : "ACME" 
+  }
 }
 ```
+**NOTE**: the *meta* field can contain *any* JSON object.
 
 ### Payload fields
 
@@ -115,7 +123,7 @@ The following table describes the fields in the payload and provides some exampl
 | meta | Stores any well-formed json object. This is the primary mechanism to store configuration item information. | { "host":"OCP-DEMO-M-01", "region":"Ireland", "provider":"AWS" } |
 | tag | Used for annotating the item for searching. For example, a search can be done by items having the EUROPE tag.| "TEST RELEASE-B EUROPE" |
 | deployed | Indicates if this item has been deployed or is waiting to be deployed. | true/false |
-| dimensions | A JSON array of key and value pairs used for reporting. | As per sample payload above. |
+| dimensions | A set of of key and value pairs used for reporting. | As per sample payload above. |
 
 ### Example
 
@@ -163,7 +171,7 @@ Note that the natural key for the configuration item is not part of the payload 
 
 ```json
 {
-  "meta": "{ }",
+  "meta": { },
   "description": "This is a CMDB item for testing purposes.",
   "role": "connect",
   "start_item_key": "ITEM_ONE_KEY",
@@ -171,6 +179,8 @@ Note that the natural key for the configuration item is not part of the payload 
   "tag": "Test"
 }
 ```
+
+**NOTE**: the *meta* field can contain *any* JSON object.
 
 ### Payload fields
 
