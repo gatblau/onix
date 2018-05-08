@@ -1,4 +1,4 @@
-# Identity and Access Management [(index)](./../readme.md)
+# Identity and Access Management 
 
 Onix CMDB by default uses [Keycloak](https://www.keycloak.org/) as its Identity and Access Management (IDAM) solution.
 
@@ -33,6 +33,15 @@ To configure Keycloak for Onix CMDB do the following:
 - Launch Keycloak on http://localhost:8081/ 
 - Log using admin/admin
 - Import the following [realm file](../install/container/idam/onix-realm.json).
+
+Alternatively, follow the manual steps below:
+- Create a realm named "onix"
+- Create a new client within the realm called "onix-cmdb"
+- Set the client's "Valid Redirect URIs" to "http://localhost:8080/*" (assuming the web API is listening to the localhost on port 8080, otherwise change it to the correct value.)
+- Create a new role called "user"
+- Create a new user called "onix"
+- Set the user password
+- Within users, role mappings, add the role user to the new user.
 
 <a name="requesting-an-access-token"></a>
 ## Requesting an Access Token [(up)](#toc)
