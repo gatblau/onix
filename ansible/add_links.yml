@@ -1,0 +1,127 @@
+---
+- name: Creates a link between Spring Boot and Host A
+  onix_link:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "RUNTIME-SPRING-BOOT-HOSTA"
+    description: "Spring Boot is deployed on Host A."
+    parent: "RUNTIME-SPRING-BOOT"
+    child: "HOST-A"
+    role: "is deployed on"
+    tag: "runtime"
+    meta: {
+      runtime: "Spring Boot",
+      version: "1.5.10.RELEASE",
+    }
+
+- name: Creates a link between Spring Boot and Host B
+  onix_link:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "RUNTIME-SPRING-BOOT-HOSTB"
+    description: "Spring Boot is deployed on Host B."
+    parent: "RUNTIME-SPRING-BOOT"
+    child: "HOST-B"
+    role: "is deployed on"
+    tag: "runtime"
+    meta: {
+      runtime: "Spring Boot",
+      version: "1.5.10.RELEASE",
+    }
+
+- name: Creates a link between Spring Boot and Host C
+  onix_link:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "RUNTIME-SPRING-BOOT-HOSTC"
+    description: "Spring Boot is deployed on Host C."
+    parent: "RUNTIME-SPRING-BOOT"
+    child: "HOST-C"
+    role: "is deployed on"
+    tag: "runtime"
+    meta: {
+      runtime: "Spring Boot",
+      version: "1.5.10.RELEASE",
+    }
+
+- name: Creates a link between PostgreSQL and Host D
+  onix_link:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "DB-POSTGRESQL-HOSTD"
+    description: "PostgreSQL is deployed on Host D."
+    parent: "DB-POSTGRESQL"
+    child: "HOST-D"
+    role: "is deployed on"
+    tag: "rdbms"
+    meta: {
+      databaseType: "PostgreSQL",
+      databaseVersion: "10.3",
+    }
+
+- name: Creates a link between PostgreSQL and Host E
+  onix_link:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "DB-POSTGRESQL-HOSTD"
+    description: "PostgreSQL is deployed on Host E."
+    parent: "DB-POSTGRESQL"
+    child: "HOST-E"
+    role: "is deployed on"
+    tag: "rdbms"
+    meta: {
+      databaseType: "PostgreSQL",
+      databaseVersion: "10.3",
+    }
+
+- name: Creates a link between Onix Web Service and Spring Boot
+  onix_link:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "WEB-SERVICE-ONIX-WAPI-RUNTIME-SPRING-BOOT"
+    description: "PostgreSQL is deployed on Host E."
+    parent: "WEB-SERVICE-ONIX-WAPI"
+    child: "RUNTIME-SPRING-BOOT"
+    role: "runs on"
+    tag: "wapi springboot"
+    meta: {
+    }
+
+- name: Creates a link between Onix Data Service and PostgreSQL
+  onix_link:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "DATA-SERVICE-ONIX-DB-DB-POSTGRESQL"
+    description: "PostgreSQL is deployed on Host E."
+    parent: "DATA-SERVICE-ONIX-DB"
+    child: "DB-POSTGRESQL"
+    role: "runs on"
+    tag: "db postgresql"
+    meta: {
+    }
+
+- name: Creates a link between Onix Application and Onix Application Data Service
+  onix_link:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "APP-ONIX-CMDB-DATA-SERVICE-ONIX-DB"
+    description: "The Onix application has a data service."
+    parent: "APP-ONIX-CMDB"
+    child: "DATA-SERVICE-ONIX-DB"
+    role: "has a"
+    tag: "onix services"
+    meta: {
+    }
+
+- name: Creates a link between Onix Application and Onix Application Web Service
+  onix_link:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "APP-ONIX-CMDB-WEB-SERVICE-ONIX-WAPI"
+    description: "The Onix application has a web service."
+    parent: "APP-ONIX-CMDB"
+    child: "WEB-SERVICE-ONIX-WAPI"
+    role: "has a"
+    tag: "onix services"
+    meta: {
+    }

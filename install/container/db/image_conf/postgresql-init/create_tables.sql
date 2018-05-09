@@ -36,6 +36,11 @@ BEGIN
         INSERT INTO item_type(name, description) VALUES ('INVENTORY', 'An Ansible inventory.');
         INSERT INTO item_type(name, description) VALUES ('HOST-GROUP', 'An Ansible host group.');
         INSERT INTO item_type(name, description) VALUES ('HOST', 'An Operating System Host.');
+        INSERT INTO item_type(name, description, custom) VALUES ('APPLICATION', 'A Software Application.', TRUE);
+        INSERT INTO item_type(name, description, custom) VALUES ('WEB-SERVICE', 'A service that is part of an application.', TRUE);
+        INSERT INTO item_type(name, description, custom) VALUES ('DATA-SERVICE', 'A service that is part of an application.', TRUE);
+        INSERT INTO item_type(name, description, custom) VALUES ('APPLICATION-RUNTIME', 'A runtime used by an application.', TRUE);
+        INSERT INTO item_type(name, description, custom) VALUES ('DATABASE-SERVER', 'A database server used by an application.', TRUE);
 	END IF;
 
     ---------------------------------------------------------------------------

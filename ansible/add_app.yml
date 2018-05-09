@@ -1,0 +1,45 @@
+---
+- name: Creates a configuration for Onix application WAPI Service
+  onix_item:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "WEB-SERVICE-ONIX-WAPI"
+    name: "ONIX Web Service API"
+    description: "Onix Web Service API"
+    type: 5 # web-service
+    meta: {
+    }
+    tag: "onix wapi"
+    dimensions:
+      WBS: "EU-00023.100002.984"
+      PROJECT: "TheOnixProject"
+
+- name: Creates a configuration for Onix application Data Service
+  onix_item:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "DATA-SERVICE-ONIX-DB"
+    name: "ONIX Data Service"
+    description: "Onix Data Service"
+    type: 6 # data-service
+    meta: {
+    }
+    tag: "onix db"
+    dimensions:
+      WBS: "EU-00023.100002.984"
+      PROJECT: "TheOnixProject"
+
+- name: Creates a configuration for Onix CMDB application
+  onix_item:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "APP-ONIX-CMDB"
+    name: "ONIX CMDB Application"
+    description: "Ansible friendly configuration management database."
+    type: 4 # application
+    meta: {
+    }
+    tag: "onix cmdb"
+    dimensions:
+      WBS: "EU-00023.100002.984"
+      PROJECT: "TheOnixProject"
