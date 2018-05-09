@@ -42,7 +42,7 @@ Is concerned with **requesting catalogue items** to be promptly deployed.
 An IT Self Service portal provides the means to issue configuration changes requests to the Automation Web API.
 Configuration data changes are automatically recorded by the Ansible playbooks.
 
-### Wider organisation [5] [(up)](#toc)
+### Data Analyst [5] [(up)](#toc)
 
 Is concerned with **querying accurate configuration information at all times** for a variety of purposes.
 
