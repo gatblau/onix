@@ -129,7 +129,8 @@ Audit tables contain the same attributes than the table they are auditing but ad
 |stamp| The time of the change. | timestamp |
 |uderid| The user who performed the change. | text |
 
-## Modelling a specific configuration 
+<a name="modelling"></a>
+## Modelling a specific configuration [(up)](#toc)
 
 Let's consider for example, the case of an application such as Onix and how it can be deployed on Virtual Machine infrastructure.
 
@@ -143,3 +144,4 @@ A graphical representation of the above is:
 
 ![Semantic Configuration Model](./pics/sample_model.png "Semantic Configuration Model for Onix")``
  
+For an example of a playbook to produce the above configuration see [here](../ansible/site.yml).
