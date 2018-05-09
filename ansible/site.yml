@@ -1,6 +1,6 @@
 - hosts: localhost
   tasks:
-    - name: logs into the CMDB (gets an access token)
+    - name: getting Onix access token
       onix_login:
         auth_host: "{{ auth_host }}"
         realm: "onix"
@@ -8,55 +8,7 @@
         username: "onix"
         password: "onix"
 
-    - name: Creates a configuration item for Host 1
-      onix_item:
-        cmdb_host: "{{ onix_host }}"
-        access_token: "{{ onix_access_token }}"
-        key: "HOST1"
-        name: "Host 1"
-        description: "Host 1 description here"
-        type: 2
-        meta: {
-          IP: "192.168.0.1",
-          Vendor: "Supreme Computers",
-          Type: "Virtual Machine",
-          OS: "RHEL 7.5"
-        }
-        tag: "test vm"
-        dimensions:
-          WBS: "AAAA0001"
-          PROJECT: "MyProject"
-
-    - name: Creates a configuration item for Middleware 1
-      onix_item:
-        cmdb_host: "{{ onix_host }}"
-        access_token: "{{ onix_access_token }}"
-        key: "SOFTWARE1"
-        name: "Software 1"
-        description: "Software 1 description here"
-        deployed: true
-        type: 2
-        meta: {
-          Vendor : "Supreme Middleware",
-          Type : "Message Broker",
-          LastPatched: "12/01/16"
-        }
-        tag: "test middleware"
-        dimensions:
-          WBS: "AAAA0001"
-          PROJECT: "MyProject"
-
-    - name: Creates a link between Host 1 and Software 1
-      onix_link:
-        cmdb_host: "{{ onix_host }}"
-        access_token: "{{ onix_access_token }}"
-        key: "SOFTWARE1_INSTALLED_ON_HOST1"
-        description: "Software 1 is deployed on Host 1"
-        parent: "HOST1"
-        child: "SOFTWARE1"
-        role: "deployed on"
-        tag: "software vm"
-        meta: {
-          DeployedBy: "John Wicks",
-          RequestNo: "RN001234"
-        }
+    - include: add_hosts.yml
+    - include: add_runtimes.yml
+    - include: add_app.yml
+    - include: add_links.yml

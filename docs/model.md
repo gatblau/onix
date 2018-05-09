@@ -3,21 +3,34 @@
 <a name="toc"></a>
 ## Table of Contents [(index)](./../readme.md)
 
-- [Overview](#overview)
-- [Item Entity](#item)
-- [Item Type Entity](#item-type)
-- [Link Entity](#link)
-- [Dimension Entity](#dimension)
-- [Auditing changes](auditing-changes)
+- [Semantic Model](#semantic-model)
+- [Relational Model](#relational-model)
+    - [Item Entity](#item)
+    - [Item Type Entity](#item-type)
+    - [Link Entity](#link)
+    - [Dimension Entity](#dimension)
+    - [Auditing changes](auditing-changes)
+- [Modelling a specific configuration](#modelling)
 
-<a name="overview"></a>
-## Overview [(up)](#toc)
+<a name="semantic-model"></a>
+## Semantic Model [(up)](#toc)
+
+The following figure shows the [semantic model](https://en.wikipedia.org/wiki/Semantic_data_model) for the CMDB:
+ 
+![Semantic Data Model](./pics/semantic_model.png "Onix Semantic Data Model")
+
+**Items** store configuration information and can be associated to other items using **Links**.
+
+**Items** ar of a specified **Item Type**.
+
+<a name="relational-model"></a>
+## Relational Model [(up)](#toc)
 
 In order to store configuration data Onix uses a simple relational model as shown below:
 
-![Onix Data Model](./pics/onix_model.png "Onix Data Model")
+![Relational Data Model](./pics/relational_model.png "Onix Relational Data Model")
 
-At the moment, the database schema is implemented in PostgresSQL, although in theory, other databases could be used as the Onix Web API uses [Hibernate](https://github.com/hibernate/hibernate-orm) to connect to the database.
+Curretly, the database schema is implemented in PostgresSQL.
 
 <a name="item"></a>
 ## Item Entity [(up)](#toc)
@@ -115,3 +128,18 @@ Audit tables contain the same attributes than the table they are auditing but ad
 |operation | "I" for insert, "U" for update and "D" for delete. | character(1) |
 |stamp| The time of the change. | timestamp |
 |uderid| The user who performed the change. | text |
+
+## Modelling a specific configuration 
+
+Let's consider for example, the case of an application such as Onix and how it can be deployed on Virtual Machine infrastructure.
+
+A semantic configuration model could tipically define the following configuration information:
+
+- The Onix Application is made of one Web Service and one Data Service.
+- The Web Service is deployed on Hosts A, B and C; whilst the Data Service is deployed on Hosts D and E.
+- The Web Service runs on Spring Boot application runtime.
+
+A graphical representation of the above is:
+
+![Semantic Configuration Model](./pics/sample_model.png "Semantic Configuration Model for Onix")``
+ 
