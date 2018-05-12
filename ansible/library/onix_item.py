@@ -16,7 +16,7 @@ def createOrUpdateItem(data):
     key = data['key']
     name = data['name']
     description = data['description']
-    deployed = data['deployed']
+    status = data['status']
     type = data['type']
     meta = data['meta']
     tag = data['tag']
@@ -28,7 +28,7 @@ def createOrUpdateItem(data):
         "itemTypeId": type,
         "meta": meta,
         "tag": tag,
-        "deployed": deployed,
+        "status": status,
         "dimensions": dimensions
     }
 
@@ -67,7 +67,7 @@ def main():
         "key": {"required": True, "type": "str"},
         "name": {"required": True, "type": "str"},
         "description": {"required": False, "type": "str", "default": ""},
-        "deployed": {"required": False, "type": "bool","default": True},
+        "status": {"required": False, "type": "int","default": 0},
         "type": {"required": True, "type": "int"},
         "meta": {"required": False, "type": "str", "default": "{}"},
         "tag": {"required": False, "type": "str", "default": ""},

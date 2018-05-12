@@ -9,7 +9,7 @@
     "OS": "RHEL 7.5"
   },
   "tag": "Test",
-  "deployed": false,
+  "status": 1,
   "dimensions": {
     "WBS" : "012csl",
     "COMPANY" : "ACME"
