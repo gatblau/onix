@@ -5,5 +5,5 @@
   "meta": "{ }",
   "tag": "Test Host",
   "key": "Test_Item_1",
-  "deployed" : true
+  "status" : 2
 }

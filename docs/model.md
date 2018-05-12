@@ -53,6 +53,7 @@ For database relational purposes, an item has a surrogate key used by [Hibernate
 |name| A user friendly name assigned to the item for displaying purposes. | character varying(200) |
 |description| The description of the item | text |
 |meta| A JSON object of any structure, containing all the specific information for a given configuration item. | json |
+|status| A number indicating the deployment status of the item. The value to use is up to the client system. For example, 1 / 2 / 3 could mean waiting to be deployed / deployed / fail to deploy respectively. Its default value is 0.| smallint |
 |tag| A text field to support semantic tagging. |﻿character varying(300) |
 |created| The date and time the item was created. | ﻿timestamp(6) with time zone|
 |updated| The date and time the item was last updated. | ﻿timestamp(6) with time zone |
@@ -126,8 +127,8 @@ Audit tables contain the same attributes than the table they are auditing but ad
 |Name | Description | Data Type|
 |---|---|---|
 |operation | "I" for insert, "U" for update and "D" for delete. | character(1) |
-|stamp| The time of the change. | timestamp |
-|uderid| The user who performed the change. | text |
+|change_date| The time of the change. | timestamp |
+|change_user| The user who performed the change. | text |
 
 <a name="modelling"></a>
 ## Modelling a specific configuration [(up)](#toc)

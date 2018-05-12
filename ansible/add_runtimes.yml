@@ -7,6 +7,7 @@
     name: "Spring Boot"
     description: "The framework used to run Spring based applications."
     type: 7 # app-runtime
+    status: 1
     meta: {
     }
     tag: "runtime"
@@ -21,6 +22,7 @@
     name: "PostgreSQL Database Server"
     description: "Relational Database Management System."
     type: 8 # db-server
+    status: 1
     meta: { }
     tag: "rdbms"
     dimensions:

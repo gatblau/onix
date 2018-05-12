@@ -9,6 +9,7 @@
     type: 5 # web-service
     meta: {
     }
+    status: 1
     tag: "onix wapi"
     dimensions:
       WBS: "EU-00023.100002.984"
@@ -24,6 +25,7 @@
     type: 6 # data-service
     meta: {
     }
+    status: 1
     tag: "onix db"
     dimensions:
       WBS: "EU-00023.100002.984"
@@ -39,6 +41,7 @@
     type: 4 # application
     meta: {
     }
+    status: 1
     tag: "onix cmdb"
     dimensions:
       WBS: "EU-00023.100002.984"

@@ -13,7 +13,7 @@ public class ItemData implements Serializable {
     private String name;
     private String description;
     private String itemType;
-    private Boolean deployed;
+    private Short status;
     private JsonNode meta;
     private String tag;
     private List<String> dimensions = new ArrayList<>();
@@ -57,12 +57,12 @@ public class ItemData implements Serializable {
         this.itemType = itemType;
     }
 
-    public Boolean getDeployed() {
-        return deployed;
+    public Short getStatus() {
+        return status;
     }
 
-    public void setDeployed(Boolean deployed) {
-        this.deployed = deployed;
+    public void setStatus(Short status) {
+        this.status = status;
     }
 
     public JsonNode getMeta() {

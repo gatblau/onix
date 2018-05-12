@@ -7,6 +7,7 @@
     name: "HOST A - ONIX WAPI"
     description: "Onix Web Service Host"
     type: 2 # host
+    status: 1
     meta: {
       Host: {
         name: "ONIX-WEB-01",
@@ -41,6 +42,7 @@
     name: "HOST B - ONIX WAPI"
     description: "Onix Web Service Host"
     type: 2 # host
+    status: 1
     meta: {
       Host: {
         name: "ONIX-WEB-02",
@@ -75,6 +77,7 @@
     name: "HOST C - ONIX WAPI"
     description: "Onix Web Service Host"
     type: 2 # host
+    status: 1
     meta: {
       Host: {
         name: "ONIX-WEB-03",
@@ -109,6 +112,7 @@
     name: "HOST D - ONIX DB"
     description: "Onix Data Service Host"
     type: 2 # host
+    status: 1
     meta: {
       Host: {
         name: "ONIX-DB-01",
@@ -139,6 +143,7 @@
     name: "HOST E - ONIX DB"
     description: "Onix Data Service Host"
     type: 2 # host
+    status: 1
     meta: {
       Host: {
         name: "ONIX-DB-02",

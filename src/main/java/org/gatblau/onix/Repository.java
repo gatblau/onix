@@ -1,9 +1,7 @@
 package org.gatblau.onix;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.gatblau.onix.data.ItemData;
-import org.gatblau.onix.data.ItemTypeList;
 import org.gatblau.onix.data.LinkData;
 import org.gatblau.onix.data.LinkedItemData;
 import org.gatblau.onix.model.Dimension;
@@ -19,7 +17,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Consumer;
@@ -65,7 +62,7 @@ public class Repository {
         item.setDescription((String)json.get("description"));
         item.setTag((String)json.get("tag"));
         item.setName((String)json.get("name"));
-        item.setDeployed((boolean)json.get("deployed"));
+        item.setStatus(Short.parseShort(json.get("status").toString()));
         item.setUpdated(time);
         item.setMeta(mapper.valueToTree(json.get("meta")));
 
@@ -105,10 +102,10 @@ public class Repository {
     @Transactional
     public void clear() {
         if (em != null) {
-            em.createNamedQuery(ItemType.DELETE_ALL).executeUpdate();
             em.createNamedQuery(Dimension.DELETE_ALL).executeUpdate();
             em.createNamedQuery(Link.DELETE_ALL).executeUpdate();
             em.createNamedQuery(Item.DELETE_ALL).executeUpdate();
+//            em.createNamedQuery(ItemType.DELETE_ALL).executeUpdate();
         }
     }
 
@@ -351,7 +348,7 @@ public class Repository {
         data.setUpdated(item.getUpdated().toString());
         data.setVersion(item.getVersion());
 
-        data.setDeployed(item.isDeployed());
+        data.setStatus(item.getStatus());
         data.setItemType(item.getItemType().getName());
         data.setMeta(item.getMeta());
         data.setTag(item.getTag());

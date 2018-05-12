@@ -36,11 +36,11 @@ BEGIN
         INSERT INTO item_type(name, description) VALUES ('INVENTORY', 'An Ansible inventory.');
         INSERT INTO item_type(name, description) VALUES ('HOST-GROUP', 'An Ansible host group.');
         INSERT INTO item_type(name, description) VALUES ('HOST', 'An Operating System Host.');
-        INSERT INTO item_type(name, description, custom) VALUES ('APPLICATION', 'A Software Application.', TRUE);
-        INSERT INTO item_type(name, description, custom) VALUES ('WEB-SERVICE', 'A service that is part of an application.', TRUE);
-        INSERT INTO item_type(name, description, custom) VALUES ('DATA-SERVICE', 'A service that is part of an application.', TRUE);
-        INSERT INTO item_type(name, description, custom) VALUES ('APPLICATION-RUNTIME', 'A runtime used by an application.', TRUE);
-        INSERT INTO item_type(name, description, custom) VALUES ('DATABASE-SERVER', 'A database server used by an application.', TRUE);
+        INSERT INTO item_type(name, description) VALUES ('APPLICATION', 'A Software Application.');
+        INSERT INTO item_type(name, description) VALUES ('WEB-SERVICE', 'A service that is part of an application.');
+        INSERT INTO item_type(name, description) VALUES ('DATA-SERVICE', 'A service that is part of an application.');
+        INSERT INTO item_type(name, description) VALUES ('APPLICATION-RUNTIME', 'A runtime used by an application.');
+        INSERT INTO item_type(name, description) VALUES ('DATABASE-SERVER', 'A database server used by an application.');
 	END IF;
 
     ---------------------------------------------------------------------------
@@ -63,7 +63,7 @@ BEGIN
             id bigint NOT NULL DEFAULT nextval('item_id_seq'::regclass),
             name CHARACTER VARYING(200) COLLATE pg_catalog."default",
             description text COLLATE pg_catalog."default",
-            deployed boolean,
+            status SMALLINT DEFAULT 0,
             item_type_id INTEGER,
             meta json,
             version bigint NOT NULL DEFAULT 1,
@@ -198,12 +198,12 @@ BEGIN
         CREATE TABLE item_audit
         (
             operation CHAR(1) NOT NULL,
-            stamp TIMESTAMP NOT NULL,
-            userid text NOT NULL,
+            change_date TIMESTAMP NOT NULL,
+            change_user CHARACTER VARYING(200) NOT NULL,
             id bigint,
             name CHARACTER VARYING(200) COLLATE pg_catalog."default",
             description CHARACTER VARYING(500) COLLATE pg_catalog."default",
-            deployed boolean,
+            status SMALLINT,
             item_type_id INTEGER,
             meta json,
             version bigint,
@@ -245,8 +245,8 @@ BEGIN
         CREATE TABLE link_audit
         (
             operation CHAR(1) NOT NULL,
-            stamp TIMESTAMP NOT NULL,
-            userid text NOT NULL,
+            change_date TIMESTAMP NOT NULL,
+            change_user CHARACTER VARYING(200) NOT NULL,
             id bigint,
             key CHARACTER VARYING(200) COLLATE pg_catalog."default",
             meta json,
@@ -292,8 +292,8 @@ BEGIN
         CREATE TABLE item_type_audit
         (
             operation CHAR(1) NOT NULL,
-            stamp TIMESTAMP NOT NULL,
-            userid text NOT NULL,
+            change_date TIMESTAMP NOT NULL,
+            change_user CHARACTER VARYING(200) NOT NULL,
             id INTEGER,
             name CHARACTER VARYING(200) COLLATE pg_catalog."default",
             description CHARACTER VARYING(500) COLLATE pg_catalog."default",

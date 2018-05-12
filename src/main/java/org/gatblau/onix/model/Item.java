@@ -138,7 +138,7 @@ public class Item implements Serializable {
     private int version;
 
     @Column
-    private boolean deployed;
+    private Short status;
 
     public Long getId() {
         return id;
@@ -228,12 +228,12 @@ public class Item implements Serializable {
         this.dimensions = dimensions;
     }
 
-    public void setDeployed(boolean deployed) {
-        this.deployed = deployed;
+    public void setStatus(Short status) {
+        this.status = status;
     }
 
-    public boolean isDeployed() {
-        return this.deployed;
+    public Short getStatus() {
+        return this.status;
     }
 
     @Override

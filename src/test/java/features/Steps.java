@@ -1,5 +1,6 @@
 package features;
 
+import cucumber.api.PendingException;
 import cucumber.api.java.en.And;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.When;
@@ -106,8 +107,8 @@ public class Steps extends BaseTest {
         assert(!util.containsKey(EXCEPTION));
     }
 
-    @And("^a PUT HTTP request with a JSON payload is done$")
-    public void aPUTTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
+    @And("^a PUT HTTP request with a new JSON payload is done$")
+    public void aPUTTHTTPRequestWithANewJSONPayloadIsDone() throws Throwable {
         putItem(ITEM_ONE_KEY, "payload/create_item_payload.json");
     }
 
@@ -127,13 +128,7 @@ public class Steps extends BaseTest {
         theItemDoesNotExistInTheDatabase();
         theItemURLSearchByKeyIsKnown();
         aJsonPayloadWithNewItemInformationExists();
-        aPUTTHTTPRequestWithAJSONPayloadIsDone();
-    }
-
-    @And("^a json payload with updated item information exists$")
-    public void aJsonPayloadWithUpdatedItemInformationExists() throws Throwable {
-        String payload = util.getFile("payload/update_item_payload.json");
-        util.put(Key.PAYLOAD, payload);
+        aPUTTHTTPRequestWithANewJSONPayloadIsDone();
     }
 
     @Given("^the item type does not exist in the database$")
@@ -321,5 +316,10 @@ public class Steps extends BaseTest {
     @Given("^the natural key for the link is known$")
     public void theNaturalKeyForTheLinkIsKnown() throws Throwable {
         util.put(LINK_KEY, "LINK_KEY");
+    }
+
+    @When("^a PUT HTTP request with an updated JSON payload is done$")
+    public void aPUTHTTPRequestWithAnUpdatedJSONPayloadIsDone() throws Throwable {
+        putItem(ITEM_ONE_KEY, "payload/update_item_payload.json");
     }
 }
