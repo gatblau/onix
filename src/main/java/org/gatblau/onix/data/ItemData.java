@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public class ItemData implements Serializable {
@@ -16,7 +18,7 @@ public class ItemData implements Serializable {
     private Short status;
     private JsonNode meta;
     private String tag;
-    private List<String> dimensions = new ArrayList<>();
+    private HashMap<String, String> dimensions = new LinkedHashMap<>();
     private List<LinkData> links = new ArrayList<>();
     private String created;
     private String updated;
@@ -81,12 +83,8 @@ public class ItemData implements Serializable {
         this.tag = tag;
     }
 
-    public List<String> getDimensions() {
+    public HashMap<String, String> getDimensions() {
         return dimensions;
-    }
-
-    public void setDimensions(List<String> dimensions) {
-        this.dimensions = dimensions;
     }
 
     public String getCreated() {
