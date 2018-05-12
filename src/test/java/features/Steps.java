@@ -54,7 +54,7 @@ public class Steps extends BaseTest {
 
     @Given("^the item URL search with query parameters is known$")
     public void theItemURLSearchWithQueryParametersIsKnown() throws Throwable {
-        util.put(Key.ITEM_URL, String.format("%sitem/search", baseUrl));
+        util.put(Key.ITEM_URL, String.format("%sitem", baseUrl));
     }
 
     @And("^the response code is (\\d+)$")
