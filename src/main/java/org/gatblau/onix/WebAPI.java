@@ -39,7 +39,7 @@ public class WebAPI {
         value = "Creates new item or updates an existing item based on the specified key.",
         notes = "Use this operation to create configuration item if it's not there or update it if it's there.")
     @RequestMapping(
-            path = "/item/{key}/", method = RequestMethod.PUT,
+            path = "/item/{key}", method = RequestMethod.PUT,
             consumes = {"application/json" },
             produces = {"application/json" })
     public ResponseEntity<Result> createOrUpdateItem(
@@ -66,7 +66,7 @@ public class WebAPI {
     @ApiOperation(
         value = "Removes ALL configuration items and links from the database.",
         notes = "Use at your own risk ONLY for testing of the CMDB!")
-    @RequestMapping(path = "/clear/", method = RequestMethod.DELETE)
+    @RequestMapping(path = "/clear", method = RequestMethod.DELETE)
     public void clear() throws InterruptedException {
         data.clear();
     }
@@ -74,7 +74,7 @@ public class WebAPI {
     @ApiOperation(
         value = "Deletes a link between two existing configuration items.",
         notes = "Use this operation to delete links between existing items.")
-    @RequestMapping(path = "/link/{key}/", method = RequestMethod.DELETE)
+    @RequestMapping(path = "/link/{key}", method = RequestMethod.DELETE)
     public void deleteLink(
             @PathVariable("key") String key
     ) throws InterruptedException {
@@ -84,7 +84,7 @@ public class WebAPI {
     @ApiOperation(
         value = "Deletes a configuration item type.",
         notes = "")
-    @RequestMapping(path = "/itemtype/", method = RequestMethod.DELETE)
+    @RequestMapping(path = "/itemtype", method = RequestMethod.DELETE)
     public void deleteItemTypes() throws InterruptedException {
         data.deleteItemTypes();
     }
@@ -92,7 +92,7 @@ public class WebAPI {
     @ApiOperation(
             value = "Get a list of available configuration item types.",
             notes = "Only item types marked as custom can be deleted.")
-    @RequestMapping(path = "/itemtype/", method = RequestMethod.GET)
+    @RequestMapping(path = "/itemtype", method = RequestMethod.GET)
     public ResponseEntity<ItemTypeList> getItemTypes() throws InterruptedException {
         List<ItemType> itemTypes = data.getItemTypes();
         return ResponseEntity.ok(new ItemTypeList(itemTypes));
@@ -102,7 +102,7 @@ public class WebAPI {
         value = "Get a configuration item based on the specified key.",
         notes = "Use this search to retrieve a specific configuration item when its natural key is known.")
     @RequestMapping(
-          path = "/item/{key}/"
+          path = "/item/{key}"
         , method = RequestMethod.GET
         , produces = {"application/json", "application/x-yaml"}
     )

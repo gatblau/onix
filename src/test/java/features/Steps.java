@@ -49,7 +49,7 @@ public class Steps extends BaseTest {
 
     @Given("^the item URL search by key is known$")
     public void theItemURLSearchByKeyIsKnown() throws Throwable {
-        util.put(Key.ITEM_URL, String.format("%sitem/{key}/", baseUrl));
+        util.put(Key.ITEM_URL, String.format("%sitem/{key}", baseUrl));
     }
 
     @Given("^the item URL search with query parameters is known$")
@@ -88,7 +88,7 @@ public class Steps extends BaseTest {
 
     @And("^the clear cmdb URL of the service is known$")
     public void theClearCMDBURLOfTheServiceIsKnown() throws Throwable {
-        util.put(Key.CLEAR_URL, String.format("%s/clear/", baseUrl));
+        util.put(Key.CLEAR_URL, String.format("%s/clear", baseUrl));
     }
 
     @And("^a clear cmdb request to the service is done$")
@@ -156,7 +156,7 @@ public class Steps extends BaseTest {
 
     @Given("^the link URL of the service is known$")
     public void theLinkURLOfTheServiceIsKnown() throws Throwable {
-        util.put(LINK_URL, String.format("%s/link/{key}/", baseUrl));
+        util.put(LINK_URL, String.format("%s/link/{key}", baseUrl));
     }
 
     @Given("^a json payload with new link information exists$")
@@ -230,7 +230,7 @@ public class Steps extends BaseTest {
 
     private void putItem(String itemKey, String filename) {
         util.put(Key.PAYLOAD, util.getFile(filename));
-        String url = String.format("%s/item/{key}/", baseUrl);
+        String url = String.format("%s/item/{key}", baseUrl);
         Map<String, Object> vars = new HashMap<>();
         vars.put("key", itemKey);
         ResponseEntity<Result> response = null;

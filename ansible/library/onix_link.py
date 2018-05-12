@@ -43,7 +43,7 @@ def createOrUpdateLink(data):
     # link_uri = "https://httpbin.org/put"
 
     # builds the URI required by the cmdb service
-    link_uri = "{}/link/{}/".format(cmdb_host, key)
+    link_uri = "{}/link/{}".format(cmdb_host, key)
 
     # put the payload to the cmdb service
     stream = open_url(link_uri, method="PUT", data=payloadStr, headers=headers)
