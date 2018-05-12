@@ -45,7 +45,7 @@ def createOrUpdateItem(data):
     # item_uri = "https://httpbin.org/put"
 
     # builds the URI required by the cmdb service
-    item_uri = "{}/item/{}/".format(cmdb_host, key)
+    item_uri = "{}/item/{}".format(cmdb_host, key)
 
     # put the payload to the cmdb service
     stream = open_url(item_uri, method="PUT", data=payloadStr, headers=headers)
