@@ -245,9 +245,9 @@ public class Repository {
                     String itemKey = null;
 
                     if (isParent) {
-                        itemKey = link.getStartItem().getKey();
-                    } else {
                         itemKey = link.getEndItem().getKey();
+                    } else {
+                        itemKey = link.getStartItem().getKey();
                     }
 
                     linkData.setItem(
