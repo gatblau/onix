@@ -25,7 +25,7 @@ import java.util.List;
         name = "item.findByTag",
         query =   "SELECT i "
                 + "FROM Item i "
-                + "WHERE i.tag = :tag "
+                + "WHERE i.tag LIKE :tag "
                 + "ORDER BY i.updated DESC "
     ),
     @NamedQuery(
@@ -48,7 +48,7 @@ import java.util.List;
         query =   "SELECT i "
                 + "FROM Item i "
                 + "WHERE i.itemType.id = :itemTypeId "
-                + "AND i.tag = :tag "
+                + "AND i.tag LIKE :tag "
                 + "ORDER BY i.updated DESC "
     ),
     @NamedQuery(
@@ -65,7 +65,7 @@ import java.util.List;
         query =   "SELECT i "
             + "FROM Item i "
             + "WHERE i.itemType.id = :itemTypeId "
-            + "AND i.tag = :tag "
+            + "AND i.tag LIKE :tag "
             + "AND i.updated >= :fromDate "
             + "AND i.updated <= :toDate "
             + "ORDER BY i.updated DESC "
