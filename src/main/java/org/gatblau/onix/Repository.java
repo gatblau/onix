@@ -89,10 +89,10 @@ public class Repository {
      * @param tag the tags used to filter the result of the search.
      * @return
      */
-    public List<Item> findItemsByType(long itemTypeId, String tag) {
+    public List<Item> findItemsByTypeAndTag(long itemTypeId, String tag) {
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TYPE_AND_TAG, Item.class);
         query.setParameter(Item.PARAM_ITEM_TYPE_ID, itemTypeId);
-        query.setParameter(Item.PARAM_TAG, tag);
+        query.setParameter(Item.PARAM_TAG, "%" + tag + "%");
         return query.getResultList();
     }
 
@@ -275,7 +275,7 @@ public class Repository {
     public List<ItemData> getItemsByTag(String tag, Integer top) {
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TAG, Item.class);
         if (top != null) query.setMaxResults(top);
-        query.setParameter(Item.PARAM_TAG, tag);
+        query.setParameter(Item.PARAM_TAG, "%" + tag + "%");
         List<ItemData> data = mapItemData(query.getResultList());
         return data;
     }
@@ -293,7 +293,7 @@ public class Repository {
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TYPE_AND_TAG, Item.class);
         if (top != null) query.setMaxResults(top);
         query.setParameter(Item.PARAM_ITEM_TYPE_ID, typeId);
-        query.setParameter(Item.PARAM_TAG, tag);
+        query.setParameter(Item.PARAM_TAG, "%" + tag + "%");
         List<ItemData> data = mapItemData(query.getResultList());
         return data;
     }
@@ -311,7 +311,7 @@ public class Repository {
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TYPE_TAG_AND_DATE, Item.class);
         if (top != null) query.setMaxResults(top);
         query.setParameter(Item.PARAM_ITEM_TYPE_ID, typeId);
-        query.setParameter(Item.PARAM_TAG, tag);
+        query.setParameter(Item.PARAM_TAG, "%" + tag + "%");
         query.setParameter(Item.PARAM_FROM_DATE, from);
         query.setParameter(Item.PARAM_TO_DATE, to);
         List<ItemData> data = mapItemData(query.getResultList());
