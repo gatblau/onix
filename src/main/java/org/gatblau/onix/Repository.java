@@ -356,7 +356,7 @@ public class Repository {
         item.getDimensions().forEach(new Consumer<Dimension>() {
             @Override
             public void accept(Dimension dimension) {
-                data.getDimensions().add(String.format("%s=%s", dimension.getKey(), dimension.getValue()));
+                data.getDimensions().put(dimension.getKey(), dimension.getValue());
             }
         });
 
