@@ -73,7 +73,7 @@ import java.util.List;
     @NamedQuery(
         name = "item.deleteAll",
         query = "DELETE FROM Item "
-    ),
+    )
 })
 @Entity
 public class Item implements Serializable {
