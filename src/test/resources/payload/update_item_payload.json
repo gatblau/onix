@@ -5,5 +5,9 @@
   "meta": "{ }",
   "tag": "Test Host",
   "key": "Test_Item_1",
-  "status" : 2
+  "status" : 2,
+  "dimensions": {
+    "WBS" : "UpdateCode01",
+    "REGION": "Ireland"
+  }
 }
