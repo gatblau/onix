@@ -1,7 +1,7 @@
 {
   "name": "Test Item",
   "description": "This is a CMDB item for testing purposes.",
-  "itemTypeId": "2",
+  "type": "HOST",
   "meta": {
     "IP": "192.168.0.1",
     "Vendor": "Supreme Computers",

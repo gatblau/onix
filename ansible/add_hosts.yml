@@ -6,7 +6,7 @@
     key: "HOST-A"
     name: "HOST A - ONIX WAPI"
     description: "Onix Web Service Host"
-    type: 2 # host
+    type: "HOST"
     status: 1
     meta: {
       Host: {
@@ -41,7 +41,7 @@
     key: "HOST-B"
     name: "HOST B - ONIX WAPI"
     description: "Onix Web Service Host"
-    type: 2 # host
+    type: "HOST"
     status: 1
     meta: {
       Host: {
@@ -76,7 +76,7 @@
     key: "HOST-C"
     name: "HOST C - ONIX WAPI"
     description: "Onix Web Service Host"
-    type: 2 # host
+    type: "HOST"
     status: 1
     meta: {
       Host: {
@@ -111,7 +111,7 @@
     key: "HOST-D"
     name: "HOST D - ONIX DB"
     description: "Onix Data Service Host"
-    type: 2 # host
+    type: "HOST"
     status: 1
     meta: {
       Host: {
@@ -142,7 +142,7 @@
     key: "HOST-E"
     name: "HOST E - ONIX DB"
     description: "Onix Data Service Host"
-    type: 2 # host
+    type: "HOST"
     status: 1
     meta: {
       Host: {
