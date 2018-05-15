@@ -384,4 +384,14 @@ public class Repository {
         }
         em.remove(item);
     }
+
+    @Transactional
+    public void createItemType(JSONObject json) throws IOException {
+        ZonedDateTime time = ZonedDateTime.now();
+        ItemType itemType = new ItemType();
+        itemType.setDescription((String)json.get("description"));
+        itemType.setName((String)json.get("name"));
+        itemType.setCustom((Boolean)json.get("custom"));
+        em.persist(itemType);
+    }
 }

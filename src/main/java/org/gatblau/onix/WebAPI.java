@@ -100,6 +100,14 @@ public class WebAPI {
     }
 
     @ApiOperation(
+            value = "Creates a new configuration item type.",
+            notes = "")
+    @RequestMapping(path = "/itemtype", method = RequestMethod.POST)
+    public void createItemType(@RequestBody JSONObject payload) throws InterruptedException, IOException {
+        data.createItemType(payload);
+    }
+
+    @ApiOperation(
             value = "Get a list of available configuration item types.",
             notes = "Only item types marked as custom can be deleted.")
     @RequestMapping(path = "/itemtype", method = RequestMethod.GET)
