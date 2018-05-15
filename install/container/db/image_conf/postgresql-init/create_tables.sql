@@ -19,10 +19,12 @@ BEGIN
         CREATE TABLE item_type
         (
             id INTEGER NOT NULL DEFAULT nextval('item_type_id_seq'::regclass),
+            key CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
             name CHARACTER VARYING(200) COLLATE pg_catalog."default",
             description CHARACTER VARYING(500) COLLATE pg_catalog."default",
             custom boolean DEFAULT FALSE,
             CONSTRAINT item_type_id_pk PRIMARY KEY (id),
+            CONSTRAINT item_type_key_uc UNIQUE (key),
             CONSTRAINT item_type_name_uc UNIQUE (name)
         )
         WITH (
@@ -33,14 +35,14 @@ BEGIN
         ALTER TABLE item_type
             OWNER to onix;
 
-        INSERT INTO item_type(name, description) VALUES ('INVENTORY', 'An Ansible inventory.');
-        INSERT INTO item_type(name, description) VALUES ('HOST-GROUP', 'An Ansible host group.');
-        INSERT INTO item_type(name, description) VALUES ('HOST', 'An Operating System Host.');
-        INSERT INTO item_type(name, description) VALUES ('APPLICATION', 'A Software Application.');
-        INSERT INTO item_type(name, description) VALUES ('WEB-SERVICE', 'A service that is part of an application.');
-        INSERT INTO item_type(name, description) VALUES ('DATA-SERVICE', 'A service that is part of an application.');
-        INSERT INTO item_type(name, description) VALUES ('APPLICATION-RUNTIME', 'A runtime used by an application.');
-        INSERT INTO item_type(name, description) VALUES ('DATABASE-SERVER', 'A database server used by an application.');
+        INSERT INTO item_type(key, name, description) VALUES ('INVENTORY', 'Ansible Inventory', 'An Ansible inventory.');
+        INSERT INTO item_type(key, name, description) VALUES ('HOST-GROUP', 'Host Group', 'An Ansible host group.');
+        INSERT INTO item_type(key, name, description) VALUES ('HOST', 'Host', 'An Operating System Host.');
+        INSERT INTO item_type(key, name, description) VALUES ('APPLICATION', 'Applciation', 'A Software Application.');
+        INSERT INTO item_type(key, name, description) VALUES ('WEB-SERVICE', 'Web Service', 'A service that is part of an application.');
+        INSERT INTO item_type(key, name, description) VALUES ('DATA-SERVICE', 'Data Service', 'A service that is part of an application.');
+        INSERT INTO item_type(key, name, description) VALUES ('APPLICATION-RUNTIME', 'Application Runtime Environment', 'A runtime used by an application.');
+        INSERT INTO item_type(key, name, description) VALUES ('DATABASE-SERVER', 'Database Server', 'A database server used by an application.');
 	END IF;
 
     ---------------------------------------------------------------------------
@@ -295,6 +297,7 @@ BEGIN
             change_date TIMESTAMP NOT NULL,
             change_user CHARACTER VARYING(200) NOT NULL,
             id INTEGER,
+            key CHARACTER VARYING(100) COLLATE pg_catalog."default",
             name CHARACTER VARYING(200) COLLATE pg_catalog."default",
             description CHARACTER VARYING(500) COLLATE pg_catalog."default",
             custom boolean

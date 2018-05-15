@@ -11,6 +11,12 @@ import java.io.Serializable;
     @NamedQuery(
         name = "itemType.findAll",
         query = "SELECT i FROM ItemType i "
+    ),
+    @NamedQuery(
+        name = "itemType.findByKey",
+        query = "SELECT i " +
+                "FROM ItemType i " +
+                "WHERE i.key = :key "
     )
 })
 @Entity()
@@ -19,11 +25,16 @@ public class ItemType implements Serializable {
     private static final long serialVersionUID = 1L;
     public static final String DELETE_ALL = "itemType.deleteAll";
     public static final String FIND_ALL = "itemType.findAll";
+    public static final String FIND_BY_KEY = "itemType.findByKey";
+    public static final String PARAM_KEY = "key";
 
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     @Column(name = "id", updatable = false, nullable = false)
     private Integer id = null;
+
+    @Column
+    private String key;
 
     @Column
     private String name;
@@ -40,6 +51,14 @@ public class ItemType implements Serializable {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
     }
 
     public String getName() {

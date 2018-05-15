@@ -56,7 +56,11 @@ public class Repository {
             item.setCreated(time);
             action = "CREATED";
         }
-        ItemType itemType = em.getReference(ItemType.class, Integer.parseInt(json.get("itemTypeId").toString()));
+
+        TypedQuery<ItemType> itquery = em.createNamedQuery(ItemType.FIND_BY_KEY, ItemType.class);
+        itquery.setParameter(ItemType.PARAM_KEY, (String)json.get("type"));
+        ItemType itemType = itquery.getSingleResult();
+
         item.setKey(key);
         item.setItemType(itemType);
         item.setDescription((String)json.get("description"));
@@ -411,6 +415,7 @@ public class Repository {
     public void createItemType(JSONObject json) throws IOException {
         ZonedDateTime time = ZonedDateTime.now();
         ItemType itemType = new ItemType();
+        itemType.setKey((String)json.get("key"));
         itemType.setDescription((String)json.get("description"));
         itemType.setName((String)json.get("name"));
         itemType.setCustom((Boolean)json.get("custom"));

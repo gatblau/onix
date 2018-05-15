@@ -25,7 +25,7 @@ def createOrUpdateItem(data):
     payload = {
         "name": name,
         "description": description,
-        "itemTypeId": type,
+        "type": type,
         "meta": meta,
         "tag": tag,
         "status": status,
@@ -68,7 +68,7 @@ def main():
         "name": {"required": True, "type": "str"},
         "description": {"required": False, "type": "str", "default": ""},
         "status": {"required": False, "type": "int","default": 0},
-        "type": {"required": True, "type": "int"},
+        "type": {"required": True, "type": "str"},
         "meta": {"required": False, "type": "str", "default": "{}"},
         "tag": {"required": False, "type": "str", "default": ""},
         "dimensions": {"required": False, "type": "str", "default": "{}"}

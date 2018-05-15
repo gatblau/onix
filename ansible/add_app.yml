@@ -6,7 +6,7 @@
     key: "WEB-SERVICE-ONIX-WAPI"
     name: "ONIX Web Service API"
     description: "Onix Web Service API"
-    type: 5 # web-service
+    type: "WEB-SERVICE"
     meta: {
     }
     status: 1
@@ -22,7 +22,7 @@
     key: "DATA-SERVICE-ONIX-DB"
     name: "ONIX Data Service"
     description: "Onix Data Service"
-    type: 6 # data-service
+    type: "DATA-SERVICE"
     meta: {
     }
     status: 1
@@ -38,7 +38,7 @@
     key: "APP-ONIX-CMDB"
     name: "ONIX CMDB Application"
     description: "Ansible friendly configuration management database."
-    type: 4 # application
+    type: "APPLICATION"
     meta: {
     }
     status: 1
