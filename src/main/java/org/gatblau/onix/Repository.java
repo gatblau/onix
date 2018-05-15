@@ -69,15 +69,37 @@ public class Repository {
         em.persist(item);
 
         LinkedHashMap<String, String> dims =  (LinkedHashMap<String, String>)json.get("dimensions");
-        if (dims != null && action.equals("CREATED")) {
-            Iterator<Map.Entry<String, String>> iterator = dims.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<String, String> entry = iterator.next();
-                Dimension d = new Dimension();
-                d.setItem(item);
-                d.setKey((String)entry.getKey());
-                d.setValue((String)entry.getValue());
-                em.persist(d);
+        if (dims != null) {
+            if (action.equals("CREATED")) {
+                Iterator<Map.Entry<String, String>> iterator = dims.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    Map.Entry<String, String> entry = iterator.next();
+                    Dimension d = new Dimension();
+                    d.setItem(item);
+                    d.setKey((String) entry.getKey());
+                    d.setValue((String) entry.getValue());
+                    em.persist(d);
+                }
+            }
+            if (action.equals("UPDATED")) {
+                Iterator<Map.Entry<String, String>> iterator = dims.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    Map.Entry<String, String> entry = iterator.next();
+                    TypedQuery<Dimension> dimQuery = em.createNamedQuery(Dimension.FIND_BY_KEY, Dimension.class);
+                    dimQuery.setParameter(Dimension.PARAM_KEY, entry.getKey());
+                    Dimension d;
+                    try {
+                        d = dimQuery.getSingleResult();
+                    }
+                    catch (NoResultException nre) {
+                        // if the dimension does not exist, then creates one
+                        d = new Dimension();
+                    }
+                    d.setKey(entry.getKey());
+                    d.setValue(entry.getValue());
+                    d.setItem(item);
+                    em.persist(d);
+                }
             }
         }
         return action;

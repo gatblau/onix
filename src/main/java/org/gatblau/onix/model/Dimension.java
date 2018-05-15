@@ -7,12 +7,20 @@ import java.io.Serializable;
     @NamedQuery(
         name = "dimension.deleteAll",
         query = "DELETE FROM Dimension "
+    ),
+    @NamedQuery(
+        name = "dimension.findByKey",
+        query = "SELECT d " +
+                "FROM Dimension d " +
+                "WHERE d.key = :key "
     )
 })
 @Entity
 public class Dimension implements Serializable {
     private static final long serialVersionUID = 1L;
     public static final String DELETE_ALL = "dimension.deleteAll";
+    public static final String FIND_BY_KEY = "dimension.findByKey";
+    public static final String PARAM_KEY = "key";
 
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
