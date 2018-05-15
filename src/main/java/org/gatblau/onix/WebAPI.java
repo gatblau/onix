@@ -82,6 +82,16 @@ public class WebAPI {
     }
 
     @ApiOperation(
+            value = "Deletes an existing configuration item.",
+            notes = "Use this operation to remove a configuration item after it has been decommisioned.")
+    @RequestMapping(path = "/item/{key}", method = RequestMethod.DELETE)
+    public void deleteItem(
+            @PathVariable("key") String key
+    ) throws InterruptedException {
+        data.deleteItem(key);
+    }
+
+    @ApiOperation(
         value = "Deletes a configuration item type.",
         notes = "")
     @RequestMapping(path = "/itemtype", method = RequestMethod.DELETE)

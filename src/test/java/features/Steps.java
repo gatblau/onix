@@ -3,11 +3,14 @@ package features;
 import cucumber.api.PendingException;
 import cucumber.api.java.en.And;
 import cucumber.api.java.en.Given;
+import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import org.gatblau.onix.Info;
 import org.gatblau.onix.Result;
 import org.gatblau.onix.data.ItemData;
 import org.gatblau.onix.data.ItemList;
+import org.gatblau.onix.model.Item;
+import org.springframework.boot.autoconfigure.sendgrid.SendGridAutoConfiguration;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -49,12 +52,12 @@ public class Steps extends BaseTest {
 
     @Given("^the item URL search by key is known$")
     public void theItemURLSearchByKeyIsKnown() throws Throwable {
-        util.put(Key.ITEM_URL, String.format("%sitem/{key}", baseUrl));
+        util.put(Key.ENDPOINT_URI, String.format("%sitem/{key}", baseUrl));
     }
 
     @Given("^the item URL search with query parameters is known$")
     public void theItemURLSearchWithQueryParametersIsKnown() throws Throwable {
-        util.put(Key.ITEM_URL, String.format("%sitem", baseUrl));
+        util.put(Key.ENDPOINT_URI, String.format("%sitem", baseUrl));
     }
 
     @And("^the response code is (\\d+)$")
@@ -88,13 +91,13 @@ public class Steps extends BaseTest {
 
     @And("^the clear cmdb URL of the service is known$")
     public void theClearCMDBURLOfTheServiceIsKnown() throws Throwable {
-        util.put(Key.CLEAR_URL, String.format("%s/clear", baseUrl));
+        util.put(Key.ENDPOINT_URI, String.format("%s/clear", baseUrl));
     }
 
     @And("^a clear cmdb request to the service is done$")
     public void aClearCMDBRequestToTheServiceIsDone() throws Throwable {
         try {
-            client.delete((String) util.get(CLEAR_URL));
+            client.delete((String) util.get(ENDPOINT_URI));
             util.remove(EXCEPTION);
         }
         catch (Exception ex) {
@@ -140,18 +143,23 @@ public class Steps extends BaseTest {
 
     @Given("^the item type URL of the service is known$")
     public void theItemTypeURLOfTheServiceIsKnown() throws Throwable {
-        util.put(ITEM_TYPE_URL, String.format("%s/itemtype/", baseUrl));
+        util.put(ENDPOINT_URI, String.format("%s/itemtype", baseUrl));
     }
 
     @When("^a DELETE HTTP request is done$")
     public void aDELETEHTTPRequestIsDone() throws Throwable {
         try {
-            client.delete((String) util.get(ITEM_TYPE_URL));
+            client.delete((String) util.get(ENDPOINT_URI));
             util.remove(EXCEPTION);
         }
         catch (Exception ex) {
             util.put(EXCEPTION, ex);
         }
+    }
+
+    @When("^a DELETE HTTP request with a key is done$")
+    public void aDELETEHTTPRequestWithAKeyIsDone() throws Throwable {
+        client.delete((String) util.get(ENDPOINT_URI), (String)util.get(ITEM_KEY));
     }
 
     @Given("^the link URL of the service is known$")
@@ -212,7 +220,8 @@ public class Steps extends BaseTest {
 
     @Given("^the item exists in the database$")
     public void theItemExistsInTheDatabase() throws Throwable {
-        putItem("item_one", "payload/update_item_payload.json");
+        util.put(ITEM_KEY, ITEM_ONE_KEY);
+        putItem(util.get(ITEM_KEY), "payload/update_item_payload.json");
     }
 
     @When("^a GET HTTP request to the Item uri is done$")
@@ -220,7 +229,7 @@ public class Steps extends BaseTest {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
         ResponseEntity<ItemData> result = client.exchange(
-                (String)util.get(ITEM_URL),
+                (String)util.get(ENDPOINT_URI),
                 HttpMethod.GET,
                 new HttpEntity<>(null, headers),
                 ItemData.class,
@@ -229,7 +238,7 @@ public class Steps extends BaseTest {
     }
 
     private void putItem(String itemKey, String filename) {
-        util.put(Key.PAYLOAD, util.getFile(filename));
+        util.put(PAYLOAD, util.getFile(filename));
         String url = String.format("%s/item/{key}", baseUrl);
         Map<String, Object> vars = new HashMap<>();
         vars.put("key", itemKey);
@@ -256,7 +265,7 @@ public class Steps extends BaseTest {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
 
         StringBuilder uri = new StringBuilder();
-        uri.append((String)util.get(ITEM_URL));
+        uri.append((String)util.get(ENDPOINT_URI));
 
         if (util.containsKey(CONGIG_ITEM_TYPE_ID) || util.containsKey(CONFIG_ITEM_TAG) || util.containsKey(CONFIG_ITEM_UPDATED_FROM)) {
             uri.append("?");

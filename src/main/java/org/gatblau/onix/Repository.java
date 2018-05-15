@@ -373,4 +373,15 @@ public class Repository {
         TypedQuery<ItemType> itemTypesQuery = em.createNamedQuery(ItemType.FIND_ALL, ItemType.class);
         return itemTypesQuery.getResultList();
     }
+
+    @Transactional
+    public void deleteItem(String key) {
+        TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
+        query.setParameter(Item.PARAM_KEY, key);
+        Item item = query.getSingleResult();
+        for (Dimension dim : item.getDimensions()){
+            em.remove(dim);
+        }
+        em.remove(item);
+    }
 }

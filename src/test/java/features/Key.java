@@ -16,4 +16,6 @@ public class Key {
     public static final String CONFIG_ITEM_UPDATED_FROM = "config_item_updated_from";
     public static final String CONFIG_ITEM_UPDATED_TO = "config_item_updated_to";
     public static final String LINK_KEY = "link_key";
+    public static final String ENDPOINT_URI = "endpoint_uri";
+    public static final String ITEM_KEY = "item_key";
 }
