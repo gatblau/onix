@@ -331,4 +331,23 @@ public class Steps extends BaseTest {
     public void aPUTHTTPRequestWithAnUpdatedJSONPayloadIsDone() throws Throwable {
         putItem(ITEM_ONE_KEY, "payload/update_item_payload.json");
     }
+
+    @Given("^a json payload with new item type information exists$")
+    public void aJsonPayloadWithNewItemTypeInformationExists() throws Throwable {
+        util.put(PAYLOAD, util.getFile("payload/create_item_type_payload.json"));
+    }
+
+    @When("^a POST HTTP request with a JSON payload is done$")
+    public void aPOSTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
+        String url = util.get(ENDPOINT_URI);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.POST, getEntity(PAYLOAD), Result.class);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
 }
