@@ -1,6 +1,4 @@
 {
-  "key": "TEST_TYPE",
   "name": "Test Item Type",
-  "description": "This item type is for testing purposes only.",
-  "custom": true
+  "description": "This item type is for testing purposes only."
 }

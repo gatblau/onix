@@ -1,5 +1,6 @@
 package org.gatblau.onix;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.gatblau.onix.data.ItemData;
 import org.gatblau.onix.data.LinkData;
@@ -42,39 +43,97 @@ public class Repository {
     }
 
     @Transactional
-    public String createOrUpdateItem(String key, JSONObject json) throws IOException {
-        String action = "UPDATED";
+    public Result createOrUpdateItem(String key, JSONObject json) throws IOException {
+        Result result = new Result();
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
         query.setParameter(Item.PARAM_KEY, key);
         Item item = null;
         ZonedDateTime time = ZonedDateTime.now();
+
+        ItemType itemType = getItemType((String)json.get("type"));
+
         try {
             item = query.getSingleResult();
+
+            if (!itemType.getKey().equals(item.getItemType().getKey())) {
+                item.setItemType(itemType);
+                result.setChanged(true);
+            }
+
+            String value = (String)json.get("description");
+
+            if (!item.getDescription().equals(value)) {
+                item.setDescription(value);
+                result.setChanged(true);
+            }
+
+            value = (String)json.get("tag");
+            if (!item.getTag().equals(value)) {
+                item.setTag(value);
+                result.setChanged(true);
+            }
+
+            value = (String)json.get("name");
+            if (!item.getName().equals(value)) {
+                item.setName(value);
+                result.setChanged(true);
+            }
+
+            Short valueShort = Short.parseShort(json.get("status").toString());
+            if (!item.getStatus().equals(valueShort)) {
+                item.setStatus(valueShort);
+                result.setChanged(true);
+            }
+
+            JsonNode node = mapper.valueToTree(json.get("meta"));
+            if (!item.getMeta().equals(node)) {
+                item.setMeta(node);
+                result.setChanged(true);
+            }
         }
         catch (NoResultException e) {
             item = new Item();
+            item.setKey(key);
             item.setCreated(time);
-            action = "CREATED";
+            item.setItemType(itemType);
+            item.setName((String)json.get("name"));
+            item.setDescription((String)json.get("description"));
+            item.setTag((String)json.get("tag"));
+            item.setMeta(mapper.valueToTree(json.get("meta")));
+            item.setStatus(Short.parseShort(json.get("status").toString()));
+
+            result.setChanged(true);
+            result.setMessage(String.format("Item %s has been CREATED.", key));
+            result.setOperation("C");
+        }
+        catch (Exception ex) {
+            result.setChanged(false);
+            result.setMessage(String.format("Failed to create or update Item %s: %s.", key, ex.getMessage()));
+            return result;
         }
 
-        TypedQuery<ItemType> itquery = em.createNamedQuery(ItemType.FIND_BY_KEY, ItemType.class);
-        itquery.setParameter(ItemType.PARAM_KEY, (String)json.get("type"));
-        ItemType itemType = itquery.getSingleResult();
-
-        item.setKey(key);
-        item.setItemType(itemType);
-        item.setDescription((String)json.get("description"));
-        item.setTag((String)json.get("tag"));
-        item.setName((String)json.get("name"));
-        item.setStatus(Short.parseShort(json.get("status").toString()));
-        item.setUpdated(time);
-        item.setMeta(mapper.valueToTree(json.get("meta")));
-
-        em.persist(item);
+        if (result.isChanged()) {
+            if (result.getOperation() == null) {
+                result.setMessage(String.format("Item %s has been UPDATED.", key));
+                result.setOperation("U");
+            }
+            item.setUpdated(time);
+            try {
+                em.persist(item);
+            }
+            catch (Exception ex) {
+                result.setChanged(false);
+                result.setMessage(String.format("Failed to create or update Item %s: %s.", key, ex.getMessage()));
+                return result;
+            }
+        }
+        else {
+            result.setMessage(String.format("Item %s has not changed and does not need updating.", key));
+        }
 
         LinkedHashMap<String, String> dims =  (LinkedHashMap<String, String>)json.get("dimensions");
         if (dims != null) {
-            if (action.equals("CREATED")) {
+            if (result.getOperation() != null && result.getOperation().equals("C")) {
                 Iterator<Map.Entry<String, String>> iterator = dims.entrySet().iterator();
                 while (iterator.hasNext()) {
                     Map.Entry<String, String> entry = iterator.next();
@@ -85,39 +144,65 @@ public class Repository {
                     em.persist(d);
                 }
             }
-            if (action.equals("UPDATED")) {
+            if (result.getOperation() == null || result.getOperation().equals("U")) {
                 Iterator<Map.Entry<String, String>> iterator = dims.entrySet().iterator();
                 while (iterator.hasNext()) {
+                    boolean changed = false;
                     Map.Entry<String, String> entry = iterator.next();
                     TypedQuery<Dimension> dimQuery = em.createNamedQuery(Dimension.FIND_BY_KEY, Dimension.class);
                     dimQuery.setParameter(Dimension.PARAM_KEY, entry.getKey());
+                    dimQuery.setParameter(Dimension.PARAM_ITEM_KEY, item.getKey());
                     Dimension d;
                     try {
-                        d = dimQuery.getSingleResult();
+                          d = dimQuery.getSingleResult();
+                          if (!d.getValue().equals(entry.getValue())) {
+                              d.setValue(entry.getValue());
+                              result.setChanged(true);
+                              result.setOperation("U");
+                          }
                     }
                     catch (NoResultException nre) {
                         // if the dimension does not exist, then creates one
                         d = new Dimension();
+                        d.setKey(entry.getKey());
+                        d.setValue(entry.getValue());
+                        d.setItem(item);
+                        result.setChanged(true);
+                        result.setOperation("C");
                     }
-                    d.setKey(entry.getKey());
-                    d.setValue(entry.getValue());
-                    d.setItem(item);
-                    em.persist(d);
+
+                    if (result.isChanged()) {
+                        em.persist(d);
+                        String m;
+                        if (result.getOperation().equals("C")) {
+                            m = String.format("Dimension %s was created.", entry.getKey());
+                        }
+                        else {
+                            m = String.format("Dimension %s was updated.", entry.getKey());
+                        }
+                        result.setMessage(String.format("%s %s", result.getMessage(), m));
+                    }
                 }
             }
         }
-        return action;
+        return result;
+    }
+
+    private ItemType getItemType(String type) {
+        TypedQuery<ItemType> itquery = em.createNamedQuery(ItemType.FIND_BY_KEY, ItemType.class);
+        itquery.setParameter(ItemType.PARAM_KEY, type);
+        return itquery.getSingleResult();
     }
 
     /***
      * Find all nodes of a particular type and with a specific tags.
-     * @param itemTypeId
+     * @param itemTypeKey
      * @param tag the tags used to filter the result of the search.
      * @return
      */
-    public List<Item> findItemsByTypeAndTag(long itemTypeId, String tag) {
+    public List<Item> findItemsByTypeAndTag(String itemTypeKey, String tag) {
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TYPE_AND_TAG, Item.class);
-        query.setParameter(Item.PARAM_ITEM_TYPE_ID, itemTypeId);
+        query.setParameter(Item.PARAM_ITEM_TYPE_KEY, itemTypeKey);
         query.setParameter(Item.PARAM_TAG, "%" + tag + "%");
         return query.getResultList();
     }
@@ -143,21 +228,23 @@ public class Repository {
     }
 
     @Transactional
-    public String createOrUpdateLink(String key, JSONObject json) throws IOException {
+    public Result createOrUpdateLink(String key, JSONObject json) throws IOException {
         String fromItemKey = (String)json.get("start_item_key");
         String toItemKey = (String)json.get("end_item_key");
-        String action = "UPDATED";
+        Result result = new Result();
         TypedQuery<Link> query = em.createNamedQuery(Link.FIND_BY_KEY, Link.class);
         query.setParameter(Link.KEY_LINK, key);
         Link link = null;
         ZonedDateTime time = ZonedDateTime.now();
         try {
             link = query.getSingleResult();
+            result.setChanged(true);
+            result.setMessage(String.format("Item %s has been UPDATED.", key));
+            result.setOperation("U");
         }
         catch (NoResultException e) {
             link = new Link();
             link.setCreated(time);
-            action = "CREATED";
 
             TypedQuery<Item> startItemQuery = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
             startItemQuery.setParameter(Item.PARAM_KEY, fromItemKey);
@@ -183,6 +270,10 @@ public class Repository {
             link.setEndItem(endItem);
 
             link.setKey(key);
+
+            result.setChanged(true);
+            result.setMessage(String.format("Item %s has been CREATED.", key));
+            result.setOperation("C");
         }
         link.setDescription((String)json.get("description"));
         link.setMeta(mapper.valueToTree(json.get("meta")));
@@ -191,9 +282,15 @@ public class Repository {
 
         link.setUpdated(time);
 
-        em.persist(link);
-
-        return action;
+        try {
+            em.persist(link);
+        }
+        catch (Exception ex) {
+            result.setChanged(false);
+            result.setMessage(String.format("Failed to create or update link %s: %s.", key, ex.getMessage()));
+            result.setOperation("U");
+        }
+        return result;
     }
 
     @Transactional
@@ -290,10 +387,10 @@ public class Repository {
         return linksData;
     }
 
-    public List<ItemData> getItemsByType(Integer typeId, Integer top) {
+    public List<ItemData> getItemsByType(String itemTypeKey, Integer top) {
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TYPE, Item.class);
         if (top != null) query.setMaxResults(top);
-        query.setParameter(Item.PARAM_ITEM_TYPE_ID, typeId);
+        query.setParameter(Item.PARAM_ITEM_TYPE_KEY, itemTypeKey);
         List<ItemData> data = mapItemData(query.getResultList());
         return data;
     }
@@ -315,28 +412,29 @@ public class Repository {
         return data;
     }
 
-    public List<ItemData> getItemsByTypeAndTag(Integer typeId, String tag, Integer top) {
+    public List<ItemData> getItemsByTypeAndTag(String itemTypeKey, String tag, Integer top) {
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TYPE_AND_TAG, Item.class);
         if (top != null) query.setMaxResults(top);
-        query.setParameter(Item.PARAM_ITEM_TYPE_ID, typeId);
+        query.setParameter(Item.PARAM_ITEM_TYPE_KEY, itemTypeKey);
         query.setParameter(Item.PARAM_TAG, "%" + tag + "%");
         List<ItemData> data = mapItemData(query.getResultList());
         return data;
     }
 
-    public List<ItemData> getItemsByTypeAndDate(Integer typeId, ZonedDateTime from, ZonedDateTime to, Integer top) {
+    public List<ItemData> getItemsByTypeAndDate(String itemTypeKey, ZonedDateTime from, ZonedDateTime to, Integer top) {
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TYPE_AND_DATE, Item.class);
         if (top != null) query.setMaxResults(top);
+        query.setParameter(Item.PARAM_ITEM_TYPE_KEY, itemTypeKey);
         query.setParameter(Item.PARAM_FROM_DATE, from);
         query.setParameter(Item.PARAM_TO_DATE, to);
         List<ItemData> data = mapItemData(query.getResultList());
         return data;
     }
 
-    public List<ItemData> getItemsByTypeTagAndDate(Integer typeId, String tag, ZonedDateTime from, ZonedDateTime to, Integer top) {
+    public List<ItemData> getItemsByTypeTagAndDate(String itemTypeKey, String tag, ZonedDateTime from, ZonedDateTime to, Integer top) {
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TYPE_TAG_AND_DATE, Item.class);
         if (top != null) query.setMaxResults(top);
-        query.setParameter(Item.PARAM_ITEM_TYPE_ID, typeId);
+        query.setParameter(Item.PARAM_ITEM_TYPE_KEY, itemTypeKey);
         query.setParameter(Item.PARAM_TAG, "%" + tag + "%");
         query.setParameter(Item.PARAM_FROM_DATE, from);
         query.setParameter(Item.PARAM_TO_DATE, to);
@@ -401,24 +499,127 @@ public class Repository {
     }
 
     @Transactional
-    public void deleteItem(String key) {
+    public Result deleteItem(String key) {
+        Result result = new Result();
+        result.setOperation("D");
+
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
         query.setParameter(Item.PARAM_KEY, key);
         Item item = query.getSingleResult();
-        for (Dimension dim : item.getDimensions()){
-            em.remove(dim);
+
+        // precondition: cant delete item if links exist
+        if (getLinksData(item, false).size() > 0) {
+            result.setChanged(false);
+            result.setMessage(String.format("Cannot delete Item %s because it is linked to other items.", key));
+            return result;
         }
-        em.remove(item);
+        if (getLinksData(item, true).size() > 0) {
+            result.setChanged(false);
+            result.setMessage(String.format("Cannot delete Item %s because it is linked to other items.", key));
+            return result;
+        }
+
+        try {
+            for (Dimension dim : item.getDimensions()) {
+                em.remove(dim);
+            }
+            em.remove(item);
+            result.setChanged(true);
+            result.setMessage(String.format("Item %s has been deleted.", key));
+        }
+        catch (Exception ex) {
+            result.setChanged(false);
+            result.setMessage(String.format("Failed to delete Item %s: %s", key, ex.getMessage()));
+        }
+        return result;
     }
 
     @Transactional
-    public void createItemType(JSONObject json) throws IOException {
+    public Result createOrUpdateItemType(String key, JSONObject json) throws IOException {
+        Result result = new Result();
         ZonedDateTime time = ZonedDateTime.now();
-        ItemType itemType = new ItemType();
-        itemType.setKey((String)json.get("key"));
-        itemType.setDescription((String)json.get("description"));
-        itemType.setName((String)json.get("name"));
-        itemType.setCustom((Boolean)json.get("custom"));
-        em.persist(itemType);
+        TypedQuery<ItemType> itquery = em.createNamedQuery(ItemType.FIND_BY_KEY, ItemType.class);
+        itquery.setParameter(ItemType.PARAM_KEY, key);
+
+        result.setChanged(false);
+
+        ItemType itemType;
+        try {
+            itemType = itquery.getSingleResult();
+            String value = (String)json.get("description");
+
+            if (!itemType.getDescription().equals(value)) {
+                itemType.setDescription((String)json.get("description"));
+                result.setChanged(true);
+            }
+
+            value = (String)json.get("name");
+            if (!itemType.getName().equals(value)) {
+                itemType.setName(value);
+                result.setChanged(true);
+            }
+
+            itemType.setCustom(true);
+            itemType.setUpdated(time);
+
+            if (result.isChanged()) {
+                result.setMessage(String.format("Item Type %s has been UPDATED.", key));
+            }
+            else {
+                result.setMessage(String.format("Item Type %s already exists and does not require any updates.", key));
+            }
+
+            result.setOperation("U");
+        }
+        catch (NoResultException nre) {
+            itemType = new ItemType();
+            itemType.setKey(key);
+            itemType.setCreated(time);
+            result.setChanged(true);
+            result.setMessage(String.format("Item Type %s has been CREATED.", key));
+            result.setOperation("C");
+        }
+
+        if (result.isChanged()) {
+            try {
+                em.persist(itemType);
+            }
+            catch (Exception ex) {
+                result.setChanged(false);
+                result.setMessage(String.format("Failed to create or update Item Type %s: %s.", key, ex.getMessage()));
+            }
+        }
+
+        return result;
+    }
+
+    @Transactional
+    public Result deleteItemType(String key) {
+        Result result = new Result();
+        result.setOperation("D");
+        // precondition: cant delete type if items exist of the type
+        if (getItemsByType(key, 1).size() > 0) {
+            result.setChanged(false);
+            result.setMessage(String.format("Cannot delete Item Type %s because there are items still using it.", key));
+            return result;
+        }
+        TypedQuery<ItemType> itQuery = em.createNamedQuery(ItemType.FIND_BY_KEY, ItemType.class);
+        itQuery.setParameter(ItemType.PARAM_KEY, key);
+        ItemType itemType;
+        try {
+            itemType = itQuery.getSingleResult();
+            em.remove(itemType);
+            result.setChanged(true);
+            result.setMessage(String.format("Item Type %s has been deleted.", key));
+        }
+        catch (NoResultException nre) {
+            result.setChanged(false);
+            result.setMessage(String.format("Item Type %s not found.", key));
+        }
+        catch (Exception ex) {
+            result.setChanged(false);
+            result.setMessage(String.format("Failed to delete Item Type %s: %s.", key, ex.getMessage()));
+        }
+        return result;
     }
 }

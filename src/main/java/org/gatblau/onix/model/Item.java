@@ -32,7 +32,7 @@ import java.util.List;
         name = "item.findByType",
         query =   "SELECT i "
                 + "FROM Item i "
-                + "WHERE i.itemType.id = :itemTypeId "
+                + "WHERE i.itemType.key = :itemTypeKey "
                 + "ORDER BY i.updated DESC "
     ),
     @NamedQuery(
@@ -47,7 +47,7 @@ import java.util.List;
         name = "item.findByTypeAndTag",
         query =   "SELECT i "
                 + "FROM Item i "
-                + "WHERE i.itemType.id = :itemTypeId "
+                + "WHERE i.itemType.key = :itemTypeKey "
                 + "AND i.tag LIKE :tag "
                 + "ORDER BY i.updated DESC "
     ),
@@ -55,7 +55,7 @@ import java.util.List;
         name = "item.findByTypeAndDate",
         query =   "SELECT i "
                 + "FROM Item i "
-                + "WHERE i.itemType.id = :itemTypeId "
+                + "WHERE i.itemType.key = :itemTypeKey "
                 + "AND i.updated >= :fromDate "
                 + "AND i.updated <= :toDate "
                 + "ORDER BY i.updated DESC "
@@ -64,7 +64,7 @@ import java.util.List;
         name = "item.findByTypeTagAndDate",
         query =   "SELECT i "
             + "FROM Item i "
-            + "WHERE i.itemType.id = :itemTypeId "
+            + "WHERE i.itemType.key = :itemTypeKey "
             + "AND i.tag LIKE :tag "
             + "AND i.updated >= :fromDate "
             + "AND i.updated <= :toDate "
@@ -89,7 +89,7 @@ public class Item implements Serializable {
     public static final String FIND_BY_TYPE_TAG_AND_DATE = "item.findByTypeTagAndDate";
     public static final String DELETE_ALL = "item.deleteAll";
 
-    public static final String PARAM_ITEM_TYPE_ID = "itemTypeId";
+    public static final String PARAM_ITEM_TYPE_KEY = "itemTypeKey";
     public static final String PARAM_TAG = "tag";
     public static final String PARAM_KEY = "key";
     public static final String PARAM_FROM_DATE = "fromDate";

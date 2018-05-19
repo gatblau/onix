@@ -33,6 +33,7 @@
       WBS: "EU-00023.100002.984"
       PROJECT: "TheOnixProject"
       LOCATION: "IRELAND"
+    state: absent
 
 - name: Creates a configuration item for Host B
   onix_item:

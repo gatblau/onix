@@ -45,8 +45,7 @@ public class WebAPI {
     public ResponseEntity<Result> createOrUpdateItem(
             @PathVariable("key") String key,
             @RequestBody JSONObject payload) throws InterruptedException, IOException {
-        String action = data.createOrUpdateItem(key, payload);
-        return ResponseEntity.ok(new Result(action));
+        return ResponseEntity.ok(data.createOrUpdateItem(key, payload));
     }
 
     @ApiOperation(
@@ -59,8 +58,7 @@ public class WebAPI {
     public ResponseEntity<Result> createOrUpdateLink(
             @PathVariable("key") String key,
             @RequestBody JSONObject payload) throws InterruptedException, IOException {
-        String action = data.createOrUpdateLink(key, payload);
-        return ResponseEntity.ok(new Result(action));
+        return ResponseEntity.ok(data.createOrUpdateLink(key, payload));
     }
 
     @ApiOperation(
@@ -85,10 +83,10 @@ public class WebAPI {
             value = "Deletes an existing configuration item.",
             notes = "Use this operation to remove a configuration item after it has been decommisioned.")
     @RequestMapping(path = "/item/{key}", method = RequestMethod.DELETE)
-    public void deleteItem(
+    public ResponseEntity<Result> deleteItem(
             @PathVariable("key") String key
     ) throws InterruptedException {
-        data.deleteItem(key);
+        return ResponseEntity.ok(data.deleteItem(key));
     }
 
     @ApiOperation(
@@ -100,16 +98,27 @@ public class WebAPI {
     }
 
     @ApiOperation(
-            value = "Creates a new configuration item type.",
-            notes = "")
-    @RequestMapping(path = "/itemtype", method = RequestMethod.POST)
-    public void createItemType(@RequestBody JSONObject payload) throws InterruptedException, IOException {
-        data.createItemType(payload);
+        value = "Deletes a configuration item type.",
+        notes = "")
+    @RequestMapping(path = "/itemtype/{key}", method = RequestMethod.DELETE)
+    public ResponseEntity<Result> deleteItemType(@PathVariable("key") String key) {
+        return ResponseEntity.ok(data.deleteItemType(key));
     }
 
     @ApiOperation(
-            value = "Get a list of available configuration item types.",
-            notes = "Only item types marked as custom can be deleted.")
+        value = "Creates a new configuration item type.",
+        notes = "")
+    @RequestMapping(path = "/itemtype/{key}", method = RequestMethod.PUT)
+    public ResponseEntity<Result> createItemType(
+            @PathVariable("key") String key,
+            @RequestBody JSONObject payload
+        ) throws InterruptedException, IOException {
+        return ResponseEntity.ok(data.createOrUpdateItemType(key, payload));
+    }
+
+    @ApiOperation(
+        value = "Get a list of available configuration item types.",
+        notes = "Only item types marked as custom can be deleted.")
     @RequestMapping(path = "/itemtype", method = RequestMethod.GET)
     public ResponseEntity<ItemTypeList> getItemTypes() throws InterruptedException {
         List<ItemType> itemTypes = data.getItemTypes();
@@ -139,7 +148,7 @@ public class WebAPI {
         , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<Wrapper> getItems(
-              @RequestParam(value = "typeId", required = false) Integer typeId
+              @RequestParam(value = "type", required = false) String itemTypeKey
             , @RequestParam(value = "tag", required = false) String tag
             , @RequestParam(value = "from", required = false) String fromDate
             , @RequestParam(value = "to", required = false) String toDate
@@ -156,21 +165,21 @@ public class WebAPI {
         }
 
         List<ItemData> items = null;
-        if (typeId != null && tag == null && fromDate == null && toDate == null) {
-            items = data.getItemsByType(typeId, top);
-        } else if (typeId == null && tag != null && fromDate == null && toDate == null) {
+        if (itemTypeKey != null && tag == null && fromDate == null && toDate == null) {
+            items = data.getItemsByType(itemTypeKey, top);
+        } else if (itemTypeKey == null && tag != null && fromDate == null && toDate == null) {
             items = data.getItemsByTag(tag, top);
-        } else if (typeId == null && tag == null && fromDate != null && toDate == null) {
+        } else if (itemTypeKey == null && tag == null && fromDate != null && toDate == null) {
             to = ZonedDateTime.now();
             items = data.getItemsByDate(from, to, top);
-        } else if (typeId == null && tag == null && fromDate != null && toDate != null) {
+        } else if (itemTypeKey == null && tag == null && fromDate != null && toDate != null) {
             items = data.getItemsByDate(from, to, top);
-        } else if (typeId != null && tag != null && fromDate == null && toDate == null) {
-            items = data.getItemsByTypeAndTag(typeId, tag, top);
-        } else if (typeId != null && tag == null && fromDate != null && toDate != null) {
-            items = data.getItemsByTypeAndDate(typeId, from, to, top);
-        } else if (typeId != null && tag != null && fromDate != null && toDate != null) {
-            items = data.getItemsByTypeTagAndDate(typeId, tag, from, to, top);
+        } else if (itemTypeKey != null && tag != null && fromDate == null && toDate == null) {
+            items = data.getItemsByTypeAndTag(itemTypeKey, tag, top);
+        } else if (itemTypeKey != null && tag == null && fromDate != null && toDate != null) {
+            items = data.getItemsByTypeAndDate(itemTypeKey, from, to, top);
+        } else if (itemTypeKey != null && tag != null && fromDate != null && toDate != null) {
+            items = data.getItemsByTypeTagAndDate(itemTypeKey, tag, from, to, top);
         }  else {
             items = data.getAllByDateDesc(top);
         }

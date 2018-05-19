@@ -12,7 +12,8 @@ import java.io.Serializable;
         name = "dimension.findByKey",
         query = "SELECT d " +
                 "FROM Dimension d " +
-                "WHERE d.key = :key "
+                "WHERE d.key = :key " +
+                "AND d.item.key = :itemKey "
     )
 })
 @Entity
@@ -21,6 +22,7 @@ public class Dimension implements Serializable {
     public static final String DELETE_ALL = "dimension.deleteAll";
     public static final String FIND_BY_KEY = "dimension.findByKey";
     public static final String PARAM_KEY = "key";
+    public static final String PARAM_ITEM_KEY = "itemKey";
 
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)

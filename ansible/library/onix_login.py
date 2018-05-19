@@ -34,8 +34,6 @@ def login(data):
     # reads the returned stream
     result = json.loads(stream.read())
 
-    has_changed = True
-
     return (has_changed, result, auth_uri, payload)
 
 # module entry point

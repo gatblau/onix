@@ -22,7 +22,10 @@ BEGIN
             key CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
             name CHARACTER VARYING(200) COLLATE pg_catalog."default",
             description CHARACTER VARYING(500) COLLATE pg_catalog."default",
-            custom boolean DEFAULT FALSE,
+            custom boolean DEFAULT TRUE,
+            version bigint NOT NULL DEFAULT 1,
+            created timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
+            updated timestamp(6) with time zone,
             CONSTRAINT item_type_id_pk PRIMARY KEY (id),
             CONSTRAINT item_type_key_uc UNIQUE (key),
             CONSTRAINT item_type_name_uc UNIQUE (name)
@@ -38,11 +41,7 @@ BEGIN
         INSERT INTO item_type(key, name, description) VALUES ('INVENTORY', 'Ansible Inventory', 'An Ansible inventory.');
         INSERT INTO item_type(key, name, description) VALUES ('HOST-GROUP', 'Host Group', 'An Ansible host group.');
         INSERT INTO item_type(key, name, description) VALUES ('HOST', 'Host', 'An Operating System Host.');
-        INSERT INTO item_type(key, name, description) VALUES ('APPLICATION', 'Applciation', 'A Software Application.');
-        INSERT INTO item_type(key, name, description) VALUES ('WEB-SERVICE', 'Web Service', 'A service that is part of an application.');
-        INSERT INTO item_type(key, name, description) VALUES ('DATA-SERVICE', 'Data Service', 'A service that is part of an application.');
-        INSERT INTO item_type(key, name, description) VALUES ('APPLICATION-RUNTIME', 'Application Runtime Environment', 'A runtime used by an application.');
-        INSERT INTO item_type(key, name, description) VALUES ('DATABASE-SERVER', 'Database Server', 'A database server used by an application.');
+
 	END IF;
 
     ---------------------------------------------------------------------------
@@ -300,7 +299,10 @@ BEGIN
             key CHARACTER VARYING(100) COLLATE pg_catalog."default",
             name CHARACTER VARYING(200) COLLATE pg_catalog."default",
             description CHARACTER VARYING(500) COLLATE pg_catalog."default",
-            custom boolean
+            custom boolean,
+            version bigint,
+            created timestamp(6) with time zone,
+            updated timestamp(6) with time zone
         );
 
         ALTER TABLE item_type_audit
