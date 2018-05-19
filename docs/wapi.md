@@ -9,7 +9,8 @@ This section explains how to use Onix Web API.
 - [Using Swagger](#using-swagger)
 - [Identity and Access Management](#identity-and-access-management)
 - [Getting service information](#getting-service-information)
-- [Creating a configuration item](#creating-a-configuration-item)
+- [Creating or updating a configuration item type](#creating-or-updating-a-configuration-item-type)
+- [Creating or updating a configuration item](#creating-a-configuration-item)
 - [Retrieving a configuration item by key](#retrieving-a-configuration-item-by-key)
 - [Linking two items](#linking-two-items)
 - [Retrieving a link](#retrieving-a-link)
@@ -73,8 +74,32 @@ $ curl \
     -H '${AUTH_HEADER}' \
     'http:localhost:8080'
 ```
+
+<a name="creating-a-configuration-item-type"></a>
+## Creating or updating a configuration item type [(up)](#toc)
+
+| Item  | Value  | 
+|---|---|
+| Method | PUT | 
+| Path | /itemtype/**{item_type_key}**/|
+| Response Content Type | application/json |
+ 
+**NOTE**: this operation is idempotent.
+
+### Sample Payload
+
+The PUT request requires a payload in JSON format as the one shown below.
+Note that the natural key for the configuration item type is not part of the payload but specified in the URI.
+
+```json
+{
+  "name": "Test Item Type",
+  "description": "This item type is for testing purposes only."
+}
+```
+
 <a name="creating-a-configuration-item"></a>
-## Creating a configuration item [(up)](#toc)
+## Creating or updating a configuration item [(up)](#toc)
 
 | Item  | Value  | 
 |---|---|
@@ -82,6 +107,7 @@ $ curl \
 | Path | /item/**{item_key}**/|
 | Response Content Type | application/json |
  
+**NOTE**: this operation is idempotent.
 
 ### Sample Payload
 
@@ -92,7 +118,7 @@ Note that the natural key for the configuration item is not part of the payload 
 {
   "name": "This is the name associated with the configuration item.",
   "description": "This a description of the configuration item.",
-  "itemTypeId": "2",  
+  "type": "HOST",  
   "meta": { 
     "a_custom_key" : "a_custom_value",
     "another_custom_key" : "another_custom_value",  
@@ -119,7 +145,7 @@ The following table describes the fields in the payload and provides some exampl
 |---|---|---|
 | name | The name associated with the configuration item. | "OCP Demo Master 1" |
 | description | A description of the configuration item. | "OpenShift Demo platform first master in zone A."
-| itemTypeId | The unique Id of the configuration item type. It must exist as a valid item type. | "2" |
+| type | The natural key of the configuration item type. It must exist as a valid item type. | "HOST" |
 | meta | Stores any well-formed json object. This is the primary mechanism to store configuration item information. | { "host":"OCP-DEMO-M-01", "region":"Ireland", "provider":"AWS" } |
 | tag | Used for annotating the item for searching. For example, a search can be done by items having the EUROPE tag.| "TEST RELEASE-B EUROPE" |
 | deployed | Indicates if this item has been deployed or is waiting to be deployed. | true/false |

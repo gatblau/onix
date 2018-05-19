@@ -91,7 +91,7 @@ Like Items, Links have to be uniquely identified using natural keys.
 |---|---|---|
 |id | Surrogate key. | bigint |
 |key| Natural key. | ﻿character varying(100)|
-|role| A friendly description of the action performed by the link, for example "connects", "hosts", etc. | ﻿character varying(200) |
+|role| A friendly description of the message performed by the link, for example "connects", "hosts", etc. | ﻿character varying(200) |
 |description| The description of the link. | text |
 |meta| A JSON object of any structure, containing all the specific information for a given link. | json |
 |created| The date and time the link was created. | timestamp(6) with time zone |

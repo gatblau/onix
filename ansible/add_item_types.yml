@@ -1,0 +1,47 @@
+---
+- name: Deletes the Application Item Type
+  onix_item_type:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "APPLICATION"
+    state: absent
+
+- name: Creates the Application Item Type
+  onix_item_type:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "APPLICATION"
+    name: "Software Application"
+    description: "A Software Application."
+
+- name: Creates the Web Service Item Type
+  onix_item_type:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "WEB-SERVICE"
+    name: "Web Service"
+    description: "A web service that is part of an application."
+
+- name: Creates the Data Service Item Type
+  onix_item_type:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "DATA-SERVICE"
+    name: "Data Service"
+    description: "A data service that is part of an application."
+
+- name: Creates the Application Runtime Item Type
+  onix_item_type:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "APPLICATION-RUNTIME"
+    name: "Application Runtime"
+    description: "A runtime used by an application."
+
+- name: Creates the Application Item Type
+  onix_item_type:
+    cmdb_host: "{{ onix_host }}"
+    access_token: "{{ onix_access_token }}"
+    key: "DATABASE-SERVER"
+    name: "Database Server"
+    description: "A database server used by an application."

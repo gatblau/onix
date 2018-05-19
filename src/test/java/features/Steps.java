@@ -1,16 +1,12 @@
 package features;
 
-import cucumber.api.PendingException;
 import cucumber.api.java.en.And;
 import cucumber.api.java.en.Given;
-import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import org.gatblau.onix.Info;
 import org.gatblau.onix.Result;
 import org.gatblau.onix.data.ItemData;
 import org.gatblau.onix.data.ItemList;
-import org.gatblau.onix.model.Item;
-import org.springframework.boot.autoconfigure.sendgrid.SendGridAutoConfiguration;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -123,7 +119,7 @@ public class Steps extends BaseTest {
     @And("^the service responds with action \"([^\"]*)\"$")
     public void theServiceRespondsWithAction(String action) throws Throwable {
         ResponseEntity<Result> response = util.get(RESPONSE);
-        assert (response.getBody().getAction().equals(action));
+        assert (response.getBody().getMessage().equals(action));
     }
 
     @And("^the item exist in the database$")
@@ -143,7 +139,7 @@ public class Steps extends BaseTest {
 
     @Given("^the item type URL of the service is known$")
     public void theItemTypeURLOfTheServiceIsKnown() throws Throwable {
-        util.put(ENDPOINT_URI, String.format("%s/itemtype", baseUrl));
+        util.put(ENDPOINT_URI, String.format("%sitemtype/{key}", baseUrl));
     }
 
     @When("^a DELETE HTTP request is done$")
@@ -337,17 +333,22 @@ public class Steps extends BaseTest {
         util.put(PAYLOAD, util.getFile("payload/create_item_type_payload.json"));
     }
 
-    @When("^a POST HTTP request with a JSON payload is done$")
-    public void aPOSTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
+    @When("^a PUT HTTP request with a JSON payload is done$")
+    public void aPUTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
         String url = util.get(ENDPOINT_URI);
         ResponseEntity<Result> response = null;
         try {
-            response = client.exchange(url, HttpMethod.POST, getEntity(PAYLOAD), Result.class);
+            response = client.exchange(url, HttpMethod.PUT, getEntity(PAYLOAD), Result.class, (String) util.get(KEY));
             util.put(RESPONSE, response);
             util.remove(EXCEPTION);
         }
         catch (Exception ex) {
             util.put(EXCEPTION, ex);
         }
+    }
+
+    @Given("^the item type natural key is known$")
+    public void theItemTypeNaturalKeyIsKnown() throws Throwable {
+        util.put(KEY, "__KEY__");
     }
 }
