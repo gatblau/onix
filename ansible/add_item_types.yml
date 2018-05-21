@@ -1,11 +1,4 @@
 ---
-- name: Deletes the Application Item Type
-  onix_item_type:
-    cmdb_host: "{{ onix_host }}"
-    access_token: "{{ onix_access_token }}"
-    key: "APPLICATION"
-    state: absent
-
 - name: Creates the Application Item Type
   onix_item_type:
     cmdb_host: "{{ onix_host }}"

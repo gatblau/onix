@@ -8,6 +8,7 @@
         username: "onix"
         password: "onix"
 
+    - include: add_item_types.yml
     - include: add_hosts.yml
     - include: add_runtimes.yml
     - include: add_app.yml
