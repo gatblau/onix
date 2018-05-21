@@ -96,11 +96,14 @@ def main():
     else:
         result = createOrUpdateItemType(module.params)
 
-    # exit the module with a result (changed & meta json object)
-    module.exit_json(
-        changed = result['changed'],
-        meta = result
-    )
+    if result['error']:
+        module.fail_json(msg=result['message'], **result)
+    else:
+        # exit the module with a result (changed & meta json object)
+        module.exit_json(
+            changed = result['changed'],
+            meta = result
+        )
 
 if __name__ == '__main__':
     main()

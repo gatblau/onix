@@ -73,15 +73,15 @@ public class WebAPI {
         value = "Deletes a link between two existing configuration items.",
         notes = "Use this operation to delete links between existing items.")
     @RequestMapping(path = "/link/{key}", method = RequestMethod.DELETE)
-    public void deleteLink(
+    public ResponseEntity<Result> deleteLink(
             @PathVariable("key") String key
     ) throws InterruptedException {
-        data.deleteLink(key);
+        return ResponseEntity.ok(data.deleteLink(key));
     }
 
     @ApiOperation(
             value = "Deletes an existing configuration item.",
-            notes = "Use this operation to remove a configuration item after it has been decommisioned.")
+            notes = "Use this operation to remove a configuration item after it has been decommissioned.")
     @RequestMapping(path = "/item/{key}", method = RequestMethod.DELETE)
     public ResponseEntity<Result> deleteItem(
             @PathVariable("key") String key

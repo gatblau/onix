@@ -8,9 +8,11 @@ public class Result implements Serializable {
     private boolean changed;
     private String message;
     private String operation;
+    private boolean error;
 
     public Result() {
         this.changed = false;
+        this.error = false;
     }
 
     public String getMessage() {
@@ -35,5 +37,13 @@ public class Result implements Serializable {
 
     public void setOperation(String operation) {
         this.operation = operation;
+    }
+
+    public boolean isError() {
+        return error;
+    }
+
+    public void setError(boolean error) {
+        this.error = error;
     }
 }

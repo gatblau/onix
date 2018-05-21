@@ -12,8 +12,23 @@ In order to facilitate this, a set of Ansible modules are provided in the [libra
 | [**onix_login**](../ansible/library/onix_login.py)| Connects to an OpenId enabled authentication server and requests an access token to authenticate requests to the Onix RESTful API. This module does not currently support automatic token refreshes after expiration. |
 | [**onix_item**](../ansible/library/onix_item.py)| Creates a new or updates an existing configuration item. |
 | [**onix_link**](../ansible/library/onix_link.py)| Creates a new or updates an existing link between two existing configuration items. |
+| [**onix_item_type**](../ansible/library/onix_item_type.py)| Creates a new or updates an existing configuration item type. |
 
  More modules will be added in the future.
+ 
+## State: Present or Absent
+
+Modules have a "state" property which always default to "present".
+
+If **state: "absent"** is specified, then the item, item type or link will be removed from the database.
+ 
+
+## Idempotency
+
+Modules are idempotent, which means if the module that has created an item/item type/link is run for a second time, changes will not be made to the database.
+
+If however, any of the item/item type/link properties has changed, tan uodated version will be written to the database.
+
  
 ## How to use the Ansible modules
  

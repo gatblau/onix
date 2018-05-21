@@ -38,9 +38,9 @@ BEGIN
         ALTER TABLE item_type
             OWNER to onix;
 
-        INSERT INTO item_type(key, name, description) VALUES ('INVENTORY', 'Ansible Inventory', 'An Ansible inventory.');
-        INSERT INTO item_type(key, name, description) VALUES ('HOST-GROUP', 'Host Group', 'An Ansible host group.');
-        INSERT INTO item_type(key, name, description) VALUES ('HOST', 'Host', 'An Operating System Host.');
+        INSERT INTO item_type(key, name, description, custom) VALUES ('INVENTORY', 'Ansible Inventory', 'An Ansible inventory.', FALSE);
+        INSERT INTO item_type(key, name, description, custom) VALUES ('HOST-GROUP', 'Host Group', 'An Ansible host group.', FALSE);
+        INSERT INTO item_type(key, name, description, custom) VALUES ('HOST', 'Host', 'An Operating System Host.', FALSE);
 
 	END IF;
 
