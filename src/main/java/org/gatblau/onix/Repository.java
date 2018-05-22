@@ -108,8 +108,8 @@ public class Repository {
             item.setCreated(time);
             item.setItemType(itemType);
             item.setName((String)json.get("name"));
-            item.setDescription((String)json.get("description"));
-            item.setTag((String)json.get("tag"));
+            item.setDescription(ifNullThenEmpty((String)json.get("description")));
+            item.setTag(ifNullThenEmpty((String)json.get("tag")));
             item.setMeta(mapper.valueToTree(json.get("meta")));
             item.setStatus(Short.parseShort(json.get("status").toString()));
 
@@ -320,10 +320,10 @@ public class Repository {
             link.setStartItem(startItem);
             link.setEndItem(endItem);
             link.setKey(key);
-            link.setDescription((String)json.get("description"));
+            link.setDescription(ifNullThenEmpty((String)json.get("description")));
             link.setMeta(mapper.valueToTree(json.get("meta")));
-            link.setTag((String)json.get("tag"));
-            link.setRole((String)json.get("role"));
+            link.setTag(ifNullThenEmpty((String)json.get("tag")));
+            link.setRole(ifNullThenEmpty((String)json.get("role")));
 
             result.setChanged(true);
             result.setMessage(String.format("Link %s has been CREATED.", key));
@@ -653,7 +653,7 @@ public class Repository {
             itemType = new ItemType();
             itemType.setKey(key);
             itemType.setName((String)json.get("name"));
-            itemType.setDescription((String)json.get("description"));
+            itemType.setDescription(ifNullThenEmpty((String)json.get("description")));
             itemType.setCreated(time);
             result.setChanged(true);
             result.setMessage(String.format("Item Type %s has been CREATED.", key));
@@ -704,5 +704,9 @@ public class Repository {
             result.setMessage(String.format("Failed to delete Item Type %s: %s.", key, ex.getMessage()));
         }
         return result;
+    }
+
+    private String ifNullThenEmpty(String value) {
+        return (value == null) ? "" : value;
     }
 }
