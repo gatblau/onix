@@ -19,4 +19,6 @@ public class Key {
     public static final String ENDPOINT_URI = "endpoint_uri";
     public static final String ITEM_KEY = "item_key";
     public static final String KEY = "KEY";
+    public static final String LINK_ONE_KEY = "link_one_key";
+    public static final String LINK_TWO_KEY = "link_two_key";
 }
