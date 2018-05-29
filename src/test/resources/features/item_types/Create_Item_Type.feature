@@ -5,7 +5,7 @@ Feature: Create a new Configuration Item type
 
   Scenario: Create a new Configuration Item type
     Given the item type does not exist in the database
-    Given the item type URL of the service is known
+    Given the item type URL of the service with key is known
     Given the item type natural key is known
     Given a json payload with new item type information exists
     When a PUT HTTP request with a JSON payload is done
