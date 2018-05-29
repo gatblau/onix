@@ -1,5 +1,6 @@
 package features;
 
+import cucumber.api.PendingException;
 import cucumber.api.java.en.And;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.When;
@@ -103,7 +104,9 @@ public class Steps extends BaseTest {
 
     @And("^there is not any error in the response$")
     public void thereIsNotAnyErrorInTheResponse() throws Throwable {
-        assert(!util.containsKey(EXCEPTION));
+        if (util.containsKey(EXCEPTION)){
+            throw new RuntimeException((Exception)util.get(EXCEPTION));
+        }
     }
 
     @And("^a PUT HTTP request with a new JSON payload is done$")
@@ -139,6 +142,11 @@ public class Steps extends BaseTest {
 
     @Given("^the item type URL of the service is known$")
     public void theItemTypeURLOfTheServiceIsKnown() throws Throwable {
+        util.put(ENDPOINT_URI, String.format("%sitemtype", baseUrl));
+    }
+
+    @Given("^the item type URL of the service with key is known$")
+    public void theItemTypeURLOfTheServiceWithKeyIsKnown() throws Throwable {
         util.put(ENDPOINT_URI, String.format("%sitemtype/{key}", baseUrl));
     }
 
