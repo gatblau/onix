@@ -380,7 +380,7 @@ public class Steps extends BaseTest {
 
     private void putLink(String linkKey, String filename) {
         util.put(PAYLOAD, util.getFile(filename));
-        String url = String.format((String)util.get(ENDPOINT_URI), baseUrl);
+        String url = String.format("%s/link/{key}", baseUrl);
         Map<String, Object> vars = new HashMap<>();
         vars.put("key", linkKey);
         ResponseEntity<Result> response = null;
