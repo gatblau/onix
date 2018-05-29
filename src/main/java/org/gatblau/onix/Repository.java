@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.gatblau.onix.data.ItemData;
 import org.gatblau.onix.data.LinkData;
+import org.gatblau.onix.data.LinkList;
 import org.gatblau.onix.data.LinkedItemData;
 import org.gatblau.onix.model.Dimension;
 import org.gatblau.onix.model.Item;
@@ -708,5 +709,28 @@ public class Repository {
 
     private String ifNullThenEmpty(String value) {
         return (value == null) ? "" : value;
+    }
+
+    @Transactional
+    public LinkList getLinksByItem(String itemKey) {
+        TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
+        query.setParameter(Item.PARAM_KEY, itemKey);
+        Item item;
+
+        try {
+            item = query.getSingleResult();
+            List<LinkData> ll = getLinksData(item, false);
+            List<LinkData> lr = getLinksData(item, true);
+            ll.forEach(new Consumer<LinkData>() {
+                @Override
+                public void accept(LinkData linkData) {
+                    lr.add(linkData);
+                }
+            });
+            return new LinkList(lr);
+        }
+        catch (NoResultException nre) {
+        }
+        return null;
     }
 }

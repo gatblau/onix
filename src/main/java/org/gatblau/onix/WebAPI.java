@@ -2,10 +2,7 @@ package org.gatblau.onix;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.gatblau.onix.data.ItemData;
-import org.gatblau.onix.data.ItemList;
-import org.gatblau.onix.data.ItemTypeList;
-import org.gatblau.onix.data.Wrapper;
+import org.gatblau.onix.data.*;
 import org.gatblau.onix.model.ItemType;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +59,19 @@ public class WebAPI {
     }
 
     @ApiOperation(
+        value = "Gets all links for the specified item.",
+        notes = "Use this resource to find all of the links associated with a particular configuration item.")
+    @RequestMapping(
+          path = "/link/item/{key}"
+        , method = RequestMethod.GET
+        , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<LinkList> getLinksByItem(
+            @PathVariable("key") String itemKey) throws InterruptedException, IOException {
+        return ResponseEntity.ok(data.getLinksByItem(itemKey));
+    }
+
+    @ApiOperation(
         value = "Removes ALL configuration items and links from the database.",
         notes = "Use at your own risk ONLY for testing of the CMDB!")
     @RequestMapping(path = "/clear", method = RequestMethod.DELETE)
@@ -80,9 +90,11 @@ public class WebAPI {
     }
 
     @ApiOperation(
-            value = "Deletes an existing configuration item.",
-            notes = "Use this operation to remove a configuration item after it has been decommissioned.")
-    @RequestMapping(path = "/item/{key}", method = RequestMethod.DELETE)
+        value = "Deletes an existing configuration item.",
+        notes = "Use this operation to remove a configuration item after it has been decommissioned.")
+    @RequestMapping(
+          path = "/item/{key}"
+        , method = RequestMethod.DELETE)
     public ResponseEntity<Result> deleteItem(
             @PathVariable("key") String key
     ) throws InterruptedException {
@@ -92,7 +104,10 @@ public class WebAPI {
     @ApiOperation(
         value = "Deletes a configuration item type.",
         notes = "")
-    @RequestMapping(path = "/itemtype", method = RequestMethod.DELETE)
+    @RequestMapping(
+          path = "/itemtype"
+        , method = RequestMethod.DELETE
+    )
     public void deleteItemTypes() throws InterruptedException {
         data.deleteItemTypes();
     }
@@ -100,7 +115,10 @@ public class WebAPI {
     @ApiOperation(
         value = "Deletes a configuration item type.",
         notes = "")
-    @RequestMapping(path = "/itemtype/{key}", method = RequestMethod.DELETE)
+    @RequestMapping(
+          path = "/itemtype/{key}"
+        , method = RequestMethod.DELETE
+    )
     public ResponseEntity<Result> deleteItemType(@PathVariable("key") String key) {
         return ResponseEntity.ok(data.deleteItemType(key));
     }
@@ -108,7 +126,9 @@ public class WebAPI {
     @ApiOperation(
         value = "Creates a new configuration item type.",
         notes = "")
-    @RequestMapping(path = "/itemtype/{key}", method = RequestMethod.PUT)
+    @RequestMapping(
+          path = "/itemtype/{key}"
+        , method = RequestMethod.PUT)
     public ResponseEntity<Result> createItemType(
             @PathVariable("key") String key,
             @RequestBody JSONObject payload
@@ -119,7 +139,11 @@ public class WebAPI {
     @ApiOperation(
         value = "Get a list of available configuration item types.",
         notes = "Only item types marked as custom can be deleted.")
-    @RequestMapping(path = "/itemtype", method = RequestMethod.GET)
+    @RequestMapping(
+          path = "/itemtype"
+        , method = RequestMethod.GET
+        , produces = {"application/json", "application/x-yaml"}
+    )
     public ResponseEntity<ItemTypeList> getItemTypes() throws InterruptedException {
         List<ItemType> itemTypes = data.getItemTypes();
         return ResponseEntity.ok(new ItemTypeList(itemTypes));

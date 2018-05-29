@@ -3,11 +3,14 @@ package features;
 import cucumber.api.PendingException;
 import cucumber.api.java.en.And;
 import cucumber.api.java.en.Given;
+import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import org.gatblau.onix.Info;
 import org.gatblau.onix.Result;
 import org.gatblau.onix.data.ItemData;
 import org.gatblau.onix.data.ItemList;
+import org.gatblau.onix.data.LinkData;
+import org.gatblau.onix.data.LinkList;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -18,6 +21,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static features.Key.*;
@@ -60,7 +64,16 @@ public class Steps extends BaseTest {
     @And("^the response code is (\\d+)$")
     public void theResponseCodeIs(int responseCode) throws Throwable {
         ResponseEntity<Result> response = util.get(RESPONSE);
-        assert (response.getStatusCodeValue() == responseCode);
+        if (response.getStatusCodeValue() != responseCode) {
+            throw new RuntimeException(
+                String.format(
+                    "Expected response code was '%s' but instead got '%s': '%s'.",
+                    responseCode,
+                    response.getStatusCode(),
+                    response.getStatusCode().getReasonPhrase()
+                )
+            );
+        };
     }
 
     @And("^the response has body$")
@@ -116,7 +129,7 @@ public class Steps extends BaseTest {
 
     @And("^a configuration item natural key is known$")
     public void aConfigurationItemNaturalKeyIsKnown() throws Throwable {
-        util.put(ITEM_ONE_KEY, "ITEM_ONE_KEY");
+        util.put(ITEM_ONE_KEY, ITEM_ONE_KEY);
     }
 
     @And("^the service responds with action \"([^\"]*)\"$")
@@ -358,5 +371,77 @@ public class Steps extends BaseTest {
     @Given("^the item type natural key is known$")
     public void theItemTypeNaturalKeyIsKnown() throws Throwable {
         util.put(KEY, "__KEY__");
+    }
+
+    @Given("^the links by item URL of the service is known$")
+    public void theLinksByItemURLOfTheServiceIsKnown() throws Throwable {
+        util.put(ENDPOINT_URI, "%s/link/item/{key}");
+    }
+
+    private void putLink(String linkKey, String filename) {
+        util.put(PAYLOAD, util.getFile(filename));
+        String url = String.format((String)util.get(ENDPOINT_URI), baseUrl);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("key", linkKey);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.PUT, getEntity(PAYLOAD), Result.class, vars);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    @Given("^two items exist in the database$")
+    public void twoItemsExistInTheDatabase() throws Throwable {
+        putItem(ITEM_ONE_KEY, "payload/update_item_payload.json");
+        putItem(ITEM_TWO_KEY, "payload/update_item_payload.json");
+    }
+
+    @Given("^two links between the two configuration items exist in the database$")
+    public void twoLinksBetweenTheTwoConfigurationItemsExistInTheDatabase() throws Throwable {
+        putLink(Key.LINK_ONE_KEY, "payload/create_link_payload.json");
+        putLink(Key.LINK_TWO_KEY, "payload/create_link_payload.json");
+    }
+
+    @When("^a GET HTTP request to the Link by Item resource is done$")
+    public void aGETHTTPRequestToTheLinkByItemResourceIsDone() throws Throwable {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<LinkList> result = client.exchange(
+            String.format((String)util.get(ENDPOINT_URI), baseUrl),
+            HttpMethod.GET,
+            new HttpEntity<>(null, headers),
+            LinkList.class,
+            (String)util.get(ITEM_ONE_KEY));
+        util.put(RESPONSE, result);
+    }
+
+    @Then("^the response contains (\\d+) links$")
+    public void theResponseContainsLinks(int count) throws Throwable {
+        ResponseEntity<LinkList> response = util.get(RESPONSE);
+
+        LinkList links = response.getBody();
+        if (links != null) {
+            if (links.getItems().size() != count) {
+                throw new RuntimeException(
+                    String.format(
+                        "Response does not contain '%s' but '%s' links.",
+                        count,
+                        response.getBody().getItems().size()
+                    )
+                );
+            }
+        }
+        else {
+            throw new RuntimeException(
+                String.format(
+                    "Response contains no links where '%s' were expected.",
+                    count
+                )
+            );
+        }
     }
 }
