@@ -7,6 +7,7 @@ Onix CMDB by default uses [Keycloak](https://www.keycloak.org/) as its Identity 
 
 - [Setting up Keycloak](#setting-up-keycloak)
 - [Configuring Keycloak](#configuring-keycloak)
+- [Onix Roles](#onix-roles)
 - [Requesting an Access Token](#requesting-an-access-token)
 - [WAPI configuration variables for IDAM](#wapi-configuration-variables-for-idam)
 - [Issuing calls to the WAPI](#issuing-calls-to-the-wapi)
@@ -38,10 +39,19 @@ Alternatively, follow the manual steps below:
 - Create a realm named "onix"
 - Create a new client within the realm called "onix-cmdb"
 - Set the client's "Valid Redirect URIs" to "http://localhost:8080/*" (assuming the web API is listening to the localhost on port 8080, otherwise change it to the correct value.)
+- Create a new role called "admin"
 - Create a new role called "user"
 - Create a new user called "onix"
 - Set the user password
-- Within users, role mappings, add the role user to the new user.
+- Within users, role mappings, add the role "user" or "admin" to the new user.
+
+## Onix Roles [(up)](#toc)
+
+|Role | Description |
+|---|---|
+| **user** | Has read only access to the resources under the /info path. This role is intended to be used to query CMDB information. |
+| **admin** | Has read and write access to resources under the root / path. This role is required to login using the Ansible module [onix_login](../ansible/library/onix_login.py). It should be used to create and update items and links. |
+
 
 <a name="requesting-an-access-token"></a>
 ## Requesting an Access Token [(up)](#toc)

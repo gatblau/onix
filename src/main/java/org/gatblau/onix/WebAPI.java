@@ -167,7 +167,7 @@ public class WebAPI {
         notes = "Use this function to retrieve configuration items based on type, tags and date range as required. " +
                 "Results are limited by the top parameter.")
     @RequestMapping(
-          path = "/item"
+          path = "/info/item"
         , method = RequestMethod.GET
         , produces = {"application/json", "application/x-yaml"}
     )
