@@ -9,7 +9,9 @@
 from ansible.module_utils.basic import *
 from ansible.module_utils.urls import *
 
-def createOrUpdateItem(data):
+def createOrUpdateItem(module):
+    data = module.params
+
     # parse the input variables
     cmdb_host = data['cmdb_host']
     access_token = data['access_token']
@@ -55,7 +57,9 @@ def createOrUpdateItem(data):
 
     return (result)
 
-def deleteItem(data):
+def deleteItem(module):
+    data = module.params
+
     # parse the input variables
     cmdb_host = data['cmdb_host']
     access_token = data['access_token']
@@ -109,9 +113,9 @@ def main():
     state = module.params['state']
 
     if state == "absent":
-        result = deleteItem(module.params)
+        result = deleteItem(module)
     else:
-        result = createOrUpdateItem(module.params)
+        result = createOrUpdateItem(module)
 
     if result['error']:
         module.fail_json(msg=result['message'], **result)

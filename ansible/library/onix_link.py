@@ -9,7 +9,9 @@
 from ansible.module_utils.basic import *
 from ansible.module_utils.urls import *
 
-def createOrUpdateLink(data):
+def createOrUpdateLink(module):
+    data = module.params
+
     # parse the input variables
     cmdb_host = data['cmdb_host']
     access_token = data['access_token']
@@ -53,7 +55,9 @@ def createOrUpdateLink(data):
 
     return (result)
 
-def deleteLink(data):
+def deleteLink(module):
+    data = module.params
+
     # parse the input variables
     cmdb_host = data['cmdb_host']
     access_token = data['access_token']
@@ -106,9 +110,9 @@ def main():
     state = module.params['state']
 
     if state == "absent":
-        result = deleteLink(module.params)
+        result = deleteLink(module)
     else:
-        result = createOrUpdateLink(module.params)
+        result = createOrUpdateLink(module)
 
     if result['error']:
         module.fail_json(msg=result['message'], **result)
