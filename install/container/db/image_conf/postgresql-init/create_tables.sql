@@ -41,6 +41,7 @@ BEGIN
         INSERT INTO item_type(key, name, description, custom) VALUES ('INVENTORY', 'Ansible Inventory', 'An Ansible inventory.', FALSE);
         INSERT INTO item_type(key, name, description, custom) VALUES ('HOST-GROUP', 'Host Group', 'An Ansible host group.', FALSE);
         INSERT INTO item_type(key, name, description, custom) VALUES ('HOST', 'Host', 'An Operating System Host.', FALSE);
+        INSERT INTO item_type(key, name, description, custom) VALUES ('LICENCE', 'A software licence.', 'Describes the information pertaining to a software licence.', FALSE);
 
 	END IF;
 
