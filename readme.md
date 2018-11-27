@@ -16,3 +16,8 @@ Onix is a lightweight configuration management database (CMDB) accessible via a 
 ## License Terms
 
 Apache License - Version 2.0, January 2004 - http://www.apache.org/licenses/
+
+### Contributor Notice
+
+Contributors to this project, hereby assign copyright in their code to the 
+project, to be licensed under the same terms as the rest of the code.
