@@ -177,7 +177,7 @@
    END OF TERMS AND CONDITIONS
 
 
-   Copyright 2018 www.gatblau.org
+   Onix CMDB - Copyright (c) 2018 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -190,3 +190,6 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+   
+   Contributors to this project, hereby assign copyright in this code to the 
+   project, to be licensed under the same terms as the rest of the code.
