@@ -53,3 +53,11 @@ WHERE start_node_id = 8
 SELECT *
 FROM link
 WHERE end_node_id = 11
+
+-- tags for searching
+INSERT INTO public.item(name, description, status, item_type_id, meta, version, created, updated, tag, key)
+VALUES ('n', 'd', 0, 1, '{}', 0, '2018-11-28', '2018-11-28', ARRAY['test', 'cmdb'], 'key1');
+
+SELECT *
+FROM item
+WHERE tag @> ARRAY['cmdb2', 'test']

@@ -63,16 +63,16 @@ BEGIN
         CREATE TABLE item
         (
             id bigint NOT NULL DEFAULT nextval('item_id_seq'::regclass),
-            name CHARACTER VARYING(200) COLLATE pg_catalog."default",
+            name character varying(200) COLLATE pg_catalog."default",
             description text COLLATE pg_catalog."default",
-            status SMALLINT DEFAULT 0,
-            item_type_id INTEGER,
+            status smallint DEFAULT 0,
+            item_type_id integer,
             meta json,
             version bigint NOT NULL DEFAULT 1,
             created timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
             updated timestamp(6) with time zone,
-            tag CHARACTER VARYING(300) COLLATE pg_catalog."default",
-            key CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+            tag text[] COLLATE pg_catalog."default" NOT NULL DEFAULT '{}'::text[],
+            key character varying(100) COLLATE pg_catalog."default" NOT NULL,
             CONSTRAINT item_id_pk PRIMARY KEY (id),
             CONSTRAINT item_key_uc UNIQUE (key),
             CONSTRAINT item_item_type_id_fk FOREIGN KEY (item_type_id)
@@ -88,9 +88,18 @@ BEGIN
         ALTER TABLE item
             OWNER to onix;
 
+        CREATE UNIQUE INDEX item_id_uix
+            ON item
+            (id)
+            TABLESPACE pg_default;
+
+        CREATE INDEX item_tag_ix
+            ON item USING gin
+            (tag COLLATE pg_catalog."default")
+            TABLESPACE pg_default;
+
         CREATE INDEX fki_item_item_type_id_fk
-            ON item USING btree
-            (item_type_id)
+            ON item USING btree (item_type_id)
             TABLESPACE pg_default;
 	END IF;
 
