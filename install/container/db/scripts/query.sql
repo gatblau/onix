@@ -54,10 +54,20 @@ SELECT *
 FROM link
 WHERE end_node_id = 11
 
--- tags for searching
-INSERT INTO public.item(name, description, status, item_type_id, meta, version, created, updated, tag, key)
-VALUES ('n', 'd', 0, 1, '{}', 0, '2018-11-28', '2018-11-28', ARRAY['test', 'cmdb'], 'key1');
+-- example upsert
+SELECT onix_upsert_item(
+	 'key11'::character varying,
+	 'test item'::character varying,
+	 'test item description'::text,
+	 0,
+	 1,
+	 '{"key":"value"}'::jsonb, -- jsonb
+	 '{"tag1", "tag2"}'::text[], -- text[]
+	 '"a"=>1.0, "b"=>2.4'::hstore -- hstore
+)
 
 SELECT *
 FROM item
 WHERE tag @> ARRAY['cmdb2', 'test']
+
+-- 	pg_ctl -D /usr/local/var/postgres start
