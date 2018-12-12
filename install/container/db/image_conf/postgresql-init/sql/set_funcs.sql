@@ -13,164 +13,13 @@
     to be licensed under the same terms as the rest of the code.
 
 */
-DO
-$$
+DO $$
 BEGIN
-
-/*
-  Encapsulates the logic to determine the status of a record update:
-    - N: no update as no changes found - new and old records are the same
-    - L: no update as the old record was updated by another client before this update could be committed
-    - U: update - the record was updated successfully
- */
-CREATE OR REPLACE FUNCTION get_update_status(
-    current_version bigint, -- the version of the record in the database
-    local_version bigint, -- the version in the new specified record
-    updated boolean -- whether or not the record was updated in the database by the last update statement
-  )
-  RETURNS char(1)
-  LANGUAGE 'plpgsql'
-  COST 100
-  STABLE
-AS $BODY$
-  DECLARE
-    result char(1);
-  BEGIN
-    -- if there were not rows affected
-    IF NOT updated THEN
-      -- if the local version is the same as the record version
-      IF (local_version = current_version) THEN
-        -- no update was required as required record was the same as stored record
-        result := 'N';
-      ELSE
-        -- no update was made as stored record is optimistically locked
-        -- i.e. updated by other client before this update can be committed
-        result := 'L';
-      END IF;
-    ELSE
-      -- the stored record was updated successfully
-      result := 'U';
-    END IF;
-
-    RETURN result;
-  END;
-$BODY$;
-
-ALTER FUNCTION get_update_status(bigint, bigint, boolean)
-OWNER TO onix;
-
-/*
-  Validates that an item attribute store contains the keys required or allowed
-  by its item type definition.
- */
-CREATE OR REPLACE FUNCTION validate_item_attr(item_type_key character varying, attributes hstore)
-  RETURNS VOID
-  LANGUAGE 'plpgsql'
-  COST 100
-  STABLE
-AS $BODY$
-DECLARE
-  validation_rules hstore;
-  rule record;
-BEGIN
-  -- gets the validation rules for an item attributes
-  SELECT attr_valid INTO validation_rules
-  FROM item_type
-  WHERE key = item_type_key;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Invalid item type key ''%''.', item_type_key
-      USING HINT = 'Check an item type with such key has been defined.';
-  END IF;
-
-  -- if validation is defined at the item_type then
-  -- validate the item attribute field
-  IF NOT (validation_rules IS NULL) THEN
-    -- loop through the validation rules key-value pairs
-    -- to validate 'required' key compliance in the passed-in attributes
-    FOR rule IN
-      SELECT (each(validation_rules)).*
-    LOOP
-      IF (rule.value = 'required') THEN
-        IF NOT (attributes ? rule.key) THEN
-          RAISE EXCEPTION 'Attribute ''%'' is required and was not provided.', rule.key
-            USING HINT = 'Where required attributeS are specified in the item type, a request to insert or update an item of that type must also specify the value of the required attribute(s).';
-        END IF;
-      END IF;
-    END LOOP;
-
-    -- loop through the passed-in item attribute hstore key-value pairs
-    -- to validate 'allowed' key compliance in the passed-in attributes
-    FOR rule IN
-      SELECT (each(attributes)).*
-    LOOP
-      IF NOT (validation_rules ? rule.key) THEN
-        RAISE EXCEPTION 'Attribute ''%'' is not allowed!', rule.key
-          USING HINT = 'Revise the item attributes removing the attribute not allowed.';
-      END IF;
-    END LOOP;
-  END IF;
-END;
-$BODY$;
-
-/*
-  Validates that a link attribute store contains the keys required or allowed
-  by its link type definition.
- */
-CREATE OR REPLACE FUNCTION validate_link_attr(link_type_key character varying, attributes hstore)
-  RETURNS VOID
-  LANGUAGE 'plpgsql'
-  COST 100
-  STABLE
-AS $BODY$
-DECLARE
-  validation_rules hstore;
-  rule record;
-BEGIN
-  -- gets the validation rules for a link attributes
-  SELECT attr_valid INTO validation_rules
-  FROM link_type
-  WHERE key = link_type_key;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Invalid link type key ''%''.', link_type_key
-    USING HINT = 'Check a link type with such a key has been defined.';
-  END IF;
-
-  -- if validation is defined at the item_type then
-  -- validate the item attribute field
-  IF NOT (validation_rules IS NULL) THEN
-    -- loop through the validation rules key-value pairs
-    -- to validate 'required' key compliance in the passed-in attributes
-    FOR rule IN
-    SELECT (each(validation_rules)).*
-    LOOP
-      IF (rule.value = 'required') THEN
-        IF NOT (attributes ? rule.key) THEN
-          RAISE EXCEPTION 'Attribute ''%'' is required and was not provided.', rule.key
-          USING HINT = 'Where required attributes are specified in the link type, a request to insert or update a link of that type must also specify the value of the required attribute(s).';
-        END IF;
-      END IF;
-    END LOOP;
-
-    -- loop through the passed-in item attribute hstore key-value pairs
-    -- to validate 'allowed' key compliance in the passed-in attributes
-    FOR rule IN
-    SELECT (each(attributes)).*
-    LOOP
-        IF NOT (validation_rules ? rule.key) THEN
-           RAISE EXCEPTION 'Attribute ''%'' is not allowed!', rule.key
-           USING HINT = 'Revise the item attributes removing the attribute not allowed.';
-        END IF;
-    END LOOP;
-  END IF;
-END;
-$BODY$;
 
 ---------------------------------------------------------
--- UPSERT ITEM
+-- SET ITEM
 ---------------------------------------------------------
-CREATE OR REPLACE FUNCTION upsert_item(
+CREATE OR REPLACE FUNCTION set_item(
     key_param character varying,
     name_param character varying,
     description_param text,
@@ -197,12 +46,12 @@ AS $BODY$
     SELECT id FROM item_type WHERE key = item_type_key_param INTO item_type_id_value;
     IF (item_type_id_value IS NULL) THEN
       -- the provided natural key is not in the item type table, cannot proceed
-     RAISE EXCEPTION 'Nonexistent Item Type Key --> %', item_type_key_param
-        USING HINT = 'Check an Item Type with the key exist in the database.';
+     RAISE EXCEPTION 'Item Type Key --> % not found.', item_type_key_param
+        USING hint = 'Check an Item Type with the key exist in the database.';
     END IF;
 
     -- checks that the attributes passed in comply with the validation in the item_type
-    PERFORM validate_item_attr(item_type_key_param, attribute_param);
+    PERFORM check_item_attr(item_type_key_param, attribute_param);
 
     -- get the item current version
     SELECT version FROM item WHERE key = key_param INTO current_version;
@@ -274,13 +123,13 @@ AS $BODY$
   END;
   $BODY$;
 
-ALTER FUNCTION upsert_item(character varying,character varying,text,jsonb, text[],hstore,smallint,character varying, bigint, character varying)
+ALTER FUNCTION set_item(character varying,character varying,text,jsonb, text[],hstore,smallint,character varying, bigint, character varying)
 OWNER TO onix;
 
 ---------------------------------------------------------
--- UPSERT ITEM_TYPE
+-- SET ITEM_TYPE
 ---------------------------------------------------------
-CREATE OR REPLACE FUNCTION upsert_item_type(
+CREATE OR REPLACE FUNCTION set_item_type(
     key_param character varying,
     name_param character varying,
     description_param text,
@@ -298,6 +147,9 @@ AS $BODY$
     current_version bigint; -- the version of the row before the update or null if no row
     rows_affected integer;
 BEGIN
+  -- checks that the attribute store parameter contain the correct values
+  PERFORM check_attr_valid(attr_valid_param);
+
   SELECT version FROM item_type WHERE key = key_param INTO current_version;
   IF (current_version IS NULL) THEN
     INSERT INTO item_type (
@@ -345,13 +197,13 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION upsert_item_type(character varying, character varying, text, hstore, bigint, character varying)
+ALTER FUNCTION set_item_type(character varying, character varying, text, hstore, bigint, character varying)
 OWNER TO onix;
 
 ---------------------------------------------------------
--- UPSERT LINK_TYPE
+-- SET LINK_TYPE
 ---------------------------------------------------------
-CREATE OR REPLACE FUNCTION upsert_link_type(
+CREATE OR REPLACE FUNCTION set_link_type(
     key_param character varying,
     name_param character varying,
     description_param text,
@@ -369,7 +221,12 @@ DECLARE
   current_version bigint; -- the version of the row before the update or null if no row
   rows_affected integer;
 BEGIN
+  -- checks that the attribute store parameter contain the correct values
+  PERFORM check_attr_valid(attr_valid_param);
+
+  -- gets the link type current version
   SELECT version FROM link_type WHERE key = key_param INTO current_version;
+
   IF (current_version IS NULL) THEN
     INSERT INTO link_type (
       id,
@@ -416,13 +273,13 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION upsert_link_type(character varying, character varying, text, hstore, bigint, character varying)
+ALTER FUNCTION set_link_type(character varying, character varying, text, hstore, bigint, character varying)
 OWNER TO onix;
 
 ---------------------------------------------------------
--- UPSERT LINK
+-- SET LINK
 ---------------------------------------------------------
-CREATE OR REPLACE FUNCTION upsert_link(
+CREATE OR REPLACE FUNCTION set_link(
     key_param character varying,
     link_type_key_param character varying,
     start_item_key_param character varying,
@@ -451,25 +308,25 @@ BEGIN
   SELECT id FROM link_type WHERE key = link_type_key_param INTO link_type_id_value;
   IF (link_type_id_value IS NULL) THEN
     -- the provided natural key is not in the link type table, cannot proceed
-    RAISE EXCEPTION 'Nonexistent Link Type Key --> %', link_type_key_param
-    USING HINT = 'Check a Link Type with the key exist in the database.';
+    RAISE EXCEPTION 'Link Type Key --> % not found.', link_type_key_param
+      USING hint = 'Check a Link Type with the key exist in the database.';
   END IF;
 
   -- checks that the attributes passed in comply with the validation in the link_type
-  PERFORM validate_link_attr(link_type_key_param, attribute_param);
+  PERFORM check_link_attr(link_type_key_param, attribute_param);
 
   SELECT id FROM item WHERE key = start_item_key_param INTO start_item_id;
   IF (start_item_id IS NULL) THEN
     -- the start item does not exist
-    RAISE EXCEPTION 'Nonexistent start item with key --> %', start_item_key_param
-    USING HINT = 'Check an item with the specified key exist in the database.';
+    RAISE EXCEPTION 'Start item with key --> % does not exist.', start_item_key_param
+      USING hint = 'Check an item with the specified key exist in the database.';
   END IF;
 
   SELECT id FROM item WHERE key = end_item_key_param INTO end_item_id;
-  IF (start_item_id IS NULL) THEN
-    -- the start item does not exist
-    RAISE EXCEPTION 'Nonexistent end item with key --> %', end_item_key_param
-    USING HINT = 'Check an item with the specified key exist in the database.';
+  IF (end_item_id IS NULL) THEN
+    -- the end item does not exist
+    RAISE EXCEPTION 'End item with key --> % does not exist.', end_item_key_param
+      USING hint = 'Check an item with the specified key exist in the database.';
   END IF;
 
   SELECT version FROM link WHERE key = key_param INTO current_version;
@@ -529,55 +386,8 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION upsert_link(character varying, character varying, character varying, character varying, text, jsonb, text[], hstore, bigint, character varying)
-OWNER TO onix;
+ALTER FUNCTION set_link(character varying, character varying, character varying, character varying, text, jsonb, text[], hstore, bigint, character varying)
+  OWNER TO onix;
 
-/*
-  gets an item by its natural key.
-  use: select * from item('the_item_key')
- */
-CREATE OR REPLACE FUNCTION item(key_param character varying)
-  RETURNS TABLE(
-    id bigint,
-    key character varying,
-    name character varying,
-    description text,
-    status smallint,
-    item_type_id integer,
-    meta jsonb,
-    tag text[],
-    attribute hstore,
-    version bigint,
-    created timestamp(6) with time zone,
-    updated timestamp(6) with time zone,
-    changedby character varying
-  )
-  LANGUAGE 'plpgsql'
-  COST 100
-  VOLATILE
-AS $BODY$
-  BEGIN
-    RETURN QUERY SELECT
-      i.id,
-      i.key,
-      i.name,
-      i.description,
-      i.status,
-      i.item_type_id,
-      i.meta,
-      i.tag,
-      i.attribute,
-      i.version,
-      i.created,
-      i.updated,
-      i.changedby
-    FROM item i
-    WHERE i.key = key_param;
-  END;
-$BODY$;
-
-ALTER FUNCTION item(character varying)
-OWNER TO onix;
-
-END;
-$$
+END
+$$;
