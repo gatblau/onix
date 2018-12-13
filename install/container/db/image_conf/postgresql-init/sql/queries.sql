@@ -169,12 +169,12 @@ BEGIN
     l.updated,
     l.changedby
   FROM link l
-  LEFT JOIN item start_item
-    ON l.start_item_id = start_item.id
-  LEFT JOIN item end_item
-    ON l.end_item_id = end_item.id
-  LEFT JOIN link_type lt
-    ON l.link_type_id = lt.id
+    INNER JOIN item start_item
+      ON l.start_item_id = start_item.id
+    INNER JOIN item end_item
+      ON l.end_item_id = end_item.id
+    INNER JOIN link_type lt
+      ON l.link_type_id = lt.id
   WHERE
    -- by link type
    (l.link_type_id = link_type_id_value OR link_type_id_value IS NULL)
@@ -189,12 +189,12 @@ BEGIN
    -- by created date range
    AND ((date_created_from_param <= l.created AND date_created_to_param > l.created) OR
         (date_created_from_param IS NULL AND date_created_to_param IS NULL) OR
-        (date_created_from_param IS NULL AND date_created_to_param > i.created) OR
+        (date_created_from_param IS NULL AND date_created_to_param > l.created) OR
         (date_created_from_param <= l.created AND date_created_to_param IS NULL))
    -- by updated date range
    AND ((date_updated_from_param <= l.updated AND date_updated_to_param > l.updated) OR
         (date_updated_from_param IS NULL AND date_updated_to_param IS NULL) OR
-        (date_updated_from_param IS NULL AND date_updated_to_param > i.updated) OR
+        (date_updated_from_param IS NULL AND date_updated_to_param > l.updated) OR
         (date_updated_from_param <= l.updated AND date_updated_to_param IS NULL));
 END
 $BODY$;
@@ -205,6 +205,142 @@ ALTER FUNCTION find_links(
   text[],
   hstore,
   character varying,
+  timestamp(6) with time zone, -- created from
+  timestamp(6) with time zone, -- created to
+  timestamp(6) with time zone, -- updated from
+  timestamp(6) with time zone -- updated to
+)
+OWNER TO onix;
+
+/*
+  find_item_types: find item types that comply with the passed-in query parameters
+ */
+CREATE OR REPLACE FUNCTION find_item_types(
+    attr_valid_param hstore, -- zero (null) or more key->value pair attributes
+    system_param boolean, -- (null) for any or true / false
+    date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
+    date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
+    date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
+    date_updated_to_param timestamp(6) with time zone -- none (null) or updated to date
+  )
+  RETURNS TABLE(
+    id integer,
+    key character varying,
+    name character varying,
+    description text,
+    attr_valid hstore,
+    system boolean,
+    version bigint,
+    created timestamp(6) with time zone,
+    updated timestamp(6) with time zone,
+    changedby character varying
+  )
+  LANGUAGE 'plpgsql'
+  COST 100
+  STABLE
+AS $BODY$
+BEGIN
+  RETURN QUERY SELECT
+     i.id,
+     i.key,
+     i.name,
+     i.description,
+     i.attr_valid,
+     i.system,
+     i.version,
+     i.created,
+     i.updated,
+     i.changedby
+  FROM item_type i
+  WHERE
+  -- by system flag
+     (i.system = system_param OR system_param IS NULL)
+  -- by attributes (hstore)
+  AND (i.attr_valid @> attr_valid_param OR attr_valid_param IS NULL)
+  -- by created date range
+  AND ((date_created_from_param <= i.created AND date_created_to_param > i.created) OR
+      (date_created_from_param IS NULL AND date_created_to_param IS NULL) OR
+      (date_created_from_param IS NULL AND date_created_to_param > i.created) OR
+      (date_created_from_param <= i.created AND date_created_to_param IS NULL))
+  -- by updated date range
+  AND ((date_updated_from_param <= i.updated AND date_updated_to_param > i.updated) OR
+      (date_updated_from_param IS NULL AND date_updated_to_param IS NULL) OR
+      (date_updated_from_param IS NULL AND date_updated_to_param > i.updated) OR
+      (date_updated_from_param <= i.updated AND date_updated_to_param IS NULL));
+END
+$BODY$;
+
+ALTER FUNCTION find_item_types(
+  hstore,
+  boolean,
+  timestamp(6) with time zone, -- created from
+  timestamp(6) with time zone, -- created to
+  timestamp(6) with time zone, -- updated from
+  timestamp(6) with time zone -- updated to
+)
+OWNER TO onix;
+
+/*
+  find_link_types: find link types that comply with the passed-in query parameters
+ */
+CREATE OR REPLACE FUNCTION find_link_types(
+    attr_valid_param hstore, -- zero (null) or more key->value pair attributes
+    system_param boolean, -- (null) for any or true / false
+    date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
+    date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
+    date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
+    date_updated_to_param timestamp(6) with time zone -- none (null) or updated to date
+  )
+  RETURNS TABLE(
+    id integer,
+    key character varying,
+    name character varying,
+    description text,
+    attr_valid hstore,
+    system boolean,
+    version bigint,
+    created timestamp(6) with time zone,
+    updated timestamp(6) with time zone,
+    changedby character varying
+  )
+  LANGUAGE 'plpgsql'
+  COST 100
+  STABLE
+AS $BODY$
+BEGIN
+  RETURN QUERY SELECT
+     l.id,
+     l.key,
+     l.name,
+     l.description,
+     l.attr_valid,
+     l.system,
+     l.version,
+     l.created,
+     l.updated,
+     l.changedby
+  FROM link_type l
+  WHERE
+  -- by system flag
+      (l.system = system_param OR system_param IS NULL)
+  -- by attributes (hstore)
+  AND (l.attr_valid @> attr_valid_param OR attr_valid_param IS NULL)
+  -- by created date range
+  AND ((date_created_from_param <= l.created AND date_created_to_param > l.created) OR
+      (date_created_from_param IS NULL AND date_created_to_param IS NULL) OR
+      (date_created_from_param IS NULL AND date_created_to_param > l.created) OR
+      (date_created_from_param <= l.created AND date_created_to_param IS NULL))
+  -- by updated date range
+  AND ((date_updated_from_param <= l.updated AND date_updated_to_param > l.updated) OR
+      (date_updated_from_param IS NULL AND date_updated_to_param IS NULL) OR
+      (date_updated_from_param IS NULL AND date_updated_to_param > l.updated) OR
+      (date_updated_from_param <= l.updated AND date_updated_to_param IS NULL));
+END
+$BODY$;
+
+ALTER FUNCTION find_link_types(
+  hstore,
+  boolean,
   timestamp(6) with time zone, -- created from
   timestamp(6) with time zone, -- created to
   timestamp(6) with time zone, -- updated from

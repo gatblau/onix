@@ -160,8 +160,9 @@ BEGIN
 
         ALTER TABLE link_type OWNER to onix;
 
-        INSERT INTO link_type(key, name, description, system, changedby) VALUES ('INVENTORY', 'Inventory Link Type.', 'Links items describing an inventory.', TRUE, 'onix');
-        INSERT INTO link_type(key, name, description, system, changedby) VALUES ('LICENSE', 'Licence Link Type.', 'Links items related by a licence.', TRUE, 'onix');
+        INSERT INTO link_type(key, name, description, system, changedby) VALUES ('INVENTORY', 'Inventory Link', 'Links items describing an inventory.', TRUE, 'onix');
+        INSERT INTO link_type(key, name, description, system, changedby) VALUES ('LICENSE', 'Licence Link', 'Links items describing licence usage.', TRUE, 'onix');
+        INSERT INTO link_type(key, name, description, system, changedby) VALUES ('NETWORK', 'Network Link', 'Links items describing network connections.', TRUE, 'onix');
     END IF;
 
     ---------------------------------------------------------------------------
