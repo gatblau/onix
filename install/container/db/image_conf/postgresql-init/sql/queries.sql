@@ -348,5 +348,205 @@ ALTER FUNCTION find_link_types(
 )
 OWNER TO onix;
 
+/*
+  find_items_audit: find audit records for items that comply with the passed-in query parameters
+ */
+CREATE OR REPLACE FUNCTION find_items_audit(
+  item_key_param character varying,
+  date_changed_from_param timestamp(6) with time zone, -- none (null) or updated from date
+  date_changed_to_param timestamp(6) with time zone -- none (null) or updated to date
+)
+RETURNS TABLE(
+    operation char,
+    change_date timestamp(6) with time zone,
+    id bigint,
+    key character varying,
+    name character varying,
+    description text,
+    status smallint,
+    item_type_id integer,
+    meta jsonb,
+    tag text[],
+    attribute hstore,
+    version bigint,
+    created timestamp(6) with time zone,
+    updated timestamp(6) with time zone,
+    changedby character varying
+  )
+  LANGUAGE 'plpgsql'
+  COST 100
+  STABLE
+AS $BODY$
+BEGIN
+  RETURN QUERY SELECT
+    i.operation,
+    i.change_date,
+    i.id,
+    i.key,
+    i.name,
+    i.description,
+    i.status,
+    i.item_type_id,
+    i.meta,
+    i.tag,
+    i.attribute,
+    i.version,
+    i.created,
+    i.updated,
+    i.changedby
+  FROM item_audit i
+  WHERE i.key = item_key_param
+  -- by change date range
+  AND ((date_changed_from_param <= i.change_date AND date_changed_to_param > i.change_date) OR
+      (date_changed_from_param IS NULL AND date_changed_to_param IS NULL) OR
+      (date_changed_from_param IS NULL AND date_changed_to_param > i.change_date) OR
+      (date_changed_from_param <= i.change_date AND date_changed_to_param IS NULL));
+END
+$BODY$;
+
+ALTER FUNCTION find_items_audit(
+  character varying, -- item natural key
+  timestamp(6) with time zone, -- change date from
+  timestamp(6) with time zone -- change date to
+)
+OWNER TO onix;
+
+/*
+  find_links_audit: find audit records for links that comply with the passed-in query parameters
+ */
+CREATE OR REPLACE FUNCTION find_links_audit(
+    link_key_param character varying,
+    date_changed_from_param timestamp(6) with time zone, -- none (null) or updated from date
+    date_changed_to_param timestamp(6) with time zone -- none (null) or updated to date
+  )
+  RETURNS TABLE(
+    operation char,
+    change_date timestamp(6) with time zone,
+    id bigint,
+    key character varying,
+    description text,
+    link_type_key character varying,
+    start_item_key character varying,
+    end_item_key character varying,
+    meta jsonb,
+    tag text[],
+    attribute hstore,
+    version bigint,
+    created timestamp(6) with time zone,
+    updated timestamp(6) with time zone,
+    changedby character varying
+  )
+  LANGUAGE 'plpgsql'
+  COST 100
+  STABLE
+AS $BODY$
+BEGIN
+  RETURN QUERY SELECT
+     l.operation,
+     l.change_date,
+     l.id,
+     l.key,
+     l.description,
+     lt.key as link_type_key,
+     start_item.key AS start_item_key,
+     end_item.key AS end_item_key,
+     l.meta,
+     l.tag,
+     l.attribute,
+     l.version,
+     l.created,
+     l.updated,
+     l.changedby
+  FROM link_audit l
+    INNER JOIN item start_item
+      ON l.start_item_id = start_item.id
+    INNER JOIN item end_item
+      ON l.end_item_id = end_item.id
+    INNER JOIN link_type lt
+      ON l.link_type_id = lt.id
+  WHERE l.key = link_key_param
+  -- by change_date range
+  AND ((date_changed_from_param <= l.change_date AND date_changed_to_param > l.change_date) OR
+      (date_changed_from_param IS NULL AND date_changed_to_param IS NULL) OR
+      (date_changed_from_param IS NULL AND date_changed_to_param > l.change_date) OR
+      (date_changed_from_param <= l.change_date AND date_changed_to_param IS NULL));
+END
+$BODY$;
+
+ALTER FUNCTION find_links_audit(
+  character varying, -- item natural key
+  timestamp(6) with time zone, -- change date from
+  timestamp(6) with time zone -- change date to
+)
+OWNER TO onix;
+
+/*
+  get_links_from_item_count: find the number of links of a particular type that are associated with an start item.
+     Can use the link attributes to filter the result.
+ */
+CREATE OR REPLACE FUNCTION get_links_from_item_count(
+    item_key_param character varying, -- item natural key
+    attribute_param hstore -- filter for links
+  )
+  RETURNS INTEGER
+  LANGUAGE 'plpgsql'
+  COST 100
+  STABLE
+AS $BODY$
+DECLARE
+  link_count integer;
+BEGIN
+  RETURN (
+    SELECT COUNT(*) INTO link_count
+    FROM link l
+    INNER JOIN item i
+       ON l.start_item_id = i.id
+    WHERE i.key = item_key_param
+    -- by attributes (hstore)
+    AND (l.attribute @> attribute_param OR attribute_param IS NULL)
+  );
+END
+$BODY$;
+
+ALTER FUNCTION get_links_from_item_count(
+  character varying, -- item natural key
+  hstore -- filter for links
+)
+OWNER TO onix;
+
+/*
+  get_links_to_item_count: find the number of links of a particular type that are associated with an end item.
+     Can use the link attributes to filter the result.
+ */
+CREATE OR REPLACE FUNCTION get_links_to_item_count(
+    item_key_param character varying, -- item natural key
+    attribute_param hstore -- filter for links
+  )
+  RETURNS INTEGER
+  LANGUAGE 'plpgsql'
+  COST 100
+  STABLE
+AS $BODY$
+DECLARE
+  link_count integer;
+BEGIN
+  RETURN (
+    SELECT COUNT(*) INTO link_count
+    FROM link l
+      INNER JOIN item i
+        ON l.end_item_id = i.id
+    WHERE i.key = item_key_param
+    -- by attributes (hstore)
+    AND (l.attribute @> attribute_param OR attribute_param IS NULL)
+  );
+END
+$BODY$;
+
+ALTER FUNCTION get_links_to_item_count(
+  character varying, -- item natural key
+  hstore -- filter for links
+)
+OWNER TO onix;
+
 END
 $$;
