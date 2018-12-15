@@ -252,19 +252,19 @@ BEGIN
         CREATE TABLE item_audit
         (
             operation CHAR(1) NOT NULL,
-            change_date TIMESTAMP NOT NULL,
+            change_date timestamp(6) with time zone NOT NULL,
             id bigint,
             key CHARACTER VARYING(100) COLLATE pg_catalog."default",
             name CHARACTER VARYING(200) COLLATE pg_catalog."default",
-            description CHARACTER VARYING(500) COLLATE pg_catalog."default",
+            description text COLLATE pg_catalog."default",
             meta jsonb,
             tag text[] COLLATE pg_catalog."default",
             attribute hstore,
             status SMALLINT,
             item_type_id INTEGER,
             version bigint,
-            created TIMESTAMP(6) with time zone,
-            updated TIMESTAMP(6) with time zone,
+            created timestamp(6) with time zone,
+            updated timestamp(6) with time zone,
             changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
         );
 
@@ -300,14 +300,14 @@ BEGIN
         CREATE TABLE link_audit
         (
             operation CHAR(1) NOT NULL,
-            change_date TIMESTAMP NOT NULL,
+            change_date timestamp(6) with time zone NOT NULL,
             id bigint,
             key CHARACTER VARYING(200) COLLATE pg_catalog."default",
             link_type_id integer,
             start_item_id bigint,
             end_item_id bigint,
-            description CHARACTER VARYING(500) COLLATE pg_catalog."default",
-            meta json,
+            description text COLLATE pg_catalog."default",
+            meta jsonb,
             tag text[] COLLATE pg_catalog."default",
             attribute hstore,
             version bigint,
