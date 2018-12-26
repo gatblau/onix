@@ -62,6 +62,52 @@ BEGIN
 	  END IF;
 
     ---------------------------------------------------------------------------
+    -- ITEM_TYPE AUDIT
+    ---------------------------------------------------------------------------
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_type_audit')
+    THEN
+        CREATE TABLE item_type_audit
+        (
+            operation CHAR(1) NOT NULL,
+            changed TIMESTAMP NOT NULL,
+            id INTEGER,
+            key CHARACTER VARYING(100) COLLATE pg_catalog."default",
+            name CHARACTER VARYING(200) COLLATE pg_catalog."default",
+            description TEXT COLLATE pg_catalog."default",
+            attr_valid HSTORE,
+            system boolean,
+            version bigint,
+            created timestamp(6) with time zone,
+            updated timestamp(6) with time zone,
+            changedby CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
+        );
+
+        ALTER TABLE item_type_audit
+            OWNER to onix;
+
+        CREATE OR REPLACE FUNCTION audit_item_type() RETURNS TRIGGER AS $item_type_audit$
+        BEGIN
+            IF (TG_OP = 'DELETE') THEN
+                INSERT INTO item_type_audit SELECT 'D', now(), OLD.*;
+                RETURN OLD;
+            ELSIF (TG_OP = 'UPDATE') THEN
+                INSERT INTO item_type_audit SELECT 'U', now(), NEW.*;
+                RETURN NEW;
+            ELSIF (TG_OP = 'INSERT') THEN
+                INSERT INTO item_type_audit SELECT 'I', now(), NEW.*;
+                RETURN NEW;
+            END IF;
+            RETURN NULL; -- result is ignored since this is an AFTER trigger
+        END;
+        $item_type_audit$ LANGUAGE plpgsql;
+
+        CREATE TRIGGER item_type_audit
+            AFTER INSERT OR UPDATE OR DELETE ON item_type
+            FOR EACH ROW EXECUTE PROCEDURE audit_item_type();
+
+    END IF;
+
+    ---------------------------------------------------------------------------
     -- ITEM
     ---------------------------------------------------------------------------
     IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item')
@@ -127,6 +173,55 @@ BEGIN
 	  END IF;
 
     ---------------------------------------------------------------------------
+    -- ITEM AUDIT
+    ---------------------------------------------------------------------------
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_audit')
+    THEN
+        CREATE TABLE item_audit
+        (
+            operation CHAR(1) NOT NULL,
+            change_date timestamp(6) with time zone NOT NULL,
+            id bigint,
+            key CHARACTER VARYING(100) COLLATE pg_catalog."default",
+            name CHARACTER VARYING(200) COLLATE pg_catalog."default",
+            description text COLLATE pg_catalog."default",
+            meta jsonb,
+            tag text[] COLLATE pg_catalog."default",
+            attribute hstore,
+            status SMALLINT,
+            item_type_id INTEGER,
+            version bigint,
+            created timestamp(6) with time zone,
+            updated timestamp(6) with time zone,
+            changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
+        );
+
+        ALTER TABLE item_audit
+            OWNER to onix;
+
+        CREATE OR REPLACE FUNCTION audit_item() RETURNS TRIGGER AS $item_audit$
+        BEGIN
+            IF (TG_OP = 'DELETE') THEN
+                INSERT INTO item_audit SELECT 'D', now(), OLD.*;
+                RETURN OLD;
+            ELSIF (TG_OP = 'UPDATE') THEN
+                INSERT INTO item_audit SELECT 'U', now(), NEW.*;
+                RETURN NEW;
+            ELSIF (TG_OP = 'INSERT') THEN
+                INSERT INTO item_audit SELECT 'I', now(), NEW.*;
+                RETURN NEW;
+            END IF;
+            RETURN NULL; -- result is ignored since this is an AFTER trigger
+        END;
+        $item_audit$ LANGUAGE plpgsql;
+
+        CREATE TRIGGER item_audit
+            AFTER INSERT OR UPDATE OR DELETE ON item
+            FOR EACH ROW EXECUTE PROCEDURE audit_item();
+
+    END IF;
+
+    ---------------------------------------------------------------------------
     -- LINK TYPE
     ---------------------------------------------------------------------------
     IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_type')
@@ -163,6 +258,52 @@ BEGIN
         INSERT INTO link_type(key, name, description, system, changedby) VALUES ('INVENTORY', 'Inventory Link', 'Links items describing an inventory.', TRUE, 'onix');
         INSERT INTO link_type(key, name, description, system, changedby) VALUES ('LICENSE', 'Licence Link', 'Links items describing licence usage.', TRUE, 'onix');
         INSERT INTO link_type(key, name, description, system, changedby) VALUES ('NETWORK', 'Network Link', 'Links items describing network connections.', TRUE, 'onix');
+    END IF;
+
+    ---------------------------------------------------------------------------
+    -- LINK_TYPE AUDIT
+    ---------------------------------------------------------------------------
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_type_audit')
+    THEN
+        CREATE TABLE link_type_audit
+        (
+            operation CHAR(1) NOT NULL,
+            changed TIMESTAMP NOT NULL,
+            id INTEGER,
+            key CHARACTER VARYING(100) COLLATE pg_catalog."default",
+            name CHARACTER VARYING(200) COLLATE pg_catalog."default",
+            description TEXT COLLATE pg_catalog."default",
+            attr_valid HSTORE,
+            system boolean,
+            version bigint,
+            created timestamp(6) with time zone,
+            updated timestamp(6) with time zone,
+            changedby CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
+        );
+
+        ALTER TABLE link_type_audit
+            OWNER to onix;
+
+        CREATE OR REPLACE FUNCTION audit_link_type() RETURNS TRIGGER AS $link_type_audit$
+        BEGIN
+            IF (TG_OP = 'DELETE') THEN
+                INSERT INTO item_type_audit SELECT 'D', now(), OLD.*;
+                RETURN OLD;
+            ELSIF (TG_OP = 'UPDATE') THEN
+                INSERT INTO item_type_audit SELECT 'U', now(), NEW.*;
+                RETURN NEW;
+            ELSIF (TG_OP = 'INSERT') THEN
+                INSERT INTO item_type_audit SELECT 'I', now(), NEW.*;
+                RETURN NEW;
+            END IF;
+            RETURN NULL; -- result is ignored since this is an AFTER trigger
+        END;
+        $link_type_audit$ LANGUAGE plpgsql;
+
+        CREATE TRIGGER link_type_audit
+            AFTER INSERT OR UPDATE OR DELETE ON link_type
+            FOR EACH ROW EXECUTE PROCEDURE audit_link_type();
+
     END IF;
 
     ---------------------------------------------------------------------------
@@ -245,54 +386,6 @@ BEGIN
     END IF;
 
     ---------------------------------------------------------------------------
-    -- ITEM AUDIT
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_audit')
-    THEN
-        CREATE TABLE item_audit
-        (
-            operation CHAR(1) NOT NULL,
-            change_date timestamp(6) with time zone NOT NULL,
-            id bigint,
-            key CHARACTER VARYING(100) COLLATE pg_catalog."default",
-            name CHARACTER VARYING(200) COLLATE pg_catalog."default",
-            description text COLLATE pg_catalog."default",
-            meta jsonb,
-            tag text[] COLLATE pg_catalog."default",
-            attribute hstore,
-            status SMALLINT,
-            item_type_id INTEGER,
-            version bigint,
-            created timestamp(6) with time zone,
-            updated timestamp(6) with time zone,
-            changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
-        );
-
-        ALTER TABLE item_audit
-            OWNER to onix;
-
-        CREATE OR REPLACE FUNCTION audit_item() RETURNS TRIGGER AS $item_audit$
-        BEGIN
-            IF (TG_OP = 'DELETE') THEN
-                INSERT INTO item_audit SELECT 'D', now(), OLD.*;
-                RETURN OLD;
-            ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO item_audit SELECT 'U', now(), NEW.*;
-                RETURN NEW;
-            ELSIF (TG_OP = 'INSERT') THEN
-                INSERT INTO item_audit SELECT 'I', now(), NEW.*;
-                RETURN NEW;
-            END IF;
-            RETURN NULL; -- result is ignored since this is an AFTER trigger
-        END;
-        $item_audit$ LANGUAGE plpgsql;
-
-        CREATE TRIGGER item_audit
-        AFTER INSERT OR UPDATE OR DELETE ON item
-            FOR EACH ROW EXECUTE PROCEDURE audit_item();
-    END IF;
-
-    ---------------------------------------------------------------------------
     -- LINK AUDIT
     ---------------------------------------------------------------------------
     IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_audit')
@@ -336,98 +429,125 @@ BEGIN
         $link_audit$ LANGUAGE plpgsql;
 
         CREATE TRIGGER link_audit
-        AFTER INSERT OR UPDATE OR DELETE ON link
-          FOR EACH ROW EXECUTE PROCEDURE audit_link();
+            AFTER INSERT OR UPDATE OR DELETE ON link
+            FOR EACH ROW EXECUTE PROCEDURE audit_link();
+
     END IF;
 
     ---------------------------------------------------------------------------
-    -- ITEM_TYPE AUDIT
+    -- LINK_RULE
     ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_type_audit')
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_rule')
     THEN
-        CREATE TABLE item_type_audit
+        CREATE SEQUENCE link_rule_id_seq
+            INCREMENT 1
+            START 1
+            MINVALUE 1
+            MAXVALUE 9223372036854775807
+            CACHE 1;
+
+        ALTER SEQUENCE link_rule_id_seq
+            OWNER TO onix;
+
+        CREATE TABLE link_rule
         (
-            operation CHAR(1) NOT NULL,
-            changed TIMESTAMP NOT NULL,
-            id INTEGER,
-            key CHARACTER VARYING(100) COLLATE pg_catalog."default",
-            name CHARACTER VARYING(200) COLLATE pg_catalog."default",
-            description TEXT COLLATE pg_catalog."default",
-            attr_valid HSTORE,
-            system boolean,
+            id bigint NOT NULL DEFAULT nextval('link_rule_id_seq'::regclass),
+            key character varying(300) COLLATE pg_catalog."default" NOT NULL,
+            name character varying(200) COLLATE pg_catalog."default",
+            description text COLLATE pg_catalog."default",
+            link_type_id integer NOT NULL,
+            start_item_type_id integer NOT NULL,
+            end_item_type_id integer NOT NULL,
+            version bigint NOT NULL DEFAULT 1,
+            created timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
+            updated timestamp(6) with time zone,
+            changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+            CONSTRAINT link_rule_id_pk PRIMARY KEY (id),
+            CONSTRAINT link_rule_key_uc UNIQUE (key),
+            CONSTRAINT link_rule_start_item_type_id_fk FOREIGN KEY (start_item_type_id)
+                REFERENCES item_type (id) MATCH SIMPLE
+                ON UPDATE NO ACTION
+                ON DELETE NO ACTION,
+            CONSTRAINT link_rule_end_item_type_id_fk FOREIGN KEY (end_item_type_id)
+                REFERENCES item_type (id) MATCH SIMPLE
+                ON UPDATE NO ACTION
+                ON DELETE NO ACTION,
+            CONSTRAINT link_rule_link_type_id_fk FOREIGN KEY (link_type_id)
+                REFERENCES link_type (id) MATCH SIMPLE
+                ON UPDATE NO ACTION
+                ON DELETE NO ACTION
+        )
+        WITH (OIDS = FALSE)
+        TABLESPACE pg_default;
+
+        ALTER TABLE link_rule
+            OWNER to onix;
+
+        CREATE UNIQUE INDEX link_rule_id_uix
+            ON link_rule
+            (id)
+            TABLESPACE pg_default;
+
+        CREATE INDEX fki_link_rule_link_type_id_fk
+            ON link_rule USING btree (link_type_id)
+            TABLESPACE pg_default;
+
+        CREATE INDEX fki_link_rule_start_item_type_id_fk
+            ON link_rule USING btree (start_item_type_id)
+            TABLESPACE pg_default;
+
+        CREATE INDEX fki_link_rule_end_item_type_id_fk
+            ON link_rule USING btree (end_item_type_id)
+            TABLESPACE pg_default;
+
+    END IF;
+
+    ---------------------------------------------------------------------------
+    -- LINK_RULE AUDIT
+    ---------------------------------------------------------------------------
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_rule_audit')
+    THEN
+        CREATE TABLE link_rule_audit
+        (
+            operation CHAR(1),
+            change_date timestamp(6) with time zone,
+            id bigint,
+            key character varying(300),
+            name character varying(200),
+            description text,
+            link_type_id integer,
+            start_item_type_id integer,
+            end_item_type_id integer,
             version bigint,
             created timestamp(6) with time zone,
             updated timestamp(6) with time zone,
-            changedby CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
+            changedby CHARACTER VARYING(100)
         );
 
-        ALTER TABLE item_type_audit
+        ALTER TABLE link_rule_audit
             OWNER to onix;
 
-        CREATE OR REPLACE FUNCTION audit_item_type() RETURNS TRIGGER AS $item_type_audit$
+        CREATE OR REPLACE FUNCTION audit_link_rule() RETURNS TRIGGER AS $link_rule_audit$
         BEGIN
             IF (TG_OP = 'DELETE') THEN
-                INSERT INTO item_type_audit SELECT 'D', now(), OLD.*;
+                INSERT INTO link_rule_audit SELECT 'D', now(), OLD.*;
                 RETURN OLD;
             ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO item_type_audit SELECT 'U', now(), NEW.*;
+                INSERT INTO link_rule_audit SELECT 'U', now(), NEW.*;
                 RETURN NEW;
             ELSIF (TG_OP = 'INSERT') THEN
-                INSERT INTO item_type_audit SELECT 'I', now(), NEW.*;
+                INSERT INTO link_rule_audit SELECT 'I', now(), NEW.*;
                 RETURN NEW;
             END IF;
             RETURN NULL; -- result is ignored since this is an AFTER trigger
         END;
-        $item_type_audit$ LANGUAGE plpgsql;
+        $link_rule_audit$
+        LANGUAGE plpgsql;
 
-        CREATE TRIGGER item_type_audit
-        AFTER INSERT OR UPDATE OR DELETE ON item_type
-          FOR EACH ROW EXECUTE PROCEDURE audit_item_type();
-    END IF;
+        CREATE TRIGGER link_rule_audit
+            AFTER INSERT OR UPDATE OR DELETE ON link_rule
+            FOR EACH ROW EXECUTE PROCEDURE audit_link_rule();
 
-    ---------------------------------------------------------------------------
-    -- ITEM_TYPE AUDIT
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_type_audit')
-    THEN
-        CREATE TABLE link_type_audit
-        (
-            operation CHAR(1) NOT NULL,
-            changed TIMESTAMP NOT NULL,
-            id INTEGER,
-            key CHARACTER VARYING(100) COLLATE pg_catalog."default",
-            name CHARACTER VARYING(200) COLLATE pg_catalog."default",
-            description TEXT COLLATE pg_catalog."default",
-            attr_valid HSTORE,
-            system boolean,
-            version bigint,
-            created timestamp(6) with time zone,
-            updated timestamp(6) with time zone,
-            changedby CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
-        );
-
-        ALTER TABLE link_type_audit
-            OWNER to onix;
-
-        CREATE OR REPLACE FUNCTION audit_link_type() RETURNS TRIGGER AS $link_type_audit$
-        BEGIN
-            IF (TG_OP = 'DELETE') THEN
-                INSERT INTO item_type_audit SELECT 'D', now(), OLD.*;
-                RETURN OLD;
-            ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO item_type_audit SELECT 'U', now(), NEW.*;
-                RETURN NEW;
-            ELSIF (TG_OP = 'INSERT') THEN
-                INSERT INTO item_type_audit SELECT 'I', now(), NEW.*;
-                RETURN NEW;
-            END IF;
-                RETURN NULL; -- result is ignored since this is an AFTER trigger
-        END;
-        $link_type_audit$ LANGUAGE plpgsql;
-
-        CREATE TRIGGER link_type_audit
-            AFTER INSERT OR UPDATE OR DELETE ON link_type
-            FOR EACH ROW EXECUTE PROCEDURE audit_link_type();
     END IF;
 END;
 $$

@@ -57,6 +57,17 @@ SELECT set_link_type(
   'onix' -- changed by
 )
 
+SELECT set_link_rule(
+   'super-host->super-host'::character varying,
+   'Allow KEY01 -> KEY02'::character varying,
+   'Allows the linking of items of type super-host.'::text,
+   'link01'::character varying,
+   'SUPER_HOST'::character varying,
+   'SUPER_HOST'::character varying,
+   null::integer,
+   'onix'::character varying
+)
+
 SELECT set_link(
    'TEST-LINK-01', -- link natural key
    'link01', -- link type

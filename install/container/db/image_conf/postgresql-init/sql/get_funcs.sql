@@ -193,5 +193,54 @@ $BODY$;
 ALTER FUNCTION link_type(character varying)
   OWNER TO onix;
 
+/*
+  gets a Link_rule by its natural key.
+  use: select * from link_rule('the_link_rule_key')
+ */
+CREATE OR REPLACE FUNCTION link_rule(key_param character varying)
+  RETURNS TABLE(
+    id bigint,
+    key character varying(300),
+    name character varying(200),
+    description text,
+    link_type_key character varying,
+    start_item_type_key character varying,
+    end_item_type_key character varying,
+    version bigint,
+    created timestamp(6) with time zone,
+    updated timestamp(6) with time zone,
+    changedby character varying(100)
+  )
+  LANGUAGE 'plpgsql'
+  COST 100
+  STABLE
+AS $BODY$
+BEGIN
+  RETURN QUERY SELECT
+    r.id,
+    r.key,
+    r.name,
+    r.description,
+    lt.key AS link_type_key,
+    start_item_type.key AS start_item_key,
+    end_item_type.key AS end_item_type_key,
+    r.version,
+    r.created,
+    r.updated,
+    r.changedby
+  FROM link_rule r
+    INNER JOIN item_type start_item_type
+      ON r.start_item_type_id = start_item_type.id
+    INNER JOIN item_type end_item_type
+      ON r.end_item_type_id = end_item_type.id
+    INNER JOIN link_type lt
+      ON r.link_type_id = lt.id
+  WHERE r.key = key_param;
+END;
+$BODY$;
+
+ALTER FUNCTION link_rule(character varying)
+  OWNER TO onix;
+
 END
 $$;
