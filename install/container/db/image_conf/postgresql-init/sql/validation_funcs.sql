@@ -203,5 +203,45 @@ $BODY$;
 ALTER FUNCTION check_attr_valid(hstore)
   OWNER TO onix;
 
+/*
+  select check_link(link_type_key_param, start_item_type_key_param, end_item_type_key_param):
+    checks that a link of a given type is valid (i.e. can be used to join to items of given types
+    in a particular direction)
+ */
+CREATE OR REPLACE FUNCTION check_link(
+    link_type_key_param character varying,
+    start_item_type_key_param character varying,
+    end_item_type_key_param character varying
+  )
+  RETURNS VOID
+  LANGUAGE 'plpgsql'
+  COST 100
+  STABLE
+  AS $BODY$
+DECLARE
+  rule_count integer;
+BEGIN
+  SELECT COUNT(*) INTO rule_count
+  FROM link_rule r
+  INNER JOIN link_type lt
+    ON lt.id = r.link_type_id
+  INNER JOIN item_type start_item_type
+    ON r.start_item_type_id = start_item_type.id
+  INNER JOIN item_type end_item_type
+    ON r.end_item_type_id = end_item_type.id
+  WHERE lt.key = link_type_key_param
+    AND start_item_type.key = start_item_type_key_param
+    AND end_item_type.key = end_item_type_key_param;
+
+  IF (rule_count = 0) THEN
+    RAISE EXCEPTION 'Unallowed link: a link of type ''%'' cannot be used to connect from items of type ''%'' to items of type ''%''.', link_type_key_param, start_item_type_key_param, end_item_type_key_param
+      USING hint = 'Check the link type is correct and the direction of the link is allowed.';
+  END IF;
+END;
+$BODY$;
+
+ALTER FUNCTION check_link(character varying, character varying, character varying)
+  OWNER TO onix;
+
 END
 $$;
