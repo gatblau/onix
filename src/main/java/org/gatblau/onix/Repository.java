@@ -25,19 +25,21 @@ import org.gatblau.onix.data.ItemData;
 import org.gatblau.onix.data.LinkData;
 import org.gatblau.onix.data.LinkList;
 import org.gatblau.onix.data.LinkedItemData;
-import org.gatblau.onix.model.Dimension;
 import org.gatblau.onix.model.Item;
 import org.gatblau.onix.model.ItemType;
 import org.gatblau.onix.model.Link;
 import org.json.simple.JSONObject;
+import org.postgresql.util.HStoreConverter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.TypedQuery;
+import javax.persistence.*;
 import java.io.IOException;
+import java.sql.*;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Consumer;
@@ -48,6 +50,9 @@ public class Repository {
 
     @Autowired
     private EntityManager em;
+
+    @Autowired
+    private Database db;
 
     public Repository() {
     }
@@ -62,163 +67,63 @@ public class Repository {
         return n.getId();
     }
 
-    @Transactional
-    public Result createOrUpdateItem(String key, JSONObject json) throws IOException {
+    public Result createOrUpdateItem(String key, JSONObject json) throws IOException, SQLException {
         Result result = new Result();
-        result.setChanged(false);
-        TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
-        query.setParameter(Item.PARAM_KEY, key);
-        Item item = null;
-        ZonedDateTime time = ZonedDateTime.now();
 
-        ItemType itemType;
-        String type = "";
+        Object name = json.get("name");
+        Object description = json.get("description");
+        Object meta = json.get("meta");
+        Object tag = json.get("tag");
+        Object attribute = json.get("attribute");
+        Object status = json.get("status");
+        Object type = json.get("type");
+
+        String sql = "SELECT set_item(" +
+            "?::character varying,\n" +
+            "?::character varying,\n" +
+            "?::text,\n" +
+            "?::jsonb,\n" +
+            "?::text[],\n" +
+            "?::hstore,\n" +
+            "?::smallint,\n" +
+            "?::character varying,\n" +
+            "?::bigint,\n" +
+            "?::character varying)";
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet set = null;
         try {
-            type = (String)json.get("type");
-            itemType = getItemType(type);
-        }
-        catch (NoResultException nre) {
-            result.setChanged(false);
-            result.setError(true);
-            result.setMessage(String.format("Cannot create or update item %s: Item Type %s is not defined.", key, type));
-            return result;
-        }
-        try {
-            item = query.getSingleResult();
-
-            if (!itemType.getKey().equals(item.getItemType().getKey())) {
-                item.setItemType(itemType);
-                result.setChanged(true);
+            conn = db.createConnection();
+            stmt = conn.prepareStatement(sql);
+            stmt.setString(1, key); // key_param
+            stmt.setString(2, (name != null) ? (String) name : null); // name_param
+            stmt.setString(3, (description != null) ? (String) description : null); // description_param
+            stmt.setString(4, (meta != null) ? new JSONObject((LinkedHashMap<String, String>) meta).toJSONString() : null); // meta_param
+            stmt.setString(5, (tag != null) ? toArrayStr((ArrayList<String>) tag) : null); // tag_param
+            stmt.setString(6, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null); // attribute_param
+            stmt.setInt(7, (status != null) ? (int) status : null); // status_param
+            stmt.setString(8, (type != null) ? (String) type : null); // item_type_key_param
+            stmt.setObject(9, null); // version_param
+            stmt.setString(10, getUser()); // changedby_param
+            set = stmt.executeQuery();
+            if (set.next()){
+                String r = set.getString("set_item");
+                result.setOperation(r);
             }
-
-            String value = (String)json.get("description");
-
-            if (!item.getDescription().equals(value)) {
-                item.setDescription(value);
-                result.setChanged(true);
-            }
-
-            value = (String)json.get("tag");
-            if (!item.getTag().equals(value)) {
-                item.setTag(value);
-                result.setChanged(true);
-            }
-
-            value = (String)json.get("name");
-            if (!item.getName().equals(value)) {
-                item.setName(value);
-                result.setChanged(true);
-            }
-
-            Short valueShort = Short.parseShort(json.get("status").toString());
-            if (!item.getStatus().equals(valueShort)) {
-                item.setStatus(valueShort);
-                result.setChanged(true);
-            }
-
-            JsonNode node = mapper.valueToTree(json.get("meta"));
-            if (!item.getMeta().equals(node)) {
-                item.setMeta(node);
-                result.setChanged(true);
-            }
-        }
-        catch (NoResultException e) {
-            item = new Item();
-            item.setKey(key);
-            item.setCreated(time);
-            item.setItemType(itemType);
-            item.setName((String)json.get("name"));
-            item.setDescription(ifNullThenEmpty((String)json.get("description")));
-            item.setTag(ifNullThenEmpty((String)json.get("tag")));
-            item.setMeta(mapper.valueToTree(json.get("meta")));
-            item.setStatus(Short.parseShort(json.get("status").toString()));
-
-            result.setChanged(true);
-            result.setMessage(String.format("Item %s has been CREATED.", key));
-            result.setOperation("C");
         }
         catch (Exception ex) {
-            result.setChanged(false);
-            result.setError(true);
-            result.setMessage(String.format("Failed to create or update Item %s: %s.", key, ex.getMessage()));
-            return result;
+            ex.printStackTrace();
         }
-
-        if (result.isChanged()) {
-            if (result.getOperation() == null) {
-                result.setMessage(String.format("Item %s has been UPDATED.", key));
-                result.setOperation("U");
-            }
-            item.setUpdated(time);
-            try {
-                em.persist(item);
-            }
-            catch (Exception ex) {
-                result.setChanged(false);
-                result.setError(true);
-                result.setMessage(String.format("Failed to create or update Item %s: %s.", key, ex.getMessage()));
-                return result;
-            }
-        }
-        else {
-            result.setMessage(String.format("Item %s has not changed and does not need updating.", key));
-        }
-
-        LinkedHashMap<String, String> dims =  (LinkedHashMap<String, String>)json.get("dimensions");
-        if (dims != null) {
-            if (result.getOperation() != null && result.getOperation().equals("C")) {
-                Iterator<Map.Entry<String, String>> iterator = dims.entrySet().iterator();
-                while (iterator.hasNext()) {
-                    Map.Entry<String, String> entry = iterator.next();
-                    Dimension d = new Dimension();
-                    d.setItem(item);
-                    d.setKey((String) entry.getKey());
-                    d.setValue((String) entry.getValue());
-                    em.persist(d);
-                }
-            }
-            if (result.getOperation() == null || result.getOperation().equals("U")) {
-                Iterator<Map.Entry<String, String>> iterator = dims.entrySet().iterator();
-                while (iterator.hasNext()) {
-                    boolean changed = false;
-                    Map.Entry<String, String> entry = iterator.next();
-                    TypedQuery<Dimension> dimQuery = em.createNamedQuery(Dimension.FIND_BY_KEY, Dimension.class);
-                    dimQuery.setParameter(Dimension.PARAM_KEY, entry.getKey());
-                    dimQuery.setParameter(Dimension.PARAM_ITEM_KEY, item.getKey());
-                    Dimension d;
-                    try {
-                          d = dimQuery.getSingleResult();
-                          if (!d.getValue().equals(entry.getValue())) {
-                              d.setValue(entry.getValue());
-                              result.setChanged(true);
-                              result.setOperation("U");
-                          }
-                    }
-                    catch (NoResultException nre) {
-                        // if the dimension does not exist, then creates one
-                        d = new Dimension();
-                        d.setKey(entry.getKey());
-                        d.setValue(entry.getValue());
-                        d.setItem(item);
-                        result.setChanged(true);
-                        result.setOperation("C");
-                    }
-
-                    if (result.isChanged()) {
-                        em.persist(d);
-                        String m;
-                        if (result.getOperation().equals("C")) {
-                            m = String.format("Dimension %s was created.", entry.getKey());
-                        }
-                        else {
-                            m = String.format("Dimension %s was updated.", entry.getKey());
-                        }
-                        result.setMessage(String.format("%s %s", result.getMessage(), m));
-                    }
-                }
-            }
+        finally {
+            set.close();
+            stmt.close();
+            conn.close();
         }
         return result;
+    }
+
+    private String toArrayStr(List tag) {
+        return null;
     }
 
     private ItemType getItemType(String type) {
@@ -246,7 +151,6 @@ public class Repository {
     @Transactional
     public void clear() {
         if (em != null) {
-            em.createNamedQuery(Dimension.DELETE_ALL).executeUpdate();
             em.createNamedQuery(Link.DELETE_ALL).executeUpdate();
             em.createNamedQuery(Item.DELETE_ALL).executeUpdate();
 //            em.createNamedQuery(ItemType.DELETE_ALL).executeUpdate();
@@ -559,13 +463,6 @@ public class Repository {
         data.setMeta(item.getMeta());
         data.setTag(item.getTag());
 
-        item.getDimensions().forEach(new Consumer<Dimension>() {
-            @Override
-            public void accept(Dimension dimension) {
-                data.getDimensions().put(dimension.getKey(), dimension.getValue());
-            }
-        });
-
         // populate linked items here
         List<LinkData> links = new ArrayList<>();
         links.addAll(getLinksData(item, true)); // to links
@@ -612,21 +509,6 @@ public class Repository {
             result.setChanged(false);
             result.setMessage(String.format("Cannot delete Item %s because it is linked to other items.", key));
             return result;
-        }
-
-        try {
-            for (Dimension dim : item.getDimensions()) {
-                em.remove(dim);
-            }
-            em.remove(item);
-            result.setError(false);
-            result.setChanged(true);
-            result.setMessage(String.format("Item %s has been deleted.", key));
-        }
-        catch (Exception ex) {
-            result.setError(true);
-            result.setChanged(false);
-            result.setMessage(String.format("Failed to delete Item %s: %s", key, ex.getMessage()));
         }
         return result;
     }
@@ -751,5 +633,21 @@ public class Repository {
         catch (NoResultException nre) {
         }
         return null;
+    }
+
+    private String getUser() {
+        String username = null;
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserDetails) {
+            UserDetails details = (UserDetails)principal;
+            username = details.getUsername();
+            for (GrantedAuthority a : details.getAuthorities()){
+                username += "|" + a.getAuthority();
+            };
+        }
+        else {
+            username = principal.toString();
+        }
+        return username;
     }
 }

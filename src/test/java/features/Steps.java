@@ -63,6 +63,10 @@ public class Steps extends BaseTest {
 
     @And("^the response code is (\\d+)$")
     public void theResponseCodeIs(int responseCode) throws Throwable {
+        if (util.containsKey(EXCEPTION)) {
+            Exception ex = util.get(EXCEPTION);
+            throw ex;
+        }
         ResponseEntity<Result> response = util.get(RESPONSE);
         if (response.getStatusCodeValue() != responseCode) {
             throw new RuntimeException(
@@ -213,20 +217,13 @@ public class Steps extends BaseTest {
         vars.put("key", util.get(LINK_KEY));
         ResponseEntity<Result> response = null;
         try {
-            response = client.exchange(url, HttpMethod.PUT, getEntity(PAYLOAD), Result.class, vars);
+            response = client.exchange(url, HttpMethod.PUT, getEntityFromKey(PAYLOAD), Result.class, vars);
             util.put(RESPONSE, response);
             util.remove(EXCEPTION);
         }
         catch (Exception ex) {
             util.put(EXCEPTION, ex);
         }
-    }
-
-    private HttpEntity<?> getEntity(String payloadKey) {
-        String payload = util.get(payloadKey);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json");
-       return new HttpEntity<>(payload, headers);
     }
 
     @Given("^the configuration items to be linked exist in the database$")
@@ -261,7 +258,7 @@ public class Steps extends BaseTest {
         vars.put("key", itemKey);
         ResponseEntity<Result> response = null;
         try {
-            response = client.exchange(url, HttpMethod.PUT, getEntity(PAYLOAD), Result.class, vars);
+            response = client.exchange(url, HttpMethod.PUT, getEntityFromKey(PAYLOAD), Result.class, vars);
             util.put(RESPONSE, response);
             util.remove(EXCEPTION);
         }
@@ -359,7 +356,7 @@ public class Steps extends BaseTest {
         String url = util.get(ENDPOINT_URI);
         ResponseEntity<Result> response = null;
         try {
-            response = client.exchange(url, HttpMethod.PUT, getEntity(PAYLOAD), Result.class, (String) util.get(KEY));
+            response = client.exchange(url, HttpMethod.PUT, getEntityFromKey(PAYLOAD), Result.class, (String) util.get(KEY));
             util.put(RESPONSE, response);
             util.remove(EXCEPTION);
         }
@@ -385,7 +382,7 @@ public class Steps extends BaseTest {
         vars.put("key", linkKey);
         ResponseEntity<Result> response = null;
         try {
-            response = client.exchange(url, HttpMethod.PUT, getEntity(PAYLOAD), Result.class, vars);
+            response = client.exchange(url, HttpMethod.PUT, getEntityFromKey(PAYLOAD), Result.class, vars);
             util.put(RESPONSE, response);
             util.remove(EXCEPTION);
         }
