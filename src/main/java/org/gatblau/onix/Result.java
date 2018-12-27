@@ -13,6 +13,7 @@ public class Result implements Serializable {
     public Result() {
         this.changed = false;
         this.error = false;
+        this.operation = "N";
     }
 
     public String getMessage() {
@@ -37,6 +38,7 @@ public class Result implements Serializable {
 
     public void setOperation(String operation) {
         this.operation = operation;
+        changed = (operation.equals("I") || operation.equals("U"));
     }
 
     public boolean isError() {

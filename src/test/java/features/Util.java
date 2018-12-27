@@ -1,15 +1,20 @@
 package features;
 
+import org.apache.tomcat.util.codec.binary.Base64;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +23,12 @@ import java.util.Scanner;
 @Component
 public class Util {
     private Map<String, Object> cache = new HashMap<>();
+
+    @Value("${wapi.admin.user}")
+    public String adminUsername;
+
+    @Value("${wapi.admin.pwd}")
+    public String adminPassword;
 
     public Util(){
     }
@@ -31,7 +42,6 @@ public class Util {
                 wait(interval);
             }
         }
-
     }
 
     private void wait(int interval) {
@@ -124,20 +134,6 @@ public class Util {
                 }
             }
         }
-    }
-
-    public HttpEntity<String> getEntity(String payload) {
-        HttpHeaders requestHeaders = new HttpHeaders();
-        requestHeaders.add("Content-Type", "application/x-yaml");
-        requestHeaders.add("Accept", "application/x-yaml");
-        if (payload != null) {
-            return new HttpEntity<String>(payload, requestHeaders);
-        }
-        return new HttpEntity<String>(requestHeaders);
-    }
-
-    public HttpEntity<String> getEntity() {
-        return getEntity(null);
     }
 
     public boolean containsKey(String key) {

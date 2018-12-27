@@ -29,6 +29,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -48,7 +49,7 @@ public class WebAPI {
         response = String.class)
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<Info> index() {
-        return ResponseEntity.ok(new Info("Onix Configuration Management Database Service.", "1.0"));
+        return ResponseEntity.ok(new Info("Onix Configuration Management Database Service.", "0.2"));
     }
 
     @ApiOperation(
@@ -60,7 +61,7 @@ public class WebAPI {
             produces = {"application/json" })
     public ResponseEntity<Result> createOrUpdateItem(
             @PathVariable("key") String key,
-            @RequestBody JSONObject payload) throws InterruptedException, IOException {
+            @RequestBody JSONObject payload) throws IOException, SQLException {
         return ResponseEntity.ok(data.createOrUpdateItem(key, payload));
     }
 

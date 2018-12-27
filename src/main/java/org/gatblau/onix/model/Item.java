@@ -132,10 +132,6 @@ public class Item implements Serializable {
     @Column
     private String description;
 
-    @Column
-    @OneToMany(mappedBy = "item")
-    private List<Dimension> dimensions;
-
     @SuppressWarnings("JpaAttributeTypeInspection")
     @Column(name = "meta", nullable = true)
     @Convert(converter = JSONBConverter.class)
@@ -237,14 +233,6 @@ public class Item implements Serializable {
 
     public void setItemType(ItemType itemType) {
         this.itemType = itemType;
-    }
-
-    public List<Dimension> getDimensions() {
-        return dimensions;
-    }
-
-    public void setDimensions(List<Dimension> dimensions) {
-        this.dimensions = dimensions;
     }
 
     public void setStatus(Short status) {

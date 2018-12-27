@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>1.5.10.RELEASE</version>
+        <version>2.1.1.RELEASE</version>
         <!--<version>2.0.2.RELEASE</version>-->
     </parent>
 
@@ -33,14 +33,25 @@
             <artifactId>hibernate-java8</artifactId>
             <version>${hibernate.version}</version>
         </dependency>
-        <!--<dependency>-->
-            <!--<groupId>org.springframework.boot</groupId>-->
-            <!--<artifactId>spring-boot-starter-security</artifactId>-->
-        <!--</dependency>-->
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-spring-boot-starter</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
+        <!--
+        Spring's RestTemplate and Spring Boot's TestRestTemplate relies on JDK's internal HttpURLConnection implementation
+        by default, which fails to access the body of an HTTP-response with status 401 "Unauthorized".
+        Thw httpclient below resolves the issue.
+        -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.6</version>
+            <!--<scope>test</scope>-->
+        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.keycloak</groupId>-->
+            <!--<artifactId>keycloak-spring-boot-starter</artifactId>-->
+        <!--</dependency>-->
         <!--<dependency>-->
             <!--<groupId>org.liquibase</groupId>-->
             <!--<artifactId>liquibase-maven-plugin</artifactId>-->

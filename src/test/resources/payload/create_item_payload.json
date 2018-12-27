@@ -8,10 +8,10 @@
     "Type": "Virtual Machine",
     "OS": "RHEL 7.5"
   },
-  "tag": "Test",
-  "status": 1,
-  "dimensions": {
+  "tag": ["cmdb", "host", "rhel"],
+  "attribute": {
     "WBS" : "012csl",
     "COMPANY" : "ACME"
-  }
+  },
+  "status": 1
 }
