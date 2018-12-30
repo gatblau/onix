@@ -126,8 +126,17 @@ public class Repository {
         return result;
     }
 
-    private String toArrayStr(List tag) {
-        return null;
+    private String toArrayStr(List<String> tag) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        for (int i = 0; i < tag.size(); i++){
+            sb.append("'").append(tag.get(i)).append("'");
+            if (i < tag.size() - 1) {
+                sb.append(",");
+            }
+        }
+        sb.append("}");
+        return sb.toString();
     }
 
     private ItemType getItemType(String type) {
