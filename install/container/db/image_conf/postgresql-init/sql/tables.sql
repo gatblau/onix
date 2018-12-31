@@ -137,7 +137,6 @@ BEGIN
             created timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
             updated timestamp(6) with time zone,
             changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-            transaction_ref UUID DEFAULT uuid_generate_v1(),
             CONSTRAINT item_id_pk PRIMARY KEY (id),
             CONSTRAINT item_key_uc UNIQUE (key),
             CONSTRAINT item_item_type_id_fk FOREIGN KEY (item_type_id)
@@ -194,8 +193,7 @@ BEGIN
             version bigint,
             created timestamp(6) with time zone,
             updated timestamp(6) with time zone,
-            changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-            transaction_ref UUID
+            changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
         );
 
         ALTER TABLE item_audit
@@ -338,7 +336,6 @@ BEGIN
             created TIMESTAMP(6) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP(6),
             updated timestamp(6) WITH TIME ZONE,
             changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-            transaction_ref UUID DEFAULT uuid_generate_v1(),
             CONSTRAINT link_id_pk PRIMARY KEY (id),
             CONSTRAINT link_key_uc UNIQUE (key),
             CONSTRAINT link_link_type_id_fk FOREIGN KEY (link_type_id)
@@ -409,8 +406,7 @@ BEGIN
             version bigint,
             created TIMESTAMP(6) with time zone,
             updated TIMESTAMP(6) with time zone,
-            changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-            transaction_ref UUID
+            changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
         );
 
         ALTER TABLE link_audit

@@ -78,7 +78,6 @@ public class Repository {
         Object status = json.get("status");
         Object type = json.get("type");
         Object version = json.get("version");
-        Object transactionRef = json.get("transaction_ref");
 
         String sql = "SELECT set_item(" +
             "?::character varying,\n" +
@@ -90,8 +89,7 @@ public class Repository {
             "?::smallint,\n" +
             "?::character varying,\n" +
             "?::bigint,\n" +
-            "?::character varying," +
-            "?::uuid)";
+            "?::character varying)";
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet set = null;
@@ -108,7 +106,6 @@ public class Repository {
             stmt.setString(8, (type != null) ? (String) type : null); // item_type_key_param
             stmt.setObject(9, version); // version_param
             stmt.setString(10, getUser()); // changedby_param
-            stmt.setObject(11, transactionRef); // transaction ref
             set = stmt.executeQuery();
             if (set.next()){
                 String r = set.getString("set_item");

@@ -35,8 +35,7 @@ CREATE OR REPLACE FUNCTION item(key_param character varying)
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changedby character varying,
-    transaction_ref uuid
+    changedby character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -56,8 +55,7 @@ BEGIN
      i.version,
      i.created,
      i.updated,
-     i.changedby,
-     i.transaction_ref
+     i.changedby
    FROM item i
    WHERE i.key = key_param;
 END;
@@ -125,8 +123,7 @@ CREATE OR REPLACE FUNCTION link(key_param character varying)
     version bigint,
     created TIMESTAMP(6) WITH TIME ZONE,
     updated timestamp(6) WITH TIME ZONE,
-    changedby CHARACTER VARYING(100),
-    transaction_ref UUID
+    changedby CHARACTER VARYING(100)
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -146,8 +143,7 @@ BEGIN
      l.version,
      l.created,
      l.updated,
-     l.changedby,
-     l.transaction_ref
+     l.changedby
   FROM link l
   WHERE l.key = key_param;
 END;

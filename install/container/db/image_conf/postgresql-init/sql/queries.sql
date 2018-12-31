@@ -27,8 +27,7 @@ CREATE OR REPLACE FUNCTION find_items(
     date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
     date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
-    date_updated_to_param timestamp(6) with time zone, -- none (null) or updated to date
-    transaction_ref_param uuid -- none (null) or ref guid
+    date_updated_to_param timestamp(6) with time zone -- none (null) or updated to date
   )
   RETURNS TABLE(
     id bigint,
@@ -43,8 +42,7 @@ CREATE OR REPLACE FUNCTION find_items(
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changedby character varying,
-    transaction_ref uuid
+    changedby character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -75,8 +73,7 @@ BEGIN
     i.version,
     i.created,
     i.updated,
-    i.changedby,
-    i.transaction_ref
+    i.changedby
   FROM item i
   WHERE
   -- by item type
@@ -96,9 +93,7 @@ BEGIN
   AND ((date_updated_from_param <= i.updated AND date_updated_to_param > i.updated) OR
       (date_updated_from_param IS NULL AND date_updated_to_param IS NULL) OR
       (date_updated_from_param IS NULL AND date_updated_to_param > i.updated) OR
-      (date_updated_from_param <= i.updated AND date_updated_to_param IS NULL))
-  -- by transaction reference
-  AND (i.transaction_ref = transaction_ref_param OR transaction_ref_param IS NULL);
+      (date_updated_from_param <= i.updated AND date_updated_to_param IS NULL));
 END
 $BODY$;
 
@@ -110,8 +105,7 @@ ALTER FUNCTION find_items(
     timestamp(6) with time zone, -- created from
     timestamp(6) with time zone, -- created to
     timestamp(6) with time zone, -- updated from
-    timestamp(6) with time zone, -- updated to
-    uuid -- transaction reference
+    timestamp(6) with time zone -- updated to
   )
   OWNER TO onix;
 
@@ -127,8 +121,7 @@ CREATE OR REPLACE FUNCTION find_links(
   date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
   date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
   date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
-  date_updated_to_param timestamp(6) with time zone, -- none (null) or updated to date
-  transaction_ref_param uuid -- none (null) or transaction reference
+  date_updated_to_param timestamp(6) with time zone -- none (null) or updated to date
 )
 RETURNS TABLE(
     id bigint,
@@ -143,8 +136,7 @@ RETURNS TABLE(
     version bigint,
     created TIMESTAMP(6) WITH TIME ZONE,
     updated timestamp(6) WITH TIME ZONE,
-    changedby CHARACTER VARYING,
-    transaction_ref uuid
+    changedby CHARACTER VARYING
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -175,8 +167,7 @@ BEGIN
     l.version,
     l.created,
     l.updated,
-    l.changedby,
-    l.transaction_ref
+    l.changedby
   FROM link l
     INNER JOIN item start_item
       ON l.start_item_id = start_item.id
@@ -204,9 +195,7 @@ BEGIN
    AND ((date_updated_from_param <= l.updated AND date_updated_to_param > l.updated) OR
         (date_updated_from_param IS NULL AND date_updated_to_param IS NULL) OR
         (date_updated_from_param IS NULL AND date_updated_to_param > l.updated) OR
-        (date_updated_from_param <= l.updated AND date_updated_to_param IS NULL))
-    -- by transaction reference
-    AND (l.transaction_ref = transaction_ref_param OR transaction_ref_param IS NULL);
+        (date_updated_from_param <= l.updated AND date_updated_to_param IS NULL));
 END
 $BODY$;
 
@@ -219,8 +208,7 @@ ALTER FUNCTION find_links(
   timestamp(6) with time zone, -- created from
   timestamp(6) with time zone, -- created to
   timestamp(6) with time zone, -- updated from
-  timestamp(6) with time zone, -- updated to
-  uuid -- transaction reference
+  timestamp(6) with time zone -- updated to
 )
 OWNER TO onix;
 
@@ -383,8 +371,7 @@ RETURNS TABLE(
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changedby character varying,
-    transaction_ref uuid
+    changedby character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -406,8 +393,7 @@ BEGIN
     i.version,
     i.created,
     i.updated,
-    i.changedby,
-    i.transaction_ref
+    i.changedby
   FROM item_audit i
   WHERE i.key = item_key_param
   -- by change date range
@@ -448,8 +434,7 @@ CREATE OR REPLACE FUNCTION find_links_audit(
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changedby character varying,
-    transaction_ref uuid
+    changedby character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -471,8 +456,7 @@ BEGIN
      l.version,
      l.created,
      l.updated,
-     l.changedby,
-     l.transaction_ref
+     l.changedby
   FROM link_audit l
     INNER JOIN item start_item
       ON l.start_item_id = start_item.id

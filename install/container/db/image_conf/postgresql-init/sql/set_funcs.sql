@@ -35,8 +35,7 @@ CREATE OR REPLACE FUNCTION set_item(
     status_param smallint,
     item_type_key_param character varying,
     local_version_param bigint,
-    changedby_param character varying,
-    transaction_ref_param uuid
+    changedby_param character varying
   )
   RETURNS TABLE(result char(1))
   LANGUAGE 'plpgsql'
@@ -77,8 +76,7 @@ AS $BODY$
         version,
         created,
         updated,
-        changedby,
-        transaction_ref
+        changedby
       )
       VALUES (
           nextval('item_id_seq'),
@@ -93,8 +91,7 @@ AS $BODY$
           1,
           current_timestamp,
           null,
-          changedby_param,
-          transaction_ref_param
+          changedby_param
       );
       result := 'I';
     ELSE
@@ -109,8 +106,7 @@ AS $BODY$
         item_type_id = item_type_id_value,
         version = version + 1,
         updated = current_timestamp,
-        changedby = changedby_param,
-        transaction_ref = transaction_ref_param
+        changedby = changedby_param
       WHERE key = key_param
       -- the database record has not been modified by someone else
       -- if a null value is passed as local version then it does not perform optimistic locking
@@ -123,8 +119,7 @@ AS $BODY$
         item_type_id != item_type_id_value OR
         meta != meta_param OR
         tag != tag_param OR
-        attribute != attribute_param OR
-        transaction_ref != transaction_ref_param
+        attribute != attribute_param
       );
       -- determines if the update has gone ahead
       GET DIAGNOSTICS rows_affected := ROW_COUNT;
@@ -135,8 +130,8 @@ AS $BODY$
   END;
   $BODY$;
 
-ALTER FUNCTION set_item(character varying,character varying,text,jsonb, text[],hstore,smallint,character varying, bigint, character varying, uuid)
-OWNER TO onix;
+ALTER FUNCTION set_item(character varying,character varying,text,jsonb, text[],hstore,smallint,character varying, bigint, character varying)
+  OWNER TO onix;
 
 /*
   set_item_type(...)
@@ -321,8 +316,7 @@ CREATE OR REPLACE FUNCTION set_link(
     tag_param text[],
     attribute_param hstore,
     local_version_param bigint,
-    changedby_param character varying,
-    transaction_ref_param uuid
+    changedby_param character varying
   )
   RETURNS TABLE(result char(1))
   LANGUAGE 'plpgsql'
@@ -394,8 +388,7 @@ BEGIN
       version,
       created,
       updated,
-      changedby,
-      transaction_ref
+      changedby
     )
     VALUES (
       nextval('link_id_seq'),
@@ -410,8 +403,7 @@ BEGIN
       1,
       current_timestamp,
       null,
-      changedby_param,
-      transaction_ref_param
+      changedby_param
     );
     result := 'I';
   ELSE
@@ -425,8 +417,7 @@ BEGIN
       end_item_id = end_item_id_value,
       version = version + 1,
       updated = current_timestamp,
-      changedby = changedby_param,
-      transaction_ref = transaction_ref_param
+      changedby = changedby_param
     WHERE key = key_param
     -- concurrency management - optimistic locking
     AND (local_version_param = current_version OR local_version_param IS NULL)
@@ -437,8 +428,7 @@ BEGIN
       attribute != attribute_param OR
       link_type_id != link_type_id_value OR
       start_item_id != start_item_id_value OR
-      end_item_id != end_item_id_value OR
-      transaction_ref != transaction_ref_param
+      end_item_id != end_item_id_value
     );
     GET DIAGNOSTICS rows_affected := ROW_COUNT;
     SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
@@ -447,7 +437,7 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION set_link(character varying, character varying, character varying, character varying, text, jsonb, text[], hstore, bigint, character varying, uuid)
+ALTER FUNCTION set_link(character varying, character varying, character varying, character varying, text, jsonb, text[], hstore, bigint, character varying)
   OWNER TO onix;
 
 /*
