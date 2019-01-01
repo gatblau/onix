@@ -3,10 +3,7 @@ package org.gatblau.onix;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 @Service
 public class Database {
@@ -38,6 +35,14 @@ public class Database {
 
     public void setInt(int parameterIndex, Integer value) throws SQLException {
         stmt.setInt(parameterIndex, value);
+    }
+
+    public void setShort(int parameterIndex, Short value) throws SQLException {
+        stmt.setShort(parameterIndex, value);
+    }
+
+    public void setDate(int parameterIndex, Date value) throws SQLException {
+        stmt.setDate(parameterIndex, value);
     }
 
     public void setObject(int parameterIndex, Object value) throws SQLException {
@@ -101,6 +106,19 @@ public class Database {
             "?::bigint," +
             "?::character varying)";
 
+    public static final String FIND_ITEMS_SQL =
+        "SELECT * FROM find_items(" +
+            "?::text[]," + // tag
+            "?::hstore," + // attribute
+            "?::smallint," + // status
+            "?::character varying," + // item_type_key
+            "?::timestamp with time zone," + // created_from
+            "?::timestamp with time zone," + // created_to
+            "?::timestamp with time zone," + // updated_from
+            "?::timestamp with time zone," + // updated_to
+            "?::integer" + // max_items
+        ")";
+
     public static final String FIND_LINKS_SQL =
         "SELECT * FROM find_links(" +
             "?::character varying," +
@@ -111,7 +129,6 @@ public class Database {
             "?::timestamp with time zone," +
             "?::timestamp with time zone," +
             "?::timestamp with time zone," +
-            "?::timestamp with time zone)";
-
-
+            "?::timestamp with time zone" +
+        ")";
 }

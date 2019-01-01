@@ -22,7 +22,7 @@ package org.gatblau.onix;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.gatblau.onix.data.ItemData;
-import org.gatblau.onix.data.LinkData;
+import org.gatblau.onix.data.ItemList;
 import org.gatblau.onix.data.LinkList;
 import org.gatblau.onix.model.Item;
 import org.gatblau.onix.model.ItemType;
@@ -37,12 +37,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.*;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.TypedQuery;
 import java.io.IOException;
-import java.sql.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.function.Consumer;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 import static org.gatblau.onix.Database.*;
 
@@ -373,14 +377,6 @@ public class Repository {
         return data;
     }
 
-    public List<ItemData> getAllByDateDesc(int maxResultEntries) {
-        TypedQuery<Item> query = em.createNamedQuery(Item.FIND_ALL_BY_DATE_DESC, Item.class);
-        query.setMaxResults(maxResultEntries);
-        List<ItemData> data = null; //mapItemData(query.getResultList());
-        return data;
-    }
-
-
     public List<ItemType> getItemTypes() {
         TypedQuery<ItemType> itemTypesQuery = em.createNamedQuery(ItemType.FIND_ALL, ItemType.class);
         return itemTypesQuery.getResultList();
@@ -539,5 +535,22 @@ public class Repository {
         return username;
     }
 
-
+    public ItemList getItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, Integer top) throws SQLException, ParseException {
+        ItemList items = new ItemList();
+        db.prepare(FIND_ITEMS_SQL);
+        db.setString(1, util.toArrayString(tagList));
+        db.setString(2, null); // attribute
+        db.setObject(3, status);
+        db.setString(4, itemTypeKey);
+        db.setObject(5, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
+        db.setObject(6, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
+        db.setObject(7, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
+        db.setObject(8, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
+        db.setObject(9, (top == null) ? 20 : top);
+        ResultSet set = db.executeQuery();
+        while (set.next()) {
+            items.getItems().add(util.toItemData(set));
+        }
+        return items;
+    }
 }

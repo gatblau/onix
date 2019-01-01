@@ -35,6 +35,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Api("ONIX CMDB Web API")
@@ -187,46 +189,43 @@ public class WebAPI {
         notes = "Use this function to retrieve configuration items based on type, tags and date range as required. " +
                 "Results are limited by the top parameter.")
     @RequestMapping(
-          path = "/info/item"
+          path = "/items"
         , method = RequestMethod.GET
         , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<Wrapper> getItems(
               @RequestParam(value = "type", required = false) String itemTypeKey
             , @RequestParam(value = "tag", required = false) String tag
-            , @RequestParam(value = "from", required = false) String fromDate
-            , @RequestParam(value = "to", required = false) String toDate
+            , @RequestParam(value = "createdFrom", required = false) String createdFromDate
+            , @RequestParam(value = "createdTo", required = false) String createdToDate
+            , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
+            , @RequestParam(value = "updatedTo", required = false) String updatedToDate
+            , @RequestParam(value = "status", required = false) Short status
             , @RequestParam(value = "top", required = false, defaultValue = "100") Integer top
-    ) {
+    ) throws SQLException, ParseException {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
-        ZonedDateTime from = null;
-        if (fromDate != null) {
-            from = ZonedDateTime.of(LocalDateTime.parse(fromDate, formatter), ZoneId.systemDefault());
+        ZonedDateTime createdFrom = null;
+        if (createdFromDate != null) {
+            createdFrom = ZonedDateTime.of(LocalDateTime.parse(createdFromDate, formatter), ZoneId.systemDefault());
         }
-        ZonedDateTime to = null;
-        if (toDate != null) {
-            to = ZonedDateTime.of(LocalDateTime.parse(toDate, formatter), ZoneId.systemDefault());
+        ZonedDateTime createdTo = null;
+        if (createdToDate != null) {
+            createdTo = ZonedDateTime.of(LocalDateTime.parse(createdToDate, formatter), ZoneId.systemDefault());
         }
-
-        List<ItemData> items = null;
-        if (itemTypeKey != null && tag == null && fromDate == null && toDate == null) {
-            items = data.getItemsByType(itemTypeKey, top);
-        } else if (itemTypeKey == null && tag != null && fromDate == null && toDate == null) {
-            items = data.getItemsByTag(tag, top);
-        } else if (itemTypeKey == null && tag == null && fromDate != null && toDate == null) {
-            to = ZonedDateTime.now();
-            items = data.getItemsByDate(from, to, top);
-        } else if (itemTypeKey == null && tag == null && fromDate != null && toDate != null) {
-            items = data.getItemsByDate(from, to, top);
-        } else if (itemTypeKey != null && tag != null && fromDate == null && toDate == null) {
-            items = data.getItemsByTypeAndTag(itemTypeKey, tag, top);
-        } else if (itemTypeKey != null && tag == null && fromDate != null && toDate != null) {
-            items = data.getItemsByTypeAndDate(itemTypeKey, from, to, top);
-        } else if (itemTypeKey != null && tag != null && fromDate != null && toDate != null) {
-            items = data.getItemsByTypeTagAndDate(itemTypeKey, tag, from, to, top);
-        }  else {
-            items = data.getAllByDateDesc(top);
+        ZonedDateTime updatedFrom = null;
+        if (updatedFromDate != null) {
+            updatedFrom = ZonedDateTime.of(LocalDateTime.parse(createdFromDate, formatter), ZoneId.systemDefault());
         }
-        return ResponseEntity.ok(new ItemList(items));
+        ZonedDateTime updatedTo = null;
+        if (updatedToDate != null) {
+            updatedTo = ZonedDateTime.of(LocalDateTime.parse(createdToDate, formatter), ZoneId.systemDefault());
+        }
+        List<String> tagList = null;
+        if (tag != null) {
+            String[] tags = tag.split("[|]"); // separate tags using pipes in the query string
+            tagList = Arrays.asList(tags);
+        }
+        ItemList list = data.getItems(itemTypeKey, tagList, createdFrom, createdTo, updatedFrom, updatedTo, status, top);
+        return ResponseEntity.ok(list);
     }
 }

@@ -58,7 +58,7 @@ public class Steps extends BaseTest {
 
     @Given("^the item URL search with query parameters is known$")
     public void theItemURLSearchWithQueryParametersIsKnown() throws Throwable {
-        util.put(Key.ENDPOINT_URI, String.format("%sinfo/item", baseUrl));
+        util.put(Key.ENDPOINT_URI, String.format("%s/items", baseUrl));
     }
 
     @And("^the response code is (\\d+)$")
@@ -285,9 +285,9 @@ public class Steps extends BaseTest {
             uri.append("?");
         }
 
-        if (util.containsKey(CONGIG_ITEM_TYPE_ID)) {
-            Integer typeId = util.get(CONGIG_ITEM_TYPE_ID);
-            uri.append("typeId=").append(typeId).append("&");
+        if (util.containsKey(CONGIG_ITEM_TYPE_KEY)) {
+            String typeKey = util.get(CONGIG_ITEM_TYPE_KEY);
+            uri.append("type=").append(typeKey).append("&");
         }
 
         if (util.containsKey(CONFIG_ITEM_TAG)) {
@@ -297,12 +297,12 @@ public class Steps extends BaseTest {
 
         if (util.containsKey(CONFIG_ITEM_UPDATED_FROM)) {
             ZonedDateTime from = util.get(CONFIG_ITEM_UPDATED_FROM);
-            uri.append("from=").append(from.format(formatter)).append("&");
+            uri.append("createdFrom=").append(from.format(formatter)).append("&");
         }
 
         if (util.containsKey(CONFIG_ITEM_UPDATED_TO)) {
             ZonedDateTime to = util.get(CONFIG_ITEM_UPDATED_TO);
-            uri.append("to=").append(to.format(formatter)).append("&");
+            uri.append("createdTo=").append(to.format(formatter)).append("&");
         }
 
         String uriString = uri.toString();
@@ -322,18 +322,18 @@ public class Steps extends BaseTest {
 
     @Given("^the filtering config item type is known$")
     public void theFilteringConfigItemTypeIsKnown() throws Throwable {
-        util.put(CONGIG_ITEM_TYPE_ID, 2);
+        util.put(CONGIG_ITEM_TYPE_KEY, "HOST");
     }
 
     @Given("^the filtering config item tag is known$")
     public void theFilteringConfigItemTagIsKnown() throws Throwable {
-        util.put(CONFIG_ITEM_TAG, "Test");
+        util.put(CONFIG_ITEM_TAG, "cmdb|host");
     }
 
     @Given("^the filtering config item date range is known$")
     public void theFilteringConfigItemDateRangeIsKnown() throws Throwable {
         util.put(CONFIG_ITEM_UPDATED_FROM, ZonedDateTime.of(ZonedDateTime.now().getYear() - 100, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()));
-        util.put(CONFIG_ITEM_UPDATED_TO, ZonedDateTime.of(ZonedDateTime.now().getYear(), 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()));
+        util.put(CONFIG_ITEM_UPDATED_TO, ZonedDateTime.of(ZonedDateTime.now().getYear() + 100, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()));
     }
 
     @Given("^the natural key for the link is known$")

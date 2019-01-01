@@ -27,7 +27,8 @@ CREATE OR REPLACE FUNCTION find_items(
     date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
     date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
-    date_updated_to_param timestamp(6) with time zone -- none (null) or updated to date
+    date_updated_to_param timestamp(6) with time zone, -- none (null) or updated to date
+    max_items integer default 20 -- the maximum number of items to return
   )
   RETURNS TABLE(
     id bigint,
@@ -35,7 +36,7 @@ CREATE OR REPLACE FUNCTION find_items(
     name character varying,
     description text,
     status smallint,
-    item_type_id integer,
+    item_type_key character varying,
     meta jsonb,
     tag text[],
     attribute hstore,
@@ -66,7 +67,7 @@ BEGIN
     i.name,
     i.description,
     i.status,
-    i.item_type_id,
+    it.key as item_type_key,
     i.meta,
     i.tag,
     i.attribute,
@@ -75,6 +76,8 @@ BEGIN
     i.updated,
     i.changedby
   FROM item i
+  INNER JOIN item_type it
+    ON i.item_type_id = it.id
   WHERE
   -- by item type
       (i.item_type_id = item_type_id_value OR item_type_id_value IS NULL)
@@ -93,7 +96,8 @@ BEGIN
   AND ((date_updated_from_param <= i.updated AND date_updated_to_param > i.updated) OR
       (date_updated_from_param IS NULL AND date_updated_to_param IS NULL) OR
       (date_updated_from_param IS NULL AND date_updated_to_param > i.updated) OR
-      (date_updated_from_param <= i.updated AND date_updated_to_param IS NULL));
+      (date_updated_from_param <= i.updated AND date_updated_to_param IS NULL))
+  LIMIT max_items;
 END
 $BODY$;
 
@@ -105,7 +109,8 @@ ALTER FUNCTION find_items(
     timestamp(6) with time zone, -- created from
     timestamp(6) with time zone, -- created to
     timestamp(6) with time zone, -- updated from
-    timestamp(6) with time zone -- updated to
+    timestamp(6) with time zone, -- updated to
+    integer -- max_items
   )
   OWNER TO onix;
 
