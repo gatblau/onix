@@ -120,7 +120,7 @@ public class WebAPI {
         , method = RequestMethod.DELETE)
     public ResponseEntity<Result> deleteItem(
             @PathVariable("key") String key
-    ) throws InterruptedException {
+    ) throws InterruptedException, SQLException {
         return ResponseEntity.ok(data.deleteItem(key));
     }
 

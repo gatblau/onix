@@ -78,6 +78,10 @@ public class Database {
         throw new RuntimeException("No results found.");
     }
 
+    public boolean execute() throws SQLException {
+        return stmt.execute();
+    }
+
     public void close() {
         try {
             stmt.close();
@@ -131,4 +135,6 @@ public class Database {
             "?::timestamp with time zone," +
             "?::timestamp with time zone" +
         ")";
+
+    public static final String DELETE_ITEM_SQL = "SELECT delete_item(?::character varying)";
 }
