@@ -28,7 +28,7 @@ CREATE OR REPLACE FUNCTION item(key_param character varying)
     name character varying,
     description text,
     status smallint,
-    item_type_id integer,
+    item_type_key character varying,
     meta jsonb,
     tag text[],
     attribute hstore,
@@ -48,7 +48,7 @@ BEGIN
      i.name,
      i.description,
      i.status,
-     i.item_type_id,
+     it.key as item_type_key,
      i.meta,
      i.tag,
      i.attribute,
@@ -56,7 +56,9 @@ BEGIN
      i.created,
      i.updated,
      i.changedby
-   FROM item i
+    FROM item i
+    INNER JOIN item_type it
+      ON i.item_type_id = it.id
    WHERE i.key = key_param;
 END;
 $BODY$;
@@ -112,10 +114,10 @@ ALTER FUNCTION item_type(character varying)
 CREATE OR REPLACE FUNCTION link(key_param character varying)
   RETURNS TABLE(
     id bigint,
-    key CHARACTER VARYING(200),
-    link_type_id integer,
-    start_item_id bigint,
-    end_item_id bigint,
+    "key" character varying,
+    link_type_key character varying,
+    start_item_key character varying,
+    end_item_key character varying,
     description text,
     meta jsonb,
     tag text[],
@@ -123,7 +125,7 @@ CREATE OR REPLACE FUNCTION link(key_param character varying)
     version bigint,
     created TIMESTAMP(6) WITH TIME ZONE,
     updated timestamp(6) WITH TIME ZONE,
-    changedby CHARACTER VARYING(100)
+    changedby character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -133,9 +135,9 @@ BEGIN
   RETURN QUERY SELECT
      l.id,
      l.key,
-     l.link_type_id,
-     l.start_item_id,
-     l.end_item_id,
+     lt.key as link_type_key,
+     start_item.key as start_item_key,
+     end_item.key as end_item_key,
      l.description,
      l.meta,
      l.tag,
@@ -145,6 +147,12 @@ BEGIN
      l.updated,
      l.changedby
   FROM link l
+    INNER JOIN link_type lt
+      ON l.link_type_id = lt.id
+    INNER JOIN item start_item
+      ON l.start_item_id = start_item.id
+    INNER JOIN item end_item
+      ON l.end_item_id = end_item.id
   WHERE l.key = key_param;
 END;
 $BODY$;

@@ -29,6 +29,7 @@ import org.gatblau.onix.model.Item;
 import org.gatblau.onix.model.ItemType;
 import org.gatblau.onix.model.Link;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
 import org.postgresql.util.HStoreConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -44,12 +45,17 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Consumer;
 
+import static org.gatblau.onix.Database.*;
+
 @Service
 public class Repository {
     private ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
     private EntityManager em;
+
+    @Autowired
+    private Lib util;
 
     @Autowired
     private Database db;
@@ -67,73 +73,37 @@ public class Repository {
         return n.getId();
     }
 
-    public Result createOrUpdateItem(String key, JSONObject json) throws IOException, SQLException {
+    public Result createOrUpdateItem(String key, JSONObject json) throws IOException, SQLException, ParseException {
         Result result = new Result();
 
         Object name = json.get("name");
         Object description = json.get("description");
-        Object meta = json.get("meta");
-        Object tag = json.get("tag");
+        String meta = util.toJSONString(json.get("meta"));
+        String tag = util.toArrayString(json.get("tag"));
         Object attribute = json.get("attribute");
         Object status = json.get("status");
         Object type = json.get("type");
         Object version = json.get("version");
 
-        String sql = "SELECT set_item(" +
-            "?::character varying,\n" +
-            "?::character varying,\n" +
-            "?::text,\n" +
-            "?::jsonb,\n" +
-            "?::text[],\n" +
-            "?::hstore,\n" +
-            "?::smallint,\n" +
-            "?::character varying,\n" +
-            "?::bigint,\n" +
-            "?::character varying)";
-        Connection conn = null;
-        PreparedStatement stmt = null;
         ResultSet set = null;
         try {
-            conn = db.createConnection();
-            stmt = conn.prepareStatement(sql);
-            stmt.setString(1, key); // key_param
-            stmt.setString(2, (name != null) ? (String) name : null); // name_param
-            stmt.setString(3, (description != null) ? (String) description : null); // description_param
-            stmt.setString(4, (meta != null) ? new JSONObject((LinkedHashMap<String, String>) meta).toJSONString() : null); // meta_param
-            stmt.setString(5, (tag != null) ? toArrayStr((ArrayList<String>) tag) : null); // tag_param
-            stmt.setString(6, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null); // attribute_param
-            stmt.setInt(7, (status != null) ? (int) status : null); // status_param
-            stmt.setString(8, (type != null) ? (String) type : null); // item_type_key_param
-            stmt.setObject(9, version); // version_param
-            stmt.setString(10, getUser()); // changedby_param
-            set = stmt.executeQuery();
-            if (set.next()){
-                String r = set.getString("set_item");
-                result.setOperation(r);
-            }
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
+            db.prepare(SET_ITEM_SQL);
+            db.setString(1, key); // key_param
+            db.setString(2, (name != null) ? (String) name : null); // name_param
+            db.setString(3, (description != null) ? (String) description : null); // description_param
+            db.setString(4, meta); // meta_param
+            db.setString(5, tag); // tag_param
+            db.setString(6, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null); // attribute_param
+            db.setInt(7, (status != null) ? (int) status : null); // status_param
+            db.setString(8, (type != null) ? (String) type : null); // item_type_key_param
+            db.setObject(9, version); // version_param
+            db.setString(10, getUser()); // changedby_param
+            result.setOperation(db.executeQueryAndRetrieveStatus("set_item"));
         }
         finally {
-            set.close();
-            stmt.close();
-            conn.close();
+            db.close();
         }
         return result;
-    }
-
-    private String toArrayStr(List<String> tag) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        for (int i = 0; i < tag.size(); i++){
-            sb.append("'").append(tag.get(i)).append("'");
-            if (i < tag.size() - 1) {
-                sb.append(",");
-            }
-        }
-        sb.append("}");
-        return sb.toString();
     }
 
     private ItemType getItemType(String type) {
@@ -306,10 +276,24 @@ public class Repository {
     }
 
     @Transactional
-    public ItemData getItem(String key) {
-        Item item = getItemModel(key);
-        if (item == null) return null;
-        return mapItemDatum(item);
+    public ItemData getItem(String key) throws SQLException, ParseException {
+        try {
+            db.prepare(GET_ITEM_SQL);
+            db.setString(1, key);
+            ItemData item = util.toItemData(db.executeQuerySingleRow());
+
+            db.prepare(FIND_LINKS_SQL);
+            db.setString(1, item.getKey());
+            db.setObjectRange(2, 9, null);
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                item.getFromLinks().add(util.toLinkData(set));
+            }
+            return item;
+        }
+        finally {
+            db.close();
+        }
     }
 
     private Item getItemModel(String key) {
@@ -387,7 +371,7 @@ public class Repository {
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TYPE, Item.class);
         if (top != null) query.setMaxResults(top);
         query.setParameter(Item.PARAM_ITEM_TYPE_KEY, itemTypeKey);
-        List<ItemData> data = mapItemData(query.getResultList());
+        List<ItemData> data = null; //mapItemData(query.getResultList());
         return data;
     }
 
@@ -395,7 +379,7 @@ public class Repository {
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_TAG, Item.class);
         if (top != null) query.setMaxResults(top);
         query.setParameter(Item.PARAM_TAG, "%" + tag + "%");
-        List<ItemData> data = mapItemData(query.getResultList());
+        List<ItemData> data = null; //mapItemData(query.getResultList());
         return data;
     }
 
@@ -404,7 +388,7 @@ public class Repository {
         if (top != null) query.setMaxResults(top);
         query.setParameter(Item.PARAM_FROM_DATE, from);
         query.setParameter(Item.PARAM_TO_DATE, to);
-        List<ItemData> data = mapItemData(query.getResultList());
+        List<ItemData> data = null; //mapItemData(query.getResultList());
         return data;
     }
 
@@ -413,7 +397,7 @@ public class Repository {
         if (top != null) query.setMaxResults(top);
         query.setParameter(Item.PARAM_ITEM_TYPE_KEY, itemTypeKey);
         query.setParameter(Item.PARAM_TAG, "%" + tag + "%");
-        List<ItemData> data = mapItemData(query.getResultList());
+        List<ItemData> data = null; //mapItemData(query.getResultList());
         return data;
     }
 
@@ -423,7 +407,7 @@ public class Repository {
         query.setParameter(Item.PARAM_ITEM_TYPE_KEY, itemTypeKey);
         query.setParameter(Item.PARAM_FROM_DATE, from);
         query.setParameter(Item.PARAM_TO_DATE, to);
-        List<ItemData> data = mapItemData(query.getResultList());
+        List<ItemData> data = null; //mapItemData(query.getResultList());
         return data;
     }
 
@@ -434,53 +418,17 @@ public class Repository {
         query.setParameter(Item.PARAM_TAG, "%" + tag + "%");
         query.setParameter(Item.PARAM_FROM_DATE, from);
         query.setParameter(Item.PARAM_TO_DATE, to);
-        List<ItemData> data = mapItemData(query.getResultList());
+        List<ItemData> data = null; //mapItemData(query.getResultList());
         return data;
     }
 
     public List<ItemData> getAllByDateDesc(int maxResultEntries) {
         TypedQuery<Item> query = em.createNamedQuery(Item.FIND_ALL_BY_DATE_DESC, Item.class);
         query.setMaxResults(maxResultEntries);
-        List<ItemData> data = mapItemData(query.getResultList());
+        List<ItemData> data = null; //mapItemData(query.getResultList());
         return data;
     }
 
-    private List<ItemData> mapItemData(List<Item> items) {
-        List<ItemData> data = new ArrayList<>();
-        items.forEach(new Consumer<Item> () {
-            @Override
-            public void accept(Item item) {
-                data.add(mapItemDatum(item));
-            }
-        });
-        return data;
-    }
-
-    private ItemData mapItemDatum(Item item) {
-        if (item == null) return null;
-
-        ItemData data = new ItemData();
-        data.setKey(item.getKey());
-        data.setName(item.getName());
-        data.setDescription(item.getDescription());
-
-        data.setCreated(item.getCreated().toString());
-        data.setUpdated(item.getUpdated().toString());
-        data.setVersion(item.getVersion());
-
-        data.setStatus(item.getStatus());
-        data.setItemType(item.getItemType().getName());
-        data.setMeta(item.getMeta());
-        data.setTag(item.getTag());
-
-        // populate linked items here
-        List<LinkData> links = new ArrayList<>();
-        links.addAll(getLinksData(item, true)); // to links
-        links.addAll(getLinksData(item, false)); // from links
-        data.setLinks(links);
-
-        return data;
-    }
 
     public List<ItemType> getItemTypes() {
         TypedQuery<ItemType> itemTypesQuery = em.createNamedQuery(ItemType.FIND_ALL, ItemType.class);
@@ -660,4 +608,6 @@ public class Repository {
         }
         return username;
     }
+
+
 }

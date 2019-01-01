@@ -20,6 +20,7 @@ project, to be licensed under the same terms as the rest of the code.
 package org.gatblau.onix.data;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.json.simple.JSONObject;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -35,10 +36,11 @@ public class ItemData implements Serializable {
     private String description;
     private String itemType;
     private Short status;
-    private JsonNode meta;
-    private String tag;
-    private HashMap<String, String> dimensions = new LinkedHashMap<>();
-    private List<LinkData> links = new ArrayList<>();
+    private JSONObject meta;
+    private JSONObject attribute;
+    private List<String> tag;
+    private List<LinkData> fromLinks = new ArrayList<>();
+    private List<LinkData> toLinks = new ArrayList<>();
     private String created;
     private String updated;
     private Integer version;
@@ -86,24 +88,20 @@ public class ItemData implements Serializable {
         this.status = status;
     }
 
-    public JsonNode getMeta() {
+    public JSONObject getMeta() {
         return meta;
     }
 
-    public void setMeta(JsonNode meta) {
+    public void setMeta(JSONObject meta) {
         this.meta = meta;
     }
 
-    public String getTag() {
+    public List<String> getTag() {
         return tag;
     }
 
-    public void setTag(String tag) {
+    public void setTag(List<String> tag) {
         this.tag = tag;
-    }
-
-    public HashMap<String, String> getDimensions() {
-        return dimensions;
     }
 
     public String getCreated() {
@@ -130,11 +128,27 @@ public class ItemData implements Serializable {
         this.version = version;
     }
 
-    public List<LinkData> getLinks() {
-        return links;
+    public List<LinkData> getFromLinks() {
+        return fromLinks;
     }
 
-    public void setLinks(List<LinkData> links) {
-        this.links = links;
+    public void setFromLinks(List<LinkData> links) {
+        this.fromLinks = links;
+    }
+
+    public List<LinkData> getToLinks() {
+        return toLinks;
+    }
+
+    public void setToLinks(List<LinkData> links) {
+        this.toLinks = links;
+    }
+
+    public JSONObject getAttribute() {
+        return attribute;
+    }
+
+    public void setAttribute(JSONObject attribute) {
+        this.attribute = attribute;
     }
 }
