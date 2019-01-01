@@ -24,6 +24,7 @@ import io.swagger.annotations.ApiOperation;
 import org.gatblau.onix.data.*;
 import org.gatblau.onix.model.ItemType;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -61,7 +62,7 @@ public class WebAPI {
             produces = {"application/json" })
     public ResponseEntity<Result> createOrUpdateItem(
             @PathVariable("key") String key,
-            @RequestBody JSONObject payload) throws IOException, SQLException {
+            @RequestBody JSONObject payload) throws IOException, SQLException, ParseException {
         return ResponseEntity.ok(data.createOrUpdateItem(key, payload));
     }
 
@@ -177,9 +178,8 @@ public class WebAPI {
         , method = RequestMethod.GET
         , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<ItemData> getItem(@PathVariable("key") String key) {
-        ItemData item = data.getItem(key);
-        return ResponseEntity.ok(item);
+    public ResponseEntity<ItemData> getItem(@PathVariable("key") String key) throws SQLException, ParseException {
+        return ResponseEntity.ok(data.getItem(key));
     }
 
     @ApiOperation(

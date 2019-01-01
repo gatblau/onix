@@ -1,11 +1,15 @@
 {
+  "description": "This is a CMDB item link for testing purposes.",
+  "link_type_key": "INVENTORY",
+  "start_item_key": "item_one_key",
+  "end_item_key": "item_two_key",
+  "tag": ["cmdb", "host", "rhel"],
+  "attribute": {
+    "WBS" : "012csl",
+    "COMPANY" : "ACME"
+  },
   "meta": {
     "DeployedBy": "John Wicks",
     "RequestNo": "RN001234"
-  },
-  "description": "This is a CMDB item for testing purposes.",
-  "role": "connects to",
-  "start_item_key": "item_one_key",
-  "end_item_key": "item_two_key",
-  "tag": "Test"
+  }
 }

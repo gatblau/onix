@@ -1,13 +1,16 @@
 {
-  "name": "Test Item UPDATED",
-  "description": "This is a CMDB item for testing purposes.",
+  "name": "Updated Test Item",
+  "description": "This is an updated CMDB item for testing purposes.",
   "type": "HOST",
-  "meta": "{ }",
-  "tag": "Test Host",
-  "key": "Test_Item_1",
-  "status" : 2,
-  "dimensions": {
-    "WBS" : "UpdateCode01",
-    "REGION": "Ireland"
-  }
+  "meta": {
+    "IP": "192.168.0.1",
+    "Vendor": "Supreme Computers",
+    "Type": "Virtual Machine",
+    "OS": "CentOS 7.5"
+  },
+  "tag": ["cmdb", "host", "centos"],
+  "attribute": {
+    "COMPANY" : "ACME"
+  },
+  "status": 2
 }
