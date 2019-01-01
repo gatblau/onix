@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.gatblau.onix.data.ItemData;
 import org.gatblau.onix.data.LinkData;
 import org.gatblau.onix.data.LinkList;
-import org.gatblau.onix.data.LinkedItemData;
 import org.gatblau.onix.model.Item;
 import org.gatblau.onix.model.ItemType;
 import org.gatblau.onix.model.Link;
@@ -282,12 +281,23 @@ public class Repository {
             db.setString(1, key);
             ItemData item = util.toItemData(db.executeQuerySingleRow());
 
+            ResultSet set;
+
             db.prepare(FIND_LINKS_SQL);
-            db.setString(1, item.getKey());
+            db.setString(1, item.getKey()); // start_item
             db.setObjectRange(2, 9, null);
-            ResultSet set = db.executeQuery();
+            set = db.executeQuery();
             while (set.next()) {
-                item.getFromLinks().add(util.toLinkData(set));
+                item.getFromLinks().add(util.toLinkData(set, false));
+            }
+
+            db.prepare(FIND_LINKS_SQL);
+            db.setString(1, null); // start_item
+            db.setString(2, item.getKey()); // end_item
+            db.setObjectRange(3, 9, null);
+            set = db.executeQuery();
+            while (set.next()) {
+                item.getFromLinks().add(util.toLinkData(set, true));
             }
             return item;
         }
@@ -306,65 +316,6 @@ public class Repository {
         catch (NoResultException nre){
         }
         return item;
-    }
-
-    private LinkedItemData getLinkedItemData(Item item, boolean isParent) {
-        LinkedItemData liData = new LinkedItemData();
-        liData.setDescription(item.getDescription());
-        liData.setKey(item.getKey());
-        liData.setName(item.getName());
-        liData.setParent(isParent);
-        return liData;
-    }
-
-    /***
-     * Get a list of links departing from or arriving at the passed-in item.
-     * @param item the configuration item connected to the links to find.
-     * @param isParent true if the links arrive at the item and false if the links depart from the item.
-     * @return a list of @see org.gatblau.onix.data.LinkData.Class
-     */
-    private List<LinkData> getLinksData(Item item, boolean isParent) {
-        TypedQuery<Link> itemQuery = null;
-        if (isParent) {
-            itemQuery = em.createNamedQuery(Link.FIND_FROM_ITEM, Link.class);
-        } else {
-            itemQuery = em.createNamedQuery(Link.FIND_TO_ITEM, Link.class);
-        }
-        itemQuery.setParameter(Link.KEY_ITEM_ID, item.getId());
-        List<LinkData> linksData = new ArrayList<>();
-        List<Link> links = null;
-        try {
-            links = itemQuery.getResultList();
-            links.forEach(new Consumer<Link>() {
-                @Override
-                public void accept(Link link) {
-                    LinkData linkData = new LinkData();
-                    linkData.setDescription(link.getDescription());
-                    linkData.setKey(link.getKey());
-                    linkData.setMeta(link.getMeta());
-                    linkData.setTag(link.getTag());
-                    linkData.setRole(link.getRole());
-
-                    String itemKey = null;
-
-                    if (isParent) {
-                        itemKey = link.getEndItem().getKey();
-                    } else {
-                        itemKey = link.getStartItem().getKey();
-                    }
-
-                    linkData.setItem(
-                        getLinkedItemData(
-                            getItemModel(itemKey), !isParent)
-                    );
-
-                    linksData.add(linkData);
-                }
-            });
-        }
-        catch (NoResultException nre){
-        }
-        return linksData;
     }
 
     public List<ItemData> getItemsByType(String itemTypeKey, Integer top) {
@@ -455,19 +406,6 @@ public class Repository {
             return result;
         }
 
-        // precondition: cant delete item if links exist
-        if (getLinksData(item, false).size() > 0) {
-            result.setError(true);
-            result.setChanged(false);
-            result.setMessage(String.format("Cannot delete Item %s because it is linked to other items.", key));
-            return result;
-        }
-        if (getLinksData(item, true).size() > 0) {
-            result.setError(true);
-            result.setChanged(false);
-            result.setMessage(String.format("Cannot delete Item %s because it is linked to other items.", key));
-            return result;
-        }
         return result;
     }
 
@@ -578,15 +516,7 @@ public class Repository {
 
         try {
             item = query.getSingleResult();
-            List<LinkData> ll = getLinksData(item, false);
-            List<LinkData> lr = getLinksData(item, true);
-            ll.forEach(new Consumer<LinkData>() {
-                @Override
-                public void accept(LinkData linkData) {
-                    lr.add(linkData);
-                }
-            });
-            return new LinkList(lr);
+            return new LinkList();
         }
         catch (NoResultException nre) {
         }
