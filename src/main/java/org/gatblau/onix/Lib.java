@@ -1,12 +1,10 @@
 package org.gatblau.onix;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.gatblau.onix.data.ItemData;
 import org.gatblau.onix.data.LinkData;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.postgresql.ds.common.PGObjectFactory;
 import org.postgresql.jdbc.PgArray;
 import org.postgresql.util.PGobject;
 import org.springframework.beans.factory.InitializingBean;
@@ -111,7 +109,19 @@ public class Lib implements InitializingBean {
         return item;
     }
 
-    public LinkData toLinkData(ResultSet set) {
-        return new LinkData();
+    public LinkData toLinkData(ResultSet set, boolean linkToItem) throws SQLException, ParseException {
+        LinkData link = new LinkData();
+        link.setKey(set.getString("key"));
+        link.setDescription(set.getString("description"));
+        if (linkToItem) {
+            link.setItemKey(set.getString("end_item_key"));
+        }
+        else {
+            link.setItemKey(set.getString("start_item_key"));
+        }
+        link.setMeta(toJSON(set.getObject("meta")));
+        link.setTag(toList(set.getObject("tag")));
+        link.setAttribute(toJSON(set.getObject("attribute")));
+        return link;
     }
 }

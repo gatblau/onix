@@ -19,19 +19,20 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix.data;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import org.json.simple.JSONObject;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class LinkData implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String key;
-    private String role;
-    private String tag;
     private String description;
-    private JsonNode meta;
-    private LinkedItemData item;
+    private List<String> tag;
+    private JSONObject attribute;
+    private JSONObject meta;
+    private String itemKey;
 
     public String getKey() {
         return key;
@@ -41,19 +42,11 @@ public class LinkData implements Serializable {
         this.key = key;
     }
 
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public String getTag() {
+    public List<String> getTag() {
         return tag;
     }
 
-    public void setTag(String tag) {
+    public void setTag(List<String> tag) {
         this.tag = tag;
     }
 
@@ -65,19 +58,27 @@ public class LinkData implements Serializable {
         this.description = description;
     }
 
-    public JsonNode getMeta() {
+    public JSONObject getMeta() {
         return meta;
     }
 
-    public void setMeta(JsonNode meta) {
+    public void setMeta(JSONObject meta) {
         this.meta = meta;
     }
 
-    public LinkedItemData getItem() {
-        return item;
+    public JSONObject getAttribute() {
+        return attribute;
     }
 
-    public void setItem(LinkedItemData item) {
-        this.item = item;
+    public void setAttribute(JSONObject attribute) {
+        this.attribute = attribute;
+    }
+
+    public String getItemKey() {
+        return itemKey;
+    }
+
+    public void setItemKey(String itemKey) {
+        this.itemKey = itemKey;
     }
 }
