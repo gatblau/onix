@@ -19,10 +19,11 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix.data;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Wrapper<T> {
-    private List<T> items;
+    private List<T> items = new ArrayList<>();
 
     public Wrapper(){
     }
