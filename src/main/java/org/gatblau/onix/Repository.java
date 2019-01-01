@@ -43,7 +43,6 @@ import javax.persistence.TypedQuery;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -136,7 +135,7 @@ public class Repository {
         if (em != null) {
             em.createNamedQuery(Link.DELETE_ALL).executeUpdate();
             em.createNamedQuery(Item.DELETE_ALL).executeUpdate();
-//            em.createNamedQuery(ItemType.DELETE_ALL).executeUpdate();
+//            em.createNamedQuery(ItemType.DELETE_ALL).execute();
         }
     }
 
@@ -382,26 +381,17 @@ public class Repository {
         return itemTypesQuery.getResultList();
     }
 
-    @Transactional
-    public Result deleteItem(String key) {
+    public Result deleteItem(String key) throws SQLException {
         Result result = new Result();
-        result.setChanged(false);
-        result.setOperation("D");
-
-        TypedQuery<Item> query = em.createNamedQuery(Item.FIND_BY_KEY, Item.class);
-        query.setParameter(Item.PARAM_KEY, key);
-        Item item;
-
         try {
-            item = query.getSingleResult();
+            db.prepare(DELETE_ITEM_SQL);
+            db.setString(1, key);
+            boolean deleted = db.execute();
+            result.setOperation((deleted) ? "D" : "N");
         }
-        catch (NoResultException nre) {
-            result.setError(false);
-            result.setChanged(false);
-            result.setMessage(String.format("Nothing to delete. Cannot find Item %s.", key));
-            return result;
+        finally {
+            db.close();
         }
-
         return result;
     }
 
