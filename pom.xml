@@ -37,6 +37,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>3.1.0</version>
+        </dependency>
         <!--
         Spring's RestTemplate and Spring Boot's TestRestTemplate relies on JDK's internal HttpURLConnection implementation
         by default, which fails to access the body of an HTTP-response with status 401 "Unauthorized".

@@ -1,37 +1,28 @@
 package org.gatblau.onix;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 @Service
 public class Database {
-
-    @Value("${spring.datasource.username}")
-    private String dbuser;
-
-    @Value("${spring.datasource.password}")
-    private String dbpwd;
-
-    @Value("${spring.datasource.url}")
-    private String connString;
-
     private Connection conn;
     private PreparedStatement stmt;
     private String resultKey;
 
+    @Autowired
+    private DataSourceFactory ds;
+
     public Database() {
     }
 
-    public void createConnection(){
-        try {
-            Class.forName("org.postgresql.Driver");
-            conn = DriverManager.getConnection(connString, dbuser, dbpwd);
-        }
-        catch(Exception ex) {
-            ex.printStackTrace();
-        }
+    public Connection createConnection() throws SQLException {
+        conn = ds.instance().getConnection();
+        return conn;
     }
 
     public void prepare(String sql) throws SQLException {
