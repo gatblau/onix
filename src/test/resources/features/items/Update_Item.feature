@@ -10,4 +10,4 @@ Feature: Update Configuration Item
     When a PUT HTTP request with an updated JSON payload is done
     Then the response code is 200
     Then the response has body
-    Then the service responds with action "UPDATED"
+    Then the service responds with action "U"

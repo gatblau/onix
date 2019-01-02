@@ -35,7 +35,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -44,7 +43,7 @@ import java.util.List;
 public class WebAPI {
 
     @Autowired
-    private Repository data;
+    private DbRepository data;
 
     @ApiOperation(
         value = "Returns OK if the service is up and running.",
@@ -77,28 +76,15 @@ public class WebAPI {
             produces = {"application/json" })
     public ResponseEntity<Result> createOrUpdateLink(
             @PathVariable("key") String key,
-            @RequestBody JSONObject payload) throws InterruptedException, IOException {
+            @RequestBody JSONObject payload) throws SQLException, ParseException {
         return ResponseEntity.ok(data.createOrUpdateLink(key, payload));
-    }
-
-    @ApiOperation(
-        value = "Gets all links for the specified item.",
-        notes = "Use this resource to find all of the links associated with a particular configuration item.")
-    @RequestMapping(
-          path = "/link/item/{key}"
-        , method = RequestMethod.GET
-        , produces = {"application/json", "application/x-yaml"}
-    )
-    public ResponseEntity<LinkList> getLinksByItem(
-            @PathVariable("key") String itemKey) throws InterruptedException, IOException {
-        return ResponseEntity.ok(data.getLinksByItem(itemKey));
     }
 
     @ApiOperation(
         value = "Removes ALL configuration items and links from the database.",
         notes = "Use at your own risk ONLY for testing of the CMDB!")
     @RequestMapping(path = "/clear", method = RequestMethod.DELETE)
-    public void clear() throws InterruptedException {
+    public void clear() throws SQLException {
         data.clear();
     }
 
@@ -108,7 +94,7 @@ public class WebAPI {
     @RequestMapping(path = "/link/{key}", method = RequestMethod.DELETE)
     public ResponseEntity<Result> deleteLink(
             @PathVariable("key") String key
-    ) throws InterruptedException {
+    ) throws InterruptedException, SQLException {
         return ResponseEntity.ok(data.deleteLink(key));
     }
 
@@ -131,7 +117,7 @@ public class WebAPI {
           path = "/itemtype"
         , method = RequestMethod.DELETE
     )
-    public void deleteItemTypes() throws InterruptedException {
+    public void deleteItemTypes() throws SQLException {
         data.deleteItemTypes();
     }
 
@@ -142,7 +128,7 @@ public class WebAPI {
           path = "/itemtype/{key}"
         , method = RequestMethod.DELETE
     )
-    public ResponseEntity<Result> deleteItemType(@PathVariable("key") String key) {
+    public ResponseEntity<Result> deleteItemType(@PathVariable("key") String key) throws SQLException {
         return ResponseEntity.ok(data.deleteItemType(key));
     }
 
@@ -155,7 +141,7 @@ public class WebAPI {
     public ResponseEntity<Result> createItemType(
             @PathVariable("key") String key,
             @RequestBody JSONObject payload
-        ) throws InterruptedException, IOException {
+        ) throws InterruptedException, IOException, SQLException {
         return ResponseEntity.ok(data.createOrUpdateItemType(key, payload));
     }
 
@@ -167,7 +153,7 @@ public class WebAPI {
         , method = RequestMethod.GET
         , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<ItemTypeList> getItemTypes() throws InterruptedException {
+    public ResponseEntity<ItemTypeList> getItemTypes() throws SQLException {
         List<ItemType> itemTypes = data.getItemTypes();
         return ResponseEntity.ok(new ItemTypeList(itemTypes));
     }
@@ -225,7 +211,7 @@ public class WebAPI {
             String[] tags = tag.split("[|]"); // separate tags using pipes in the query string
             tagList = Arrays.asList(tags);
         }
-        ItemList list = data.getItems(itemTypeKey, tagList, createdFrom, createdTo, updatedFrom, updatedTo, status, top);
+        ItemList list = data.findItems(itemTypeKey, tagList, createdFrom, createdTo, updatedFrom, updatedTo, status, top);
         return ResponseEntity.ok(list);
     }
 }

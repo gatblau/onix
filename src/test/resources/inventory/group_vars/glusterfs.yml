@@ -1,0 +1,9 @@
+---
+# NOTE: DO NOT DELETE this file: glusterfs ansible group in inventory is not needed as it is created dynamically
+openshift_schedulable: "True"
+
+node_type: glusterfs
+
+# add more devices below to expand disk capacity of gluster storage
+glusterfs_devices: [ '/dev/sdb' ]
+...

@@ -1,0 +1,4 @@
+---
+node_type: master
+openshift_schedulable: "True"
+...

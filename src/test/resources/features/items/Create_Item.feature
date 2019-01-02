@@ -10,4 +10,4 @@ Feature: Create Configuration Item
     When a PUT HTTP request with a new JSON payload is done
     Then the response code is 200
     Then the response has body
-    Then the service responds with action "CREATED"
+    Then the service responds with action "I"

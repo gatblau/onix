@@ -110,5 +110,77 @@ $BODY$;
 ALTER FUNCTION delete_link_type(character varying, boolean)
   OWNER TO onix;
 
+/*
+  clear_all: deletes all instance data
+ */
+CREATE OR REPLACE FUNCTION clear_all()
+  RETURNS VOID
+  LANGUAGE 'plpgsql'
+  COST 100
+  VOLATILE
+AS $BODY$
+BEGIN
+  DELETE FROM link;
+  DELETE FROM item;
+  PERFORM delete_link_types();
+  PERFORM delete_item_types();
+  PERFORM delete_link_rules();
+END
+$BODY$;
+
+ALTER FUNCTION clear_all()
+  OWNER TO onix;
+
+/*
+  delete_item_types: deletes all item types
+ */
+CREATE OR REPLACE FUNCTION delete_item_types()
+  RETURNS VOID
+  LANGUAGE 'plpgsql'
+  COST 100
+  VOLATILE
+AS $BODY$
+BEGIN
+  DELETE FROM item_type WHERE system = FALSE;
+END
+$BODY$;
+
+ALTER FUNCTION delete_item_types()
+  OWNER TO onix;
+
+/*
+  delete_link_types: deletes all link types
+ */
+CREATE OR REPLACE FUNCTION delete_link_types()
+  RETURNS VOID
+  LANGUAGE 'plpgsql'
+  COST 100
+  VOLATILE
+AS $BODY$
+BEGIN
+  DELETE FROM link_type WHERE system = FALSE;
+END
+$BODY$;
+
+ALTER FUNCTION delete_link_types()
+  OWNER TO onix;
+
+/*
+  delete_link_rules: deletes all link rules
+ */
+CREATE OR REPLACE FUNCTION delete_link_rules()
+  RETURNS VOID
+  LANGUAGE 'plpgsql'
+  COST 100
+  VOLATILE
+AS $BODY$
+BEGIN
+  DELETE FROM link_rule WHERE system = FALSE;
+END
+$BODY$;
+
+ALTER FUNCTION delete_link_rules()
+  OWNER TO onix;
+
 END
 $$;

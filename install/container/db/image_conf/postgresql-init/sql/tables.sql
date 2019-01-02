@@ -242,7 +242,7 @@ BEGIN
            name CHARACTER VARYING(200) COLLATE pg_catalog."default",
            description TEXT COLLATE pg_catalog."default",
            attr_valid HSTORE,
-           system boolean DEFAULT FALSE,
+           system boolean NOT NULL DEFAULT FALSE,
            version bigint NOT NULL DEFAULT 1,
            created timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
            updated timestamp(6) with time zone,
@@ -458,6 +458,7 @@ BEGIN
             link_type_id integer NOT NULL,
             start_item_type_id integer NOT NULL,
             end_item_type_id integer NOT NULL,
+            system boolean NOT NULL DEFAULT FALSE,
             version bigint NOT NULL DEFAULT 1,
             created timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
             updated timestamp(6) with time zone,
@@ -502,8 +503,8 @@ BEGIN
 
     END IF;
 
-    INSERT INTO link_rule (key, name, description, link_type_id, start_item_type_id, end_item_type_id, changedby) VALUES ('INVENTORY->HOST-GROUP', 'Inventory to Host-Group link rule.', 'Allows to link an inventory item with a host group item.', 1, 1, 2, 'onix');
-    INSERT INTO link_rule (key, name, description, link_type_id, start_item_type_id, end_item_type_id, changedby) VALUES ('HOST-GROUP->HOST', 'Host Group to Host link rule.', 'Allows to link a host group item with a host item.', 1, 2, 3, 'onix');
+    INSERT INTO link_rule (key, name, description, link_type_id, start_item_type_id, end_item_type_id, changedby, system) VALUES ('INVENTORY->HOST-GROUP', 'Inventory to Host-Group link rule.', 'Allows to link an inventory item with a host group item.', 1, 1, 2, 'onix', TRUE);
+    INSERT INTO link_rule (key, name, description, link_type_id, start_item_type_id, end_item_type_id, changedby, system) VALUES ('HOST-GROUP->HOST', 'Host Group to Host link rule.', 'Allows to link a host group item with a host item.', 1, 2, 3, 'onix', TRUE);
 
     ---------------------------------------------------------------------------
     -- LINK_RULE AUDIT
@@ -521,6 +522,7 @@ BEGIN
             link_type_id integer,
             start_item_type_id integer,
             end_item_type_id integer,
+            system boolean,
             version bigint,
             created timestamp(6) with time zone,
             updated timestamp(6) with time zone,

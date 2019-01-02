@@ -8,4 +8,4 @@ Feature: Delete Configuration Item
     Given the item URL search by key is known
     When a DELETE HTTP request with a key is done
     Then the response has body
-    Then the service responds with action "DELETED"
+    Then the service responds with action "D"

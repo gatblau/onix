@@ -32,7 +32,8 @@ public class LinkData implements Serializable {
     private List<String> tag;
     private JSONObject attribute;
     private JSONObject meta;
-    private String itemKey;
+    private String startItemKey;
+    private String endItemKey;
 
     public String getKey() {
         return key;
@@ -74,11 +75,19 @@ public class LinkData implements Serializable {
         this.attribute = attribute;
     }
 
-    public String getItemKey() {
-        return itemKey;
+    public String getStartItemKey() {
+        return startItemKey;
     }
 
-    public void setItemKey(String itemKey) {
-        this.itemKey = itemKey;
+    public void setStartItemKey(String startItemKey) {
+        this.startItemKey = startItemKey;
+    }
+
+    public String getEndItemKey() {
+        return endItemKey;
+    }
+
+    public void setEndItemKey(String endItemKey) {
+        this.endItemKey = endItemKey;
     }
 }

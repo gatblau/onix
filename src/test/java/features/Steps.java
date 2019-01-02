@@ -139,7 +139,8 @@ public class Steps extends BaseTest {
     @And("^the service responds with action \"([^\"]*)\"$")
     public void theServiceRespondsWithAction(String action) throws Throwable {
         ResponseEntity<Result> response = util.get(RESPONSE);
-        assert (response.getBody().getMessage().equals(action));
+        Result result = response.getBody();
+        assert (result.getOperation().equals(action));
     }
 
     @And("^the item exist in the database$")
@@ -180,7 +181,17 @@ public class Steps extends BaseTest {
 
     @When("^a DELETE HTTP request with a key is done$")
     public void aDELETEHTTPRequestWithAKeyIsDone() throws Throwable {
-        client.delete((String) util.get(ENDPOINT_URI), (String)util.get(ITEM_KEY));
+//        client.delete((String) util.get(ENDPOINT_URI), (String)util.get(ITEM_KEY));
+        String url = (String) util.get(ENDPOINT_URI);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.DELETE, null, Result.class, (String)util.get(ITEM_KEY));
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
     }
 
     @Given("^the link URL of the service is known$")
@@ -228,7 +239,7 @@ public class Steps extends BaseTest {
 
     @Given("^the configuration items to be linked exist in the database$")
     public void theConfigurationItemsToBeLinkedExistInTheDatabase() throws Throwable {
-        putItem(ITEM_ONE_KEY, "payload/create_item_payload.json");
+        putItem(ITEM_ONE_KEY, "payload/create_item_2_payload.json");
         putItem(ITEM_TWO_KEY, "payload/create_item_payload.json");
     }
 
@@ -370,11 +381,6 @@ public class Steps extends BaseTest {
         util.put(KEY, "__KEY__");
     }
 
-    @Given("^the links by item URL of the service is known$")
-    public void theLinksByItemURLOfTheServiceIsKnown() throws Throwable {
-        util.put(ENDPOINT_URI, "%s/link/item/{key}");
-    }
-
     private void putLink(String linkKey, String filename) {
         util.put(PAYLOAD, util.getFile(filename));
         String url = String.format("%s/link/{key}", baseUrl);
@@ -440,5 +446,38 @@ public class Steps extends BaseTest {
                 )
             );
         }
+    }
+
+    @Then("^the response contains (\\d+) items$")
+    public void theResponseContainsNumberItems(int count) {
+        ResponseEntity<ItemList> response = util.get(RESPONSE);
+
+        ItemList items = response.getBody();
+        if (items != null) {
+            if (items.getItems().size() != count) {
+                throw new RuntimeException(
+                    String.format(
+                        "Response does not contain '%s' but '%s' items.",
+                        count,
+                        response.getBody().getItems().size()
+                    )
+                );
+            }
+        }
+        else {
+            throw new RuntimeException(
+                String.format(
+                    "Response contains no items where '%s' were expected.",
+                    count
+                )
+            );
+        }
+    }
+
+    @Then("^the reponse contains the requested item$")
+    public void theReponseContainsTheRequestedItem() {
+        ResponseEntity<ItemData> response = util.get(RESPONSE);
+        ItemData item = response.getBody();
+        assert(item != null);
     }
 }
