@@ -12,4 +12,4 @@ Feature: Create Link Between two Configuration Items
     When a PUT HTTP request to the Link resource is done with a JSON payload
     Then the response code is 200
     Then the response has body
-    Then the service responds with action "CREATED"
+    Then the service responds with action "I"

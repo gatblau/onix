@@ -109,16 +109,12 @@ public class Lib implements InitializingBean {
         return item;
     }
 
-    public LinkData toLinkData(ResultSet set, boolean linkToItem) throws SQLException, ParseException {
+    public LinkData toLinkData(ResultSet set) throws SQLException, ParseException {
         LinkData link = new LinkData();
         link.setKey(set.getString("key"));
         link.setDescription(set.getString("description"));
-        if (linkToItem) {
-            link.setItemKey(set.getString("end_item_key"));
-        }
-        else {
-            link.setItemKey(set.getString("start_item_key"));
-        }
+        link.setEndItemKey(set.getString("end_item_key"));
+        link.setStartItemKey(set.getString("start_item_key"));
         link.setMeta(toJSON(set.getObject("meta")));
         link.setTag(toList(set.getObject("tag")));
         link.setAttribute(toJSON(set.getObject("attribute")));

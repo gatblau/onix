@@ -1,0 +1,46 @@
+[OSEv3:children]
+masters
+nodes
+postdeploy_glusterfs
+etcd
+
+[masters]
+master0 ansible_host=host0003.example.com openshift_node_labels="{'node': 'false', 'region': 'master', 'zone': 'az1'}"
+master1 ansible_host=host0002.example.com openshift_node_labels="{'node': 'false', 'region': 'master', 'zone': 'az2'}"
+master2 ansible_host=host0004.example.com openshift_node_labels="{'node': 'false', 'region': 'master', 'zone': 'az3'}"
+
+[etcd]
+etcd0 ansible_host=host0003.example.com
+etcd1 ansible_host=host0002.example.com
+etcd2 ansible_host=host0004.example.com
+
+[infra]
+infra0 ansible_host=host0010.example.com openshift_node_labels="{'region': 'infra', 'zone': 'az1', 'site': 'a'}"
+infra1 ansible_host=host0011.example.com openshift_node_labels="{'region': 'infra', 'zone': 'az2', 'site': 'b'}"
+infra2 ansible_host=host0012.example.com openshift_node_labels="{'region': 'infra', 'zone': 'az3', 'site': 'c'}"
+infra3 ansible_host=host0005.example.com openshift_node_labels="{'region': 'infra', 'zone': 'az3', 'site': 'd'}"
+
+[compute]
+compute0 ansible_host=host0001.example.com openshift_node_labels="{'node': 'true', 'region': 'primary', 'zone': 'az1', 'site': 'a'}"
+compute1 ansible_host=host0003.example.com openshift_node_labels="{'node': 'true', 'region': 'primary', 'zone': 'az2', 'site': 'b'}"
+compute2 ansible_host=host0005.example.com openshift_node_labels="{'node': 'true', 'region': 'primary', 'zone': 'az3', 'site': 'c'}"
+compute3 ansible_host=host0004.example.com openshift_node_labels="{'node': 'true', 'region': 'primary', 'zone': 'az2', 'site': 'd'}"
+compute4 ansible_host=host0002.example.com openshift_node_labels="{'node': 'true', 'region': 'primary', 'zone': 'az3', 'site': 'e'}"
+
+# external GlusterFS Container Ready Storage (CRS) cluster nodes
+[postdeploy_glusterfs]
+storage0 ansible_host=host0009.example.com
+storage1 ansible_host=host0008.example.com
+storage2 ansible_host=host0007.example.com
+
+[nodes:children]
+masters
+compute
+infra
+etcd
+
+[controller]
+controller1 ansible_host=host0002.example.com
+
+[bastion]
+bastion1 ansible_host=host0002.example.com

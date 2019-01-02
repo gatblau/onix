@@ -1,8 +1,8 @@
 {
   "description": "This is a CMDB item link for testing purposes.",
-  "link_type_key": "INVENTORY",
-  "start_item_key": "item_one_key",
-  "end_item_key": "item_two_key",
+  "linkType": "INVENTORY",
+  "startItem": "item_one_key",
+  "endItem": "item_two_key",
   "tag": ["cmdb", "host", "rhel"],
   "attribute": {
     "WBS" : "012csl",

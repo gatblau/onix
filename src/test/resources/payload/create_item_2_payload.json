@@ -1,0 +1,17 @@
+{
+  "name": "Test Host Group Item",
+  "description": "This is a CMDB item for testing purposes.",
+  "type": "HOST-GROUP",
+  "meta": {
+    "IP": "192.168.0.1",
+    "Vendor": "Supreme Computers",
+    "Type": "Virtual Machine",
+    "OS": "RHEL 7.5"
+  },
+  "tag": ["cmdb", "host", "rhel"],
+  "attribute": {
+    "WBS" : "012csl",
+    "COMPANY" : "ACME"
+  },
+  "status": 1
+}

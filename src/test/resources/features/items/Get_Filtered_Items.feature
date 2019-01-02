@@ -12,4 +12,4 @@ Feature: Get Filtered Configuration Items
     When a GET HTTP request to the Item uri is done with query parameters
     Then the response code is 200
     Then the response has body
-    Then the service responds with action "CREATED"
+    Then the response contains 3 items
