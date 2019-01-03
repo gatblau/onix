@@ -1,4 +1,4 @@
-package org.gatblau.onix;
+package org.gatblau.onix.data;
 
 import java.io.Serializable;
 

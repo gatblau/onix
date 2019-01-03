@@ -1,16 +1,11 @@
 package features;
 
-import cucumber.api.PendingException;
 import cucumber.api.java.en.And;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import org.gatblau.onix.Info;
-import org.gatblau.onix.Result;
-import org.gatblau.onix.data.ItemData;
-import org.gatblau.onix.data.ItemList;
-import org.gatblau.onix.data.LinkData;
-import org.gatblau.onix.data.LinkList;
+import org.gatblau.onix.data.*;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -21,7 +16,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static features.Key.*;

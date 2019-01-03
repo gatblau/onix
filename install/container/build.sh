@@ -18,12 +18,12 @@ HASH=`git rev-parse --short HEAD`
 ONIXTAG="${HASH}.${DATE}"
 echo "Onix TAG is: ${ONIXTAG}"
 
-# builds the Onix-Db image
+# builds the onix-db image
 cd db
 sh ./build.sh $ONIXTAG
 cd ..
 
-# builds the Onix-Svc image
-cd svc
+# builds the onix-wapi image
+cd wapi
 sh ./build.sh $ONIXTAG
 cd ..

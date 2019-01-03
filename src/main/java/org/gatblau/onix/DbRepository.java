@@ -1,7 +1,6 @@
 package org.gatblau.onix;
 
 import org.gatblau.onix.data.*;
-import org.gatblau.onix.model.ItemType;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
@@ -36,14 +35,14 @@ public interface DbRepository {
     */
     ItemTypeData getItemType(String key);
     Result deleteItemTypes() throws SQLException;
-    List<ItemType> getItemTypes() throws SQLException;
+    List<ItemTypeData> getItemTypes() throws SQLException;
     Result createOrUpdateItemType(String key, JSONObject json) throws SQLException;
     Result deleteItemType(String key) throws SQLException;
 
     /*
         LINK TYPES
     */
-    List<ItemType> getLinkTypes();
+    List<LinkTypeData> getLinkTypes();
     Result createOrUpdateLinkType(String key);
     Result deleteLinkType(String key) throws SQLException;
     Result deleteLinkTypes() throws SQLException;

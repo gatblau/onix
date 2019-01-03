@@ -1,5 +1,5 @@
 /*
-Onix CMDB - Copyright (c) 2018 by www.gatblau.org
+Onix CMDB - Copyright (c) 2018-2019 by www.gatblau.org
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ project, to be licensed under the same terms as the rest of the code.
 package org.gatblau.onix;
 
 import org.gatblau.onix.data.*;
-import org.gatblau.onix.model.ItemType;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.postgresql.util.HStoreConverter;
@@ -37,8 +36,6 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-
-import static org.gatblau.onix.Database.*;
 
 @Service
 public class PgSqlRepository implements DbRepository {
@@ -242,8 +239,8 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public List<ItemType> getItemTypes() throws SQLException {
-        List<ItemType> list = new ArrayList<>();
+    public List<ItemTypeData> getItemTypes() throws SQLException {
+        List<ItemTypeData> list = new ArrayList<>();
         try {
             db.prepare(getFindItemTypesSQL());
         }
@@ -285,7 +282,7 @@ public class PgSqlRepository implements DbRepository {
         LINK TYPES
      */
     @Override
-    public List<ItemType> getLinkTypes() {
+    public List<LinkTypeData> getLinkTypes() {
         // TODO: implement getLinkTypes()
         throw new UnsupportedOperationException("getLinkTypes");
     }

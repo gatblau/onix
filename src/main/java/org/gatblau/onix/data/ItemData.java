@@ -1,5 +1,5 @@
 /*
-Onix CMDB - Copyright (c) 2018 by www.gatblau.org
+Onix CMDB - Copyright (c) 2018-2019 by www.gatblau.org
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,13 +19,10 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix.data;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.json.simple.JSONObject;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 
 public class ItemData implements Serializable {
