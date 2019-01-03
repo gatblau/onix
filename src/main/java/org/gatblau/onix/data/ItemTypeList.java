@@ -1,5 +1,5 @@
 /*
-Onix CMDB - Copyright (c) 2018 by www.gatblau.org
+Onix CMDB - Copyright (c) 2018-2019 by www.gatblau.org
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,15 +19,13 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix.data;
 
-import org.gatblau.onix.model.ItemType;
-
 import java.util.List;
 
-public class ItemTypeList extends Wrapper<ItemType> {
+public class ItemTypeList extends Wrapper<ItemTypeData> {
     public ItemTypeList() {
     }
 
-    public ItemTypeList(List<ItemType> itemTypes){
+    public ItemTypeList(List<ItemTypeData> itemTypes){
         super(itemTypes);
     }
 }

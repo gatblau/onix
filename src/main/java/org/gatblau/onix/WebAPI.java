@@ -1,5 +1,5 @@
 /*
-Onix CMDB - Copyright (c) 2018 by www.gatblau.org
+Onix CMDB - Copyright (c) 2018-2019 by www.gatblau.org
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ package org.gatblau.onix;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.gatblau.onix.data.*;
-import org.gatblau.onix.model.ItemType;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -141,7 +140,7 @@ public class WebAPI {
     public ResponseEntity<Result> createItemType(
             @PathVariable("key") String key,
             @RequestBody JSONObject payload
-        ) throws InterruptedException, IOException, SQLException {
+        ) throws IOException, SQLException {
         return ResponseEntity.ok(data.createOrUpdateItemType(key, payload));
     }
 
@@ -154,7 +153,7 @@ public class WebAPI {
         , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<ItemTypeList> getItemTypes() throws SQLException {
-        List<ItemType> itemTypes = data.getItemTypes();
+        List<ItemTypeData> itemTypes = data.getItemTypes();
         return ResponseEntity.ok(new ItemTypeList(itemTypes));
     }
 

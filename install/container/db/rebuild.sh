@@ -13,6 +13,9 @@ docker rm -f onix-db
 # deletes the image
 docker rmi "onix-db:${TAG}"
 
+# deletes any images with no tag
+docker rmi $(docker images -f dangling=true -q)
+
 # builds the image
 sh build.sh "${TAG}"
 

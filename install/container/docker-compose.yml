@@ -1,12 +1,5 @@
 version: '2'
 services:
-  onixid:
-    image: "jboss/keycloak"
-    ports:
-      - 8081:8080
-    environment:
-      KEYCLOAK_USER: 'admin'
-      KEYCLOAK_PASSWORD: 'admin'
   onixdb:
     image: "gatoazul/onix-db:${ONIXTAG}"
     ports:
@@ -15,23 +8,26 @@ services:
       - data:/var/lib/pgsql/data
     environment:
       POSTGRESQL_ADMIN_PASSWORD: 'onix'
-#  onixsvc:
-#    image: "gatoazul/onix-svc:${ONIXTAG}"
-#    ports:
-#      - 8080:8080
-#    depends_on:
-#      - onixdb
-#    environment:
-#      HTTP_PORT: '8080'
-#      DB_HOST: 'onixdb'
-#      DB_USER: 'onix'
-#      DB_PWD: 'onix'
-#      DB_PORT: '5432'
-#      DB_NAME: 'onix'
-#      AUTH_SERVER_URL: 'http://localhost:8081/auth'
-#      AUTH_REALM: 'onix'
-#      AUTH_RESX: 'onix-cmdb'
-#      AUTH_ENABLED: 'true'
+  onixsvc:
+    image: "gatoazul/onix-wapi:${ONIXTAG}"
+    ports:
+      - 8080:8080
+    depends_on:
+      - onixdb
+    environment:
+      HTTP_PORT: '8080'
+      WAPI_AUTH_MODE: 'basic'
+      WAPI_READER_USER: 'reader'
+      WAPI_READER_PWD: '0n1xR3ad3r'
+      WAPI_WRITER_USER: 'writer'
+      WAPI_WRITER_PWD: '0n1xWr1t3r'
+      WAPI_ADMIN_USER: 'admin'
+      WAPI_ADMIN_PWD: '0n1xAdm1n'
+      DB_HOST: 'onixdb'
+      DB_USER: 'onix'
+      DB_PWD: 'onix'
+      DB_PORT: '5432'
+      DB_NAME: 'onix'
 
 volumes:
   data: {}
