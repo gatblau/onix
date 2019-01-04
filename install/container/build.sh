@@ -31,7 +31,7 @@ fi
 # creates a TAG for the newly built docker images
 DATE=`date '+%d%m%y-%H%M%S'`
 HASH=`git rev-parse --short HEAD`
-ONIXTAG="${HASH}.${DATE}"
+ONIXTAG="${HASH}-${DATE}"
 echo "Onix TAG is: ${ONIXTAG}"
 
 # builds the onix-db image
