@@ -56,18 +56,17 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public Result createOrUpdateItem(String key, JSONObject json) throws IOException, SQLException, ParseException {
         Result result = new Result();
-
-        Object name = json.get("name");
-        Object description = json.get("description");
-        String meta = util.toJSONString(json.get("meta"));
-        String tag = util.toArrayString(json.get("tag"));
-        Object attribute = json.get("attribute");
-        Object status = json.get("status");
-        Object type = json.get("type");
-        Object version = json.get("version");
-
         ResultSet set = null;
         try {
+            Object name = json.get("name");
+            Object description = json.get("description");
+            String meta = util.toJSONString(json.get("meta"));
+            String tag = util.toArrayString(json.get("tag"));
+            Object attribute = json.get("attribute");
+            Object status = json.get("status");
+            Object type = json.get("type");
+            Object version = json.get("version");
+
             db.prepare(getSetItemSQL());
             db.setString(1, key); // key_param
             db.setString(2, (name != null) ? (String) name : null); // name_param
@@ -80,6 +79,10 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(9, version); // version_param
             db.setString(10, getUser()); // changedby_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_item"));
+        }
+        catch(Exception ex) {
+            result.setError(true);
+            result.setMessage(ex.getMessage());
         }
         finally {
             db.close();

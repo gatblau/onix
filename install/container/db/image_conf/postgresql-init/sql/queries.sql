@@ -53,14 +53,6 @@ DECLARE
   item_type_id_value smallint;
 
 BEGIN
-  IF NOT (item_type_key_param IS NULL) THEN
-    SELECT it.id INTO item_type_id_value
-    FROM item_type it
-      INNER JOIN item i
-        ON i.item_type_id = it.id
-        AND it.key = item_type_key_param;
-  END IF;
-
   RETURN QUERY SELECT
     i.id,
     i.key,
@@ -80,7 +72,7 @@ BEGIN
     ON i.item_type_id = it.id
   WHERE
   -- by item type
-      (i.item_type_id = item_type_id_value OR item_type_id_value IS NULL)
+      (it.key = item_type_key_param OR item_type_key_param IS NULL)
   -- by status
   AND (i.status = status_param OR status_param IS NULL)
   -- by tags
@@ -151,14 +143,6 @@ DECLARE
   link_type_id_value smallint;
 
 BEGIN
-  IF NOT (link_type_key_param IS NULL) THEN
-    SELECT lt.id INTO link_type_id_value
-    FROM link_type lt
-      INNER JOIN link l
-        ON l.link_type_id = lt.id
-        AND lt.key = link_type_key_param;
-  END IF;
-
   RETURN QUERY SELECT
     l.id,
     l.key,
@@ -182,7 +166,7 @@ BEGIN
       ON l.link_type_id = lt.id
   WHERE
    -- by link type
-   (l.link_type_id = link_type_id_value OR link_type_id_value IS NULL)
+   (lt.key = link_type_key_param OR link_type_key_param IS NULL)
    -- by start item
    AND (start_item.key = start_item_key_param OR start_item_key_param IS NULL)
    -- by end item
