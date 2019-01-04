@@ -13,35 +13,10 @@
 #    Contributors to this project, hereby assign copyright in this code to the project,
 #    to be licensed under the same terms as the rest of the code.
 #
-
-# Builds the Onix WAPI and DB images required to run the application
-
-# check docker is installed
-if [ ! -x "$(command -v docker)" ]; then
-    echo "Docker is required to execute this script."
-    exit 1
-fi
-
-# check s2i command is installed
-if [ ! -x "$(command -v ./s2i)" ]; then
-    echo "s2i is required to execute this script. See here: https://github.com/openshift/source-to-image"
-    exit 1
-fi
-
-# creates a TAG for the newly built docker images
-DATE=`date '+%d%m%y-%H%M%S'`
-HASH=`git rev-parse --short HEAD`
-ONIXTAG="${HASH}.${DATE}"
-echo "Onix TAG is: ${ONIXTAG}"
-
-# builds the onix-db image
-echo building onix-db...
-cd db
-sh ./build.sh $ONIXTAG
+git clone https://github.com/gatblau/onix.git
+cd onix
+git checkout v1
+mvn package
 cd ..
-
-# builds the onix-wapi image
-echo building onix-wapi
-cd wapi
-sh ./build.sh $ONIXTAG
-cd ..
+cp onix/target/onix*.jar .
+rm -rf onix
