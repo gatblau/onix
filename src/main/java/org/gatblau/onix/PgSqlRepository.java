@@ -33,9 +33,9 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class PgSqlRepository implements DbRepository {
@@ -242,15 +242,25 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public List<ItemTypeData> getItemTypes() throws SQLException {
-        List<ItemTypeData> list = new ArrayList<>();
+    public ItemTypeList getItemTypes(Map attribute, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) throws SQLException, ParseException {
+        ItemTypeList itemTypes = new ItemTypeList();
         try {
             db.prepare(getFindItemTypesSQL());
+            db.setString(1, util.toHStoreString(attribute)); // attribute_param
+            db.setObject(2, system);
+            db.setObject(3, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
+            db.setObject(4, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
+            db.setObject(5, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
+            db.setObject(6, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                itemTypes.getItems().add(util.toItemTypeData(set));
+            }
         }
         finally {
             db.close();
         }
-        return list;
+        return itemTypes;
     }
 
     @Override
@@ -438,9 +448,14 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getFindItemTypesSQL() {
-        return "SELECT * FROM find_links(" +
-                "?::character varying," +
-                ")";
+        return "SELECT * FROM find_item_types(" +
+            "?::hstore," + // attr_valid
+            "?::boolean," + // system
+            "?::timestamp(6) with time zone," + // date created from
+            "?::timestamp(6) with time zone," + // date created to
+            "?::timestamp(6) with time zone," + // date updates from
+            "?::timestamp(6) with time zone" + // date updated to
+        ")";
     }
 
     @Override

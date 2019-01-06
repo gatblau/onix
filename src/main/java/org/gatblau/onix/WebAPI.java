@@ -35,7 +35,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Api("ONIX CMDB Web API")
 @RestController
@@ -43,6 +45,8 @@ public class WebAPI {
 
     @Autowired
     private DbRepository data;
+
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
 
     @ApiOperation(
         value = "Returns OK if the service is up and running.",
@@ -148,13 +152,35 @@ public class WebAPI {
         value = "Get a list of available configuration item types.",
         notes = "Only item types marked as custom can be deleted.")
     @RequestMapping(
-          path = "/itemtype"
+          path = "/itemtypes"
         , method = RequestMethod.GET
         , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<ItemTypeList> getItemTypes() throws SQLException {
-        List<ItemTypeData> itemTypes = data.getItemTypes();
-        return ResponseEntity.ok(new ItemTypeList(itemTypes));
+    public ResponseEntity<ItemTypeList> getItemTypes(
+          @RequestParam(value = "attribute", required = false) String attribute
+        , @RequestParam(value = "system", required = false) Boolean system
+        , @RequestParam(value = "createdFrom", required = false) String createdFromDate
+        , @RequestParam(value = "createdTo", required = false) String createdToDate
+        , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
+        , @RequestParam(value = "updatedTo", required = false) String updatedToDate
+    ) throws SQLException, ParseException {
+        Map attrMap = null;
+        if (attribute != null) {
+            attrMap = new HashMap<String, String>();
+            String[] items = attribute.split("[|]"); // separate tags using pipes in the query string
+            for(String item : items) {
+                String[] parts = item.split("->");
+                attrMap.put(parts[0],parts[1]);
+            }
+        }
+        ItemTypeList itemTypes = data.getItemTypes(
+            attrMap,
+            system,
+            getDate(createdFromDate),
+            getDate(createdToDate),
+            getDate(updatedFromDate),
+            getDate(updatedToDate));
+        return ResponseEntity.ok(itemTypes);
     }
 
     @ApiOperation(
@@ -188,29 +214,37 @@ public class WebAPI {
             , @RequestParam(value = "status", required = false) Short status
             , @RequestParam(value = "top", required = false, defaultValue = "100") Integer top
     ) throws SQLException, ParseException {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
-        ZonedDateTime createdFrom = null;
-        if (createdFromDate != null) {
-            createdFrom = ZonedDateTime.of(LocalDateTime.parse(createdFromDate, formatter), ZoneId.systemDefault());
-        }
-        ZonedDateTime createdTo = null;
-        if (createdToDate != null) {
-            createdTo = ZonedDateTime.of(LocalDateTime.parse(createdToDate, formatter), ZoneId.systemDefault());
-        }
-        ZonedDateTime updatedFrom = null;
-        if (updatedFromDate != null) {
-            updatedFrom = ZonedDateTime.of(LocalDateTime.parse(createdFromDate, formatter), ZoneId.systemDefault());
-        }
-        ZonedDateTime updatedTo = null;
-        if (updatedToDate != null) {
-            updatedTo = ZonedDateTime.of(LocalDateTime.parse(createdToDate, formatter), ZoneId.systemDefault());
-        }
         List<String> tagList = null;
         if (tag != null) {
             String[] tags = tag.split("[|]"); // separate tags using pipes in the query string
             tagList = Arrays.asList(tags);
         }
-        ItemList list = data.findItems(itemTypeKey, tagList, createdFrom, createdTo, updatedFrom, updatedTo, status, top);
+        ItemList list = data.findItems(
+            itemTypeKey,
+            tagList,
+            getDate(createdFromDate),
+            getDate(createdToDate),
+            getDate(updatedFromDate),
+            getDate(updatedToDate),
+            status,
+            top
+        );
         return ResponseEntity.ok(list);
+    }
+
+    private ZonedDateTime getZonedDateTime(@RequestParam(value = "createdFrom", required = false) String createdFromDate) {
+        ZonedDateTime createdFrom = null;
+        if (createdFromDate != null) {
+            createdFrom = ZonedDateTime.of(LocalDateTime.parse(createdFromDate, formatter), ZoneId.systemDefault());
+        }
+        return createdFrom;
+    }
+
+    private ZonedDateTime getDate(String dateString) {
+        ZonedDateTime date = null;
+        if (date != null) {
+            date = ZonedDateTime.of(LocalDateTime.parse(dateString, formatter), ZoneId.systemDefault());
+        }
+        return date;
     }
 }
