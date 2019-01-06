@@ -20,6 +20,7 @@ project, to be licensed under the same terms as the rest of the code.
 package org.gatblau.onix;
 
 import org.gatblau.onix.data.ItemData;
+import org.gatblau.onix.data.ItemTypeData;
 import org.gatblau.onix.data.LinkData;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -141,5 +142,38 @@ public class Lib implements InitializingBean {
         link.setTag(toList(set.getObject("tag")));
         link.setAttribute(toJSON(set.getObject("attribute")));
         return link;
+    }
+
+    public ItemTypeData toItemTypeData(ResultSet set) throws SQLException, ParseException {
+        Date updated = set.getDate("updated");
+        ItemTypeData itemType = new ItemTypeData();
+        itemType.setKey(set.getString("key"));
+        itemType.setName(set.getString("name"));
+        itemType.setDescription(set.getString("description"));
+        itemType.setCreated(dateFormat.format(set.getDate("created")));
+        itemType.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+        itemType.setVersion(set.getInt("version"));
+        itemType.setAttribute(toJSON(set.getObject("attr_valid")));
+        return itemType;
+    }
+
+    public String toHStoreString(Map<String, String> map) {
+        String result = null;
+        if (map == null) {
+            result = null;
+        }
+        else {
+            StringBuilder sb = new StringBuilder();
+            int count = 0;
+            for (Map.Entry<String, String> entry : map.entrySet()) {
+                sb.append(entry.getKey()).append("=>").append(entry.getValue());
+                if (count < map.entrySet().size() - 1) {
+                    sb.append(",");
+                }
+                count++;
+            }
+            result = sb.toString();
+        }
+        return result;
     }
 }

@@ -19,6 +19,8 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix.data;
 
+import org.json.simple.JSONObject;
+
 import java.io.Serializable;
 
 public class ItemTypeData implements Serializable {
@@ -27,6 +29,11 @@ public class ItemTypeData implements Serializable {
     private String key;
     private String name;
     private String description;
+    private Boolean system;
+    private JSONObject attribute;
+    private String created;
+    private String updated;
+    private Integer version;
 
     public ItemTypeData() {
     }
@@ -53,5 +60,45 @@ public class ItemTypeData implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Boolean getSystem() {
+        return system;
+    }
+
+    public void setSystem(Boolean system) {
+        this.system = system;
+    }
+
+    public JSONObject getAttribute() {
+        return attribute;
+    }
+
+    public void setAttribute(JSONObject attribute) {
+        this.attribute = attribute;
+    }
+
+    public String getCreated() {
+        return created;
+    }
+
+    public void setCreated(String created) {
+        this.created = created;
+    }
+
+    public String getUpdated() {
+        return updated;
+    }
+
+    public void setUpdated(String updated) {
+        this.updated = updated;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 }

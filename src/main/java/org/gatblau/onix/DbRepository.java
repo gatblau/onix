@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 
 /*
     Provides an abstraction to the underlying onix cmdb database.
@@ -54,7 +55,8 @@ public interface DbRepository {
     */
     ItemTypeData getItemType(String key);
     Result deleteItemTypes() throws SQLException;
-    List<ItemTypeData> getItemTypes() throws SQLException;
+    ItemTypeList getItemTypes(Map attribute, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) throws SQLException, ParseException;
+
     Result createOrUpdateItemType(String key, JSONObject json) throws SQLException;
     Result deleteItemType(String key) throws SQLException;
 
