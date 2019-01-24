@@ -52,7 +52,7 @@ public class Steps extends BaseTest {
 
     @Given("^the item URL search with query parameters is known$")
     public void theItemURLSearchWithQueryParametersIsKnown() throws Throwable {
-        util.put(Key.ENDPOINT_URI, String.format("%s/items", baseUrl));
+        util.put(ITEM_URL, String.format("%s/item", baseUrl));
     }
 
     @And("^the response code is (\\d+)$")
@@ -99,13 +99,13 @@ public class Steps extends BaseTest {
 
     @And("^the clear cmdb URL of the service is known$")
     public void theClearCMDBURLOfTheServiceIsKnown() throws Throwable {
-        util.put(Key.ENDPOINT_URI, String.format("%s/clear", baseUrl));
+        util.put(CLEAR_URL, String.format("%s/clear", baseUrl));
     }
 
     @And("^a clear cmdb request to the service is done$")
     public void aClearCMDBRequestToTheServiceIsDone() throws Throwable {
         try {
-            client.delete((String) util.get(ENDPOINT_URI));
+            client.delete((String) util.get(CLEAR_URL));
             util.remove(EXCEPTION);
         }
         catch (Exception ex) {
@@ -146,7 +146,7 @@ public class Steps extends BaseTest {
     }
 
     @Given("^the item type does not exist in the database$")
-    public void theItemTypeDoesNotExistInTheDatabase() throws Throwable {
+    public void xtheItemTypeDoesNotExistInTheDatabase() throws Throwable {
         theItemTypeURLOfTheServiceIsKnown();
         aDELETEHTTPRequestIsDone();
         thereIsNotAnyErrorInTheResponse();
@@ -154,29 +154,22 @@ public class Steps extends BaseTest {
 
     @Given("^the item type URL of the service is known$")
     public void theItemTypeURLOfTheServiceIsKnown() throws Throwable {
-        util.put(ENDPOINT_URI, String.format("%sitemtype", baseUrl));
+        util.put(ITEM_TYPE_URL, String.format("%sitemtype", baseUrl));
     }
 
     @Given("^the item type URL of the service with key is known$")
     public void theItemTypeURLOfTheServiceWithKeyIsKnown() throws Throwable {
-        util.put(ENDPOINT_URI, String.format("%sitemtype/{key}", baseUrl));
+        util.put(ITEM_TYPE_URL, String.format("%sitemtype/{key}", baseUrl));
     }
 
     @When("^a DELETE HTTP request is done$")
     public void aDELETEHTTPRequestIsDone() throws Throwable {
-        try {
-            client.delete((String) util.get(ENDPOINT_URI));
-            util.remove(EXCEPTION);
-        }
-        catch (Exception ex) {
-            util.put(EXCEPTION, ex);
-        }
+
     }
 
-    @When("^a DELETE HTTP request with a key is done$")
-    public void aDELETEHTTPRequestWithAKeyIsDone() throws Throwable {
-//        client.delete((String) util.get(ENDPOINT_URI), (String)util.get(ITEM_KEY));
-        String url = (String) util.get(ENDPOINT_URI);
+    @When("^a DELETE HTTP request with an item key is done$")
+    public void aDELETEHTTPRequestWithAnItemKeyKeyIsDone() throws Throwable {
+        String url = (String) util.get(ITEM_URL);
         ResponseEntity<Result> response = null;
         try {
             response = client.exchange(url, HttpMethod.DELETE, null, Result.class, (String)util.get(ITEM_KEY));
@@ -272,8 +265,26 @@ public class Steps extends BaseTest {
         }
     }
 
+    private void putItemType(String itemTypeKey, String filename) {
+        util.put(PAYLOAD, util.getFile(filename));
+        String url = String.format("%sitemtype/{key}", baseUrl);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("key", itemTypeKey);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.PUT, getEntityFromKey(PAYLOAD), Result.class, vars);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
     @Given("^more than one item exist in the database$")
     public void moreThanOneItemExistInTheDatabase() throws Throwable {
+        theClearCMDBURLOfTheServiceIsKnown();
+        aClearCMDBRequestToTheServiceIsDone();
         putItem("item_one", "payload/update_item_payload.json");
         putItem("item_two", "payload/update_item_payload.json");
         putItem("item_three", "payload/update_item_payload.json");
@@ -284,7 +295,7 @@ public class Steps extends BaseTest {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
 
         StringBuilder uri = new StringBuilder();
-        uri.append((String)util.get(ENDPOINT_URI));
+        uri.append((String)util.get(ITEM_URL));
 
         if (util.containsKey(CONGIG_ITEM_TYPE_ID) || util.containsKey(CONFIG_ITEM_TAG) || util.containsKey(CONFIG_ITEM_UPDATED_FROM)) {
             uri.append("?");
@@ -372,7 +383,7 @@ public class Steps extends BaseTest {
 
     @Given("^the item type natural key is known$")
     public void theItemTypeNaturalKeyIsKnown() throws Throwable {
-        util.put(KEY, "__KEY__");
+        util.put(CONGIG_ITEM_TYPE_KEY, "item_type_1");
     }
 
     private void putLink(String linkKey, String filename) {
@@ -397,11 +408,11 @@ public class Steps extends BaseTest {
         putItem(ITEM_TWO_KEY, "payload/update_item_payload.json");
     }
 
-    @Given("^two links between the two configuration items exist in the database$")
-    public void twoLinksBetweenTheTwoConfigurationItemsExistInTheDatabase() throws Throwable {
-        putLink(Key.LINK_ONE_KEY, "payload/create_link_payload.json");
-        putLink(Key.LINK_TWO_KEY, "payload/create_link_payload.json");
-    }
+//    @Given("^two links between the two configuration items exist in the database$")
+//    public void twoLinksBetweenTheTwoConfigurationItemsExistInTheDatabase() throws Throwable {
+//        putLink(Key.LINK_ONE_KEY, "payload/create_link_payload.json");
+//        putLink(Key.LINK_TWO_KEY, "payload/create_link_payload.json");
+//    }
 
     @When("^a GET HTTP request to the Link by Item resource is done$")
     public void aGETHTTPRequestToTheLinkByItemResourceIsDone() throws Throwable {
@@ -473,5 +484,70 @@ public class Steps extends BaseTest {
         ResponseEntity<ItemData> response = util.get(RESPONSE);
         ItemData item = response.getBody();
         assert(item != null);
+    }
+
+    @Given("^the item type URL of the service with no query parameters exist$")
+    public void theItemTypeURLOfTheServiceWithNoQueryParametersExist() {
+        util.put(Key.ENDPOINT_URI, String.format("%s/itemtype", baseUrl));
+    }
+
+    @When("^a request to GET a list of item types is done$")
+    public void aRequestToGETAListOfItemTypesIsDone() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<ItemTypeList> result = client.exchange(
+                (String)util.get(ENDPOINT_URI),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                ItemTypeList.class);
+        util.put(RESPONSE, result);
+    }
+
+    @Then("^the response contains (\\d+) item types$")
+    public void theResponseContainsItemTypes(int items) {
+        ResponseEntity<ItemTypeList> response = util.get(RESPONSE);
+        assert(response.getBody().getItems().size() == items);
+    }
+
+    @Given("^the link between the two items exists in the database$")
+    public void theLinkBetweenTheTwoItemsExistsInTheDatabase() {
+        putLink(Key.LINK_ONE_KEY, "payload/create_link_payload.json");
+    }
+
+    @Given("^the item type exists in the database$")
+    public void theItemTypeExistsInTheDatabase() {
+        putItemType(util.get(CONGIG_ITEM_TYPE_KEY), "payload/create_item_type_payload.json");
+    }
+
+    @When("^a DELETE HTTP request with an item type key is done$")
+    public void aDELETEHTTPRequestWithAnItemTypeKeyIsDone() {
+        String url = (String) util.get(ITEM_TYPE_URL);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.DELETE, null, Result.class, (String)util.get(CONGIG_ITEM_TYPE_KEY));
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    @When("^an item type DELETE HTTP request is done$")
+    public void anItemTypeDELETEHTTPRequestIsDone() {
+        try {
+            client.delete((String) util.get(ITEM_TYPE_URL));
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    @When("^an item type PUT HTTP request with a JSON payload is done$")
+    public void anItemTypePUTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
+        util.put(KEY, util.get(CONGIG_ITEM_TYPE_KEY));
+        util.put(ENDPOINT_URI, util.get(ITEM_TYPE_URL));
+        aPUTHTTPRequestWithAJSONPayloadIsDone();
     }
 }

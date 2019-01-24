@@ -167,16 +167,17 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result createOrUpdateLink(String key, JSONObject json) throws SQLException, ParseException {
-        String description = (String)json.get("description");
-        String linkTypeKey = (String)json.get("linkType");
-        String startItemKey = (String)json.get("startItem");
-        String endItemKey = (String)json.get("endItem");
-        String meta = util.toJSONString(json.get("meta"));
-        String tag = util.toArrayString(json.get("tag"));
-        Object attribute = json.get("attribute");
-        Object version = json.get("version");
         Result result = new Result();
         try {
+            String description = (String)json.get("description");
+            String linkTypeKey = (String)json.get("linkType");
+            String startItemKey = (String)json.get("startItem");
+            String endItemKey = (String)json.get("endItem");
+            String meta = util.toJSONString(json.get("meta"));
+            String tag = util.toArrayString(json.get("tag"));
+            Object attribute = json.get("attribute");
+            Object version = json.get("version");
+
             db.prepare(getSetLinkSQL());
             db.setString(1, key);
             db.setString(2, linkTypeKey);
@@ -189,6 +190,10 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(9, version);
             db.setString(10, getUser());
             result.setOperation(db.executeQueryAndRetrieveStatus("set_link"));
+        }
+        catch (Exception ex) {
+            result.setError(true);
+            result.setMessage(ex.getMessage());
         }
         finally {
             db.close();
@@ -231,9 +236,18 @@ public class PgSqlRepository implements DbRepository {
         ITEM TYPES
      */
     @Override
-    public ItemTypeData getItemType(String key) {
-        // TODO: implement getItemType()
-        throw new UnsupportedOperationException("getItemType");
+    public ItemTypeData getItemType(String key) throws SQLException, ParseException {
+        ItemTypeData itemType = null;
+        try {
+            db.prepare(getGetItemTypeSQL());
+            db.setString(1, key);
+            ResultSet set = db.executeQuerySingleRow();
+            itemType = util.toItemTypeData(set);
+        }
+        finally {
+            db.close();
+        }
+        return itemType;
     }
 
     @Override
@@ -301,7 +315,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result createOrUpdateLinkType(String key) {
+    public Result createOrUpdateLinkType(String key, JSONObject json) {
         // TODO: implement createOrUpdateLinkType()
         throw new UnsupportedOperationException("createOrUpdateLinkType");
     }
@@ -314,6 +328,12 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public Result deleteLinkTypes() throws SQLException {
         return delete(getDeleteLinkTypes(), null);
+    }
+
+    @Override
+    public LinkTypeData getLinkType(String key) {
+        // TODO: implement getLinkType()
+        throw new UnsupportedOperationException("getLinkType");
     }
 
     /*
@@ -467,6 +487,13 @@ public class PgSqlRepository implements DbRepository {
                 "?::hstore," + // attr_valid
                 "?::bigint," + // version
                 "?::character varying" + // changed_by
+                ")";
+    }
+
+    @Override
+    public String getGetItemTypeSQL() {
+        return "SELECT item_type(" +
+                "?::character varying" + // key
                 ")";
     }
 

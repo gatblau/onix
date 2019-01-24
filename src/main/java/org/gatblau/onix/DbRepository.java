@@ -53,7 +53,7 @@ public interface DbRepository {
     /*
         ITEM TYPES
     */
-    ItemTypeData getItemType(String key);
+    ItemTypeData getItemType(String key) throws SQLException, ParseException;
     Result deleteItemTypes() throws SQLException;
     ItemTypeList getItemTypes(Map attribute, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) throws SQLException, ParseException;
 
@@ -64,9 +64,10 @@ public interface DbRepository {
         LINK TYPES
     */
     List<LinkTypeData> getLinkTypes();
-    Result createOrUpdateLinkType(String key);
+    Result createOrUpdateLinkType(String key, JSONObject json);
     Result deleteLinkType(String key) throws SQLException;
     Result deleteLinkTypes() throws SQLException;
+    LinkTypeData getLinkType(String key);
 
     /*
         LINK RULES
@@ -100,6 +101,7 @@ public interface DbRepository {
     String getDeleteItemTypes();
     String getFindItemTypesSQL();
     String getSetItemTypeSQL();
+    String getGetItemTypeSQL();
 
     String getDeleteLinkTypeSQL();
     String getDeleteLinkTypes();
