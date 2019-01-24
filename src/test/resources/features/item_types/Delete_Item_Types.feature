@@ -5,5 +5,5 @@ Feature: Delete All Item types
 
   Scenario: Delete all Configuration Item types
     Given the item type URL of the service is known
-    When a DELETE HTTP request is done
+    When an item type DELETE HTTP request is done
     Then there is not any error in the response

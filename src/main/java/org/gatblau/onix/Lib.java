@@ -146,6 +146,7 @@ public class Lib implements InitializingBean {
 
     public ItemTypeData toItemTypeData(ResultSet set) throws SQLException, ParseException {
         Date updated = set.getDate("updated");
+
         ItemTypeData itemType = new ItemTypeData();
         itemType.setKey(set.getString("key"));
         itemType.setName(set.getString("name"));

@@ -48,14 +48,9 @@ public class WebAPI {
 
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
 
-    @ApiOperation(
-        value = "Returns OK if the service is up and running.",
-        notes = "Use it as a readiness probe for the service.",
-        response = String.class)
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<Info> index() {
-        return ResponseEntity.ok(new Info("Onix Configuration Management Database Service.", "0.2"));
-    }
+    /*
+        ITEMS
+     */
 
     @ApiOperation(
         value = "Creates new item or updates an existing item based on the specified key.",
@@ -71,37 +66,6 @@ public class WebAPI {
     }
 
     @ApiOperation(
-        value = "Creates new link or updates an existing link based on its natural key.",
-        notes = "Use this operation to create a new link between two existing configuration items or to update such link if it already exists.")
-    @RequestMapping(
-            path = "/link/{key}", method = RequestMethod.PUT,
-            consumes = {"application/json" },
-            produces = {"application/json" })
-    public ResponseEntity<Result> createOrUpdateLink(
-            @PathVariable("key") String key,
-            @RequestBody JSONObject payload) throws SQLException, ParseException {
-        return ResponseEntity.ok(data.createOrUpdateLink(key, payload));
-    }
-
-    @ApiOperation(
-        value = "Removes ALL configuration items and links from the database.",
-        notes = "Use at your own risk ONLY for testing of the CMDB!")
-    @RequestMapping(path = "/clear", method = RequestMethod.DELETE)
-    public void clear() throws SQLException {
-        data.clear();
-    }
-
-    @ApiOperation(
-        value = "Deletes a link between two existing configuration items.",
-        notes = "Use this operation to delete links between existing items.")
-    @RequestMapping(path = "/link/{key}", method = RequestMethod.DELETE)
-    public ResponseEntity<Result> deleteLink(
-            @PathVariable("key") String key
-    ) throws InterruptedException, SQLException {
-        return ResponseEntity.ok(data.deleteLink(key));
-    }
-
-    @ApiOperation(
         value = "Deletes an existing configuration item.",
         notes = "Use this operation to remove a configuration item after it has been decommissioned.")
     @RequestMapping(
@@ -114,7 +78,60 @@ public class WebAPI {
     }
 
     @ApiOperation(
-        value = "Deletes a configuration item type.",
+            value = "Get a configuration item based on the specified key.",
+            notes = "Use this search to retrieve a specific configuration item when its natural key is known.")
+    @RequestMapping(
+            path = "/item/{key}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<ItemData> getItem(@PathVariable("key") String key) throws SQLException, ParseException {
+        return ResponseEntity.ok(data.getItem(key));
+    }
+
+    @ApiOperation(
+            value = "Search for configuration items based on the specified filters (provided via a query string).",
+            notes = "Use this function to retrieve configuration items based on type, tags and date range as required. " +
+                    "Results are limited by the top parameter.")
+    @RequestMapping(
+            path = "/item"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<Wrapper> getItems(
+            @RequestParam(value = "type", required = false) String itemTypeKey
+            , @RequestParam(value = "tag", required = false) String tag
+            , @RequestParam(value = "createdFrom", required = false) String createdFromDate
+            , @RequestParam(value = "createdTo", required = false) String createdToDate
+            , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
+            , @RequestParam(value = "updatedTo", required = false) String updatedToDate
+            , @RequestParam(value = "status", required = false) Short status
+            , @RequestParam(value = "top", required = false, defaultValue = "100") Integer top
+    ) throws SQLException, ParseException {
+        List<String> tagList = null;
+        if (tag != null) {
+            String[] tags = tag.split("[|]"); // separate tags using pipes in the query string
+            tagList = Arrays.asList(tags);
+        }
+        ItemList list = data.findItems(
+                itemTypeKey,
+                tagList,
+                getDate(createdFromDate),
+                getDate(createdToDate),
+                getDate(updatedFromDate),
+                getDate(updatedToDate),
+                status,
+                top
+        );
+        return ResponseEntity.ok(list);
+    }
+
+    /*
+        ITEM TYPES
+     */
+
+    @ApiOperation(
+        value = "Deletes all non-system specific configuration item types.",
         notes = "")
     @RequestMapping(
           path = "/itemtype"
@@ -149,10 +166,22 @@ public class WebAPI {
     }
 
     @ApiOperation(
+            value = "Get a configuration item type based on the specified key.",
+            notes = "Use this search to retrieve a specific configuration item type when its natural key is known.")
+    @RequestMapping(
+            path = "/itemtype/{key}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<ItemTypeData> getItemType(@PathVariable("key") String key) throws SQLException, ParseException {
+        return ResponseEntity.ok(data.getItemType(key));
+    }
+
+    @ApiOperation(
         value = "Get a list of available configuration item types.",
         notes = "Only item types marked as custom can be deleted.")
     @RequestMapping(
-          path = "/itemtypes"
+          path = "/itemtype"
         , method = RequestMethod.GET
         , produces = {"application/json", "application/x-yaml"}
     )
@@ -183,55 +212,106 @@ public class WebAPI {
         return ResponseEntity.ok(itemTypes);
     }
 
+    /*
+        LINKS
+     */
     @ApiOperation(
-        value = "Get a configuration item based on the specified key.",
-        notes = "Use this search to retrieve a specific configuration item when its natural key is known.")
+            value = "Creates new link or updates an existing link based on its natural key.",
+            notes = "Use this operation to create a new link between two existing configuration items or to update such link if it already exists.")
     @RequestMapping(
-          path = "/item/{key}"
-        , method = RequestMethod.GET
-        , produces = {"application/json", "application/x-yaml"}
-    )
-    public ResponseEntity<ItemData> getItem(@PathVariable("key") String key) throws SQLException, ParseException {
-        return ResponseEntity.ok(data.getItem(key));
+            path = "/link/{key}", method = RequestMethod.PUT,
+            consumes = {"application/json" },
+            produces = {"application/json" })
+    public ResponseEntity<Result> createOrUpdateLink(
+            @PathVariable("key") String key,
+            @RequestBody JSONObject payload) throws SQLException, ParseException {
+        return ResponseEntity.ok(data.createOrUpdateLink(key, payload));
     }
 
     @ApiOperation(
-        value = "Search for configuration items based on the specified filters (provided via a query string).",
-        notes = "Use this function to retrieve configuration items based on type, tags and date range as required. " +
-                "Results are limited by the top parameter.")
-    @RequestMapping(
-          path = "/items"
-        , method = RequestMethod.GET
-        , produces = {"application/json", "application/x-yaml"}
-    )
-    public ResponseEntity<Wrapper> getItems(
-              @RequestParam(value = "type", required = false) String itemTypeKey
-            , @RequestParam(value = "tag", required = false) String tag
-            , @RequestParam(value = "createdFrom", required = false) String createdFromDate
-            , @RequestParam(value = "createdTo", required = false) String createdToDate
-            , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
-            , @RequestParam(value = "updatedTo", required = false) String updatedToDate
-            , @RequestParam(value = "status", required = false) Short status
-            , @RequestParam(value = "top", required = false, defaultValue = "100") Integer top
-    ) throws SQLException, ParseException {
-        List<String> tagList = null;
-        if (tag != null) {
-            String[] tags = tag.split("[|]"); // separate tags using pipes in the query string
-            tagList = Arrays.asList(tags);
-        }
-        ItemList list = data.findItems(
-            itemTypeKey,
-            tagList,
-            getDate(createdFromDate),
-            getDate(createdToDate),
-            getDate(updatedFromDate),
-            getDate(updatedToDate),
-            status,
-            top
-        );
-        return ResponseEntity.ok(list);
+            value = "Deletes a link between two existing configuration items.",
+            notes = "Use this operation to delete links between existing items.")
+    @RequestMapping(path = "/link/{key}", method = RequestMethod.DELETE)
+    public ResponseEntity<Result> deleteLink(
+            @PathVariable("key") String key
+    ) throws InterruptedException, SQLException {
+        return ResponseEntity.ok(data.deleteLink(key));
     }
 
+    /*
+        LINK TYPES
+     */
+    @ApiOperation(
+            value = "Deletes all non-system specific item link types.",
+            notes = "")
+    @RequestMapping(
+            path = "/linktype"
+            , method = RequestMethod.DELETE
+    )
+    public void deleteLinkTypes() throws SQLException {
+        data.deleteLinkTypes();
+    }
+
+    @ApiOperation(
+            value = "Deletes an item link type.",
+            notes = "")
+    @RequestMapping(
+            path = "/linktype/{key}"
+            , method = RequestMethod.DELETE
+    )
+    public ResponseEntity<Result> deleteLinkType(@PathVariable("key") String key) throws SQLException {
+        return ResponseEntity.ok(data.deleteLinkType(key));
+    }
+
+    @ApiOperation(
+            value = "Creates a new item link type.",
+            notes = "")
+    @RequestMapping(
+            path = "/linktype/{key}"
+            , method = RequestMethod.PUT)
+    public ResponseEntity<Result> createLinkType(
+            @PathVariable("key") String key,
+            @RequestBody JSONObject payload
+    ) throws IOException, SQLException {
+        return ResponseEntity.ok(data.createOrUpdateLinkType(key, payload));
+    }
+
+    @ApiOperation(
+            value = "Get an item link type based on the specified key.",
+            notes = "Use this search to retrieve a specific item link type when its natural key is known.")
+    @RequestMapping(
+            path = "/linktype/{key}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<LinkTypeData> getLinkType(@PathVariable("key") String key) throws SQLException, ParseException {
+        return ResponseEntity.ok(data.getLinkType(key));
+    }
+
+    /*
+        MISCELLANEOUS
+     */
+
+    @ApiOperation(
+            value = "Returns OK if the service is up and running.",
+            notes = "Use it as a readiness probe for the service.",
+            response = String.class)
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<Info> index() {
+        return ResponseEntity.ok(new Info("Onix Configuration Management Database Service.", "0.2"));
+    }
+
+    @ApiOperation(
+            value = "Removes ALL configuration items and links from the database.",
+            notes = "Use at your own risk ONLY for testing of the CMDB!")
+    @RequestMapping(path = "/clear", method = RequestMethod.DELETE)
+    public void clear() throws SQLException {
+        data.clear();
+    }
+
+    /*
+        helper methods
+     */
     private ZonedDateTime getZonedDateTime(@RequestParam(value = "createdFrom", required = false) String createdFromDate) {
         ZonedDateTime createdFrom = null;
         if (createdFromDate != null) {
@@ -247,4 +327,5 @@ public class WebAPI {
         }
         return date;
     }
+
 }
