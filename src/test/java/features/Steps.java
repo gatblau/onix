@@ -146,9 +146,9 @@ public class Steps extends BaseTest {
     }
 
     @Given("^the item type does not exist in the database$")
-    public void xtheItemTypeDoesNotExistInTheDatabase() throws Throwable {
+    public void theItemTypeDoesNotExistInTheDatabase() throws Throwable {
         theItemTypeURLOfTheServiceIsKnown();
-        aDELETEHTTPRequestIsDone();
+//        aDELETEHTTPRequestIsDone();
         thereIsNotAnyErrorInTheResponse();
     }
 
@@ -160,11 +160,6 @@ public class Steps extends BaseTest {
     @Given("^the item type URL of the service with key is known$")
     public void theItemTypeURLOfTheServiceWithKeyIsKnown() throws Throwable {
         util.put(ITEM_TYPE_URL, String.format("%sitemtype/{key}", baseUrl));
-    }
-
-    @When("^a DELETE HTTP request is done$")
-    public void aDELETEHTTPRequestIsDone() throws Throwable {
-
     }
 
     @When("^a DELETE HTTP request with an item key is done$")
@@ -493,14 +488,15 @@ public class Steps extends BaseTest {
 
     @When("^a request to GET a list of item types is done$")
     public void aRequestToGETAListOfItemTypesIsDone() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json");
-        ResponseEntity<ItemTypeList> result = client.exchange(
-                (String)util.get(ENDPOINT_URI),
-                HttpMethod.GET,
-                new HttpEntity<>(null, headers),
-                ItemTypeList.class);
-        util.put(RESPONSE, result);
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.add("Content-Type", "application/json");
+//        ResponseEntity<ItemTypeList> result = client.exchange(
+//                (String)util.get(ENDPOINT_URI),
+//                HttpMethod.GET,
+//                new HttpEntity<>(null, headers),
+//                ItemTypeList.class);
+//        util.put(RESPONSE, result);
+        get(ItemTypeList.class);
     }
 
     @Then("^the response contains (\\d+) item types$")
@@ -549,5 +545,145 @@ public class Steps extends BaseTest {
         util.put(KEY, util.get(CONGIG_ITEM_TYPE_KEY));
         util.put(ENDPOINT_URI, util.get(ITEM_TYPE_URL));
         aPUTHTTPRequestWithAJSONPayloadIsDone();
+    }
+
+    @Given("^the link type does not exist in the database$")
+    public void theLinkTypeDoesNotExistInTheDatabase() throws Throwable {
+        theClearCMDBURLOfTheServiceIsKnown();
+        aClearCMDBRequestToTheServiceIsDone();
+    }
+
+    @Given("^the link type URL of the service with key is known$")
+    public void theLinkTypeURLOfTheServiceWithKeyIsKnown() {
+        util.put(LINK_TYPE_URL, String.format("%slinktype/{key}", baseUrl));
+    }
+
+    @Given("^the link type natural key is known$")
+    public void theLinkTypeNaturalKeyIsKnown() {
+        util.put(CONGIG_LINK_TYPE_KEY, "link_type_1");
+    }
+
+    @Given("^a json payload with new link type information exists$")
+    public void aJsonPayloadWithNewLinkTypeInformationExists() {
+        String payload = util.getFile("payload/create_link_type_payload.json");
+        util.put(Key.PAYLOAD, payload);
+    }
+
+    @When("^a link type PUT HTTP request with a JSON payload is done$")
+    public void aLinkTypePUTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
+        util.put(KEY, util.get(CONGIG_LINK_TYPE_KEY));
+        util.put(ENDPOINT_URI, util.get(LINK_TYPE_URL));
+        aPUTHTTPRequestWithAJSONPayloadIsDone();
+    }
+
+    @Given("^the link type URL of the service is known$")
+    public void theLinkTypeURLOfTheServiceIsKnown() {
+        util.put(LINK_TYPE_URL, String.format("%slinktype", baseUrl));
+    }
+
+    @Given("^the link type exists in the database$")
+    public void theLinkTypeExistsInTheDatabase() {
+        putLinkType(util.get(CONGIG_LINK_TYPE_KEY), "payload/create_link_type_payload.json");
+    }
+
+    private void putLinkType(String linkTypeKey, String filename) {
+        util.put(PAYLOAD, util.getFile(filename));
+        String url = String.format("%slinktype/{key}", baseUrl);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("key", linkTypeKey);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.PUT, getEntityFromKey(PAYLOAD), Result.class, vars);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    @When("^a DELETE HTTP request with a link type key is done$")
+    public void aDELETEHTTPRequestWithALinkTypeKeyIsDone() {
+        delete(LINK_TYPE_URL, CONGIG_LINK_TYPE_KEY);
+    }
+
+    @When("^a link type DELETE HTTP request is done$")
+    public void aLinkTypeDELETEHTTPRequestIsDone() {
+        delete(LINK_TYPE_URL, null);
+    }
+
+    /*
+        a generic delete request to a specified URL in the util dictionary defined by the passed-in key
+     */
+    private void delete(String urlKeyLabel, String resourceKeyLabel) {
+        String url = (String) util.get(urlKeyLabel);
+        ResponseEntity<Result> response = null;
+        try {
+            if (resourceKeyLabel != null) {
+                response = client.exchange(url, HttpMethod.DELETE, null, Result.class, (String) util.get(resourceKeyLabel));
+            } else {
+                response = client.exchange(url, HttpMethod.DELETE, null, Result.class);
+            }
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    /*
+        a generic get to an endpoint without parameters
+     */
+    private <T> void get(Class<T> cls){
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<T> result = client.exchange(
+                (String)util.get(ENDPOINT_URI),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                cls);
+        util.put(RESPONSE, result);
+    }
+
+    @Given("^the link type URL of the service with no query parameters exist$")
+    public void theLinkTypeURLOfTheServiceWithNoQueryParametersExist() {
+        util.put(Key.ENDPOINT_URI, String.format("%s/linktype", baseUrl));
+    }
+
+    @When("^a request to GET a list of link types is done$")
+    public void aRequestToGETAListOfLinkTypesIsDone() {
+        get(LinkTypeList.class);
+    }
+
+    @Then("^the response contains (\\d+) link types$")
+    public void theResponseContainsLinkTypes(int count) {
+        ResponseEntity<LinkTypeList> response = util.get(RESPONSE);
+
+        LinkTypeList links = response.getBody();
+        if (links != null) {
+            if (links.getItems().size() != count) {
+                throw new RuntimeException(
+                        String.format(
+                                "Response does not contain '%s' but '%s' links.",
+                                count,
+                                response.getBody().getItems().size()
+                        )
+                );
+            }
+        }
+        else {
+            throw new RuntimeException(
+                    String.format(
+                            "Response contains no links where '%s' were expected.",
+                            count
+                    )
+            );
+        }
+    }
+
+    @Given("^there are pre-existing Link types in the database$")
+    public void thereArePreExistingLinkTypesInTheDatabase() throws Throwable {
+        // there are already 3 pre-existing system item types in the database so do not do anything
     }
 }

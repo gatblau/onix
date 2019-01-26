@@ -288,6 +288,41 @@ public class WebAPI {
         return ResponseEntity.ok(data.getLinkType(key));
     }
 
+    @ApiOperation(
+            value = "Get a list of available link types.",
+            notes = "")
+    @RequestMapping(
+            path = "/linktype"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<LinkTypeList> getLinkTypes(
+            @RequestParam(value = "attribute", required = false) String attribute
+            , @RequestParam(value = "system", required = false) Boolean system
+            , @RequestParam(value = "createdFrom", required = false) String createdFromDate
+            , @RequestParam(value = "createdTo", required = false) String createdToDate
+            , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
+            , @RequestParam(value = "updatedTo", required = false) String updatedToDate
+    ) throws SQLException, ParseException {
+        Map attrMap = null;
+        if (attribute != null) {
+            attrMap = new HashMap<String, String>();
+            String[] items = attribute.split("[|]"); // separate tags using pipes in the query string
+            for(String item : items) {
+                String[] parts = item.split("->");
+                attrMap.put(parts[0],parts[1]);
+            }
+        }
+        LinkTypeList linkTypes = data.getLinkTypes(
+                attrMap,
+                system,
+                getDate(createdFromDate),
+                getDate(createdToDate),
+                getDate(updatedFromDate),
+                getDate(updatedToDate));
+        return ResponseEntity.ok(linkTypes);
+    }
+
     /*
         MISCELLANEOUS
      */

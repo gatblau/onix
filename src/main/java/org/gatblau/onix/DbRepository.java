@@ -63,8 +63,8 @@ public interface DbRepository {
     /*
         LINK TYPES
     */
-    List<LinkTypeData> getLinkTypes();
-    Result createOrUpdateLinkType(String key, JSONObject json);
+    LinkTypeList getLinkTypes(Map attrMap, Boolean system, ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time) throws SQLException, ParseException;
+    Result createOrUpdateLinkType(String key, JSONObject json) throws SQLException;
     Result deleteLinkType(String key) throws SQLException;
     Result deleteLinkTypes() throws SQLException;
     LinkTypeData getLinkType(String key);
@@ -106,6 +106,7 @@ public interface DbRepository {
     String getDeleteLinkTypeSQL();
     String getDeleteLinkTypes();
     String getSetLinkTypeSQL();
+    String getFindLinkTypesSQL();
 
     String getDeleteLinkRuleSQL();
     String getDeleteLinkRulesSQL();
