@@ -22,4 +22,6 @@ public class Key {
     public static final String KEY = "KEY";
     public static final String LINK_ONE_KEY = "link_one_key";
     public static final String LINK_TWO_KEY = "link_two_key";
+    public static final String LINK_TYPE_URL = "link_type_url";
+    public static final String CONGIG_LINK_TYPE_KEY = "link_type_key";
 }

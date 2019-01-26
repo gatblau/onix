@@ -22,6 +22,7 @@ package org.gatblau.onix;
 import org.gatblau.onix.data.ItemData;
 import org.gatblau.onix.data.ItemTypeData;
 import org.gatblau.onix.data.LinkData;
+import org.gatblau.onix.data.LinkTypeData;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -176,5 +177,19 @@ public class Lib implements InitializingBean {
             result = sb.toString();
         }
         return result;
+    }
+
+    public LinkTypeData toLinkTypeData(ResultSet set) throws SQLException, ParseException {
+        Date updated = set.getDate("updated");
+
+        LinkTypeData linkType = new LinkTypeData();
+        linkType.setKey(set.getString("key"));
+        linkType.setName(set.getString("name"));
+        linkType.setDescription(set.getString("description"));
+        linkType.setCreated(dateFormat.format(set.getDate("created")));
+        linkType.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+        linkType.setVersion(set.getInt("version"));
+        linkType.setAttribute(toJSON(set.getObject("attr_valid")));
+        return linkType;
     }
 }

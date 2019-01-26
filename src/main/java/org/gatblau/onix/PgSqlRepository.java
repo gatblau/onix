@@ -309,15 +309,48 @@ public class PgSqlRepository implements DbRepository {
         LINK TYPES
      */
     @Override
-    public List<LinkTypeData> getLinkTypes() {
-        // TODO: implement getLinkTypes()
-        throw new UnsupportedOperationException("getLinkTypes");
+    public LinkTypeList getLinkTypes(Map attribute, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) throws SQLException, ParseException {
+        LinkTypeList linkTypes = new LinkTypeList();
+        try {
+            db.prepare(getFindLinkTypesSQL());
+            db.setString(1, util.toHStoreString(attribute)); // attribute_param
+            db.setObject(2, system);
+            db.setObject(3, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
+            db.setObject(4, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
+            db.setObject(5, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
+            db.setObject(6, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                linkTypes.getItems().add(util.toLinkTypeData(set));
+            }
+        }
+        finally {
+            db.close();
+        }
+        return linkTypes;
     }
 
     @Override
-    public Result createOrUpdateLinkType(String key, JSONObject json) {
-        // TODO: implement createOrUpdateLinkType()
-        throw new UnsupportedOperationException("createOrUpdateLinkType");
+    public Result createOrUpdateLinkType(String key, JSONObject json) throws SQLException {
+        Result result = new Result();
+        Object name = json.get("name");
+        Object description = json.get("description");
+        Object attribute = json.get("attribute_validation");
+        Object version = json.get("version");
+        try {
+            db.prepare(getSetItemTypeSQL());
+            db.setString(1, key); // key_param
+            db.setString(2, (name != null) ? (String) name : null); // name_param
+            db.setString(3, (description != null) ? (String) description : null); // description_param
+            db.setString(4, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null); // attribute_param
+            db.setObject(5, version); // version_param
+            db.setString(6, getUser()); // changedby_param
+            result.setOperation(db.executeQueryAndRetrieveStatus("set_item_type"));
+        }
+        finally {
+            db.close();
+        }
+        return result;
     }
 
     @Override
@@ -505,6 +538,18 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public String getDeleteLinkTypes() {
         return "SELECT delete_link_types()";
+    }
+
+    @Override
+    public String getFindLinkTypesSQL() {
+        return "SELECT * FROM find_link_types(" +
+                "?::hstore," + // attr_valid
+                "?::boolean," + // system
+                "?::timestamp(6) with time zone," + // date created from
+                "?::timestamp(6) with time zone," + // date created to
+                "?::timestamp(6) with time zone," + // date updates from
+                "?::timestamp(6) with time zone" + // date updated to
+                ")";
     }
 
     @Override
