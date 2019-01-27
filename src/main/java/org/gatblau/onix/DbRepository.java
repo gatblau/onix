@@ -72,8 +72,8 @@ public interface DbRepository {
     /*
         LINK RULES
     */
-    List<ItemTypeData> getLinkRules();
-    Result createOrUpdateLinkRule(String key);
+    List<LinkRuleData> getLinkRules();
+    Result createOrUpdateLinkRule(String key, JSONObject payload) throws SQLException;
     Result deleteLinkRule(String key) throws SQLException;
     Result deleteLinkRules() throws SQLException;
 
@@ -110,4 +110,5 @@ public interface DbRepository {
 
     String getDeleteLinkRuleSQL();
     String getDeleteLinkRulesSQL();
+    String getSetLinkRuleSQL();
 }

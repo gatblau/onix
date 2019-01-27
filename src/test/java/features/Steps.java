@@ -362,23 +362,23 @@ public class Steps extends BaseTest {
         util.put(PAYLOAD, util.getFile("payload/create_item_type_payload.json"));
     }
 
-    @When("^a PUT HTTP request with a JSON payload is done$")
-    public void aPUTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
-        String url = util.get(ENDPOINT_URI);
+    @Given("^the item type natural key is known$")
+    public void theItemTypeNaturalKeyIsKnown() throws Throwable {
+        util.put(CONGIG_ITEM_TYPE_KEY, "item_type_1");
+    }
+
+//    @When("^a PUT HTTP request with a JSON payload is done$")
+    private void makePutRequestWithPayload(String urlKey, String payloadKey, String itemKey) throws Throwable {
+        String url = util.get(urlKey);
         ResponseEntity<Result> response = null;
         try {
-            response = client.exchange(url, HttpMethod.PUT, getEntityFromKey(PAYLOAD), Result.class, (String) util.get(KEY));
+            response = client.exchange(url, HttpMethod.PUT, getEntityFromKey(payloadKey), Result.class, (String) util.get(itemKey));
             util.put(RESPONSE, response);
             util.remove(EXCEPTION);
         }
         catch (Exception ex) {
             util.put(EXCEPTION, ex);
         }
-    }
-
-    @Given("^the item type natural key is known$")
-    public void theItemTypeNaturalKeyIsKnown() throws Throwable {
-        util.put(CONGIG_ITEM_TYPE_KEY, "item_type_1");
     }
 
     private void putLink(String linkKey, String filename) {
@@ -542,9 +542,7 @@ public class Steps extends BaseTest {
 
     @When("^an item type PUT HTTP request with a JSON payload is done$")
     public void anItemTypePUTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
-        util.put(KEY, util.get(CONGIG_ITEM_TYPE_KEY));
-        util.put(ENDPOINT_URI, util.get(ITEM_TYPE_URL));
-        aPUTHTTPRequestWithAJSONPayloadIsDone();
+        makePutRequestWithPayload(ITEM_TYPE_URL, PAYLOAD, CONGIG_ITEM_TYPE_KEY);
     }
 
     @Given("^the link type does not exist in the database$")
@@ -571,9 +569,7 @@ public class Steps extends BaseTest {
 
     @When("^a link type PUT HTTP request with a JSON payload is done$")
     public void aLinkTypePUTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
-        util.put(KEY, util.get(CONGIG_LINK_TYPE_KEY));
-        util.put(ENDPOINT_URI, util.get(LINK_TYPE_URL));
-        aPUTHTTPRequestWithAJSONPayloadIsDone();
+        makePutRequestWithPayload(LINK_TYPE_URL, PAYLOAD, CONGIG_LINK_TYPE_KEY);
     }
 
     @Given("^the link type URL of the service is known$")
@@ -685,5 +681,32 @@ public class Steps extends BaseTest {
     @Given("^there are pre-existing Link types in the database$")
     public void thereArePreExistingLinkTypesInTheDatabase() throws Throwable {
         // there are already 3 pre-existing system item types in the database so do not do anything
+    }
+
+    @Given("^the link rule does not exist in the database$")
+    public void theLinkRuleDoesNotExistInTheDatabase() throws Throwable {
+        theClearCMDBURLOfTheServiceIsKnown();
+        aClearCMDBRequestToTheServiceIsDone();
+    }
+
+    @Given("^the link rule URL of the service with key is known$")
+    public void theLinkRuleURLOfTheServiceWithKeyIsKnown() {
+        util.put(LINK_RULE_URL, String.format("%slinkrule/{key}", baseUrl));
+    }
+
+    @Given("^the link rule natural key is known$")
+    public void theLinkRuleNaturalKeyIsKnown() {
+        util.put(LINK_RULE_KEY, "link_rule_1");
+    }
+
+    @Given("^a json payload with new link rule information exists$")
+    public void aJsonPayloadWithNewLinkRuleInformationExists() {
+        String payload = util.getFile("payload/create_link_rule_payload.json");
+        util.put(Key.PAYLOAD, payload);
+    }
+
+    @When("^a link rule PUT HTTP request with a JSON payload is done$")
+    public void aLinkRulePUTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
+        makePutRequestWithPayload(LINK_RULE_URL, PAYLOAD, LINK_RULE_KEY);
     }
 }
