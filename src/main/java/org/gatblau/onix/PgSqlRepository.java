@@ -373,15 +373,36 @@ public class PgSqlRepository implements DbRepository {
         LINK RULES
      */
     @Override
-    public List<ItemTypeData> getLinkRules() {
+    public List<LinkRuleData> getLinkRules() {
         // TODO: implement getLinkRules()
         throw new UnsupportedOperationException("getLinkRules");
     }
 
     @Override
-    public Result createOrUpdateLinkRule(String key) {
-        // TODO: implement createOrUpdateLinkRule()
-        throw new UnsupportedOperationException("createOrUpdateLinkRule");
+    public Result createOrUpdateLinkRule(String key, JSONObject json) throws SQLException {
+        Result result = new Result();
+        Object name = json.get("name");
+        Object description = json.get("description");
+        Object linkType = json.get("linkType");
+        Object startItemType = json.get("startItemType");
+        Object endItemType = json.get("endItemType");
+        Object version = json.get("version");
+        try {
+            db.prepare(getSetLinkRuleSQL());
+            db.setString(1, key); // key_param
+            db.setString(2, (name != null) ? (String) name : null); // name_param
+            db.setString(3, (description != null) ? (String) description : null); // description_param
+            db.setString(4, (linkType != null) ? (String) linkType : null); // linkType_param
+            db.setString(5, (startItemType != null) ? (String) startItemType : null); // startItemType_param
+            db.setString(6, (endItemType != null) ? (String) endItemType : null); // endItemType_param
+            db.setObject(7, version); // version_param
+            db.setString(8, getUser()); // changedby_param
+            result.setOperation(db.executeQueryAndRetrieveStatus("set_link_rule"));
+        }
+        finally {
+            db.close();
+        }
+        return result;
     }
 
     @Override
@@ -565,6 +586,20 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public String getDeleteLinkRulesSQL() {
         return "SELECT delete_link_rules()";
+    }
+
+    @Override
+    public String getSetLinkRuleSQL() {
+        return "SELECT set_link_rule(" +
+                "?::character varying," + // key
+                "?::character varying," + // name
+                "?::text," + // description
+                "?::character varying," + // link_type
+                "?::character varying," + // start_item_type
+                "?::character varying," + // end_item_type
+                "?::bigint," + // version
+                "?::character varying" + // changed_by
+                ")";
     }
 
     private String getUser() {

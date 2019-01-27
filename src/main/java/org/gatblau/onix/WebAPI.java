@@ -324,6 +324,23 @@ public class WebAPI {
     }
 
     /*
+        LINK RULES
+     */
+
+    @ApiOperation(
+            value = "Creates a new or updates an existing link rule.",
+            notes = "")
+    @RequestMapping(
+            path = "/linkrule/{key}"
+            , method = RequestMethod.PUT)
+    public ResponseEntity<Result> createOrUpdateLinkRule(
+            @PathVariable("key") String key,
+            @RequestBody JSONObject payload
+    ) throws IOException, SQLException {
+        return ResponseEntity.ok(data.createOrUpdateLinkRule(key, payload));
+    }
+
+    /*
         MISCELLANEOUS
      */
 
