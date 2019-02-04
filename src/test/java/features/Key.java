@@ -26,4 +26,7 @@ public class Key {
     public static final String CONGIG_LINK_TYPE_KEY = "link_type_key";
     public static final String LINK_RULE_URL = "link_rule_url";
     public static final String LINK_RULE_KEY = "link_rule_key";
+    public static final String INVENTORY_FILE = "inventory_file";
+    public static final String INVENTORY_KEY = "inventory_key";
+    public static final String INVENTORY_URL = "inventory_url";
 }

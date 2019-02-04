@@ -19,10 +19,7 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix;
 
-import org.gatblau.onix.data.ItemData;
-import org.gatblau.onix.data.ItemTypeData;
-import org.gatblau.onix.data.LinkData;
-import org.gatblau.onix.data.LinkTypeData;
+import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -191,5 +188,21 @@ public class Lib implements InitializingBean {
         linkType.setVersion(set.getInt("version"));
         linkType.setAttribute(toJSON(set.getObject("attr_valid")));
         return linkType;
+    }
+
+    public LinkRuleData toLinkRuleData(ResultSet set) throws SQLException {
+        Date updated = set.getDate("updated");
+
+        LinkRuleData linkRule = new LinkRuleData();
+        linkRule.setKey(set.getString("key"));
+        linkRule.setName(set.getString("name"));
+        linkRule.setDescription(set.getString("description"));
+        linkRule.setLinkType(set.getString("link_type_key"));
+        linkRule.setStartItemType(set.getString("start_item_type_key"));
+        linkRule.setEndItemType(set.getString("end_item_type_key"));
+        linkRule.setCreated(dateFormat.format(set.getDate("created")));
+        linkRule.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+        linkRule.setVersion(set.getInt("version"));
+        return linkRule;
     }
 }

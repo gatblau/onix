@@ -72,7 +72,7 @@ public interface DbRepository {
     /*
         LINK RULES
     */
-    List<LinkRuleData> getLinkRules();
+    LinkRuleList getLinkRules(String linkTypeKey, String startItemType, String endItemType, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) throws SQLException;
     Result createOrUpdateLinkRule(String key, JSONObject payload) throws SQLException;
     Result deleteLinkRule(String key) throws SQLException;
     Result deleteLinkRules() throws SQLException;
@@ -81,6 +81,11 @@ public interface DbRepository {
         AUDIT
     */
     List<AuditItemData> findAuditItems();
+
+    /*
+        INVENTORY
+     */
+    Result createOrUpdateInventory(String key, String inventory) throws ParseException, SQLException, IOException;
 
     /*
         Function Calls
@@ -111,4 +116,5 @@ public interface DbRepository {
     String getDeleteLinkRuleSQL();
     String getDeleteLinkRulesSQL();
     String getSetLinkRuleSQL();
+    String getFindLinkRulesSQL();
 }

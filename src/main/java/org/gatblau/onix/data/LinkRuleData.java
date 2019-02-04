@@ -19,9 +19,101 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix.data;
 
+import org.json.simple.JSONObject;
+
 import java.io.Serializable;
 
 public class LinkRuleData implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    private String key;
+    private String name;
+    private String description;
+    private String linkType;
+    private String startItemType;
+    private String endItemType;
+    private Boolean system;
+    private String created;
+    private String updated;
+    private Integer version;
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getLinkType() {
+        return linkType;
+    }
+
+    public void setLinkType(String linkType) {
+        this.linkType = linkType;
+    }
+
+    public String getStartItemType() {
+        return startItemType;
+    }
+
+    public void setStartItemType(String startItemType) {
+        this.startItemType = startItemType;
+    }
+
+    public String getEndItemType() {
+        return endItemType;
+    }
+
+    public void setEndItemType(String endItemType) {
+        this.endItemType = endItemType;
+    }
+
+    public Boolean getSystem() {
+        return system;
+    }
+
+    public void setSystem(Boolean system) {
+        this.system = system;
+    }
+
+    public String getCreated() {
+        return created;
+    }
+
+    public void setCreated(String created) {
+        this.created = created;
+    }
+
+    public String getUpdated() {
+        return updated;
+    }
+
+    public void setUpdated(String updated) {
+        this.updated = updated;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
 }

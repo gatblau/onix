@@ -148,7 +148,6 @@ public class Steps extends BaseTest {
     @Given("^the item type does not exist in the database$")
     public void theItemTypeDoesNotExistInTheDatabase() throws Throwable {
         theItemTypeURLOfTheServiceIsKnown();
-//        aDELETEHTTPRequestIsDone();
         thereIsNotAnyErrorInTheResponse();
     }
 
@@ -164,16 +163,7 @@ public class Steps extends BaseTest {
 
     @When("^a DELETE HTTP request with an item key is done$")
     public void aDELETEHTTPRequestWithAnItemKeyKeyIsDone() throws Throwable {
-        String url = (String) util.get(ITEM_URL);
-        ResponseEntity<Result> response = null;
-        try {
-            response = client.exchange(url, HttpMethod.DELETE, null, Result.class, (String)util.get(ITEM_KEY));
-            util.put(RESPONSE, response);
-            util.remove(EXCEPTION);
-        }
-        catch (Exception ex) {
-            util.put(EXCEPTION, ex);
-        }
+        delete(ITEM_URL, ITEM_KEY);
     }
 
     @Given("^the link URL of the service is known$")
@@ -488,21 +478,25 @@ public class Steps extends BaseTest {
 
     @When("^a request to GET a list of item types is done$")
     public void aRequestToGETAListOfItemTypesIsDone() {
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.add("Content-Type", "application/json");
-//        ResponseEntity<ItemTypeList> result = client.exchange(
-//                (String)util.get(ENDPOINT_URI),
-//                HttpMethod.GET,
-//                new HttpEntity<>(null, headers),
-//                ItemTypeList.class);
-//        util.put(RESPONSE, result);
         get(ItemTypeList.class);
     }
 
     @Then("^the response contains (\\d+) item types$")
     public void theResponseContainsItemTypes(int items) {
         ResponseEntity<ItemTypeList> response = util.get(RESPONSE);
-        assert(response.getBody().getItems().size() == items);
+        int actual = response.getBody().getItems().size();
+        if(response.getBody().getItems().size() != items){
+            throw new RuntimeException(String.format("Response contains %s items instead of %s items.", actual, items));
+        }
+    }
+
+    @Then("^the response contains (\\d+) link rules$")
+    public void theResponseContainsLinkRules(int rules) {
+        ResponseEntity<LinkRuleList> response = util.get(RESPONSE);
+        int actual = response.getBody().getItems().size();
+        if(response.getBody().getItems().size() != rules){
+            throw new RuntimeException(String.format("Response contains %s items instead of %s items.", actual, rules));
+        }
     }
 
     @Given("^the link between the two items exists in the database$")
@@ -582,22 +576,6 @@ public class Steps extends BaseTest {
         putLinkType(util.get(CONGIG_LINK_TYPE_KEY), "payload/create_link_type_payload.json");
     }
 
-    private void putLinkType(String linkTypeKey, String filename) {
-        util.put(PAYLOAD, util.getFile(filename));
-        String url = String.format("%slinktype/{key}", baseUrl);
-        Map<String, Object> vars = new HashMap<>();
-        vars.put("key", linkTypeKey);
-        ResponseEntity<Result> response = null;
-        try {
-            response = client.exchange(url, HttpMethod.PUT, getEntityFromKey(PAYLOAD), Result.class, vars);
-            util.put(RESPONSE, response);
-            util.remove(EXCEPTION);
-        }
-        catch (Exception ex) {
-            util.put(EXCEPTION, ex);
-        }
-    }
-
     @When("^a DELETE HTTP request with a link type key is done$")
     public void aDELETEHTTPRequestWithALinkTypeKeyIsDone() {
         delete(LINK_TYPE_URL, CONGIG_LINK_TYPE_KEY);
@@ -606,40 +584,6 @@ public class Steps extends BaseTest {
     @When("^a link type DELETE HTTP request is done$")
     public void aLinkTypeDELETEHTTPRequestIsDone() {
         delete(LINK_TYPE_URL, null);
-    }
-
-    /*
-        a generic delete request to a specified URL in the util dictionary defined by the passed-in key
-     */
-    private void delete(String urlKeyLabel, String resourceKeyLabel) {
-        String url = (String) util.get(urlKeyLabel);
-        ResponseEntity<Result> response = null;
-        try {
-            if (resourceKeyLabel != null) {
-                response = client.exchange(url, HttpMethod.DELETE, null, Result.class, (String) util.get(resourceKeyLabel));
-            } else {
-                response = client.exchange(url, HttpMethod.DELETE, null, Result.class);
-            }
-            util.put(RESPONSE, response);
-            util.remove(EXCEPTION);
-        }
-        catch (Exception ex) {
-            util.put(EXCEPTION, ex);
-        }
-    }
-
-    /*
-        a generic get to an endpoint without parameters
-     */
-    private <T> void get(Class<T> cls){
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json");
-        ResponseEntity<T> result = client.exchange(
-                (String)util.get(ENDPOINT_URI),
-                HttpMethod.GET,
-                new HttpEntity<>(null, headers),
-                cls);
-        util.put(RESPONSE, result);
     }
 
     @Given("^the link type URL of the service with no query parameters exist$")
@@ -709,4 +653,154 @@ public class Steps extends BaseTest {
     public void aLinkRulePUTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
         makePutRequestWithPayload(LINK_RULE_URL, PAYLOAD, LINK_RULE_KEY);
     }
+
+    @Given("^the link rule URL of the service is known$")
+    public void theLinkRuleURLOfTheServiceIsKnown() {
+        util.put(LINK_RULE_URL, String.format("%s/linkrule", baseUrl));
+    }
+
+    @When("^an link rule DELETE HTTP request is done$")
+    public void anLinkRuleDELETEHTTPRequestIsDone() {
+        try {
+            client.delete((String) util.get(LINK_RULE_URL));
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    @Given("^the link rule exists in the database$")
+    public void theLinkRuleExistsInTheDatabase() {
+        putLinkRule(LINK_RULE_KEY, "payload/create_link_rule_payload.json");
+    }
+
+    @When("^a DELETE HTTP request with a link rule key is done$")
+    public void aDELETEHTTPRequestWithALinkRuleKeyIsDone() {
+        delete(LINK_RULE_URL, LINK_RULE_KEY);
+    }
+
+    @Given("^the link rule URL of the service with no query parameters exist$")
+    public void theLinkRuleURLOfTheServiceWithNoQueryParametersExist() {
+        util.put(ENDPOINT_URI, String.format("%s/linkrule", baseUrl));
+    }
+
+    @When("^a request to GET a list of link rules is done$")
+    public void aRequestToGETAListOfLinkRulesIsDone() {
+        get(LinkRuleList.class);
+    }
+
+    @Given("^an inventory file exists$")
+    public void anInventoryFileExists() {
+        util.put(INVENTORY_FILE, util.getFile("inventory/ansible_hosts"));
+    }
+
+    @Given("^the inventory key is known$")
+    public void theInventoryKeyIsKnown() {
+        util.put(INVENTORY_KEY, "test_inventory");
+    }
+
+    @Given("^the inventory upload URL is known$")
+    public void theInventoryUploadURLIsKnown() {
+        util.put(INVENTORY_URL, String.format("%s/inventory/{key}", baseUrl));
+    }
+
+    @When("^an HTTP PUT request with the inventory payload is executed$")
+    public void anHTTPPUTRequestWithTheInventoryPayloadIsExecuted() {
+        String inventory = util.get(INVENTORY_FILE);
+        String url = util.get(INVENTORY_URL);
+        String key = util.get(INVENTORY_KEY);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("key", key);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.PUT, getEntity(inventory), Result.class, vars);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    @Then("^the inventory config item is created$")
+    public void theInventoryConfigItemIsCreated() {
+
+    }
+
+    @Then("^the host group config items are created$")
+    public void theHostGroupConfigItemsAreCreated() {
+
+    }
+
+    @Then("^the host config items are created$")
+    public void theHostConfigItemsAreCreated() {
+    }
+
+    private void putLinkRule(String linkRuleKey, String filename) {
+        util.put(PAYLOAD, util.getFile(filename));
+        String url = String.format("%slinkrule/{key}", baseUrl);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("key", linkRuleKey);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.PUT, getEntityFromKey(PAYLOAD), Result.class, vars);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    /*
+        a generic delete request to a specified URL in the util dictionary defined by the passed-in key
+     */
+    private void delete(String urlKeyLabel, String resourceKeyLabel) {
+        String url = (String) util.get(urlKeyLabel);
+        ResponseEntity<Result> response = null;
+        try {
+            if (resourceKeyLabel != null) {
+                response = client.exchange(url, HttpMethod.DELETE, null, Result.class, (String) util.get(resourceKeyLabel));
+            } else {
+                response = client.exchange(url, HttpMethod.DELETE, null, Result.class);
+            }
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    /*
+        a generic get to an endpoint without parameters
+     */
+    private <T> void get(Class<T> cls){
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<T> result = client.exchange(
+                (String)util.get(ENDPOINT_URI),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                cls);
+        util.put(RESPONSE, result);
+    }
+
+    private void putLinkType(String linkTypeKey, String filename) {
+        util.put(PAYLOAD, util.getFile(filename));
+        String url = String.format("%slinktype/{key}", baseUrl);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("key", linkTypeKey);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.PUT, getEntityFromKey(PAYLOAD), Result.class, vars);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
 }
