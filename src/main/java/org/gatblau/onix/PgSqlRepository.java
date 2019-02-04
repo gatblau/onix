@@ -450,11 +450,19 @@ public class PgSqlRepository implements DbRepository {
         Inventory inv = new Inventory(inventory);
         createOrUpdateItem(key, getItemData(key, "Inventory imported from Ansible inventory file.", "INVENTORY"));
         for (HostGroup group : inv.getGroups()) {
-            createOrUpdateItem(group.getName(), getItemData(group.getName(), "Host group imported from Ansible inventory.", "HOST-GROUP"));
+            String groupType = (group.getGroups().size() == 0) ? "HOST-GROUP" : "HOST-GROUP-GROUP";
+            createOrUpdateItem(group.getName(), getItemData(group.getName(), String.format("%s imported from Ansible inventory.", groupType), groupType));
             createOrUpdateLink(String.format("%s->%s", key, group.getName()), getLinkData("Link imported from Ansible inventory.", "INVENTORY", key, group.getName()));
-            for (Host host : group.getHosts()) {
-                createOrUpdateItem(host.getName(), getItemData(host.getName(), "Host imported from Ansible inventory.", "HOST"));
-                createOrUpdateLink(String.format("%s->%s", group.getName(), host.getName()), getLinkData("Link imported from Ansible inventory.", "INVENTORY", group.getName(), host.getName()));
+            if (group.getGroups().size() > 0) {
+                for (HostGroup subGroup : group.getGroups()) {
+                    createOrUpdateItem(subGroup.getName(), getItemData(subGroup.getName(), "HOST-GROUP imported from Ansible inventory.", "HOST-GROUP"));
+                    createOrUpdateLink(String.format("%s->%s", group.getName(), subGroup.getName()), getLinkData("Link imported from Ansible inventory.", "INVENTORY", group.getName(), subGroup.getName()));
+                }
+            } else {
+                for (Host host : group.getHosts()) {
+                    createOrUpdateItem(host.getName(), getItemData(host.getName(), "HOST imported from Ansible inventory.", "HOST"));
+                    createOrUpdateLink(String.format("%s->%s", group.getName(), host.getName()), getLinkData("Link imported from Ansible inventory.", "INVENTORY", group.getName(), host.getName()));
+                }
             }
         }
         return new Result();

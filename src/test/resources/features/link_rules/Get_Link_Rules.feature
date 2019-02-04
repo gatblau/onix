@@ -8,5 +8,5 @@ Feature: Find Link Rules
     Given the link rule URL of the service with no query parameters exist
     When a request to GET a list of link rules is done
     Then the response has body
-    Then the response contains 2 link rules
+    Then the response contains 3 link rules
     Then the response code is 200
