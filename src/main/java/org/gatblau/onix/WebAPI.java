@@ -328,6 +328,17 @@ public class WebAPI {
      */
 
     @ApiOperation(
+            value = "Deletes all non-system specific item link types.",
+            notes = "")
+    @RequestMapping(
+            path = "/linkrule"
+            , method = RequestMethod.DELETE
+    )
+    public void deleteLinkRules() throws SQLException {
+        data.deleteLinkRules();
+    }
+
+    @ApiOperation(
             value = "Creates a new or updates an existing link rule.",
             notes = "")
     @RequestMapping(
@@ -338,6 +349,36 @@ public class WebAPI {
             @RequestBody JSONObject payload
     ) throws IOException, SQLException {
         return ResponseEntity.ok(data.createOrUpdateLinkRule(key, payload));
+    }
+
+    @ApiOperation(
+            value = "Get a list of available link rules filtered by the specified query parameters.",
+            notes = "")
+    @RequestMapping(
+            path = "/linkrule"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<LinkRuleList> getLinkRules(
+              @RequestParam(value = "linkType", required = false) String linkType
+            , @RequestParam(value = "startItemType", required = false) String startItemType
+            , @RequestParam(value = "endItemType", required = false) String endItemType
+            , @RequestParam(value = "system", required = false) Boolean system
+            , @RequestParam(value = "createdFrom", required = false) String createdFromDate
+            , @RequestParam(value = "createdTo", required = false) String createdToDate
+            , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
+            , @RequestParam(value = "updatedTo", required = false) String updatedToDate
+    ) throws SQLException, ParseException {
+        LinkRuleList linkRules = data.getLinkRules(
+                linkType,
+                startItemType,
+                endItemType,
+                system,
+                getDate(createdFromDate),
+                getDate(createdToDate),
+                getDate(updatedFromDate),
+                getDate(updatedToDate));
+        return ResponseEntity.ok(linkRules);
     }
 
     /*
@@ -359,6 +400,22 @@ public class WebAPI {
     @RequestMapping(path = "/clear", method = RequestMethod.DELETE)
     public void clear() throws SQLException {
         data.clear();
+    }
+
+    /*
+        INVENTORY
+     */
+    @ApiOperation(
+            value = "Creates a new or updates an existing inventory.",
+            notes = "")
+    @RequestMapping(
+            path = "/inventory/{key}"
+            , method = RequestMethod.PUT)
+    public ResponseEntity<Result> createOrUpdateInventory(
+            @PathVariable("key") String key,
+            @RequestBody String inventory
+    ) throws IOException, SQLException, ParseException {
+        return ResponseEntity.ok(data.createOrUpdateInventory(key, inventory));
     }
 
     /*

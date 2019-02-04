@@ -20,6 +20,9 @@ project, to be licensed under the same terms as the rest of the code.
 package org.gatblau.onix;
 
 import org.gatblau.onix.data.*;
+import org.gatblau.onix.inv.Host;
+import org.gatblau.onix.inv.HostGroup;
+import org.gatblau.onix.inv.Inventory;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.postgresql.util.HStoreConverter;
@@ -74,7 +77,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(4, meta); // meta_param
             db.setString(5, tag); // tag_param
             db.setString(6, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null); // attribute_param
-            db.setInt(7, (status != null) ? (int) status : null); // status_param
+            db.setInt(7, (status != null) ? (int) status : 0); // status_param
             db.setString(8, (type != null) ? (String) type : null); // item_type_key_param
             db.setObject(9, version); // version_param
             db.setString(10, getUser()); // changedby_param
@@ -373,9 +376,27 @@ public class PgSqlRepository implements DbRepository {
         LINK RULES
      */
     @Override
-    public List<LinkRuleData> getLinkRules() {
-        // TODO: implement getLinkRules()
-        throw new UnsupportedOperationException("getLinkRules");
+    public LinkRuleList getLinkRules(String linkType, String startItemType, String endItemType, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) throws SQLException {
+        LinkRuleList linkRules = new LinkRuleList();
+        try {
+            db.prepare(getFindLinkRulesSQL());
+            db.setString(1, linkType); // link_type key
+            db.setString(2, startItemType); // start item_type key
+            db.setString(3, endItemType); // end item_type key
+            db.setObject(4, system); // system
+            db.setObject(5, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
+            db.setObject(6, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
+            db.setObject(7, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
+            db.setObject(8, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                linkRules.getItems().add(util.toLinkRuleData(set));
+            }
+        }
+        finally {
+            db.close();
+        }
+        return linkRules;
     }
 
     @Override
@@ -422,6 +443,38 @@ public class PgSqlRepository implements DbRepository {
     public List<AuditItemData> findAuditItems() {
         // TODO: implement findAuditItems()
         throw new UnsupportedOperationException("findAuditItems");
+    }
+
+    @Override
+    public Result createOrUpdateInventory(String key, String inventory) throws ParseException, SQLException, IOException {
+        Inventory inv = new Inventory(inventory);
+        createOrUpdateItem(key, getItemData(key, "Inventory imported from Ansible inventory file.", "INVENTORY"));
+        for (HostGroup group : inv.getGroups()) {
+            createOrUpdateItem(group.getName(), getItemData(group.getName(), "Host group imported from Ansible inventory.", "HOST-GROUP"));
+            createOrUpdateLink(String.format("%s->%s", key, group.getName()), getLinkData("Link imported from Ansible inventory.", "INVENTORY", key, group.getName()));
+            for (Host host : group.getHosts()) {
+                createOrUpdateItem(host.getName(), getItemData(host.getName(), "Host imported from Ansible inventory.", "HOST"));
+                createOrUpdateLink(String.format("%s->%s", group.getName(), host.getName()), getLinkData("Link imported from Ansible inventory.", "INVENTORY", group.getName(), host.getName()));
+            }
+        }
+        return new Result();
+    }
+
+    private JSONObject getLinkData(String description, String linkType, String startItem, String endItem) {
+        JSONObject json = new JSONObject();
+        json.put("description", description);
+        json.put("linkType", linkType);
+        json.put("startItem", startItem);
+        json.put("endItem", endItem);
+        return json;
+    }
+
+    private JSONObject getItemData(String name, String description, String type) {
+        JSONObject json = new JSONObject();
+        json.put("name", name);
+        json.put("description", description);
+        json.put("type", type);
+        return json;
     }
 
     @Override
@@ -599,6 +652,20 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," + // end_item_type
                 "?::bigint," + // version
                 "?::character varying" + // changed_by
+                ")";
+    }
+
+    @Override
+    public String getFindLinkRulesSQL() {
+        return "SELECT * FROM find_link_rules(" +
+                    "?::character varying," +
+                    "?::character varying," +
+                    "?::character varying," +
+                    "?::boolean," +
+                    "?::timestamp(6) with time zone," +
+                    "?::timestamp(6) with time zone," +
+                    "?::timestamp(6) with time zone," +
+                    "?::timestamp(6) with time zone" +
                 ")";
     }
 

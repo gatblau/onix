@@ -537,5 +537,91 @@ ALTER FUNCTION get_links_to_item_count(
 )
 OWNER TO onix;
 
+/*
+  find_link_rules: find link rules that comply with the passed-in query parameters
+ */
+CREATE OR REPLACE FUNCTION find_link_rules(
+  link_type_key_param character varying, -- none (null) or link type key
+  start_item_type_key_param character varying, -- none (null) or start item type key
+  end_item_type_key_param character varying, -- none (null) or end item type key
+  system_param boolean, -- (null) for any or true / false
+  date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
+  date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
+  date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
+  date_updated_to_param timestamp(6) with time zone -- none (null) or updated to date
+)
+RETURNS TABLE(
+  id bigint,
+  key character varying,
+  name character varying,
+  description text,
+  link_type_key character varying,
+  start_item_type_key character varying,
+  end_item_type_key character varying,
+  system boolean,
+  version bigint,
+  created timestamp(6) with time zone,
+  updated timestamp(6) with time zone,
+  changedby character varying
+)
+LANGUAGE 'plpgsql'
+COST 100
+STABLE
+AS $BODY$
+BEGIN
+  RETURN QUERY SELECT
+      l.id,
+      l.key,
+      l.name,
+      l.description,
+      link_type.key as link_type_key,
+      start_item_type.key as start_item_type_key,
+      end_item_type.key as end_item_type_key,
+      l.system,
+      l.version,
+      l.created,
+      l.updated,
+      l.changedby
+  FROM link_rule l
+    INNER JOIN link_type link_type
+      ON link_type.id = l.link_type_id
+    INNER JOIN item_type start_item_type
+      ON start_item_type.id = l.start_item_type_id
+    INNER JOIN item_type end_item_type
+      ON end_item_type.id = l.end_item_type_id
+  WHERE
+  -- by system flag
+  (l.system = system_param OR system_param IS NULL)
+  -- by link type
+  AND (link_type.key = link_type_key_param OR link_type_key_param IS NULL)
+  -- by start item_type key
+  AND (start_item_type.key = start_item_type_key_param OR start_item_type_key_param IS NULL)
+  -- by end item_type key
+  AND (end_item_type.key = end_item_type_key_param OR end_item_type_key_param IS NULL)
+  -- by created date range
+  AND ((date_created_from_param <= l.created AND date_created_to_param > l.created) OR
+      (date_created_from_param IS NULL AND date_created_to_param IS NULL) OR
+      (date_created_from_param IS NULL AND date_created_to_param > l.created) OR
+      (date_created_from_param <= l.created AND date_created_to_param IS NULL))
+  -- by updated date range
+  AND ((date_updated_from_param <= l.updated AND date_updated_to_param > l.updated) OR
+      (date_updated_from_param IS NULL AND date_updated_to_param IS NULL) OR
+      (date_updated_from_param IS NULL AND date_updated_to_param > l.updated) OR
+      (date_updated_from_param <= l.updated AND date_updated_to_param IS NULL));
+END
+$BODY$;
+
+ALTER FUNCTION find_link_rules(
+  character varying, -- link_type key
+  character varying, -- start item_type key
+  character varying, -- end item_type key
+  boolean, -- system
+  timestamp(6) with time zone, -- created from
+  timestamp(6) with time zone, -- created to
+  timestamp(6) with time zone, -- updated from
+  timestamp(6) with time zone -- updated to
+)
+OWNER TO onix;
+
 END
 $$;
