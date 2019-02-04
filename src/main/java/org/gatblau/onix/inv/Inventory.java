@@ -19,6 +19,10 @@ public class Inventory {
     private void parse(String inventory) {
        String[] lines = inventory.split("\n");
        for (String line : lines) {
+           // omits commented out lines
+           if (line.trim().length() == 0 || line.trim().startsWith("#")) {
+               continue;
+           }
            parseLine(line);
        }
     }

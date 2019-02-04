@@ -58,8 +58,9 @@ BEGIN
         INSERT INTO item_type(key, name, description, system, changedby) VALUES ('HOST-GROUP', 'Host Group', 'An Ansible host group.', TRUE, 'onix');
         INSERT INTO item_type(key, name, description, system, changedby) VALUES ('HOST', 'Host', 'An Operating System Host.', TRUE, 'onix');
         INSERT INTO item_type(key, name, description, system, changedby) VALUES ('LICENCE', 'A software licence.', 'Describes the information pertaining to a software licence.', TRUE, 'onix');
+        INSERT INTO item_type(key, name, description, system, changedby) VALUES ('HOST-GROUP-GROUP', 'Group of Host Groups', 'An Ansible group of host groups.', TRUE, 'onix');
 
-	  END IF;
+END IF;
 
     ---------------------------------------------------------------------------
     -- ITEM_TYPE AUDIT
@@ -505,6 +506,7 @@ BEGIN
 
     INSERT INTO link_rule (key, name, description, link_type_id, start_item_type_id, end_item_type_id, changedby, system) VALUES ('INVENTORY->HOST-GROUP', 'Inventory to Host-Group link rule.', 'Allows to link an inventory item with a host group item.', 1, 1, 2, 'onix', TRUE);
     INSERT INTO link_rule (key, name, description, link_type_id, start_item_type_id, end_item_type_id, changedby, system) VALUES ('HOST-GROUP->HOST', 'Host Group to Host link rule.', 'Allows to link a host group item with a host item.', 1, 2, 3, 'onix', TRUE);
+    INSERT INTO link_rule (key, name, description, link_type_id, start_item_type_id, end_item_type_id, changedby, system) VALUES ('HOST-GROUP-GROUP->HOST-GROUP', 'Group of Host Groups to Groups link rule.', 'Allows to link a group of host groups with a host group.', 1, 5, 2, 'onix', TRUE);
 
     ---------------------------------------------------------------------------
     -- LINK_RULE AUDIT
