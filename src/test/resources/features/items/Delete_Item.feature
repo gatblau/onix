@@ -6,6 +6,6 @@ Feature: Delete Configuration Item
   Scenario: Delete Configuration Item
     Given the item exists in the database
     Given the item URL search by key is known
-    When a DELETE HTTP request with a key is done
+    When a DELETE HTTP request with an item key is done
     Then the response has body
     Then the service responds with action "D"

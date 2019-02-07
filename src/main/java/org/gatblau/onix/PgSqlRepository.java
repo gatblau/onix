@@ -447,21 +447,29 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result createOrUpdateInventory(String key, String inventory) throws ParseException, SQLException, IOException {
-        Inventory inv = new Inventory(inventory);
-        createOrUpdateItem(key, getItemData(key, "Inventory imported from Ansible inventory file.", "INVENTORY"));
+        Inventory inv = new Inventory(key, inventory);
+        createOrUpdateItem(inv.hash(key), getItemData(key, "Inventory imported from Ansible inventory file.", "INVENTORY"));
         for (HostGroup group : inv.getGroups()) {
             String groupType = (group.getGroups().size() == 0) ? "HOST-GROUP" : "HOST-GROUP-GROUP";
-            createOrUpdateItem(group.getName(), getItemData(group.getName(), String.format("%s imported from Ansible inventory.", groupType), groupType));
-            createOrUpdateLink(String.format("%s->%s", key, group.getName()), getLinkData("Link imported from Ansible inventory.", "INVENTORY", key, group.getName()));
+            createOrUpdateItem(inv.hash(group.getName()), getItemData(group.getName(), String.format("%s imported from Ansible inventory.", groupType), groupType));
+            createOrUpdateLink(
+                inv.hash(String.format("%s>>%s", key, group.getName())),
+                getLinkData("Link imported from Ansible inventory.", "INVENTORY", inv.hash(key), inv.hash(group.getName()))
+            );
             if (group.getGroups().size() > 0) {
                 for (HostGroup subGroup : group.getGroups()) {
-                    createOrUpdateItem(subGroup.getName(), getItemData(subGroup.getName(), "HOST-GROUP imported from Ansible inventory.", "HOST-GROUP"));
-                    createOrUpdateLink(String.format("%s->%s", group.getName(), subGroup.getName()), getLinkData("Link imported from Ansible inventory.", "INVENTORY", group.getName(), subGroup.getName()));
+                    createOrUpdateItem(inv.hash(subGroup.getName()), getItemData(subGroup.getName(), "HOST-GROUP imported from Ansible inventory.", "HOST-GROUP"));
+                    createOrUpdateLink(
+                        inv.hash(String.format("%s>>%s=>%s", key, group.getName(), subGroup.getName())),
+                        getLinkData("Link imported from Ansible inventory.", "INVENTORY", inv.hash(group.getName()), inv.hash(subGroup.getName()))
+                    );
                 }
             } else {
                 for (Host host : group.getHosts()) {
-                    createOrUpdateItem(host.getName(), getItemData(host.getName(), "HOST imported from Ansible inventory.", "HOST"));
-                    createOrUpdateLink(String.format("%s->%s", group.getName(), host.getName()), getLinkData("Link imported from Ansible inventory.", "INVENTORY", group.getName(), host.getName()));
+                    createOrUpdateItem(inv.hash(host.getName()), getItemData(host.getName(), "HOST imported from Ansible inventory.", "HOST"));
+                    createOrUpdateLink(
+                        inv.hash(String.format("%s>>%s->%s", key, group.getName(), host.getName())),
+                        getLinkData("Link imported from Ansible inventory.", "INVENTORY", inv.hash(group.getName()), inv.hash(host.getName())));
                 }
             }
         }
