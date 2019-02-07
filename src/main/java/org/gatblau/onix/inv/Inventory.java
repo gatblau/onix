@@ -7,13 +7,19 @@ public class Inventory {
     private ParentType parent;
     private HostGroup lastParentGroup;
     private List<HostGroup> groups = new ArrayList<>();
+    private String key;
 
-    public Inventory(String inventory) {
+    public Inventory(String key, String inventory) {
+        this.key = key;
         parse(inventory);
     }
 
     public List<HostGroup> getGroups() {
         return groups;
+    }
+
+    public String hash(String value) {
+        return String.format("%s-%s", value, Integer.toString(Math.abs(key.hashCode())));
     }
 
     private void parse(String inventory) {

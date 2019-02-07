@@ -8,5 +8,5 @@ Feature: Find Item Types
     Given the link type URL of the service with no query parameters exist
     When a request to GET a list of link types is done
     Then the response has body
-    Then the response contains 3 link types
+    Then the response contains more than 2 link types
     Then the response code is 200

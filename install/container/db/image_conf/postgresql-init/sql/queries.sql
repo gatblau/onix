@@ -623,5 +623,65 @@ ALTER FUNCTION find_link_rules(
 )
 OWNER TO onix;
 
+/*
+  find_child_items: returns a list of child items which are linked to the specified item.
+ */
+CREATE OR REPLACE FUNCTION find_child_items(
+  parent_item_key_param character varying,
+  link_type_key_param character varying
+)
+RETURNS TABLE(
+  id bigint, -- id
+  key character varying, -- key
+  name character varying, -- name
+  description text, -- description
+  meta jsonb, -- meta
+  tag text[], -- tag
+  attribute hstore, -- attribute
+  status smallint, -- status
+  item_type_id integer,
+  item_type_key character varying,
+  version bigint,
+  created timestamp(6) with time zone,
+  updated timestamp(6) with time zone,
+  changedby character varying
+)
+LANGUAGE 'plpgsql'
+COST 100
+STABLE
+AS $BODY$
+BEGIN
+  RETURN QUERY SELECT
+     i.id,
+     i.key,
+     i.name,
+     i.description,
+     i.meta,
+     i.tag,
+     i.attribute,
+     i.status,
+     i.item_type_id,
+     it.key AS item_type_key,
+     i.version,
+     i.created,
+     i.updated,
+     i.changedby
+  FROM item i
+  INNER JOIN link l
+    ON i.id = l.end_item_id
+  INNER JOIN item_type it
+    ON it.id = i.item_type_id
+  INNER JOIN item i2
+    ON i2.id = l.start_item_id
+  INNER JOIN link_type lt
+    ON lt.id = l.link_type_id
+  WHERE i2.key = parent_item_key_param
+  AND (lt.key = link_type_key_param OR link_type_key_param IS NULL)
+  ORDER BY it.key DESC;
+END
+$BODY$;
+
+ALTER FUNCTION find_child_items(character varying, character varying) OWNER TO onix;
+
 END
 $$;

@@ -47,7 +47,7 @@ public class Steps extends BaseTest {
 
     @Given("^the item URL search by key is known$")
     public void theItemURLSearchByKeyIsKnown() throws Throwable {
-        util.put(Key.ENDPOINT_URI, String.format("%sitem/{key}", baseUrl));
+        util.put(ITEM_URL, String.format("%sitem/{key}", baseUrl));
     }
 
     @Given("^the item URL search with query parameters is known$")
@@ -490,12 +490,12 @@ public class Steps extends BaseTest {
         }
     }
 
-    @Then("^the response contains (\\d+) link rules$")
-    public void theResponseContainsLinkRules(int rules) {
+    @Then("^the response contains more than (\\d+) link rules$")
+    public void theResponseContainsMoreThanLinkRules(int rules) {
         ResponseEntity<LinkRuleList> response = util.get(RESPONSE);
         int actual = response.getBody().getItems().size();
-        if(response.getBody().getItems().size() != rules){
-            throw new RuntimeException(String.format("Response contains %s items instead of %s items.", actual, rules));
+        if(response.getBody().getItems().size() <= rules){
+            throw new RuntimeException(String.format("Response contains %s items which is less than %s items.", rules, actual));
         }
     }
 
@@ -596,19 +596,19 @@ public class Steps extends BaseTest {
         get(LinkTypeList.class);
     }
 
-    @Then("^the response contains (\\d+) link types$")
+    @Then("^the response contains more than (\\d+) link types$")
     public void theResponseContainsLinkTypes(int count) {
         ResponseEntity<LinkTypeList> response = util.get(RESPONSE);
 
         LinkTypeList links = response.getBody();
         if (links != null) {
-            if (links.getItems().size() != count) {
+            if (links.getItems().size() <= count) {
                 throw new RuntimeException(
-                        String.format(
-                                "Response does not contain '%s' but '%s' links.",
-                                count,
-                                response.getBody().getItems().size()
-                        )
+                    String.format(
+                        "Response contains '%s' links which is less than '%s' links.",
+                        response.getBody().getItems().size(),
+                        count
+                    )
                 );
             }
         }
@@ -802,5 +802,4 @@ public class Steps extends BaseTest {
             util.put(EXCEPTION, ex);
         }
     }
-
 }
