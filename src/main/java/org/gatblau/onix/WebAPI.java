@@ -418,6 +418,18 @@ public class WebAPI {
         return ResponseEntity.ok(data.createOrUpdateInventory(key, inventory));
     }
 
+    @ApiOperation(
+            value = "Retrieves an existing inventory.",
+            notes = "")
+    @RequestMapping(
+              path = "/inventory/{key}"
+            , method = RequestMethod.GET)
+    public ResponseEntity<String> getInventory(
+            @PathVariable("key") String key
+    ) throws SQLException, ParseException {
+        return ResponseEntity.ok(data.getInventory(key));
+    }
+
     /*
         helper methods
      */

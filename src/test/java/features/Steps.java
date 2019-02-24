@@ -115,6 +115,18 @@ public class Steps extends BaseTest {
 
     @And("^there is not any error in the response$")
     public void thereIsNotAnyErrorInTheResponse() throws Throwable {
+        if (util.containsKey(RESPONSE)) {
+            try {
+                ResponseEntity<Result> response = util.get(RESPONSE);
+                if (response.getBody() != null) {
+                    if (response.getBody().isError()) {
+                        throw new RuntimeException(response.getBody().getMessage());
+                    }
+                }
+            } catch (ClassCastException cce) {
+                System.out.println("WARNING: response type is not a Result. ");
+            }
+        }
         if (util.containsKey(EXCEPTION)){
             throw new RuntimeException((Exception)util.get(EXCEPTION));
         }
@@ -801,5 +813,31 @@ public class Steps extends BaseTest {
         catch (Exception ex) {
             util.put(EXCEPTION, ex);
         }
+    }
+
+    @Given("^the inventory exists in the database$")
+    public void theInventoryExistsInTheDatabase() {
+        theInventoryKeyIsKnown();
+        anInventoryFileExists();
+        theInventoryUploadURLIsKnown();
+        anHTTPPUTRequestWithTheInventoryPayloadIsExecuted();
+    }
+
+    @Given("^the URL of the inventory finder endpoint is known$")
+    public void theURLOfTheInventoryFinderEndpointIsKnown() {
+        util.put(INVENTORY_URL, String.format("%sinventory/{key}", baseUrl));
+    }
+
+    @When("^an HTTP GET to the inventory GET endpoint is made using its key$")
+    public void anHTTPGETToTheInventoryGETEndpointIsMadeUsingItsKey() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<LinkList> result = client.exchange(
+                util.get(INVENTORY_URL),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                LinkList.class,
+                (String)util.get(INVENTORY_KEY));
+        util.put(RESPONSE, result);
     }
 }

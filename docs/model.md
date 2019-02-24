@@ -53,7 +53,7 @@ For database relational purposes, an item has a surrogate key used by [Hibernate
 |name| A user friendly name assigned to the item for displaying purposes. | character varying(200) |
 |description| The description of the item | text |
 |meta| A JSON object of any structure, containing all the specific information for a given configuration item. | json |
-|status| A number indicating the deployment status of the item. The value to use is up to the client system. For example, 1 / 2 / 3 could mean waiting to be deployed / deployed / fail to deploy respectively. Its default value is 0.| smallint |
+|status| A number indicating the deployment status of the item. The regex to use is up to the client system. For example, 1 / 2 / 3 could mean waiting to be deployed / deployed / fail to deploy respectively. Its default regex is 0.| smallint |
 |tag| A text field to support semantic tagging. |﻿character varying(300) |
 |created| The date and time the item was created. | ﻿timestamp(6) with time zone|
 |updated| The date and time the item was last updated. | ﻿timestamp(6) with time zone |
@@ -102,11 +102,11 @@ Like Items, Links have to be uniquely identified using natural keys.
 <a name="dimension"></a>
 ## Dimension Entity [(up)](#toc)
 
-The dimension is a mechanism to attach an indefinite number of key/value pairs for reporting purposes.
+The dimension is a mechanism to attach an indefinite number of key/regex pairs for reporting purposes.
 
 For example, Items might be associated with projects so it would be beneficial to know the project work break down structure (WBS) code for the item.
 
-Then, a reporting dimension could be added to the item as follows: key="WBS" and value="OP011.896WIE".
+Then, a reporting dimension could be added to the item as follows: key="WBS" and regex="OP011.896WIE".
 
 ### Attributes
 
@@ -115,7 +115,7 @@ Then, a reporting dimension could be added to the item as follows: key="WBS" and
 |id | Surrogate key. | bigint |
 |item_id| The unique identifier for the item the reporting dimension is for. | bigint |
 |key| A reporting dimension key (e.g. "WBS") | ﻿character varying(50) |
-|value| A reporting dimension value (e.g. OP011.896WIE) | character varying(100) |
+|regex| A reporting dimension regex (e.g. OP011.896WIE) | character varying(100) |
 
 <a name="auditing-changes"></a>
 ## Auditing Changes [(up)](#toc)

@@ -61,7 +61,7 @@ SELECT onix_upsert_item(
 	 'test item description'::text,
 	 0,
 	 1,
-	 '{"key":"value"}'::jsonb, -- jsonb
+	 '{"key":"regex"}'::jsonb, -- jsonb
 	 '{"tag1", "tag2"}'::text[], -- text[]
 	 '"a"=>1.0, "b"=>2.4'::hstore -- hstore
 )

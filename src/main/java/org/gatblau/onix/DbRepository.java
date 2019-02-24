@@ -86,6 +86,7 @@ public interface DbRepository {
         INVENTORY
      */
     Result createOrUpdateInventory(String key, String inventory) throws ParseException, SQLException, IOException;
+    String getInventory(String key) throws SQLException, ParseException;
 
     /*
         Function Calls
@@ -117,4 +118,6 @@ public interface DbRepository {
     String getDeleteLinkRulesSQL();
     String getSetLinkRuleSQL();
     String getFindLinkRulesSQL();
+
+    String getFindChildItemsSQL();
 }

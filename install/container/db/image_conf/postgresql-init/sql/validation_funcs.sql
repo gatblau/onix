@@ -85,20 +85,20 @@ BEGIN
   -- if validation is defined at the item_type then
   -- validate the item attribute field
   IF NOT (validation_rules IS NULL) THEN
-    -- loop through the validation rules key-value pairs
+    -- loop through the validation rules key-regex pairs
     -- to validate 'required' key compliance in the passed-in attributes
     FOR rule IN
     SELECT (each(validation_rules)).*
     LOOP
-      IF (rule.value = 'required') THEN
+      IF (rule.regex = 'required') THEN
         IF NOT (attributes ? rule.key) THEN
           RAISE EXCEPTION 'Item of type ''%'' requires attribute ''%''.', item_type_key, rule.key
-            USING hint = 'Where required attributes are specified in the item type, a request to insert or update an item of that type must also specify the value of the required attribute(s).';
+            USING hint = 'Where required attributes are specified in the item type, a request to insert or update an item of that type must also specify the regex of the required attribute(s).';
         END IF;
       END IF;
     END LOOP;
 
-    -- loop through the passed-in item attribute hstore key-value pairs
+    -- loop through the passed-in item attribute hstore key-regex pairs
     -- to validate 'allowed' key compliance in the passed-in attributes
     FOR rule IN
     SELECT (each(attributes)).*
@@ -142,20 +142,20 @@ BEGIN
   -- if validation is defined at the item_type then
   -- validate the item attribute field
   IF NOT (validation_rules IS NULL) THEN
-    -- loop through the validation rules key-value pairs
+    -- loop through the validation rules key-regex pairs
     -- to validate 'required' key compliance in the passed-in attributes
     FOR rule IN
     SELECT (each(validation_rules)).*
     LOOP
-      IF (rule.value = 'required') THEN
+      IF (rule.regex = 'required') THEN
         IF NOT (attributes ? rule.key) THEN
           RAISE EXCEPTION 'Attribute ''%'' is required and was not provided.', rule.key
-            USING hint = 'Where required attributes are specified in the link type, a request to insert or update a link of that type must also specify the value of the required attribute(s).';
+            USING hint = 'Where required attributes are specified in the link type, a request to insert or update a link of that type must also specify the regex of the required attribute(s).';
         END IF;
       END IF;
     END LOOP;
 
-    -- loop through the passed-in item attribute hstore key-value pairs
+    -- loop through the passed-in item attribute hstore key-regex pairs
     -- to validate 'allowed' key compliance in the passed-in attributes
     FOR rule IN
     SELECT (each(attributes)).*
@@ -186,13 +186,13 @@ DECLARE
 BEGIN
   -- if the attributes hstore is defined
   IF NOT (attributes IS NULL) THEN
-    -- loop through the validation rules key-value pairs
+    -- loop through the validation rules key-regex pairs
     -- to determine if there are values other than 'required' or 'allowed'
     FOR rule IN
     SELECT (each(attributes)).*
     LOOP
-      IF NOT ((rule.value = 'required') OR (rule.value = 'allowed')) THEN
-        RAISE EXCEPTION 'Attribute ''%'' has an invalid value: ''%''.', rule.key, rule.value
+      IF NOT ((rule.regex = 'required') OR (rule.regex = 'allowed')) THEN
+        RAISE EXCEPTION 'Attribute ''%'' has an invalid regex: ''%''.', rule.key, rule.regex
           USING hint = 'Attribute values can only be either ''required'' or ''allowed''';
       END IF;
     END LOOP;

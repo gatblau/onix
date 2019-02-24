@@ -20,9 +20,8 @@ project, to be licensed under the same terms as the rest of the code.
 package org.gatblau.onix;
 
 import org.gatblau.onix.data.*;
-import org.gatblau.onix.inv.Host;
-import org.gatblau.onix.inv.HostGroup;
 import org.gatblau.onix.inv.Inventory;
+import org.gatblau.onix.inv.Node;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.postgresql.util.HStoreConverter;
@@ -447,33 +446,106 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result createOrUpdateInventory(String key, String inventory) throws ParseException, SQLException, IOException {
-        Inventory inv = new Inventory(key, inventory);
-        createOrUpdateItem(inv.hash(key), getItemData(key, "Inventory imported from Ansible inventory file.", "INVENTORY"));
-        for (HostGroup group : inv.getGroups()) {
-            String groupType = (group.getGroups().size() == 0) ? "HOST-GROUP" : "HOST-GROUP-GROUP";
-            createOrUpdateItem(inv.hash(group.getName()), getItemData(group.getName(), String.format("%s imported from Ansible inventory.", groupType), groupType));
-            createOrUpdateLink(
-                inv.hash(String.format("%s>>%s", key, group.getName())),
-                getLinkData("Link imported from Ansible inventory.", "INVENTORY", inv.hash(key), inv.hash(group.getName()))
-            );
-            if (group.getGroups().size() > 0) {
-                for (HostGroup subGroup : group.getGroups()) {
-                    createOrUpdateItem(inv.hash(subGroup.getName()), getItemData(subGroup.getName(), "HOST-GROUP imported from Ansible inventory.", "HOST-GROUP"));
-                    createOrUpdateLink(
-                        inv.hash(String.format("%s>>%s=>%s", key, group.getName(), subGroup.getName())),
-                        getLinkData("Link imported from Ansible inventory.", "INVENTORY", inv.hash(group.getName()), inv.hash(subGroup.getName()))
+        Inventory inv = new Inventory(inventory);
+        Result result = new Result();
+        result = createOrUpdateItem(key, getItemData(key, "Inventory imported from Ansible inventory file.", "INVENTORY"));
+        if (result.isError()) return result;
+        for (Node node : inv.getNodes()) {
+            processNode(node,  null, key);
+        }
+        return null;
+    }
+
+    private Result processNode(Node node, Node parent, String key) throws ParseException, SQLException, IOException {
+        String nodeType = getNodeType(node);
+        Result result = createOrUpdateItem(prefix(key, node.getName()), getItemData(node.getName(), String.format("%s imported from Ansible inventory.", node.getType()), nodeType));
+        if (result.isError()) return result;
+        switch (node.getType()) {
+            case PARENT_GROUP:
+            case GROUP: {
+                if (parent == null) { // parent is the inventory node - link to inventory
+                    result = createOrUpdateLink(
+                            prefix(key, String.format("%s->%s", key, node.getName())),
+                            getLinkData("Link imported from Ansible inventory.", "INVENTORY", key, prefix(key, node.getName()))
                     );
+                    if (result.isError()) return result;
+                } else { // link to a group
+                    result = createOrUpdateLink(
+                            prefix(key, String.format("%s->%s", parent.getName(), node.getName())),
+                            getLinkData("Link imported from Ansible inventory.", "INVENTORY", prefix(key, parent.getName()), prefix(key, node.getName()))
+                    );
+                    if (result.isError()) return result;
                 }
-            } else {
-                for (Host host : group.getHosts()) {
-                    createOrUpdateItem(inv.hash(host.getName()), getItemData(host.getName(), "HOST imported from Ansible inventory.", "HOST"));
-                    createOrUpdateLink(
-                        inv.hash(String.format("%s>>%s->%s", key, group.getName(), host.getName())),
-                        getLinkData("Link imported from Ansible inventory.", "INVENTORY", inv.hash(group.getName()), inv.hash(host.getName())));
+                for (Node child : node.getChildren()) {
+                    processNode(child, node, key);
                 }
+                break;
+            }
+            case HOST:{
+                result = createOrUpdateLink(
+                    prefix(key, String.format("%s->%s", parent.getName(), node.getName())),
+                    getLinkData("Link imported from Ansible inventory.", "INVENTORY", prefix(key, parent.getName()), prefix(key, node.getName())));
+                if (result.isError()) return result;
+                break;
             }
         }
-        return new Result();
+        return result;
+    }
+
+    private String getNodeType(Node node) {
+        String groupType = "";
+        switch (node.getType()) {
+            case PARENT_GROUP:
+                groupType = "HOST-GROUP-GROUP";
+                break;
+            case GROUP:
+                groupType = "HOST-GROUP";
+                break;
+            case HOST:
+                groupType = "HOST";
+                break;
+        }
+        return groupType;
+    }
+
+    @Override
+    public String getInventory(String key) throws SQLException, ParseException {
+        StringBuilder builder = new StringBuilder();
+        ItemList items = getChildItems(key);
+        for (ItemData item : items.getItems()) {
+            if (item.getItemType().equalsIgnoreCase("HOST-GROUP-GROUP")) {
+                builder
+                        .append("[")
+                        .append(item.getName())
+                        .append(":children]")
+                        .append(System.getProperty("line.separator"));
+            } else {
+
+            }
+            builder.append(item.getName()).append(System.getProperty("line.separator"));
+        }
+        return null;
+    }
+
+    private ItemList getChildItems(String parentKey) throws SQLException, ParseException {
+        ItemList items = new ItemList();
+        try {
+            db.prepare(getFindChildItemsSQL());
+            db.setString(1, parentKey); // parent_key_param
+            db.setString(2, "INVENTORY"); // item_type_key_param
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                items.getItems().add(util.toItemData(set));
+            }
+        }
+        finally {
+            db.close();
+        }
+        return items;
+    }
+
+    private String prefix(String prefix, String str) {
+        return String.format("%s::%s", prefix, str);
     }
 
     private JSONObject getLinkData(String description, String linkType, String startItem, String endItem) {
@@ -682,6 +754,14 @@ public class PgSqlRepository implements DbRepository {
                     "?::timestamp(6) with time zone," +
                     "?::timestamp(6) with time zone," +
                     "?::timestamp(6) with time zone" +
+                ")";
+    }
+
+    @Override
+    public String getFindChildItemsSQL() {
+        return "SELECT * FROM find_child_items(" +
+                    "?::character varying," + // parent_item_key_param
+                    "?::character varying" + // link_type_key_param
                 ")";
     }
 
