@@ -21,7 +21,7 @@ BEGIN
  */
 CREATE OR REPLACE FUNCTION find_items(
     tag_param text[], -- zero (null) or more tags
-    attribute_param hstore, -- zero (null) or more key->value pair attributes
+    attribute_param hstore, -- zero (null) or more key->regex pair attributes
     status_param smallint, -- zero (null) or one status
     item_type_key_param character varying, -- zero (null) or one item type
     date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
@@ -113,7 +113,7 @@ CREATE OR REPLACE FUNCTION find_links(
   start_item_key_param character varying, -- zero (null) or one start item
   end_item_key_param character varying, -- zero (null) or one end item
   tag_param text[], -- zero (null) or more tags
-  attribute_param hstore, -- zero (null) or more key->value pair attributes
+  attribute_param hstore, -- zero (null) or more key->regex pair attributes
   link_type_key_param character varying, -- zero (null) or one link type
   date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
   date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
@@ -205,7 +205,7 @@ OWNER TO onix;
   find_item_types: find item types that comply with the passed-in query parameters
  */
 CREATE OR REPLACE FUNCTION find_item_types(
-    attr_valid_param hstore, -- zero (null) or more key->value pair attributes
+    attr_valid_param hstore, -- zero (null) or more key->regex pair attributes
     system_param boolean, -- (null) for any or true / false
     date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
@@ -273,7 +273,7 @@ OWNER TO onix;
   find_link_types: find link types that comply with the passed-in query parameters
  */
 CREATE OR REPLACE FUNCTION find_link_types(
-    attr_valid_param hstore, -- zero (null) or more key->value pair attributes
+    attr_valid_param hstore, -- zero (null) or more key->regex pair attributes
     system_param boolean, -- (null) for any or true / false
     date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date

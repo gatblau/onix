@@ -149,7 +149,7 @@ The following table describes the fields in the payload and provides some exampl
 | meta | Stores any well-formed json object. This is the primary mechanism to store configuration item information. | { "host":"OCP-DEMO-M-01", "region":"Ireland", "provider":"AWS" } |
 | tag | Used for annotating the item for searching. For example, a search can be done by items having the EUROPE tag.| "TEST RELEASE-B EUROPE" |
 | deployed | Indicates if this item has been deployed or is waiting to be deployed. | true/false |
-| dimensions | A set of of key and value pairs used for reporting. | As per sample payload above. |
+| dimensions | A set of of key and regex pairs used for reporting. | As per sample payload above. |
 
 ### Example
 

@@ -21,8 +21,8 @@ BEGIN
   Inserts a new or updates an existing item.
   Concurrency Management:
    - If the item is found in the database, the function attempts an update of the existing record.
-      In this case, if a null value is passed as local_version_param, no optimistic locking is performed.
-      If a value is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
+      In this case, if a null regex is passed as local_version_param, no optimistic locking is performed.
+      If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
    - If the item is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
  */
 CREATE OR REPLACE FUNCTION set_item(
@@ -109,7 +109,7 @@ AS $BODY$
         changedby = changedby_param
       WHERE key = key_param
       -- the database record has not been modified by someone else
-      -- if a null value is passed as local version then it does not perform optimistic locking
+      -- if a null regex is passed as local version then it does not perform optimistic locking
       AND (local_version_param = current_version OR local_version_param IS NULL)
       AND (
         -- the fields to be updated have not changed
@@ -138,8 +138,8 @@ ALTER FUNCTION set_item(character varying,character varying,text,jsonb, text[],h
   Inserts a new or updates an existing item item.
   Concurrency Management:
    - If the item type is found in the database, the function attempts an update of the existing record.
-      In this case, if a null value is passed as local_version_param, no optimistic locking is performed.
-      If a value is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
+      In this case, if a null regex is passed as local_version_param, no optimistic locking is performed.
+      If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
    - If the item type is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
  */
 CREATE OR REPLACE FUNCTION set_item_type(
@@ -219,8 +219,8 @@ OWNER TO onix;
   Inserts a new or updates an existing link type.
   Concurrency Management:
    - If the link type is found in the database, the function attempts an update of the existing record.
-      In this case, if a null value is passed as local_version_param, no optimistic locking is performed.
-      If a value is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
+      In this case, if a null regex is passed as local_version_param, no optimistic locking is performed.
+      If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
    - If the link type is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
  */
 CREATE OR REPLACE FUNCTION set_link_type(
@@ -302,8 +302,8 @@ OWNER TO onix;
   Inserts a new or updates an existing link.
   Concurrency Management:
    - If the link is found in the database, the function attempts an update of the existing record.
-      In this case, if a null value is passed as local_version_param, no optimistic locking is performed.
-      If a value is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
+      In this case, if a null regex is passed as local_version_param, no optimistic locking is performed.
+      If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
    - If the link is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
  */
 CREATE OR REPLACE FUNCTION set_link(
@@ -445,8 +445,8 @@ ALTER FUNCTION set_link(character varying, character varying, character varying,
   Inserts a new or updates an existing link rule.
   Concurrency Management:
    - If the link rule is found in the database, the function attempts an update of the existing record.
-      In this case, if a null value is passed as local_version_param, no optimistic locking is performed.
-      If a value is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
+      In this case, if a null regex is passed as local_version_param, no optimistic locking is performed.
+      If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
    - If the link rule is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
 
  */

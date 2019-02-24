@@ -38,7 +38,7 @@ To configure Keycloak for Onix CMDB do the following:
 Alternatively, follow the manual steps below:
 - Create a realm named "onix"
 - Create a new client within the realm called "onix-cmdb"
-- Set the client's "Valid Redirect URIs" to "http://localhost:8080/*" (assuming the web API is listening to the localhost on port 8080, otherwise change it to the correct value.)
+- Set the client's "Valid Redirect URIs" to "http://localhost:8080/*" (assuming the web API is listening to the localhost on port 8080, otherwise change it to the correct regex.)
 - Create a new role called "admin"
 - Create a new role called "user"
 - Create a new user called "onix"
