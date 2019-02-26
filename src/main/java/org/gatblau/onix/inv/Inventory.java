@@ -24,8 +24,6 @@ public class Inventory {
     private static final String COMMENT = "COMMENT";
     private String hostVars = "";
     private boolean readingHostVars;
-    private Lib util = new Lib();
-    private int count = 0;
 
     private NodeList nodes = new NodeList();
 
@@ -94,7 +92,6 @@ public class Inventory {
                 switch (currentParent.getType()){
                     case PARENT_GROUP:
                         if (readingHostVars) {
-                            count++;
                             // aggregates host vars
                             hostVars += item + System.lineSeparator();
                             // if it is the end of the vars section
