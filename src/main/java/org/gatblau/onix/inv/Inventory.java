@@ -1,20 +1,31 @@
 package org.gatblau.onix.inv;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.gatblau.onix.Lib;
 import org.gatblau.onix.parser.Lexer;
 import org.gatblau.onix.parser.LexerRule;
 import org.gatblau.onix.parser.LexerToken;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Inventory {
-    private static String HOST_GROUP = "HOST-GROUP";
-    private static String GROUP_OF_HOST_GROUPS = "GROUP-OF-HOST-GROUPS";
-    private static String ITEM = "ITEM";
-    private static String HOST_VARS = "HOST-VARS";
-    private static String COMMENT = "COMMENT";
+    private static final String EMPTY_LINE = "EMPTY_LINE";
+    private static final String HOST_GROUP = "HOST-GROUP";
+    private static final String GROUP_OF_HOST_GROUPS = "GROUP-OF-HOST-GROUPS";
+    private static final String ITEM = "ITEM";
+    private static final String HOST_VARS = "HOST-VARS";
+    private static final String COMMENT = "COMMENT";
+    private String hostVars = "";
+    private boolean readingHostVars;
+    private Lib util = new Lib();
+    private int count = 0;
 
     private NodeList nodes = new NodeList();
 
@@ -29,8 +40,14 @@ public class Inventory {
 
     private List<LexerToken> parse(String source) {
         Lexer lexer = new Lexer();
+        // pass the text to tokenise to the lexer
         lexer.init(source);
+        // skip tokens for empty lines and comments
+        lexer.getSkippedTokens().add(EMPTY_LINE);
+        lexer.getSkippedTokens().add(COMMENT);
+        // add the tokenisation rules
         addRules(lexer);
+        // return a list of tokens
         return lexer.getTokenStream();
     }
 
@@ -59,17 +76,52 @@ public class Inventory {
                 }
             }
             else if (token.getType().equals(HOST_VARS)) {
+                // get the host name for the vars
+                String hostName = token.getValue().substring(1, token.getValue().length() - ":vars]".length());
+                // find the node representing the host name
+                Node host = nodes.find(hostName);
+                if (host == null) {
+                    throw new RuntimeException(
+                        String.format("Failed to find host '%s' in inventory. " +
+                            "Check it appears before host:vars statement in the inventory file.", hostName));
+                }
+                // makes the host the current parent
+                currentParent = host;
+                readingHostVars = true;
             }
             else if (token.getType().equals(ITEM)) {
                 String item = token.getValue();
                 switch (currentParent.getType()){
                     case PARENT_GROUP:
-                        currentParent.getChildren().add(new Node(item, Node.NodeType.GROUP));
+                        if (readingHostVars) {
+                            count++;
+                            // aggregates host vars
+                            hostVars += item + System.lineSeparator();
+                            // if it is the end of the vars section
+                            if (token.getNextToken().getType().contains("GROUP")) {
+                                // resets the accumulator flag
+                                readingHostVars = false;
+
+                                // gets vars in json format
+                                JSONObject vars = new JSONObject();
+                                try {
+                                    vars = convertYamlToJson(hostVars);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+
+                                // add vars to the current parent
+                                currentParent.getVars().putAll(vars);
+                                hostVars = "";
+                            }
+                        } else {
+                            // add a new host node
+                            currentParent.getChildren().add(new Node(item, Node.NodeType.GROUP));
+                        }
                         break;
                     case GROUP:
                         String name = getItemName(item);
-                        Map<String, String> vars = getItemVars(item);
-                        currentParent.getChildren().add(new Node(name, Node.NodeType.HOST, vars));
+                        currentParent.getChildren().add(new Node(name, Node.NodeType.HOST, getItemVars(item)));
                         break;
                 }
             }
@@ -77,6 +129,7 @@ public class Inventory {
     }
 
     private void addRules(Lexer lexer) {
+        lexer.addRule(new LexerRule(EMPTY_LINE, "^\\s*$"));
         lexer.addRule(new LexerRule(COMMENT, "#.*$"));
         lexer.addRule(new LexerRule(GROUP_OF_HOST_GROUPS, "^\\w*\\[\\w*(?<item>.*):children\\w*\\]\\w*$"));
         lexer.addRule(new LexerRule(HOST_VARS, "^\\w*\\[\\w*(?<item>.*):vars\\w*\\]\\w*$"));
@@ -113,5 +166,25 @@ public class Inventory {
             vars.put(items.get(i), items.get(i+1));
         }
         return vars;
+    }
+
+    private JSONObject convertYamlToJson(String yaml) {
+        String result = null;
+        try {
+            ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+            Object obj = yamlReader.readValue(yaml, Object.class);
+            ObjectMapper jsonWriter = new ObjectMapper();
+            result = jsonWriter.writeValueAsString(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        JSONParser parser = new JSONParser();
+        JSONObject json = null;
+        try {
+            json = (JSONObject)parser.parse(new StringReader(result));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 }

@@ -1,12 +1,11 @@
 package org.gatblau.onix.parser;
 
-import java.util.regex.Matcher;
-
 public class LexerToken {
     private String match;
     private String tokenType;
     private final boolean isNullMatch;
     private final String nullValueData;
+    private LexerToken nextToken;
 
     public LexerToken(String match, String tokenType) {
         this.match = match;
@@ -32,5 +31,13 @@ public class LexerToken {
     @Override
     public String toString() {
         return (match != null) ? match : nullValueData;
+    }
+
+    public LexerToken getNextToken() {
+        return nextToken;
+    }
+
+    void setNextToken(LexerToken nextToken) {
+        this.nextToken = nextToken;
     }
 }

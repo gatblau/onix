@@ -1,5 +1,7 @@
 package org.gatblau.onix.inv;
 
+import org.json.simple.JSONObject;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +39,12 @@ public class Node {
         return vars;
     }
 
+    public JSONObject getVarsJSON() {
+        JSONObject result = new JSONObject();
+        result.put("vars", new JSONObject(getVars()));
+        return result;
+    }
+
     public Node find(String name) {
         if (this.name.equals(name)) {
             return this;
@@ -53,7 +61,7 @@ public class Node {
         HOST,
         GROUP,
         PARENT_GROUP,
-        ROOT,
+        HOST_VARS,
     }
 
     @Override

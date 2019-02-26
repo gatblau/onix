@@ -9,9 +9,7 @@ import java.util.regex.Matcher;
 public class Lexer {
     private String source;
     private List<LexerRule> rules = new ArrayList<>();
-    private int currentLineNo;
-    private int currentLinePos;
-    private int totalCharsScanned;
+    private List<String> skippedTokens = new ArrayList<>();
 
     public Lexer() {
     }
@@ -69,7 +67,21 @@ public class Lexer {
                     if (!rule.isEnabled()) continue;
                     match = rule.match(line);
                     if (match == null) continue;
-                    tokens.add(new LexerToken(rule.getLastMatched(), rule.getTokenType()));
+                    LexerToken previousToken = (tokens.size() > 0) ? tokens.get(tokens.size() - 1) : null;
+                    LexerToken nextToken = new LexerToken(rule.getLastMatched(), rule.getTokenType());
+                    if (previousToken != null) {
+                        previousToken.setNextToken(nextToken);
+                    }
+                    boolean skip = false;
+                    for (String key : skippedTokens) {
+                        if (nextToken.getType().equals(key)) {
+                            skip = true;
+                            break;
+                        }
+                    }
+                    if (!skip) {
+                        tokens.add(nextToken);
+                    }
                     break;
                 }
                 if (match == null) {
@@ -80,5 +92,9 @@ public class Lexer {
         } catch (Exception e) {
         }
         return tokens;
+    }
+
+    public List<String> getSkippedTokens() {
+        return skippedTokens;
     }
 }
