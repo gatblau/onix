@@ -539,7 +539,6 @@ public class PgSqlRepository implements DbRepository {
                 if (result.isError()) return result;
                 break;
             }
-            case HOST_VARS:
         }
         return result;
     }
