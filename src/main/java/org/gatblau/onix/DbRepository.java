@@ -36,46 +36,46 @@ public interface DbRepository {
     /*
         ITEMS
     */
-    Result createOrUpdateItem(String key, JSONObject json) throws IOException, SQLException, ParseException;
-    ItemData getItem(String key) throws SQLException, ParseException;
-    Result deleteItem(String key) throws SQLException;
-    ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, Integer top) throws SQLException, ParseException;
+    Result createOrUpdateItem(String key, JSONObject json);
+    ItemData getItem(String key);
+    Result deleteItem(String key);
+    ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, Integer top);
 
     /*
         LINKS
     */
-    LinkData getLink(String key) throws SQLException, ParseException;
-    Result createOrUpdateLink(String key, JSONObject json) throws SQLException, ParseException;
-    Result deleteLink(String key) throws SQLException;
+    LinkData getLink(String key);
+    Result createOrUpdateLink(String key, JSONObject json);
+    Result deleteLink(String key);
     LinkList findLinks();
-    Result clear() throws SQLException;
+    Result clear();
 
     /*
         ITEM TYPES
     */
-    ItemTypeData getItemType(String key) throws SQLException, ParseException;
-    Result deleteItemTypes() throws SQLException;
-    ItemTypeList getItemTypes(Map attribute, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) throws SQLException, ParseException;
+    ItemTypeData getItemType(String key);
+    Result deleteItemTypes();
+    ItemTypeList getItemTypes(Map attribute, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo);
 
-    Result createOrUpdateItemType(String key, JSONObject json) throws SQLException;
-    Result deleteItemType(String key) throws SQLException;
+    Result createOrUpdateItemType(String key, JSONObject json);
+    Result deleteItemType(String key);
 
     /*
         LINK TYPES
     */
-    LinkTypeList getLinkTypes(Map attrMap, Boolean system, ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time) throws SQLException, ParseException;
-    Result createOrUpdateLinkType(String key, JSONObject json) throws SQLException;
-    Result deleteLinkType(String key) throws SQLException;
-    Result deleteLinkTypes() throws SQLException;
+    LinkTypeList getLinkTypes(Map attrMap, Boolean system, ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time);
+    Result createOrUpdateLinkType(String key, JSONObject json);
+    Result deleteLinkType(String key);
+    Result deleteLinkTypes();
     LinkTypeData getLinkType(String key);
 
     /*
         LINK RULES
     */
-    LinkRuleList getLinkRules(String linkTypeKey, String startItemType, String endItemType, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) throws SQLException;
-    Result createOrUpdateLinkRule(String key, JSONObject payload) throws SQLException;
-    Result deleteLinkRule(String key) throws SQLException;
-    Result deleteLinkRules() throws SQLException;
+    LinkRuleList getLinkRules(String linkTypeKey, String startItemType, String endItemType, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo);
+    Result createOrUpdateLinkRule(String key, JSONObject payload);
+    Result deleteLinkRule(String key);
+    Result deleteLinkRules();
 
     /*
         AUDIT
@@ -85,8 +85,8 @@ public interface DbRepository {
     /*
         INVENTORY
      */
-    Result createOrUpdateInventory(String key, String inventory) throws ParseException, SQLException, IOException;
-    String getInventory(String key) throws SQLException, ParseException;
+    Result createOrUpdateInventory(String key, String inventory);
+    String getInventory(String key);
 
     /*
         Function Calls

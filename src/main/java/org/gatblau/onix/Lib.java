@@ -28,6 +28,8 @@ import org.postgresql.util.PGobject;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -44,7 +46,7 @@ public class Lib implements InitializingBean {
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
 
-    public JSONObject toJSON(Object value) throws ParseException {
+    public JSONObject toJSON(Object value) throws ParseException, IOException {
         JSONObject json = null;
         if (value instanceof PGobject) {
             PGobject pgObj = (PGobject)value;
@@ -54,6 +56,11 @@ public class Lib implements InitializingBean {
         else if (value instanceof LinkedHashMap || value instanceof HashMap) {
             json = new JSONObject((HashMap)value);
         }
+        else if (value instanceof String) {
+            JSONParser parser = new JSONParser();
+            StringReader reader = new StringReader((String)value);
+            return (JSONObject)parser.parse(reader);
+        }
         else {
             // the object is not a list, then create an empty JSON object
             json = new JSONObject();
@@ -62,7 +69,7 @@ public class Lib implements InitializingBean {
         return json;
     }
 
-    public String toJSONString(Object value) throws ParseException {
+    public String toJSONString(Object value) throws ParseException, IOException {
         return toJSON(value).toJSONString();
     }
 
@@ -113,7 +120,7 @@ public class Lib implements InitializingBean {
         throw new RuntimeException("Conversion not implemented.");
     }
 
-    public ItemData toItemData(ResultSet set) throws SQLException, ParseException {
+    public ItemData toItemData(ResultSet set) throws SQLException, ParseException, IOException {
         Date updated = set.getDate("updated");
         ItemData item = new ItemData();
         item.setKey(set.getString("key"));
@@ -130,7 +137,7 @@ public class Lib implements InitializingBean {
         return item;
     }
 
-    public LinkData toLinkData(ResultSet set) throws SQLException, ParseException {
+    public LinkData toLinkData(ResultSet set) throws SQLException, ParseException, IOException {
         LinkData link = new LinkData();
         link.setKey(set.getString("key"));
         link.setDescription(set.getString("description"));
@@ -142,7 +149,7 @@ public class Lib implements InitializingBean {
         return link;
     }
 
-    public ItemTypeData toItemTypeData(ResultSet set) throws SQLException, ParseException {
+    public ItemTypeData toItemTypeData(ResultSet set) throws SQLException, ParseException, IOException {
         Date updated = set.getDate("updated");
 
         ItemTypeData itemType = new ItemTypeData();
@@ -176,7 +183,7 @@ public class Lib implements InitializingBean {
         return result;
     }
 
-    public LinkTypeData toLinkTypeData(ResultSet set) throws SQLException, ParseException {
+    public LinkTypeData toLinkTypeData(ResultSet set) throws SQLException, ParseException, IOException {
         Date updated = set.getDate("updated");
 
         LinkTypeData linkType = new LinkTypeData();

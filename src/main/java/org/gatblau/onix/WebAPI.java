@@ -85,7 +85,7 @@ public class WebAPI {
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<ItemData> getItem(@PathVariable("key") String key) throws SQLException, ParseException {
+    public ResponseEntity<ItemData> getItem(@PathVariable("key") String key) throws SQLException, ParseException, IOException {
         return ResponseEntity.ok(data.getItem(key));
     }
 
@@ -107,7 +107,7 @@ public class WebAPI {
             , @RequestParam(value = "updatedTo", required = false) String updatedToDate
             , @RequestParam(value = "status", required = false) Short status
             , @RequestParam(value = "top", required = false, defaultValue = "100") Integer top
-    ) throws SQLException, ParseException {
+    ) throws SQLException, ParseException, IOException {
         List<String> tagList = null;
         if (tag != null) {
             String[] tags = tag.split("[|]"); // separate tags using pipes in the query string
@@ -173,7 +173,7 @@ public class WebAPI {
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<ItemTypeData> getItemType(@PathVariable("key") String key) throws SQLException, ParseException {
+    public ResponseEntity<ItemTypeData> getItemType(@PathVariable("key") String key) throws SQLException, ParseException, IOException {
         return ResponseEntity.ok(data.getItemType(key));
     }
 
@@ -192,7 +192,7 @@ public class WebAPI {
         , @RequestParam(value = "createdTo", required = false) String createdToDate
         , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
         , @RequestParam(value = "updatedTo", required = false) String updatedToDate
-    ) throws SQLException, ParseException {
+    ) throws SQLException, ParseException, IOException {
         Map attrMap = null;
         if (attribute != null) {
             attrMap = new HashMap<String, String>();
@@ -303,7 +303,7 @@ public class WebAPI {
             , @RequestParam(value = "createdTo", required = false) String createdToDate
             , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
             , @RequestParam(value = "updatedTo", required = false) String updatedToDate
-    ) throws SQLException, ParseException {
+    ) throws SQLException, ParseException, IOException {
         Map attrMap = null;
         if (attribute != null) {
             attrMap = new HashMap<String, String>();
@@ -426,7 +426,7 @@ public class WebAPI {
             , method = RequestMethod.GET)
     public ResponseEntity<String> getInventory(
             @PathVariable("key") String key
-    ) throws SQLException, ParseException {
+    ) throws SQLException, ParseException, IOException {
         return ResponseEntity.ok(data.getInventory(key));
     }
 
