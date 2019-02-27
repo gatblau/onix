@@ -26,6 +26,9 @@ createdb -E UTF8 -e -O onix onix
 echo '>>> Installing HSTORE extension <<<'
 psql -U postgres -d onix -c 'create extension if not exists hstore;'
 
+echo '>>> Installing INTARRAY extension <<<'
+psql -U postgres -d onix -c 'create extension if not exists intarray;'
+
 echo '>>> Creating the database tables <<<'
 psql -U postgres -d onix -a -f $DIR/sql/tables.sql
 
@@ -35,5 +38,6 @@ psql -U postgres -d onix -a -f $DIR/sql/set_funcs.sql
 psql -U postgres -d onix -a -f $DIR/sql/get_funcs.sql
 psql -U postgres -d onix -a -f $DIR/sql/delete_funcs.sql
 psql -U postgres -d onix -a -f $DIR/sql/queries.sql
+psql -U postgres -d onix -a -f $DIR/sql/tree_funcs.sql
 
 echo '>>> ONIX database initialisation complete! <<<'
