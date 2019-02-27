@@ -21,12 +21,11 @@ package org.gatblau.onix.data;
 
 import java.util.List;
 
-public class AuditItemList extends Wrapper<AuditItemData> {
-    public AuditItemList() {
+public class ChangeLinkList extends Wrapper<ChangeLinkData> {
+    public ChangeLinkList() {
     }
 
-    public AuditItemList(List<AuditItemData> item){
+    public ChangeLinkList(List<ChangeLinkData> item) {
         super(item);
     }
 }
-

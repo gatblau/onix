@@ -41,7 +41,7 @@ BEGIN
             version bigint NOT NULL DEFAULT 1,
             created timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
             updated timestamp(6) with time zone,
-            changedby CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
+            changed_by CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
             CONSTRAINT item_type_id_pk PRIMARY KEY (id),
             CONSTRAINT item_type_key_uc UNIQUE (key),
             CONSTRAINT item_type_name_uc UNIQUE (name)
@@ -54,20 +54,20 @@ BEGIN
         ALTER TABLE item_type
             OWNER to onix;
 
-        INSERT INTO item_type(id, key, name, description, system, changedby) VALUES (1, 'INVENTORY', 'Ansible Inventory', 'An Ansible inventory.', TRUE, 'onix');
-        INSERT INTO item_type(id, key, name, description, system, changedby) VALUES (2, 'HOST-GROUP-GROUP', 'Group of Host Groups', 'An Ansible group of host groups.', TRUE, 'onix');
-        INSERT INTO item_type(id, key, name, description, system, changedby) VALUES (3, 'HOST-GROUP', 'Host Group', 'An Ansible host group.', TRUE, 'onix');
-        INSERT INTO item_type(id, key, name, description, system, changedby) VALUES (4, 'HOST', 'Host', 'An Operating System Host.', TRUE, 'onix');
-        INSERT INTO item_type(id, key, name, description, system, changedby) VALUES (5, 'LICENCE', 'A software licence.', 'Describes the information pertaining to a software licence.', TRUE, 'onix');
+        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (1, 'INVENTORY', 'Ansible Inventory', 'An Ansible inventory.', TRUE, 'onix');
+        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (2, 'HOST-GROUP-GROUP', 'Group of Host Groups', 'An Ansible group of host groups.', TRUE, 'onix');
+        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (3, 'HOST-GROUP', 'Host Group', 'An Ansible host group.', TRUE, 'onix');
+        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (4, 'HOST', 'Host', 'An Operating System Host.', TRUE, 'onix');
+        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (5, 'LICENCE', 'A software licence.', 'Describes the information pertaining to a software licence.', TRUE, 'onix');
 
     END IF;
 
     ---------------------------------------------------------------------------
-    -- ITEM_TYPE AUDIT
+    -- ITEM_TYPE CHANGE
     ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_type_audit')
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_type_change')
     THEN
-        CREATE TABLE item_type_audit
+        CREATE TABLE item_type_change
         (
             operation CHAR(1) NOT NULL,
             changed TIMESTAMP NOT NULL,
@@ -80,31 +80,31 @@ BEGIN
             version bigint,
             created timestamp(6) with time zone,
             updated timestamp(6) with time zone,
-            changedby CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
+            changed_by CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
         );
 
-        ALTER TABLE item_type_audit
+        ALTER TABLE item_type_change
             OWNER to onix;
 
-        CREATE OR REPLACE FUNCTION audit_item_type() RETURNS TRIGGER AS $item_type_audit$
+        CREATE OR REPLACE FUNCTION change_item_type() RETURNS TRIGGER AS $item_type_change$
         BEGIN
             IF (TG_OP = 'DELETE') THEN
-                INSERT INTO item_type_audit SELECT 'D', now(), OLD.*;
+                INSERT INTO item_type_change SELECT 'D', now(), OLD.*;
                 RETURN OLD;
             ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO item_type_audit SELECT 'U', now(), NEW.*;
+                INSERT INTO item_type_change SELECT 'U', now(), NEW.*;
                 RETURN NEW;
             ELSIF (TG_OP = 'INSERT') THEN
-                INSERT INTO item_type_audit SELECT 'I', now(), NEW.*;
+                INSERT INTO item_type_change SELECT 'I', now(), NEW.*;
                 RETURN NEW;
             END IF;
             RETURN NULL; -- result is ignored since this is an AFTER trigger
         END;
-        $item_type_audit$ LANGUAGE plpgsql;
+        $item_type_change$ LANGUAGE plpgsql;
 
-        CREATE TRIGGER item_type_audit
+        CREATE TRIGGER item_type_change
             AFTER INSERT OR UPDATE OR DELETE ON item_type
-            FOR EACH ROW EXECUTE PROCEDURE audit_item_type();
+            FOR EACH ROW EXECUTE PROCEDURE change_item_type();
 
     END IF;
 
@@ -137,7 +137,7 @@ BEGIN
             version bigint NOT NULL DEFAULT 1,
             created timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
             updated timestamp(6) with time zone,
-            changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+            changed_by CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
             CONSTRAINT item_id_pk PRIMARY KEY (id),
             CONSTRAINT item_key_uc UNIQUE (key),
             CONSTRAINT item_item_type_id_fk FOREIGN KEY (item_type_id)
@@ -174,14 +174,14 @@ BEGIN
 	  END IF;
 
     ---------------------------------------------------------------------------
-    -- ITEM AUDIT
+    -- ITEM CHANGE
     ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_audit')
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_change')
     THEN
-        CREATE TABLE item_audit
+        CREATE TABLE item_change
         (
             operation CHAR(1) NOT NULL,
-            change_date timestamp(6) with time zone NOT NULL,
+            changed_date timestamp(6) with time zone NOT NULL,
             id bigint,
             key CHARACTER VARYING(100) COLLATE pg_catalog."default",
             name CHARACTER VARYING(200) COLLATE pg_catalog."default",
@@ -194,31 +194,31 @@ BEGIN
             version bigint,
             created timestamp(6) with time zone,
             updated timestamp(6) with time zone,
-            changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
+            changed_by CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
         );
 
-        ALTER TABLE item_audit
+        ALTER TABLE item_change
             OWNER to onix;
 
-        CREATE OR REPLACE FUNCTION audit_item() RETURNS TRIGGER AS $item_audit$
+        CREATE OR REPLACE FUNCTION change_item() RETURNS TRIGGER AS $item_change$
         BEGIN
             IF (TG_OP = 'DELETE') THEN
-                INSERT INTO item_audit SELECT 'D', now(), OLD.*;
+                INSERT INTO item_change SELECT 'D', now(), OLD.*;
                 RETURN OLD;
             ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO item_audit SELECT 'U', now(), NEW.*;
+                INSERT INTO item_change SELECT 'U', now(), NEW.*;
                 RETURN NEW;
             ELSIF (TG_OP = 'INSERT') THEN
-                INSERT INTO item_audit SELECT 'I', now(), NEW.*;
+                INSERT INTO item_change SELECT 'I', now(), NEW.*;
                 RETURN NEW;
             END IF;
             RETURN NULL; -- result is ignored since this is an AFTER trigger
         END;
-        $item_audit$ LANGUAGE plpgsql;
+        $item_change$ LANGUAGE plpgsql;
 
-        CREATE TRIGGER item_audit
+        CREATE TRIGGER item_change
             AFTER INSERT OR UPDATE OR DELETE ON item
-            FOR EACH ROW EXECUTE PROCEDURE audit_item();
+            FOR EACH ROW EXECUTE PROCEDURE change_item();
 
     END IF;
 
@@ -247,7 +247,7 @@ BEGIN
            version bigint NOT NULL DEFAULT 1,
            created timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
            updated timestamp(6) with time zone,
-           changedby CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
+           changed_by CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
            CONSTRAINT link_type_id_pk PRIMARY KEY (id),
            CONSTRAINT link_type_key_uc UNIQUE (key),
            CONSTRAINT link_type_name_uc UNIQUE (name)
@@ -256,18 +256,18 @@ BEGIN
 
         ALTER TABLE link_type OWNER to onix;
 
-        INSERT INTO link_type(id, key, name, description, system, changedby) VALUES (1, 'INVENTORY', 'Inventory Link', 'Links items describing an inventory.', TRUE, 'onix');
-        INSERT INTO link_type(id, key, name, description, system, changedby) VALUES (2, 'LICENSE', 'Licence Link', 'Links items describing licence usage.', TRUE, 'onix');
-        INSERT INTO link_type(id, key, name, description, system, changedby) VALUES (3, 'NETWORK', 'Network Link', 'Links items describing network connections.', TRUE, 'onix');
-        INSERT INTO link_type(id, key, name, description, system, changedby) VALUES (4, 'WEB-CONTENT', 'Web Content Link', 'Links items describing web content.', TRUE, 'onix');
+        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (1, 'INVENTORY', 'Inventory Link', 'Links items describing an inventory.', TRUE, 'onix');
+        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (2, 'LICENSE', 'Licence Link', 'Links items describing licence usage.', TRUE, 'onix');
+        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (3, 'NETWORK', 'Network Link', 'Links items describing network connections.', TRUE, 'onix');
+        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (4, 'WEB-CONTENT', 'Web Content Link', 'Links items describing web content.', TRUE, 'onix');
     END IF;
 
     ---------------------------------------------------------------------------
-    -- LINK_TYPE AUDIT
+    -- LINK_TYPE CHANGE
     ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_type_audit')
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_type_change')
     THEN
-        CREATE TABLE link_type_audit
+        CREATE TABLE link_type_change
         (
             operation CHAR(1) NOT NULL,
             changed TIMESTAMP NOT NULL,
@@ -280,31 +280,31 @@ BEGIN
             version bigint,
             created timestamp(6) with time zone,
             updated timestamp(6) with time zone,
-            changedby CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
+            changed_by CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
         );
 
-        ALTER TABLE link_type_audit
+        ALTER TABLE link_type_change
             OWNER to onix;
 
-        CREATE OR REPLACE FUNCTION audit_link_type() RETURNS TRIGGER AS $link_type_audit$
+        CREATE OR REPLACE FUNCTION change_link_type() RETURNS TRIGGER AS $link_type_change$
         BEGIN
             IF (TG_OP = 'DELETE') THEN
-                INSERT INTO item_type_audit SELECT 'D', now(), OLD.*;
+                INSERT INTO link_type_change SELECT 'D', now(), OLD.*;
                 RETURN OLD;
             ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO item_type_audit SELECT 'U', now(), NEW.*;
+                INSERT INTO link_type_change SELECT 'U', now(), NEW.*;
                 RETURN NEW;
             ELSIF (TG_OP = 'INSERT') THEN
-                INSERT INTO item_type_audit SELECT 'I', now(), NEW.*;
+                INSERT INTO link_type_change SELECT 'I', now(), NEW.*;
                 RETURN NEW;
             END IF;
             RETURN NULL; -- result is ignored since this is an AFTER trigger
         END;
-        $link_type_audit$ LANGUAGE plpgsql;
+        $link_type_change$ LANGUAGE plpgsql;
 
-        CREATE TRIGGER link_type_audit
+        CREATE TRIGGER link_type_change
             AFTER INSERT OR UPDATE OR DELETE ON link_type
-            FOR EACH ROW EXECUTE PROCEDURE audit_link_type();
+            FOR EACH ROW EXECUTE PROCEDURE change_link_type();
 
     END IF;
 
@@ -337,7 +337,7 @@ BEGIN
             version bigint NOT NULL DEFAULT 1,
             created TIMESTAMP(6) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP(6),
             updated timestamp(6) WITH TIME ZONE,
-            changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+            changed_by CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
             CONSTRAINT link_id_pk PRIMARY KEY (id),
             CONSTRAINT link_key_uc UNIQUE (key),
             CONSTRAINT link_link_type_id_fk FOREIGN KEY (link_type_id)
@@ -388,14 +388,14 @@ BEGIN
     END IF;
 
     ---------------------------------------------------------------------------
-    -- LINK AUDIT
+    -- LINK CHANGE
     ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_audit')
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_change')
     THEN
-        CREATE TABLE link_audit
+        CREATE TABLE link_change
         (
             operation CHAR(1) NOT NULL,
-            change_date timestamp(6) with time zone NOT NULL,
+            changed_date timestamp(6) with time zone NOT NULL,
             id bigint,
             key CHARACTER VARYING(200) COLLATE pg_catalog."default",
             link_type_id integer,
@@ -408,31 +408,31 @@ BEGIN
             version bigint,
             created TIMESTAMP(6) with time zone,
             updated TIMESTAMP(6) with time zone,
-            changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
+            changed_by CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
         );
 
-        ALTER TABLE link_audit
+        ALTER TABLE link_change
             OWNER to onix;
 
-        CREATE OR REPLACE FUNCTION audit_link() RETURNS TRIGGER AS $link_audit$
+        CREATE OR REPLACE FUNCTION change_link() RETURNS TRIGGER AS $link_change$
         BEGIN
             IF (TG_OP = 'DELETE') THEN
-                INSERT INTO link_audit SELECT 'D', now(), OLD.*;
+                INSERT INTO link_change SELECT 'D', now(), OLD.*;
                 RETURN OLD;
             ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO link_audit SELECT 'U', now(), NEW.*;
+                INSERT INTO link_change SELECT 'U', now(), NEW.*;
                 RETURN NEW;
             ELSIF (TG_OP = 'INSERT') THEN
-                INSERT INTO link_audit SELECT 'I', now(), NEW.*;
+                INSERT INTO link_change SELECT 'I', now(), NEW.*;
                 RETURN NEW;
             END IF;
             RETURN NULL; -- result is ignored since this is an AFTER trigger
         END;
-        $link_audit$ LANGUAGE plpgsql;
+        $link_change$ LANGUAGE plpgsql;
 
-        CREATE TRIGGER link_audit
+        CREATE TRIGGER link_change
             AFTER INSERT OR UPDATE OR DELETE ON link
-            FOR EACH ROW EXECUTE PROCEDURE audit_link();
+            FOR EACH ROW EXECUTE PROCEDURE change_link();
 
     END IF;
 
@@ -464,7 +464,7 @@ BEGIN
             version bigint NOT NULL DEFAULT 1,
             created timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
             updated timestamp(6) with time zone,
-            changedby CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+            changed_by CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
             CONSTRAINT link_rule_id_pk PRIMARY KEY (id),
             CONSTRAINT link_rule_key_uc UNIQUE (key),
             CONSTRAINT link_rule_start_item_type_id_fk FOREIGN KEY (start_item_type_id)
@@ -505,20 +505,20 @@ BEGIN
 
     END IF;
 
-    INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changedby, system) VALUES (1, 'INVENTORY-HOST-GROUP-GROUP', 'Inventory to Group of Host Groups link rule.', 'Allows to link an inventory with a group of host groups.', 1, 1, 2, 'onix', TRUE);
-    INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changedby, system) VALUES (2, 'INVENTORY->HOST-GROUP', 'Inventory to Host-Group link rule.', 'Allows to link an inventory item with a host group item.', 1, 1, 3, 'onix', TRUE);
-    INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changedby, system) VALUES (3, 'HOST-GROUP-GROUP->HOST-GROUP', 'Group of Host Groups to Groups link rule.', 'Allows to link a group of host groups with a host group.', 1, 2, 3, 'onix', TRUE);
-    INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changedby, system) VALUES (4, 'HOST-GROUP->HOST', 'Host Group to Host link rule.', 'Allows to link a host group item with a host item.', 1, 3, 4, 'onix', TRUE);
+    INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (1, 'INVENTORY-HOST-GROUP-GROUP', 'Inventory to Group of Host Groups link rule.', 'Allows to link an inventory with a group of host groups.', 1, 1, 2, 'onix', TRUE);
+    INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (2, 'INVENTORY->HOST-GROUP', 'Inventory to Host-Group link rule.', 'Allows to link an inventory item with a host group item.', 1, 1, 3, 'onix', TRUE);
+    INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (3, 'HOST-GROUP-GROUP->HOST-GROUP', 'Group of Host Groups to Groups link rule.', 'Allows to link a group of host groups with a host group.', 1, 2, 3, 'onix', TRUE);
+    INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (4, 'HOST-GROUP->HOST', 'Host Group to Host link rule.', 'Allows to link a host group item with a host item.', 1, 3, 4, 'onix', TRUE);
 
     ---------------------------------------------------------------------------
-    -- LINK_RULE AUDIT
+    -- LINK_RULE CHANGE
     ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_rule_audit')
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_rule_change')
     THEN
-        CREATE TABLE link_rule_audit
+        CREATE TABLE link_rule_change
         (
             operation CHAR(1),
-            change_date timestamp(6) with time zone,
+            changed_date timestamp(6) with time zone,
             id bigint,
             key character varying(300),
             name character varying(200),
@@ -530,32 +530,32 @@ BEGIN
             version bigint,
             created timestamp(6) with time zone,
             updated timestamp(6) with time zone,
-            changedby CHARACTER VARYING(100)
+            changed_by CHARACTER VARYING(100)
         );
 
-        ALTER TABLE link_rule_audit
+        ALTER TABLE link_rule_change
             OWNER to onix;
 
-        CREATE OR REPLACE FUNCTION audit_link_rule() RETURNS TRIGGER AS $link_rule_audit$
+        CREATE OR REPLACE FUNCTION change_link_rule() RETURNS TRIGGER AS $link_rule_change$
         BEGIN
             IF (TG_OP = 'DELETE') THEN
-                INSERT INTO link_rule_audit SELECT 'D', now(), OLD.*;
+                INSERT INTO link_rule_change SELECT 'D', now(), OLD.*;
                 RETURN OLD;
             ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO link_rule_audit SELECT 'U', now(), NEW.*;
+                INSERT INTO link_rule_change SELECT 'U', now(), NEW.*;
                 RETURN NEW;
             ELSIF (TG_OP = 'INSERT') THEN
-                INSERT INTO link_rule_audit SELECT 'I', now(), NEW.*;
+                INSERT INTO link_rule_change SELECT 'I', now(), NEW.*;
                 RETURN NEW;
             END IF;
             RETURN NULL; -- result is ignored since this is an AFTER trigger
         END;
-        $link_rule_audit$
+        $link_rule_change$
         LANGUAGE plpgsql;
 
-        CREATE TRIGGER link_rule_audit
+        CREATE TRIGGER link_rule_change
             AFTER INSERT OR UPDATE OR DELETE ON link_rule
-            FOR EACH ROW EXECUTE PROCEDURE audit_link_rule();
+            FOR EACH ROW EXECUTE PROCEDURE change_link_rule();
 
     END IF;
 END;

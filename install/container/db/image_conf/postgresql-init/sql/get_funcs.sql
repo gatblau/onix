@@ -35,7 +35,7 @@ CREATE OR REPLACE FUNCTION item(key_param character varying)
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changedby character varying
+    changed_by character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -55,7 +55,7 @@ BEGIN
      i.version,
      i.created,
      i.updated,
-     i.changedby
+     i.changed_by
     FROM item i
     INNER JOIN item_type it
       ON i.item_type_id = it.id
@@ -81,7 +81,7 @@ CREATE OR REPLACE FUNCTION item_type(key_param character varying)
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changedby character varying
+    changed_by character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -98,7 +98,7 @@ BEGIN
     i.version,
     i.created,
     i.updated,
-    i.changedby
+    i.changed_by
   FROM item_type i
   WHERE i.key = key_param;
 END;
@@ -125,7 +125,7 @@ CREATE OR REPLACE FUNCTION link(key_param character varying)
     version bigint,
     created TIMESTAMP(6) WITH TIME ZONE,
     updated timestamp(6) WITH TIME ZONE,
-    changedby character varying
+    changed_by character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -145,7 +145,7 @@ BEGIN
      l.version,
      l.created,
      l.updated,
-     l.changedby
+     l.changed_by
   FROM link l
     INNER JOIN link_type lt
       ON l.link_type_id = lt.id
@@ -175,7 +175,7 @@ CREATE OR REPLACE FUNCTION link_type(key_param character varying)
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changedby character varying
+    changed_by character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -192,7 +192,7 @@ BEGIN
      l.version,
      l.created,
      l.updated,
-     l.changedby
+     l.changed_by
    FROM link_type l
    WHERE l.key = key_param;
 END;
@@ -218,7 +218,7 @@ CREATE OR REPLACE FUNCTION link_rule(key_param character varying)
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changedby character varying(100)
+    changed_by character varying(100)
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -237,7 +237,7 @@ BEGIN
     r.version,
     r.created,
     r.updated,
-    r.changedby
+    r.changed_by
   FROM link_rule r
     INNER JOIN item_type start_item_type
       ON r.start_item_type_id = start_item_type.id

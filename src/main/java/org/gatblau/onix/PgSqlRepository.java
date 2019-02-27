@@ -79,7 +79,7 @@ public class PgSqlRepository implements DbRepository {
             db.setInt(7, (status != null) ? (int) status : 0); // status_param
             db.setString(8, (type != null) ? (String) type : null); // item_type_key_param
             db.setObject(9, version); // version_param
-            db.setString(10, getUser()); // changedby_param
+            db.setString(10, getUser()); // changed_by_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_item"));
         }
         catch(Exception ex) {
@@ -323,7 +323,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(3, (description != null) ? (String) description : null); // description_param
             db.setString(4, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null); // attribute_param
             db.setObject(5, version); // version_param
-            db.setString(6, getUser()); // changedby_param
+            db.setString(6, getUser()); // changed_by_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_item_type"));
         }
         catch (Exception ex) {
@@ -382,7 +382,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(3, (description != null) ? (String) description : null); // description_param
             db.setString(4, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null); // attribute_param
             db.setObject(5, version); // version_param
-            db.setString(6, getUser()); // changedby_param
+            db.setString(6, getUser()); // changed_by_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_item_type"));
         }
         catch (Exception ex) {
@@ -458,7 +458,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(5, (startItemType != null) ? (String) startItemType : null); // startItemType_param
             db.setString(6, (endItemType != null) ? (String) endItemType : null); // endItemType_param
             db.setObject(7, version); // version_param
-            db.setString(8, getUser()); // changedby_param
+            db.setString(8, getUser()); // changed_by_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_link_rule"));
         }
         catch (Exception ex) {
@@ -481,12 +481,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     /*
-        AUDIT
+        CHANGE
      */
     @Override
-    public List<AuditItemData> findAuditItems() {
-        // TODO: implement findAuditItems()
-        throw new UnsupportedOperationException("findAuditItems");
+    public List<ChangeItemData> findChangeItems() {
+        // TODO: implement findChangeItems()
+        throw new UnsupportedOperationException("findChangeItems");
     }
 
     @Override

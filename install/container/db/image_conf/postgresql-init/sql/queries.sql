@@ -43,7 +43,7 @@ CREATE OR REPLACE FUNCTION find_items(
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changedby character varying
+    changed_by character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -66,7 +66,7 @@ BEGIN
     i.version,
     i.created,
     i.updated,
-    i.changedby
+    i.changed_by
   FROM item i
   INNER JOIN item_type it
     ON i.item_type_id = it.id
@@ -133,7 +133,7 @@ RETURNS TABLE(
     version bigint,
     created TIMESTAMP(6) WITH TIME ZONE,
     updated timestamp(6) WITH TIME ZONE,
-    changedby CHARACTER VARYING
+    changed_by CHARACTER VARYING
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -156,7 +156,7 @@ BEGIN
     l.version,
     l.created,
     l.updated,
-    l.changedby
+    l.changed_by
   FROM link l
     INNER JOIN item start_item
       ON l.start_item_id = start_item.id
@@ -222,7 +222,7 @@ CREATE OR REPLACE FUNCTION find_item_types(
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changedby character varying
+    changed_by character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -239,7 +239,7 @@ BEGIN
      i.version,
      i.created,
      i.updated,
-     i.changedby
+     i.changed_by
   FROM item_type i
   WHERE
   -- by system flag
@@ -290,7 +290,7 @@ CREATE OR REPLACE FUNCTION find_link_types(
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changedby character varying
+    changed_by character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -307,7 +307,7 @@ BEGIN
      l.version,
      l.created,
      l.updated,
-     l.changedby
+     l.changed_by
   FROM link_type l
   WHERE
   -- by system flag
@@ -338,16 +338,16 @@ ALTER FUNCTION find_link_types(
 OWNER TO onix;
 
 /*
-  find_items_audit: find audit records for items that comply with the passed-in query parameters
+  find_items_change: find change records for items that comply with the passed-in query parameters
  */
-CREATE OR REPLACE FUNCTION find_items_audit(
+CREATE OR REPLACE FUNCTION find_items_change(
   item_key_param character varying,
   date_changed_from_param timestamp(6) with time zone, -- none (null) or updated from date
   date_changed_to_param timestamp(6) with time zone -- none (null) or updated to date
 )
 RETURNS TABLE(
     operation char,
-    change_date timestamp(6) with time zone,
+    changed_date timestamp(6) with time zone,
     id bigint,
     key character varying,
     name character varying,
@@ -360,7 +360,7 @@ RETURNS TABLE(
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changedby character varying
+    changed_by character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -369,7 +369,7 @@ AS $BODY$
 BEGIN
   RETURN QUERY SELECT
     i.operation,
-    i.change_date,
+    i.changed_date,
     i.id,
     i.key,
     i.name,
@@ -382,18 +382,18 @@ BEGIN
     i.version,
     i.created,
     i.updated,
-    i.changedby
-  FROM item_audit i
+    i.changed_by
+  FROM item_change i
   WHERE i.key = item_key_param
   -- by change date range
-  AND ((date_changed_from_param <= i.change_date AND date_changed_to_param > i.change_date) OR
+  AND ((date_changed_from_param <= i.changed_date AND date_changed_to_param > i.changed_date) OR
       (date_changed_from_param IS NULL AND date_changed_to_param IS NULL) OR
-      (date_changed_from_param IS NULL AND date_changed_to_param > i.change_date) OR
-      (date_changed_from_param <= i.change_date AND date_changed_to_param IS NULL));
+      (date_changed_from_param IS NULL AND date_changed_to_param > i.changed_date) OR
+      (date_changed_from_param <= i.changed_date AND date_changed_to_param IS NULL));
 END
 $BODY$;
 
-ALTER FUNCTION find_items_audit(
+ALTER FUNCTION find_items_change(
   character varying, -- item natural key
   timestamp(6) with time zone, -- change date from
   timestamp(6) with time zone -- change date to
@@ -401,16 +401,16 @@ ALTER FUNCTION find_items_audit(
 OWNER TO onix;
 
 /*
-  find_links_audit: find audit records for links that comply with the passed-in query parameters
+  find_links_change: find change records for links that comply with the passed-in query parameters
  */
-CREATE OR REPLACE FUNCTION find_links_audit(
+CREATE OR REPLACE FUNCTION find_links_change(
     link_key_param character varying,
     date_changed_from_param timestamp(6) with time zone, -- none (null) or updated from date
     date_changed_to_param timestamp(6) with time zone -- none (null) or updated to date
   )
   RETURNS TABLE(
     operation char,
-    change_date timestamp(6) with time zone,
+    changed_date timestamp(6) with time zone,
     id bigint,
     key character varying,
     description text,
@@ -423,7 +423,7 @@ CREATE OR REPLACE FUNCTION find_links_audit(
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changedby character varying
+    changed_by character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -432,7 +432,7 @@ AS $BODY$
 BEGIN
   RETURN QUERY SELECT
      l.operation,
-     l.change_date,
+     l.changed_date,
      l.id,
      l.key,
      l.description,
@@ -445,8 +445,8 @@ BEGIN
      l.version,
      l.created,
      l.updated,
-     l.changedby
-  FROM link_audit l
+     l.changed_by
+  FROM link_change l
     INNER JOIN item start_item
       ON l.start_item_id = start_item.id
     INNER JOIN item end_item
@@ -454,15 +454,15 @@ BEGIN
     INNER JOIN link_type lt
       ON l.link_type_id = lt.id
   WHERE l.key = link_key_param
-  -- by change_date range
-  AND ((date_changed_from_param <= l.change_date AND date_changed_to_param > l.change_date) OR
+  -- by changed_date range
+  AND ((date_changed_from_param <= l.changed_date AND date_changed_to_param > l.changed_date) OR
       (date_changed_from_param IS NULL AND date_changed_to_param IS NULL) OR
-      (date_changed_from_param IS NULL AND date_changed_to_param > l.change_date) OR
-      (date_changed_from_param <= l.change_date AND date_changed_to_param IS NULL));
+      (date_changed_from_param IS NULL AND date_changed_to_param > l.changed_date) OR
+      (date_changed_from_param <= l.changed_date AND date_changed_to_param IS NULL));
 END
 $BODY$;
 
-ALTER FUNCTION find_links_audit(
+ALTER FUNCTION find_links_change(
   character varying, -- item natural key
   timestamp(6) with time zone, -- change date from
   timestamp(6) with time zone -- change date to
@@ -562,7 +562,7 @@ RETURNS TABLE(
   version bigint,
   created timestamp(6) with time zone,
   updated timestamp(6) with time zone,
-  changedby character varying
+  changed_by character varying
 )
 LANGUAGE 'plpgsql'
 COST 100
@@ -581,7 +581,7 @@ BEGIN
       l.version,
       l.created,
       l.updated,
-      l.changedby
+      l.changed_by
   FROM link_rule l
     INNER JOIN link_type link_type
       ON link_type.id = l.link_type_id
@@ -644,7 +644,7 @@ RETURNS TABLE(
   version bigint,
   created timestamp(6) with time zone,
   updated timestamp(6) with time zone,
-  changedby character varying
+  changed_by character varying
 )
 LANGUAGE 'plpgsql'
 COST 100
@@ -665,7 +665,7 @@ BEGIN
      i.version,
      i.created,
      i.updated,
-     i.changedby
+     i.changed_by
   FROM item i
   INNER JOIN link l
     ON i.id = l.end_item_id
