@@ -558,5 +558,45 @@ BEGIN
             FOR EACH ROW EXECUTE PROCEDURE change_link_rule();
 
     END IF;
+
+    ---------------------------------------------------------------------------
+    -- SNAPSHOT
+    ---------------------------------------------------------------------------
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='snapshot')
+    THEN
+        CREATE SEQUENCE snapshot_id_seq
+        INCREMENT 1
+        START 10
+        MINVALUE 10
+        MAXVALUE 9223372036854775807
+        CACHE 1;
+
+        ALTER SEQUENCE snapshot_id_seq
+            OWNER TO onix;
+
+        CREATE TABLE snapshot
+        (
+            id INTEGER NOT NULL DEFAULT nextval('snapshot_id_seq'::regclass),
+            key CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+            root_item_key CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+            name CHARACTER VARYING(200) COLLATE pg_catalog."default",
+            description TEXT COLLATE pg_catalog."default",
+            item_data HSTORE,
+            link_data HSTORE,
+            created timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
+            created_by CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
+            CONSTRAINT snapshot_id_pk PRIMARY KEY (id),
+            CONSTRAINT snapshot_key_uc UNIQUE (key),
+            CONSTRAINT snapshot_name_uc UNIQUE (name)
+        )
+        WITH (
+            OIDS = FALSE
+        )
+        TABLESPACE pg_default;
+
+        ALTER TABLE snapshot
+            OWNER to onix;
+    END IF;
+
 END;
 $$
