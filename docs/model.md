@@ -9,7 +9,7 @@
     - [Item Type Entity](#item-type)
     - [Link Entity](#link)
     - [Dimension Entity](#dimension)
-    - [Auditing changes](auditing-changes)
+    - [Changeing changes](changeing-changes)
 - [Modelling a specific configuration](#modelling)
 
 <a name="semantic-model"></a>
@@ -117,18 +117,18 @@ Then, a reporting dimension could be added to the item as follows: key="WBS" and
 |key| A reporting dimension key (e.g. "WBS") | ﻿character varying(50) |
 |regex| A reporting dimension regex (e.g. OP011.896WIE) | character varying(100) |
 
-<a name="auditing-changes"></a>
-## Auditing Changes [(up)](#toc)
+<a name="changeing-changes"></a>
+## Changeing Changes [(up)](#toc)
 
-All changes to Items, Links and Item Types are recorded (via database triggers) on dedicated audit tables.
+All changes to Items, Links and Item Types are recorded (via database triggers) on dedicated change tables.
 
-Audit tables contain the same attributes than the table they are auditing but add the following attributes:
+Change tables contain the same attributes than the table they are changeing but add the following attributes:
 
 |Name | Description | Data Type|
 |---|---|---|
 |operation | "I" for insert, "U" for update and "D" for delete. | character(1) |
-|change_date| The time of the change. | timestamp |
-|change_user| The user who performed the change. | text |
+|changed_date| The time of the change. | timestamp |
+|changed_by| The user who performed the change. | text |
 
 <a name="modelling"></a>
 ## Modelling a specific configuration [(up)](#toc)

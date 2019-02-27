@@ -78,9 +78,9 @@ public interface DbRepository {
     Result deleteLinkRules();
 
     /*
-        AUDIT
+        CHANGE
     */
-    List<AuditItemData> findAuditItems();
+    List<ChangeItemData> findChangeItems();
 
     /*
         INVENTORY

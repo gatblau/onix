@@ -35,7 +35,7 @@ CREATE OR REPLACE FUNCTION set_item(
     status_param smallint,
     item_type_key_param character varying,
     local_version_param bigint,
-    changedby_param character varying
+    changed_by_param character varying
   )
   RETURNS TABLE(result char(1))
   LANGUAGE 'plpgsql'
@@ -76,7 +76,7 @@ AS $BODY$
         version,
         created,
         updated,
-        changedby
+        changed_by
       )
       VALUES (
           nextval('item_id_seq'),
@@ -91,7 +91,7 @@ AS $BODY$
           1,
           current_timestamp,
           null,
-          changedby_param
+          changed_by_param
       );
       result := 'I';
     ELSE
@@ -106,7 +106,7 @@ AS $BODY$
         item_type_id = item_type_id_value,
         version = version + 1,
         updated = current_timestamp,
-        changedby = changedby_param
+        changed_by = changed_by_param
       WHERE key = key_param
       -- the database record has not been modified by someone else
       -- if a null regex is passed as local version then it does not perform optimistic locking
@@ -148,7 +148,7 @@ CREATE OR REPLACE FUNCTION set_item_type(
     description_param text,
     attr_valid_param hstore, -- keys allowed or required in item attributes
     local_version_param bigint,
-    changedby_param character varying
+    changed_by_param character varying
   )
   RETURNS TABLE(result char(1))
   LANGUAGE 'plpgsql'
@@ -174,7 +174,7 @@ BEGIN
       version,
       created,
       updated,
-      changedby
+      changed_by
     )
     VALUES (
       nextval('item_type_id_seq'),
@@ -185,7 +185,7 @@ BEGIN
       1,
       current_timestamp,
       null,
-      changedby_param
+      changed_by_param
     );
     result := 'I';
   ELSE
@@ -195,7 +195,7 @@ BEGIN
       attr_valid = attr_valid_param,
       version = version + 1,
       updated = current_timestamp,
-      changedby = changedby_param
+      changed_by = changed_by_param
     WHERE key = key_param
     -- concurrency management - optimistic locking
     AND (local_version_param = current_version OR local_version_param IS NULL)
@@ -229,7 +229,7 @@ CREATE OR REPLACE FUNCTION set_link_type(
     description_param text,
     attr_valid_param hstore, -- keys allowed or required in item attributes
     local_version_param bigint,
-    changedby_param character varying
+    changed_by_param character varying
   )
   RETURNS TABLE(result char(1))
   LANGUAGE 'plpgsql'
@@ -257,7 +257,7 @@ BEGIN
       version,
       created,
       updated,
-      changedby
+      changed_by
     )
     VALUES (
       nextval('link_type_id_seq'),
@@ -268,7 +268,7 @@ BEGIN
       1,
       current_timestamp,
       null,
-      changedby_param
+      changed_by_param
     );
     result := 'I';
   ELSE
@@ -278,7 +278,7 @@ BEGIN
        attr_valid = attr_valid_param,
        version = version + 1,
        updated = current_timestamp,
-       changedby = changedby_param
+       changed_by = changed_by_param
     WHERE key = key_param
     -- concurrency management - optimistic locking
     AND (local_version_param = current_version OR local_version_param IS NULL)
@@ -316,7 +316,7 @@ CREATE OR REPLACE FUNCTION set_link(
     tag_param text[],
     attribute_param hstore,
     local_version_param bigint,
-    changedby_param character varying
+    changed_by_param character varying
   )
   RETURNS TABLE(result char(1))
   LANGUAGE 'plpgsql'
@@ -388,7 +388,7 @@ BEGIN
       version,
       created,
       updated,
-      changedby
+      changed_by
     )
     VALUES (
       nextval('link_id_seq'),
@@ -403,7 +403,7 @@ BEGIN
       1,
       current_timestamp,
       null,
-      changedby_param
+      changed_by_param
     );
     result := 'I';
   ELSE
@@ -417,7 +417,7 @@ BEGIN
       end_item_id = end_item_id_value,
       version = version + 1,
       updated = current_timestamp,
-      changedby = changedby_param
+      changed_by = changed_by_param
     WHERE key = key_param
     -- concurrency management - optimistic locking
     AND (local_version_param = current_version OR local_version_param IS NULL)
@@ -458,7 +458,7 @@ CREATE OR REPLACE FUNCTION set_link_rule(
     start_item_type_key_param character varying,
     end_item_type_key_param character varying,
     local_version_param bigint,
-    changedby_param character varying
+    changed_by_param character varying
   )
   RETURNS TABLE(result char(1))
   LANGUAGE 'plpgsql'
@@ -493,7 +493,7 @@ BEGIN
       version,
       created,
       updated,
-      changedby
+      changed_by
     )
     VALUES (
       nextval('link_rule_id_seq'),
@@ -506,7 +506,7 @@ BEGIN
       1,
       current_timestamp,
       null,
-      changedby_param
+      changed_by_param
     );
     result := 'I';
   ELSE
@@ -518,7 +518,7 @@ BEGIN
        end_item_type_id = end_item_type_id_value,
        version = version + 1,
        updated = current_timestamp,
-       changedby = changedby_param
+       changed_by = changed_by_param
     WHERE key = key_param
     -- concurrency management - optimistic locking (disabled if local_version_param is null)
     AND (local_version_param = current_version OR local_version_param IS NULL)
