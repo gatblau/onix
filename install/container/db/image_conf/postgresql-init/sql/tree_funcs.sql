@@ -23,6 +23,7 @@ BEGIN
   CREATE OR REPLACE FUNCTION array_dedup(array_param anyarray)
     RETURNS anyarray
     LANGUAGE 'plpgsql'
+    STABLE
   AS $BODY$
     DECLARE
     offset_point INTEGER;
@@ -57,6 +58,7 @@ BEGIN
   CREATE OR REPLACE FUNCTION get_child_item_ids(parent_item_ids bigint[])
     RETURNS TABLE(ids bigint[])
     LANGUAGE 'plpgsql'
+    STABLE
     AS $BODY$
   BEGIN
     RETURN QUERY
@@ -76,6 +78,7 @@ BEGIN
   CREATE OR REPLACE FUNCTION get_parent_item_ids(child_item_ids bigint[])
     RETURNS TABLE(ids bigint[])
     LANGUAGE 'plpgsql'
+    STABLE
   AS $BODY$
   BEGIN
     RETURN QUERY
@@ -95,6 +98,7 @@ BEGIN
   CREATE OR REPLACE FUNCTION get_child_item_records(parent_item_ids bigint[])
     RETURNS TABLE(ids bigint[])
     LANGUAGE 'plpgsql'
+    STABLE
   AS $BODY$
     DECLARE child_item_ids BIGINT[];
   BEGIN
@@ -117,6 +121,7 @@ BEGIN
   CREATE OR REPLACE FUNCTION get_child_items(parent_id bigint)
     RETURNS BIGINT[]
     LANGUAGE 'plpgsql'
+    STABLE
   AS $BODY$
   DECLARE
     children BIGINT[];
@@ -141,6 +146,7 @@ BEGIN
   CREATE OR REPLACE FUNCTION delete_tree(parent_id bigint)
     RETURNS TABLE(links_affected INTEGER, items_affected INTEGER)
     LANGUAGE 'plpgsql'
+    VOLATILE
   AS $BODY$
   DECLARE
     links_affected INTEGER := 0;
