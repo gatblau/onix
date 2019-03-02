@@ -347,7 +347,7 @@ CREATE OR REPLACE FUNCTION find_items_change(
 )
 RETURNS TABLE(
     operation char,
-    changed_date timestamp(6) with time zone,
+    changed timestamp(6) with time zone,
     id bigint,
     key character varying,
     name character varying,
@@ -369,7 +369,7 @@ AS $BODY$
 BEGIN
   RETURN QUERY SELECT
     i.operation,
-    i.changed_date,
+    i.changed,
     i.id,
     i.key,
     i.name,
@@ -386,10 +386,10 @@ BEGIN
   FROM item_change i
   WHERE i.key = item_key_param
   -- by change date range
-  AND ((date_changed_from_param <= i.changed_date AND date_changed_to_param > i.changed_date) OR
+  AND ((date_changed_from_param <= i.changed AND date_changed_to_param > i.changed) OR
       (date_changed_from_param IS NULL AND date_changed_to_param IS NULL) OR
-      (date_changed_from_param IS NULL AND date_changed_to_param > i.changed_date) OR
-      (date_changed_from_param <= i.changed_date AND date_changed_to_param IS NULL));
+      (date_changed_from_param IS NULL AND date_changed_to_param > i.changed) OR
+      (date_changed_from_param <= i.changed AND date_changed_to_param IS NULL));
 END
 $BODY$;
 
@@ -410,7 +410,7 @@ CREATE OR REPLACE FUNCTION find_links_change(
   )
   RETURNS TABLE(
     operation char,
-    changed_date timestamp(6) with time zone,
+    changed timestamp(6) with time zone,
     id bigint,
     key character varying,
     description text,
@@ -432,7 +432,7 @@ AS $BODY$
 BEGIN
   RETURN QUERY SELECT
      l.operation,
-     l.changed_date,
+     l.changed,
      l.id,
      l.key,
      l.description,
@@ -454,11 +454,11 @@ BEGIN
     INNER JOIN link_type lt
       ON l.link_type_id = lt.id
   WHERE l.key = link_key_param
-  -- by changed_date range
-  AND ((date_changed_from_param <= l.changed_date AND date_changed_to_param > l.changed_date) OR
+  -- by changed range
+  AND ((date_changed_from_param <= l.changed AND date_changed_to_param > l.changed) OR
       (date_changed_from_param IS NULL AND date_changed_to_param IS NULL) OR
-      (date_changed_from_param IS NULL AND date_changed_to_param > l.changed_date) OR
-      (date_changed_from_param <= l.changed_date AND date_changed_to_param IS NULL));
+      (date_changed_from_param IS NULL AND date_changed_to_param > l.changed) OR
+      (date_changed_from_param <= l.changed AND date_changed_to_param IS NULL));
 END
 $BODY$;
 

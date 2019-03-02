@@ -115,6 +115,32 @@ BEGIN
     OWNER TO onix;
 
   /*
+    select get_child_link_records(parent_item_ids):
+      gets set of records containing array of Ids of all child links in the tree for all tree levels.
+  */
+  CREATE OR REPLACE FUNCTION get_child_link_records(parent_item_ids bigint[])
+    RETURNS TABLE(ids bigint[])
+    LANGUAGE 'plpgsql'
+    STABLE
+  AS $BODY$
+  DECLARE
+    child_item_ids BIGINT[];
+    child_link_ids BIGINT[];
+  BEGIN
+    child_item_ids := (SELECT array_agg(DISTINCT end_item_id) FROM link WHERE start_item_id = ANY(parent_item_ids::BIGINT[]))::BIGINT[];
+    child_link_ids := (SELECT array_agg(DISTINCT id) FROM link WHERE start_item_id = ANY(parent_item_ids::BIGINT[]))::BIGINT[];
+    -- recurse
+    IF (child_link_ids IS NOT NULL) THEN
+      RETURN QUERY SELECT child_link_ids;
+      RETURN QUERY SELECT get_child_link_records(child_item_ids::BIGINT[]);
+    END IF;
+  END;
+  $BODY$;
+
+  ALTER FUNCTION get_child_link_records(bigint[])
+    OWNER TO onix;
+
+  /*
     get_child_items(parent_id bigint):
       returns an array of the Ids of the child items of a specified item in a tree.
    */
@@ -141,6 +167,32 @@ BEGIN
     OWNER TO onix;
 
   /*
+    get_child_links(parent_id bigint):
+      returns an array of the Ids of the child links of a specified item in a tree.
+   */
+  CREATE OR REPLACE FUNCTION get_child_links(parent_id bigint)
+    RETURNS BIGINT[]
+    LANGUAGE 'plpgsql'
+    STABLE
+  AS $BODY$
+  DECLARE
+    children BIGINT[];
+    item RECORD;
+  BEGIN
+    FOR item IN
+    SELECT get_child_link_records(ARRAY[parent_id]) AS ids
+       LOOP
+         children := children || item.ids;
+    END LOOP;
+    children := array_dedup(children);
+    RETURN SORT(children::INT[]);
+  END;
+  $BODY$;
+
+  ALTER FUNCTION get_child_links(bigint)
+    OWNER TO onix;
+
+  /*
     delete_tree(bigint): deletes all items and links under a specified parent item in an item tree.
    */
   CREATE OR REPLACE FUNCTION delete_tree(parent_id bigint)
@@ -157,7 +209,7 @@ BEGIN
     GET DIAGNOSTICS links_affected := ROW_COUNT;
     DELETE FROM item WHERE id = ANY((child_item_ids || parent_id)::BIGINT[]);
     GET DIAGNOSTICS items_affected := ROW_COUNT;
-    RETURN QUERY SELECT links_affected AS links_deleted, items_affected as items_deleted;
+    RETURN QUERY SELECT links_affected AS links_deleted, (items_affected + 1) as items_deleted;
   END;
   $BODY$;
 

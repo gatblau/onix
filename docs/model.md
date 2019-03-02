@@ -127,7 +127,7 @@ Change tables contain the same attributes than the table they are changeing but 
 |Name | Description | Data Type|
 |---|---|---|
 |operation | "I" for insert, "U" for update and "D" for delete. | character(1) |
-|changed_date| The time of the change. | timestamp |
+|changed| The time of the change. | timestamp |
 |changed_by| The user who performed the change. | text |
 
 <a name="modelling"></a>
