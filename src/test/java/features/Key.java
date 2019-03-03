@@ -19,9 +19,7 @@ public class Key {
     public static final String LINK_KEY = "link_key";
     public static final String ENDPOINT_URI = "endpoint_uri";
     public static final String ITEM_KEY = "item_key";
-    public static final String KEY = "KEY";
     public static final String LINK_ONE_KEY = "link_one_key";
-    public static final String LINK_TWO_KEY = "link_two_key";
     public static final String LINK_TYPE_URL = "link_type_url";
     public static final String CONGIG_LINK_TYPE_KEY = "link_type_key";
     public static final String LINK_RULE_URL = "link_rule_url";
@@ -29,4 +27,13 @@ public class Key {
     public static final String INVENTORY_FILE = "inventory_file";
     public static final String INVENTORY_KEY = "inventory_key";
     public static final String INVENTORY_URL = "inventory_url";
+    public static final String SNAPSHOT_CREATE_URL = "snapshot_create_url";
+    public static final String SNAPSHOT_UPDATE_URL = "snapshot_update_url";
+    public static final String SNAPSHOT_CREATE_PAYLOAD = "create_snapshot_payload";
+    public static final String SNAPSHOT_UPDATE_PAYLOAD = "update_snapshot_payload";
+    public static final String SNAPSHOT_ITEM_ROOT_KEY = "snapshot_item_root_key";
+    public static final String SNAPSHOT_LABEL = "snapshot_label";
+    public static final String SNAPSHOT_DELETE_URL = "snapshot_delete_url";
+    public static final String SNAPSHOT_LIST_URL = "snapshot_list_url";
+    public static final String SNAPSHOT_TREE_URL = "snapshot_tree_url";
 }

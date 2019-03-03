@@ -56,9 +56,9 @@ public class Steps extends BaseTest {
     }
 
     @And("^the response code is (\\d+)$")
-    public void theResponseCodeIs(int responseCode) throws Throwable {
+    public void theResponseCodeIs(int responseCode)  {
         if (util.containsKey(EXCEPTION)) {
-            Exception ex = util.get(EXCEPTION);
+            RuntimeException ex = util.get(EXCEPTION);
             throw ex;
         }
         ResponseEntity<Result> response = util.get(RESPONSE);
@@ -114,7 +114,7 @@ public class Steps extends BaseTest {
     }
 
     @And("^there is not any error in the response$")
-    public void thereIsNotAnyErrorInTheResponse() throws Throwable {
+    public void thereIsNotAnyErrorInTheResponse() {
         if (util.containsKey(RESPONSE)) {
             try {
                 ResponseEntity<Result> response = util.get(RESPONSE);
@@ -839,5 +839,236 @@ public class Steps extends BaseTest {
                 LinkList.class,
                 (String)util.get(INVENTORY_KEY));
         util.put(RESPONSE, result);
+    }
+
+    @Given("^there are items linked to the root item in the database$")
+    public void thereAreItemsLinkedToTheRootItemInTheDatabase() {
+        // imports an ansible inventory
+        anInventoryFileExists();
+        theInventoryKeyIsKnown();
+        theInventoryUploadURLIsKnown();
+        anHTTPPUTRequestWithTheInventoryPayloadIsExecuted();
+        thereIsNotAnyErrorInTheResponse();
+    }
+
+    @Given("^the URL of the snapshot create endpoint is known$")
+    public void theURLOfTheSnapshotCreateEndpointIsKnown() {
+        util.put(SNAPSHOT_CREATE_URL, String.format("%s/snapshot", baseUrl));
+    }
+
+    @When("^a snapshot creation is requested$")
+    public void aSnapshotCreationIsRequested() {
+        String url = util.get(SNAPSHOT_CREATE_URL);
+        String payload = util.get(SNAPSHOT_CREATE_PAYLOAD);
+        Map<String, Object> vars = new HashMap<>();
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.POST, getEntity(payload), Result.class, vars);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    @Given("^a payload exists with the data required to create the snapshot$")
+    public void aPayloadExistsWithTheDataRequiredToCreateTheSnapshot() {
+        util.put(SNAPSHOT_CREATE_PAYLOAD, util.getFile("payload/create_snapshot.json"));
+    }
+
+    @Then("^the result contains no errors$")
+    public void theResultContainsNoErrors() {
+        ResponseEntity<Result> result = util.get(RESPONSE);
+        if(result.getBody().isError()){
+            throw new RuntimeException(String.format("Result contains an error as follows: '%s'", result.getBody().getMessage()));
+        };
+    }
+
+    @Given("^the URL of the snapshot update endpoint is known$")
+    public void theURLOfTheSnapshotUpdateEndpointIsKnown() {
+        util.put(SNAPSHOT_UPDATE_URL, String.format("%s/snapshot/{root_item_key}/{label}", baseUrl));
+    }
+
+    @Given("^the snapshot already exists$")
+    public void theSnapshotAlreadyExists() {
+        try {
+            // replays create_snapshot.feature
+            theURLOfTheSnapshotCreateEndpointIsKnown();
+            thereAreItemsLinkedToTheRootItemInTheDatabase();
+            aPayloadExistsWithTheDataRequiredToCreateTheSnapshot();
+            aSnapshotCreationIsRequested();
+            theResponseCodeIs(200);
+            theResultContainsNoErrors();
+        } catch (Exception ex) {
+            if (ex.getMessage().contains("duplicate key value violates unique constraint")) {
+                // the snapshot is already in the database so do nothing
+            } else {
+                throw ex;
+            }
+        }
+    }
+
+    @Given("^a payload exists with the data required to update the snapshot$")
+    public void aPayloadExistsWithTheDataRequiredToUpdateTheSnapshot() {
+        util.put(SNAPSHOT_UPDATE_PAYLOAD, util.getFile("payload/update_snapshot.json"));
+    }
+
+    @When("^a snapshot update is requested$")
+    public void aSnapshotUpdateIsRequested() {
+        String url = util.get(SNAPSHOT_UPDATE_URL);
+        String payload = util.get(SNAPSHOT_UPDATE_PAYLOAD);
+        String currentLabel = util.get(SNAPSHOT_LABEL);
+        String itemRootKey = util.get(SNAPSHOT_ITEM_ROOT_KEY);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("root_item_key", itemRootKey);
+        vars.put("label", currentLabel);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.PUT, getEntity(payload), Result.class, vars);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    @Given("^the item root key of the snapshot is known$")
+    public void theItemRootKeyOfTheSnapshotIsKnown() {
+        util.put(SNAPSHOT_ITEM_ROOT_KEY, "test_inventory");
+    }
+
+    @Given("^the current label of the snapshot is known$")
+    public void theCurrentLabelOfTheSnapshotIsKnown() {
+        util.put(SNAPSHOT_LABEL, "v1");
+    }
+
+    @Given("^the URL of the snapshot delete endpoint is known$")
+    public void theURLOfTheSnapshotDeleteEndpointIsKnown() {
+        util.put(SNAPSHOT_DELETE_URL, String.format("%s/snapshot/{root_item_key}/{label}", baseUrl));
+    }
+
+    @When("^a snapshot delete is requested$")
+    public void aSnapshotDeleteIsRequested() {
+        String url = util.get(SNAPSHOT_DELETE_URL);
+        String currentLabel = util.get(SNAPSHOT_LABEL);
+        String itemRootKey = util.get(SNAPSHOT_ITEM_ROOT_KEY);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("root_item_key", itemRootKey);
+        vars.put("label", currentLabel);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.DELETE, getEntity(), Result.class, vars);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    @Given("^the URL of the snapshot get endpoint is known$")
+    public void theURLOfTheSnapshotGetEndpointIsKnown() {
+        util.put(SNAPSHOT_LIST_URL, String.format("%s/snapshot/{root_item_key}", baseUrl));
+    }
+
+    @Given("^there are snapshots for a given item in the database$")
+    public void thereAreSnapshotsForAGivenItemInTheDatabase() {
+        // for now only puts one snapshot in the database
+        theSnapshotAlreadyExists();
+    }
+
+    @Given("^the item root key of the snapshots is known$")
+    public void theItemRootKeyOfTheSnapshotsIsKnown() {
+        util.put(SNAPSHOT_ITEM_ROOT_KEY, "test_inventory");
+    }
+
+    @When("^a snapshot list for an item is requested$")
+    public void aSnapshotListForAnItemIsRequested() {
+        String url = util.get(SNAPSHOT_LIST_URL);
+        String itemRootKey = util.get(SNAPSHOT_ITEM_ROOT_KEY);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("root_item_key", itemRootKey);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<SnapshotList> result = client.exchange(
+                url,
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                SnapshotList.class,
+                vars);
+        util.put(RESPONSE, result);
+    }
+
+    @Then("^the response contains more than (\\d+) snapshots$")
+    public void theResponseContainsMoreThanSnapshots(int count) {
+        ResponseEntity<SnapshotList> response = util.get(RESPONSE);
+
+        SnapshotList items = response.getBody();
+        if (items != null) {
+            if (items.getItems().size() <= count) {
+                throw new RuntimeException(
+                    String.format(
+                        "Response does not contain more than '%s' but '%s' snapshots.",
+                        count,
+                        response.getBody().getItems().size()
+                    )
+                );
+            }
+        }
+        else {
+            throw new RuntimeException(
+                String.format(
+                    "Response contains no snapshots where more than '%s' were expected.",
+                    count
+                )
+            );
+        }
+    }
+
+    @Given("^the snapshot does not already exist$")
+    public void theSnapshotDoesNotAlreadyExist() {
+        // remove the snapshot if exists
+        theURLOfTheSnapshotDeleteEndpointIsKnown();
+        theItemRootKeyOfTheSnapshotIsKnown();
+        theCurrentLabelOfTheSnapshotIsKnown();
+        aSnapshotDeleteIsRequested();
+        theResponseCodeIs(200);
+    }
+
+    @Given("^the URL of the item tree get endpoint is known$")
+    public void theURLOfTheItemTreeGetEndpointIsKnown() {
+        util.put(SNAPSHOT_TREE_URL, String.format("%s/tree/{root_item_key}/{label}", baseUrl));
+    }
+
+    @When("^a snapshot tree retrieval for the snapshot is requested$")
+    public void aSnapshotTreeRetrievalForTheSnapshotIsRequested() {
+        String url = util.get(SNAPSHOT_TREE_URL);
+        String itemRootKey = util.get(SNAPSHOT_ITEM_ROOT_KEY);
+        String label = util.get(SNAPSHOT_LABEL);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("root_item_key", itemRootKey);
+        vars.put("label", label);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<ItemTreeData> result = client.exchange(
+                url,
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                ItemTreeData.class,
+                vars);
+        util.put(RESPONSE, result);
+    }
+
+    @Then("^the result contains the tree items and links$")
+    public void theResultContainsTheTreeItemsAndLinks() {
+        ResponseEntity<ItemTreeData> response = util.get(RESPONSE);
+        ItemTreeData tree = response.getBody();
+        if (tree != null) {
+            if (tree.getItems().size() == 0 || tree.getLinks().size() == 0){
+                throw new RuntimeException("Tree does not contain items or links.");
+            }
+        }
     }
 }

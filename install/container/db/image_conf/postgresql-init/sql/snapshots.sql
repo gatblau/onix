@@ -204,7 +204,8 @@ $BODY$;
     version bigint,
     created timestamp with time zone,
     updated timestamp with time zone,
-    changed_by character varying
+    changed_by character varying,
+    item_type_key character varying
   )
     LANGUAGE 'plpgsql'
     COST 100
@@ -213,12 +214,15 @@ $BODY$;
     AS $BODY$
   BEGIN
     RETURN QUERY
-      SELECT i.*
-      FROM get_tree_content('test_inventory', 'v1') s
+      SELECT i.*, it.key as item_type_key
+      FROM get_tree_content(root_item_key_param, label_param) s
       INNER JOIN item_change i
         ON i.id = s.id::bigint
         AND i.version = s.version::bigint
-        AND s.is_item = true;
+        AND s.is_item = true
+      INNER JOIN item_type_change it
+        ON it.id = i.item_type_id
+        AND it.version = i.version;
   END;
   $BODY$;
 
@@ -247,7 +251,10 @@ $BODY$;
     version bigint,
     created timestamp with time zone,
     updated timestamp with time zone,
-    changed_by character varying
+    changed_by character varying,
+    link_type_key character varying,
+    start_item_key character varying,
+    end_item_key character varying
   )
     LANGUAGE 'plpgsql'
     COST 100
@@ -256,12 +263,22 @@ $BODY$;
   AS $BODY$
   BEGIN
     RETURN QUERY
-    SELECT l.*
-    FROM get_tree_content('test_inventory', 'v1') s
+    SELECT l.*, lt.key as link_type_key, start_item.key as start_item_key, end_item.key as end_item_key
+    FROM get_tree_content(root_item_key_param, label_param) s
     INNER JOIN link_change l
       ON l.id = s.id::bigint
-         AND l.version = s.version::bigint
-         AND s.is_item = false;
+        AND l.version = s.version::bigint
+        AND s.is_item = false
+    INNER JOIN link_type_change lt
+      ON lt.id = l.link_type_id
+        AND lt.version = l.version
+    INNER JOIN item_change start_item
+      ON start_item.id = l.start_item_id
+        AND start_item.version = l.version
+    INNER JOIN item_change end_item
+      ON end_item.id = l.end_item_id
+        AND end_item.version = l.version;
+
   END;
   $BODY$;
 
@@ -269,10 +286,10 @@ $BODY$;
     OWNER TO onix;
 
 /*
-  get_snapshot_labels(root_item_key_param): gets a list of snapshots for a specified items that
+  get_item_snapshots(root_item_key_param): gets a list of snapshots for a specified items that
     is the parent for the snapshot tree.
  */
-CREATE OR REPLACE FUNCTION get_snapshot_labels(root_item_key_param character varying)
+CREATE OR REPLACE FUNCTION get_item_snapshots(root_item_key_param character varying)
 RETURNS TABLE(
   id integer,
   label character varying,
@@ -294,12 +311,12 @@ AS $BODY$
 BEGIN
   RETURN QUERY
   SELECT *
-  FROM snapshot
-  WHERE root_item_key = root_item_key_param;
+  FROM snapshot s
+  WHERE s.root_item_key = root_item_key_param;
 END;
 $BODY$;
 
-ALTER FUNCTION get_snapshot_labels(character varying)
+ALTER FUNCTION get_item_snapshots(character varying)
   OWNER TO onix;
 
 END

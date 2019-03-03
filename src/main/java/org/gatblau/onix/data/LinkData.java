@@ -34,6 +34,10 @@ public class LinkData implements Serializable {
     private JSONObject meta;
     private String startItemKey;
     private String endItemKey;
+    private String created;
+    private String updated;
+    private Integer version;
+    private String changedBy;
 
     public String getKey() {
         return key;
@@ -89,5 +93,37 @@ public class LinkData implements Serializable {
 
     public void setEndItemKey(String endItemKey) {
         this.endItemKey = endItemKey;
+    }
+
+    public String getChangedBy() {
+        return changedBy;
+    }
+
+    public void setChangedBy(String changedBy) {
+        this.changedBy = changedBy;
+    }
+
+    public String getCreated() {
+        return created;
+    }
+
+    public void setCreated(String created) {
+        this.created = created;
+    }
+
+    public String getUpdated() {
+        return updated;
+    }
+
+    public void setUpdated(String updated) {
+        this.updated = updated;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 }

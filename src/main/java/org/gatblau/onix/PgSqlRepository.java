@@ -784,6 +784,133 @@ public class PgSqlRepository implements DbRepository {
         return "SELECT delete_link_rules()";
     }
 
+    /* snapshots */
+    @Override
+    public Result createSnapshot(JSONObject json) {
+        Result result = new Result();
+        Object name = json.get("name");
+        Object description = json.get("description");
+        Object label = json.get("label");
+        Object rootItemKey = json.get("rootItemKey");
+        try {
+            db.prepare(getCreateSnapshotSQL());
+            db.setString(1, (rootItemKey != null) ? (String) rootItemKey : null); // root item key
+            db.setString(3, (name != null) ? (String) name : null); // name_param
+            db.setString(4, (description != null) ? (String) description : null); // description_param
+            db.setString(2, (label != null) ? (String) label : null); // label
+            db.setString(5, getUser()); // changed_by_param
+            result.setError(!db.execute());
+            result.setOperation("I");
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
+        }
+        finally {
+            db.close();
+        }
+        return result;
+    }
+
+    @Override
+    public Result updateSnapshot(String rootItemKey, String currentLabel, JSONObject json) {
+        Result result = new Result();
+        Object name = json.get("name");
+        Object description = json.get("description");
+        Object newLabel = json.get("label");
+        Object version = json.get("version");
+        try {
+            db.prepare(getUpdateSnapshotSQL());
+            db.setString(1, (rootItemKey != null) ? (String) rootItemKey : null); // root item key
+            db.setString(2, (currentLabel != null) ? (String) currentLabel : null); // current_label
+            db.setString(3, (newLabel != null) ? (String) newLabel : null); // new_label
+            db.setString(4, (name != null) ? (String) name : null); // name_param
+            db.setString(5, (description != null) ? (String) description : null); // description_param
+            db.setString(6, getUser()); // changed_by_param
+            db.setObject(7, version); // version_param
+            result.setOperation(db.executeQueryAndRetrieveStatus("update_snapshot"));
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
+        }
+        finally {
+            db.close();
+        }
+        return result;
+    }
+
+    @Override
+    public Result deleteSnapshot(String rootItemKey, String label) {
+        Result result = new Result();
+        try {
+            db.prepare(getDeleteSnapshotSQL());
+            db.setString(1, (rootItemKey != null) ? (String) rootItemKey : null); // root item key
+            db.setString(2, (label != null) ? (String) label : null); // current_label
+            result.setError(!db.execute());
+            result.setOperation("D");
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
+        }
+        finally {
+            db.close();
+        }
+        return result;
+    }
+
+    @Override
+    public SnapshotList getItemSnapshots(String rootItemKey) {
+        SnapshotList snapshots = new SnapshotList();
+        try {
+            db.prepare(getGetItemSnapshotsSQL());
+            db.setString(1, rootItemKey); // root_item_key_param
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                snapshots.getItems().add(util.toSnapshotData(set));
+            }
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        finally {
+            db.close();
+        }
+        return snapshots;
+    }
+
+    @Override
+    public ItemTreeData getItemTree(String rootItemKey, String label) {
+        ItemTreeData tree = new ItemTreeData();
+        try {
+            db.prepare(getGetTreeItemsForSnapshotSQL());
+            db.setString(1, rootItemKey); // root_item_key_param
+            db.setString(2, label); // label_param
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                tree.getItems().add(util.toItemData(set));
+            }
+            db.prepare(getGetTreeLinksForSnapshotSQL());
+            db.setString(1, rootItemKey); // root_item_key_param
+            db.setString(2, label); // label_param
+            set = db.executeQuery();
+            while (set.next()) {
+                tree.getLinks().add(util.toLinkData(set));
+            }
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        finally {
+            db.close();
+        }
+        return tree;
+    }
+
     @Override
     public String getSetLinkRuleSQL() {
         return "SELECT set_link_rule(" +
@@ -817,6 +944,61 @@ public class PgSqlRepository implements DbRepository {
         return "SELECT * FROM find_child_items(" +
                     "?::character varying," + // parent_item_key_param
                     "?::character varying" + // link_type_key_param
+                ")";
+    }
+
+    @Override
+    public String getCreateSnapshotSQL() {
+        return "SELECT create_snapshot(" +
+                "?::character varying," + // root_item_key_param
+                "?::character varying," + // snapshot_label_param
+                "?::character varying," + // snapshot_name_param
+                "?::text," + // snapshot_description_param
+                "?::character varying" + // changed_by
+                ")";
+    }
+
+    @Override
+    public String getDeleteSnapshotSQL() {
+        return "SELECT delete_snapshot(" +
+                "?::character varying," + // root_item_key_param
+                "?::character varying" + // snapshot_label_param
+                ")";
+    }
+
+    @Override
+    public String getUpdateSnapshotSQL() {
+        return "SELECT update_snapshot(" +
+                "?::character varying," + // root_item_key_param
+                "?::character varying," + // current_label_param
+                "?::character varying," + // new_label_param
+                "?::character varying," + // snapshot_name_param
+                "?::text," + // snapshot_description_param
+                "?::character varying," + // changed_by_param
+                "?::bigint" + // version_param
+                ")";
+    }
+
+    @Override
+    public String getGetItemSnapshotsSQL() {
+        return "SELECT * FROM get_item_snapshots(" +
+                "?::character varying" + // root_item_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetTreeItemsForSnapshotSQL() {
+        return "SELECT * FROM get_tree_items(" +
+                "?::character varying," + // root_item_key_param
+                "?::character varying" + // snapshot_label_param
+                ")";
+    }
+
+    @Override
+    public String getGetTreeLinksForSnapshotSQL() {
+        return "SELECT * FROM get_tree_links(" +
+                "?::character varying," + // root_item_key_param
+                "?::character varying" + // snapshot_label_param
                 ")";
     }
 

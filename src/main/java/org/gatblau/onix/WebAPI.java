@@ -431,6 +431,84 @@ public class WebAPI {
     }
 
     /*
+        SNAPSHOT
+     */
+    @ApiOperation(
+            value = "Creates a new snapshot.",
+            notes = "A snapshot is a set of items and their links at a specific point in time.")
+    @RequestMapping(
+            path = "/snapshot"
+            , method = RequestMethod.POST)
+    public ResponseEntity<Result> createSnapshot(
+            @RequestBody JSONObject payload
+    ) {
+        return ResponseEntity.ok(data.createSnapshot(payload));
+    }
+
+    @ApiOperation(
+            value = "Updates an existing snapshot.",
+            notes = "A snapshot is a set of items and their links at a specific point in time.")
+    @RequestMapping(
+            path = "/snapshot/{root_item_key}/{label}"
+            , method = RequestMethod.PUT)
+    public ResponseEntity<Result> updateSnapshot(
+            @PathVariable("root_item_key") String rootItemKey,
+            @PathVariable("label") String label,
+            @RequestBody JSONObject payload
+    ) {
+        return ResponseEntity.ok(data.updateSnapshot(rootItemKey, label, payload));
+    }
+
+    @ApiOperation(
+            value = "Deletes an existing snapshot.",
+            notes = "A snapshot is a set of items and their links at a specific point in time.")
+    @RequestMapping(
+            path = "/snapshot/{root_item_key}/{label}"
+            , method = RequestMethod.DELETE)
+    public ResponseEntity<Result> deleteSnapshot(
+            @PathVariable("root_item_key") String rootItemKey,
+            @PathVariable("label") String label
+    ) {
+        return ResponseEntity.ok(data.deleteSnapshot(rootItemKey, label));
+    }
+
+    @ApiOperation(
+            value = "Get a list of available snapshots for a specific item.",
+            notes = "")
+    @RequestMapping(
+            path = "/snapshot/{root_item_key}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<SnapshotList> getItemSnapshots(
+            @PathVariable("root_item_key") String rootItemKey
+    ) {
+        SnapshotList snapshots = data.getItemSnapshots(rootItemKey);
+        return ResponseEntity.ok(snapshots);
+    }
+
+    // /tree/{root_item_key}/{label}
+
+    /*
+       ITEM TREE
+     */
+    @ApiOperation(
+            value = "Get a list of items and links in a specified item snapshot.",
+            notes = "")
+    @RequestMapping(
+            path = "/tree/{root_item_key}/{label}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<ItemTreeData> getItemTree(
+            @PathVariable("root_item_key") String rootItemKey,
+            @PathVariable("label") String label
+    ) {
+        ItemTreeData tree = data.getItemTree(rootItemKey, label);
+        return ResponseEntity.ok(tree);
+    }
+
+    /*
         helper methods
      */
     private ZonedDateTime getZonedDateTime(@RequestParam(value = "createdFrom", required = false) String createdFromDate) {

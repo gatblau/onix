@@ -54,12 +54,6 @@ BEGIN
         ALTER TABLE item_type
             OWNER to onix;
 
-        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (1, 'INVENTORY', 'Ansible Inventory', 'An Ansible inventory.', TRUE, 'onix');
-        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (2, 'HOST-GROUP-GROUP', 'Group of Host Groups', 'An Ansible group of host groups.', TRUE, 'onix');
-        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (3, 'HOST-GROUP', 'Host Group', 'An Ansible host group.', TRUE, 'onix');
-        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (4, 'HOST', 'Host', 'An Operating System Host.', TRUE, 'onix');
-        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (5, 'LICENCE', 'A software licence.', 'Describes the information pertaining to a software licence.', TRUE, 'onix');
-
     END IF;
 
     ---------------------------------------------------------------------------
@@ -105,6 +99,12 @@ BEGIN
         CREATE TRIGGER item_type_change
             AFTER INSERT OR UPDATE OR DELETE ON item_type
             FOR EACH ROW EXECUTE PROCEDURE change_item_type();
+
+        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (1, 'INVENTORY', 'Ansible Inventory', 'An Ansible inventory.', TRUE, 'onix');
+        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (2, 'HOST-GROUP-GROUP', 'Group of Host Groups', 'An Ansible group of host groups.', TRUE, 'onix');
+        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (3, 'HOST-GROUP', 'Host Group', 'An Ansible host group.', TRUE, 'onix');
+        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (4, 'HOST', 'Host', 'An Operating System Host.', TRUE, 'onix');
+        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (5, 'LICENCE', 'A software licence.', 'Describes the information pertaining to a software licence.', TRUE, 'onix');
 
     END IF;
 
@@ -257,10 +257,6 @@ BEGIN
 
         ALTER TABLE link_type OWNER to onix;
 
-        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (1, 'INVENTORY', 'Inventory Link', 'Links items describing an inventory.', TRUE, 'onix');
-        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (2, 'LICENSE', 'Licence Link', 'Links items describing licence usage.', TRUE, 'onix');
-        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (3, 'NETWORK', 'Network Link', 'Links items describing network connections.', TRUE, 'onix');
-        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (4, 'WEB-CONTENT', 'Web Content Link', 'Links items describing web content.', TRUE, 'onix');
     END IF;
 
     ---------------------------------------------------------------------------
@@ -306,6 +302,11 @@ BEGIN
         CREATE TRIGGER link_type_change
             AFTER INSERT OR UPDATE OR DELETE ON link_type
             FOR EACH ROW EXECUTE PROCEDURE change_link_type();
+
+        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (1, 'INVENTORY', 'Inventory Link', 'Links items describing an inventory.', TRUE, 'onix');
+        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (2, 'LICENSE', 'Licence Link', 'Links items describing licence usage.', TRUE, 'onix');
+        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (3, 'NETWORK', 'Network Link', 'Links items describing network connections.', TRUE, 'onix');
+        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (4, 'WEB-CONTENT', 'Web Content Link', 'Links items describing web content.', TRUE, 'onix');
 
     END IF;
 
@@ -506,11 +507,6 @@ BEGIN
 
     END IF;
 
-    INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (1, 'INVENTORY-HOST-GROUP-GROUP', 'Inventory to Group of Host Groups link rule.', 'Allows to link an inventory with a group of host groups.', 1, 1, 2, 'onix', TRUE);
-    INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (2, 'INVENTORY->HOST-GROUP', 'Inventory to Host-Group link rule.', 'Allows to link an inventory item with a host group item.', 1, 1, 3, 'onix', TRUE);
-    INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (3, 'HOST-GROUP-GROUP->HOST-GROUP', 'Group of Host Groups to Groups link rule.', 'Allows to link a group of host groups with a host group.', 1, 2, 3, 'onix', TRUE);
-    INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (4, 'HOST-GROUP->HOST', 'Host Group to Host link rule.', 'Allows to link a host group item with a host item.', 1, 3, 4, 'onix', TRUE);
-
     ---------------------------------------------------------------------------
     -- LINK_RULE CHANGE
     ---------------------------------------------------------------------------
@@ -557,6 +553,11 @@ BEGIN
         CREATE TRIGGER link_rule_change
             AFTER INSERT OR UPDATE OR DELETE ON link_rule
             FOR EACH ROW EXECUTE PROCEDURE change_link_rule();
+
+        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (1, 'INVENTORY-HOST-GROUP-GROUP', 'Inventory to Group of Host Groups link rule.', 'Allows to link an inventory with a group of host groups.', 1, 1, 2, 'onix', TRUE);
+        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (2, 'INVENTORY->HOST-GROUP', 'Inventory to Host-Group link rule.', 'Allows to link an inventory item with a host group item.', 1, 1, 3, 'onix', TRUE);
+        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (3, 'HOST-GROUP-GROUP->HOST-GROUP', 'Group of Host Groups to Groups link rule.', 'Allows to link a group of host groups with a host group.', 1, 2, 3, 'onix', TRUE);
+        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (4, 'HOST-GROUP->HOST', 'Host Group to Host link rule.', 'Allows to link a host group item with a host item.', 1, 3, 4, 'onix', TRUE);
 
     END IF;
 
