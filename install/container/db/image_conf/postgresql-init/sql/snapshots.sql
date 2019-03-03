@@ -135,7 +135,7 @@ END;
 $BODY$;
 
   /*
-    delete_item
+    delete_snapshot: deletes the specified snapshot.
    */
   CREATE OR REPLACE FUNCTION delete_snapshot(
     root_item_key_param character varying,
@@ -155,6 +155,152 @@ $BODY$;
 
   ALTER FUNCTION delete_snapshot(character varying, character varying)
     OWNER TO onix;
+
+  /*
+    get_tree_content(root_item_key_param, label_param): inspects the snapshot hstores for information
+      about a specific snapshot items and links and retrieve a set of ids and versions for them.
+   */
+  CREATE OR REPLACE FUNCTION get_tree_content(
+    root_item_key_param character varying,
+    label_param character varying
+  )
+    RETURNS TABLE(id text, version text, is_item boolean)
+    LANGUAGE 'plpgsql'
+    VOLATILE
+  AS $BODY$
+  DECLARE
+    item_data HSTORE;
+    link_data HSTORE;
+  BEGIN
+    item_data := (SELECT s.item_data FROM snapshot s WHERE s.label = label_param AND s.root_item_key = root_item_key_param);
+    link_data := (SELECT s.link_data FROM snapshot s WHERE s.label = label_param AND s.root_item_key = root_item_key_param);
+    RETURN QUERY SELECT *, true AS is_item FROM each(item_data);
+    RETURN QUERY SELECT *, false AS is_item FROM each(link_data);
+  END;
+  $BODY$;
+
+  ALTER FUNCTION get_tree_content(character varying, character varying)
+    OWNER TO onix;
+
+  /*
+    get_tree_items(root_item_key_param, label_param): gets a list of all the items that are part
+      of a snapshot tree for a specific parent item and a label.
+  */
+  CREATE OR REPLACE FUNCTION get_tree_items(
+    root_item_key_param character varying,
+    label_param character varying
+  )
+  RETURNS TABLE(
+    operation character,
+    changed timestamp with time zone,
+    id bigint, key character varying,
+    name character varying,
+    description text,
+    meta jsonb,
+    tag text[],
+    attribute hstore,
+    status smallint,
+    item_type_id integer,
+    version bigint,
+    created timestamp with time zone,
+    updated timestamp with time zone,
+    changed_by character varying
+  )
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+    ROWS 1000
+    AS $BODY$
+  BEGIN
+    RETURN QUERY
+      SELECT i.*
+      FROM get_tree_content('test_inventory', 'v1') s
+      INNER JOIN item_change i
+        ON i.id = s.id::bigint
+        AND i.version = s.version::bigint
+        AND s.is_item = true;
+  END;
+  $BODY$;
+
+  ALTER FUNCTION get_tree_items(character varying, character varying)
+    OWNER TO onix;
+
+  /*
+    get_tree_links(root_item_key_param, label_param): gets a list of all the links that are part
+      of a snapshot tree for a specific parent item and a label.
+   */
+  CREATE OR REPLACE FUNCTION get_tree_links(
+    root_item_key_param character varying,
+    label_param character varying
+  )
+  RETURNS TABLE(
+    operation character,
+    changed timestamp with time zone,
+    id bigint, key character varying,
+    link_type_id integer,
+    start_item_id bigint,
+    end_item_id bigint,
+    description text,
+    meta jsonb,
+    tag text[],
+    attribute hstore,
+    version bigint,
+    created timestamp with time zone,
+    updated timestamp with time zone,
+    changed_by character varying
+  )
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+    ROWS 1000
+  AS $BODY$
+  BEGIN
+    RETURN QUERY
+    SELECT l.*
+    FROM get_tree_content('test_inventory', 'v1') s
+    INNER JOIN link_change l
+      ON l.id = s.id::bigint
+         AND l.version = s.version::bigint
+         AND s.is_item = false;
+  END;
+  $BODY$;
+
+  ALTER FUNCTION get_tree_links(character varying, character varying)
+    OWNER TO onix;
+
+/*
+  get_snapshot_labels(root_item_key_param): gets a list of snapshots for a specified items that
+    is the parent for the snapshot tree.
+ */
+CREATE OR REPLACE FUNCTION get_snapshot_labels(root_item_key_param character varying)
+RETURNS TABLE(
+  id integer,
+  label character varying,
+  root_item_key character varying,
+  name character varying,
+  description text,
+  item_data hstore,
+  link_data hstore,
+  version bigint,
+  created timestamp with time zone,
+  updated timestamp with time zone,
+  changed_by character varying
+)
+  LANGUAGE 'plpgsql'
+  COST 100
+  VOLATILE
+  ROWS 1000
+AS $BODY$
+BEGIN
+  RETURN QUERY
+  SELECT *
+  FROM snapshot
+  WHERE root_item_key = root_item_key_param;
+END;
+$BODY$;
+
+ALTER FUNCTION get_snapshot_labels(character varying)
+  OWNER TO onix;
 
 END
 $$;
