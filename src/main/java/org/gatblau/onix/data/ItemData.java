@@ -41,6 +41,7 @@ public class ItemData implements Serializable {
     private String created;
     private String updated;
     private Integer version;
+    private String changedBy;
 
     public ItemData() {
     }
@@ -147,5 +148,13 @@ public class ItemData implements Serializable {
 
     public void setAttribute(JSONObject attribute) {
         this.attribute = attribute;
+    }
+
+    public String getChangedBy() {
+        return changedBy;
+    }
+
+    public void setChangedBy(String changedBy) {
+        this.changedBy = changedBy;
     }
 }

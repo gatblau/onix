@@ -138,6 +138,7 @@ public class Lib implements InitializingBean {
     }
 
     public LinkData toLinkData(ResultSet set) throws SQLException, ParseException, IOException {
+        Date updated = set.getDate("updated");
         LinkData link = new LinkData();
         link.setKey(set.getString("key"));
         link.setDescription(set.getString("description"));
@@ -146,6 +147,9 @@ public class Lib implements InitializingBean {
         link.setMeta(toJSON(set.getObject("meta")));
         link.setTag(toList(set.getObject("tag")));
         link.setAttribute(toJSON(set.getObject("attribute")));
+        link.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+        link.setVersion(set.getInt("version"));
+        link.setChangedBy(set.getString("changed_by"));
         return link;
     }
 
@@ -194,6 +198,7 @@ public class Lib implements InitializingBean {
         linkType.setUpdated((updated != null) ? dateFormat.format(updated) : null);
         linkType.setVersion(set.getInt("version"));
         linkType.setAttribute(toJSON(set.getObject("attr_valid")));
+        linkType.setChangedBy(set.getString("changed_by"));
         return linkType;
     }
 
@@ -210,6 +215,22 @@ public class Lib implements InitializingBean {
         linkRule.setCreated(dateFormat.format(set.getDate("created")));
         linkRule.setUpdated((updated != null) ? dateFormat.format(updated) : null);
         linkRule.setVersion(set.getInt("version"));
+        linkRule.setChangedBy(set.getString("changed_by"));
         return linkRule;
+    }
+
+    public SnapshotData toSnapshotData(ResultSet set) throws SQLException {
+        Date updated = set.getDate("updated");
+
+        SnapshotData snapshot = new SnapshotData();
+        snapshot.setLabel(set.getString("label"));
+        snapshot.setName(set.getString("name"));
+        snapshot.setDescription(set.getString("description"));
+        snapshot.setRootItemKey(set.getString("root_item_key"));
+        snapshot.setCreated(dateFormat.format(set.getDate("created")));
+        snapshot.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+        snapshot.setVersion(set.getInt("version"));
+        snapshot.setChangedBy(set.getString("changed_by"));
+        return snapshot;
     }
 }

@@ -33,6 +33,7 @@ public class LinkTypeData implements Serializable {
     private String created;
     private String updated;
     private Integer version;
+    private String changedBy;
 
     public LinkTypeData() {
     }
@@ -99,5 +100,13 @@ public class LinkTypeData implements Serializable {
 
     public void setVersion(Integer version) {
         this.version = version;
+    }
+
+    public String getChangedBy() {
+        return changedBy;
+    }
+
+    public void setChangedBy(String changedBy) {
+        this.changedBy = changedBy;
     }
 }

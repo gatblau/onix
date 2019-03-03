@@ -21,10 +21,7 @@ package org.gatblau.onix;
 
 import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -120,4 +117,21 @@ public interface DbRepository {
     String getFindLinkRulesSQL();
 
     String getFindChildItemsSQL();
+
+    String getCreateSnapshotSQL();
+    String getDeleteSnapshotSQL();
+    String getUpdateSnapshotSQL();
+    String getGetItemSnapshotsSQL();
+
+    String getGetTreeItemsForSnapshotSQL();
+    String getGetTreeLinksForSnapshotSQL();
+
+    /* Snapshots */
+    Result createSnapshot(JSONObject payload);
+    Result updateSnapshot(String rootItemKey, String label, JSONObject payload);
+    Result deleteSnapshot(String rootItemKey, String label);
+    SnapshotList getItemSnapshots(String rootItemKey);
+
+    /* Item Tree */
+    ItemTreeData getItemTree(String rootItemKey, String label);
 }
