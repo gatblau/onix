@@ -1,0 +1,43 @@
+#
+#    Onix CMDB - Copyright (c) 2018-2019 by www.gatblau.org
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+#    Unless required by applicable law or agreed to in writing, software distributed under
+#    the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+#    either express or implied.
+#    See the License for the specific language governing permissions and limitations under the License.
+#
+#    Contributors to this project, hereby assign copyright in this code to the project,
+#    to be licensed under the same terms as the rest of the code.
+#
+#   Docker Compose file to get the ONIX CMDB up and running
+#   use as follows:
+#     docker-compose up -d | docker-compose down, stop, start
+#
+version: '3'
+services:
+  onixdb:
+    image: creoworks/onixdb-snapshot:v1.0.0-f2b00fb-040319234901
+    container_name: onixdb
+    restart: always
+    environment:
+      - POSTGRESQL_ADMIN_PASSWORD=onix
+    ports:
+      - "5432:5432"
+  onixwapi:
+    image: creoworks/onixwapi-snapshot:v1.0.0-f2b00fb-040319234901
+    depends_on:
+      - onixdb
+    container_name: onixwapi
+    restart: always
+    environment:
+      - DB_HOST=onixdb
+      - WAPI_AUTH_MODE=none
+#     uncomment below to enable basic authentication
+#      - WAPI_AUTH_MODE=basic
+#      - WAPI_ADMIN_USER=admin
+#      - WAPI_ADMIN_PWD=0n1x
+    ports:
+      - "8080:8080"
