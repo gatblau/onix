@@ -28,10 +28,17 @@ if [ ! -x "$(command -v ./s2i)" ]; then
     exit 1
 fi
 
+VERSION=$1
+if [ $# -eq 0 ]; then
+    echo "An image version is required for Onix. Provide it as a parameter."
+    echo "Usage is: sh build.sh [ONIX VERSION] - e.g. sh build.sh v1.0.0"
+    exit 1
+fi
+
 # creates a TAG for the newly built docker images
-DATE=`date '+%d%m%y-%H%M%S'`
+DATE=`date '+%d%m%y%H%M%S'`
 HASH=`git rev-parse --short HEAD`
-ONIXTAG="${HASH}-${DATE}"
+ONIXTAG="${VERSION}-${HASH}-${DATE}"
 echo "Onix TAG is: ${ONIXTAG}"
 
 # builds the onix-db image
