@@ -31,6 +31,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.io.Console;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -560,22 +561,13 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public String getInventory(String key) {
+    public String getInventory(String key, String label) {
         StringBuilder builder = new StringBuilder();
-        ItemList items = getChildItems(key);
-        for (ItemData item : items.getItems()) {
-            if (item.getItemType().equalsIgnoreCase("HOST-GROUP-GROUP")) {
-                builder
-                        .append("[")
-                        .append(item.getName())
-                        .append(":children]")
-                        .append(System.getProperty("line.separator"));
-            } else {
-
-            }
-            builder.append(item.getName()).append(System.getProperty("line.separator"));
-        }
-        return null;
+        ItemTreeData tree = getItemTree(key, label);
+        Inventory inventory = new Inventory(tree);
+        String inventoryString = inventory.toString();
+        System.out.println(inventoryString);
+        return inventoryString;
     }
 
     private ItemList getChildItems(String parentKey) {

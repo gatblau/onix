@@ -2,12 +2,15 @@ package org.gatblau.onix.inv;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.gatblau.onix.Lib;
+import org.gatblau.onix.data.ItemData;
+import org.gatblau.onix.data.ItemTreeData;
+import org.gatblau.onix.data.LinkData;
 import org.gatblau.onix.parser.Lexer;
 import org.gatblau.onix.parser.LexerRule;
 import org.gatblau.onix.parser.LexerToken;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.omg.CORBA.Environment;
 
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -18,7 +21,7 @@ import java.util.Map;
 public class Inventory {
     private static final String EMPTY_LINE = "EMPTY_LINE";
     private static final String HOST_GROUP = "HOST-GROUP";
-    private static final String GROUP_OF_HOST_GROUPS = "GROUP-OF-HOST-GROUPS";
+    private static final String GROUP_OF_HOST_GROUPS = "HOST-GROUP-GROUP";
     private static final String ITEM = "ITEM";
     private static final String HOST_VARS = "HOST-VARS";
     private static final String COMMENT = "COMMENT";
@@ -27,13 +30,151 @@ public class Inventory {
 
     private NodeList nodes = new NodeList();
 
+    /*
+        builds an inventory from a flat inventory file
+     */
     public Inventory(String inventory) {
         List<LexerToken> tokens = parse(inventory);
         populate(tokens);
     }
 
+    /*
+        builds an inventory from item tree data
+     */
+    public Inventory(ItemTreeData tree) {
+        for (ItemData item : tree.getItems()) {
+            processItem(tree, item, nodes);
+        }
+    }
+
+    private void processItem(ItemTreeData tree, ItemData item, NodeList nodes) {
+        String name = item.getName();
+        Node node = this.nodes.find(name);
+        if (node == null) {
+            node = new Node(item.getName(), getType(item.getItemType()), (JSONObject)item.getMeta().get("vars"));
+            nodes.add(node);
+            List<ItemData> children = getChildren(tree, item);
+            for (ItemData childData : children) {
+                processItem(tree, childData, node.getChildren());
+            }
+        }
+    }
+
+    private List<ItemData> getChildren(ItemTreeData tree, ItemData item) {
+        List<ItemData> items = new ArrayList<>();
+        for (LinkData link : tree.getLinks()) {
+            if (link.getStartItemKey().equals(item.getKey())) {
+                String childItemKey = link.getEndItemKey();
+                for (ItemData child : tree.getItems()){
+                    if (child.getKey().equals(childItemKey)) {
+                        items.add(child);
+                    }
+                }
+            }
+        }
+        return items;
+    }
+
+    private Node.NodeType getType(String itemType) {
+        switch (itemType){
+            case "HOST-GROUP":
+                return Node.NodeType.GROUP;
+            case "HOST-GROUP-GROUP":
+                return Node.NodeType.PARENT_GROUP;
+            case "HOST":
+                return Node.NodeType.HOST;
+        }
+        throw new RuntimeException(String.format("Mapping not found for ite type '%s'", itemType));
+    }
+
     public List<Node> getNodes() {
         return nodes;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        WriteParentGroups(builder);
+        WriteHostGroups(builder);
+        WriteGroupsVars(builder);
+        return builder.toString();
+    }
+
+    private void WriteGroupsVars(StringBuilder builder) {
+        for (Node node : nodes) {
+            switch (node.getType()) {
+                case PARENT_GROUP: {
+                    if (node.getVars().size() > 0) {
+                        WriteGroupVars(builder, node);
+                    }
+                    for (Node hostGroup : node.getChildren()) {
+                        WriteGroupVars(builder, hostGroup);
+                    }
+                    break;
+                }
+                case GROUP: {
+                    WriteGroupVars(builder, node);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void WriteGroupVars(StringBuilder builder, Node hostGroup) {
+        if (hostGroup.getVars().size() > 0) {
+            builder.append("[").append(hostGroup.getName()).append(":vars]").append(System.lineSeparator());
+            builder.append(new JSONObject(hostGroup.getVars()).toJSONString()).append(System.lineSeparator());
+        }
+    }
+
+    private void WriteParentGroups(StringBuilder builder) {
+        for (Node node : nodes) {
+            switch (node.getType()) {
+                case PARENT_GROUP: {
+                    builder.append("[").append(node.getName()).append(":children]").append(System.lineSeparator());
+                    for (int i = 0; i < node.getChildren().size(); i++) {
+                        Node hostGroup = node.getChildren().get(i);
+                        builder.append(hostGroup.getName()).append(System.lineSeparator());
+                        if (i == hostGroup.getChildren().size() - 1) {
+                            builder.append(System.lineSeparator());
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    private void WriteHostGroups(StringBuilder builder) {
+        for (Node node : nodes) {
+            switch (node.getType()) {
+                case PARENT_GROUP: {
+                    for (Node hostGroup : node.getChildren()) {
+                        WriteHostGroup(builder, hostGroup);
+                    }
+                    break;
+                }
+                case GROUP: {
+                    WriteHostGroup(builder, node);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void WriteHostGroup(StringBuilder builder, Node hostGroup) {
+        builder.append("[").append(hostGroup.getName()).append("]").append(System.lineSeparator());
+        for (int i = 0; i < hostGroup.getChildren().size(); i++) {
+            Node host = hostGroup.getChildren().get(i);
+            builder.append(host.getName());
+            if (host.getVars().size() > 0) {
+                builder.append(" ").append(new JSONObject(host.getVars()).toJSONString());
+            }
+            builder.append(System.lineSeparator());
+            if (i == hostGroup.getChildren().size() - 1) {
+                builder.append(System.lineSeparator());
+            }
+        }
     }
 
     private List<LexerToken> parse(String source) {

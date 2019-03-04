@@ -23,10 +23,10 @@ if [ $# -eq 0 ]; then
 fi
 
 # removes the container
-docker rm -f onix-db
+docker rm -f onixdb
 
 # deletes the image
-docker rmi "onix-db:${TAG}"
+docker rmi "onixdb:${TAG}"
 
 # builds the image
 sh build.sh "${TAG}"
@@ -38,4 +38,4 @@ sh run.sh "${TAG}"
 sleep 5
 
 # shows the logs
-docker logs onix-db
+docker logs onixdb

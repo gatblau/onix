@@ -35,13 +35,13 @@ ONIXTAG="${HASH}-${DATE}"
 echo "Onix TAG is: ${ONIXTAG}"
 
 # builds the onix-db image
-echo building onix-db...
+echo building onixdb...
 cd db
 sh ./build.sh $ONIXTAG
 cd ..
 
-# builds the onix-wapi image
-echo building onix-wapi
+# builds the onixwapi image
+echo building onixwapi
 cd wapi
 sh ./build.sh $ONIXTAG
 cd ..

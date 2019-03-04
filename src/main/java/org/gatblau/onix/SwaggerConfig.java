@@ -43,10 +43,10 @@ public class SwaggerConfig {
     private ApiInfo apiInfo() {
         ApiInfo apiInfo = new ApiInfo(
             "Onix Web API",
-            "The API to access the CMDB.",
-            "0.10",
+            "RESTful Web API for the ONIX CMDB.",
+            "1.0.0",
             "",
-            "gatblau",
+            "gatblau.org",
             "Apache LICENSE-2.0",
             "https://www.apache.org/licenses/LICENSE-2.0");
         return apiInfo;

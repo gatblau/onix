@@ -38,9 +38,9 @@ if [ -n "$images_with_no_tag" ]; then
 fi
 
 # try and delete existing Onix containers
-docker rm -f onix-db
-docker rm -f onix-wapi
+docker rm -f onixdb
+docker rm -f onixwapi
 
 # creates the Onix containers
-docker run --name onix-db -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "gatoazul/onix-db:${ONIXTAG}"
-docker run --name onix-wapi -it -d -p 8080:8080 --link onix-db -eDB_HOST=onix-db "gatoazul/onix-wapi:${ONIXTAG}"
+docker run --name onixdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "creoworks/onixdb:${ONIXTAG}"
+docker run --name onixwapi -it -d -p 8080:8080 --link onix-db -eDB_HOST=onix-db "creoworks/onixwapi:${ONIXTAG}"

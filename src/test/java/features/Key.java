@@ -36,4 +36,5 @@ public class Key {
     public static final String SNAPSHOT_DELETE_URL = "snapshot_delete_url";
     public static final String SNAPSHOT_LIST_URL = "snapshot_list_url";
     public static final String SNAPSHOT_TREE_URL = "snapshot_tree_url";
+    public static final String INVENTORY_LABEL = "inventory_label";
 }
