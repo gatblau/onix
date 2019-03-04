@@ -41,4 +41,4 @@ echo "unzips the application jar file"
 unzip -o ././../../../target/*.jar -d ./tmp
 
 echo "builds the docker image"
-docker build -t creoworks/onixwapi:${TAG} .
+docker build -t creoworks/onixwapi-snapshot:${TAG} .
