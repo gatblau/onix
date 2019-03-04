@@ -25,9 +25,11 @@ import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.print.attribute.standard.Media;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -47,6 +49,24 @@ public class WebAPI {
     private DbRepository data;
 
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+
+    @ApiOperation(
+            value = "Returns information about the service.",
+            notes = "",
+            response = String.class)
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "text/html")
+    public ResponseEntity<String> index() {
+        return ResponseEntity.ok("OK");
+    }
+
+    @ApiOperation(
+            value = "Returns information about the service.",
+            notes = "",
+            response = String.class)
+    @RequestMapping(value = "/info", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<Info> info() {
+        return ResponseEntity.ok(new Info("Onix CMDB Service.", "1.0.0"));
+    }
 
     /*
         ITEMS
@@ -386,15 +406,6 @@ public class WebAPI {
      */
 
     @ApiOperation(
-            value = "Returns OK if the service is up and running.",
-            notes = "Use it as a readiness probe for the service.",
-            response = String.class)
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<Info> index() {
-        return ResponseEntity.ok(new Info("Onix Configuration Management Database Service.", "0.2"));
-    }
-
-    @ApiOperation(
             value = "Removes ALL configuration items and links from the database.",
             notes = "Use at your own risk ONLY for testing of the CMDB!")
     @RequestMapping(path = "/clear", method = RequestMethod.DELETE)
@@ -422,12 +433,13 @@ public class WebAPI {
             value = "Retrieves an existing inventory.",
             notes = "")
     @RequestMapping(
-              path = "/inventory/{key}"
+              path = "/inventory/{key}/{label}"
             , method = RequestMethod.GET)
     public ResponseEntity<String> getInventory(
-            @PathVariable("key") String key
+            @PathVariable("key") String key,
+            @PathVariable("label") String label
     ) throws SQLException, ParseException, IOException {
-        return ResponseEntity.ok(data.getInventory(key));
+        return ResponseEntity.ok(data.getInventory(key, label));
     }
 
     /*
@@ -486,8 +498,6 @@ public class WebAPI {
         SnapshotList snapshots = data.getItemSnapshots(rootItemKey);
         return ResponseEntity.ok(snapshots);
     }
-
-    // /tree/{root_item_key}/{label}
 
     /*
        ITEM TREE

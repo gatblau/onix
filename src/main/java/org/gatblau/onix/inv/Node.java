@@ -31,7 +31,7 @@ public class Node {
         return name;
     }
 
-    public List<Node> getChildren() {
+    public NodeList getChildren() {
         return children;
     }
 
@@ -55,6 +55,14 @@ public class Node {
             }
         }
         return null;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setType(NodeType type) {
+        this.type = type;
     }
 
     public enum NodeType {

@@ -24,4 +24,4 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-docker run --name onix-db -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "gatoazul/onix-db:${TAG}"
+docker run --name onixdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "creoworks/onixdb:${TAG}"

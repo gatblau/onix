@@ -83,7 +83,7 @@ public interface DbRepository {
         INVENTORY
      */
     Result createOrUpdateInventory(String key, String inventory);
-    String getInventory(String key);
+    String getInventory(String key, String label);
 
     /*
         Function Calls

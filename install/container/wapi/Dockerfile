@@ -1,5 +1,5 @@
 FROM openjdk:8-jdk-alpine
-MAINTAINER Gatblau <onix-admin@gatblau.org>
+MAINTAINER Gatblau <onix@gatblau.org>
 VOLUME ./tmp
 ARG DEPENDENCY=tmp
 COPY ${DEPENDENCY}/BOOT-INF/lib /app/lib
