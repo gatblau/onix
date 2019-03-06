@@ -2,3 +2,5 @@
 *.iml
 target
 install/container/wapi/tmp
+install/container/s2i
+src/main/resources/version

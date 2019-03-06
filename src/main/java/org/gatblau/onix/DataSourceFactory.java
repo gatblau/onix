@@ -43,7 +43,6 @@ public class DataSourceFactory {
             ds.setJdbcUrl(connString);
             ds.setUsername(dbuser);
             ds.setPassword(dbpwd);
-//            ds.setDataSourceClassName("org.postgresql.ds.PGSimpleDataSource");
         }
         return ds;
     }

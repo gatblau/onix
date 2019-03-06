@@ -76,9 +76,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .csrf().disable()
                 .authorizeRequests()
                 .antMatchers("/").permitAll()
-                .antMatchers(HttpMethod.GET, "(item|link)/**").hasRole("READER")
-                .antMatchers(HttpMethod.PUT, "(item|link)/**").hasRole("WRITER")
-                .antMatchers(HttpMethod.DELETE, "(item|link)/**").hasRole("WRITER")
+                .antMatchers(HttpMethod.GET, "(item|link|tree|snapshot)/**").hasRole("READER")
+                .antMatchers(HttpMethod.PUT, "(item|link|snapshot)/**").hasRole("WRITER")
+                .antMatchers(HttpMethod.POST, "(snapshot)/**").hasRole("WRITER")
+                .antMatchers(HttpMethod.DELETE, "(item|link|snapshot)/**").hasRole("WRITER")
                 .antMatchers("/**").hasRole("ADMIN")
                 // http basic authentication
                 .and().httpBasic()

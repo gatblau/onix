@@ -25,11 +25,8 @@ import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import javax.print.attribute.standard.Media;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -48,6 +45,9 @@ public class WebAPI {
     @Autowired
     private DbRepository data;
 
+    @Autowired
+    private Info info;
+
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
 
     @ApiOperation(
@@ -65,13 +65,12 @@ public class WebAPI {
             response = String.class)
     @RequestMapping(value = "/info", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<Info> info() {
-        return ResponseEntity.ok(new Info("Onix CMDB Service.", "1.0.0"));
+        return ResponseEntity.ok(info);
     }
 
     /*
         ITEMS
      */
-
     @ApiOperation(
         value = "Creates new item or updates an existing item based on the specified key.",
         notes = "Use this operation to create configuration item if it's not there or update it if it's there.")

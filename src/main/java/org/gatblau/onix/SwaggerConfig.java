@@ -20,6 +20,7 @@ project, to be licensed under the same terms as the rest of the code.
 package org.gatblau.onix;
 
 import io.swagger.annotations.Api;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import springfox.documentation.builders.PathSelectors;
@@ -40,11 +41,14 @@ public class SwaggerConfig {
                 .build().apiInfo(apiInfo());
     }
 
+    @Autowired
+    private Info info;
+
     private ApiInfo apiInfo() {
         ApiInfo apiInfo = new ApiInfo(
             "Onix Web API",
             "RESTful Web API for the ONIX CMDB.",
-            "1.0.0",
+            info.toString(),
             "",
             "gatblau.org",
             "Apache LICENSE-2.0",

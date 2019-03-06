@@ -19,8 +19,17 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix;
 
-import java.io.Serializable;
+import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.temporal.ChronoUnit;
+import java.util.Scanner;
+
+@Component
 public class Info implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -28,11 +37,8 @@ public class Info implements Serializable {
     private String version;
 
     public Info() {
-    }
-
-    public Info(String description, String version) {
-        this.description = description;
-        this.version = version;
+        this.description = "Onix CMDB service.";
+        this.version = getFile("version");
     }
 
     public String getDescription() {
@@ -47,7 +53,49 @@ public class Info implements Serializable {
         return version;
     }
 
-    public void setVersion(String version) {
-        this.version = version;
+    private String getFile(String fileName) {
+        StringBuilder result = new StringBuilder("");
+        ClassLoader classLoader = getClass().getClassLoader();
+        // get file from resources folder
+        File file = new File(classLoader.getResource(fileName).getFile());
+        try (Scanner scanner = new Scanner(file)) {
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                result.append(line).append("\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String output = result.toString();
+        return output.substring(0, output.length() - 1);
+    }
+
+    public String getElapsed() {
+        StringBuilder b = new StringBuilder();
+        try {
+            int i = version.lastIndexOf('-');
+            String dateString = version.substring(i + 1, version.length() - 1);
+            int day = Integer.parseInt(dateString.substring(0, 2));
+            int month = Integer.parseInt(dateString.substring(2, 4));
+            int year = Integer.parseInt("20" + dateString.substring(4, 6));
+            LocalDate today = LocalDate.now();
+            LocalDate release = LocalDate.of(year, month, day);
+            Period p = Period.between(release, today);
+            long days = ChronoUnit.DAYS.between(release, today);
+            long months = ChronoUnit.MONTHS.between(release, today);
+            if (months > 0) {
+                b.append(String.format("%s months ", months));
+            }
+            b.append(String.format("%s days since release.", days));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return b.toString();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s - %s", version, getElapsed());
     }
 }
