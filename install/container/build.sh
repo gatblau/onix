@@ -41,6 +41,9 @@ HASH=`git rev-parse --short HEAD`
 ONIXTAG="${VERSION}-${HASH}-${DATE}"
 echo "Onix TAG is: ${ONIXTAG}"
 
+# writes the version to the resources folder so it is available for the wapi to report on
+echo ${ONIXTAG} >> ../../src/main/resources/version
+
 # builds the onix-db image
 echo building onixdb...
 cd db
