@@ -139,7 +139,7 @@ $BODY$;
    */
   CREATE OR REPLACE FUNCTION delete_snapshot(
     root_item_key_param character varying,
-    label_param character varying
+    label_param character varying -- if no label, then deletes all snapshots for the item
   )
     RETURNS VOID
     LANGUAGE 'plpgsql'
@@ -147,9 +147,9 @@ $BODY$;
     VOLATILE
   AS $BODY$
   BEGIN
-    DELETE FROM snapshot
-    WHERE label = label_param
-    AND root_item_key = root_item_key_param;
+    DELETE FROM snapshot s
+    WHERE (s.label = label_param OR label_param IS NULL)
+    AND s.root_item_key = root_item_key_param;
   END
   $BODY$;
 

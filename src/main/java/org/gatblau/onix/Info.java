@@ -70,8 +70,7 @@ public class Info implements Serializable {
         return output.substring(0, output.length() - 1);
     }
 
-    public String getElapsed() {
-        StringBuilder b = new StringBuilder();
+    public long getSinceReleaseDays() {
         try {
             int i = version.lastIndexOf('-');
             String dateString = version.substring(i + 1, version.length() - 1);
@@ -81,21 +80,16 @@ public class Info implements Serializable {
             LocalDate today = LocalDate.now();
             LocalDate release = LocalDate.of(year, month, day);
             Period p = Period.between(release, today);
-            long days = ChronoUnit.DAYS.between(release, today);
-            long months = ChronoUnit.MONTHS.between(release, today);
-            if (months > 0) {
-                b.append(String.format("%s months ", months));
-            }
-            b.append(String.format("%s days since release.", days));
+            return ChronoUnit.DAYS.between(release, today);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return b.toString();
+        return -1;
     }
 
     @Override
     public String toString() {
-        return String.format("%s - %s", version, getElapsed());
+        return String.format("%s - %s days since release.", version, getSinceReleaseDays());
     }
 }

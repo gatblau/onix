@@ -19,8 +19,6 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix.data;
 
-import org.json.simple.JSONObject;
-
 import java.io.Serializable;
 
 public class LinkRuleData implements Serializable {

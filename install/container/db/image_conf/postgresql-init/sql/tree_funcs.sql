@@ -195,7 +195,7 @@ BEGIN
   /*
     delete_tree(bigint): deletes all items and links under a specified parent item in an item tree.
    */
-  CREATE OR REPLACE FUNCTION delete_tree(parent_id bigint)
+  CREATE OR REPLACE FUNCTION delete_tree(root_item_key character varying)
     RETURNS TABLE(links_affected INTEGER, items_affected INTEGER)
     LANGUAGE 'plpgsql'
     VOLATILE
@@ -203,17 +203,18 @@ BEGIN
   DECLARE
     links_affected INTEGER := 0;
     items_affected INTEGER := 0;
-    child_item_ids BIGINT[] := get_child_items(parent_id);
+    root_item_id BIGINT := (SELECT id FROM item WHERE key = root_item_key);
+    child_item_ids BIGINT[] := get_child_items(root_item_id);
   BEGIN
     DELETE FROM link WHERE start_item_id = ANY(child_item_ids::BIGINT[]) OR end_item_id = ANY(child_item_ids::BIGINT[]);
     GET DIAGNOSTICS links_affected := ROW_COUNT;
-    DELETE FROM item WHERE id = ANY((child_item_ids || parent_id)::BIGINT[]);
+    DELETE FROM item WHERE id = ANY((child_item_ids || root_item_id)::BIGINT[]);
     GET DIAGNOSTICS items_affected := ROW_COUNT;
     RETURN QUERY SELECT links_affected AS links_deleted, (items_affected + 1) as items_deleted;
   END;
   $BODY$;
 
-  ALTER FUNCTION delete_tree(bigint)
+  ALTER FUNCTION delete_tree(character varying)
     OWNER TO onix;
 
 END

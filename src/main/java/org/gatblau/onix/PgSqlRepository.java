@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +85,9 @@ public class PgSqlRepository implements DbRepository {
         }
         catch(Exception ex) {
             result.setError(true);
-            result.setMessage(ex.getMessage());
+            result.setMessage(
+                    String.format(
+                        "Failed to create or update item with key '%s': %s", key, ex.getMessage()));
         }
         finally {
             db.close();
@@ -93,29 +96,32 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public ItemData getItem(String key) {
+    public ItemData getItem(String key, boolean includeLinks) {
+        ItemData item = new ItemData();
         try {
             db.prepare(getGetItemSQL());
             db.setString(1, key);
-            ItemData item = util.toItemData(db.executeQuerySingleRow());
+            item = util.toItemData(db.executeQuerySingleRow());
 
-            ResultSet set;
+            if (includeLinks) {
+                ResultSet set;
 
-            db.prepare(getFindLinksSQL());
-            db.setString(1, item.getKey()); // start_item
-            db.setObjectRange(2, 9, null);
-            set = db.executeQuery();
-            while (set.next()) {
-                item.getFromLinks().add(util.toLinkData(set));
-            }
+                db.prepare(getFindLinksSQL());
+                db.setString(1, item.getKey()); // start_item
+                db.setObjectRange(2, 9, null);
+                set = db.executeQuery();
+                while (set.next()) {
+                    item.getToLinks().add(util.toLinkData(set));
+                }
 
-            db.prepare(getFindLinksSQL());
-            db.setString(1, null); // start_item
-            db.setString(2, item.getKey()); // end_item
-            db.setObjectRange(3, 9, null);
-            set = db.executeQuery();
-            while (set.next()) {
-                item.getFromLinks().add(util.toLinkData(set));
+                db.prepare(getFindLinksSQL());
+                db.setString(1, null); // start_item
+                db.setString(2, item.getKey()); // end_item
+                db.setObjectRange(3, 9, null);
+                set = db.executeQuery();
+                while (set.next()) {
+                    item.getFromLinks().add(util.toLinkData(set));
+                }
             }
         }
         catch (Exception ex) {
@@ -123,8 +129,8 @@ public class PgSqlRepository implements DbRepository {
         }
         finally {
             db.close();
+            return item;
         }
-        return new ItemData();
     }
 
     @Override
@@ -183,9 +189,9 @@ public class PgSqlRepository implements DbRepository {
         Result result = new Result();
         try {
             String description = (String)json.get("description");
-            String linkTypeKey = (String)json.get("linkType");
-            String startItemKey = (String)json.get("startItem");
-            String endItemKey = (String)json.get("endItem");
+            String linkTypeKey = (String)json.get("type");
+            String startItemKey = (String)json.get("startItemKey");
+            String endItemKey = (String)json.get("endItemKey");
             String meta = util.toJSONString(json.get("meta"));
             String tag = util.toArrayString(json.get("tag"));
             Object attribute = json.get("attribute");
@@ -206,7 +212,7 @@ public class PgSqlRepository implements DbRepository {
         }
         catch (Exception ex) {
             result.setError(true);
-            result.setMessage(ex.getMessage());
+            result.setMessage(String.format("Failed to create or update link with key '%s': %s", key, ex.getMessage()));
         }
         finally {
             db.close();
@@ -596,9 +602,9 @@ public class PgSqlRepository implements DbRepository {
     private JSONObject getLinkData(String description, String linkType, String startItem, String endItem) {
         JSONObject json = new JSONObject();
         json.put("description", description);
-        json.put("linkType", linkType);
-        json.put("startItem", startItem);
-        json.put("endItem", endItem);
+        json.put("type", linkType);
+        json.put("startItemKey", startItem);
+        json.put("endItemKey", endItem);
         return json;
     }
 
@@ -903,6 +909,41 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public ResultList createOrUpdateItemTree(JSONObject payload) {
+        ResultList results = new ResultList();
+        ArrayList<LinkedHashMap> items = (ArrayList<LinkedHashMap>) payload.get("items");
+        ArrayList<LinkedHashMap> links = (ArrayList<LinkedHashMap>)payload.get("links");
+        for (Map item: items) {
+            results.getItems().add(createOrUpdateItem((String)item.get("key"), new JSONObject(item)));
+        }
+        for (Map link: links) {
+            results.getItems().add(createOrUpdateLink((String)link.get("key"), new JSONObject(link)));
+        }
+        return results;
+    }
+
+    @Override
+    public Result deleteItemTree(String rootItemKey) {
+        Result result = new Result();
+        try {
+            db.prepare(getDeleteItemTreeSQL());
+            db.setString(1, (rootItemKey != null) ? (String) rootItemKey : null); // root item key
+            result.setError(!db.execute());
+            result.setOperation("D");
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(
+                String.format("Failed to delete item tree for root item with key '%s': %s", rootItemKey, ex.getMessage()));
+        }
+        finally {
+            db.close();
+        }
+        return result;
+    }
+
+    @Override
     public String getSetLinkRuleSQL() {
         return "SELECT set_link_rule(" +
                 "?::character varying," + // key
@@ -990,6 +1031,13 @@ public class PgSqlRepository implements DbRepository {
         return "SELECT * FROM get_tree_links(" +
                 "?::character varying," + // root_item_key_param
                 "?::character varying" + // snapshot_label_param
+                ")";
+    }
+
+    @Override
+    public String getDeleteItemTreeSQL() {
+        return "SELECT delete_tree(" +
+                "?::character varying" + // root_item_key_param
                 ")";
     }
 

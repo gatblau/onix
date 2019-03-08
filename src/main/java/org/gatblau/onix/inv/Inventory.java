@@ -10,7 +10,6 @@ import org.gatblau.onix.parser.LexerRule;
 import org.gatblau.onix.parser.LexerToken;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.omg.CORBA.Environment;
 
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -51,7 +50,7 @@ public class Inventory {
         String name = item.getName();
         Node node = this.nodes.find(name);
         if (node == null) {
-            node = new Node(item.getName(), getType(item.getItemType()), (JSONObject)item.getMeta().get("vars"));
+            node = new Node(item.getName(), getType(item.getType()), (JSONObject)item.getMeta().get("vars"));
             nodes.add(node);
             List<ItemData> children = getChildren(tree, item);
             for (ItemData childData : children) {

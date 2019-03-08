@@ -35,8 +35,14 @@ public class Steps extends BaseTest {
 
     @And("^a get request to the service is done$")
     public void aGetRequestToTheServiceIsDone() throws Throwable {
-        ResponseEntity<Info> response = client.getForEntity((String)util.get(BASE_URL), Info.class);
-        util.put(RESPONSE, response);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "text/html");
+        ResponseEntity<String> result = client.exchange(
+                (String)util.get(BASE_URL),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                String.class);
+        util.put(RESPONSE, result);
     }
 
     @And("^the service responds with description and version number$")
@@ -450,16 +456,16 @@ public class Steps extends BaseTest {
         }
     }
 
-    @Then("^the response contains (\\d+) items$")
-    public void theResponseContainsNumberItems(int count) {
+    @Then("^the response contains more than (\\d+) items$")
+    public void theResponseContainsMoreThanNumberItems(int count) {
         ResponseEntity<ItemList> response = util.get(RESPONSE);
 
         ItemList items = response.getBody();
         if (items != null) {
-            if (items.getItems().size() != count) {
+            if (items.getItems().size() <= count) {
                 throw new RuntimeException(
                     String.format(
-                        "Response does not contain '%s' but '%s' items.",
+                        "Response does not contain more than '%s' items but '%s' items.",
                         count,
                         response.getBody().getItems().size()
                     )
@@ -922,7 +928,7 @@ public class Steps extends BaseTest {
         String url = util.get(SNAPSHOT_UPDATE_URL);
         String payload = util.get(SNAPSHOT_UPDATE_PAYLOAD);
         String currentLabel = util.get(SNAPSHOT_LABEL);
-        String itemRootKey = util.get(SNAPSHOT_ITEM_ROOT_KEY);
+        String itemRootKey = util.get(ROOT_ITEM_KEY);
         Map<String, Object> vars = new HashMap<>();
         vars.put("root_item_key", itemRootKey);
         vars.put("label", currentLabel);
@@ -939,7 +945,7 @@ public class Steps extends BaseTest {
 
     @Given("^the item root key of the snapshot is known$")
     public void theItemRootKeyOfTheSnapshotIsKnown() {
-        util.put(SNAPSHOT_ITEM_ROOT_KEY, "test_inventory");
+        util.put(ROOT_ITEM_KEY, "test_inventory");
     }
 
     @Given("^the current label of the snapshot is known$")
@@ -956,7 +962,7 @@ public class Steps extends BaseTest {
     public void aSnapshotDeleteIsRequested() {
         String url = util.get(SNAPSHOT_DELETE_URL);
         String currentLabel = util.get(SNAPSHOT_LABEL);
-        String itemRootKey = util.get(SNAPSHOT_ITEM_ROOT_KEY);
+        String itemRootKey = util.get(ROOT_ITEM_KEY);
         Map<String, Object> vars = new HashMap<>();
         vars.put("root_item_key", itemRootKey);
         vars.put("label", currentLabel);
@@ -984,13 +990,13 @@ public class Steps extends BaseTest {
 
     @Given("^the item root key of the snapshots is known$")
     public void theItemRootKeyOfTheSnapshotsIsKnown() {
-        util.put(SNAPSHOT_ITEM_ROOT_KEY, "test_inventory");
+        util.put(ROOT_ITEM_KEY, "test_inventory");
     }
 
     @When("^a snapshot list for an item is requested$")
     public void aSnapshotListForAnItemIsRequested() {
         String url = util.get(SNAPSHOT_LIST_URL);
-        String itemRootKey = util.get(SNAPSHOT_ITEM_ROOT_KEY);
+        String itemRootKey = util.get(ROOT_ITEM_KEY);
         Map<String, Object> vars = new HashMap<>();
         vars.put("root_item_key", itemRootKey);
         HttpHeaders headers = new HttpHeaders();
@@ -1048,7 +1054,7 @@ public class Steps extends BaseTest {
     @When("^a snapshot tree retrieval for the snapshot is requested$")
     public void aSnapshotTreeRetrievalForTheSnapshotIsRequested() {
         String url = util.get(SNAPSHOT_TREE_URL);
-        String itemRootKey = util.get(SNAPSHOT_ITEM_ROOT_KEY);
+        String itemRootKey = util.get(ROOT_ITEM_KEY);
         String label = util.get(SNAPSHOT_LABEL);
         Map<String, Object> vars = new HashMap<>();
         vars.put("root_item_key", itemRootKey);
@@ -1078,5 +1084,139 @@ public class Steps extends BaseTest {
     @Given("^the inventory snapshot label is known$")
     public void theInventorySnapshotLabelIsKnown() {
         util.put(INVENTORY_LABEL, "v1");
+    }
+
+    @Given("^the URL of the item tree PUT endpoint is known$")
+    public void theURLOfTheItemTreePUTEndpointIsKnown() {
+        util.put(PUT_TREE_URL, String.format("%s/tree", baseUrl));
+    }
+
+    @Given("^the item tree does not exist in the database$")
+    public void theItemTreeDoesNotExistInTheDatabase() {
+        // do nothing for now
+    }
+
+    @Given("^a json payload with tree data exists$")
+    public void aJsonPayloadWithTreeDataExists() {
+        util.put(CREATE_TREE_PAYLOAD, util.getFile("payload/create_tree_payload.json"));
+    }
+
+    @When("^the creation of the tree is requested$")
+    public void theCreationOfTheTreeIsRequested() {
+        String payload = util.get(CREATE_TREE_PAYLOAD);
+        String url = util.get(PUT_TREE_URL);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("payload", payload);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<ResultList> response = client.exchange(url, HttpMethod.PUT, getEntity(payload), ResultList.class, vars);
+        util.put(RESPONSE, response);
+    }
+
+    @Then("^the result list contains no errors$")
+    public void theResultListContainsNoErrors() {
+        ResponseEntity<ResultList> results = util.get(RESPONSE);
+        for (Result result : results.getBody().getItems()) {
+            if (result.isError()) {
+                throw new RuntimeException(String.format("Result contains an error as follows: '%s'", result.getMessage()));
+            }
+        }
+    }
+
+    @Given("^the item tree exists in the database$")
+    public void theItemTreeExistsInTheDatabase() {
+        theURLOfTheItemTreePUTEndpointIsKnown();
+        aJsonPayloadWithTreeDataExists();
+        theCreationOfTheTreeIsRequested();
+        theResponseCodeIs(200);
+        theResultListContainsNoErrors();
+    }
+
+    @Given("^a json payload with update tree data exists$")
+    public void aJsonPayloadWithUpdateTreeDataExists() {
+        util.put(UPDATE_TREE_PAYLOAD, util.getFile("payload/update_tree_payload.json"));
+    }
+
+    @When("^the update of the tree is requested$")
+    public void theUpdateOfTheTreeIsRequested() {
+        String payload = util.get(UPDATE_TREE_PAYLOAD);
+        String url = util.get(PUT_TREE_URL);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("payload", payload);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<ResultList> response = client.exchange(url, HttpMethod.PUT, getEntity(payload), ResultList.class, vars);
+        util.put(RESPONSE, response);
+    }
+
+    @Then("^the result list contained updated results$")
+    public void theResultListContainedUpdatedResults() {
+        ResponseEntity<ResultList> response = util.get(RESPONSE);
+        ResultList results = response.getBody();
+        boolean updateFound = false;
+        for (Result result : results.getItems()) {
+            updateFound = result.getOperation().equals("U");
+            if (updateFound) break;
+        }
+        if (!updateFound){
+            throw new RuntimeException("Results have not been updated");
+        }
+    }
+
+    @Given("^the URL of the item tree DELETE endpoint is known$")
+    public void theURLOfTheItemTreeDELETEEndpointIsKnown() {
+        util.put(DELETE_TREE_URL, String.format("%s/tree/{root_item_key}", baseUrl));
+    }
+
+    @Given("^the item key of the tree root item is known$")
+    public void theItemKeyOfTheTreeRootItemIsKnown() {
+        util.put(ROOT_ITEM_KEY, "test_inventory");
+    }
+
+    @When("^the deletion of the tree is requested$")
+    public void theDeletionOfTheTreeIsRequested() {
+        String url = util.get(DELETE_TREE_URL);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.DELETE, null, Result.class, (String)util.get(ROOT_ITEM_KEY));
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
+    }
+
+    @Given("^there are not any snapshot for the root item$")
+    public void thereAreNotAnySnapshotForTheRootItem() {
+        theURLOfTheSnapshotDeleteAllEndpointIsKnown();
+        aSnapshotDeleteAllIsRequested();
+    }
+
+    @Given("^the URL of the snapshot delete all endpoint is known$")
+    public void theURLOfTheSnapshotDeleteAllEndpointIsKnown() {
+        util.put(SNAPSHOT_DELETE_URL, String.format("%s/snapshot/{root_item_key}", baseUrl));
+    }
+
+    @Given("^there are more than one snapshots in the database$")
+    public void thereAreMoreThanOneSnapshotsInTheDatabase() {
+        // do nothing for now
+    }
+
+    @When("^a snapshot delete all is requested$")
+    public void aSnapshotDeleteAllIsRequested() {
+        deleteAllSnapshots(util.get(SNAPSHOT_DELETE_URL), (String)util.get(ROOT_ITEM_KEY));
+    }
+
+    private void deleteAllSnapshots(String url, String key) {
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.DELETE, null, Result.class, key);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
     }
 }

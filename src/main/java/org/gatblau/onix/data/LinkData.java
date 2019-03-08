@@ -29,6 +29,7 @@ public class LinkData implements Serializable {
 
     private String key;
     private String description;
+    private String type;
     private List<String> tag;
     private JSONObject attribute;
     private JSONObject meta;
@@ -38,6 +39,9 @@ public class LinkData implements Serializable {
     private String updated;
     private Integer version;
     private String changedBy;
+
+    public LinkData() {
+    }
 
     public String getKey() {
         return key;
@@ -125,5 +129,13 @@ public class LinkData implements Serializable {
 
     public void setVersion(Integer version) {
         this.version = version;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }
