@@ -1,0 +1,879 @@
+{
+  "items": [
+    {
+      "key": "test_inventory::OSEv3",
+      "name": "OSEv3",
+      "description": "PARENT_GROUP imported from Ansible inventory.",
+      "type": "HOST-GROUP-GROUP",
+      "status": 1,
+      "meta": {
+        "vars": {
+          "ansible_become": "yes",
+          "openshift_master_overwrite_named_certificates": "True",
+          "openshift_node_kubelet_args": {
+            "image-gc-high-threshold": [
+              "90"
+            ],
+            "image-gc-low-threshold": [
+              "80"
+            ]
+          },
+          "openshift_prometheus_pvc_size": "10Gi",
+          "openshift_metrics_cassandra_pvc_storage_class_name": "glusterfs-storage-block",
+          "openshift_image_tag": "v3.9.30",
+          "openshift_https_proxy": "http://proxy.example.com:8080",
+          "openshift_storage_glusterfs_heketi_executor": "ssh",
+          "ansible_ssh_user": "deploy-user",
+          "openshift_prometheus_alertmanager_pvc_size": "3Gi",
+          "openshift_storage_glusterfs_block_host_vol_size": 20,
+          "openshift_prometheus_alertbuffer_sc_name": "glusterfs-storage-block",
+          "openshift_http_proxy": "http://proxy.example.com:8080",
+          "openshift_logging_install_logging": false,
+          "openshift_storage_glusterfs_image": "registry.access.redhat.com/rhgs3/rhgs-server-rhel7",
+          "openshift_storage_glusterfs_heketi_ssh_user": "ansible-user",
+          "openshift_logging_es_pvc_storage_class_name": "glusterfs-storage-block",
+          "openshift_metrics_hawkular_nodeselector": {
+            "region": "infra"
+          },
+          "postdeploy_openshift_storage_glusterfs_heketi_is_native": true,
+          "openshift_router_selector": "region=infra",
+          "openshift_metrics_cassandra_limits_memory": "1Gi",
+          "openshift_logging_use_ops": false,
+          "openshift_metrics_hawkular_agent_nodeselector": {
+            "region": "infra"
+          },
+          "openshift_metrics_install_metrics": false,
+          "openshift_storage_glusterfs_block_storageclass": true,
+          "openshift_storage_glusterfs_is_native": false,
+          "postdeploy_glusterfs_heketi_topology_load": true,
+          "openshift_no_proxy": "local,localhost,localdomain,svc,my.openshift.domain.com",
+          "openshift_hosted_metrics_deploy": false,
+          "oreg_url": "registry.access.redhat.com/openshift3/ose-${component}:${version}",
+          "openshift_logging_es_pvc_size": "10G",
+          "openshift_metrics_cassandra_storage_type": "pv",
+          "openshift_logging_fluentd_audit_container_engine": true,
+          "openshift_prometheus_sc_name": "glusterfs-storage-block",
+          "openshift_master_cluster_public_hostname": "admin.ocp-01.example.com",
+          "openshift_metrics_cassandra_pvc_size": "10Gi",
+          "openshift_prometheus_alertmanager_sc_name": "glusterfs-storage-block",
+          "openshift_storage_glusterfs_heketi_is_native": true,
+          "os_firewall_use_firewalld": "True",
+          "openshift_storage_glusterfs_block_image": "registry.access.redhat.com/rhgs3/rhgs-gluster-block-prov-rhel7",
+          "openshift_release": "3.9.30",
+          "os_sdn_network_plugin_name": "redhat/openshift-ovs-multitenant",
+          "openshift_prometheus_storage_type": "pvc",
+          "openshift_examples_modify_imagestreams": true,
+          "openshift_prometheus_alertbuffer_storage_type": "pvc",
+          "openshift_metrics_heapster_limits_memory": "1Gi",
+          "openshift_storage_glusterfs_block_deploy": true,
+          "postdeploy_openshift_hosted_metrics_deploy": true,
+          "openshift_metrics_image_version": "v3.9",
+          "openshift_master_cluster_hostname": "admin-internal.ocp-01.example.com",
+          "openshift_storage_glusterfs_block_host_vol_max": 50,
+          "openshift_storage_glusterfs_heketi_image": "registry.access.redhat.com/rhgs3/rhgs-volmanager-rhel7",
+          "glusterfs_heketi_topology_load": false,
+          "openshift_master_identity_providers": [
+            {
+              "bindDN": "CN=OpenShift_Svc_Accounts,OU=Service Accounts,OU=Administration,DC=subdomain,DC=company,DC=com",
+              "bindPassword": "bind_password_here",
+              "kind": "LDAPPasswordIdentityProvider",
+              "mappingMethod": "claim",
+              "name": "my_company",
+              "insecure": true,
+              "challenge": true,
+              "attributes": {
+                "preferredUsername": [
+                  "sAMAccountName"
+                ],
+                "name": [
+                  "cn"
+                ],
+                "id": [
+                  "dn"
+                ],
+                "email": [
+                  "mail"
+                ]
+              },
+              "login": true,
+              "url": "ldap://ldapserver:389/DC=subdomain,DC=company,DC=com?sAMAccountName"
+            },
+            {
+              "filename": "/etc/origin/master/htpasswd",
+              "kind": "HTPasswdPasswordIdentityProvider",
+              "name": "htpasswd_auth",
+              "challenge": true,
+              "login": true
+            }
+          ],
+          "postdeploy_openshift_logging_install_logging": true,
+          "openshift_master_htpasswd_users": {
+            "admin": "my_admin_password_hash",
+            "user": "my_user_password_hash"
+          },
+          "postdeploy_openshift_logging_install_eventrouter": true,
+          "openshift_metrics_cassandra_nodeselector": {
+            "region": "infra"
+          },
+          "containerized": "True",
+          "openshift_metrics_hawkular_hostname": "hawkular-metrics.apps.ocp-01.example.com",
+          "postdeploy_openshift_metrics_install_metrics": true,
+          "openshift_storage_glusterfs_registry_is_native": false,
+          "openshift_metrics_cassanda_pvc_storage_class_name": "glusterfs-storage-block",
+          "openshift_storage_glusterfs_storageclass": true,
+          "openshift_storage_glusterfs_storageclass_default": true,
+          "openshift_docker_additional_registries": [
+            "registry.access.redhat.com"
+          ],
+          "glusterfs_block_storageclass": false,
+          "openshift_logging_curator_default_days": 30,
+          "openshift_prometheus_alertmanager_storage_type": "pvc",
+          "openshift_master_named_certificates": [
+            {
+              "certfile": "/home/ansible-user/cluster_setup/certificates/admin",
+              "keyfile": "/home/ansible-user/cluster_setup/certificates/certificates/key"
+            }
+          ],
+          "postdeploy_ansible_service_broker_install": true,
+          "postdeploy_glusterfs_block_storageclass": true,
+          "openshift_metrics_hawkular_limits_memory": "2Gi",
+          "openshift_storage_glusterfs_block_host_vol_create": true,
+          "openshift_prometheus_alertbuffer_pvc_size": "3Gi",
+          "openshift_disable_check": "disk_availability,docker_image_availability,docker_storage,memory_availability,package_availability,package_version",
+          "openshift_deployment_type": "openshift-enterprise",
+          "openshift_master_console_port": 443,
+          "ansible_service_broker_install": false,
+          "openshift_storage_glusterfs_heketi_ssh_keyfile": "/home/ansible-user/.ssh/id_rsa",
+          "openshift_logging_install_eventrouter": false,
+          "openshift_master_api_port": 443,
+          "openshift_install_examples": "True",
+          "openshift_master_cluster_method": "native",
+          "openshift_metrics_heapster_nodeselector": {
+            "region": "infra"
+          },
+          "openshift_storage_glusterfs_heketi_ssh_sudo": true,
+          "openshift_logging_es_cluster_size": 3,
+          "openshift_logging_kibana_replica_count": 2,
+          "openshift_storage_glusterfs_heketi_version": "v3.10",
+          "postdeploy_openshift_storage_glusterfs_storageclass": true,
+          "openshift_registry_selector": "region=infra",
+          "openshift_master_default_subdomain": "apps.ocp-01.example.com"
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::masters",
+      "name": "masters",
+      "description": "GROUP imported from Ansible inventory.",
+      "type": "HOST-GROUP",
+      "status": 1,
+      "meta": {
+        "vars": {}
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::master0",
+      "name": "master0",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0003.example.com",
+          " openshift_node_labels": "\"{'node': 'false', 'region': 'master', 'zone': 'az1'}\""
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::master1",
+      "name": "master1",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 0,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0002.example.com",
+          " openshift_node_labels": "\"{'node': 'false', 'region': 'master', 'zone': 'az2'}\""
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::master2",
+      "name": "master2",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0004.example.com",
+          " openshift_node_labels": "\"{'node': 'false', 'region': 'master', 'zone': 'az3'}\""
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::postdeploy_glusterfs",
+      "name": "postdeploy_glusterfs",
+      "description": "GROUP imported from Ansible inventory.",
+      "type": "HOST-GROUP",
+      "status": 1,
+      "meta": {
+        "vars": {}
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::storage0",
+      "name": "storage0",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0009.example.com"
+        }
+      },
+      "attribute": {},
+      "tag": [],
+      "created": "07-03-2019 00:00:00 +0000",
+      "updated": null,
+      "version": 1,
+      "changedBy": null
+    },
+    {
+      "key": "test_inventory::storage1",
+      "name": "storage1",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0008.example.com"
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::storage2",
+      "name": "storage2",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0007.example.com"
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::etcd",
+      "name": "etcd",
+      "description": "GROUP imported from Ansible inventory.",
+      "type": "HOST-GROUP",
+      "status": 1,
+      "meta": {
+        "vars": {}
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::etcd0",
+      "name": "etcd0",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0003.example.com"
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::etcd1",
+      "name": "etcd1",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0002.example.com"
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::etcd2",
+      "name": "etcd2",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0004.example.com"
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::infra",
+      "name": "infra",
+      "description": "GROUP imported from Ansible inventory.",
+      "type": "HOST-GROUP",
+      "status": 1,
+      "meta": {
+        "vars": {}
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::infra0",
+      "name": "infra0",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0010.example.com",
+          " openshift_node_labels": "\"{'region': 'infra', 'zone': 'az1', 'site': 'a'}\""
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::infra1",
+      "name": "infra1",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0011.example.com",
+          " openshift_node_labels": "\"{'region': 'infra', 'zone': 'az2', 'site': 'b'}\""
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::infra2",
+      "name": "infra2",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0012.example.com",
+          " openshift_node_labels": "\"{'region': 'infra', 'zone': 'az3', 'site': 'c'}\""
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::infra3",
+      "name": "infra3",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0005.example.com",
+          " openshift_node_labels": "\"{'region': 'infra', 'zone': 'az3', 'site': 'd'}\""
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::compute",
+      "name": "compute",
+      "description": "GROUP imported from Ansible inventory.",
+      "type": "HOST-GROUP",
+      "status": 1,
+      "meta": {
+        "vars": {}
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::compute0",
+      "name": "compute0",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0001.example.com",
+          " openshift_node_labels": "\"{'node': 'true', 'region': 'primary', 'zone': 'az1', 'site': 'a'}\""
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::compute1",
+      "name": "compute1",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0003.example.com",
+          " openshift_node_labels": "\"{'node': 'true', 'region': 'primary', 'zone': 'az2', 'site': 'b'}\""
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::compute2",
+      "name": "compute2",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0005.example.com",
+          " openshift_node_labels": "\"{'node': 'true', 'region': 'primary', 'zone': 'az3', 'site': 'c'}\""
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::compute3",
+      "name": "compute3",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0004.example.com",
+          " openshift_node_labels": "\"{'node': 'true', 'region': 'primary', 'zone': 'az2', 'site': 'd'}\""
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::compute4",
+      "name": "compute4",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0002.example.com",
+          " openshift_node_labels": "\"{'node': 'true', 'region': 'primary', 'zone': 'az3', 'site': 'e'}\""
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::controller",
+      "name": "controller",
+      "description": "GROUP imported from Ansible inventory.",
+      "type": "HOST-GROUP",
+      "status": 1,
+      "meta": {
+        "vars": {}
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::controller1",
+      "name": "controller1",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0002.example.com"
+        }
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::bastion",
+      "name": "bastion",
+      "description": "GROUP imported from Ansible inventory.",
+      "type": "HOST-GROUP",
+      "status": 1,
+      "meta": {
+        "vars": {}
+      },
+      "attribute": {},
+      "tag": []
+    },
+    {
+      "key": "test_inventory::bastion1",
+      "name": "bastion1",
+      "description": "HOST imported from Ansible inventory.",
+      "type": "HOST",
+      "status": 1,
+      "meta": {
+        "vars": {
+          " ansible_host": "host0002.example.com"
+        }
+      },
+      "attribute": {},
+      "tag": []
+    }
+  ],
+  "links": [
+    {
+      "key": "test_inventory::test_inventory->OSEv3",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory",
+      "endItemKey": "test_inventory::OSEv3"
+    },
+    {
+      "key": "test_inventory::OSEv3->masters",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::OSEv3",
+      "endItemKey": "test_inventory::masters"
+    },
+    {
+      "key": "test_inventory::masters->master0",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::masters",
+      "endItemKey": "test_inventory::master0"
+    },
+    {
+      "key": "test_inventory::masters->master1",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::masters",
+      "endItemKey": "test_inventory::master1"
+    },
+    {
+      "key": "test_inventory::masters->master2",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::masters",
+      "endItemKey": "test_inventory::master2"
+    },
+    {
+      "key": "test_inventory::OSEv3->postdeploy_glusterfs",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::OSEv3",
+      "endItemKey": "test_inventory::postdeploy_glusterfs"
+    },
+    {
+      "key": "test_inventory::postdeploy_glusterfs->storage0",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::postdeploy_glusterfs",
+      "endItemKey": "test_inventory::storage0"
+    },
+    {
+      "key": "test_inventory::postdeploy_glusterfs->storage1",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::postdeploy_glusterfs",
+      "endItemKey": "test_inventory::storage1"
+    },
+    {
+      "key": "test_inventory::postdeploy_glusterfs->storage2",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::postdeploy_glusterfs",
+      "endItemKey": "test_inventory::storage2"
+    },
+    {
+      "key": "test_inventory::OSEv3->etcd",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::OSEv3",
+      "endItemKey": "test_inventory::etcd"
+    },
+    {
+      "key": "test_inventory::etcd->etcd0",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::etcd",
+      "endItemKey": "test_inventory::etcd0"
+    },
+    {
+      "key": "test_inventory::etcd->etcd1",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::etcd",
+      "endItemKey": "test_inventory::etcd1"
+    },
+    {
+      "key": "test_inventory::etcd->etcd2",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::etcd",
+      "endItemKey": "test_inventory::etcd2"
+    },
+    {
+      "key": "test_inventory::test_inventory->infra",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory",
+      "endItemKey": "test_inventory::infra"
+    },
+    {
+      "key": "test_inventory::infra->infra0",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::infra",
+      "endItemKey": "test_inventory::infra0"
+    },
+    {
+      "key": "test_inventory::infra->infra1",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::infra",
+      "endItemKey": "test_inventory::infra1"
+    },
+    {
+      "key": "test_inventory::infra->infra2",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::infra",
+      "endItemKey": "test_inventory::infra2"
+    },
+    {
+      "key": "test_inventory::infra->infra3",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::infra",
+      "endItemKey": "test_inventory::infra3"
+    },
+    {
+      "key": "test_inventory::test_inventory->compute",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory",
+      "endItemKey": "test_inventory::compute"
+    },
+    {
+      "key": "test_inventory::compute->compute0",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::compute",
+      "endItemKey": "test_inventory::compute0"
+    },
+    {
+      "key": "test_inventory::compute->compute1",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::compute",
+      "endItemKey": "test_inventory::compute1"
+    },
+    {
+      "key": "test_inventory::compute->compute2",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::compute",
+      "endItemKey": "test_inventory::compute2"
+    },
+    {
+      "key": "test_inventory::compute->compute3",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::compute",
+      "endItemKey": "test_inventory::compute3"
+    },
+    {
+      "key": "test_inventory::compute->compute4",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::compute",
+      "endItemKey": "test_inventory::compute4"
+    },
+    {
+      "key": "test_inventory::test_inventory->nodes",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory",
+      "endItemKey": "test_inventory::nodes"
+    },
+    {
+      "key": "test_inventory::nodes->masters",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::nodes",
+      "endItemKey": "test_inventory::masters"
+    },
+    {
+      "key": "test_inventory::nodes->compute",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::nodes",
+      "endItemKey": "test_inventory::compute"
+    },
+    {
+      "key": "test_inventory::nodes->infra",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::nodes",
+      "endItemKey": "test_inventory::infra"
+    },
+    {
+      "key": "test_inventory::nodes->etcd",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::nodes",
+      "endItemKey": "test_inventory::etcd"
+    },
+    {
+      "key": "test_inventory::test_inventory->controller",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory",
+      "endItemKey": "test_inventory::controller"
+    },
+    {
+      "key": "test_inventory::controller->controller1",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::controller",
+      "endItemKey": "test_inventory::controller1"
+    },
+    {
+      "key": "test_inventory::test_inventory->bastion",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory",
+      "endItemKey": "test_inventory::bastion"
+    },
+    {
+      "key": "test_inventory::bastion->bastion1",
+      "description": "Link imported from Ansible inventory.",
+      "type": "INVENTORY",
+      "tag": [],
+      "attribute": {},
+      "meta": {},
+      "startItemKey": "test_inventory::bastion",
+      "endItemKey": "test_inventory::bastion1"
+    }
+  ]
+}

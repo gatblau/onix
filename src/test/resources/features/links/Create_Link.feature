@@ -13,3 +13,4 @@ Feature: Create Link Between two Configuration Items
     Then the response code is 200
     Then the response has body
     Then the service responds with action "I"
+    Then the result contains no errors

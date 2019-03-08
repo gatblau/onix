@@ -31,7 +31,7 @@ public class ItemData implements Serializable {
     private String key;
     private String name;
     private String description;
-    private String itemType;
+    private String type;
     private Short status;
     private JSONObject meta;
     private JSONObject attribute;
@@ -70,12 +70,12 @@ public class ItemData implements Serializable {
         this.description = description;
     }
 
-    public String getItemType() {
-        return itemType;
+    public String getType() {
+        return type;
     }
 
-    public void setItemType(String itemType) {
-        this.itemType = itemType;
+    public void setType(String type) {
+        this.type = type;
     }
 
     public Short getStatus() {

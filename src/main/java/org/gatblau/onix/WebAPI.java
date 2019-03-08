@@ -27,6 +27,7 @@ import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -104,8 +105,11 @@ public class WebAPI {
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<ItemData> getItem(@PathVariable("key") String key) throws SQLException, ParseException, IOException {
-        return ResponseEntity.ok(data.getItem(key));
+    public ResponseEntity<ItemData> getItem(
+            @PathVariable("key") String key,
+            @RequestParam(required = false, name = "links", defaultValue = "false" // true to retrieve link information
+    ) boolean links) {
+        return ResponseEntity.ok(data.getItem(key, links));
     }
 
     @ApiOperation(
@@ -126,7 +130,7 @@ public class WebAPI {
             , @RequestParam(value = "updatedTo", required = false) String updatedToDate
             , @RequestParam(value = "status", required = false) Short status
             , @RequestParam(value = "top", required = false, defaultValue = "100") Integer top
-    ) throws SQLException, ParseException, IOException {
+    ) {
         List<String> tagList = null;
         if (tag != null) {
             String[] tags = tag.split("[|]"); // separate tags using pipes in the query string
@@ -472,7 +476,7 @@ public class WebAPI {
 
     @ApiOperation(
             value = "Deletes an existing snapshot.",
-            notes = "A snapshot is a set of items and their links at a specific point in time.")
+            notes = "Takes the key of a root item and a snapshot label and deletes the matching snapshot.")
     @RequestMapping(
             path = "/snapshot/{root_item_key}/{label}"
             , method = RequestMethod.DELETE)
@@ -481,6 +485,18 @@ public class WebAPI {
             @PathVariable("label") String label
     ) {
         return ResponseEntity.ok(data.deleteSnapshot(rootItemKey, label));
+    }
+
+    @ApiOperation(
+            value = "Deletes all snapshots for an item.",
+            notes = "Takes the key of a root item and deletes any associated snapshots.")
+    @RequestMapping(
+            path = "/snapshot/{root_item_key}"
+            , method = RequestMethod.DELETE)
+    public ResponseEntity<Result> deleteAllSnapshots(
+            @PathVariable("root_item_key") String rootItemKey
+    ) {
+        return ResponseEntity.ok(data.deleteSnapshot(rootItemKey, null));
     }
 
     @ApiOperation(
@@ -515,6 +531,33 @@ public class WebAPI {
     ) {
         ItemTreeData tree = data.getItemTree(rootItemKey, label);
         return ResponseEntity.ok(tree);
+    }
+
+    @ApiOperation(
+            value = "Creates or updates a set of items and links.",
+            notes = "")
+    @RequestMapping(
+            path = "/tree"
+            , method = RequestMethod.PUT
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<ResultList> createOrUpdateItemTree(
+        @RequestBody JSONObject payload
+    ) {
+        ResultList results = data.createOrUpdateItemTree(payload);
+        return ResponseEntity.ok(results);
+    }
+
+    @ApiOperation(
+            value = "Deletes an existing item tree.",
+            notes = "")
+    @RequestMapping(
+            path = "/tree/{root_item_key}"
+            , method = RequestMethod.DELETE)
+    public ResponseEntity<Result> deleteTree(
+        @PathVariable("root_item_key") String rootItemKey
+    ) {
+        return ResponseEntity.ok(data.deleteItemTree(rootItemKey));
     }
 
     /*

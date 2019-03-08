@@ -31,10 +31,14 @@ public class Key {
     public static final String SNAPSHOT_UPDATE_URL = "snapshot_update_url";
     public static final String SNAPSHOT_CREATE_PAYLOAD = "create_snapshot_payload";
     public static final String SNAPSHOT_UPDATE_PAYLOAD = "update_snapshot_payload";
-    public static final String SNAPSHOT_ITEM_ROOT_KEY = "snapshot_item_root_key";
+    public static final String ROOT_ITEM_KEY = "_" + "root_item_key";
     public static final String SNAPSHOT_LABEL = "snapshot_label";
     public static final String SNAPSHOT_DELETE_URL = "snapshot_delete_url";
     public static final String SNAPSHOT_LIST_URL = "snapshot_list_url";
     public static final String SNAPSHOT_TREE_URL = "snapshot_tree_url";
     public static final String INVENTORY_LABEL = "inventory_label";
+    public static final String CREATE_TREE_PAYLOAD = "create_tree_payload";
+    public static final String PUT_TREE_URL = "put_tree_url";
+    public static final String UPDATE_TREE_PAYLOAD = "update_tree_payload";
+    public static final String DELETE_TREE_URL = "delete_tree_url";
 }

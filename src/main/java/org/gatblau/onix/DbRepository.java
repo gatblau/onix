@@ -34,7 +34,7 @@ public interface DbRepository {
         ITEMS
     */
     Result createOrUpdateItem(String key, JSONObject json);
-    ItemData getItem(String key);
+    ItemData getItem(String key, boolean includeLinks);
     Result deleteItem(String key);
     ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, Integer top);
 
@@ -126,6 +126,8 @@ public interface DbRepository {
     String getGetTreeItemsForSnapshotSQL();
     String getGetTreeLinksForSnapshotSQL();
 
+    String getDeleteItemTreeSQL();
+
     /* Snapshots */
     Result createSnapshot(JSONObject payload);
     Result updateSnapshot(String rootItemKey, String label, JSONObject payload);
@@ -134,4 +136,6 @@ public interface DbRepository {
 
     /* Item Tree */
     ItemTreeData getItemTree(String rootItemKey, String label);
+    ResultList createOrUpdateItemTree(JSONObject payload);
+    Result deleteItemTree(String rootItemKey);
 }

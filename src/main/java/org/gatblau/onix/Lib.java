@@ -127,7 +127,7 @@ public class Lib implements InitializingBean {
         item.setName(set.getString("name"));
         item.setDescription(set.getString("description"));
         item.setStatus(set.getShort("status"));
-        item.setItemType(set.getString("item_type_key"));
+        item.setType(set.getString("item_type_key"));
         item.setCreated(dateFormat.format(set.getDate("created")));
         item.setUpdated((updated != null) ? dateFormat.format(updated) : null);
         item.setMeta(toJSON(set.getObject("meta")));
@@ -141,6 +141,7 @@ public class Lib implements InitializingBean {
         Date updated = set.getDate("updated");
         LinkData link = new LinkData();
         link.setKey(set.getString("key"));
+        link.setType(set.getString("link_type_key"));
         link.setDescription(set.getString("description"));
         link.setEndItemKey(set.getString("end_item_key"));
         link.setStartItemKey(set.getString("start_item_key"));

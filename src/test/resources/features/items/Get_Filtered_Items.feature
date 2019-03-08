@@ -12,4 +12,4 @@ Feature: Get Filtered Configuration Items
     When a GET HTTP request to the Item uri is done with query parameters
     Then the response code is 200
     Then the response has body
-    Then the response contains 3 items
+    Then the response contains more than 2 items
