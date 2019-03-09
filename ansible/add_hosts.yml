@@ -1,8 +1,8 @@
 ---
 - name: Creates a configuration item for Host A
-  onix_item:
-    cmdb_host: "{{ onix_host }}"
-    access_token: "{{ onix_access_token }}"
+  ox_item:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
     key: "HOST-A"
     name: "HOST A - ONIX WAPI"
     description: "Onix Web Service Host"
@@ -28,16 +28,19 @@
         version: "1.8"
       }
     }
-    tag: "onix wapi ec2"
-    dimensions:
+    tag:
+      - "onix"
+      - "wapi"
+      - "ec2"
+    attribute:
       WBS: "EU-00023.100002.984"
       PROJECT: "TheOnixProject"
       LOCATION: "IRELAND"
 
 - name: Creates a configuration item for Host B
-  onix_item:
-    cmdb_host: "{{ onix_host }}"
-    access_token: "{{ onix_access_token }}"
+  ox_item:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
     key: "HOST-B"
     name: "HOST B - ONIX WAPI"
     description: "Onix Web Service Host"
@@ -63,16 +66,19 @@
         version: "1.8"
       }
     }
-    tag: "onix wapi ec2"
-    dimensions:
+    tag:
+      - "onix"
+      - "wapi"
+      - "ec2"
+    attribute:
       WBS: "EU-00023.100002.984"
       PROJECT: "TheOnixProject"
       LOCATION: "IRELAND"
 
 - name: Creates a configuration item for Host C
-  onix_item:
-    cmdb_host: "{{ onix_host }}"
-    access_token: "{{ onix_access_token }}"
+  ox_item:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
     key: "HOST-C"
     name: "HOST C - ONIX WAPI"
     description: "Onix Web Service Host"
@@ -98,16 +104,19 @@
         version: "1.8"
       }
     }
-    tag: "onix wapi ec2"
-    dimensions:
+    tag:
+      - "onix"
+      - "wapi"
+      - "ec2"
+    attribute:
       WBS: "EU-00023.100002.984"
       PROJECT: "TheOnixProject"
       LOCATION: "IRELAND"
 
 - name: Creates a configuration item for Host D
-  onix_item:
-    cmdb_host: "{{ onix_host }}"
-    access_token: "{{ onix_access_token }}"
+  ox_item:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
     key: "HOST-D"
     name: "HOST D - ONIX DB"
     description: "Onix Data Service Host"
@@ -129,16 +138,19 @@
         zone: "3"
       }
     }
-    tag: "onix db ec2"
-    dimensions:
+    tag:
+      - "onix"
+      - "wapi"
+      - "ec2"
+    attribute:
       WBS: "EU-00023.100002.984"
       PROJECT: "TheOnixProject"
       LOCATION: "USA"
 
 - name: Creates a configuration item for Host E
-  onix_item:
-    cmdb_host: "{{ onix_host }}"
-    access_token: "{{ onix_access_token }}"
+  ox_item:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
     key: "HOST-E"
     name: "HOST E - ONIX DB"
     description: "Onix Data Service Host"
@@ -160,8 +172,11 @@
         zone: "3"
       }
     }
-    tag: "onix db ec2"
-    dimensions:
+    tag:
+      - "onix"
+      - "wapi"
+      - "ec2"
+    attribute:
       WBS: "EU-00023.100002.984"
       PROJECT: "TheOnixProject"
       LOCATION: "USA"

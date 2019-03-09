@@ -113,5 +113,5 @@ Once in possession of the bearer token (i.e. access_token) a call to the WAPI en
 ```bash
 $ curl \
     -H '${AUTH_HEADER}' \
-    'http://localhost:8080/itemType/'
+    'http://localhost:8080/type/'
 ```

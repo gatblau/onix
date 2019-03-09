@@ -1,7 +1,7 @@
 {
   "name": "Test Link Rule",
   "description": "This link rule is for testing purposes only.",
-  "linkType": "INVENTORY",
-  "startItemType": "HOST-GROUP",
-  "endItemType": "HOST"
+  "linkTypeKey": "INVENTORY",
+  "startItemTypeKey": "HOST-GROUP",
+  "endItemTypeKey": "HOST"
 }

@@ -1,0 +1,10 @@
+---
+- name: Creates the Application Link Type
+  ox_link_type:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "APPLICATION"
+    name: "Software Application Link."
+    description: "Links application services."
+...
+
