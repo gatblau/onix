@@ -421,7 +421,7 @@ public class WebAPI {
      */
     @ApiOperation(
             value = "Creates a new or updates an existing inventory.",
-            notes = "")
+            notes = "NOTE: this endpoint is EXPERIMENTAL. In future versions, it will be deprecated and its logic will be moved to the ox_cli tool.")
     @RequestMapping(
             path = "/inventory/{key}"
             , method = RequestMethod.PUT)
@@ -434,7 +434,7 @@ public class WebAPI {
 
     @ApiOperation(
             value = "Retrieves an existing inventory.",
-            notes = "")
+            notes = "NOTE: this endpoint is EXPERIMENTAL. In future versions, it will be deprecated and its logic will be moved to the ox_cli tool.")
     @RequestMapping(
               path = "/inventory/{key}/{label}"
             , method = RequestMethod.GET)
