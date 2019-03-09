@@ -1,8 +1,8 @@
 ---
 - name: Creates a runtime configuration for Spring Boot
-  onix_item:
-    cmdb_host: "{{ onix_host }}"
-    access_token: "{{ onix_access_token }}"
+  ox_item:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
     key: "RUNTIME-SPRING-BOOT"
     name: "Spring Boot"
     description: "The framework used to run Spring based applications."
@@ -10,20 +10,22 @@
     status: 1
     meta: {
     }
-    tag: "runtime"
-    dimensions:
+    tag:
+    - "runtime"
+    attribute:
       LANGUAGE: "JAVA"
 
 - name: Creates a runtime configuration for PostgreSQL
-  onix_item:
-    cmdb_host: "{{ onix_host }}"
-    access_token: "{{ onix_access_token }}"
+  ox_item:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
     key: "DB-POSTGRESQL"
     name: "PostgreSQL Database Server"
     description: "Relational Database Management System."
     type: "DATABASE-SERVER"
     status: 1
     meta: { }
-    tag: "rdbms"
-    dimensions:
+    tag:
+    - "rdbms"
+    attribute:
       DBTYPE: "POSTGRESQL"

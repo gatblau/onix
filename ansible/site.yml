@@ -1,14 +1,15 @@
 - hosts: localhost
   tasks:
-    - name: getting Onix access token
-      onix_login:
-        auth_host: "{{ auth_host }}"
-        realm: "onix"
-        client_id: "onix-cmdb"
-        username: "onix"
-        password: "onix"
+    - name: configure access to Onix
+      ox_setup:
+        uri: "{{ wapi_uri }}" # the URL where the Onix WAPI is listening
+        username: "{{ user }}" # the username for basic authentication
+        password: "{{ pwd }}" # the password for basic authentication
+        auth_mode: "basic" # the authentication to use (e.g. none, basic, openid)
 
     - include: add_item_types.yml
+    - include: add_link_types.yml
+    - include: add_link_rules.yml
     - include: add_hosts.yml
     - include: add_runtimes.yml
     - include: add_app.yml

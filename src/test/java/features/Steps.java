@@ -499,11 +499,11 @@ public class Steps extends BaseTest {
         get(ItemTypeList.class);
     }
 
-    @Then("^the response contains (\\d+) item types$")
-    public void theResponseContainsItemTypes(int items) {
+    @Then("^the response contains more than (\\d+) item types$")
+    public void theResponseContainsMoreThanItemTypes(int items) {
         ResponseEntity<ItemTypeList> response = util.get(RESPONSE);
         int actual = response.getBody().getItems().size();
-        if(response.getBody().getItems().size() != items){
+        if(response.getBody().getItems().size() <= items){
             throw new RuntimeException(String.format("Response contains %s items instead of %s items.", actual, items));
         }
     }

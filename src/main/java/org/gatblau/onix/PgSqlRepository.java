@@ -382,7 +382,7 @@ public class PgSqlRepository implements DbRepository {
         Object attribute = json.get("attribute_validation");
         Object version = json.get("version");
         try {
-            db.prepare(getSetItemTypeSQL());
+            db.prepare(getSetLinkTypeSQL());
             db.setString(1, key); // key_param
             db.setString(2, (name != null) ? (String) name : null); // name_param
             db.setString(3, (description != null) ? (String) description : null); // description_param
@@ -451,9 +451,9 @@ public class PgSqlRepository implements DbRepository {
         Result result = new Result();
         Object name = json.get("name");
         Object description = json.get("description");
-        Object linkType = json.get("linkType");
-        Object startItemType = json.get("startItemType");
-        Object endItemType = json.get("endItemType");
+        Object linkType = json.get("linkTypeKey");
+        Object startItemType = json.get("startItemTypeKey");
+        Object endItemType = json.get("endItemTypeKey");
         Object version = json.get("version");
         try {
             db.prepare(getSetLinkRuleSQL());
@@ -768,7 +768,14 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getSetLinkTypeSQL() {
-        return null;
+        return "SELECT set_link_type(" +
+                "?::character varying," + // key
+                "?::character varying," + // name
+                "?::text," + // description
+                "?::hstore," + // attr_valid
+                "?::bigint," + // version
+                "?::character varying" + // changed_by
+                ")";
     }
 
     @Override

@@ -5,14 +5,14 @@ In order to maintain accurate information in the CMDB it is important that:
 - Changes are driven by information in the CMDB. Or
 - Both of the above cases.
 
-In order to facilitate this, a set of Ansible modules are provided in the [library](../ansible/library) folder, as follows:
+In order to facilitate this, a set of Ansible modules are provided in the [library](../ansible/library_old) folder, as follows:
 
 |Module| Description |
 |---|---|
-| [**onix_login**](../ansible/library/onix_login.py)| Connects to an OpenId enabled authentication server and requests an access token to authenticate requests to the Onix RESTful API. This module does not currently support automatic token refreshes after expiration. |
-| [**onix_item**](../ansible/library/onix_item.py)| Creates a new or updates an existing configuration item. |
-| [**onix_link**](../ansible/library/onix_link.py)| Creates a new or updates an existing link between two existing configuration items. |
-| [**onix_item_type**](../ansible/library/onix_item_type.py)| Creates a new or updates an existing configuration item type. |
+| [**onix_login**](../ansible/library_old/onix_login.py)| Connects to an OpenId enabled authentication server and requests an access token to authenticate requests to the Onix RESTful API. This module does not currently support automatic token refreshes after expiration. |
+| [**onix_item**](../ansible/library_old/onix_item.py)| Creates a new or updates an existing configuration item. |
+| [**onix_link**](../ansible/library_old/onix_link.py)| Creates a new or updates an existing link between two existing configuration items. |
+| [**onix_item_type**](../ansible/library_old/onix_item_type.py)| Creates a new or updates an existing configuration item type. |
 
  More modules will be added in the future.
  
@@ -47,7 +47,7 @@ If this is not the case, update the variables in the [inventory](../ansible/inve
 
 ### In the same location of the playbooks / project
 
-Copy the [library](../ansible/library) folder in the same folder where the playbook using the modules is (e.g. see [site.yml here](../ansible/site.yml)). 
+Copy the [library](../ansible/library_old) folder in the same folder where the playbook using the modules is (e.g. see [site.yml here](../ansible/site.yml)). 
 
 ### In a shared location
 

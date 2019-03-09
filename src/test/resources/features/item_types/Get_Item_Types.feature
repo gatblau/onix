@@ -8,5 +8,5 @@ Feature: Find Item Types
     Given the item type URL of the service with no query parameters exist
     When a request to GET a list of item types is done
     Then the response has body
-    Then the response contains 5 item types
+    Then the response contains more than 3 item types
     Then the response code is 200
