@@ -42,3 +42,6 @@ unzip -o ././../../../target/*.jar -d ./tmp
 
 echo "builds the docker image"
 docker build -t creoworks/onixwapi-snapshot:${TAG} .
+
+echo "tags the image as latest"
+docker tag creoworks/onixwapi-snapshot:${TAG} creoworks/onixwapi-snapshot:latest
