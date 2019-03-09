@@ -42,6 +42,7 @@ ONIXTAG="${VERSION}-${HASH}-${DATE}"
 echo "Onix TAG is: ${ONIXTAG}"
 
 # writes the version to the resources folder so it is available for the wapi to report on
+rm ../../src/main/resources/version
 echo ${ONIXTAG} >> ../../src/main/resources/version
 
 # builds the onix-db image
@@ -55,3 +56,6 @@ echo building onixwapi
 cd wapi
 sh ./build.sh $ONIXTAG
 cd ..
+
+docker push creoworks/onixdb-snapshot
+docker push creoworks/onixwapi-snapshot
