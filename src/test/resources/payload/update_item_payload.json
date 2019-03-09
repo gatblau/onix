@@ -1,7 +1,7 @@
 {
   "name": "Updated Test Item",
   "description": "This is an updated CMDB item for testing purposes.",
-  "type": "HOST",
+  "type": "ANSIBLE_HOST",
   "meta": {
     "IP": "192.168.0.1",
     "Vendor": "Supreme Computers",

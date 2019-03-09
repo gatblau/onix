@@ -66,9 +66,9 @@ public class Node {
     }
 
     public enum NodeType {
-        HOST,
-        GROUP,
-        PARENT_GROUP,
+        ANSIBLE_HOST,
+        ANSIBLE_HOST_GROUP,
+        ANSIBLE_HOST_GROUP_SET,
         HOST_VARS,
     }
 

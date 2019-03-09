@@ -341,7 +341,7 @@ public class Steps extends BaseTest {
 
     @Given("^the filtering config item type is known$")
     public void theFilteringConfigItemTypeIsKnown() throws Throwable {
-        util.put(CONGIG_ITEM_TYPE_KEY, "HOST");
+        util.put(CONGIG_ITEM_TYPE_KEY, "ANSIBLE_HOST");
     }
 
     @Given("^the filtering config item tag is known$")

@@ -19,10 +19,11 @@ import java.util.Map;
 
 public class Inventory {
     private static final String EMPTY_LINE = "EMPTY_LINE";
-    private static final String HOST_GROUP = "HOST-GROUP";
-    private static final String GROUP_OF_HOST_GROUPS = "HOST-GROUP-GROUP";
+    private static final String ANSIBLE_HOST = "ANSIBLE_HOST";
+    private static final String ANSIBLE_HOST_GROUP = "ANSIBLE_HOST_GROUP";
+    private static final String ANSIBLE_HOST_GROUP_SET = "ANSIBLE_HOST_GROUP_SET";
     private static final String ITEM = "ITEM";
-    private static final String HOST_VARS = "HOST-VARS";
+    private static final String HOST_VARS = "HOST_VARS";
     private static final String COMMENT = "COMMENT";
     private String hostVars = "";
     private boolean readingHostVars;
@@ -76,14 +77,14 @@ public class Inventory {
 
     private Node.NodeType getType(String itemType) {
         switch (itemType){
-            case "HOST-GROUP":
-                return Node.NodeType.GROUP;
-            case "HOST-GROUP-GROUP":
-                return Node.NodeType.PARENT_GROUP;
-            case "HOST":
-                return Node.NodeType.HOST;
+            case ANSIBLE_HOST_GROUP:
+                return Node.NodeType.ANSIBLE_HOST_GROUP;
+            case ANSIBLE_HOST_GROUP_SET:
+                return Node.NodeType.ANSIBLE_HOST_GROUP_SET;
+            case ANSIBLE_HOST:
+                return Node.NodeType.ANSIBLE_HOST;
         }
-        throw new RuntimeException(String.format("Mapping not found for ite type '%s'", itemType));
+        throw new RuntimeException(String.format("Mapping not found for item type '%s'", itemType));
     }
 
     public List<Node> getNodes() {
@@ -102,7 +103,7 @@ public class Inventory {
     private void WriteGroupsVars(StringBuilder builder) {
         for (Node node : nodes) {
             switch (node.getType()) {
-                case PARENT_GROUP: {
+                case ANSIBLE_HOST_GROUP_SET: {
                     if (node.getVars().size() > 0) {
                         WriteGroupVars(builder, node);
                     }
@@ -111,7 +112,7 @@ public class Inventory {
                     }
                     break;
                 }
-                case GROUP: {
+                case ANSIBLE_HOST_GROUP: {
                     WriteGroupVars(builder, node);
                     break;
                 }
@@ -129,7 +130,7 @@ public class Inventory {
     private void WriteParentGroups(StringBuilder builder) {
         for (Node node : nodes) {
             switch (node.getType()) {
-                case PARENT_GROUP: {
+                case ANSIBLE_HOST_GROUP_SET: {
                     builder.append("[").append(node.getName()).append(":children]").append(System.lineSeparator());
                     for (int i = 0; i < node.getChildren().size(); i++) {
                         Node hostGroup = node.getChildren().get(i);
@@ -147,13 +148,13 @@ public class Inventory {
     private void WriteHostGroups(StringBuilder builder) {
         for (Node node : nodes) {
             switch (node.getType()) {
-                case PARENT_GROUP: {
+                case ANSIBLE_HOST_GROUP_SET: {
                     for (Node hostGroup : node.getChildren()) {
                         WriteHostGroup(builder, hostGroup);
                     }
                     break;
                 }
-                case GROUP: {
+                case ANSIBLE_HOST_GROUP: {
                     WriteHostGroup(builder, node);
                     break;
                 }
@@ -192,13 +193,13 @@ public class Inventory {
     private void populate(List<LexerToken> tokens) {
         Node currentParent = null;
         for (LexerToken token : tokens) {
-            if (token.getType().equals(GROUP_OF_HOST_GROUPS)) {
+            if (token.getType().equals(ANSIBLE_HOST_GROUP_SET)) {
                 String name = token.getValue().substring(1, token.getValue().length() - ":children".length() - 1);
-                Node newParent = new Node(name, Node.NodeType.PARENT_GROUP);
+                Node newParent = new Node(name, Node.NodeType.ANSIBLE_HOST_GROUP_SET);
                 nodes.add(newParent);
                 currentParent = newParent;
             }
-            else if (token.getType().equals(HOST_GROUP)) {
+            else if (token.getType().equals(ANSIBLE_HOST_GROUP)) {
                 String name = token.getValue().substring(1, token.getValue().length() - 1);
                 // is this node already part of the tree
                 Node hostGroup = nodes.find(name);
@@ -206,7 +207,7 @@ public class Inventory {
                 if (hostGroup != null) {
                     currentParent = hostGroup;
                 } else {
-                    hostGroup = new Node(name, Node.NodeType.GROUP);
+                    hostGroup = new Node(name, Node.NodeType.ANSIBLE_HOST_GROUP);
                     // if not, then it has to be added to the tree under the root
                     // and then made the current parent
                     nodes.add(hostGroup);
@@ -230,7 +231,7 @@ public class Inventory {
             else if (token.getType().equals(ITEM)) {
                 String item = token.getValue();
                 switch (currentParent.getType()){
-                    case PARENT_GROUP:
+                    case ANSIBLE_HOST_GROUP_SET:
                         if (readingHostVars) {
                             // aggregates host vars
                             hostVars += item + System.lineSeparator();
@@ -253,12 +254,12 @@ public class Inventory {
                             }
                         } else {
                             // add a new host node
-                            currentParent.getChildren().add(new Node(item, Node.NodeType.GROUP));
+                            currentParent.getChildren().add(new Node(item, Node.NodeType.ANSIBLE_HOST_GROUP));
                         }
                         break;
-                    case GROUP:
+                    case ANSIBLE_HOST_GROUP:
                         String name = getItemName(item);
-                        currentParent.getChildren().add(new Node(name, Node.NodeType.HOST, getItemVars(item)));
+                        currentParent.getChildren().add(new Node(name, Node.NodeType.ANSIBLE_HOST, getItemVars(item)));
                         break;
                 }
             }
@@ -268,9 +269,9 @@ public class Inventory {
     private void addRules(Lexer lexer) {
         lexer.addRule(new LexerRule(EMPTY_LINE, "^\\s*$"));
         lexer.addRule(new LexerRule(COMMENT, "#.*$"));
-        lexer.addRule(new LexerRule(GROUP_OF_HOST_GROUPS, "^\\w*\\[\\w*(?<item>.*):children\\w*\\]\\w*$"));
+        lexer.addRule(new LexerRule(ANSIBLE_HOST_GROUP_SET, "^\\w*\\[\\w*(?<item>.*):children\\w*\\]\\w*$"));
         lexer.addRule(new LexerRule(HOST_VARS, "^\\w*\\[\\w*(?<item>.*):vars\\w*\\]\\w*$"));
-        lexer.addRule(new LexerRule(HOST_GROUP, "^\\w*\\[\\w*(?<item>[^:]*)\\w*\\]\\w*$"));
+        lexer.addRule(new LexerRule(ANSIBLE_HOST_GROUP, "^\\w*\\[\\w*(?<item>[^:]*)\\w*\\]\\w*$"));
         lexer.addRule(new LexerRule(ITEM, "^(?!\\[).+$"));
     }
 
