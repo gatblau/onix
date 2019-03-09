@@ -147,6 +147,7 @@ CREATE OR REPLACE FUNCTION set_item_type(
     name_param character varying,
     description_param text,
     attr_valid_param hstore, -- keys allowed or required in item attributes
+    filter_param jsonb,
     local_version_param bigint,
     changed_by_param character varying
   )
@@ -171,6 +172,7 @@ BEGIN
       name,
       description,
       attr_valid,
+      filter,
       version,
       created,
       updated,
@@ -182,6 +184,7 @@ BEGIN
       name_param,
       description_param,
       attr_valid_param,
+      filter_param,
       1,
       current_timestamp,
       null,
@@ -193,6 +196,7 @@ BEGIN
       name = name_param,
       description = description_param,
       attr_valid = attr_valid_param,
+      filter = filter_param,
       version = version + 1,
       updated = current_timestamp,
       changed_by = changed_by_param
@@ -202,7 +206,8 @@ BEGIN
     AND (
       name != name_param OR
       description != description_param OR
-      attr_valid != attr_valid_param
+      attr_valid != attr_valid_param OR
+      filter != filter_param
     );
     GET DIAGNOSTICS rows_affected := ROW_COUNT;
     SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
@@ -211,7 +216,7 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION set_item_type(character varying, character varying, text, hstore, bigint, character varying)
+ALTER FUNCTION set_item_type(character varying, character varying, text, hstore, jsonb, bigint, character varying)
 OWNER TO onix;
 
 /*

@@ -81,7 +81,7 @@ public class WebAPI {
             produces = {"application/json" })
     public ResponseEntity<Result> createOrUpdateItem(
             @PathVariable("key") String key,
-            @RequestBody JSONObject payload) throws IOException, SQLException, ParseException {
+            @RequestBody JSONObject payload) {
         return ResponseEntity.ok(data.createOrUpdateItem(key, payload));
     }
 
@@ -93,7 +93,7 @@ public class WebAPI {
         , method = RequestMethod.DELETE)
     public ResponseEntity<Result> deleteItem(
             @PathVariable("key") String key
-    ) throws InterruptedException, SQLException {
+    ) {
         return ResponseEntity.ok(data.deleteItem(key));
     }
 
@@ -149,6 +149,20 @@ public class WebAPI {
         return ResponseEntity.ok(list);
     }
 
+    @ApiOperation(
+            value = "Search for configuration items based on the specified filters (provided via a query string).",
+            notes = "Use this function to retrieve configuration items based on type, tags and date range as required. " +
+                    "Results are limited by the top parameter.")
+    @RequestMapping(
+            path = "/item/{key}/meta"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<JSONObject> getItemMeta(
+        @PathVariable("key") String key
+    ){
+        return ResponseEntity.ok(data.getItemMeta(key));
+    }
     /*
         ITEM TYPES
      */

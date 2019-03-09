@@ -22,8 +22,8 @@ BEGIN
     THEN
         CREATE SEQUENCE item_type_id_seq
             INCREMENT 1
-            START 10
-            MINVALUE 10
+            START 1000
+            MINVALUE 1000
             MAXVALUE 9223372036854775807
             CACHE 1;
 
@@ -37,6 +37,7 @@ BEGIN
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
           description TEXT COLLATE pg_catalog."default",
           attr_valid  HSTORE,
+          filter      jsonb,
           system      boolean                         DEFAULT FALSE,
           version     bigint                 NOT NULL DEFAULT 1,
           created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
@@ -70,6 +71,7 @@ BEGIN
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
           description TEXT COLLATE pg_catalog."default",
           attr_valid  HSTORE,
+          filter      jsonb,
           system      boolean,
           version     bigint,
           created     timestamp(6) with time zone,
@@ -100,10 +102,10 @@ BEGIN
             AFTER INSERT OR UPDATE OR DELETE ON item_type
             FOR EACH ROW EXECUTE PROCEDURE change_item_type();
 
-        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (1, 'ANSIBLE_INVENTORY', 'Ansible Inventory', 'An Ansible inventory.', TRUE, 'onix');
-        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (2, 'ANSIBLE_HOST_GROUP_SET', 'Host Group Set', 'An Ansible Set of Host Groups.', TRUE, 'onix');
-        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (3, 'ANSIBLE_HOST_GROUP', 'Ansible Host Group', 'An Ansible Inventory Host Group.', TRUE, 'onix');
-        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (4, 'ANSIBLE_HOST', 'Ansible Host', 'An Ansible Inventory Host', TRUE, 'onix');
+        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (50, 'ANSIBLE_INVENTORY', 'Ansible Inventory', 'An Ansible inventory.', TRUE, 'onix');
+        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (51, 'ANSIBLE_HOST_GROUP_SET', 'Host Group Set', 'An Ansible Set of Host Groups.', TRUE, 'onix');
+        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (52, 'ANSIBLE_HOST_GROUP', 'Ansible Host Group', 'An Ansible Inventory Host Group.', TRUE, 'onix');
+        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (53, 'ANSIBLE_HOST', 'Ansible Host', 'An Ansible Inventory Host', TRUE, 'onix');
 
     END IF;
 
@@ -114,8 +116,8 @@ BEGIN
     THEN
         CREATE SEQUENCE item_id_seq
             INCREMENT 1
-            START 10
-            MINVALUE 10
+            START 1
+            MINVALUE 1
             MAXVALUE 9223372036854775807
             CACHE 1;
 
@@ -228,8 +230,8 @@ BEGIN
     THEN
         CREATE SEQUENCE link_type_id_seq
         INCREMENT 1
-        START 10
-        MINVALUE 10
+        START 1000
+        MINVALUE 1000
         MAXVALUE 9223372036854775807
         CACHE 1;
 
@@ -302,10 +304,10 @@ BEGIN
             AFTER INSERT OR UPDATE OR DELETE ON link_type
             FOR EACH ROW EXECUTE PROCEDURE change_link_type();
 
-        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (1, 'ANSIBLE_INVENTORY', 'Ansible Inventory Link', 'Links items describing an Ansible inventory.', TRUE, 'onix');
-        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (2, 'LICENSE', 'Licence Link', 'Links items describing licence usage.', TRUE, 'onix');
-        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (3, 'NETWORK', 'Network Link', 'Links items describing network connections.', TRUE, 'onix');
-        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (4, 'WEB-CONTENT', 'Web Content Link', 'Links items describing web content.', TRUE, 'onix');
+        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (1, 'APPLICATION', 'Application Link', 'Links items describing application components.', TRUE, 'onix');
+        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (2, 'NETWORK', 'Network Link', 'Links items describing network connections.', TRUE, 'onix');
+        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (3, 'WEB-CONTENT', 'Web Content Link', 'Links items describing web content.', TRUE, 'onix');
+        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (50, 'ANSIBLE_INVENTORY', 'Ansible Inventory Link', 'Links items describing an Ansible inventory.', TRUE, 'onix');
 
     END IF;
 
@@ -316,8 +318,8 @@ BEGIN
 	  THEN
         CREATE SEQUENCE link_id_seq
             INCREMENT 1
-            START 10
-            MINVALUE 10
+            START 1
+            MINVALUE 1
             MAXVALUE 9223372036854775807
             CACHE 1;
 
@@ -444,8 +446,8 @@ BEGIN
     THEN
         CREATE SEQUENCE link_rule_id_seq
             INCREMENT 1
-            START 10
-            MINVALUE 10
+            START 1
+            MINVALUE 1
             MAXVALUE 9223372036854775807
             CACHE 1;
 
@@ -553,10 +555,10 @@ BEGIN
             AFTER INSERT OR UPDATE OR DELETE ON link_rule
             FOR EACH ROW EXECUTE PROCEDURE change_link_rule();
 
-        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (1, 'INVENTORY-ANSIBLE-HOST-GROUP-SET', 'Inventory to Group of Host Groups link rule.', 'Allows to link an inventory with a group of host groups.', 1, 1, 2, 'onix', TRUE);
-        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (2, 'INVENTORY->ANSIBLE-HOST-GROUP', 'Inventory to ANSIBLE-HOST-GROUP link rule.', 'Allows to link an inventory item with a host group item.', 1, 1, 3, 'onix', TRUE);
-        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (3, 'ANSIBLE-HOST-GROUP-SET->ANSIBLE-HOST-GROUP', 'Group of Host Groups to Groups link rule.', 'Allows to link a group of host groups with a host group.', 1, 2, 3, 'onix', TRUE);
-        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (4, 'ANSIBLE-HOST-GROUP->HOST', 'Host Group to Host link rule.', 'Allows to link a host group item with a host item.', 1, 3, 4, 'onix', TRUE);
+        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (1, 'ANSIBLE-INVENTORY->ANSIBLE-HOST-GROUP-SET', 'Inventory to Group of Host Groups link rule.', 'Allows to link an inventory with a group of host groups.', 50, 50, 51, 'onix', TRUE);
+        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (2, 'ANSIBLE-INVENTORY->ANSIBLE-HOST-GROUP', 'Inventory to ANSIBLE-HOST-GROUP link rule.', 'Allows to link an inventory item with a host group item.', 50, 50, 52, 'onix', TRUE);
+        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (3, 'ANSIBLE-HOST-GROUP-SET->ANSIBLE-HOST-GROUP', 'Group of Host Groups to Groups link rule.', 'Allows to link a group of host groups with a host group.', 50, 51, 52, 'onix', TRUE);
+        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (4, 'ANSIBLE-HOST-GROUP->HOST', 'Host Group to Host link rule.', 'Allows to link a host group item with a host item.', 50, 52, 53, 'onix', TRUE);
 
     END IF;
 
@@ -567,8 +569,8 @@ BEGIN
     THEN
         CREATE SEQUENCE snapshot_id_seq
         INCREMENT 1
-        START 10
-        MINVALUE 10
+        START 1
+        MINVALUE 1
         MAXVALUE 9223372036854775807
         CACHE 1;
 

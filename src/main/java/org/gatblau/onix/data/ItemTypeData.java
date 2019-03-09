@@ -31,6 +31,7 @@ public class ItemTypeData implements Serializable {
     private String description;
     private Boolean system;
     private JSONObject attribute;
+    private JSONObject filter;
     private String created;
     private String updated;
     private Integer version;
@@ -100,5 +101,13 @@ public class ItemTypeData implements Serializable {
 
     public void setVersion(Integer version) {
         this.version = version;
+    }
+
+    public JSONObject getFilter() {
+        return filter;
+    }
+
+    public void setFilter(JSONObject filter) {
+        this.filter = filter;
     }
 }

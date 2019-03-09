@@ -165,6 +165,7 @@ public class Lib implements InitializingBean {
         itemType.setUpdated((updated != null) ? dateFormat.format(updated) : null);
         itemType.setVersion(set.getInt("version"));
         itemType.setAttribute(toJSON(set.getObject("attr_valid")));
+        itemType.setFilter(toJSON(set.getObject("filter")));
         return itemType;
     }
 

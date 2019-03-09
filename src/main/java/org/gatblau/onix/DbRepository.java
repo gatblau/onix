@@ -37,6 +37,7 @@ public interface DbRepository {
     ItemData getItem(String key, boolean includeLinks);
     Result deleteItem(String key);
     ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, Integer top);
+    JSONObject getItemMeta(String key);
 
     /*
         LINKS

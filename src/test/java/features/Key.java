@@ -41,4 +41,5 @@ public class Key {
     public static final String PUT_TREE_URL = "put_tree_url";
     public static final String UPDATE_TREE_PAYLOAD = "update_tree_payload";
     public static final String DELETE_TREE_URL = "delete_tree_url";
+    public static final String ITEM_META_URL = "item_meta_url";
 }

@@ -11,3 +11,4 @@ Feature: Create a new Configuration Item type
     When an item type PUT HTTP request with a JSON payload is done
     Then the response code is 200
     Then the response has body
+    Then the result contains no errors
