@@ -4,7 +4,7 @@
       "key": "test_inventory::OSEv3",
       "name": "OSEv3",
       "description": "PARENT_GROUP imported from Ansible inventory.",
-      "type": "HOST-GROUP-GROUP",
+      "type": "ANSIBLE_HOST_GROUP_SET",
       "status": 0,
       "meta": {
         "vars": {
@@ -167,7 +167,7 @@
       "key": "test_inventory::masters",
       "name": "masters",
       "description": "GROUP imported from Ansible inventory.",
-      "type": "HOST-GROUP",
+      "type": "ANSIBLE_HOST_GROUP",
       "status": 0,
       "meta": {
         "vars": {}
@@ -179,7 +179,7 @@
       "key": "test_inventory::master0",
       "name": "master0",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -198,7 +198,7 @@
       "key": "test_inventory::master1",
       "name": "master1",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -213,7 +213,7 @@
       "key": "test_inventory::master2",
       "name": "master2",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -228,7 +228,7 @@
       "key": "test_inventory::postdeploy_glusterfs",
       "name": "postdeploy_glusterfs",
       "description": "GROUP imported from Ansible inventory.",
-      "type": "HOST-GROUP",
+      "type": "ANSIBLE_HOST_GROUP",
       "status": 0,
       "meta": {
         "vars": {}
@@ -240,7 +240,7 @@
       "key": "test_inventory::storage0",
       "name": "storage0",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -258,7 +258,7 @@
       "key": "test_inventory::storage1",
       "name": "storage1",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -272,7 +272,7 @@
       "key": "test_inventory::storage2",
       "name": "storage2",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -286,7 +286,7 @@
       "key": "test_inventory::etcd",
       "name": "etcd",
       "description": "GROUP imported from Ansible inventory.",
-      "type": "HOST-GROUP",
+      "type": "ANSIBLE_HOST_GROUP",
       "status": 0,
       "meta": {
         "vars": {}
@@ -298,7 +298,7 @@
       "key": "test_inventory::etcd0",
       "name": "etcd0",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -312,7 +312,7 @@
       "key": "test_inventory::etcd1",
       "name": "etcd1",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -326,7 +326,7 @@
       "key": "test_inventory::etcd2",
       "name": "etcd2",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -340,7 +340,7 @@
       "key": "test_inventory::infra",
       "name": "infra",
       "description": "GROUP imported from Ansible inventory.",
-      "type": "HOST-GROUP",
+      "type": "ANSIBLE_HOST_GROUP",
       "status": 0,
       "meta": {
         "vars": {}
@@ -352,7 +352,7 @@
       "key": "test_inventory::infra0",
       "name": "infra0",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -367,7 +367,7 @@
       "key": "test_inventory::infra1",
       "name": "infra1",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -382,7 +382,7 @@
       "key": "test_inventory::infra2",
       "name": "infra2",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -397,7 +397,7 @@
       "key": "test_inventory::infra3",
       "name": "infra3",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -412,7 +412,7 @@
       "key": "test_inventory::compute",
       "name": "compute",
       "description": "GROUP imported from Ansible inventory.",
-      "type": "HOST-GROUP",
+      "type": "ANSIBLE_HOST_GROUP",
       "status": 0,
       "meta": {
         "vars": {}
@@ -424,7 +424,7 @@
       "key": "test_inventory::compute0",
       "name": "compute0",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -439,7 +439,7 @@
       "key": "test_inventory::compute1",
       "name": "compute1",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -454,7 +454,7 @@
       "key": "test_inventory::compute2",
       "name": "compute2",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -469,7 +469,7 @@
       "key": "test_inventory::compute3",
       "name": "compute3",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -484,7 +484,7 @@
       "key": "test_inventory::compute4",
       "name": "compute4",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -499,7 +499,7 @@
       "key": "test_inventory::controller",
       "name": "controller",
       "description": "GROUP imported from Ansible inventory.",
-      "type": "HOST-GROUP",
+      "type": "ANSIBLE_HOST_GROUP",
       "status": 0,
       "meta": {
         "vars": {}
@@ -511,7 +511,7 @@
       "key": "test_inventory::controller1",
       "name": "controller1",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -525,7 +525,7 @@
       "key": "test_inventory::bastion",
       "name": "bastion",
       "description": "GROUP imported from Ansible inventory.",
-      "type": "HOST-GROUP",
+      "type": "ANSIBLE_HOST_GROUP",
       "status": 0,
       "meta": {
         "vars": {}
@@ -537,7 +537,7 @@
       "key": "test_inventory::bastion1",
       "name": "bastion1",
       "description": "HOST imported from Ansible inventory.",
-      "type": "HOST",
+      "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
         "vars": {
@@ -552,7 +552,7 @@
     {
       "key": "test_inventory::test_inventory->OSEv3",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -562,7 +562,7 @@
     {
       "key": "test_inventory::OSEv3->masters",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -572,7 +572,7 @@
     {
       "key": "test_inventory::masters->master0",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -582,7 +582,7 @@
     {
       "key": "test_inventory::masters->master1",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -592,7 +592,7 @@
     {
       "key": "test_inventory::masters->master2",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -602,7 +602,7 @@
     {
       "key": "test_inventory::OSEv3->postdeploy_glusterfs",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -612,7 +612,7 @@
     {
       "key": "test_inventory::postdeploy_glusterfs->storage0",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -622,7 +622,7 @@
     {
       "key": "test_inventory::postdeploy_glusterfs->storage1",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -632,7 +632,7 @@
     {
       "key": "test_inventory::postdeploy_glusterfs->storage2",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -642,7 +642,7 @@
     {
       "key": "test_inventory::OSEv3->etcd",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -652,7 +652,7 @@
     {
       "key": "test_inventory::etcd->etcd0",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -662,7 +662,7 @@
     {
       "key": "test_inventory::etcd->etcd1",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -672,7 +672,7 @@
     {
       "key": "test_inventory::etcd->etcd2",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -682,7 +682,7 @@
     {
       "key": "test_inventory::test_inventory->infra",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -692,7 +692,7 @@
     {
       "key": "test_inventory::infra->infra0",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -702,7 +702,7 @@
     {
       "key": "test_inventory::infra->infra1",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -712,7 +712,7 @@
     {
       "key": "test_inventory::infra->infra2",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -722,7 +722,7 @@
     {
       "key": "test_inventory::infra->infra3",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -732,7 +732,7 @@
     {
       "key": "test_inventory::test_inventory->compute",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -742,7 +742,7 @@
     {
       "key": "test_inventory::compute->compute0",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -752,7 +752,7 @@
     {
       "key": "test_inventory::compute->compute1",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -762,7 +762,7 @@
     {
       "key": "test_inventory::compute->compute2",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -772,7 +772,7 @@
     {
       "key": "test_inventory::compute->compute3",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -782,7 +782,7 @@
     {
       "key": "test_inventory::compute->compute4",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -792,7 +792,7 @@
     {
       "key": "test_inventory::test_inventory->nodes",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -802,7 +802,7 @@
     {
       "key": "test_inventory::nodes->masters",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -812,7 +812,7 @@
     {
       "key": "test_inventory::nodes->compute",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -822,7 +822,7 @@
     {
       "key": "test_inventory::nodes->infra",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -832,7 +832,7 @@
     {
       "key": "test_inventory::nodes->etcd",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -842,7 +842,7 @@
     {
       "key": "test_inventory::test_inventory->controller",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -852,7 +852,7 @@
     {
       "key": "test_inventory::controller->controller1",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -862,7 +862,7 @@
     {
       "key": "test_inventory::test_inventory->bastion",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},
@@ -872,7 +872,7 @@
     {
       "key": "test_inventory::bastion->bastion1",
       "description": "Link imported from Ansible inventory.",
-      "type": "INVENTORY",
+      "type": "ANSIBLE_INVENTORY",
       "tag": [],
       "attribute": {},
       "meta": {},

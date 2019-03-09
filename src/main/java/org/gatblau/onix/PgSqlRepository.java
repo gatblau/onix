@@ -500,7 +500,7 @@ public class PgSqlRepository implements DbRepository {
         try {
             Inventory inv = new Inventory(inventory);
             Result result = new Result();
-            result = createOrUpdateItem(key, getItemData(key, "Inventory imported from Ansible inventory file.", "INVENTORY", new JSONObject()));
+            result = createOrUpdateItem(key, getItemData(key, "Inventory imported from Ansible inventory file.", "ANSIBLE_INVENTORY", new JSONObject()));
             if (result.isError()) return result;
             for (Node node : inv.getNodes()) {
                 processNode(node, null, key);
@@ -518,18 +518,18 @@ public class PgSqlRepository implements DbRepository {
         Result result = createOrUpdateItem(prefix(key, node.getName()), getItemData(node.getName(), String.format("%s imported from Ansible inventory.", node.getType()), nodeType, vars));
         if (result.isError()) return result;
         switch (node.getType()) {
-            case PARENT_GROUP:
-            case GROUP: {
+            case ANSIBLE_HOST_GROUP_SET:
+            case ANSIBLE_HOST_GROUP: {
                 if (parent == null) { // parent is the inventory node - link to inventory
                     result = createOrUpdateLink(
                             prefix(key, String.format("%s->%s", key, node.getName())),
-                            getLinkData("Link imported from Ansible inventory.", "INVENTORY", key, prefix(key, node.getName()))
+                            getLinkData("Link imported from Ansible inventory.", "ANSIBLE_INVENTORY", key, prefix(key, node.getName()))
                     );
                     if (result.isError()) return result;
                 } else { // link to a group
                     result = createOrUpdateLink(
                             prefix(key, String.format("%s->%s", parent.getName(), node.getName())),
-                            getLinkData("Link imported from Ansible inventory.", "INVENTORY", prefix(key, parent.getName()), prefix(key, node.getName()))
+                            getLinkData("Link imported from Ansible inventory.", "ANSIBLE_INVENTORY", prefix(key, parent.getName()), prefix(key, node.getName()))
                     );
                     if (result.isError()) return result;
                 }
@@ -538,10 +538,10 @@ public class PgSqlRepository implements DbRepository {
                 }
                 break;
             }
-            case HOST:{
+            case ANSIBLE_HOST:{
                 result = createOrUpdateLink(
                     prefix(key, String.format("%s->%s", parent.getName(), node.getName())),
-                    getLinkData("Link imported from Ansible inventory.", "INVENTORY", prefix(key, parent.getName()), prefix(key, node.getName())));
+                    getLinkData("Link imported from Ansible inventory.", "ANSIBLE_INVENTORY", prefix(key, parent.getName()), prefix(key, node.getName())));
                 if (result.isError()) return result;
                 break;
             }
@@ -552,14 +552,14 @@ public class PgSqlRepository implements DbRepository {
     private String getNodeType(Node node) {
         String groupType = "";
         switch (node.getType()) {
-            case PARENT_GROUP:
-                groupType = "HOST-GROUP-GROUP";
+            case ANSIBLE_HOST_GROUP_SET:
+                groupType = "ANSIBLE_HOST_GROUP_SET";
                 break;
-            case GROUP:
-                groupType = "HOST-GROUP";
+            case ANSIBLE_HOST_GROUP:
+                groupType = "ANSIBLE-HOST-GROUP";
                 break;
-            case HOST:
-                groupType = "HOST";
+            case ANSIBLE_HOST:
+                groupType = "ANSIBLE-HOST";
                 break;
         }
         return groupType;
@@ -580,7 +580,7 @@ public class PgSqlRepository implements DbRepository {
         try {
             db.prepare(getFindChildItemsSQL());
             db.setString(1, parentKey); // parent_key_param
-            db.setString(2, "INVENTORY"); // item_type_key_param
+            db.setString(2, "ANSIBLE_INVENTORY"); // item_type_key_param
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 items.getItems().add(util.toItemData(set));
