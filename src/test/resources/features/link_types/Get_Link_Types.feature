@@ -1,4 +1,4 @@
-Feature: Find Item Types
+Feature: Find Link Types
   As an Web API user
   I want to find Link Types
   So that I can see their configuration for administration purposes.

@@ -1,4 +1,29 @@
 {
   "name": "Test Item Type",
-  "description": "This item type is for testing purposes only."
+  "description": "This item type is for testing purposes only.",
+  "filter" : {
+    "items": [
+      {
+        "filter_1": [
+          "expression 1",
+          "expression 2",
+          "expression 3"
+        ]
+      },
+      {
+        "filter_2": [
+          "expression 1",
+          "expression 2",
+          "expression 3"
+        ]
+      },
+      {
+        "filter_3": [
+          "expression 1",
+          "expression 2",
+          "expression 3"
+        ]
+      }
+    ]
+  }
 }

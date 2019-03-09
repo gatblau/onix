@@ -6,6 +6,7 @@ import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import org.gatblau.onix.Info;
 import org.gatblau.onix.data.*;
+import org.json.simple.JSONObject;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -1217,6 +1218,33 @@ public class Steps extends BaseTest {
         }
         catch (Exception ex) {
             util.put(EXCEPTION, ex);
+        }
+    }
+
+    @Given("^the item metadata URL get by key is known$")
+    public void theItemMetadataURLGetByKeyIsKnown() {
+        util.put(ITEM_META_URL, String.format("%s/item/{key}/meta", baseUrl));
+    }
+
+    @When("^a GET HTTP request to the Item Metadata endpoint is done$")
+    public void aGETHTTPRequestToTheItemMetadataEndpointIsDone() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<JSONObject> result = client.exchange(
+                (String)util.get(ITEM_META_URL),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                JSONObject.class,
+                (String)util.get(ITEM_ONE_KEY));
+        util.put(RESPONSE, result);
+    }
+
+    @Then("^the reponse contains the requested metadata$")
+    public void theReponseContainsTheRequestedMetadata() {
+        ResponseEntity<JSONObject> response = util.get(RESPONSE);
+        JSONObject item = response.getBody();
+        if (item == null) {
+            throw new RuntimeException("Metadata not found in the response.");
         }
     }
 }
