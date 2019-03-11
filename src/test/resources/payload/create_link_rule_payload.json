@@ -1,7 +1,7 @@
 {
   "name": "Test Link Rule",
   "description": "This link rule is for testing purposes only.",
-  "linkTypeKey": "ANSIBLE_INVENTORY",
-  "startItemTypeKey": "ANSIBLE_HOST_GROUP",
-  "endItemTypeKey": "ANSIBLE_HOST"
+  "linkTypeKey": "link_type_1",
+  "startItemTypeKey": "item_type_1",
+  "endItemTypeKey": "item_type_1"
 }

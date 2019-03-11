@@ -150,9 +150,8 @@ public class WebAPI {
     }
 
     @ApiOperation(
-            value = "Search for configuration items based on the specified filters (provided via a query string).",
-            notes = "Use this function to retrieve configuration items based on type, tags and date range as required. " +
-                    "Results are limited by the top parameter.")
+            value = "Gets the metadata associated with the specified item.",
+            notes = "Use this function to retrieve the full metadata for an item.")
     @RequestMapping(
             path = "/item/{key}/meta"
             , method = RequestMethod.GET
@@ -161,7 +160,22 @@ public class WebAPI {
     public ResponseEntity<JSONObject> getItemMeta(
         @PathVariable("key") String key
     ){
-        return ResponseEntity.ok(data.getItemMeta(key));
+        return ResponseEntity.ok(data.getItemMeta(key, null));
+    }
+
+    @ApiOperation(
+            value = "Gets the portions of the metadata associated with the specified item and filter.",
+            notes = "Use this function to retrieve portions of the metadata for an item.")
+    @RequestMapping(
+            path = "/item/{key}/meta/{filter}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<JSONObject> getFilteredItemMeta(
+            @PathVariable("key") String key,
+            @PathVariable("filter") String filter
+    ){
+        return ResponseEntity.ok(data.getItemMeta(key, filter));
     }
     /*
         ITEM TYPES

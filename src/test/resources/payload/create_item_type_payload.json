@@ -2,26 +2,25 @@
   "name": "Test Item Type",
   "description": "This item type is for testing purposes only.",
   "filter" : {
-    "items": [
+    "filters": [
       {
-        "filter_1": [
-          "expression 1",
-          "expression 2",
-          "expression 3"
+        "authors": [
+          {"authors_of_all_books": "$.store.book[*].author"},
+          {"all_authors": "$..author"}
         ]
       },
       {
-        "filter_2": [
-          "expression 1",
-          "expression 2",
-          "expression 3"
+        "store": [
+          {"all_books_and_bikes": "$.store.*"},
+          {"all_prices": "$.store..price"}
         ]
       },
       {
-        "filter_3": [
-          "expression 1",
-          "expression 2",
-          "expression 3"
+        "books": [
+          {"not_expensive": "$..book[?(@.price <= $['expensive'])]"},
+          {"last_two": "$..book[-2:]"},
+          {"cheaper_than_ten": "$.store.book[?(@.price < 10)]"},
+          {"book_count": "$..book.length()"}
         ]
       }
     ]

@@ -1,6 +1,6 @@
 {
   "description": "This is a CMDB item link for testing purposes.",
-  "type": "ANSIBLE_INVENTORY",
+  "type": "link_type_1",
   "startItemKey": "item_one_key",
   "endItemKey": "item_two_key",
   "tag": ["cmdb", "host", "rhel"],

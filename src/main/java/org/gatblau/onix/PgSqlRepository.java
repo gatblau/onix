@@ -19,6 +19,8 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix;
 
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.ReadContext;
 import org.gatblau.onix.data.*;
 import org.gatblau.onix.inv.Inventory;
 import org.gatblau.onix.inv.Node;
@@ -35,10 +37,7 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class PgSqlRepository implements DbRepository {
@@ -164,9 +163,41 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public JSONObject getItemMeta(String key) {
+    public JSONObject getItemMeta(String key, String filter) {
+        HashMap<String, Object> results = new HashMap<>();
+        // gets the item in question
         ItemData item = getItem(key, false);
-        return item.getMeta();
+        if (filter == null) {
+            // if the query does not specify a filter key then returns the plain metadata
+            return item.getMeta();
+        }
+        // as a filter key has been passed in then tries and retrieves the filter expression for
+        // the key from the itemType definition
+        ItemTypeData itemType = getItemType(item.getType());
+        JSONObject f = itemType.getFilter();
+        if (f == null) {
+            // if the itemType does not define a filter then returns the plain whole metadata
+            return item.getMeta();
+        }
+        // parses the json metadata into a read context in order to apply the json paths later
+        ReadContext ctx = JsonPath.parse(item.getMeta());
+        // starts processing the filter expression
+        ArrayList<JSONObject> filters = (ArrayList) f.get("filters");
+        for (JSONObject json : filters) {
+            // each filter can have a set of values (json path expressions)
+            // matches the filter key with the key in the list of predefined filters
+            ArrayList<JSONObject> jsonPaths = (ArrayList) json.get(filter);
+            if (jsonPaths != null) {
+                // if there are json paths defined, runs an extraction for each path
+                for (JSONObject jsonPath: jsonPaths) {
+                    HashMap.Entry<String, String> path = (HashMap.Entry<String, String>) jsonPath.entrySet().toArray()[0];
+                    Object result = ctx.read(path.getValue());
+                    results.put(path.getKey(), result);
+                }
+                break;
+            }
+        }
+        return new JSONObject(results);
     }
 
     /*
@@ -275,19 +306,20 @@ public class PgSqlRepository implements DbRepository {
      */
     @Override
     public ItemTypeData getItemType(String key) {
+        ItemTypeData itemType = null;
         try {
             db.prepare(getGetItemTypeSQL());
             db.setString(1, key);
             ResultSet set = db.executeQuerySingleRow();
-            return util.toItemTypeData(set);
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        finally {
+            itemType = util.toItemTypeData(set);
             db.close();
         }
-        return new ItemTypeData();
+        catch (Exception ex) {
+            db.close();
+            ex.printStackTrace();
+            throw new RuntimeException(String.format("Failed to get item type with key '%s': %s", ex.getMessage()), ex);
+        }
+        return itemType;
     }
 
     @Override
@@ -400,7 +432,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(4, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null); // attribute_param
             db.setObject(5, version); // version_param
             db.setString(6, getUser()); // changed_by_param
-            result.setOperation(db.executeQueryAndRetrieveStatus("set_item_type"));
+            result.setOperation(db.executeQueryAndRetrieveStatus("set_link_type"));
         }
         catch (Exception ex) {
             ex.printStackTrace();
@@ -753,7 +785,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getGetItemTypeSQL() {
-        return "SELECT item_type(" +
+        return "SELECT * FROM item_type(" +
                 "?::character varying" + // key
                 ")";
     }

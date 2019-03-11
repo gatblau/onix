@@ -1,0 +1,12 @@
+plugin based on:
+https://github.com/ansible/ansible/blob/stable-2.7/lib/ansible/plugins/inventory/tower.py
+https://docs.ansible.com/ansible/latest/plugins/inventory/tower.html
+
+plugin to be deployed under:
+ ~/.ansible/plugins/inventory folder.
+
+test with:
+    ansible-inventory -i onix_inventory.yml --graph -vvv
+
+check vars with:
+    ansible-config dump
