@@ -1,7 +1,7 @@
 {
   "name": "Test Host Group Item",
   "description": "This is a CMDB item for testing purposes.",
-  "type": "ANSIBLE_HOST_GROUP",
+  "type": "item_type_1",
   "meta": {
     "IP": "192.168.0.1",
     "Vendor": "Supreme Computers",

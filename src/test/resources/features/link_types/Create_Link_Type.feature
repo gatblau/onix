@@ -1,7 +1,7 @@
-Feature: Create a new Configuration Item type
+Feature: Create a new Link Type
   As an API user
-  I want to create a new Link Item type
-  So that links can be of the created link type
+  I want to create a new Link Type
+  So that link instances can be associated to the link type
 
   Scenario: Create a new Link Type
     Given the link type does not exist in the database
@@ -11,3 +11,4 @@ Feature: Create a new Configuration Item type
     When a link type PUT HTTP request with a JSON payload is done
     Then the response code is 200
     Then the response has body
+    Then the result contains no errors

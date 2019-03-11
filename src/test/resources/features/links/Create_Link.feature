@@ -7,6 +7,8 @@ Feature: Create Link Between two Configuration Items
     Given the natural key for the link is known
     Given the link URL of the service is known
     Given the configuration items to be linked exist in the database
+    Given the link type exists in the database
+    Given the link rule exists in the database
     Given a link to the two configuration items does not exist in the database
     Given a json payload with new link information exists
     When a PUT HTTP request to the Link resource is done with a JSON payload

@@ -1247,4 +1247,41 @@ public class Steps extends BaseTest {
             throw new RuntimeException("Metadata not found in the response.");
         }
     }
+
+    @Given("^the item metadata URL GET with filter is known$")
+    public void theItemMetadataURLGETWithFilterIsKnown() {
+        util.put(ITEM_META_URL, String.format("%s/item/{key}/meta/{filter}", baseUrl));
+    }
+
+    @Given("^an item type with filter data exists in the database$")
+    public void anItemTypeWithFilterDataExistsInTheDatabase() throws Throwable {
+        theItemTypeURLOfTheServiceWithKeyIsKnown();
+        theItemTypeNaturalKeyIsKnown();
+        aJsonPayloadWithNewItemTypeInformationExists();
+        anItemTypePUTHTTPRequestWithAJSONPayloadIsDone();
+    }
+
+    @Given("^the item with metadata exists in the database$")
+    public void theItemWithMetadataExistsInTheDatabase() {
+        util.put(ITEM_KEY, ITEM_ONE_KEY);
+        putItem(util.get(ITEM_KEY), "payload/create_meta_test_item_payload.json");
+    }
+
+    @When("^a GET HTTP request to the Item Metadata endpoint with filter is done$")
+    public void aGETHTTPRequestToTheItemMetadataEndpointWithFilterIsDone() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<JSONObject> result = client.exchange(
+                (String)util.get(ITEM_META_URL),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                JSONObject.class,
+                (String)util.get(ITEM_ONE_KEY), (String) util.get(ITEM_META_FILTER));
+        util.put(RESPONSE, result);
+    }
+
+    @Given("^a metadata filter key is known$")
+    public void aMetadataFilterKeyIsKnown() {
+        util.put(ITEM_META_FILTER, "books");
+    }
 }
