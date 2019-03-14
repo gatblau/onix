@@ -45,7 +45,7 @@ The following table describes the configuration variables required:
 Most inventory plugins shipped with Ansible are disabled by default and need to be whitelisted in your ansible.cfg file 
 in order to function. This is how the whitelist should look like in the config file to enable the onix plugin:
 
-In the **ansible.cfg** file:
+In the [ansible.cfg](../ansible.cfg) file:
 ```bash
 [inventory]
 enable_plugins = onix, host_list, script, yaml, ini, auto
