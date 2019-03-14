@@ -7,7 +7,7 @@
       "type": "ANSIBLE_HOST_GROUP_SET",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           "ansible_become": "yes",
           "openshift_master_overwrite_named_certificates": "True",
           "openshift_node_kubelet_args": {
@@ -170,7 +170,7 @@
       "type": "ANSIBLE_HOST_GROUP",
       "status": 0,
       "meta": {
-        "vars": {}
+        "hostvars": {}
       },
       "attribute": {},
       "tag": []
@@ -182,7 +182,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0003.example.com",
           " openshift_node_labels": "\"{'node': 'false', 'region': 'master', 'zone': 'az1'}\""
         }
@@ -201,7 +201,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0002.example.com",
           " openshift_node_labels": "\"{'node': 'false', 'region': 'master', 'zone': 'az2'}\""
         }
@@ -216,7 +216,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0004.example.com",
           " openshift_node_labels": "\"{'node': 'false', 'region': 'master', 'zone': 'az3'}\""
         }
@@ -231,7 +231,7 @@
       "type": "ANSIBLE_HOST_GROUP",
       "status": 0,
       "meta": {
-        "vars": {}
+        "hostvars": {}
       },
       "attribute": {},
       "tag": []
@@ -243,7 +243,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0009.example.com"
         }
       },
@@ -261,7 +261,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0008.example.com"
         }
       },
@@ -275,7 +275,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0007.example.com"
         }
       },
@@ -289,7 +289,7 @@
       "type": "ANSIBLE_HOST_GROUP",
       "status": 0,
       "meta": {
-        "vars": {}
+        "hostvars": {}
       },
       "attribute": {},
       "tag": []
@@ -301,7 +301,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0003.example.com"
         }
       },
@@ -315,7 +315,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0002.example.com"
         }
       },
@@ -329,7 +329,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0004.example.com"
         }
       },
@@ -343,7 +343,7 @@
       "type": "ANSIBLE_HOST_GROUP",
       "status": 0,
       "meta": {
-        "vars": {}
+        "hostvars": {}
       },
       "attribute": {},
       "tag": []
@@ -355,7 +355,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0010.example.com",
           " openshift_node_labels": "\"{'region': 'infra', 'zone': 'az1', 'site': 'a'}\""
         }
@@ -370,7 +370,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0011.example.com",
           " openshift_node_labels": "\"{'region': 'infra', 'zone': 'az2', 'site': 'b'}\""
         }
@@ -385,7 +385,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0012.example.com",
           " openshift_node_labels": "\"{'region': 'infra', 'zone': 'az3', 'site': 'c'}\""
         }
@@ -400,7 +400,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0005.example.com",
           " openshift_node_labels": "\"{'region': 'infra', 'zone': 'az3', 'site': 'd'}\""
         }
@@ -415,7 +415,7 @@
       "type": "ANSIBLE_HOST_GROUP",
       "status": 0,
       "meta": {
-        "vars": {}
+        "hostvars": {}
       },
       "attribute": {},
       "tag": []
@@ -427,7 +427,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0001.example.com",
           " openshift_node_labels": "\"{'node': 'true', 'region': 'primary', 'zone': 'az1', 'site': 'a'}\""
         }
@@ -442,7 +442,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0003.example.com",
           " openshift_node_labels": "\"{'node': 'true', 'region': 'primary', 'zone': 'az2', 'site': 'b'}\""
         }
@@ -457,7 +457,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0005.example.com",
           " openshift_node_labels": "\"{'node': 'true', 'region': 'primary', 'zone': 'az3', 'site': 'c'}\""
         }
@@ -472,7 +472,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0004.example.com",
           " openshift_node_labels": "\"{'node': 'true', 'region': 'primary', 'zone': 'az2', 'site': 'd'}\""
         }
@@ -487,7 +487,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0002.example.com",
           " openshift_node_labels": "\"{'node': 'true', 'region': 'primary', 'zone': 'az3', 'site': 'e'}\""
         }
@@ -502,7 +502,7 @@
       "type": "ANSIBLE_HOST_GROUP",
       "status": 0,
       "meta": {
-        "vars": {}
+        "hostvars": {}
       },
       "attribute": {},
       "tag": []
@@ -514,7 +514,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0002.example.com"
         }
       },
@@ -528,7 +528,7 @@
       "type": "ANSIBLE_HOST_GROUP",
       "status": 0,
       "meta": {
-        "vars": {}
+        "hostvars": {}
       },
       "attribute": {},
       "tag": []
@@ -540,7 +540,7 @@
       "type": "ANSIBLE_HOST",
       "status": 0,
       "meta": {
-        "vars": {
+        "hostvars": {
           " ansible_host": "host0002.example.com"
         }
       },

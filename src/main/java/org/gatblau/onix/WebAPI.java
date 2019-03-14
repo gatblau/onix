@@ -52,12 +52,32 @@ public class WebAPI {
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
 
     @ApiOperation(
-            value = "Returns information about the service.",
-            notes = "",
-            response = String.class)
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "text/html")
-    public ResponseEntity<String> index() {
-        return ResponseEntity.ok("OK");
+            value = "Returns a JSON payload if the service is alive.",
+            notes = "Use as liveliness probe for the service.",
+            response = JSONObject.class)
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<JSONObject> index() {
+        return live();
+    }
+
+    @ApiOperation(
+            value = "Returns a JSON payload if the service is alive.",
+            notes = "Use as liveliness probe for the service.",
+            response = JSONObject.class)
+    @RequestMapping(value = "/live", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<JSONObject> live() {
+        JSONObject response = new JSONObject();
+        response.put("live", true);
+        return ResponseEntity.ok(response);
+    }
+
+    @ApiOperation(
+            value = "Returns the readyness status of the service.",
+            notes = "Use as readyness probe for the service.",
+            response = JSONObject.class)
+    @RequestMapping(value = "/ready", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<JSONObject> ready() {
+        return ResponseEntity.ok(data.getReadyStatus());
     }
 
     @ApiOperation(

@@ -685,5 +685,27 @@ $BODY$;
 
 ALTER FUNCTION find_child_items(character varying, character varying) OWNER TO onix;
 
+/*
+  get_table_count:
+    returns the number of tables in the database.
+    this function is used to test readiness of the database service.
+ */
+CREATE OR REPLACE FUNCTION get_table_count()
+RETURNS TABLE(count bigint)
+  LANGUAGE 'plpgsql'
+  COST 100
+  STABLE
+AS $BODY$
+BEGIN
+  RETURN QUERY
+    SELECT count(table_name)
+    FROM information_schema.tables
+    WHERE table_catalog = 'onix'
+      AND table_schema = 'public';
+END
+$BODY$;
+
+ALTER FUNCTION get_table_count() OWNER TO onix;
+
 END
 $$;

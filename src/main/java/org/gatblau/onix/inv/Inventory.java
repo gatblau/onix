@@ -19,9 +19,9 @@ import java.util.Map;
 
 public class Inventory {
     private static final String EMPTY_LINE = "EMPTY_LINE";
-    private static final String ANSIBLE_HOST = "ANSIBLE_HOST";
-    private static final String ANSIBLE_HOST_GROUP = "ANSIBLE_HOST_GROUP";
-    private static final String ANSIBLE_HOST_GROUP_SET = "ANSIBLE_HOST_GROUP_SET";
+    public static final String ANSIBLE_HOST = "ANSIBLE_HOST";
+    public static final String ANSIBLE_HOST_GROUP = "ANSIBLE_HOST_GROUP";
+    public static final String ANSIBLE_HOST_GROUP_SET = "ANSIBLE_HOST_GROUP_SET";
     private static final String ITEM = "ITEM";
     private static final String HOST_VARS = "HOST_VARS";
     private static final String COMMENT = "COMMENT";
@@ -51,7 +51,7 @@ public class Inventory {
         String name = item.getName();
         Node node = this.nodes.find(name);
         if (node == null) {
-            node = new Node(item.getName(), getType(item.getType()), (JSONObject)item.getMeta().get("vars"));
+            node = new Node(item.getName(), getType(item.getType()), (JSONObject)item.getMeta().get("hostvars"));
             nodes.add(node);
             List<ItemData> children = getChildren(tree, item);
             for (ItemData childData : children) {
