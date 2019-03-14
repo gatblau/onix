@@ -3,7 +3,7 @@ plugin: 'onix'
 host: 'http://localhost:8080'
 username: 'admin'
 password: '0n1x'
-inventory_id: 'test_inventory'
-inventory_version: 'v1'
+inventory_key: 'test_inventory'
+inventory_tag: 'v1'
 verify_ssl : False
 ...

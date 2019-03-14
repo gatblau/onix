@@ -6,7 +6,7 @@ DOCUMENTATION = '''
     name: onix
     plugin_type: inventory
     author: gatblau.org
-    short_description: Ansible dynamic inventory plugin for Onix CMDB.
+    short_description: Ansible dynamic inventory plugin for the Onix CMDB.
     version_added: "2.7"
     description:
         - Reads inventories from Onix CMDB.
@@ -41,17 +41,17 @@ DOCUMENTATION = '''
             env:
                 - name: OX_PASSWORD
             required: True
-        inventory_id:
-            description: The ID of the Onix inventory that you wish to import.
+        inventory_key:
+            description: The natural key of the inventory that you wish to import.
             type: string
             env:
-                - name: OX_INVENTORY_ID
+                - name: OX_INVENTORY_KEY
             required: True
-        inventory_version:
-            description: The label of the Onix inventory that you wish to import.
+        inventory_tag:
+            description: The tag of the Onix inventory that you wish to import.
             type: string
             env:
-                - name: OX_INVENTORY_VERSION
+                - name: OX_INVENTORY_TAG
             required: True
         verify_ssl:
             description: Specify whether Ansible should verify the SSL certificate of the Onix WAPI host.
@@ -62,10 +62,33 @@ DOCUMENTATION = '''
             required: False
 '''
 
+EXAMPLES = '''
+# Before you execute the following commands, you should make sure this file is in your plugin path,
+# and you enabled this plugin.
+# Example for using onix_inventory.yml file
+plugin: onix
+host: your_onix_server_network_address
+username: your_onix_username
+password: your_onix_password
+inventory_key: the_key_of_targeted_onix_inventory
+# Then you can run the following command.
+# If some of the arguments are missing, Ansible will attempt to read them from environment variables.
+# ansible-inventory -i /path/to/onix_inventory.yml --list
+# Example for reading from environment variables:
+# Set environment variables:
+# export OX_HOST=YOUR_ONIX_HOST_ADDRESS
+# export OX_USERNAME=YOUR_ONIX_USERNAME
+# export OX_PASSWORD=YOUR_ONIX_PASSWORD
+# export OX_INVENTORY_KEY=THE_KEY_OF_TARGETED_INVENTORY
+# export OX_INVENTORY_TAG=THE_TAG_OF_TARGETED_INVENTORY
+# Read the inventory specified in OX_INVENTORY_KEY from Onix CMDB, and list them.
+# The inventory path must always be @onix_inventory if you are reading all settings from environment variables.
+# ansible-inventory -i @onix_inventory --list
+'''
+
 import re
 import os
 import json
-from ansible.module_utils import six
 from ansible.module_utils.urls import Request, urllib_error, ConnectionError, socket, httplib
 from ansible.module_utils._text import to_native
 from ansible.errors import AnsibleParserError
@@ -83,6 +106,48 @@ class InventoryModule(BaseInventoryPlugin):
 
     # If the user supplies '@onix_inventory' as path, the plugin will read from environment variables.
     no_config_file_supplied = False
+
+    def add_group_host(self, item):
+        if item['type'] == 'ANSIBLE_HOST_GROUP' or item['type'] == 'ANSIBLE_HOST_GROUP_SET':
+            self.inventory.add_group(item['key'])
+
+        if item['type'] == 'ANSIBLE_HOST_GROUP_SET':
+            group_name = item['key']
+            hostvars = item['meta']['hostvars']
+            if hostvars:
+                for var_name in hostvars:
+                    var_value = hostvars[var_name]
+                    self.inventory.set_variable(group_name, var_name, var_value)
+
+        if item['type'] == 'ANSIBLE_HOST':
+            host_name = item['key']
+            self.inventory.add_host(host_name)
+            hostvars = item['meta']['hostvars']
+            if hostvars:
+                for var_name in hostvars:
+                    var_value = hostvars[var_name]
+                    self.inventory.set_variable(host_name, var_name, var_value)
+
+    def add_group_host_relationhip(self, item, json):
+        if item['type'] == 'ANSIBLE_HOST_GROUP_SET':
+            group_group_key = item['key']
+            for i in json['items']:
+                group_key = i['key']
+                print('group-group = '+ group_group_key + '-> group = ' + group_key)
+                for link in json['links']:
+                    if link['startItemKey'] == group_group_key and link['endItemKey'] == group_key:
+                        self.inventory.add_child(group_group_key, group_key)
+                        break
+
+        if item['type'] == 'ANSIBLE_HOST_GROUP':
+            group_key = item['key']
+            for i in json['items']:
+                host_key = i['key']
+                print('group = '+ group_key + '-> host = ' + host_key)
+                for link in json['links']:
+                    if link['startItemKey'] == group_key and link['endItemKey'] == host_key:
+                        self.inventory.add_child(group_key, host_key)
+                        break
 
     def make_request(self, request_handler, onix_url):
         """Makes the request to given URL, handles errors, returns JSON"""
@@ -128,12 +193,18 @@ class InventoryModule(BaseInventoryPlugin):
                                   force_basic_auth=True,
                                   validate_certs=self.get_option('verify_ssl'))
 
-        inventory_id = self.get_option('inventory_id').replace('/', '')
-        inventory_version = self.get_option('inventory_version').replace('/', '')
-        inventory_url = '/inventory/{inv_id}/{inv_ver}'.format(inv_id=inventory_id, inv_ver=inventory_version)
+        inventory_key = self.get_option('inventory_key').replace('/', '')
+        inventory_tag = self.get_option('inventory_tag').replace('/', '')
+        inventory_url = '/tree/{inv_key}/{inv_tag}'.format(inv_key=inventory_key, inv_tag=inventory_tag)
         inventory_url = urljoin(onix_host, inventory_url)
 
-        inventory = self.make_request(request_handler, inventory_url)
+        inventory_json = self.make_request(request_handler, inventory_url)
 
-        # TODO: complete plugin development here...
-        raise Exception(inventory)
+        # first adds groups and hosts to the inventory
+        for item in inventory_json["items"]:
+            self.add_group_host(item)
+
+        # finally add group-host relationships
+        for item in inventory_json["items"]:
+            self.add_group_host_relationhip(item, inventory_json)
+

@@ -129,6 +129,8 @@ public interface DbRepository {
 
     String getDeleteItemTreeSQL();
 
+    String getTableCountSQL();
+
     /* Snapshots */
     Result createSnapshot(JSONObject payload);
     Result updateSnapshot(String rootItemKey, String label, JSONObject payload);
@@ -139,4 +141,7 @@ public interface DbRepository {
     ItemTreeData getItemTree(String rootItemKey, String label);
     ResultList createOrUpdateItemTree(JSONObject payload);
     Result deleteItemTree(String rootItemKey);
+
+    /* Readiness probe */
+    JSONObject getReadyStatus();
 }

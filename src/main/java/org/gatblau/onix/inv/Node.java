@@ -41,7 +41,7 @@ public class Node {
 
     public JSONObject getVarsJSON() {
         JSONObject result = new JSONObject();
-        result.put("vars", new JSONObject(getVars()));
+        result.put("hostvars", new JSONObject(getVars()));
         return result;
     }
 
@@ -69,7 +69,6 @@ public class Node {
         ANSIBLE_HOST,
         ANSIBLE_HOST_GROUP,
         ANSIBLE_HOST_GROUP_SET,
-        HOST_VARS,
     }
 
     @Override

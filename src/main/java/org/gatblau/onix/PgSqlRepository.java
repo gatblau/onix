@@ -548,7 +548,8 @@ public class PgSqlRepository implements DbRepository {
             result = createOrUpdateItem(key, getItemData(key, "Inventory imported from Ansible inventory file.", "ANSIBLE_INVENTORY", new JSONObject()));
             if (result.isError()) return result;
             for (Node node : inv.getNodes()) {
-                processNode(node, null, key);
+                result = processNode(node, null, key);
+                if (result.isError()) return result;
             }
         }
         catch (Exception ex) {
@@ -579,7 +580,8 @@ public class PgSqlRepository implements DbRepository {
                     if (result.isError()) return result;
                 }
                 for (Node child : node.getChildren()) {
-                    processNode(child, node, key);
+                    result = processNode(child, node, key);
+                    if (result.isError()) return result;
                 }
                 break;
             }
@@ -598,13 +600,13 @@ public class PgSqlRepository implements DbRepository {
         String groupType = "";
         switch (node.getType()) {
             case ANSIBLE_HOST_GROUP_SET:
-                groupType = "ANSIBLE_HOST_GROUP_SET";
+                groupType = Inventory.ANSIBLE_HOST_GROUP_SET;
                 break;
             case ANSIBLE_HOST_GROUP:
-                groupType = "ANSIBLE-HOST-GROUP";
+                groupType = Inventory.ANSIBLE_HOST_GROUP;
                 break;
             case ANSIBLE_HOST:
-                groupType = "ANSIBLE-HOST";
+                groupType = Inventory.ANSIBLE_HOST;
                 break;
         }
         return groupType;
@@ -997,6 +999,26 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public JSONObject getReadyStatus() {
+        JSONObject status = new JSONObject();
+        try{
+            db.prepare(getTableCountSQL());
+            ResultSet set = db.executeQuerySingleRow();
+            while (set.next()) {
+                int count = set.getInt("get_table_count");
+                if (count == 0) {
+                    throw new RuntimeException("No tables found in the database.");
+                }
+            }
+            status.put("ready", true);
+        } catch (Exception ex) {
+            status.put("ready", false);
+            status.put("error", ex.getMessage());
+        }
+        return status;
+    }
+
+    @Override
     public String getSetLinkRuleSQL() {
         return "SELECT set_link_rule(" +
                 "?::character varying," + // key
@@ -1092,6 +1114,11 @@ public class PgSqlRepository implements DbRepository {
         return "SELECT delete_tree(" +
                 "?::character varying" + // root_item_key_param
                 ")";
+    }
+
+    @Override
+    public String getTableCountSQL() {
+        return "SELECT get_table_count();";
     }
 
     private String getUser() {
