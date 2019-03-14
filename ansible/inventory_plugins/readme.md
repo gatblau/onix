@@ -59,8 +59,174 @@ $  ansible-config dump | grep INVENTORY_ENABLED
 ```
 should display a list of enabled plugings including onix.
 
-Running:
+## Trying it out
+
+In order to try the plugin out, do the following:
+
+### Install the Onix WAPI
+
+Install onix wapi by running [docker compose](https://docs.docker.com/compose/) with the configuration 
+file located [here](./../../install/container/docker-compose.yml).
+
 ```bash
-$ ansible-inventory -i onix_inventory.yml --list -vvv
+$ docker-compose up -d
 ```
-should display the inventory structure loaded from Onix.
+
+### Import the inventory into the CMDB
+
+1. Open the [Swagger UI](http://localhost:8080/swagger-ui.html#/web-api/createOrUpdateItemTreeUsingPUT)
+2. Paste the payload [here](inventory.json) in the payload box
+3. Put the request to create the inventory in the CMDB
+
+### Create a snapshot for the inventory
+
+The imported inventory needs to be snapshoted before it can be used.
+The snapshot ensures that a version is fixed before it is used for deployment.
+
+To take a snapshot:
+1. Open the [Swagger UI](http://localhost:8080/swagger-ui.html#/web-api/createSnapshotUsingPOST)
+2. Paste the payload [here](snapshot.json) in the payload box
+3. Put the request to create the snapshot in the CMDB
+
+### Test the plugin
+
+From this folder, type the following:
+```bash
+$ ansible-inventory -i onix_inventory.yml --graph
+```
+The output should look like:
+```text
+@all:
+  |--@test_inventory::OSEv3:
+  |  |--@test_inventory::infra:
+  |  |  |--test_inventory::infra1
+  |  |  |--test_inventory::infra2
+  |  |--@test_inventory::masters:
+  |  |  |--test_inventory::master1
+  |  |  |--test_inventory::master2
+  |--@test_inventory::compute:
+  |  |--test_inventory::compute1
+  |  |--test_inventory::compute2
+  |--@ungrouped:
+```
+Now type the following command to get json with all the inventory data as loaded in Ansible:
+```bash
+ansible-inventory -i onix_inventory.yml --list
+```
+the following output should be displayed in the terminal:
+```json
+{
+    "_meta": {
+        "hostvars": {
+            "test_inventory::compute1": {
+                " ansible_host": "host0003.example.com", 
+                " openshift_node_labels": "\"{'node': 'true', 'region': 'primary', 'zone': 'az2', 'site': 'b'}\""
+            }, 
+            "test_inventory::compute2": {
+                " ansible_host": "host0005.example.com", 
+                " openshift_node_labels": "\"{'node': 'true', 'region': 'primary', 'zone': 'az3', 'site': 'c'}\""
+            }, 
+            "test_inventory::infra1": {
+                " ansible_host": "host0011.example.com", 
+                " openshift_node_labels": "\"{'region': 'infra', 'zone': 'az2', 'site': 'b'}\"", 
+                "ansible_become": "yes", 
+                "openshift_image_tag": "v3.9.30", 
+                "openshift_master_overwrite_named_certificates": "True", 
+                "openshift_metrics_cassandra_pvc_storage_class_name": "glusterfs-storage-block", 
+                "openshift_node_kubelet_args": {
+                    "image-gc-high-threshold": [
+                        "90"
+                    ], 
+                    "image-gc-low-threshold": [
+                        "80"
+                    ]
+                }, 
+                "openshift_prometheus_pvc_size": "10Gi"
+            }, 
+            "test_inventory::infra2": {
+                " ansible_host": "host0012.example.com", 
+                " openshift_node_labels": "\"{'region': 'infra', 'zone': 'az3', 'site': 'c'}\"", 
+                "ansible_become": "yes", 
+                "openshift_image_tag": "v3.9.30", 
+                "openshift_master_overwrite_named_certificates": "True", 
+                "openshift_metrics_cassandra_pvc_storage_class_name": "glusterfs-storage-block", 
+                "openshift_node_kubelet_args": {
+                    "image-gc-high-threshold": [
+                        "90"
+                    ], 
+                    "image-gc-low-threshold": [
+                        "80"
+                    ]
+                }, 
+                "openshift_prometheus_pvc_size": "10Gi"
+            }, 
+            "test_inventory::master1": {
+                " ansible_host": "host0002.example.com", 
+                " openshift_node_labels": "\"{'node': 'false', 'region': 'master', 'zone': 'az2'}\"", 
+                "ansible_become": "yes", 
+                "openshift_image_tag": "v3.9.30", 
+                "openshift_master_overwrite_named_certificates": "True", 
+                "openshift_metrics_cassandra_pvc_storage_class_name": "glusterfs-storage-block", 
+                "openshift_node_kubelet_args": {
+                    "image-gc-high-threshold": [
+                        "90"
+                    ], 
+                    "image-gc-low-threshold": [
+                        "80"
+                    ]
+                }, 
+                "openshift_prometheus_pvc_size": "10Gi"
+            }, 
+            "test_inventory::master2": {
+                " ansible_host": "host0004.example.com", 
+                " openshift_node_labels": "\"{'node': 'false', 'region': 'master', 'zone': 'az3'}\"", 
+                "ansible_become": "yes", 
+                "openshift_image_tag": "v3.9.30", 
+                "openshift_master_overwrite_named_certificates": "True", 
+                "openshift_metrics_cassandra_pvc_storage_class_name": "glusterfs-storage-block", 
+                "openshift_node_kubelet_args": {
+                    "image-gc-high-threshold": [
+                        "90"
+                    ], 
+                    "image-gc-low-threshold": [
+                        "80"
+                    ]
+                }, 
+                "openshift_prometheus_pvc_size": "10Gi"
+            }
+        }
+    }, 
+    "all": {
+        "children": [
+            "test_inventory::OSEv3", 
+            "test_inventory::compute", 
+            "ungrouped"
+        ]
+    }, 
+    "test_inventory::OSEv3": {
+        "children": [
+            "test_inventory::infra", 
+            "test_inventory::masters"
+        ]
+    }, 
+    "test_inventory::compute": {
+        "hosts": [
+            "test_inventory::compute1", 
+            "test_inventory::compute2"
+        ]
+    }, 
+    "test_inventory::infra": {
+        "hosts": [
+            "test_inventory::infra1", 
+            "test_inventory::infra2"
+        ]
+    }, 
+    "test_inventory::masters": {
+        "hosts": [
+            "test_inventory::master1", 
+            "test_inventory::master2"
+        ]
+    }, 
+    "ungrouped": {}
+}
+```
