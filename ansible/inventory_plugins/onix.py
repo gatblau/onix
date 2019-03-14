@@ -133,7 +133,6 @@ class InventoryModule(BaseInventoryPlugin):
             group_group_key = item['key']
             for i in json['items']:
                 group_key = i['key']
-                print('group-group = '+ group_group_key + '-> group = ' + group_key)
                 for link in json['links']:
                     if link['startItemKey'] == group_group_key and link['endItemKey'] == group_key:
                         self.inventory.add_child(group_group_key, group_key)
@@ -143,7 +142,6 @@ class InventoryModule(BaseInventoryPlugin):
             group_key = item['key']
             for i in json['items']:
                 host_key = i['key']
-                print('group = '+ group_key + '-> host = ' + host_key)
                 for link in json['links']:
                     if link['startItemKey'] == group_key and link['endItemKey'] == host_key:
                         self.inventory.add_child(group_key, host_key)
