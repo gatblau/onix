@@ -26,7 +26,7 @@ fi
 docker rm -f onixdb
 
 # deletes the image
-docker rmi "onixdb:${TAG}"
+docker rmi "onixdb-snapshot:${TAG}"
 
 # builds the image
 sh build.sh "${TAG}"

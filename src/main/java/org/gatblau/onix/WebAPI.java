@@ -258,7 +258,6 @@ public class WebAPI {
     )
     public ResponseEntity<ItemTypeList> getItemTypes(
           @RequestParam(value = "attribute", required = false) String attribute
-        , @RequestParam(value = "system", required = false) Boolean system
         , @RequestParam(value = "createdFrom", required = false) String createdFromDate
         , @RequestParam(value = "createdTo", required = false) String createdToDate
         , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
@@ -275,7 +274,6 @@ public class WebAPI {
         }
         ItemTypeList itemTypes = data.getItemTypes(
             attrMap,
-            system,
             getDate(createdFromDate),
             getDate(createdToDate),
             getDate(updatedFromDate),
@@ -340,10 +338,10 @@ public class WebAPI {
     @RequestMapping(
             path = "/linktype/{key}"
             , method = RequestMethod.PUT)
-    public ResponseEntity<Result> createLinkType(
+    public ResponseEntity<Result> createOrUpdateLinkType(
             @PathVariable("key") String key,
             @RequestBody JSONObject payload
-    ) throws IOException, SQLException {
+    ) {
         return ResponseEntity.ok(data.createOrUpdateLinkType(key, payload));
     }
 
@@ -369,7 +367,6 @@ public class WebAPI {
     )
     public ResponseEntity<LinkTypeList> getLinkTypes(
             @RequestParam(value = "attribute", required = false) String attribute
-            , @RequestParam(value = "system", required = false) Boolean system
             , @RequestParam(value = "createdFrom", required = false) String createdFromDate
             , @RequestParam(value = "createdTo", required = false) String createdToDate
             , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
@@ -386,7 +383,6 @@ public class WebAPI {
         }
         LinkTypeList linkTypes = data.getLinkTypes(
                 attrMap,
-                system,
                 getDate(createdFromDate),
                 getDate(createdToDate),
                 getDate(updatedFromDate),
@@ -434,7 +430,6 @@ public class WebAPI {
               @RequestParam(value = "linkType", required = false) String linkType
             , @RequestParam(value = "startItemType", required = false) String startItemType
             , @RequestParam(value = "endItemType", required = false) String endItemType
-            , @RequestParam(value = "system", required = false) Boolean system
             , @RequestParam(value = "createdFrom", required = false) String createdFromDate
             , @RequestParam(value = "createdTo", required = false) String createdToDate
             , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
@@ -444,7 +439,6 @@ public class WebAPI {
                 linkType,
                 startItemType,
                 endItemType,
-                system,
                 getDate(createdFromDate),
                 getDate(createdToDate),
                 getDate(updatedFromDate),
@@ -465,108 +459,97 @@ public class WebAPI {
     }
 
     /*
-        INVENTORY
+        TAG
      */
     @ApiOperation(
-            value = "Creates a new or updates an existing inventory.",
-            notes = "NOTE: this endpoint is EXPERIMENTAL. In future versions, it will be deprecated and its logic will be moved to the ox_cli tool.")
+            value = "Creates a new tag.",
+            notes = "A tag is a set of items and their links at a specific point in time.")
     @RequestMapping(
-            path = "/inventory/{key}"
-            , method = RequestMethod.PUT)
-    public ResponseEntity<Result> createOrUpdateInventory(
-            @PathVariable("key") String key,
-            @RequestBody String inventory
-    ) throws IOException, SQLException, ParseException {
-        return ResponseEntity.ok(data.createOrUpdateInventory(key, inventory));
-    }
-
-    @ApiOperation(
-            value = "Retrieves an existing inventory.",
-            notes = "NOTE: this endpoint is EXPERIMENTAL. In future versions, it will be deprecated and its logic will be moved to the ox_cli tool.")
-    @RequestMapping(
-              path = "/inventory/{key}/{label}"
-            , method = RequestMethod.GET)
-    public ResponseEntity<String> getInventory(
-            @PathVariable("key") String key,
-            @PathVariable("label") String label
-    ) throws SQLException, ParseException, IOException {
-        return ResponseEntity.ok(data.getInventory(key, label));
-    }
-
-    /*
-        SNAPSHOT
-     */
-    @ApiOperation(
-            value = "Creates a new snapshot.",
-            notes = "A snapshot is a set of items and their links at a specific point in time.")
-    @RequestMapping(
-            path = "/snapshot"
+            path = "/tag"
             , method = RequestMethod.POST)
-    public ResponseEntity<Result> createSnapshot(
+    public ResponseEntity<Result> createTag(
             @RequestBody JSONObject payload
     ) {
-        return ResponseEntity.ok(data.createSnapshot(payload));
+        return ResponseEntity.ok(data.createTag(payload));
     }
 
     @ApiOperation(
-            value = "Updates an existing snapshot.",
-            notes = "A snapshot is a set of items and their links at a specific point in time.")
+            value = "Updates an existing tag.",
+            notes = "A tag is a set of items and their links at a specific point in time.")
     @RequestMapping(
-            path = "/snapshot/{root_item_key}/{label}"
+            path = "/tag/{root_item_key}/{label}"
             , method = RequestMethod.PUT)
-    public ResponseEntity<Result> updateSnapshot(
+    public ResponseEntity<Result> updateTag(
             @PathVariable("root_item_key") String rootItemKey,
             @PathVariable("label") String label,
             @RequestBody JSONObject payload
     ) {
-        return ResponseEntity.ok(data.updateSnapshot(rootItemKey, label, payload));
+        return ResponseEntity.ok(data.updateTag(rootItemKey, label, payload));
     }
 
     @ApiOperation(
-            value = "Deletes an existing snapshot.",
-            notes = "Takes the key of a root item and a snapshot label and deletes the matching snapshot.")
+            value = "Deletes an existing tag.",
+            notes = "Takes the key of a root item and a tag label and deletes the matching tag.")
     @RequestMapping(
-            path = "/snapshot/{root_item_key}/{label}"
+            path = "/tag/{root_item_key}/{label}"
             , method = RequestMethod.DELETE)
-    public ResponseEntity<Result> deleteSnapshot(
+    public ResponseEntity<Result> deleteTag(
             @PathVariable("root_item_key") String rootItemKey,
             @PathVariable("label") String label
     ) {
-        return ResponseEntity.ok(data.deleteSnapshot(rootItemKey, label));
+        return ResponseEntity.ok(data.deleteTag(rootItemKey, label));
     }
 
     @ApiOperation(
-            value = "Deletes all snapshots for an item.",
-            notes = "Takes the key of a root item and deletes any associated snapshots.")
+            value = "Deletes all tags for an item.",
+            notes = "Takes the key of a root item and deletes any associated tags.")
     @RequestMapping(
-            path = "/snapshot/{root_item_key}"
+            path = "/tag/{root_item_key}"
             , method = RequestMethod.DELETE)
-    public ResponseEntity<Result> deleteAllSnapshots(
+    public ResponseEntity<Result> deleteAllTags(
             @PathVariable("root_item_key") String rootItemKey
     ) {
-        return ResponseEntity.ok(data.deleteSnapshot(rootItemKey, null));
+        return ResponseEntity.ok(data.deleteTag(rootItemKey, null));
     }
 
     @ApiOperation(
-            value = "Get a list of available snapshots for a specific item.",
+            value = "Get a list of available tags for a specific item.",
             notes = "")
     @RequestMapping(
-            path = "/snapshot/{root_item_key}"
+            path = "/tag/{root_item_key}"
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<SnapshotList> getItemSnapshots(
+    public ResponseEntity<TagList> getItemTags(
             @PathVariable("root_item_key") String rootItemKey
     ) {
-        SnapshotList snapshots = data.getItemSnapshots(rootItemKey);
-        return ResponseEntity.ok(snapshots);
+        TagList tags = data.getItemTags(rootItemKey);
+        return ResponseEntity.ok(tags);
+    }
+
+    /*
+        DATA
+     */
+    @ApiOperation(
+            value = "Creates or updates a set of items and links.",
+            notes = "")
+    @RequestMapping(
+            path = "/data"
+            , method = RequestMethod.PUT
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<ResultList> createOrUpdateData(
+            @RequestBody JSONObject payload
+    ) {
+        ResultList results = data.createOrUpdateData(payload);
+        return ResponseEntity.ok(results);
     }
 
     /*
        ITEM TREE
      */
     @ApiOperation(
-            value = "Get a list of items and links in a specified item snapshot.",
+            value = "Get a list of items and links in a specified item tag.",
             notes = "")
     @RequestMapping(
             path = "/tree/{root_item_key}/{label}"
@@ -579,21 +562,6 @@ public class WebAPI {
     ) {
         ItemTreeData tree = data.getItemTree(rootItemKey, label);
         return ResponseEntity.ok(tree);
-    }
-
-    @ApiOperation(
-            value = "Creates or updates a set of items and links.",
-            notes = "")
-    @RequestMapping(
-            path = "/tree"
-            , method = RequestMethod.PUT
-            , produces = {"application/json", "application/x-yaml"}
-    )
-    public ResponseEntity<ResultList> createOrUpdateItemTree(
-        @RequestBody JSONObject payload
-    ) {
-        ResultList results = data.createOrUpdateItemTree(payload);
-        return ResponseEntity.ok(results);
     }
 
     @ApiOperation(

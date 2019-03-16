@@ -1,9 +1,9 @@
-Feature: Create a new Item Tree
+Feature: Import data
   As an API user
   I want to create all items and links that define a particular configuration
   So that I facilitate the import of large amount of configuration data at once.
 
-  Scenario: Create item tree
+  Scenario: Import data graph
     Given the URL of the item tree PUT endpoint is known
     Given the item tree does not exist in the database
     Given a json payload with tree data exists

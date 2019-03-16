@@ -28,7 +28,6 @@ public class LinkTypeData implements Serializable {
     private String key;
     private String name;
     private String description;
-    private Boolean system;
     private JSONObject attribute;
     private String created;
     private String updated;
@@ -60,14 +59,6 @@ public class LinkTypeData implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Boolean getSystem() {
-        return system;
-    }
-
-    public void setSystem(Boolean system) {
-        this.system = system;
     }
 
     public JSONObject getAttribute() {

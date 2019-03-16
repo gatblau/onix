@@ -22,8 +22,6 @@ package org.gatblau.onix;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ReadContext;
 import org.gatblau.onix.data.*;
-import org.gatblau.onix.inv.Inventory;
-import org.gatblau.onix.inv.Node;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.postgresql.util.HStoreConverter;
@@ -317,7 +315,7 @@ public class PgSqlRepository implements DbRepository {
         catch (Exception ex) {
             db.close();
             ex.printStackTrace();
-            throw new RuntimeException(String.format("Failed to get item type with key '%s': %s", ex.getMessage()), ex);
+            throw new RuntimeException(String.format("Failed to get item type with key '%s': %s", key, ex.getMessage()), ex);
         }
         return itemType;
     }
@@ -328,16 +326,15 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public ItemTypeList getItemTypes(Map attribute, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) {
+    public ItemTypeList getItemTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) {
         try {
             ItemTypeList itemTypes = new ItemTypeList();
             db.prepare(getFindItemTypesSQL());
             db.setString(1, util.toHStoreString(attribute)); // attribute_param
-            db.setObject(2, system);
-            db.setObject(3, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
-            db.setObject(4, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
-            db.setObject(5, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
-            db.setObject(6, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
+            db.setObject(2, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
+            db.setObject(3, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
+            db.setObject(4, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
+            db.setObject(5, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 itemTypes.getItems().add(util.toItemTypeData(set));
@@ -393,16 +390,15 @@ public class PgSqlRepository implements DbRepository {
         LINK TYPES
      */
     @Override
-    public LinkTypeList getLinkTypes(Map attribute, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) {
+    public LinkTypeList getLinkTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) {
         LinkTypeList linkTypes = new LinkTypeList();
         try {
             db.prepare(getFindLinkTypesSQL());
             db.setString(1, util.toHStoreString(attribute)); // attribute_param
-            db.setObject(2, system);
-            db.setObject(3, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
-            db.setObject(4, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
-            db.setObject(5, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
-            db.setObject(6, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
+            db.setObject(2, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
+            db.setObject(3, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
+            db.setObject(4, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
+            db.setObject(5, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 linkTypes.getItems().add(util.toLinkTypeData(set));
@@ -457,26 +453,37 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public LinkTypeData getLinkType(String key) {
-        // TODO: implement getLinkType()
-        throw new UnsupportedOperationException("getLinkType");
+        LinkTypeData linkType = null;
+        try {
+            db.prepare(getGetLinkTypeSQL());
+            db.setString(1, key);
+            ResultSet set = db.executeQuerySingleRow();
+            linkType = util.toLinkTypeData(set);
+            db.close();
+        }
+        catch (Exception ex) {
+            db.close();
+            ex.printStackTrace();
+            throw new RuntimeException(String.format("Failed to get link type with key '%s': %s", key, ex.getMessage()), ex);
+        }
+        return linkType;
     }
 
     /*
         LINK RULES
      */
     @Override
-    public LinkRuleList getLinkRules(String linkType, String startItemType, String endItemType, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) {
+    public LinkRuleList getLinkRules(String linkType, String startItemType, String endItemType, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) {
         LinkRuleList linkRules = new LinkRuleList();
         try {
             db.prepare(getFindLinkRulesSQL());
             db.setString(1, linkType); // link_type key
             db.setString(2, startItemType); // start item_type key
             db.setString(3, endItemType); // end item_type key
-            db.setObject(4, system); // system
-            db.setObject(5, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
-            db.setObject(6, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
-            db.setObject(7, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
-            db.setObject(8, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
+            db.setObject(4, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
+            db.setObject(5, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
+            db.setObject(6, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
+            db.setObject(7, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 linkRules.getItems().add(util.toLinkRuleData(set));
@@ -538,88 +545,6 @@ public class PgSqlRepository implements DbRepository {
     public List<ChangeItemData> findChangeItems() {
         // TODO: implement findChangeItems()
         throw new UnsupportedOperationException("findChangeItems");
-    }
-
-    @Override
-    public Result createOrUpdateInventory(String key, String inventory) {
-        try {
-            Inventory inv = new Inventory(inventory);
-            Result result = new Result();
-            result = createOrUpdateItem(key, getItemData(key, "Inventory imported from Ansible inventory file.", "ANSIBLE_INVENTORY", new JSONObject()));
-            if (result.isError()) return result;
-            for (Node node : inv.getNodes()) {
-                result = processNode(node, null, key);
-                if (result.isError()) return result;
-            }
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return null;
-    }
-
-    private Result processNode(Node node, Node parent, String key) throws ParseException, SQLException, IOException {
-        String nodeType = getNodeType(node);
-        JSONObject vars = node.getVarsJSON();
-        Result result = createOrUpdateItem(prefix(key, node.getName()), getItemData(node.getName(), String.format("%s imported from Ansible inventory.", node.getType()), nodeType, vars));
-        if (result.isError()) return result;
-        switch (node.getType()) {
-            case ANSIBLE_HOST_GROUP_SET:
-            case ANSIBLE_HOST_GROUP: {
-                if (parent == null) { // parent is the inventory node - link to inventory
-                    result = createOrUpdateLink(
-                            prefix(key, String.format("%s->%s", key, node.getName())),
-                            getLinkData("Link imported from Ansible inventory.", "ANSIBLE_INVENTORY", key, prefix(key, node.getName()))
-                    );
-                    if (result.isError()) return result;
-                } else { // link to a group
-                    result = createOrUpdateLink(
-                            prefix(key, String.format("%s->%s", parent.getName(), node.getName())),
-                            getLinkData("Link imported from Ansible inventory.", "ANSIBLE_INVENTORY", prefix(key, parent.getName()), prefix(key, node.getName()))
-                    );
-                    if (result.isError()) return result;
-                }
-                for (Node child : node.getChildren()) {
-                    result = processNode(child, node, key);
-                    if (result.isError()) return result;
-                }
-                break;
-            }
-            case ANSIBLE_HOST:{
-                result = createOrUpdateLink(
-                    prefix(key, String.format("%s->%s", parent.getName(), node.getName())),
-                    getLinkData("Link imported from Ansible inventory.", "ANSIBLE_INVENTORY", prefix(key, parent.getName()), prefix(key, node.getName())));
-                if (result.isError()) return result;
-                break;
-            }
-        }
-        return result;
-    }
-
-    private String getNodeType(Node node) {
-        String groupType = "";
-        switch (node.getType()) {
-            case ANSIBLE_HOST_GROUP_SET:
-                groupType = Inventory.ANSIBLE_HOST_GROUP_SET;
-                break;
-            case ANSIBLE_HOST_GROUP:
-                groupType = Inventory.ANSIBLE_HOST_GROUP;
-                break;
-            case ANSIBLE_HOST:
-                groupType = Inventory.ANSIBLE_HOST;
-                break;
-        }
-        return groupType;
-    }
-
-    @Override
-    public String getInventory(String key, String label) {
-        StringBuilder builder = new StringBuilder();
-        ItemTreeData tree = getItemTree(key, label);
-        Inventory inventory = new Inventory(tree);
-        String inventoryString = inventory.toString();
-        System.out.println(inventoryString);
-        return inventoryString;
     }
 
     private ItemList getChildItems(String parentKey) {
@@ -764,7 +689,6 @@ public class PgSqlRepository implements DbRepository {
     public String getFindItemTypesSQL() {
         return "SELECT * FROM find_item_types(" +
             "?::hstore," + // attr_valid
-            "?::boolean," + // system
             "?::timestamp(6) with time zone," + // date created from
             "?::timestamp(6) with time zone," + // date created to
             "?::timestamp(6) with time zone," + // date updates from
@@ -806,7 +730,6 @@ public class PgSqlRepository implements DbRepository {
     public String getFindLinkTypesSQL() {
         return "SELECT * FROM find_link_types(" +
                 "?::hstore," + // attr_valid
-                "?::boolean," + // system
                 "?::timestamp(6) with time zone," + // date created from
                 "?::timestamp(6) with time zone," + // date created to
                 "?::timestamp(6) with time zone," + // date updates from
@@ -827,6 +750,13 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public String getGetLinkTypeSQL() {
+        return "SELECT * FROM link_type(" +
+                "?::character varying" + // key
+                ")";
+    }
+
+    @Override
     public String getDeleteLinkRuleSQL() {
         return "SELECT delete_link_rule(?::character varying)";
     }
@@ -836,16 +766,16 @@ public class PgSqlRepository implements DbRepository {
         return "SELECT delete_link_rules()";
     }
 
-    /* snapshots */
+    /* tags */
     @Override
-    public Result createSnapshot(JSONObject json) {
+    public Result createTag(JSONObject json) {
         Result result = new Result();
         Object name = json.get("name");
         Object description = json.get("description");
         Object label = json.get("label");
         Object rootItemKey = json.get("rootItemKey");
         try {
-            db.prepare(getCreateSnapshotSQL());
+            db.prepare(getCreateTagSQL());
             db.setString(1, (rootItemKey != null) ? (String) rootItemKey : null); // root item key
             db.setString(3, (name != null) ? (String) name : null); // name_param
             db.setString(4, (description != null) ? (String) description : null); // description_param
@@ -866,14 +796,14 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result updateSnapshot(String rootItemKey, String currentLabel, JSONObject json) {
+    public Result updateTag(String rootItemKey, String currentLabel, JSONObject json) {
         Result result = new Result();
         Object name = json.get("name");
         Object description = json.get("description");
         Object newLabel = json.get("label");
         Object version = json.get("version");
         try {
-            db.prepare(getUpdateSnapshotSQL());
+            db.prepare(getUpdateTagSQL());
             db.setString(1, (rootItemKey != null) ? (String) rootItemKey : null); // root item key
             db.setString(2, (currentLabel != null) ? (String) currentLabel : null); // current_label
             db.setString(3, (newLabel != null) ? (String) newLabel : null); // new_label
@@ -881,7 +811,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(5, (description != null) ? (String) description : null); // description_param
             db.setString(6, getUser()); // changed_by_param
             db.setObject(7, version); // version_param
-            result.setOperation(db.executeQueryAndRetrieveStatus("update_snapshot"));
+            result.setOperation(db.executeQueryAndRetrieveStatus("update_tag"));
         }
         catch (Exception ex) {
             ex.printStackTrace();
@@ -895,10 +825,10 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteSnapshot(String rootItemKey, String label) {
+    public Result deleteTag(String rootItemKey, String label) {
         Result result = new Result();
         try {
-            db.prepare(getDeleteSnapshotSQL());
+            db.prepare(getDeleteTagSQL());
             db.setString(1, (rootItemKey != null) ? (String) rootItemKey : null); // root item key
             db.setString(2, (label != null) ? (String) label : null); // current_label
             result.setError(!db.execute());
@@ -916,14 +846,14 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public SnapshotList getItemSnapshots(String rootItemKey) {
-        SnapshotList snapshots = new SnapshotList();
+    public TagList getItemTags(String rootItemKey) {
+        TagList tags = new TagList();
         try {
-            db.prepare(getGetItemSnapshotsSQL());
+            db.prepare(getGetItemTagsSQL());
             db.setString(1, rootItemKey); // root_item_key_param
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                snapshots.getItems().add(util.toSnapshotData(set));
+                tags.getItems().add(util.toTagData(set));
             }
         }
         catch (Exception ex) {
@@ -932,21 +862,21 @@ public class PgSqlRepository implements DbRepository {
         finally {
             db.close();
         }
-        return snapshots;
+        return tags;
     }
 
     @Override
     public ItemTreeData getItemTree(String rootItemKey, String label) {
         ItemTreeData tree = new ItemTreeData();
         try {
-            db.prepare(getGetTreeItemsForSnapshotSQL());
+            db.prepare(getGetTreeItemsForTagSQL());
             db.setString(1, rootItemKey); // root_item_key_param
             db.setString(2, label); // label_param
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 tree.getItems().add(util.toItemData(set));
             }
-            db.prepare(getGetTreeLinksForSnapshotSQL());
+            db.prepare(getGetTreeLinksForTagSQL());
             db.setString(1, rootItemKey); // root_item_key_param
             db.setString(2, label); // label_param
             set = db.executeQuery();
@@ -964,15 +894,57 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public ResultList createOrUpdateItemTree(JSONObject payload) {
+    public ResultList createOrUpdateData(JSONObject payload) {
         ResultList results = new ResultList();
-        ArrayList<LinkedHashMap> items = (ArrayList<LinkedHashMap>) payload.get("items");
-        ArrayList<LinkedHashMap> links = (ArrayList<LinkedHashMap>)payload.get("links");
-        for (Map item: items) {
-            results.getItems().add(createOrUpdateItem((String)item.get("key"), new JSONObject(item)));
+        Object itemTypesObject = payload.get("itemTypes");
+        if (itemTypesObject != null) {
+            ArrayList<LinkedHashMap> itemTypes = (ArrayList<LinkedHashMap>)itemTypesObject;
+            for (Map itemType : itemTypes) {
+                String key = (String)itemType.get("key");
+                Result result = createOrUpdateItemType(key, new JSONObject(itemType));
+                result.setRef(key);
+                results.getItems().add(result);
+            }
         }
-        for (Map link: links) {
-            results.getItems().add(createOrUpdateLink((String)link.get("key"), new JSONObject(link)));
+        Object linkTypesObject = payload.get("linkTypes");
+        if (linkTypesObject != null) {
+            ArrayList<LinkedHashMap> linkTypes = (ArrayList<LinkedHashMap>)linkTypesObject;
+            for (Map linkType : linkTypes) {
+                String key = (String)linkType.get("key");
+                Result result = createOrUpdateLinkType(key, new JSONObject(linkType));
+                result.setRef(key);
+                results.getItems().add(result);
+            }
+        }
+        Object linkRulesObject = payload.get("linkRules");
+        if (linkRulesObject != null) {
+            ArrayList<LinkedHashMap> linkRules = (ArrayList<LinkedHashMap>)linkRulesObject;
+            for (Map linkRule : linkRules) {
+                String key = (String)linkRule.get("key");
+                Result result = createOrUpdateLinkRule(key, new JSONObject(linkRule));
+                result.setRef(key);
+                results.getItems().add(result);
+            }
+        }
+        Object itemsObject = payload.get("items");
+        if (itemsObject != null) {
+            ArrayList<LinkedHashMap> items = (ArrayList<LinkedHashMap>)itemsObject;
+            for (Map item: items) {
+                String key = (String)item.get("key");
+                Result result = createOrUpdateItem(key, new JSONObject(item));
+                result.setRef(key);
+                results.getItems().add(result);
+            }
+        }
+        Object linksObject = payload.get("links");
+        if (linksObject != null) {
+            ArrayList<LinkedHashMap> links = (ArrayList<LinkedHashMap>) linksObject;
+            for (Map link : links) {
+                String key = (String) link.get("key");
+                Result result = createOrUpdateLink((String) link.get("key"), new JSONObject(link));
+                result.setRef(key);
+                results.getItems().add(result);
+            }
         }
         return results;
     }
@@ -1038,7 +1010,6 @@ public class PgSqlRepository implements DbRepository {
                     "?::character varying," +
                     "?::character varying," +
                     "?::character varying," +
-                    "?::boolean," +
                     "?::timestamp(6) with time zone," +
                     "?::timestamp(6) with time zone," +
                     "?::timestamp(6) with time zone," +
@@ -1055,57 +1026,57 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public String getCreateSnapshotSQL() {
-        return "SELECT create_snapshot(" +
+    public String getCreateTagSQL() {
+        return "SELECT create_tag(" +
                 "?::character varying," + // root_item_key_param
-                "?::character varying," + // snapshot_label_param
-                "?::character varying," + // snapshot_name_param
-                "?::text," + // snapshot_description_param
+                "?::character varying," + // tag_label_param
+                "?::character varying," + // tag_name_param
+                "?::text," + // tag_description_param
                 "?::character varying" + // changed_by
                 ")";
     }
 
     @Override
-    public String getDeleteSnapshotSQL() {
-        return "SELECT delete_snapshot(" +
+    public String getDeleteTagSQL() {
+        return "SELECT delete_tag(" +
                 "?::character varying," + // root_item_key_param
-                "?::character varying" + // snapshot_label_param
+                "?::character varying" + // tag_label_param
                 ")";
     }
 
     @Override
-    public String getUpdateSnapshotSQL() {
-        return "SELECT update_snapshot(" +
+    public String getUpdateTagSQL() {
+        return "SELECT update_tag(" +
                 "?::character varying," + // root_item_key_param
                 "?::character varying," + // current_label_param
                 "?::character varying," + // new_label_param
-                "?::character varying," + // snapshot_name_param
-                "?::text," + // snapshot_description_param
+                "?::character varying," + // tag_name_param
+                "?::text," + // tag_description_param
                 "?::character varying," + // changed_by_param
                 "?::bigint" + // version_param
                 ")";
     }
 
     @Override
-    public String getGetItemSnapshotsSQL() {
-        return "SELECT * FROM get_item_snapshots(" +
+    public String getGetItemTagsSQL() {
+        return "SELECT * FROM get_item_tags(" +
                 "?::character varying" + // root_item_key_param
                 ")";
     }
 
     @Override
-    public String getGetTreeItemsForSnapshotSQL() {
+    public String getGetTreeItemsForTagSQL() {
         return "SELECT * FROM get_tree_items(" +
                 "?::character varying," + // root_item_key_param
-                "?::character varying" + // snapshot_label_param
+                "?::character varying" + // tag_label_param
                 ")";
     }
 
     @Override
-    public String getGetTreeLinksForSnapshotSQL() {
+    public String getGetTreeLinksForTagSQL() {
         return "SELECT * FROM get_tree_links(" +
                 "?::character varying," + // root_item_key_param
-                "?::character varying" + // snapshot_label_param
+                "?::character varying" + // tag_label_param
                 ")";
     }
 

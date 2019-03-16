@@ -206,7 +206,6 @@ OWNER TO onix;
  */
 CREATE OR REPLACE FUNCTION find_item_types(
     attr_valid_param hstore, -- zero (null) or more key->regex pair attributes
-    system_param boolean, -- (null) for any or true / false
     date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
     date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
@@ -219,7 +218,6 @@ CREATE OR REPLACE FUNCTION find_item_types(
     description text,
     attr_valid hstore,
     filter jsonb,
-    system boolean,
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
@@ -237,17 +235,14 @@ BEGIN
      i.description,
      i.attr_valid,
      i.filter,
-     i.system,
      i.version,
      i.created,
      i.updated,
      i.changed_by
   FROM item_type i
   WHERE
-  -- by system flag
-     (i.system = system_param OR system_param IS NULL)
   -- by attributes (hstore)
-  AND (i.attr_valid @> attr_valid_param OR attr_valid_param IS NULL)
+     (i.attr_valid @> attr_valid_param OR attr_valid_param IS NULL)
   -- by created date range
   AND ((date_created_from_param <= i.created AND date_created_to_param > i.created) OR
       (date_created_from_param IS NULL AND date_created_to_param IS NULL) OR
@@ -263,7 +258,6 @@ $BODY$;
 
 ALTER FUNCTION find_item_types(
   hstore,
-  boolean,
   timestamp(6) with time zone, -- created from
   timestamp(6) with time zone, -- created to
   timestamp(6) with time zone, -- updated from
@@ -276,7 +270,6 @@ OWNER TO onix;
  */
 CREATE OR REPLACE FUNCTION find_link_types(
     attr_valid_param hstore, -- zero (null) or more key->regex pair attributes
-    system_param boolean, -- (null) for any or true / false
     date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
     date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
@@ -288,7 +281,6 @@ CREATE OR REPLACE FUNCTION find_link_types(
     name character varying,
     description text,
     attr_valid hstore,
-    system boolean,
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
@@ -305,17 +297,14 @@ BEGIN
      l.name,
      l.description,
      l.attr_valid,
-     l.system,
      l.version,
      l.created,
      l.updated,
      l.changed_by
   FROM link_type l
   WHERE
-  -- by system flag
-      (l.system = system_param OR system_param IS NULL)
   -- by attributes (hstore)
-  AND (l.attr_valid @> attr_valid_param OR attr_valid_param IS NULL)
+      (l.attr_valid @> attr_valid_param OR attr_valid_param IS NULL)
   -- by created date range
   AND ((date_created_from_param <= l.created AND date_created_to_param > l.created) OR
       (date_created_from_param IS NULL AND date_created_to_param IS NULL) OR
@@ -331,7 +320,6 @@ $BODY$;
 
 ALTER FUNCTION find_link_types(
   hstore,
-  boolean,
   timestamp(6) with time zone, -- created from
   timestamp(6) with time zone, -- created to
   timestamp(6) with time zone, -- updated from
@@ -546,7 +534,6 @@ CREATE OR REPLACE FUNCTION find_link_rules(
   link_type_key_param character varying, -- none (null) or link type key
   start_item_type_key_param character varying, -- none (null) or start item type key
   end_item_type_key_param character varying, -- none (null) or end item type key
-  system_param boolean, -- (null) for any or true / false
   date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
   date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
   date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
@@ -560,7 +547,6 @@ RETURNS TABLE(
   link_type_key character varying,
   start_item_type_key character varying,
   end_item_type_key character varying,
-  system boolean,
   version bigint,
   created timestamp(6) with time zone,
   updated timestamp(6) with time zone,
@@ -579,7 +565,6 @@ BEGIN
       link_type.key as link_type_key,
       start_item_type.key as start_item_type_key,
       end_item_type.key as end_item_type_key,
-      l.system,
       l.version,
       l.created,
       l.updated,
@@ -592,10 +577,8 @@ BEGIN
     INNER JOIN item_type end_item_type
       ON end_item_type.id = l.end_item_type_id
   WHERE
-  -- by system flag
-  (l.system = system_param OR system_param IS NULL)
   -- by link type
-  AND (link_type.key = link_type_key_param OR link_type_key_param IS NULL)
+     (link_type.key = link_type_key_param OR link_type_key_param IS NULL)
   -- by start item_type key
   AND (start_item_type.key = start_item_type_key_param OR start_item_type_key_param IS NULL)
   -- by end item_type key
@@ -617,7 +600,6 @@ ALTER FUNCTION find_link_rules(
   character varying, -- link_type key
   character varying, -- start item_type key
   character varying, -- end item_type key
-  boolean, -- system
   timestamp(6) with time zone, -- created from
   timestamp(6) with time zone, -- created to
   timestamp(6) with time zone, -- updated from

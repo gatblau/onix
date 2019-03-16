@@ -28,6 +28,7 @@ public class Result implements Serializable {
     private String message;
     private String operation;
     private boolean error;
+    private String ref;
 
     public Result() {
         this.changed = false;
@@ -66,5 +67,13 @@ public class Result implements Serializable {
 
     public void setError(boolean error) {
         this.error = error;
+    }
+
+    public String getRef() {
+        return ref;
+    }
+
+    public void setRef(String ref) {
+        this.ref = ref;
     }
 }

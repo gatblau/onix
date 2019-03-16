@@ -2,7 +2,7 @@ package org.gatblau.onix.data;
 
 import java.io.Serializable;
 
-public class SnapshotData implements Serializable {
+public class TagData implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String label;
@@ -14,7 +14,7 @@ public class SnapshotData implements Serializable {
     private Integer version;
     private String changedBy;
 
-    public SnapshotData() {
+    public TagData() {
     }
 
     public String getLabel() {
