@@ -514,7 +514,7 @@ public class Steps extends BaseTest {
         ResponseEntity<LinkRuleList> response = util.get(RESPONSE);
         int actual = response.getBody().getItems().size();
         if(response.getBody().getItems().size() <= rules){
-            throw new RuntimeException(String.format("Response contains %s items which is less than %s items.", rules, actual));
+            throw new RuntimeException(String.format("Response contains %s items which is less than %s items.", actual, rules));
         }
     }
 
@@ -592,6 +592,7 @@ public class Steps extends BaseTest {
 
     @Given("^the link type exists in the database$")
     public void theLinkTypeExistsInTheDatabase() {
+        theLinkTypeNaturalKeyIsKnown();
         putLinkType(util.get(CONGIG_LINK_TYPE_KEY), "payload/create_link_type_payload.json");
     }
 
@@ -643,7 +644,7 @@ public class Steps extends BaseTest {
 
     @Given("^there are pre-existing Link types in the database$")
     public void thereArePreExistingLinkTypesInTheDatabase() throws Throwable {
-        // there are already 3 pre-existing system item types in the database so do not do anything
+        putData("payload/import_link_types_payload.json");
     }
 
     @Given("^the link rule does not exist in the database$")
@@ -709,47 +710,8 @@ public class Steps extends BaseTest {
         get(LinkRuleList.class);
     }
 
-    @Given("^an inventory file exists$")
-    public void anInventoryFileExists() {
-        util.put(INVENTORY_FILE, util.getFile("inventory/ansible_hosts"));
-    }
-
-    @Given("^the inventory key is known$")
-    public void theInventoryKeyIsKnown() {
-        util.put(INVENTORY_KEY, "test_inventory");
-    }
-
-    @Given("^the inventory upload URL is known$")
-    public void theInventoryUploadURLIsKnown() {
-        util.put(INVENTORY_URL, String.format("%s/inventory/{key}", baseUrl));
-    }
-
-    @When("^an HTTP PUT request with the inventory payload is executed$")
-    public void anHTTPPUTRequestWithTheInventoryPayloadIsExecuted() {
-        String inventory = util.get(INVENTORY_FILE);
-        String url = util.get(INVENTORY_URL);
-        String key = util.get(INVENTORY_KEY);
-        Map<String, Object> vars = new HashMap<>();
-        vars.put("key", key);
-        ResponseEntity<Result> response = null;
-        try {
-            response = client.exchange(url, HttpMethod.PUT, getEntity(inventory), Result.class, vars);
-            util.put(RESPONSE, response);
-            util.remove(EXCEPTION);
-        }
-        catch (Exception ex) {
-            util.put(EXCEPTION, ex);
-        }
-    }
-
-    @Then("^the inventory config item is created$")
-    public void theInventoryConfigItemIsCreated() {
-
-    }
-
     @Then("^the host group config items are created$")
     public void theHostGroupConfigItemsAreCreated() {
-
     }
 
     @Then("^the host config items are created$")
@@ -822,54 +784,20 @@ public class Steps extends BaseTest {
         }
     }
 
-    @Given("^the inventory exists in the database$")
-    public void theInventoryExistsInTheDatabase() {
-        theInventoryKeyIsKnown();
-        anInventoryFileExists();
-        theInventoryUploadURLIsKnown();
-        anHTTPPUTRequestWithTheInventoryPayloadIsExecuted();
-    }
-
-    @Given("^the URL of the inventory finder endpoint is known$")
-    public void theURLOfTheInventoryFinderEndpointIsKnown() {
-        util.put(INVENTORY_URL, String.format("%sinventory/{key}/{label}", baseUrl));
-    }
-
-    @When("^an HTTP GET to the inventory GET endpoint is made using its key$")
-    public void anHTTPGETToTheInventoryGETEndpointIsMadeUsingItsKey() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json");
-        Map<String, Object> vars = new HashMap<>();
-        vars.put("key", util.get(INVENTORY_KEY));
-        vars.put("label", util.get(INVENTORY_LABEL));
-        ResponseEntity<String> result = client.exchange(
-                util.get(INVENTORY_URL),
-                HttpMethod.GET,
-                new HttpEntity<>(null, headers),
-                String.class,
-                vars);
-        util.put(RESPONSE, result);
-    }
-
     @Given("^there are items linked to the root item in the database$")
     public void thereAreItemsLinkedToTheRootItemInTheDatabase() {
-        // imports an ansible inventory
-        anInventoryFileExists();
-        theInventoryKeyIsKnown();
-        theInventoryUploadURLIsKnown();
-        anHTTPPUTRequestWithTheInventoryPayloadIsExecuted();
-        thereIsNotAnyErrorInTheResponse();
+        putData("payload/create_data_payload.json");
     }
 
-    @Given("^the URL of the snapshot create endpoint is known$")
-    public void theURLOfTheSnapshotCreateEndpointIsKnown() {
-        util.put(SNAPSHOT_CREATE_URL, String.format("%s/snapshot", baseUrl));
+    @Given("^the URL of the tag create endpoint is known$")
+    public void theURLOfTheTagCreateEndpointIsKnown() {
+        util.put(TAG_CREATE_URL, String.format("%s/tag", baseUrl));
     }
 
-    @When("^a snapshot creation is requested$")
-    public void aSnapshotCreationIsRequested() {
-        String url = util.get(SNAPSHOT_CREATE_URL);
-        String payload = util.get(SNAPSHOT_CREATE_PAYLOAD);
+    @When("^a tag creation is requested$")
+    public void aTagCreationIsRequested() {
+        String url = util.get(TAG_CREATE_URL);
+        String payload = util.get(TAG_CREATE_PAYLOAD);
         Map<String, Object> vars = new HashMap<>();
         ResponseEntity<Result> response = null;
         try {
@@ -882,9 +810,9 @@ public class Steps extends BaseTest {
         }
     }
 
-    @Given("^a payload exists with the data required to create the snapshot$")
-    public void aPayloadExistsWithTheDataRequiredToCreateTheSnapshot() {
-        util.put(SNAPSHOT_CREATE_PAYLOAD, util.getFile("payload/create_snapshot.json"));
+    @Given("^a payload exists with the data required to create the tag$")
+    public void aPayloadExistsWithTheDataRequiredToCreateTheTag() {
+        util.put(TAG_CREATE_PAYLOAD, util.getFile("payload/create_tag.json"));
     }
 
     @Then("^the result contains no errors$")
@@ -895,40 +823,40 @@ public class Steps extends BaseTest {
         };
     }
 
-    @Given("^the URL of the snapshot update endpoint is known$")
-    public void theURLOfTheSnapshotUpdateEndpointIsKnown() {
-        util.put(SNAPSHOT_UPDATE_URL, String.format("%s/snapshot/{root_item_key}/{label}", baseUrl));
+    @Given("^the URL of the tag update endpoint is known$")
+    public void theURLOfTheTagUpdateEndpointIsKnown() {
+        util.put(TAG_UPDATE_URL, String.format("%s/tag/{root_item_key}/{label}", baseUrl));
     }
 
-    @Given("^the snapshot already exists$")
-    public void theSnapshotAlreadyExists() {
+    @Given("^the tag already exists$")
+    public void theTagAlreadyExists() {
         try {
-            // replays create_snapshot.feature
-            theURLOfTheSnapshotCreateEndpointIsKnown();
-            thereAreItemsLinkedToTheRootItemInTheDatabase();
-            aPayloadExistsWithTheDataRequiredToCreateTheSnapshot();
-            aSnapshotCreationIsRequested();
+            // replays create_tag.feature
+            theURLOfTheTagCreateEndpointIsKnown();
+            putData("payload/create_data_payload.json");
+            aPayloadExistsWithTheDataRequiredToCreateTheTag();
+            aTagCreationIsRequested();
             theResponseCodeIs(200);
             theResultContainsNoErrors();
         } catch (Exception ex) {
             if (ex.getMessage().contains("duplicate key value violates unique constraint")) {
-                // the snapshot is already in the database so do nothing
+                // the tag is already in the database so do nothing
             } else {
                 throw ex;
             }
         }
     }
 
-    @Given("^a payload exists with the data required to update the snapshot$")
-    public void aPayloadExistsWithTheDataRequiredToUpdateTheSnapshot() {
-        util.put(SNAPSHOT_UPDATE_PAYLOAD, util.getFile("payload/update_snapshot.json"));
+    @Given("^a payload exists with the data required to update the tag$")
+    public void aPayloadExistsWithTheDataRequiredToUpdateTheTag() {
+        util.put(TAG_UPDATE_PAYLOAD, util.getFile("payload/update_tag.json"));
     }
 
-    @When("^a snapshot update is requested$")
-    public void aSnapshotUpdateIsRequested() {
-        String url = util.get(SNAPSHOT_UPDATE_URL);
-        String payload = util.get(SNAPSHOT_UPDATE_PAYLOAD);
-        String currentLabel = util.get(SNAPSHOT_LABEL);
+    @When("^a tag update is requested$")
+    public void aTagUpdateIsRequested() {
+        String url = util.get(TAG_UPDATE_URL);
+        String payload = util.get(TAG_UPDATE_PAYLOAD);
+        String currentLabel = util.get(TAG_LABEL);
         String itemRootKey = util.get(ROOT_ITEM_KEY);
         Map<String, Object> vars = new HashMap<>();
         vars.put("root_item_key", itemRootKey);
@@ -944,25 +872,25 @@ public class Steps extends BaseTest {
         }
     }
 
-    @Given("^the item root key of the snapshot is known$")
-    public void theItemRootKeyOfTheSnapshotIsKnown() {
+    @Given("^the item root key of the tag is known$")
+    public void theItemRootKeyOfTheTagIsKnown() {
         util.put(ROOT_ITEM_KEY, "test_inventory");
     }
 
-    @Given("^the current label of the snapshot is known$")
-    public void theCurrentLabelOfTheSnapshotIsKnown() {
-        util.put(SNAPSHOT_LABEL, "v1");
+    @Given("^the current label of the tag is known$")
+    public void theCurrentLabelOfTheTagIsKnown() {
+        util.put(TAG_LABEL, "v1");
     }
 
-    @Given("^the URL of the snapshot delete endpoint is known$")
-    public void theURLOfTheSnapshotDeleteEndpointIsKnown() {
-        util.put(SNAPSHOT_DELETE_URL, String.format("%s/snapshot/{root_item_key}/{label}", baseUrl));
+    @Given("^the URL of the tag delete endpoint is known$")
+    public void theURLOfTheTagDeleteEndpointIsKnown() {
+        util.put(TAG_DELETE_URL, String.format("%s/tag/{root_item_key}/{label}", baseUrl));
     }
 
-    @When("^a snapshot delete is requested$")
-    public void aSnapshotDeleteIsRequested() {
-        String url = util.get(SNAPSHOT_DELETE_URL);
-        String currentLabel = util.get(SNAPSHOT_LABEL);
+    @When("^a tag delete is requested$")
+    public void aTagDeleteIsRequested() {
+        String url = util.get(TAG_DELETE_URL);
+        String currentLabel = util.get(TAG_LABEL);
         String itemRootKey = util.get(ROOT_ITEM_KEY);
         Map<String, Object> vars = new HashMap<>();
         vars.put("root_item_key", itemRootKey);
@@ -978,49 +906,49 @@ public class Steps extends BaseTest {
         }
     }
 
-    @Given("^the URL of the snapshot get endpoint is known$")
-    public void theURLOfTheSnapshotGetEndpointIsKnown() {
-        util.put(SNAPSHOT_LIST_URL, String.format("%s/snapshot/{root_item_key}", baseUrl));
+    @Given("^the URL of the tag get endpoint is known$")
+    public void theURLOfTheTagGetEndpointIsKnown() {
+        util.put(TAG_LIST_URL, String.format("%s/tag/{root_item_key}", baseUrl));
     }
 
-    @Given("^there are snapshots for a given item in the database$")
-    public void thereAreSnapshotsForAGivenItemInTheDatabase() {
-        // for now only puts one snapshot in the database
-        theSnapshotAlreadyExists();
+    @Given("^there are tags for a given item in the database$")
+    public void thereAreTagsForAGivenItemInTheDatabase() {
+        // for now only puts one tag in the database
+        theTagAlreadyExists();
     }
 
-    @Given("^the item root key of the snapshots is known$")
-    public void theItemRootKeyOfTheSnapshotsIsKnown() {
+    @Given("^the item root key of the tags is known$")
+    public void theItemRootKeyOfTheTagsIsKnown() {
         util.put(ROOT_ITEM_KEY, "test_inventory");
     }
 
-    @When("^a snapshot list for an item is requested$")
-    public void aSnapshotListForAnItemIsRequested() {
-        String url = util.get(SNAPSHOT_LIST_URL);
+    @When("^a tag list for an item is requested$")
+    public void aTagListForAnItemIsRequested() {
+        String url = util.get(TAG_LIST_URL);
         String itemRootKey = util.get(ROOT_ITEM_KEY);
         Map<String, Object> vars = new HashMap<>();
         vars.put("root_item_key", itemRootKey);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
-        ResponseEntity<SnapshotList> result = client.exchange(
+        ResponseEntity<TagList> result = client.exchange(
                 url,
                 HttpMethod.GET,
                 new HttpEntity<>(null, headers),
-                SnapshotList.class,
+                TagList.class,
                 vars);
         util.put(RESPONSE, result);
     }
 
-    @Then("^the response contains more than (\\d+) snapshots$")
-    public void theResponseContainsMoreThanSnapshots(int count) {
-        ResponseEntity<SnapshotList> response = util.get(RESPONSE);
+    @Then("^the response contains more than (\\d+) tags$")
+    public void theResponseContainsMoreThanTags(int count) {
+        ResponseEntity<TagList> response = util.get(RESPONSE);
 
-        SnapshotList items = response.getBody();
+        TagList items = response.getBody();
         if (items != null) {
             if (items.getItems().size() <= count) {
                 throw new RuntimeException(
                     String.format(
-                        "Response does not contain more than '%s' but '%s' snapshots.",
+                        "Response does not contain more than '%s' but '%s' tags.",
                         count,
                         response.getBody().getItems().size()
                     )
@@ -1030,33 +958,33 @@ public class Steps extends BaseTest {
         else {
             throw new RuntimeException(
                 String.format(
-                    "Response contains no snapshots where more than '%s' were expected.",
+                    "Response contains no tags where more than '%s' were expected.",
                     count
                 )
             );
         }
     }
 
-    @Given("^the snapshot does not already exist$")
-    public void theSnapshotDoesNotAlreadyExist() {
-        // remove the snapshot if exists
-        theURLOfTheSnapshotDeleteEndpointIsKnown();
-        theItemRootKeyOfTheSnapshotIsKnown();
-        theCurrentLabelOfTheSnapshotIsKnown();
-        aSnapshotDeleteIsRequested();
+    @Given("^the tag does not already exist$")
+    public void theTagDoesNotAlreadyExist() {
+        // remove the tag if exists
+        theURLOfTheTagDeleteEndpointIsKnown();
+        theItemRootKeyOfTheTagIsKnown();
+        theCurrentLabelOfTheTagIsKnown();
+        aTagDeleteIsRequested();
         theResponseCodeIs(200);
     }
 
     @Given("^the URL of the item tree get endpoint is known$")
     public void theURLOfTheItemTreeGetEndpointIsKnown() {
-        util.put(SNAPSHOT_TREE_URL, String.format("%s/tree/{root_item_key}/{label}", baseUrl));
+        util.put(TAG_TREE_URL, String.format("%s/tree/{root_item_key}/{label}", baseUrl));
     }
 
-    @When("^a snapshot tree retrieval for the snapshot is requested$")
-    public void aSnapshotTreeRetrievalForTheSnapshotIsRequested() {
-        String url = util.get(SNAPSHOT_TREE_URL);
+    @When("^a tag tree retrieval for the tag is requested$")
+    public void aTagTreeRetrievalForTheTagIsRequested() {
+        String url = util.get(TAG_TREE_URL);
         String itemRootKey = util.get(ROOT_ITEM_KEY);
-        String label = util.get(SNAPSHOT_LABEL);
+        String label = util.get(TAG_LABEL);
         Map<String, Object> vars = new HashMap<>();
         vars.put("root_item_key", itemRootKey);
         vars.put("label", label);
@@ -1082,14 +1010,9 @@ public class Steps extends BaseTest {
         }
     }
 
-    @Given("^the inventory snapshot label is known$")
-    public void theInventorySnapshotLabelIsKnown() {
-        util.put(INVENTORY_LABEL, "v1");
-    }
-
     @Given("^the URL of the item tree PUT endpoint is known$")
     public void theURLOfTheItemTreePUTEndpointIsKnown() {
-        util.put(PUT_TREE_URL, String.format("%s/tree", baseUrl));
+        util.put(IMPORT_DATA_URL, String.format("%s/data", baseUrl));
     }
 
     @Given("^the item tree does not exist in the database$")
@@ -1099,13 +1022,13 @@ public class Steps extends BaseTest {
 
     @Given("^a json payload with tree data exists$")
     public void aJsonPayloadWithTreeDataExists() {
-        util.put(CREATE_TREE_PAYLOAD, util.getFile("payload/create_tree_payload.json"));
+        util.put(IMPORT_DATA_PAYLOAD, util.getFile("payload/create_data_payload.json"));
     }
 
     @When("^the creation of the tree is requested$")
     public void theCreationOfTheTreeIsRequested() {
-        String payload = util.get(CREATE_TREE_PAYLOAD);
-        String url = util.get(PUT_TREE_URL);
+        String payload = util.get(IMPORT_DATA_PAYLOAD);
+        String url = util.get(IMPORT_DATA_URL);
         Map<String, Object> vars = new HashMap<>();
         vars.put("payload", payload);
         HttpHeaders headers = new HttpHeaders();
@@ -1135,13 +1058,13 @@ public class Steps extends BaseTest {
 
     @Given("^a json payload with update tree data exists$")
     public void aJsonPayloadWithUpdateTreeDataExists() {
-        util.put(UPDATE_TREE_PAYLOAD, util.getFile("payload/update_tree_payload.json"));
+        util.put(UPDATE_DATA_PAYLOAD, util.getFile("payload/update_data_payload.json"));
     }
 
     @When("^the update of the tree is requested$")
     public void theUpdateOfTheTreeIsRequested() {
-        String payload = util.get(UPDATE_TREE_PAYLOAD);
-        String url = util.get(PUT_TREE_URL);
+        String payload = util.get(UPDATE_DATA_PAYLOAD);
+        String url = util.get(IMPORT_DATA_URL);
         Map<String, Object> vars = new HashMap<>();
         vars.put("payload", payload);
         HttpHeaders headers = new HttpHeaders();
@@ -1188,28 +1111,28 @@ public class Steps extends BaseTest {
         }
     }
 
-    @Given("^there are not any snapshot for the root item$")
-    public void thereAreNotAnySnapshotForTheRootItem() {
-        theURLOfTheSnapshotDeleteAllEndpointIsKnown();
-        aSnapshotDeleteAllIsRequested();
+    @Given("^there are not any tag for the root item$")
+    public void thereAreNotAnyTagForTheRootItem() {
+        theURLOfTheTagDeleteAllEndpointIsKnown();
+        aTagDeleteAllIsRequested();
     }
 
-    @Given("^the URL of the snapshot delete all endpoint is known$")
-    public void theURLOfTheSnapshotDeleteAllEndpointIsKnown() {
-        util.put(SNAPSHOT_DELETE_URL, String.format("%s/snapshot/{root_item_key}", baseUrl));
+    @Given("^the URL of the tag delete all endpoint is known$")
+    public void theURLOfTheTagDeleteAllEndpointIsKnown() {
+        util.put(TAG_DELETE_URL, String.format("%s/tag/{root_item_key}", baseUrl));
     }
 
-    @Given("^there are more than one snapshots in the database$")
-    public void thereAreMoreThanOneSnapshotsInTheDatabase() {
+    @Given("^there are more than one tags in the database$")
+    public void thereAreMoreThanOneTagsInTheDatabase() {
         // do nothing for now
     }
 
-    @When("^a snapshot delete all is requested$")
-    public void aSnapshotDeleteAllIsRequested() {
-        deleteAllSnapshots(util.get(SNAPSHOT_DELETE_URL), (String)util.get(ROOT_ITEM_KEY));
+    @When("^a tag delete all is requested$")
+    public void aTagDeleteAllIsRequested() {
+        deleteAllTags(util.get(TAG_DELETE_URL), (String)util.get(ROOT_ITEM_KEY));
     }
 
-    private void deleteAllSnapshots(String url, String key) {
+    private void deleteAllTags(String url, String key) {
         ResponseEntity<Result> response = null;
         try {
             response = client.exchange(url, HttpMethod.DELETE, null, Result.class, key);
@@ -1283,5 +1206,41 @@ public class Steps extends BaseTest {
     @Given("^a metadata filter key is known$")
     public void aMetadataFilterKeyIsKnown() {
         util.put(ITEM_META_FILTER, "books");
+    }
+
+    @When("^a link type GET HTTP request with the key is done$")
+    public void aLinkTypeGETHTTPRequestWithTheKeyIsDone() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<JSONObject> result = client.exchange(
+                (String)util.get(LINK_TYPE_URL),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                JSONObject.class,
+                (String)util.get(CONGIG_LINK_TYPE_KEY));
+        util.put(RESPONSE, result);
+    }
+
+    @Then("^the response contains the link type$")
+    public void theResponseContainsTheLinkType() {
+        ResponseEntity<LinkTypeData> result = util.get(RESPONSE);
+        if (result.getBody() == null) {
+            throw new RuntimeException("The response does not contain the required link type.");
+        }
+    }
+
+    private void putData(String payloadFilePath){
+        String payload = util.getFile(payloadFilePath);
+        String url = String.format("%s/data", baseUrl);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("payload", util.getFile(payloadFilePath));
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<ResultList> response = client.exchange(url, HttpMethod.PUT, getEntity(payload), ResultList.class, vars);
+    }
+
+    @Given("^link rules exist in the database$")
+    public void linkRulesExistInTheDatabase() {
+        putData("payload/import_link_rules_payload.json");
     }
 }

@@ -221,18 +221,18 @@ public class Lib implements InitializingBean {
         return linkRule;
     }
 
-    public SnapshotData toSnapshotData(ResultSet set) throws SQLException {
+    public TagData toTagData(ResultSet set) throws SQLException {
         Date updated = set.getDate("updated");
 
-        SnapshotData snapshot = new SnapshotData();
-        snapshot.setLabel(set.getString("label"));
-        snapshot.setName(set.getString("name"));
-        snapshot.setDescription(set.getString("description"));
-        snapshot.setRootItemKey(set.getString("root_item_key"));
-        snapshot.setCreated(dateFormat.format(set.getDate("created")));
-        snapshot.setUpdated((updated != null) ? dateFormat.format(updated) : null);
-        snapshot.setVersion(set.getInt("version"));
-        snapshot.setChangedBy(set.getString("changed_by"));
-        return snapshot;
+        TagData tag = new TagData();
+        tag.setLabel(set.getString("label"));
+        tag.setName(set.getString("name"));
+        tag.setDescription(set.getString("description"));
+        tag.setRootItemKey(set.getString("root_item_key"));
+        tag.setCreated(dateFormat.format(set.getDate("created")));
+        tag.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+        tag.setVersion(set.getInt("version"));
+        tag.setChangedBy(set.getString("changed_by"));
+        return tag;
     }
 }

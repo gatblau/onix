@@ -1,6 +1,6 @@
 {
   "rootItemKey": "test_inventory",
   "name": "Test Inventory v1",
-  "description": "This is a snapshot for testing purposes.",
+  "description": "This is a tag for testing purposes.",
   "label" : "v1"
 }

@@ -30,7 +30,6 @@ public class LinkRuleData implements Serializable {
     private String linkType;
     private String startItemType;
     private String endItemType;
-    private Boolean system;
     private String created;
     private String updated;
     private Integer version;
@@ -82,14 +81,6 @@ public class LinkRuleData implements Serializable {
 
     public void setEndItemType(String endItemType) {
         this.endItemType = endItemType;
-    }
-
-    public Boolean getSystem() {
-        return system;
-    }
-
-    public void setSystem(Boolean system) {
-        this.system = system;
     }
 
     public String getCreated() {

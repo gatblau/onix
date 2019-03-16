@@ -42,5 +42,5 @@ docker rm -f onixdb
 docker rm -f onixwapi
 
 # creates the Onix containers
-docker run --name onixdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "creoworks/onixdb:${ONIXTAG}"
-docker run --name onixwapi -it -d -p 8080:8080 --link onix-db -eDB_HOST=onix-db "creoworks/onixwapi:${ONIXTAG}"
+docker run --name onixdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "creoworks/onixdb-snapshot:${ONIXTAG}"
+docker run --name onixwapi -it -d -p 8080:8080 --link onix-db -eDB_HOST=onix-db "creoworks/onixwapi:snapshot${ONIXTAG}"

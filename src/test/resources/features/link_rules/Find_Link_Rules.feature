@@ -4,7 +4,7 @@ Feature: Find Link Rules
   So that I can see their configuration for administration purposes.
 
   Scenario: Find All Link Rules
-    Given: there are pre-existing link rules in the database
+    Given link rules exist in the database
     Given the link rule URL of the service with no query parameters exist
     When a request to GET a list of link rules is done
     Then the response has body

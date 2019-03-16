@@ -53,7 +53,7 @@ public interface DbRepository {
     */
     ItemTypeData getItemType(String key);
     Result deleteItemTypes();
-    ItemTypeList getItemTypes(Map attribute, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo);
+    ItemTypeList getItemTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo);
 
     Result createOrUpdateItemType(String key, JSONObject json);
     Result deleteItemType(String key);
@@ -61,7 +61,7 @@ public interface DbRepository {
     /*
         LINK TYPES
     */
-    LinkTypeList getLinkTypes(Map attrMap, Boolean system, ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time);
+    LinkTypeList getLinkTypes(Map attrMap, ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time);
     Result createOrUpdateLinkType(String key, JSONObject json);
     Result deleteLinkType(String key);
     Result deleteLinkTypes();
@@ -70,7 +70,7 @@ public interface DbRepository {
     /*
         LINK RULES
     */
-    LinkRuleList getLinkRules(String linkTypeKey, String startItemType, String endItemType, Boolean system, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo);
+    LinkRuleList getLinkRules(String linkTypeKey, String startItemType, String endItemType, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo);
     Result createOrUpdateLinkRule(String key, JSONObject payload);
     Result deleteLinkRule(String key);
     Result deleteLinkRules();
@@ -79,12 +79,6 @@ public interface DbRepository {
         CHANGE
     */
     List<ChangeItemData> findChangeItems();
-
-    /*
-        INVENTORY
-     */
-    Result createOrUpdateInventory(String key, String inventory);
-    String getInventory(String key, String label);
 
     /*
         Function Calls
@@ -110,6 +104,7 @@ public interface DbRepository {
     String getDeleteLinkTypeSQL();
     String getDeleteLinkTypes();
     String getSetLinkTypeSQL();
+    String getGetLinkTypeSQL();
     String getFindLinkTypesSQL();
 
     String getDeleteLinkRuleSQL();
@@ -119,27 +114,27 @@ public interface DbRepository {
 
     String getFindChildItemsSQL();
 
-    String getCreateSnapshotSQL();
-    String getDeleteSnapshotSQL();
-    String getUpdateSnapshotSQL();
-    String getGetItemSnapshotsSQL();
+    String getCreateTagSQL();
+    String getDeleteTagSQL();
+    String getUpdateTagSQL();
+    String getGetItemTagsSQL();
 
-    String getGetTreeItemsForSnapshotSQL();
-    String getGetTreeLinksForSnapshotSQL();
+    String getGetTreeItemsForTagSQL();
+    String getGetTreeLinksForTagSQL();
 
     String getDeleteItemTreeSQL();
 
     String getTableCountSQL();
 
-    /* Snapshots */
-    Result createSnapshot(JSONObject payload);
-    Result updateSnapshot(String rootItemKey, String label, JSONObject payload);
-    Result deleteSnapshot(String rootItemKey, String label);
-    SnapshotList getItemSnapshots(String rootItemKey);
+    /* Tags */
+    Result createTag(JSONObject payload);
+    Result updateTag(String rootItemKey, String label, JSONObject payload);
+    Result deleteTag(String rootItemKey, String label);
+    TagList getItemTags(String rootItemKey);
 
     /* Item Tree */
     ItemTreeData getItemTree(String rootItemKey, String label);
-    ResultList createOrUpdateItemTree(JSONObject payload);
+    ResultList createOrUpdateData(JSONObject payload);
     Result deleteItemTree(String rootItemKey);
 
     /* Readiness probe */

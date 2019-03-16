@@ -17,15 +17,15 @@ DO $$
 BEGIN
 
 /*
-  create_snapshot(...):
-    creates a new snapshot for a subtree starting at the specified root item.
+  create_tag(...):
+    creates a new tag for a subtree starting at the specified root item.
   */
-CREATE OR REPLACE FUNCTION create_snapshot(
+CREATE OR REPLACE FUNCTION create_tag(
   root_item_key_param character varying,
-  snapshot_label_param character varying,
-  snapshot_name_param character varying,
-  snapshot_description_param text,
-  snapshot_created_by_param character varying
+  tag_label_param character varying,
+  tag_name_param character varying,
+  tag_description_param text,
+  tag_created_by_param character varying
   )
   RETURNS VOID
   LANGUAGE 'plpgsql'
@@ -58,7 +58,7 @@ BEGIN
      link_store := link_store || hstore(loop_item.id::TEXT, loop_item.version::TEXT);
   END LOOP;
 
-  INSERT INTO snapshot (
+  INSERT INTO tag (
     label,
     root_item_key,
     name,
@@ -69,24 +69,24 @@ BEGIN
     changed_by
   )
   VALUES (
-    snapshot_label_param,
+    tag_label_param,
     root_item_key_param,
-    snapshot_name_param,
-    snapshot_description_param,
+    tag_name_param,
+    tag_description_param,
     item_store,
     link_store,
     1,
-    snapshot_created_by_param
+    tag_created_by_param
   );
 
 END;
 $BODY$;
 
 /*
-  update_snapshot(...):
-    updates some of the attributes of an existing snapshot (e.g. label, name and description).
+  update_tag(...):
+    updates some of the attributes of an existing tag (e.g. label, name and description).
   */
-CREATE OR REPLACE FUNCTION update_snapshot(
+CREATE OR REPLACE FUNCTION update_tag(
   root_item_key_param character varying,
   current_label_param character varying,
   new_label_param character varying,
@@ -106,12 +106,12 @@ DECLARE
 BEGIN
   -- gets the current version
   SELECT version
-  FROM snapshot
+  FROM tag
   WHERE root_item_key = root_item_key_param
     AND label = current_label_param
   INTO current_version;
 
-  UPDATE snapshot
+  UPDATE tag
   SET
     label = new_label_param,
     name = name_param,
@@ -135,11 +135,11 @@ END;
 $BODY$;
 
   /*
-    delete_snapshot: deletes the specified snapshot.
+    delete_tag: deletes the specified tag.
    */
-  CREATE OR REPLACE FUNCTION delete_snapshot(
+  CREATE OR REPLACE FUNCTION delete_tag(
     root_item_key_param character varying,
-    label_param character varying -- if no label, then deletes all snapshots for the item
+    label_param character varying -- if no label, then deletes all tags for the item
   )
     RETURNS VOID
     LANGUAGE 'plpgsql'
@@ -147,18 +147,18 @@ $BODY$;
     VOLATILE
   AS $BODY$
   BEGIN
-    DELETE FROM snapshot s
+    DELETE FROM tag s
     WHERE (s.label = label_param OR label_param IS NULL)
     AND s.root_item_key = root_item_key_param;
   END
   $BODY$;
 
-  ALTER FUNCTION delete_snapshot(character varying, character varying)
+  ALTER FUNCTION delete_tag(character varying, character varying)
     OWNER TO onix;
 
   /*
-    get_tree_content(root_item_key_param, label_param): inspects the snapshot hstores for information
-      about a specific snapshot items and links and retrieve a set of ids and versions for them.
+    get_tree_content(root_item_key_param, label_param): inspects the tag hstores for information
+      about a specific tag items and links and retrieve a set of ids and versions for them.
    */
   CREATE OR REPLACE FUNCTION get_tree_content(
     root_item_key_param character varying,
@@ -172,8 +172,8 @@ $BODY$;
     item_data HSTORE;
     link_data HSTORE;
   BEGIN
-    item_data := (SELECT s.item_data FROM snapshot s WHERE s.label = label_param AND s.root_item_key = root_item_key_param);
-    link_data := (SELECT s.link_data FROM snapshot s WHERE s.label = label_param AND s.root_item_key = root_item_key_param);
+    item_data := (SELECT s.item_data FROM tag s WHERE s.label = label_param AND s.root_item_key = root_item_key_param);
+    link_data := (SELECT s.link_data FROM tag s WHERE s.label = label_param AND s.root_item_key = root_item_key_param);
     RETURN QUERY SELECT *, true AS is_item FROM each(item_data);
     RETURN QUERY SELECT *, false AS is_item FROM each(link_data);
   END;
@@ -184,7 +184,7 @@ $BODY$;
 
   /*
     get_tree_items(root_item_key_param, label_param): gets a list of all the items that are part
-      of a snapshot tree for a specific parent item and a label.
+      of a tag tree for a specific parent item and a label.
   */
   CREATE OR REPLACE FUNCTION get_tree_items(
     root_item_key_param character varying,
@@ -231,7 +231,7 @@ $BODY$;
 
   /*
     get_tree_links(root_item_key_param, label_param): gets a list of all the links that are part
-      of a snapshot tree for a specific parent item and a label.
+      of a tag tree for a specific parent item and a label.
    */
   CREATE OR REPLACE FUNCTION get_tree_links(
     root_item_key_param character varying,
@@ -286,10 +286,10 @@ $BODY$;
     OWNER TO onix;
 
 /*
-  get_item_snapshots(root_item_key_param): gets a list of snapshots for a specified items that
-    is the parent for the snapshot tree.
+  get_item_tags(root_item_key_param): gets a list of tags for a specified items that
+    is the parent for the tag tree.
  */
-CREATE OR REPLACE FUNCTION get_item_snapshots(root_item_key_param character varying)
+CREATE OR REPLACE FUNCTION get_item_tags(root_item_key_param character varying)
 RETURNS TABLE(
   id integer,
   label character varying,
@@ -311,12 +311,12 @@ AS $BODY$
 BEGIN
   RETURN QUERY
   SELECT *
-  FROM snapshot s
+  FROM tag s
   WHERE s.root_item_key = root_item_key_param;
 END;
 $BODY$;
 
-ALTER FUNCTION get_item_snapshots(character varying)
+ALTER FUNCTION get_item_tags(character varying)
   OWNER TO onix;
 
 END

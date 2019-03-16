@@ -1,5 +1,79 @@
 {
+  "itemTypes": [
+    {
+      "key": "ANSIBLE_INVENTORY",
+      "name": "Ansible Inventory",
+      "description": "This item type is for testing purposes only."
+    },
+    {
+      "key": "ANSIBLE_HOST_GROUP_SET",
+      "name": "Ansible Host Group Set",
+      "description": "This item type is for testing purposes only."
+    },
+    {
+      "key": "ANSIBLE_HOST_GROUP",
+      "name": "Ansible Host Group",
+      "description": "This item type is for testing purposes only."
+    },
+    {
+      "key": "ANSIBLE_HOST",
+      "name": "Ansible Host",
+      "description": "This item type is for testing purposes only."
+    }
+  ],
+  "linkTypes": [
+    {
+      "key": "ANSIBLE_INVENTORY",
+      "name": "Ansible Inventory Link",
+      "description": "This item type is for testing purposes only."
+    }
+  ],
+  "linkRules": [
+    {
+      "key": "ANSIBLE-INVENTORY->ANSIBLE-HOST-GROUP-SET",
+      "name": "Inventory to Group of Host Groups link rule.",
+      "description": "Allows to link an inventory with a group of host groups.",
+      "linkTypeKey": "ANSIBLE_INVENTORY",
+      "startItemTypeKey": "ANSIBLE_INVENTORY",
+      "endItemTypeKey": "ANSIBLE_HOST_GROUP_SET"
+    },
+    {
+      "key": "ANSIBLE-INVENTORY->ANSIBLE-HOST-GROUP",
+      "name": "Inventory to Host Groups link rule.",
+      "description": "Allows to link an inventory with a host group.",
+      "linkTypeKey": "ANSIBLE_INVENTORY",
+      "startItemTypeKey": "ANSIBLE_INVENTORY",
+      "endItemTypeKey": "ANSIBLE_HOST_GROUP"
+    },
+    {
+      "key": "ANSIBLE-HOST-GROUP-SET->ANSIBLE-HOST-GROUP",
+      "name": "Group to Host Groups to Host Groups link rule.",
+      "description": "Allows to link a group of host groups with a host group.",
+      "linkTypeKey": "ANSIBLE_INVENTORY",
+      "startItemTypeKey": "ANSIBLE_HOST_GROUP_SET",
+      "endItemTypeKey": "ANSIBLE_HOST_GROUP"
+    },
+    {
+      "key": "ANSIBLE-HOST-GROUP->HOST",
+      "name": "Host Group to Host link rule.",
+      "description": "Allows to link a host group with a host.",
+      "linkTypeKey": "ANSIBLE_INVENTORY",
+      "startItemTypeKey": "ANSIBLE_HOST_GROUP",
+      "endItemTypeKey": "ANSIBLE_HOST"
+    }
+  ],
   "items": [
+    {
+      "key": "test_inventory",
+      "name": "Ansible test_inventory",
+      "description": "Inventory imported from Ansible inventory.",
+      "type": "ANSIBLE_INVENTORY",
+      "status": 0,
+      "meta": {
+      },
+      "attribute": {},
+      "tag": []
+    },
     {
       "key": "test_inventory::OSEv3",
       "name": "OSEv3",
@@ -788,56 +862,6 @@
       "meta": {},
       "startItemKey": "test_inventory::compute",
       "endItemKey": "test_inventory::compute4"
-    },
-    {
-      "key": "test_inventory::test_inventory->nodes",
-      "description": "Link imported from Ansible inventory.",
-      "type": "ANSIBLE_INVENTORY",
-      "tag": [],
-      "attribute": {},
-      "meta": {},
-      "startItemKey": "test_inventory",
-      "endItemKey": "test_inventory::nodes"
-    },
-    {
-      "key": "test_inventory::nodes->masters",
-      "description": "Link imported from Ansible inventory.",
-      "type": "ANSIBLE_INVENTORY",
-      "tag": [],
-      "attribute": {},
-      "meta": {},
-      "startItemKey": "test_inventory::nodes",
-      "endItemKey": "test_inventory::masters"
-    },
-    {
-      "key": "test_inventory::nodes->compute",
-      "description": "Link imported from Ansible inventory.",
-      "type": "ANSIBLE_INVENTORY",
-      "tag": [],
-      "attribute": {},
-      "meta": {},
-      "startItemKey": "test_inventory::nodes",
-      "endItemKey": "test_inventory::compute"
-    },
-    {
-      "key": "test_inventory::nodes->infra",
-      "description": "Link imported from Ansible inventory.",
-      "type": "ANSIBLE_INVENTORY",
-      "tag": [],
-      "attribute": {},
-      "meta": {},
-      "startItemKey": "test_inventory::nodes",
-      "endItemKey": "test_inventory::infra"
-    },
-    {
-      "key": "test_inventory::nodes->etcd",
-      "description": "Link imported from Ansible inventory.",
-      "type": "ANSIBLE_INVENTORY",
-      "tag": [],
-      "attribute": {},
-      "meta": {},
-      "startItemKey": "test_inventory::nodes",
-      "endItemKey": "test_inventory::etcd"
     },
     {
       "key": "test_inventory::test_inventory->controller",

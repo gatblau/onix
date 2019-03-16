@@ -1,0 +1,19 @@
+{
+  "linkTypes": [
+    {
+      "key": "ANSIBLE_INVENTORY",
+      "name": "Ansible Inventory Link",
+      "description": "This item type is for testing purposes only."
+    },
+    {
+      "key": "APPLICATION",
+      "name": "Application Inventory Link",
+      "description": "This item type is for testing purposes only."
+    },
+    {
+      "key": "CONTENT",
+      "name": "Content Inventory Link",
+      "description": "This item type is for testing purposes only."
+    }
+  ]
+}

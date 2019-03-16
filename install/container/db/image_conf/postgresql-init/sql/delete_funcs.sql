@@ -51,12 +51,10 @@ BEGIN
       SELECT id
       FROM item_type
       WHERE key = key_param
-        AND system = false
     );
   END IF;
   DELETE FROM item_type
-  WHERE key = key_param
-    AND system = false;
+  WHERE key = key_param;
 END
 $BODY$;
 
@@ -98,12 +96,10 @@ BEGIN
       SELECT id
       FROM link_type
       WHERE key = key_param
-        AND system = false
     );
   END IF;
   DELETE FROM link_type
-  WHERE key = key_param
-    AND system = false;
+  WHERE key = key_param;
 END
 $BODY$;
 
@@ -141,7 +137,7 @@ CREATE OR REPLACE FUNCTION delete_item_types()
   VOLATILE
 AS $BODY$
 BEGIN
-  DELETE FROM item_type WHERE system = FALSE;
+  DELETE FROM item_type;
 END
 $BODY$;
 
@@ -158,7 +154,7 @@ CREATE OR REPLACE FUNCTION delete_link_types()
   VOLATILE
 AS $BODY$
 BEGIN
-  DELETE FROM link_type WHERE system = FALSE;
+  DELETE FROM link_type;
 END
 $BODY$;
 
@@ -175,7 +171,7 @@ CREATE OR REPLACE FUNCTION delete_link_rules()
   VOLATILE
 AS $BODY$
 BEGIN
-  DELETE FROM link_rule WHERE system = FALSE;
+  DELETE FROM link_rule;
 END
 $BODY$;
 

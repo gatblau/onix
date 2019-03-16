@@ -1,8 +1,0 @@
-[local]
-localhost
-
-[local:vars]
-ansible_connection=local
-wapi_uri="http://localhost:8080"
-user=admin
-pwd=0n1x

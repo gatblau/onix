@@ -22,8 +22,8 @@ BEGIN
     THEN
         CREATE SEQUENCE item_type_id_seq
             INCREMENT 1
-            START 1000
-            MINVALUE 1000
+            START 1
+            MINVALUE 1
             MAXVALUE 9223372036854775807
             CACHE 1;
 
@@ -38,7 +38,6 @@ BEGIN
           description TEXT COLLATE pg_catalog."default",
           attr_valid  HSTORE,
           filter      jsonb,
-          system      boolean                         DEFAULT FALSE,
           version     bigint                 NOT NULL DEFAULT 1,
           created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated     timestamp(6) with time zone,
@@ -72,7 +71,6 @@ BEGIN
           description TEXT COLLATE pg_catalog."default",
           attr_valid  HSTORE,
           filter      jsonb,
-          system      boolean,
           version     bigint,
           created     timestamp(6) with time zone,
           updated     timestamp(6) with time zone,
@@ -101,11 +99,6 @@ BEGIN
         CREATE TRIGGER item_type_change
             AFTER INSERT OR UPDATE OR DELETE ON item_type
             FOR EACH ROW EXECUTE PROCEDURE change_item_type();
-
-        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (50, 'ANSIBLE_INVENTORY', 'Ansible Inventory', 'An Ansible inventory.', TRUE, 'onix');
-        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (51, 'ANSIBLE_HOST_GROUP_SET', 'Host Group Set', 'An Ansible Set of Host Groups.', TRUE, 'onix');
-        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (52, 'ANSIBLE_HOST_GROUP', 'Ansible Host Group', 'An Ansible Inventory Host Group.', TRUE, 'onix');
-        INSERT INTO item_type(id, key, name, description, system, changed_by) VALUES (53, 'ANSIBLE_HOST', 'Ansible Host', 'An Ansible Inventory Host', TRUE, 'onix');
 
     END IF;
 
@@ -230,8 +223,8 @@ BEGIN
     THEN
         CREATE SEQUENCE link_type_id_seq
         INCREMENT 1
-        START 1000
-        MINVALUE 1000
+        START 1
+        MINVALUE 1
         MAXVALUE 9223372036854775807
         CACHE 1;
 
@@ -245,7 +238,6 @@ BEGIN
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
           description TEXT COLLATE pg_catalog."default",
           attr_valid  HSTORE,
-          system      boolean                NOT NULL DEFAULT FALSE,
           version     bigint                 NOT NULL DEFAULT 1,
           created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated     timestamp(6) with time zone,
@@ -274,7 +266,6 @@ BEGIN
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
           description TEXT COLLATE pg_catalog."default",
           attr_valid  HSTORE,
-          system      boolean,
           version     bigint,
           created     timestamp(6) with time zone,
           updated     timestamp(6) with time zone,
@@ -303,11 +294,6 @@ BEGIN
         CREATE TRIGGER link_type_change
             AFTER INSERT OR UPDATE OR DELETE ON link_type
             FOR EACH ROW EXECUTE PROCEDURE change_link_type();
-
-        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (1, 'APPLICATION', 'Application Link', 'Links items describing application components.', TRUE, 'onix');
-        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (2, 'NETWORK', 'Network Link', 'Links items describing network connections.', TRUE, 'onix');
-        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (3, 'WEB-CONTENT', 'Web Content Link', 'Links items describing web content.', TRUE, 'onix');
-        INSERT INTO link_type(id, key, name, description, system, changed_by) VALUES (50, 'ANSIBLE_INVENTORY', 'Ansible Inventory Link', 'Links items describing an Ansible inventory.', TRUE, 'onix');
 
     END IF;
 
@@ -463,7 +449,6 @@ BEGIN
           link_type_id       integer                                             NOT NULL,
           start_item_type_id integer                                             NOT NULL,
           end_item_type_id   integer                                             NOT NULL,
-          system             boolean                                             NOT NULL DEFAULT FALSE,
           version            bigint                                              NOT NULL DEFAULT 1,
           created            timestamp(6) with time zone                                  DEFAULT CURRENT_TIMESTAMP(6),
           updated            timestamp(6) with time zone,
@@ -524,7 +509,6 @@ BEGIN
           link_type_id       integer,
           start_item_type_id integer,
           end_item_type_id   integer,
-          system             boolean,
           version            bigint,
           created            timestamp(6) with time zone,
           updated            timestamp(6) with time zone,
@@ -555,31 +539,26 @@ BEGIN
             AFTER INSERT OR UPDATE OR DELETE ON link_rule
             FOR EACH ROW EXECUTE PROCEDURE change_link_rule();
 
-        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (1, 'ANSIBLE-INVENTORY->ANSIBLE-HOST-GROUP-SET', 'Inventory to Group of Host Groups link rule.', 'Allows to link an inventory with a group of host groups.', 50, 50, 51, 'onix', TRUE);
-        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (2, 'ANSIBLE-INVENTORY->ANSIBLE-HOST-GROUP', 'Inventory to ANSIBLE-HOST-GROUP link rule.', 'Allows to link an inventory item with a host group item.', 50, 50, 52, 'onix', TRUE);
-        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (3, 'ANSIBLE-HOST-GROUP-SET->ANSIBLE-HOST-GROUP', 'Group of Host Groups to Groups link rule.', 'Allows to link a group of host groups with a host group.', 50, 51, 52, 'onix', TRUE);
-        INSERT INTO link_rule (id, key, name, description, link_type_id, start_item_type_id, end_item_type_id, changed_by, system) VALUES (4, 'ANSIBLE-HOST-GROUP->HOST', 'Host Group to Host link rule.', 'Allows to link a host group item with a host item.', 50, 52, 53, 'onix', TRUE);
-
     END IF;
 
     ---------------------------------------------------------------------------
-    -- SNAPSHOT
+    -- TAG
     ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='snapshot')
+    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='tag')
     THEN
-        CREATE SEQUENCE snapshot_id_seq
+        CREATE SEQUENCE tag_id_seq
         INCREMENT 1
         START 1
         MINVALUE 1
         MAXVALUE 9223372036854775807
         CACHE 1;
 
-        ALTER SEQUENCE snapshot_id_seq
+        ALTER SEQUENCE tag_id_seq
             OWNER TO onix;
 
-        CREATE TABLE snapshot
+        CREATE TABLE tag
         (
-          id            INTEGER                NOT NULL DEFAULT nextval('snapshot_id_seq'::regclass),
+          id            INTEGER                NOT NULL DEFAULT nextval('tag_id_seq'::regclass),
           label         CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
           root_item_key CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           name          CHARACTER VARYING(200) COLLATE pg_catalog."default",
@@ -590,10 +569,10 @@ BEGIN
           created       timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated       timestamp(6) with time zone,
           changed_by    CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
-          CONSTRAINT snapshot_id_pk PRIMARY KEY (id),
+          CONSTRAINT tag_id_pk PRIMARY KEY (id),
           CONSTRAINT label_root_item_key_uc UNIQUE (label, root_item_key),
           CONSTRAINT root_item_key_item_data_link_data_uc UNIQUE (root_item_key, item_data, link_data),
-          CONSTRAINT snapshot_root_item_key_fk FOREIGN KEY (root_item_key)
+          CONSTRAINT tag_root_item_key_fk FOREIGN KEY (root_item_key)
             REFERENCES item (key) MATCH SIMPLE
             ON UPDATE NO ACTION
             ON DELETE NO ACTION
@@ -603,20 +582,20 @@ BEGIN
         )
         TABLESPACE pg_default;
 
-        ALTER TABLE snapshot
+        ALTER TABLE tag
             OWNER to onix;
 
-        CREATE INDEX fki_snapshot_root_item_key_fk
-            ON snapshot USING btree (root_item_key)
+        CREATE INDEX fki_tag_root_item_key_fk
+            ON tag USING btree (root_item_key)
             TABLESPACE pg_default;
     END IF;
 
   ---------------------------------------------------------------------------
-  -- SNAPSHOT CHANGE
+  -- TAG CHANGE
   ---------------------------------------------------------------------------
-  IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='snapshot_change')
+  IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='tag_change')
   THEN
-    CREATE TABLE snapshot_change
+    CREATE TABLE tag_change
     (
       operation     CHAR(1),
       changed       timestamp(6) with time zone,
@@ -633,29 +612,29 @@ BEGIN
       changed_by    CHARACTER VARYING(50)
     );
 
-    ALTER TABLE snapshot_change
+    ALTER TABLE tag_change
       OWNER to onix;
 
-    CREATE OR REPLACE FUNCTION change_snapshot() RETURNS TRIGGER AS $snapshot_change$
+    CREATE OR REPLACE FUNCTION change_tag() RETURNS TRIGGER AS $tag_change$
     BEGIN
       IF (TG_OP = 'DELETE') THEN
-        INSERT INTO snapshot_change SELECT 'D', now(), OLD.*;
+        INSERT INTO tag_change SELECT 'D', now(), OLD.*;
         RETURN OLD;
       ELSIF (TG_OP = 'UPDATE') THEN
-        INSERT INTO snapshot_change SELECT 'U', now(), NEW.*;
+        INSERT INTO tag_change SELECT 'U', now(), NEW.*;
         RETURN NEW;
       ELSIF (TG_OP = 'INSERT') THEN
-        INSERT INTO snapshot_change SELECT 'I', now(), NEW.*;
+        INSERT INTO tag_change SELECT 'I', now(), NEW.*;
         RETURN NEW;
       END IF;
       RETURN NULL; -- result is ignored since this is an AFTER trigger
       END;
-    $snapshot_change$
+    $tag_change$
     LANGUAGE plpgsql;
 
-    CREATE TRIGGER snapshot_change
-      AFTER INSERT OR UPDATE OR DELETE ON snapshot
-      FOR EACH ROW EXECUTE PROCEDURE change_snapshot();
+    CREATE TRIGGER tag_change
+      AFTER INSERT OR UPDATE OR DELETE ON tag
+      FOR EACH ROW EXECUTE PROCEDURE change_tag();
 
 END IF;
 
