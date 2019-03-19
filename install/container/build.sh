@@ -57,5 +57,5 @@ cd wapi
 sh ./build.sh $ONIXTAG
 cd ..
 
-docker push creoworks/onixdb-snapshot
-docker push creoworks/onixwapi-snapshot
+docker push southwinds/onixdb-snapshot
+docker push southwinds/onixwapi-snapshot
