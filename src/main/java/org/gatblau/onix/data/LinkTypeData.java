@@ -29,6 +29,7 @@ public class LinkTypeData implements Serializable {
     private String name;
     private String description;
     private JSONObject attribute;
+    private JSONObject metaSchema;
     private String created;
     private String updated;
     private Integer version;
@@ -99,5 +100,13 @@ public class LinkTypeData implements Serializable {
 
     public void setChangedBy(String changedBy) {
         this.changedBy = changedBy;
+    }
+
+    public JSONObject getMetaSchema() {
+        return metaSchema;
+    }
+
+    public void setMetaSchema(JSONObject metaSchema) {
+        this.metaSchema = metaSchema;
     }
 }

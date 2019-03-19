@@ -358,6 +358,7 @@ public class PgSqlRepository implements DbRepository {
             Object description = json.get("description");
             Object attribute = json.get("attribute_validation");
             String filter = util.toJSONString(json.get("filter"));
+            String metaSchema = util.toJSONString(json.get("metaSchema"));
             Object version = json.get("version");
 
             db.prepare(getSetItemTypeSQL());
@@ -366,8 +367,9 @@ public class PgSqlRepository implements DbRepository {
             db.setString(3, (description != null) ? (String) description : null); // description_param
             db.setString(4, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null); // attribute_param
             db.setString(5, filter);
-            db.setObject(6, version); // version_param
-            db.setString(7, getUser()); // changed_by_param
+            db.setString(6, metaSchema);
+            db.setObject(7, version); // version_param
+            db.setString(8, getUser()); // changed_by_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_item_type"));
         }
         catch (Exception ex) {
@@ -416,18 +418,20 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public Result createOrUpdateLinkType(String key, JSONObject json) {
         Result result = new Result();
-        Object name = json.get("name");
-        Object description = json.get("description");
-        Object attribute = json.get("attribute_validation");
-        Object version = json.get("version");
         try {
+            Object name = json.get("name");
+            Object description = json.get("description");
+            Object attribute = json.get("attribute_validation");
+            String metaSchema = util.toJSONString(json.get("metaSchema"));
+            Object version = json.get("version");
             db.prepare(getSetLinkTypeSQL());
             db.setString(1, key); // key_param
             db.setString(2, (name != null) ? (String) name : null); // name_param
             db.setString(3, (description != null) ? (String) description : null); // description_param
             db.setString(4, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null); // attribute_param
-            db.setObject(5, version); // version_param
-            db.setString(6, getUser()); // changed_by_param
+            db.setString(5, metaSchema);
+            db.setObject(6, version); // version_param
+            db.setString(7, getUser()); // changed_by_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_link_type"));
         }
         catch (Exception ex) {
@@ -704,6 +708,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::text," + // description
                 "?::hstore," + // attr_valid
                 "?::jsonb," + // filter
+                "?::jsonb," + // meta_schema
                 "?::bigint," + // version
                 "?::character varying" + // changed_by
                 ")";
@@ -744,6 +749,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," + // name
                 "?::text," + // description
                 "?::hstore," + // attr_valid
+                "?::jsonb," + // meta_schema
                 "?::bigint," + // version
                 "?::character varying" + // changed_by
                 ")";

@@ -1,7 +1,7 @@
 {
   "name": "Meta Test Item",
   "description": "This is an item to test the item meta endpoint and filters.",
-  "type": "item_type_1",
+  "type": "item_type_with_filter",
   "meta": {
     "store": {
       "book": [

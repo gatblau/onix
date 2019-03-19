@@ -3,10 +3,10 @@
   "description": "This is a CMDB item for testing purposes.",
   "type": "item_type_1",
   "meta": {
-    "IP": "192.168.0.1",
-    "Vendor": "Supreme Computers",
-    "Type": "Virtual Machine",
-    "OS": "RHEL 7.5"
+    "productId": 1,
+    "productName": "A green door",
+    "price": 12.50,
+    "tags": [ "home", "green" ]
   },
   "tag": ["cmdb", "host", "rhel"],
   "attribute": {

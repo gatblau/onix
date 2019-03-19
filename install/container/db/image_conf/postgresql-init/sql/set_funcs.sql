@@ -47,6 +47,8 @@ AS $BODY$
     current_version bigint; -- the version of the row before the update or null if no row
     rows_affected integer;
     item_type_id_value integer;
+    meta_schema_value jsonb;
+    is_meta_valid boolean;
   BEGIN
     -- find the item type surrogate key from the provided natural key
     SELECT id FROM item_type WHERE key = item_type_key_param INTO item_type_id_value;
@@ -58,6 +60,18 @@ AS $BODY$
 
     -- checks that the attributes passed in comply with the validation in the item_type
     PERFORM check_item_attr(item_type_key_param, attribute_param);
+
+    -- checks that the meta field complies with the json schema defined by the item type
+    IF (meta_param IS NOT NULL) THEN
+      SELECT meta_schema FROM item_type it WHERE it.key = item_type_key_param INTO meta_schema_value;
+      IF (meta_schema_value IS NOT NULL) THEN
+        SELECT validate_json_schema(meta_schema_value, meta_param) INTO is_meta_valid;
+        IF (NOT is_meta_valid) THEN
+          RAISE EXCEPTION 'Meta field % for Item % is not valid as defined by the schema % in its type %.', meta_param, key_param, meta_schema_value, item_type_key_param
+            USING hint = 'Check the JSON value meets the requirement of the schema defined by the item type.';
+        END IF;
+      END IF;
+    END IF;
 
     -- get the item current version
     SELECT version FROM item WHERE key = key_param INTO current_version;
@@ -148,6 +162,7 @@ CREATE OR REPLACE FUNCTION set_item_type(
     description_param text,
     attr_valid_param hstore, -- keys allowed or required in item attributes
     filter_param jsonb,
+    meta_schema_param jsonb,
     local_version_param bigint,
     changed_by_param character varying
   )
@@ -173,6 +188,7 @@ BEGIN
       description,
       attr_valid,
       filter,
+      meta_schema,
       version,
       created,
       updated,
@@ -185,6 +201,7 @@ BEGIN
       description_param,
       attr_valid_param,
       filter_param,
+      meta_schema_param,
       1,
       current_timestamp,
       null,
@@ -197,6 +214,7 @@ BEGIN
       description = description_param,
       attr_valid = attr_valid_param,
       filter = filter_param,
+      meta_schema = meta_schema_param,
       version = version + 1,
       updated = current_timestamp,
       changed_by = changed_by_param
@@ -207,7 +225,8 @@ BEGIN
       name != name_param OR
       description != description_param OR
       attr_valid != attr_valid_param OR
-      filter != filter_param
+      filter != filter_param OR
+      meta_schema != meta_schema_param
     );
     GET DIAGNOSTICS rows_affected := ROW_COUNT;
     SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
@@ -216,7 +235,7 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION set_item_type(character varying, character varying, text, hstore, jsonb, bigint, character varying)
+ALTER FUNCTION set_item_type(character varying, character varying, text, hstore, jsonb, jsonb, bigint, character varying)
 OWNER TO onix;
 
 /*
@@ -233,6 +252,7 @@ CREATE OR REPLACE FUNCTION set_link_type(
     name_param character varying,
     description_param text,
     attr_valid_param hstore, -- keys allowed or required in item attributes
+    meta_schema_param jsonb,
     local_version_param bigint,
     changed_by_param character varying
   )
@@ -259,6 +279,7 @@ BEGIN
       name,
       description,
       attr_valid,
+      meta_schema,
       version,
       created,
       updated,
@@ -270,6 +291,7 @@ BEGIN
       name_param,
       description_param,
       attr_valid_param,
+      meta_schema_param,
       1,
       current_timestamp,
       null,
@@ -281,6 +303,7 @@ BEGIN
        name = name_param,
        description = description_param,
        attr_valid = attr_valid_param,
+       meta_schema = meta_schema_param,
        version = version + 1,
        updated = current_timestamp,
        changed_by = changed_by_param
@@ -290,7 +313,8 @@ BEGIN
     AND (
       name != name_param OR
       description != description_param OR
-      attr_valid != attr_valid_param
+      attr_valid != attr_valid_param OR
+      meta_schema != meta_schema_param
     );
     GET DIAGNOSTICS rows_affected := ROW_COUNT;
     SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
@@ -299,8 +323,8 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION set_link_type(character varying, character varying, text, hstore, bigint, character varying)
-OWNER TO onix;
+ALTER FUNCTION set_link_type(character varying, character varying, text, hstore, jsonb, bigint, character varying)
+  OWNER TO onix;
 
 /*
   set_link(...)
@@ -337,6 +361,8 @@ AS $BODY$
     link_type_id_value integer;
     start_item_type_key_value character varying;
     end_item_type_key_value character varying;
+    meta_schema_value jsonb;
+    is_meta_valid boolean;
 BEGIN
   -- find the link type surrogate key from the provided natural key
   SELECT id FROM link_type WHERE key = link_type_key_param INTO link_type_id_value;
@@ -377,6 +403,18 @@ BEGIN
 
   -- checks that the attributes passed in comply with the validation in the link_type
   PERFORM check_link_attr(link_type_key_param, attribute_param);
+
+  -- checks that the meta field complies with the json schema defined by the item type
+  IF (meta_param IS NOT NULL) THEN
+    SELECT meta_schema FROM link_type it WHERE it.key = link_type_key_param INTO meta_schema_value;
+    IF (meta_schema_value IS NOT NULL) THEN
+      SELECT validate_json_schema(meta_schema_value, meta_param) INTO is_meta_valid;
+      IF (NOT is_meta_valid) THEN
+        RAISE EXCEPTION 'Meta field for Link % is not valid as defined by the schema in its type %.', key_param, link_type_key_param
+          USING hint = 'Check the JSON value meets the requirement of the schema defined by the link type.';
+      END IF;
+    END IF;
+  END IF;
 
   SELECT version FROM link WHERE key = key_param INTO current_version;
   IF (current_version IS NULL) THEN

@@ -166,6 +166,7 @@ public class Lib implements InitializingBean {
         itemType.setVersion(set.getInt("version"));
         itemType.setAttribute(toJSON(set.getObject("attr_valid")));
         itemType.setFilter(toJSON(set.getObject("filter")));
+        itemType.setMetaSchema(toJSON(set.getObject("meta_schema")));
         return itemType;
     }
 
@@ -200,6 +201,7 @@ public class Lib implements InitializingBean {
         linkType.setUpdated((updated != null) ? dateFormat.format(updated) : null);
         linkType.setVersion(set.getInt("version"));
         linkType.setAttribute(toJSON(set.getObject("attr_valid")));
+        linkType.setMetaSchema(toJSON(set.getObject("meta_schema")));
         linkType.setChangedBy(set.getString("changed_by"));
         return linkType;
     }
