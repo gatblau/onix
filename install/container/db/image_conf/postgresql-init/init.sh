@@ -33,6 +33,7 @@ echo '>>> Creating the database tables <<<'
 psql -U postgres -d onix -a -f $DIR/sql/tables.sql
 
 echo '>>> Creating the database functions <<<'
+psql -U postgres -d onix -a -f $DIR/sql/json_schema.sql
 psql -U postgres -d onix -a -f $DIR/sql/validation_funcs.sql
 psql -U postgres -d onix -a -f $DIR/sql/set_funcs.sql
 psql -U postgres -d onix -a -f $DIR/sql/get_funcs.sql

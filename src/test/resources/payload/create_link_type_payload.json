@@ -1,4 +1,6 @@
 {
   "name": "Test Link Type",
-  "description": "This link type is for testing purposes only."
+  "description": "This link type is for testing purposes only.",
+  "metaSchema": {
+  }
 }

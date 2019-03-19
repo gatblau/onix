@@ -267,6 +267,9 @@ public class Steps extends BaseTest {
         catch (Exception ex) {
             util.put(EXCEPTION, ex);
         }
+        if (response.getBody().isError()) {
+            throw new RuntimeException(String.format("Failed to put item: %s", response.getBody().getMessage()));
+        }
     }
 
     private void putItemType(String itemTypeKey, String filename) {
@@ -368,7 +371,7 @@ public class Steps extends BaseTest {
 
     @Given("^a json payload with new item type information exists$")
     public void aJsonPayloadWithNewItemTypeInformationExists() throws Throwable {
-        util.put(PAYLOAD, util.getFile("payload/create_item_type_payload.json"));
+        util.put(PAYLOAD, util.getFile("payload/create_item_type_with_meta_schema_payload.json"));
     }
 
     @Given("^the item type natural key is known$")
@@ -525,7 +528,7 @@ public class Steps extends BaseTest {
 
     @Given("^the item type exists in the database$")
     public void theItemTypeExistsInTheDatabase() {
-        putItemType(util.get(CONGIG_ITEM_TYPE_KEY), "payload/create_item_type_payload.json");
+        putItemType(util.get(CONGIG_ITEM_TYPE_KEY), "payload/create_item_type_with_meta_schema_payload.json");
     }
 
     @When("^a DELETE HTTP request with an item type key is done$")
@@ -1162,8 +1165,8 @@ public class Steps extends BaseTest {
         util.put(RESPONSE, result);
     }
 
-    @Then("^the reponse contains the requested metadata$")
-    public void theReponseContainsTheRequestedMetadata() {
+    @Then("^the response contains the requested metadata$")
+    public void theResponseContainsTheRequestedMetadata() {
         ResponseEntity<JSONObject> response = util.get(RESPONSE);
         JSONObject item = response.getBody();
         if (item == null) {
@@ -1178,16 +1181,12 @@ public class Steps extends BaseTest {
 
     @Given("^an item type with filter data exists in the database$")
     public void anItemTypeWithFilterDataExistsInTheDatabase() throws Throwable {
-        theItemTypeURLOfTheServiceWithKeyIsKnown();
-        theItemTypeNaturalKeyIsKnown();
-        aJsonPayloadWithNewItemTypeInformationExists();
-        anItemTypePUTHTTPRequestWithAJSONPayloadIsDone();
+        putItemType("item_type_with_filter", "payload/create_item_type_with_filter_payload.json");
     }
 
     @Given("^the item with metadata exists in the database$")
     public void theItemWithMetadataExistsInTheDatabase() {
-        util.put(ITEM_KEY, ITEM_ONE_KEY);
-        putItem(util.get(ITEM_KEY), "payload/create_meta_test_item_payload.json");
+        putItem(util.get(ITEM_ONE_KEY), "payload/create_meta_test_item_payload.json");
     }
 
     @When("^a GET HTTP request to the Item Metadata endpoint with filter is done$")

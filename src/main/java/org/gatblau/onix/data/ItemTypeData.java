@@ -32,6 +32,7 @@ public class ItemTypeData implements Serializable {
     private Boolean system;
     private JSONObject attribute;
     private JSONObject filter;
+    private JSONObject metaSchema;
     private String created;
     private String updated;
     private Integer version;
@@ -109,5 +110,13 @@ public class ItemTypeData implements Serializable {
 
     public void setFilter(JSONObject filter) {
         this.filter = filter;
+    }
+
+    public JSONObject getMetaSchema() {
+        return metaSchema;
+    }
+
+    public void setMetaSchema(JSONObject metaSchema) {
+        this.metaSchema = metaSchema;
     }
 }

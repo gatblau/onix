@@ -1,0 +1,27 @@
+{
+  "name": "Test Item Type",
+  "description": "This item type is for testing purposes only.",
+  "metaSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://example.com/product.schema.json",
+    "title": "Product",
+    "description": "A product from Acme's catalog",
+    "type": "object",
+    "properties": {
+      "productId": {
+        "description": "The unique identifier for a product",
+        "type": "integer"
+      },
+      "productName": {
+        "description": "Name of the product",
+        "type": "string"
+      },
+      "price": {
+        "description": "The price of the product",
+        "type": "number",
+        "exclusiveMinimum": 0
+      }
+    },
+    "required": [ "productId", "productName", "price" ]
+  }
+}

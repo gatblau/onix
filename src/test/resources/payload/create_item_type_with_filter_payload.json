@@ -1,5 +1,5 @@
 {
-  "name": "Test Item Type",
+  "name": "Item Type with Filter",
   "description": "This item type is for testing purposes only.",
   "filter" : {
     "filters": [
@@ -24,5 +24,7 @@
         ]
       }
     ]
+  },
+  "metaSchema": {
   }
 }

@@ -10,4 +10,4 @@ Feature: Get Configuration Item Metadata
     When a GET HTTP request to the Item Metadata endpoint is done
     Then the response code is 200
     Then the response has body
-    Then the reponse contains the requested metadata
+    Then the response contains the requested metadata
