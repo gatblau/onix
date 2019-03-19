@@ -19,7 +19,7 @@
 version: '3'
 services:
   onixdb:
-    image: creoworks/onixdb-snapshot
+    image: southwinds/onixdb-snapshot
     container_name: onixdb
     restart: always
     environment:
@@ -27,7 +27,7 @@ services:
     ports:
       - "5432:5432"
   onixwapi:
-    image: creoworks/onixwapi-snapshot
+    image: southwinds/onixwapi-snapshot
     depends_on:
       - onixdb
     container_name: onixwapi

@@ -41,7 +41,7 @@ echo "unzips the application jar file"
 unzip -o ././../../../target/*.jar -d ./tmp
 
 echo "builds the docker image"
-docker build -t creoworks/onixwapi-snapshot:${TAG} .
+docker build -t southwinds/onixwapi-snapshot:${TAG} .
 
 echo "tags the image as latest"
-docker tag creoworks/onixwapi-snapshot:${TAG} creoworks/onixwapi-snapshot:latest
+docker tag southwinds/onixwapi-snapshot:${TAG} southwinds/onixwapi-snapshot:latest

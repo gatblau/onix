@@ -30,7 +30,7 @@ fi
 
 # builds an onix postgresql database image using the S2I tool (https://github.com/openshift/source-to-image/releases)
 # https://github.com/sclorg/postgresql-container/tree/generated/10
-../s2i build ./image_conf/ centos/postgresql-10-centos7 "creoworks/onixdb-snapshot:${TAG}"
+../s2i build ./image_conf/ centos/postgresql-10-centos7 "southwinds/onixdb-snapshot:${TAG}"
 
 # tags the image as latest
-docker tag creoworks/onixdb-snapshot:${TAG} creoworks/onixdb-snapshot:latest
+docker tag southwinds/onixdb-snapshot:${TAG} southwinds/onixdb-snapshot:latest
