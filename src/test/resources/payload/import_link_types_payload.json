@@ -3,17 +3,20 @@
     {
       "key": "ANSIBLE_INVENTORY",
       "name": "Ansible Inventory Link",
-      "description": "This item type is for testing purposes only."
+      "description": "This item type is for testing purposes only.",
+      "modelKey": "meta_model_1"
     },
     {
       "key": "APPLICATION",
       "name": "Application Inventory Link",
-      "description": "This item type is for testing purposes only."
+      "description": "This item type is for testing purposes only.",
+      "modelKey": "meta_model_1"
     },
     {
       "key": "CONTENT",
       "name": "Content Inventory Link",
-      "description": "This item type is for testing purposes only."
+      "description": "This item type is for testing purposes only.",
+      "modelKey": "meta_model_1"
     }
   ]
 }

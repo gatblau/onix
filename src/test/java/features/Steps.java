@@ -272,20 +272,25 @@ public class Steps extends BaseTest {
         }
     }
 
-    private void putItemType(String itemTypeKey, String filename) {
-        util.put(PAYLOAD, util.getFile(filename));
+    private Result putItemType(String itemTypeKey, String payload) {
+        Result result = null;
         String url = String.format("%sitemtype/{key}", baseUrl);
         Map<String, Object> vars = new HashMap<>();
         vars.put("key", itemTypeKey);
         ResponseEntity<Result> response = null;
         try {
-            response = client.exchange(url, HttpMethod.PUT, getEntityFromKey(PAYLOAD), Result.class, vars);
+            response = client.exchange(url, HttpMethod.PUT, getEntity(payload), Result.class, vars);
             util.put(RESPONSE, response);
             util.remove(EXCEPTION);
+            result = response.getBody();
         }
         catch (Exception ex) {
             util.put(EXCEPTION, ex);
+            result = new Result();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
         }
+        return result;
     }
 
     @Given("^more than one item exist in the database$")
@@ -369,22 +374,17 @@ public class Steps extends BaseTest {
         putItem(ITEM_ONE_KEY, "payload/update_item_payload.json");
     }
 
-    @Given("^a json payload with new item type information exists$")
-    public void aJsonPayloadWithNewItemTypeInformationExists() throws Throwable {
-        util.put(PAYLOAD, util.getFile("payload/create_item_type_with_meta_schema_payload.json"));
-    }
-
     @Given("^the item type natural key is known$")
     public void theItemTypeNaturalKeyIsKnown() throws Throwable {
         util.put(CONGIG_ITEM_TYPE_KEY, "item_type_1");
     }
 
 //    @When("^a PUT HTTP request with a JSON payload is done$")
-    private void makePutRequestWithPayload(String urlKey, String payloadKey, String itemKey) throws Throwable {
+    private void makePutRequestWithPayload(String urlKey, String payload, String itemKey) throws Throwable {
         String url = util.get(urlKey);
         ResponseEntity<Result> response = null;
         try {
-            response = client.exchange(url, HttpMethod.PUT, getEntityFromKey(payloadKey), Result.class, (String) util.get(itemKey));
+            response = client.exchange(url, HttpMethod.PUT, getEntity(payload), Result.class, (String) util.get(itemKey));
             util.put(RESPONSE, response);
             util.remove(EXCEPTION);
         }
@@ -498,9 +498,19 @@ public class Steps extends BaseTest {
         util.put(Key.ENDPOINT_URI, String.format("%s/itemtype", baseUrl));
     }
 
+    @Given(("^there are item types in the database$"))
+    public void thereAreItemTypesInTheDatabase(){
+        for (int i = 0; i < 2; i++) {
+            putItemType(
+                String.format("item_type_%s", i+1) ,
+                util.getFile(String.format("payload/create_item_type_%s_payload.json", i+1))
+            );
+        }
+    }
+
     @When("^a request to GET a list of item types is done$")
     public void aRequestToGETAListOfItemTypesIsDone() {
-        get(ItemTypeList.class);
+        get(ItemTypeList.class, (String)util.get(ENDPOINT_URI));
     }
 
     @Then("^the response contains more than (\\d+) item types$")
@@ -558,7 +568,10 @@ public class Steps extends BaseTest {
 
     @When("^an item type PUT HTTP request with a JSON payload is done$")
     public void anItemTypePUTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
-        makePutRequestWithPayload(ITEM_TYPE_URL, PAYLOAD, CONGIG_ITEM_TYPE_KEY);
+        makePutRequestWithPayload(
+            ITEM_TYPE_URL,
+            util.getFile("payload/create_item_type_with_meta_schema_payload.json"),
+            CONGIG_ITEM_TYPE_KEY);
     }
 
     @Given("^the link type does not exist in the database$")
@@ -577,15 +590,12 @@ public class Steps extends BaseTest {
         util.put(CONGIG_LINK_TYPE_KEY, "link_type_1");
     }
 
-    @Given("^a json payload with new link type information exists$")
-    public void aJsonPayloadWithNewLinkTypeInformationExists() {
-        String payload = util.getFile("payload/create_link_type_payload.json");
-        util.put(Key.PAYLOAD, payload);
-    }
-
     @When("^a link type PUT HTTP request with a JSON payload is done$")
     public void aLinkTypePUTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
-        makePutRequestWithPayload(LINK_TYPE_URL, PAYLOAD, CONGIG_LINK_TYPE_KEY);
+        makePutRequestWithPayload(
+            LINK_TYPE_URL,
+            util.getFile("payload/create_link_type_payload.json"),
+            CONGIG_LINK_TYPE_KEY);
     }
 
     @Given("^the link type URL of the service is known$")
@@ -601,12 +611,12 @@ public class Steps extends BaseTest {
 
     @When("^a DELETE HTTP request with a link type key is done$")
     public void aDELETEHTTPRequestWithALinkTypeKeyIsDone() {
-        delete(LINK_TYPE_URL, CONGIG_LINK_TYPE_KEY);
+        delete(util.get(LINK_TYPE_URL), util.get(CONGIG_LINK_TYPE_KEY));
     }
 
     @When("^a link type DELETE HTTP request is done$")
     public void aLinkTypeDELETEHTTPRequestIsDone() {
-        delete(LINK_TYPE_URL, null);
+        delete(util.get(LINK_TYPE_URL), null);
     }
 
     @Given("^the link type URL of the service with no query parameters exist$")
@@ -616,7 +626,7 @@ public class Steps extends BaseTest {
 
     @When("^a request to GET a list of link types is done$")
     public void aRequestToGETAListOfLinkTypesIsDone() {
-        get(LinkTypeList.class);
+        get(LinkTypeList.class, (String)util.get(ENDPOINT_URI));
     }
 
     @Then("^the response contains more than (\\d+) link types$")
@@ -666,15 +676,12 @@ public class Steps extends BaseTest {
         util.put(LINK_RULE_KEY, "link_rule_1");
     }
 
-    @Given("^a json payload with new link rule information exists$")
-    public void aJsonPayloadWithNewLinkRuleInformationExists() {
-        String payload = util.getFile("payload/create_link_rule_payload.json");
-        util.put(Key.PAYLOAD, payload);
-    }
-
     @When("^a link rule PUT HTTP request with a JSON payload is done$")
     public void aLinkRulePUTHTTPRequestWithAJSONPayloadIsDone() throws Throwable {
-        makePutRequestWithPayload(LINK_RULE_URL, PAYLOAD, LINK_RULE_KEY);
+        makePutRequestWithPayload(
+            LINK_RULE_URL,
+            util.getFile("payload/create_link_rule_payload.json"),
+            LINK_RULE_KEY);
     }
 
     @Given("^the link rule URL of the service is known$")
@@ -700,7 +707,7 @@ public class Steps extends BaseTest {
 
     @When("^a DELETE HTTP request with a link rule key is done$")
     public void aDELETEHTTPRequestWithALinkRuleKeyIsDone() {
-        delete(LINK_RULE_URL, LINK_RULE_KEY);
+        delete(util.get(LINK_RULE_URL), util.get(LINK_RULE_KEY));
     }
 
     @Given("^the link rule URL of the service with no query parameters exist$")
@@ -710,7 +717,7 @@ public class Steps extends BaseTest {
 
     @When("^a request to GET a list of link rules is done$")
     public void aRequestToGETAListOfLinkRulesIsDone() {
-        get(LinkRuleList.class);
+        get(LinkRuleList.class, (String)util.get(ENDPOINT_URI));
     }
 
     @Then("^the host group config items are created$")
@@ -740,31 +747,36 @@ public class Steps extends BaseTest {
     /*
         a generic delete request to a specified URL in the util dictionary defined by the passed-in key
      */
-    private void delete(String urlKeyLabel, String resourceKeyLabel) {
-        String url = (String) util.get(urlKeyLabel);
+    private Result delete(String url, String key) {
+        Result result;
         ResponseEntity<Result> response = null;
         try {
-            if (resourceKeyLabel != null) {
-                response = client.exchange(url, HttpMethod.DELETE, null, Result.class, (String) util.get(resourceKeyLabel));
+            if (key != null) {
+                response = client.exchange(url, HttpMethod.DELETE, null, Result.class, key);
             } else {
                 response = client.exchange(url, HttpMethod.DELETE, null, Result.class);
             }
             util.put(RESPONSE, response);
             util.remove(EXCEPTION);
+            result = response.getBody();
         }
         catch (Exception ex) {
             util.put(EXCEPTION, ex);
+            result = new Result();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
         }
+        return result;
     }
 
     /*
         a generic get to an endpoint without parameters
      */
-    private <T> void get(Class<T> cls){
+    private <T> void get(Class<T> cls, String url){
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
         ResponseEntity<T> result = client.exchange(
-                (String)util.get(ENDPOINT_URI),
+                url,
                 HttpMethod.GET,
                 new HttpEntity<>(null, headers),
                 cls);
@@ -1181,7 +1193,10 @@ public class Steps extends BaseTest {
 
     @Given("^an item type with filter data exists in the database$")
     public void anItemTypeWithFilterDataExistsInTheDatabase() throws Throwable {
-        putItemType("item_type_with_filter", "payload/create_item_type_with_filter_payload.json");
+        Result result = putItemType("item_type_with_filter", util.getFile("payload/create_item_type_with_filter_payload.json"));
+        if (result.isError()){
+            throw new RuntimeException(result.getMessage());
+        }
     }
 
     @Given("^the item with metadata exists in the database$")
@@ -1228,18 +1243,151 @@ public class Steps extends BaseTest {
         }
     }
 
-    private void putData(String payloadFilePath){
+    @Given("^link rules exist in the database$")
+    public void linkRulesExistInTheDatabase() {
+        putData("payload/import_link_rules_payload.json");
+    }
+
+    @Given("^the meta model does not exist in the database$")
+    public void theMetaModelDoesNotExistInTheDatabase() {
+        theMetaModelURLOfTheServiceWithKeyIsKnown();
+        delete(util.get(MODEL_URL_WITH_KEY), util.get(META_MODEL_KEY));
+    }
+
+    @Given("^the meta model natural key is known$")
+    public void theMetaModelNaturalKeyIsKnown() {
+        util.put(META_MODEL_KEY, "meta_model_1");
+    }
+
+    @Given("^the meta model URL of the service with key is known$")
+    public void theMetaModelURLOfTheServiceWithKeyIsKnown() {
+        util.put(MODEL_URL_WITH_KEY, String.format("%s/model/{key}", baseUrl));
+    }
+
+    @When("^a meta model PUT HTTP request with a JSON payload is done$")
+    public void aMetaModelPUTHTTPRequestWithAJSONPayloadIsDone() {
+        util.put(RESPONSE, putModel(util.get(META_MODEL_KEY), util.getFile("payload/create_model_1_payload.json")));
+    }
+
+    private ResponseEntity<Result> putModel(String key, String payload) {
+        String url = String.format("%s/model/{key}", baseUrl);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("key", key);
+        vars.put("payload", payload);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        return client.exchange(url, HttpMethod.PUT, getEntity(payload), Result.class, vars);
+    }
+
+    private ResponseEntity<ResultList> putData(String payloadFilePath){
         String payload = util.getFile(payloadFilePath);
         String url = String.format("%s/data", baseUrl);
         Map<String, Object> vars = new HashMap<>();
         vars.put("payload", util.getFile(payloadFilePath));
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
-        ResponseEntity<ResultList> response = client.exchange(url, HttpMethod.PUT, getEntity(payload), ResultList.class, vars);
+        return client.exchange(url, HttpMethod.PUT, getEntity(payload), ResultList.class, vars);
     }
 
-    @Given("^link rules exist in the database$")
-    public void linkRulesExistInTheDatabase() {
-        putData("payload/import_link_rules_payload.json");
+    @Given("^the meta model exists in the database$")
+    public void theMetaModelExistsInTheDatabase() {
+        putModel(util.get(META_MODEL_KEY), util.getFile("payload/create_model_1_payload.json"));
+    }
+
+    @When("^a meta model DELETE HTTP request with key is done$")
+    public void aMetaModelDELETEHTTPRequestWithKeyIsDone() {
+        delete(util.get(MODEL_URL_WITH_KEY), util.get(META_MODEL_KEY));
+    }
+
+    @Given("^the meta model URL of the service without key is known$")
+    public void theMetaModelURLOfTheServiceWithoutKeyIsKnown() {
+        util.put(MODEL_URL_NO_KEY, String.format("%s/model", baseUrl));
+    }
+
+    @Given("^there are a few meta models in the system$")
+    public void thereAreAFewMetaModelsInTheSystem() {
+        for (int i = 0; i < 2; i++) {
+            putModel(
+                String.format("meta_model_%s", i+1) ,
+                util.getFile(String.format("payload/create_model_%s_payload.json", i+1))
+            );
+        }
+    }
+
+    @When("^a meta model GET HTTP request is done$")
+    public void aMetaModelGETHTTPRequestIsDone() {
+        get(ModelDataList.class, util.get(MODEL_URL_NO_KEY));
+    }
+
+    @Then("^the response contains more than (\\d+) meta models$")
+    public void theResponseContainsMoreThanMetaModels(int count) {
+        ResponseEntity<ModelDataList> response = util.get(RESPONSE);
+
+        ModelDataList models = response.getBody();
+        if (models != null) {
+            if (models.getItems().size() <= count) {
+                throw new RuntimeException(
+                    String.format(
+                        "Response does not contain '%s' but '%s' models.",
+                        count,
+                        response.getBody().getItems().size())
+                );
+            }
+        }
+        else {
+            throw new RuntimeException(
+                String.format(
+                    "Response contains no models where '%s' were expected.",
+                    count
+                )
+            );
+        }
+    }
+
+    @When("^a meta model GET HTTP request with key is done$")
+    public void aMetaModelGETHTTPRequestWithKeyIsDone() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<ModelData> result = client.exchange(
+                String.format((String)util.get(MODEL_URL_WITH_KEY), baseUrl),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                ModelData.class,
+                (String)util.get(META_MODEL_KEY));
+        util.put(RESPONSE, result);
+    }
+
+    @Given("^a model exists in the database$")
+    public void aModelExistsInTheDatabase() {
+        putModel("meta_model_1", util.getFile("payload/create_model_1_payload.json"));
+    }
+
+    @Given("^an item type exists in the database$")
+    public void anItemTypeExistsInTheDatabase() {
+        putItemType("item_type_1", util.getFile("payload/create_item_type_with_attr_payload.json"));
+    }
+
+    @Given("^there are not any item types associated with the model$")
+    public void thereAreNotAnyItemTypesAssociatedWithTheModel() {
+        Result result = delete(String.format("%s/itemtype/{key}", baseUrl), "item_type_1");
+        if (result.isError()){
+            throw new RuntimeException(result.getMessage());
+        }
+    }
+
+    @Given("^there are not any link types associated with the model$")
+    public void thereAreNotAnyLinkTypesAssociatedWithTheModel() {
+        Result result = delete(String.format("%s/linktype/{key}", baseUrl), "link_type_1");
+        if (result.isError()){
+            throw new RuntimeException(result.getMessage());
+        }
+    }
+
+    @Given("^there are not any items associated with the model$")
+    public void thereAreNotAnyItemsAssociatedWithTheModel() {
+        Result result = delete(String.format("%s/item", baseUrl), null);
+        if (result.isError()){
+            throw new RuntimeException(result.getMessage());
+        }
     }
 }

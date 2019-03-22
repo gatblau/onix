@@ -36,6 +36,7 @@ public class ItemTypeData implements Serializable {
     private String created;
     private String updated;
     private Integer version;
+    private String model;
 
     public ItemTypeData() {
     }
@@ -118,5 +119,13 @@ public class ItemTypeData implements Serializable {
 
     public void setMetaSchema(JSONObject metaSchema) {
         this.metaSchema = metaSchema;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
     }
 }

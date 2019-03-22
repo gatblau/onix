@@ -16,6 +16,82 @@
 DO $$
 BEGIN
 
+  /*
+    set_model(...)
+    Inserts a new or updates an existing meta model.
+   */
+  CREATE OR REPLACE FUNCTION set_model(
+    key_param character varying,
+    name_param character varying,
+    description_param text,
+    local_version_param bigint,
+    changed_by_param character varying
+  )
+    RETURNS TABLE(result char(1))
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+  AS $BODY$
+  DECLARE
+    result char(1); -- the result status for the upsert
+    current_version bigint; -- the version of the row before the update or null if no row
+    rows_affected integer;
+  BEGIN
+    -- gets the current item type version
+    SELECT version FROM model WHERE key = key_param INTO current_version;
+
+    IF (current_version IS NULL) THEN
+      INSERT INTO model (
+        id,
+        key,
+        name,
+        description,
+        version,
+        created,
+        updated,
+        changed_by
+      )
+      VALUES (
+         nextval('model_id_seq'),
+         key_param,
+         name_param,
+         description_param,
+         1,
+         current_timestamp,
+         null,
+         changed_by_param
+      );
+      result := 'I';
+    ELSE
+      UPDATE model SET
+         name = name_param,
+         description = description_param,
+         version = version + 1,
+         updated = current_timestamp,
+         changed_by = changed_by_param
+      WHERE key = key_param
+        -- concurrency management - optimistic locking
+        AND (local_version_param = current_version OR local_version_param IS NULL)
+        AND (
+            name != name_param OR
+            description != description_param
+        );
+      GET DIAGNOSTICS rows_affected := ROW_COUNT;
+      SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
+    END IF;
+    RETURN QUERY SELECT result;
+  END;
+  $BODY$;
+
+  ALTER FUNCTION set_model(
+    character varying, -- key
+    character varying, -- name
+    text, -- description
+    bigint, -- client version
+    character varying -- changed by
+  )
+  OWNER TO onix;
+
 /*
   set_item(...)
   Inserts a new or updates an existing item.
@@ -164,6 +240,7 @@ CREATE OR REPLACE FUNCTION set_item_type(
     filter_param jsonb,
     meta_schema_param jsonb,
     local_version_param bigint,
+    model_key_param character varying,
     changed_by_param character varying
   )
   RETURNS TABLE(result char(1))
@@ -175,11 +252,27 @@ AS $BODY$
     result char(1); -- the result status for the upsert
     current_version bigint; -- the version of the row before the update or null if no row
     rows_affected integer;
+    model_id_value integer;
 BEGIN
+  -- checks a model has been specified
+  IF (model_key_param IS NULL) THEN
+    RAISE EXCEPTION 'Meta Model not specified when trying to set Item Type with key %', key_param;
+  END IF;
+
+  -- gets the model id associated with the model key
+  SELECT m.id FROM model m WHERE m.key = model_key_param INTO model_id_value;
+
+  IF (model_id_value IS NULL) THEN
+    RAISE EXCEPTION 'Meta Model % not found.', model_key_param
+      USING hint = 'Check a meta model with the specified key exist in the database.';
+  END IF;
+
   -- checks that the attribute store parameter contain the correct values
   PERFORM check_attr_valid(attr_valid_param);
 
+  -- gets the current item type version
   SELECT version FROM item_type WHERE key = key_param INTO current_version;
+
   IF (current_version IS NULL) THEN
     INSERT INTO item_type (
       id,
@@ -192,7 +285,8 @@ BEGIN
       version,
       created,
       updated,
-      changed_by
+      changed_by,
+      model_id
     )
     VALUES (
       nextval('item_type_id_seq'),
@@ -205,7 +299,8 @@ BEGIN
       1,
       current_timestamp,
       null,
-      changed_by_param
+      changed_by_param,
+      model_id_value
     );
     result := 'I';
   ELSE
@@ -217,7 +312,8 @@ BEGIN
       meta_schema = meta_schema_param,
       version = version + 1,
       updated = current_timestamp,
-      changed_by = changed_by_param
+      changed_by = changed_by_param,
+      model_id = model_id_value
     WHERE key = key_param
     -- concurrency management - optimistic locking
     AND (local_version_param = current_version OR local_version_param IS NULL)
@@ -226,7 +322,8 @@ BEGIN
       description != description_param OR
       attr_valid != attr_valid_param OR
       filter != filter_param OR
-      meta_schema != meta_schema_param
+      meta_schema != meta_schema_param OR
+      model_id != model_id_value
     );
     GET DIAGNOSTICS rows_affected := ROW_COUNT;
     SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
@@ -235,7 +332,17 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION set_item_type(character varying, character varying, text, hstore, jsonb, jsonb, bigint, character varying)
+ALTER FUNCTION set_item_type(
+  character varying, -- key
+  character varying, -- name
+  text, -- description
+  hstore, -- attribute validation
+  jsonb, -- meta query filter
+  jsonb, -- meta json schema
+  bigint, -- client version
+  character varying, -- meta model key
+  character varying -- changed by
+)
 OWNER TO onix;
 
 /*
@@ -254,6 +361,7 @@ CREATE OR REPLACE FUNCTION set_link_type(
     attr_valid_param hstore, -- keys allowed or required in item attributes
     meta_schema_param jsonb,
     local_version_param bigint,
+    model_key_param character varying,
     changed_by_param character varying
   )
   RETURNS TABLE(result char(1))
@@ -265,7 +373,21 @@ DECLARE
   result char(1); -- the result status for the upsert
   current_version bigint; -- the version of the row before the update or null if no row
   rows_affected integer;
+  model_id_value integer;
 BEGIN
+  -- checks a model has been specified
+  IF (model_key_param IS NULL) THEN
+    RAISE EXCEPTION 'Meta Model not specified when trying to set Link Type with key %', key_param;
+  END IF;
+
+  -- gets the model id associated with the model key
+  SELECT m.id FROM model m WHERE m.key = model_key_param INTO model_id_value;
+
+  IF (model_id_value IS NULL) THEN
+    RAISE EXCEPTION 'Meta Model % not found.', model_key_param
+      USING hint = 'Check a meta model with the specified key exist in the database.';
+  END IF;
+
   -- checks that the attribute store parameter contain the correct values
   PERFORM check_attr_valid(attr_valid_param);
 
@@ -283,7 +405,8 @@ BEGIN
       version,
       created,
       updated,
-      changed_by
+      changed_by,
+      model_id
     )
     VALUES (
       nextval('link_type_id_seq'),
@@ -295,7 +418,8 @@ BEGIN
       1,
       current_timestamp,
       null,
-      changed_by_param
+      changed_by_param,
+      model_id_value
     );
     result := 'I';
   ELSE
@@ -306,7 +430,8 @@ BEGIN
        meta_schema = meta_schema_param,
        version = version + 1,
        updated = current_timestamp,
-       changed_by = changed_by_param
+       changed_by = changed_by_param,
+       model_id = model_id_value
     WHERE key = key_param
     -- concurrency management - optimistic locking
     AND (local_version_param = current_version OR local_version_param IS NULL)
@@ -314,7 +439,8 @@ BEGIN
       name != name_param OR
       description != description_param OR
       attr_valid != attr_valid_param OR
-      meta_schema != meta_schema_param
+      meta_schema != meta_schema_param OR
+      model_id != model_id_value
     );
     GET DIAGNOSTICS rows_affected := ROW_COUNT;
     SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
@@ -323,7 +449,16 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION set_link_type(character varying, character varying, text, hstore, jsonb, bigint, character varying)
+ALTER FUNCTION set_link_type(
+  character varying, -- key
+  character varying, -- name
+  text, -- description
+  hstore, -- attribute validation
+  jsonb, -- meta json schema validation
+  bigint, -- client version
+  character varying, -- meta model key
+  character varying -- changed by
+)
   OWNER TO onix;
 
 /*

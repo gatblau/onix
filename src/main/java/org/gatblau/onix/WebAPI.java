@@ -118,6 +118,17 @@ public class WebAPI {
     }
 
     @ApiOperation(
+            value = "Deletes all configuration items.",
+            notes = "")
+    @RequestMapping(
+            path = "/item"
+            , method = RequestMethod.DELETE)
+    public ResponseEntity<Result> deleteAllItems(
+    ) {
+        return ResponseEntity.ok(data.deleteAllItems());
+    }
+
+    @ApiOperation(
             value = "Get a configuration item based on the specified key.",
             notes = "Use this search to retrieve a specific configuration item when its natural key is known.")
     @RequestMapping(
@@ -149,6 +160,7 @@ public class WebAPI {
             , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
             , @RequestParam(value = "updatedTo", required = false) String updatedToDate
             , @RequestParam(value = "status", required = false) Short status
+            , @RequestParam(value = "model", required = false) String modelKey
             , @RequestParam(value = "top", required = false, defaultValue = "100") Integer top
     ) {
         List<String> tagList = null;
@@ -164,6 +176,7 @@ public class WebAPI {
                 getDate(updatedFromDate),
                 getDate(updatedToDate),
                 status,
+                modelKey,
                 top
         );
         return ResponseEntity.ok(list);
@@ -197,6 +210,7 @@ public class WebAPI {
     ){
         return ResponseEntity.ok(data.getItemMeta(key, filter));
     }
+
     /*
         ITEM TYPES
      */
@@ -262,7 +276,8 @@ public class WebAPI {
         , @RequestParam(value = "createdTo", required = false) String createdToDate
         , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
         , @RequestParam(value = "updatedTo", required = false) String updatedToDate
-    ) throws SQLException, ParseException, IOException {
+        , @RequestParam(value = "model", required = false) String modelKey
+    ) {
         Map attrMap = null;
         if (attribute != null) {
             attrMap = new HashMap<String, String>();
@@ -277,7 +292,8 @@ public class WebAPI {
             getDate(createdFromDate),
             getDate(createdToDate),
             getDate(updatedFromDate),
-            getDate(updatedToDate));
+            getDate(updatedToDate),
+            modelKey);
         return ResponseEntity.ok(itemTypes);
     }
 
@@ -293,7 +309,7 @@ public class WebAPI {
             produces = {"application/json" })
     public ResponseEntity<Result> createOrUpdateLink(
             @PathVariable("key") String key,
-            @RequestBody JSONObject payload) throws SQLException, ParseException {
+            @RequestBody JSONObject payload) {
         return ResponseEntity.ok(data.createOrUpdateLink(key, payload));
     }
 
@@ -303,7 +319,7 @@ public class WebAPI {
     @RequestMapping(path = "/link/{key}", method = RequestMethod.DELETE)
     public ResponseEntity<Result> deleteLink(
             @PathVariable("key") String key
-    ) throws InterruptedException, SQLException {
+    ) {
         return ResponseEntity.ok(data.deleteLink(key));
     }
 
@@ -371,6 +387,7 @@ public class WebAPI {
             , @RequestParam(value = "createdTo", required = false) String createdToDate
             , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
             , @RequestParam(value = "updatedTo", required = false) String updatedToDate
+            , @RequestParam(value = "model", required = false) String modelKey
     ) throws SQLException, ParseException, IOException {
         Map attrMap = null;
         if (attribute != null) {
@@ -386,7 +403,8 @@ public class WebAPI {
                 getDate(createdFromDate),
                 getDate(createdToDate),
                 getDate(updatedFromDate),
-                getDate(updatedToDate));
+                getDate(updatedToDate),
+                modelKey);
         return ResponseEntity.ok(linkTypes);
     }
 
@@ -444,6 +462,58 @@ public class WebAPI {
                 getDate(updatedFromDate),
                 getDate(updatedToDate));
         return ResponseEntity.ok(linkRules);
+    }
+
+    /*
+        MODEL
+     */
+
+    @ApiOperation(
+            value = "Deletes a model for a specified key.",
+            notes = "")
+    @RequestMapping(
+            path = "/model/{key}"
+            , method = RequestMethod.DELETE
+    )
+    public ResponseEntity<Result> deleteModel(@PathVariable("key") String key) {
+        return ResponseEntity.ok(data.deleteModel(key));
+    }
+
+    @ApiOperation(
+            value = "Creates a new model.",
+            notes = "")
+    @RequestMapping(
+            path = "/model/{key}"
+            , method = RequestMethod.PUT)
+    public ResponseEntity<Result> createOrUpdateModel(
+            @PathVariable("key") String key,
+            @RequestBody JSONObject payload
+    ) {
+        return ResponseEntity.ok(data.createOrUpdateModel(key, payload));
+    }
+
+    @ApiOperation(
+            value = "Get a model based on the specified key.",
+            notes = "Use this search to retrieve a specific model when its natural key is known.")
+    @RequestMapping(
+            path = "/model/{key}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<ModelData> getModel(@PathVariable("key") String key) {
+        return ResponseEntity.ok(data.getModel(key));
+    }
+
+    @ApiOperation(
+            value = "Get an item link type based on the specified key.",
+            notes = "Use this search to retrieve the list of models known to the system.")
+    @RequestMapping(
+            path = "/model"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<ModelDataList> getModels() {
+        return ResponseEntity.ok(data.getModels());
     }
 
     /*

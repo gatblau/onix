@@ -90,7 +90,7 @@ BEGIN
     FOR rule IN
     SELECT (each(validation_rules)).*
     LOOP
-      IF (rule.regex = 'required') THEN
+      IF (rule.value = 'required') THEN
         IF NOT (attributes ? rule.key) THEN
           RAISE EXCEPTION 'Item of type ''%'' requires attribute ''%''.', item_type_key, rule.key
             USING hint = 'Where required attributes are specified in the item type, a request to insert or update an item of that type must also specify the regex of the required attribute(s).';
@@ -147,7 +147,7 @@ BEGIN
     FOR rule IN
     SELECT (each(validation_rules)).*
     LOOP
-      IF (rule.regex = 'required') THEN
+      IF (rule.value = 'required') THEN
         IF NOT (attributes ? rule.key) THEN
           RAISE EXCEPTION 'Attribute ''%'' is required and was not provided.', rule.key
             USING hint = 'Where required attributes are specified in the link type, a request to insert or update a link of that type must also specify the regex of the required attribute(s).';
@@ -191,8 +191,8 @@ BEGIN
     FOR rule IN
     SELECT (each(attributes)).*
     LOOP
-      IF NOT ((rule.regex = 'required') OR (rule.regex = 'allowed')) THEN
-        RAISE EXCEPTION 'Attribute ''%'' has an invalid regex: ''%''.', rule.key, rule.regex
+      IF NOT ((rule.value = 'required') OR (rule.value = 'allowed')) THEN
+        RAISE EXCEPTION 'Attribute ''%'' has an invalid regex: ''%''.', rule.key, rule.value
           USING hint = 'Attribute values can only be either ''required'' or ''allowed''';
       END IF;
     END LOOP;

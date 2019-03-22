@@ -28,6 +28,7 @@ CREATE OR REPLACE FUNCTION find_items(
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
     date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
     date_updated_to_param timestamp(6) with time zone, -- none (null) or updated to date
+    model_key_param character varying, -- the meta model key the item is for
     max_items integer default 20 -- the maximum number of items to return
   )
   RETURNS TABLE(
@@ -43,15 +44,13 @@ CREATE OR REPLACE FUNCTION find_items(
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changed_by character varying
+    changed_by character varying,
+    model_key character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
   STABLE
 AS $BODY$
-DECLARE
-  item_type_id_value smallint;
-
 BEGIN
   RETURN QUERY SELECT
     i.id,
@@ -66,10 +65,13 @@ BEGIN
     i.version,
     i.created,
     i.updated,
-    i.changed_by
+    i.changed_by,
+    m.key as model_key
   FROM item i
   INNER JOIN item_type it
     ON i.item_type_id = it.id
+  INNER JOIN model m
+    ON m.id = it.model_id
   WHERE
   -- by item type
       (it.key = item_type_key_param OR item_type_key_param IS NULL)
@@ -89,6 +91,8 @@ BEGIN
       (date_updated_from_param IS NULL AND date_updated_to_param IS NULL) OR
       (date_updated_from_param IS NULL AND date_updated_to_param > i.updated) OR
       (date_updated_from_param <= i.updated AND date_updated_to_param IS NULL))
+  -- by model
+  AND (m.key = model_key_param OR model_key_param IS NULL)
   LIMIT max_items;
 END
 $BODY$;
@@ -102,6 +106,7 @@ ALTER FUNCTION find_items(
     timestamp(6) with time zone, -- created to
     timestamp(6) with time zone, -- updated from
     timestamp(6) with time zone, -- updated to
+    character varying, -- model key
     integer -- max_items
   )
   OWNER TO onix;
@@ -118,7 +123,9 @@ CREATE OR REPLACE FUNCTION find_links(
   date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
   date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
   date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
-  date_updated_to_param timestamp(6) with time zone -- none (null) or updated to date
+  date_updated_to_param timestamp(6) with time zone, -- none (null) or updated to date
+  model_key_param character varying, -- the meta model key the link is for
+  max_items integer default 20 -- the maximum number of items to return
 )
 RETURNS TABLE(
     id bigint,
@@ -164,6 +171,8 @@ BEGIN
       ON l.end_item_id = end_item.id
     INNER JOIN link_type lt
       ON l.link_type_id = lt.id
+    INNER JOIN model m
+      ON m.id = lt.model_id
   WHERE
    -- by link type
    (lt.key = link_type_key_param OR link_type_key_param IS NULL)
@@ -184,7 +193,10 @@ BEGIN
    AND ((date_updated_from_param <= l.updated AND date_updated_to_param > l.updated) OR
         (date_updated_from_param IS NULL AND date_updated_to_param IS NULL) OR
         (date_updated_from_param IS NULL AND date_updated_to_param > l.updated) OR
-        (date_updated_from_param <= l.updated AND date_updated_to_param IS NULL));
+        (date_updated_from_param <= l.updated AND date_updated_to_param IS NULL))
+    -- by model
+   AND (m.key = model_key_param OR model_key_param IS NULL)
+   LIMIT max_items;
 END
 $BODY$;
 
@@ -197,7 +209,9 @@ ALTER FUNCTION find_links(
   timestamp(6) with time zone, -- created from
   timestamp(6) with time zone, -- created to
   timestamp(6) with time zone, -- updated from
-  timestamp(6) with time zone -- updated to
+  timestamp(6) with time zone, -- updated to,
+  character varying, -- model key
+  integer -- max_items
 )
 OWNER TO onix;
 
@@ -209,7 +223,8 @@ CREATE OR REPLACE FUNCTION find_item_types(
     date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
     date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
-    date_updated_to_param timestamp(6) with time zone -- none (null) or updated to date
+    date_updated_to_param timestamp(6) with time zone, -- none (null) or updated to date
+    model_key_param character varying -- the meta model the item type is for
   )
   RETURNS TABLE(
     id integer,
@@ -222,7 +237,8 @@ CREATE OR REPLACE FUNCTION find_item_types(
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changed_by character varying
+    changed_by character varying,
+    model_key character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -240,8 +256,11 @@ BEGIN
      i.version,
      i.created,
      i.updated,
-     i.changed_by
+     i.changed_by,
+     m.key as model_key
   FROM item_type i
+  INNER JOIN model m
+    ON i.model_id = m.id
   WHERE
   -- by attributes (hstore)
      (i.attr_valid @> attr_valid_param OR attr_valid_param IS NULL)
@@ -254,7 +273,9 @@ BEGIN
   AND ((date_updated_from_param <= i.updated AND date_updated_to_param > i.updated) OR
       (date_updated_from_param IS NULL AND date_updated_to_param IS NULL) OR
       (date_updated_from_param IS NULL AND date_updated_to_param > i.updated) OR
-      (date_updated_from_param <= i.updated AND date_updated_to_param IS NULL));
+      (date_updated_from_param <= i.updated AND date_updated_to_param IS NULL))
+  -- by model
+  AND (m.key = model_key_param OR model_key_param IS NULL);
 END
 $BODY$;
 
@@ -263,7 +284,8 @@ ALTER FUNCTION find_item_types(
   timestamp(6) with time zone, -- created from
   timestamp(6) with time zone, -- created to
   timestamp(6) with time zone, -- updated from
-  timestamp(6) with time zone -- updated to
+  timestamp(6) with time zone, -- updated to
+  character varying -- meta model key
 )
 OWNER TO onix;
 
@@ -275,7 +297,8 @@ CREATE OR REPLACE FUNCTION find_link_types(
     date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
     date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
-    date_updated_to_param timestamp(6) with time zone -- none (null) or updated to date
+    date_updated_to_param timestamp(6) with time zone, -- none (null) or updated to date
+    model_key_param character varying -- meta model key the link is for
   )
   RETURNS TABLE(
     id integer,
@@ -287,7 +310,8 @@ CREATE OR REPLACE FUNCTION find_link_types(
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
-    changed_by character varying
+    changed_by character varying,
+    model_key character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -304,8 +328,11 @@ BEGIN
      l.version,
      l.created,
      l.updated,
-     l.changed_by
+     l.changed_by,
+     m.key as model_key
   FROM link_type l
+  INNER JOIN model m
+    ON m.id = l.model_id
   WHERE
   -- by attributes (hstore)
       (l.attr_valid @> attr_valid_param OR attr_valid_param IS NULL)
@@ -318,7 +345,9 @@ BEGIN
   AND ((date_updated_from_param <= l.updated AND date_updated_to_param > l.updated) OR
       (date_updated_from_param IS NULL AND date_updated_to_param IS NULL) OR
       (date_updated_from_param IS NULL AND date_updated_to_param > l.updated) OR
-      (date_updated_from_param <= l.updated AND date_updated_to_param IS NULL));
+      (date_updated_from_param <= l.updated AND date_updated_to_param IS NULL))
+  -- by model
+  AND (m.key = model_key_param OR model_key_param IS NULL);
 END
 $BODY$;
 
@@ -327,7 +356,8 @@ ALTER FUNCTION find_link_types(
   timestamp(6) with time zone, -- created from
   timestamp(6) with time zone, -- created to
   timestamp(6) with time zone, -- updated from
-  timestamp(6) with time zone -- updated to
+  timestamp(6) with time zone, -- updated to
+  character varying -- meta model key
 )
 OWNER TO onix;
 

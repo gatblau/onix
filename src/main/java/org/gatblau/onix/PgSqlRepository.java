@@ -23,17 +23,15 @@ import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ReadContext;
 import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
 import org.postgresql.util.HStoreConverter;
+import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.*;
 
@@ -55,7 +53,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result createOrUpdateItem(String key, JSONObject json) {
-        Result result = new Result();
+        Result result = new Result(String.format("Item:%s", key));
         ResultSet set = null;
         try {
             Object name = json.get("name");
@@ -136,7 +134,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, Integer top) {
+    public ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, String modelKey, Integer top) {
         ItemList items = new ItemList();
         try {
             db.prepare(getFindItemsSQL());
@@ -148,7 +146,8 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(6, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
             db.setObject(7, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
             db.setObject(8, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
-            db.setObject(9, (top == null) ? 20 : top);
+            db.setString(9, modelKey);
+            db.setObject(10, (top == null) ? 20 : top);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 items.getItems().add(util.toItemData(set));
@@ -198,6 +197,22 @@ public class PgSqlRepository implements DbRepository {
         return new JSONObject(results);
     }
 
+    @Override
+    public Result deleteAllItems() {
+        Result result = new Result();
+        try {
+            db.prepare(getDeleteAllItemsSQL());
+            db.execute();
+            result.setOperation("D");
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            result.setMessage(ex.getMessage());
+            result.setError(true);
+        }
+        return result;
+    }
+
     /*
        LINKS
      */
@@ -221,7 +236,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result createOrUpdateLink(String key, JSONObject json) {
-        Result result = new Result();
+        Result result = new Result(String.format("Link:%s", key));
         try {
             String description = (String)json.get("description");
             String linkTypeKey = (String)json.get("type");
@@ -231,6 +246,7 @@ public class PgSqlRepository implements DbRepository {
             String tag = util.toArrayString(json.get("tag"));
             Object attribute = json.get("attribute");
             Object version = json.get("version");
+            Object model = json.get("modelKey");
 
             db.prepare(getSetLinkSQL());
             db.setString(1, key);
@@ -273,7 +289,7 @@ public class PgSqlRepository implements DbRepository {
         }
         catch (Exception ex) {
             ex.printStackTrace();
-            Result result = new Result();
+            Result result = new Result("CLEAR_ALL");
             result.setError(true);
             result.setMessage(ex.getMessage());
             return result;
@@ -281,7 +297,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     private Result delete(String sql, String key) {
-        Result result = new Result();
+        Result result = new Result(String.format("Delete(%s)", key));
         try {
             db.prepare(sql);
             if (key != null) {
@@ -326,7 +342,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public ItemTypeList getItemTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) {
+    public ItemTypeList getItemTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey) {
         try {
             ItemTypeList itemTypes = new ItemTypeList();
             db.prepare(getFindItemTypesSQL());
@@ -335,6 +351,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(3, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
             db.setObject(4, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
             db.setObject(5, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
+            db.setString(6, modelKey);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 itemTypes.getItems().add(util.toItemTypeData(set));
@@ -352,13 +369,14 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result createOrUpdateItemType(String key, JSONObject json) {
-        Result result = new Result();
+        Result result = new Result(String.format("ItemType:%s", key));
         try {
             Object name = json.get("name");
             Object description = json.get("description");
-            Object attribute = json.get("attribute_validation");
+            Object attribute = json.get("attrValid");
             String filter = util.toJSONString(json.get("filter"));
             String metaSchema = util.toJSONString(json.get("metaSchema"));
+            Object modelKey = json.get("modelKey");
             Object version = json.get("version");
 
             db.prepare(getSetItemTypeSQL());
@@ -369,7 +387,8 @@ public class PgSqlRepository implements DbRepository {
             db.setString(5, filter);
             db.setString(6, metaSchema);
             db.setObject(7, version); // version_param
-            db.setString(8, getUser()); // changed_by_param
+            db.setObject(8, modelKey); // meta model key
+            db.setString(9, getUser()); // changed_by_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_item_type"));
         }
         catch (Exception ex) {
@@ -392,7 +411,7 @@ public class PgSqlRepository implements DbRepository {
         LINK TYPES
      */
     @Override
-    public LinkTypeList getLinkTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) {
+    public LinkTypeList getLinkTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey) {
         LinkTypeList linkTypes = new LinkTypeList();
         try {
             db.prepare(getFindLinkTypesSQL());
@@ -401,6 +420,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(3, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
             db.setObject(4, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
             db.setObject(5, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
+            db.setObject(6, modelKey);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 linkTypes.getItems().add(util.toLinkTypeData(set));
@@ -417,13 +437,14 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result createOrUpdateLinkType(String key, JSONObject json) {
-        Result result = new Result();
+        Result result = new Result(String.format("LinkType:%s", key));
         try {
             Object name = json.get("name");
             Object description = json.get("description");
-            Object attribute = json.get("attribute_validation");
+            Object attribute = json.get("attrValid");
             String metaSchema = util.toJSONString(json.get("metaSchema"));
             Object version = json.get("version");
+            Object modelKey = json.get("modelKey");
             db.prepare(getSetLinkTypeSQL());
             db.setString(1, key); // key_param
             db.setString(2, (name != null) ? (String) name : null); // name_param
@@ -431,7 +452,8 @@ public class PgSqlRepository implements DbRepository {
             db.setString(4, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null); // attribute_param
             db.setString(5, metaSchema);
             db.setObject(6, version); // version_param
-            db.setString(7, getUser()); // changed_by_param
+            db.setString(7, (modelKey != null) ? (String)modelKey : null); // model_key_param
+            db.setString(8, getUser()); // changed_by_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_link_type"));
         }
         catch (Exception ex) {
@@ -504,7 +526,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result createOrUpdateLinkRule(String key, JSONObject json) {
-        Result result = new Result();
+        Result result = new Result(String.format("LinkRule:%s", key));
         Object name = json.get("name");
         Object description = json.get("description");
         Object linkType = json.get("linkTypeKey");
@@ -624,6 +646,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::timestamp with time zone," + // created_to
                 "?::timestamp with time zone," + // updated_from
                 "?::timestamp with time zone," + // updated_to
+                "?::character varying," + // model_key
                 "?::integer" + // max_items
                 ")";
     }
@@ -631,6 +654,11 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public String getDeleteItemSQL() {
         return "SELECT delete_item(?::character varying)";
+    }
+
+    @Override
+    public String getDeleteAllItemsSQL() {
+        return "SELECT delete_all_items()";
     }
 
     @Override
@@ -696,7 +724,8 @@ public class PgSqlRepository implements DbRepository {
             "?::timestamp(6) with time zone," + // date created from
             "?::timestamp(6) with time zone," + // date created to
             "?::timestamp(6) with time zone," + // date updates from
-            "?::timestamp(6) with time zone" + // date updated to
+            "?::timestamp(6) with time zone," + // date updated to
+            "?::character varying" + // model key
         ")";
     }
 
@@ -710,6 +739,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::jsonb," + // filter
                 "?::jsonb," + // meta_schema
                 "?::bigint," + // version
+                "?::character varying," + // meta model key
                 "?::character varying" + // changed_by
                 ")";
     }
@@ -738,7 +768,8 @@ public class PgSqlRepository implements DbRepository {
                 "?::timestamp(6) with time zone," + // date created from
                 "?::timestamp(6) with time zone," + // date created to
                 "?::timestamp(6) with time zone," + // date updates from
-                "?::timestamp(6) with time zone" + // date updated to
+                "?::timestamp(6) with time zone," + // date updated to
+                "?::character varying" + // model key
                 ")";
     }
 
@@ -751,6 +782,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::hstore," + // attr_valid
                 "?::jsonb," + // meta_schema
                 "?::bigint," + // version
+                "?::character varying," + // model_key
                 "?::character varying" + // changed_by
                 ")";
     }
@@ -775,7 +807,7 @@ public class PgSqlRepository implements DbRepository {
     /* tags */
     @Override
     public Result createTag(JSONObject json) {
-        Result result = new Result();
+        Result result = new Result("CREATE_TAG");
         Object name = json.get("name");
         Object description = json.get("description");
         Object label = json.get("label");
@@ -803,7 +835,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result updateTag(String rootItemKey, String currentLabel, JSONObject json) {
-        Result result = new Result();
+        Result result = new Result(String.format("TAG:%s", rootItemKey));
         Object name = json.get("name");
         Object description = json.get("description");
         Object newLabel = json.get("label");
@@ -832,7 +864,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteTag(String rootItemKey, String label) {
-        Result result = new Result();
+        Result result = new Result(String.format("TAG:%s", rootItemKey));
         try {
             db.prepare(getDeleteTagSQL());
             db.setString(1, (rootItemKey != null) ? (String) rootItemKey : null); // root item key
@@ -902,13 +934,21 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public ResultList createOrUpdateData(JSONObject payload) {
         ResultList results = new ResultList();
+        Object modelsObject = payload.get("models");
+        if (modelsObject != null) {
+            ArrayList<LinkedHashMap> models = (ArrayList<LinkedHashMap>)modelsObject;
+            for (Map model : models) {
+                String key = (String)model.get("key");
+                Result result = createOrUpdateModel(key, new JSONObject(model));
+                results.getItems().add(result);
+            }
+        }
         Object itemTypesObject = payload.get("itemTypes");
         if (itemTypesObject != null) {
             ArrayList<LinkedHashMap> itemTypes = (ArrayList<LinkedHashMap>)itemTypesObject;
             for (Map itemType : itemTypes) {
                 String key = (String)itemType.get("key");
                 Result result = createOrUpdateItemType(key, new JSONObject(itemType));
-                result.setRef(key);
                 results.getItems().add(result);
             }
         }
@@ -918,7 +958,6 @@ public class PgSqlRepository implements DbRepository {
             for (Map linkType : linkTypes) {
                 String key = (String)linkType.get("key");
                 Result result = createOrUpdateLinkType(key, new JSONObject(linkType));
-                result.setRef(key);
                 results.getItems().add(result);
             }
         }
@@ -928,7 +967,6 @@ public class PgSqlRepository implements DbRepository {
             for (Map linkRule : linkRules) {
                 String key = (String)linkRule.get("key");
                 Result result = createOrUpdateLinkRule(key, new JSONObject(linkRule));
-                result.setRef(key);
                 results.getItems().add(result);
             }
         }
@@ -938,7 +976,6 @@ public class PgSqlRepository implements DbRepository {
             for (Map item: items) {
                 String key = (String)item.get("key");
                 Result result = createOrUpdateItem(key, new JSONObject(item));
-                result.setRef(key);
                 results.getItems().add(result);
             }
         }
@@ -948,7 +985,6 @@ public class PgSqlRepository implements DbRepository {
             for (Map link : links) {
                 String key = (String) link.get("key");
                 Result result = createOrUpdateLink((String) link.get("key"), new JSONObject(link));
-                result.setRef(key);
                 results.getItems().add(result);
             }
         }
@@ -957,7 +993,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteItemTree(String rootItemKey) {
-        Result result = new Result();
+        Result result = new Result(String.format("ItemTree:%s", rootItemKey));
         try {
             db.prepare(getDeleteItemTreeSQL());
             db.setString(1, (rootItemKey != null) ? (String) rootItemKey : null); // root item key
@@ -989,11 +1025,124 @@ public class PgSqlRepository implements DbRepository {
                 }
             }
             status.put("ready", true);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             status.put("ready", false);
             status.put("error", ex.getMessage());
         }
         return status;
+    }
+
+    @Override
+    public Result deleteModel(String key) {
+        Result result = new Result(String.format("Model:%s", key));
+        try {
+            db.prepare(getDeleteModelSQL());
+            db.setString(1, key); // meta model key
+            result.setError(!db.execute());
+            result.setOperation("D");
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(
+                String.format("Failed to delete model for key '%s': %s", key, ex.getMessage()));
+        }
+        finally {
+            db.close();
+        }
+        return result;
+    }
+
+    @Override
+    public Result createOrUpdateModel(String key, JSONObject json) {
+        Result result = new Result(String.format("Model:%s", key));
+        Object name = json.get("name");
+        Object description = json.get("description");
+        Object version = json.get("version");
+        try {
+            db.prepare(getSetModelSQL());
+            db.setString(1, key); // model key
+            db.setString(2, (name != null) ? (String) name : null); // name_param
+            db.setString(3, (description != null) ? (String) description : null); // description_param
+            db.setObject(4, version); // version_param
+            db.setString(5, getUser()); // changed_by_param
+            result.setError(!db.execute());
+            result.setOperation("I");
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
+        }
+        finally {
+            db.close();
+        }
+        return result;
+    }
+
+    @Override
+    public ModelData getModel(String key) {
+        ModelData model = null;
+        try {
+            db.prepare(getGetModelSQL());
+            db.setString(1, key);
+            ResultSet set = db.executeQuerySingleRow();
+            model = util.toModelData(set);
+            db.close();
+        }
+        catch (Exception ex) {
+            db.close();
+            ex.printStackTrace();
+            throw new RuntimeException(String.format("Failed to get model with key '%s': %s", key, ex.getMessage()), ex);
+        }
+        return model;
+    }
+
+    @Override
+    public ModelDataList getModels() {
+        ModelDataList models = new ModelDataList();
+        try {
+            db.prepare(getGetModelsSQL());
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                models.getItems().add(util.toModelData(set));
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Failed to retrieve models.", ex);
+        }
+        return models;
+    }
+
+    @Override
+    public String getSetModelSQL() {
+        return "SELECT set_model(" +
+                "?::character varying," + // key_param
+                "?::character varying," + // name_param
+                "?::text," + // description_param
+                "?::bigint," + // version_param
+                "?::character varying" + // changed_by
+                ")";
+    }
+
+    @Override
+    public String getGetModelsSQL() {
+        return "SELECT * FROM get_models()";
+    }
+
+    @Override
+    public String getGetModelSQL() {
+        return "SELECT * FROM model(" +
+                "?::character varying" + // key
+                ")";
+    }
+
+    @Override
+    public String getDeleteModelSQL() {
+        return "SELECT delete_model(" +
+                "?::character varying" + // model_key_param
+                ")";
     }
 
     @Override

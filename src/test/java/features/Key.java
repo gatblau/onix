@@ -39,4 +39,7 @@ public class Key {
     public static final String DELETE_TREE_URL = "delete_tree_url";
     public static final String ITEM_META_URL = "item_meta_url";
     public static final String ITEM_META_FILTER = "item_meta_filter";
+    public static final String META_MODEL_KEY = "meta_model_key";
+    public static final String MODEL_URL_WITH_KEY = "model_url_with_key";
+    public static final String MODEL_URL_NO_KEY = "model_url_no_key";
 }

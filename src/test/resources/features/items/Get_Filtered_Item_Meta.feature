@@ -4,6 +4,7 @@ Feature: Get Configuration Item Metadata
   So that a I can consume it directly from client applications.
 
   Scenario: Get an Item Unfiltered Metadata
+    Given a model exists in the database
     Given a configuration item natural key is known
     Given a metadata filter key is known
     Given the item metadata URL GET with filter is known

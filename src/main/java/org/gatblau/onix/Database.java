@@ -42,7 +42,7 @@ class Database {
     }
 
     void prepare(String sql) throws SQLException {
-        if (conn == null) {
+        if (conn == null || conn.isClosed()) {
             createConnection();
         }
         stmt = conn.prepareStatement(sql);
