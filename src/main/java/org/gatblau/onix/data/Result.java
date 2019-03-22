@@ -31,6 +31,10 @@ public class Result implements Serializable {
     private String ref;
 
     public Result() {
+        this(null);
+    }
+    public Result(String ref) {
+        this.ref = ref;
         this.changed = false;
         this.error = false;
         this.operation = "N";

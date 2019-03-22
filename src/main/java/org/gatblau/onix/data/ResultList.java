@@ -6,7 +6,7 @@ public class ResultList extends Wrapper<Result> {
     public ResultList() {
     }
 
-    public ResultList(List<Result> linkData) {
-        super(linkData);
+    public ResultList(List<Result> result) {
+        super(result);
     }
 }

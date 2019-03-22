@@ -13,22 +13,108 @@
     to be licensed under the same terms as the rest of the code.
 */
 DO
-$$
-BEGIN
-    ---------------------------------------------------------------------------
-    -- ITEM TYPE
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_type')
-    THEN
+  $$
+    BEGIN
+      ---------------------------------------------------------------------------
+      -- MODEL
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'model')
+      THEN
+        CREATE SEQUENCE model_id_seq
+          INCREMENT 1
+          START 1
+          MINVALUE 1
+          MAXVALUE 9223372036854775807
+          CACHE 1;
+
+        ALTER SEQUENCE model_id_seq
+          OWNER TO onix;
+
+        CREATE TABLE model
+        (
+          id          INTEGER                NOT NULL DEFAULT nextval('model_id_seq'::regclass),
+          key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          description TEXT COLLATE pg_catalog."default",
+          version     bigint                 NOT NULL DEFAULT 1,
+          created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
+          updated     timestamp(6) with time zone,
+          changed_by  CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
+          CONSTRAINT model_id_pk PRIMARY KEY (id),
+          CONSTRAINT model_key_uc UNIQUE (key),
+          CONSTRAINT model_name_uc UNIQUE (name)
+        )
+          WITH (
+            OIDS = FALSE
+          )
+          TABLESPACE pg_default;
+
+        ALTER TABLE model
+          OWNER to onix;
+
+      END IF;
+
+      ---------------------------------------------------------------------------
+      -- MODEL CHANGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'model_change')
+      THEN
+        CREATE TABLE model_change
+        (
+          operation   CHAR(1)               NOT NULL,
+          changed     TIMESTAMP             NOT NULL,
+          id          INTEGER,
+          key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
+          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          description TEXT COLLATE pg_catalog."default",
+          version     bigint,
+          created     timestamp(6) with time zone,
+          updated     timestamp(6) with time zone,
+          changed_by  CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
+        );
+
+        ALTER TABLE model_change
+          OWNER to onix;
+
+        CREATE OR REPLACE FUNCTION change_model() RETURNS TRIGGER AS
+        $model_change$
+        BEGIN
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO model_change SELECT 'D', now(), OLD.*;
+            RETURN OLD;
+          ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO model_change SELECT 'U', now(), NEW.*;
+            RETURN NEW;
+          ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO model_change SELECT 'I', now(), NEW.*;
+            RETURN NEW;
+          END IF;
+          RETURN NULL; -- result is ignored since this is an AFTER trigger
+        END;
+        $model_change$ LANGUAGE plpgsql;
+
+        CREATE TRIGGER model_change
+          AFTER INSERT OR UPDATE OR DELETE
+          ON model
+          FOR EACH ROW
+        EXECUTE PROCEDURE change_model();
+
+      END IF;
+
+      ---------------------------------------------------------------------------
+      -- ITEM TYPE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'item_type')
+      THEN
         CREATE SEQUENCE item_type_id_seq
-            INCREMENT 1
-            START 1
-            MINVALUE 1
-            MAXVALUE 9223372036854775807
-            CACHE 1;
+          INCREMENT 1
+          START 1
+          MINVALUE 1
+          MAXVALUE 9223372036854775807
+          CACHE 1;
 
         ALTER SEQUENCE item_type_id_seq
-            OWNER TO onix;
+          OWNER TO onix;
 
         CREATE TABLE item_type
         (
@@ -43,25 +129,34 @@ BEGIN
           created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated     timestamp(6) with time zone,
           changed_by  CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
+          model_id    int                 NOT NULL,
           CONSTRAINT item_type_id_pk PRIMARY KEY (id),
           CONSTRAINT item_type_key_uc UNIQUE (key),
-          CONSTRAINT item_type_name_uc UNIQUE (name)
+          CONSTRAINT item_type_name_uc UNIQUE (name),
+          CONSTRAINT item_type_model_id_fk FOREIGN KEY (model_id)
+            REFERENCES model (id) MATCH SIMPLE
+            ON UPDATE NO ACTION
+            ON DELETE NO ACTION
         )
-        WITH (
+          WITH (
             OIDS = FALSE
-        )
-        TABLESPACE pg_default;
+          )
+          TABLESPACE pg_default;
+
+        CREATE INDEX fki_item_type_model_id_fk
+          ON item_type USING btree (model_id)
+          TABLESPACE pg_default;
 
         ALTER TABLE item_type
-            OWNER to onix;
+          OWNER to onix;
 
-    END IF;
+      END IF;
 
-    ---------------------------------------------------------------------------
-    -- ITEM_TYPE CHANGE
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_type_change')
-    THEN
+      ---------------------------------------------------------------------------
+      -- ITEM_TYPE CHANGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'item_type_change')
+      THEN
         CREATE TABLE item_type_change
         (
           operation   CHAR(1)               NOT NULL,
@@ -76,48 +171,52 @@ BEGIN
           version     bigint,
           created     timestamp(6) with time zone,
           updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
+          changed_by  CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
+          model_id    int
         );
 
         ALTER TABLE item_type_change
-            OWNER to onix;
+          OWNER to onix;
 
-        CREATE OR REPLACE FUNCTION change_item_type() RETURNS TRIGGER AS $item_type_change$
+        CREATE OR REPLACE FUNCTION change_item_type() RETURNS TRIGGER AS
+        $item_type_change$
         BEGIN
-            IF (TG_OP = 'DELETE') THEN
-                INSERT INTO item_type_change SELECT 'D', now(), OLD.*;
-                RETURN OLD;
-            ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO item_type_change SELECT 'U', now(), NEW.*;
-                RETURN NEW;
-            ELSIF (TG_OP = 'INSERT') THEN
-                INSERT INTO item_type_change SELECT 'I', now(), NEW.*;
-                RETURN NEW;
-            END IF;
-            RETURN NULL; -- result is ignored since this is an AFTER trigger
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO item_type_change SELECT 'D', now(), OLD.*;
+            RETURN OLD;
+          ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO item_type_change SELECT 'U', now(), NEW.*;
+            RETURN NEW;
+          ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO item_type_change SELECT 'I', now(), NEW.*;
+            RETURN NEW;
+          END IF;
+          RETURN NULL; -- result is ignored since this is an AFTER trigger
         END;
         $item_type_change$ LANGUAGE plpgsql;
 
         CREATE TRIGGER item_type_change
-            AFTER INSERT OR UPDATE OR DELETE ON item_type
-            FOR EACH ROW EXECUTE PROCEDURE change_item_type();
+          AFTER INSERT OR UPDATE OR DELETE
+          ON item_type
+          FOR EACH ROW
+        EXECUTE PROCEDURE change_item_type();
 
-    END IF;
+      END IF;
 
-    ---------------------------------------------------------------------------
-    -- ITEM
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item')
-    THEN
+      ---------------------------------------------------------------------------
+      -- ITEM
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'item')
+      THEN
         CREATE SEQUENCE item_id_seq
-            INCREMENT 1
-            START 1
-            MINVALUE 1
-            MAXVALUE 9223372036854775807
-            CACHE 1;
+          INCREMENT 1
+          START 1
+          MINVALUE 1
+          MAXVALUE 9223372036854775807
+          CACHE 1;
 
         ALTER SEQUENCE item_id_seq
-            OWNER TO onix;
+          OWNER TO onix;
 
         CREATE TABLE item
         (
@@ -141,39 +240,39 @@ BEGIN
             ON UPDATE NO ACTION
             ON DELETE NO ACTION
         )
-        WITH (
+          WITH (
             OIDS = FALSE
-        )
-        TABLESPACE pg_default;
+          )
+          TABLESPACE pg_default;
 
         ALTER TABLE item
-            OWNER to onix;
+          OWNER to onix;
 
         CREATE UNIQUE INDEX item_id_uix
-            ON item
+          ON item
             (id)
-            TABLESPACE pg_default;
+          TABLESPACE pg_default;
 
         CREATE INDEX item_tag_ix
-            ON item USING gin
+          ON item USING gin
             (tag COLLATE pg_catalog."default")
-            TABLESPACE pg_default;
+          TABLESPACE pg_default;
 
         CREATE INDEX item_attribute_ix
-            ON item USING gin
+          ON item USING gin
             (attribute)
-            TABLESPACE pg_default;
+          TABLESPACE pg_default;
 
         CREATE INDEX fki_item_item_type_id_fk
-            ON item USING btree (item_type_id)
-            TABLESPACE pg_default;
-	  END IF;
+          ON item USING btree (item_type_id)
+          TABLESPACE pg_default;
+      END IF;
 
-    ---------------------------------------------------------------------------
-    -- ITEM CHANGE
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='item_change')
-    THEN
+      ---------------------------------------------------------------------------
+      -- ITEM CHANGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'item_change')
+      THEN
         CREATE TABLE item_change
         (
           operation    CHAR(1)                     NOT NULL,
@@ -194,44 +293,47 @@ BEGIN
         );
 
         ALTER TABLE item_change
-            OWNER to onix;
+          OWNER to onix;
 
-        CREATE OR REPLACE FUNCTION change_item() RETURNS TRIGGER AS $item_change$
+        CREATE OR REPLACE FUNCTION change_item() RETURNS TRIGGER AS
+        $item_change$
         BEGIN
-            IF (TG_OP = 'DELETE') THEN
-                INSERT INTO item_change SELECT 'D', now(), OLD.*;
-                RETURN OLD;
-            ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO item_change SELECT 'U', now(), NEW.*;
-                RETURN NEW;
-            ELSIF (TG_OP = 'INSERT') THEN
-                INSERT INTO item_change SELECT 'I', now(), NEW.*;
-                RETURN NEW;
-            END IF;
-            RETURN NULL; -- result is ignored since this is an AFTER trigger
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO item_change SELECT 'D', now(), OLD.*;
+            RETURN OLD;
+          ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO item_change SELECT 'U', now(), NEW.*;
+            RETURN NEW;
+          ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO item_change SELECT 'I', now(), NEW.*;
+            RETURN NEW;
+          END IF;
+          RETURN NULL; -- result is ignored since this is an AFTER trigger
         END;
         $item_change$ LANGUAGE plpgsql;
 
         CREATE TRIGGER item_change
-            AFTER INSERT OR UPDATE OR DELETE ON item
-            FOR EACH ROW EXECUTE PROCEDURE change_item();
+          AFTER INSERT OR UPDATE OR DELETE
+          ON item
+          FOR EACH ROW
+        EXECUTE PROCEDURE change_item();
 
-    END IF;
+      END IF;
 
-    ---------------------------------------------------------------------------
-    -- LINK TYPE
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_type')
-    THEN
+      ---------------------------------------------------------------------------
+      -- LINK TYPE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'link_type')
+      THEN
         CREATE SEQUENCE link_type_id_seq
-        INCREMENT 1
-        START 1
-        MINVALUE 1
-        MAXVALUE 9223372036854775807
-        CACHE 1;
+          INCREMENT 1
+          START 1
+          MINVALUE 1
+          MAXVALUE 9223372036854775807
+          CACHE 1;
 
         ALTER SEQUENCE link_type_id_seq
-        OWNER TO onix;
+          OWNER TO onix;
 
         CREATE TABLE link_type
         (
@@ -245,21 +347,32 @@ BEGIN
           created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated     timestamp(6) with time zone,
           changed_by  CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
+          model_id    int                 NOT NULL,
           CONSTRAINT link_type_id_pk PRIMARY KEY (id),
           CONSTRAINT link_type_key_uc UNIQUE (key),
-          CONSTRAINT link_type_name_uc UNIQUE (name)
+          CONSTRAINT link_type_name_uc UNIQUE (name),
+          CONSTRAINT link_type_model_id_fk FOREIGN KEY (model_id)
+            REFERENCES model (id) MATCH SIMPLE
+            ON UPDATE NO ACTION
+            ON DELETE NO ACTION
         )
-        WITH (OIDS = FALSE) TABLESPACE pg_default;
+          WITH (OIDS = FALSE)
+          TABLESPACE pg_default;
 
-        ALTER TABLE link_type OWNER to onix;
+        CREATE INDEX fki_link_type_model_id_fk
+          ON link_type USING btree (model_id)
+          TABLESPACE pg_default;
 
-    END IF;
+        ALTER TABLE link_type
+          OWNER to onix;
 
-    ---------------------------------------------------------------------------
-    -- LINK_TYPE CHANGE
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_type_change')
-    THEN
+      END IF;
+
+      ---------------------------------------------------------------------------
+      -- LINK_TYPE CHANGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'link_type_change')
+      THEN
         CREATE TABLE link_type_change
         (
           operation   CHAR(1)               NOT NULL,
@@ -273,48 +386,52 @@ BEGIN
           version     bigint,
           created     timestamp(6) with time zone,
           updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
+          changed_by  CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
+          model_id    int
         );
 
         ALTER TABLE link_type_change
-            OWNER to onix;
+          OWNER to onix;
 
-        CREATE OR REPLACE FUNCTION change_link_type() RETURNS TRIGGER AS $link_type_change$
+        CREATE OR REPLACE FUNCTION change_link_type() RETURNS TRIGGER AS
+        $link_type_change$
         BEGIN
-            IF (TG_OP = 'DELETE') THEN
-                INSERT INTO link_type_change SELECT 'D', now(), OLD.*;
-                RETURN OLD;
-            ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO link_type_change SELECT 'U', now(), NEW.*;
-                RETURN NEW;
-            ELSIF (TG_OP = 'INSERT') THEN
-                INSERT INTO link_type_change SELECT 'I', now(), NEW.*;
-                RETURN NEW;
-            END IF;
-            RETURN NULL; -- result is ignored since this is an AFTER trigger
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO link_type_change SELECT 'D', now(), OLD.*;
+            RETURN OLD;
+          ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO link_type_change SELECT 'U', now(), NEW.*;
+            RETURN NEW;
+          ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO link_type_change SELECT 'I', now(), NEW.*;
+            RETURN NEW;
+          END IF;
+          RETURN NULL; -- result is ignored since this is an AFTER trigger
         END;
         $link_type_change$ LANGUAGE plpgsql;
 
         CREATE TRIGGER link_type_change
-            AFTER INSERT OR UPDATE OR DELETE ON link_type
-            FOR EACH ROW EXECUTE PROCEDURE change_link_type();
+          AFTER INSERT OR UPDATE OR DELETE
+          ON link_type
+          FOR EACH ROW
+        EXECUTE PROCEDURE change_link_type();
 
-    END IF;
+      END IF;
 
-    ---------------------------------------------------------------------------
-    -- LINK
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link')
-	  THEN
+      ---------------------------------------------------------------------------
+      -- LINK
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'link')
+      THEN
         CREATE SEQUENCE link_id_seq
-            INCREMENT 1
-            START 1
-            MINVALUE 1
-            MAXVALUE 9223372036854775807
-            CACHE 1;
+          INCREMENT 1
+          START 1
+          MINVALUE 1
+          MAXVALUE 9223372036854775807
+          CACHE 1;
 
         ALTER SEQUENCE link_id_seq
-            OWNER TO onix;
+          OWNER TO onix;
 
         CREATE TABLE link
         (
@@ -346,45 +463,45 @@ BEGIN
             ON UPDATE NO ACTION
             ON DELETE NO ACTION
         )
-        WITH (
+          WITH (
             OIDS = FALSE
-        )
-        TABLESPACE pg_default;
+          )
+          TABLESPACE pg_default;
 
         ALTER TABLE link
-            OWNER to onix;
+          OWNER to onix;
 
         CREATE INDEX fki_link_link_type_id_fk
-            ON link USING btree (link_type_id)
-            TABLESPACE pg_default;
+          ON link USING btree (link_type_id)
+          TABLESPACE pg_default;
 
         CREATE INDEX fki_link_start_item_id_fk
-            ON link USING btree
+          ON link USING btree
             (start_item_id)
-            TABLESPACE pg_default;
+          TABLESPACE pg_default;
 
         CREATE INDEX fki_link_end_item_id_fk
-            ON link USING btree
+          ON link USING btree
             (end_item_id)
-            TABLESPACE pg_default;
+          TABLESPACE pg_default;
 
         CREATE INDEX link_tag_ix
-        ON link USING gin
-        (tag COLLATE pg_catalog."default")
-        TABLESPACE pg_default;
+          ON link USING gin
+            (tag COLLATE pg_catalog."default")
+          TABLESPACE pg_default;
 
         CREATE INDEX link_attribute_ix
-        ON link USING gin
-        (attribute)
-        TABLESPACE pg_default;
+          ON link USING gin
+            (attribute)
+          TABLESPACE pg_default;
 
-    END IF;
+      END IF;
 
-    ---------------------------------------------------------------------------
-    -- LINK CHANGE
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_change')
-    THEN
+      ---------------------------------------------------------------------------
+      -- LINK CHANGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'link_change')
+      THEN
         CREATE TABLE link_change
         (
           operation     CHAR(1)                     NOT NULL,
@@ -405,44 +522,47 @@ BEGIN
         );
 
         ALTER TABLE link_change
-            OWNER to onix;
+          OWNER to onix;
 
-        CREATE OR REPLACE FUNCTION change_link() RETURNS TRIGGER AS $link_change$
+        CREATE OR REPLACE FUNCTION change_link() RETURNS TRIGGER AS
+        $link_change$
         BEGIN
-            IF (TG_OP = 'DELETE') THEN
-                INSERT INTO link_change SELECT 'D', now(), OLD.*;
-                RETURN OLD;
-            ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO link_change SELECT 'U', now(), NEW.*;
-                RETURN NEW;
-            ELSIF (TG_OP = 'INSERT') THEN
-                INSERT INTO link_change SELECT 'I', now(), NEW.*;
-                RETURN NEW;
-            END IF;
-            RETURN NULL; -- result is ignored since this is an AFTER trigger
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO link_change SELECT 'D', now(), OLD.*;
+            RETURN OLD;
+          ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO link_change SELECT 'U', now(), NEW.*;
+            RETURN NEW;
+          ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO link_change SELECT 'I', now(), NEW.*;
+            RETURN NEW;
+          END IF;
+          RETURN NULL; -- result is ignored since this is an AFTER trigger
         END;
         $link_change$ LANGUAGE plpgsql;
 
         CREATE TRIGGER link_change
-            AFTER INSERT OR UPDATE OR DELETE ON link
-            FOR EACH ROW EXECUTE PROCEDURE change_link();
+          AFTER INSERT OR UPDATE OR DELETE
+          ON link
+          FOR EACH ROW
+        EXECUTE PROCEDURE change_link();
 
-    END IF;
+      END IF;
 
-    ---------------------------------------------------------------------------
-    -- LINK_RULE
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_rule')
-    THEN
+      ---------------------------------------------------------------------------
+      -- LINK_RULE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'link_rule')
+      THEN
         CREATE SEQUENCE link_rule_id_seq
-            INCREMENT 1
-            START 1
-            MINVALUE 1
-            MAXVALUE 9223372036854775807
-            CACHE 1;
+          INCREMENT 1
+          START 1
+          MINVALUE 1
+          MAXVALUE 9223372036854775807
+          CACHE 1;
 
         ALTER SEQUENCE link_rule_id_seq
-            OWNER TO onix;
+          OWNER TO onix;
 
         CREATE TABLE link_rule
         (
@@ -472,36 +592,36 @@ BEGIN
             ON UPDATE NO ACTION
             ON DELETE NO ACTION
         )
-        WITH (OIDS = FALSE)
-        TABLESPACE pg_default;
+          WITH (OIDS = FALSE)
+          TABLESPACE pg_default;
 
         ALTER TABLE link_rule
-            OWNER to onix;
+          OWNER to onix;
 
         CREATE UNIQUE INDEX link_rule_id_uix
-            ON link_rule
+          ON link_rule
             (id)
-            TABLESPACE pg_default;
+          TABLESPACE pg_default;
 
         CREATE INDEX fki_link_rule_link_type_id_fk
-            ON link_rule USING btree (link_type_id)
-            TABLESPACE pg_default;
+          ON link_rule USING btree (link_type_id)
+          TABLESPACE pg_default;
 
         CREATE INDEX fki_link_rule_start_item_type_id_fk
-            ON link_rule USING btree (start_item_type_id)
-            TABLESPACE pg_default;
+          ON link_rule USING btree (start_item_type_id)
+          TABLESPACE pg_default;
 
         CREATE INDEX fki_link_rule_end_item_type_id_fk
-            ON link_rule USING btree (end_item_type_id)
-            TABLESPACE pg_default;
+          ON link_rule USING btree (end_item_type_id)
+          TABLESPACE pg_default;
 
-    END IF;
+      END IF;
 
-    ---------------------------------------------------------------------------
-    -- LINK_RULE CHANGE
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='link_rule_change')
-    THEN
+      ---------------------------------------------------------------------------
+      -- LINK_RULE CHANGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'link_rule_change')
+      THEN
         CREATE TABLE link_rule_change
         (
           operation          CHAR(1),
@@ -520,45 +640,48 @@ BEGIN
         );
 
         ALTER TABLE link_rule_change
-            OWNER to onix;
+          OWNER to onix;
 
-        CREATE OR REPLACE FUNCTION change_link_rule() RETURNS TRIGGER AS $link_rule_change$
+        CREATE OR REPLACE FUNCTION change_link_rule() RETURNS TRIGGER AS
+        $link_rule_change$
         BEGIN
-            IF (TG_OP = 'DELETE') THEN
-                INSERT INTO link_rule_change SELECT 'D', now(), OLD.*;
-                RETURN OLD;
-            ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO link_rule_change SELECT 'U', now(), NEW.*;
-                RETURN NEW;
-            ELSIF (TG_OP = 'INSERT') THEN
-                INSERT INTO link_rule_change SELECT 'I', now(), NEW.*;
-                RETURN NEW;
-            END IF;
-            RETURN NULL; -- result is ignored since this is an AFTER trigger
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO link_rule_change SELECT 'D', now(), OLD.*;
+            RETURN OLD;
+          ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO link_rule_change SELECT 'U', now(), NEW.*;
+            RETURN NEW;
+          ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO link_rule_change SELECT 'I', now(), NEW.*;
+            RETURN NEW;
+          END IF;
+          RETURN NULL; -- result is ignored since this is an AFTER trigger
         END;
         $link_rule_change$
-        LANGUAGE plpgsql;
+          LANGUAGE plpgsql;
 
         CREATE TRIGGER link_rule_change
-            AFTER INSERT OR UPDATE OR DELETE ON link_rule
-            FOR EACH ROW EXECUTE PROCEDURE change_link_rule();
+          AFTER INSERT OR UPDATE OR DELETE
+          ON link_rule
+          FOR EACH ROW
+        EXECUTE PROCEDURE change_link_rule();
 
-    END IF;
+      END IF;
 
-    ---------------------------------------------------------------------------
-    -- TAG
-    ---------------------------------------------------------------------------
-    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='tag')
-    THEN
+      ---------------------------------------------------------------------------
+      -- TAG
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'tag')
+      THEN
         CREATE SEQUENCE tag_id_seq
-        INCREMENT 1
-        START 1
-        MINVALUE 1
-        MAXVALUE 9223372036854775807
-        CACHE 1;
+          INCREMENT 1
+          START 1
+          MINVALUE 1
+          MAXVALUE 9223372036854775807
+          CACHE 1;
 
         ALTER SEQUENCE tag_id_seq
-            OWNER TO onix;
+          OWNER TO onix;
 
         CREATE TABLE tag
         (
@@ -581,66 +704,69 @@ BEGIN
             ON UPDATE NO ACTION
             ON DELETE NO ACTION
         )
-        WITH (
+          WITH (
             OIDS = FALSE
-        )
-        TABLESPACE pg_default;
+          )
+          TABLESPACE pg_default;
 
         ALTER TABLE tag
-            OWNER to onix;
+          OWNER to onix;
 
         CREATE INDEX fki_tag_root_item_key_fk
-            ON tag USING btree (root_item_key)
-            TABLESPACE pg_default;
-    END IF;
-
-  ---------------------------------------------------------------------------
-  -- TAG CHANGE
-  ---------------------------------------------------------------------------
-  IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname='tag_change')
-  THEN
-    CREATE TABLE tag_change
-    (
-      operation     CHAR(1),
-      changed       timestamp(6) with time zone,
-      id            INTEGER,
-      label         CHARACTER VARYING(50),
-      root_item_key CHARACTER VARYING(100),
-      name          CHARACTER VARYING(200),
-      description   TEXT,
-      item_data     HSTORE,
-      link_data     HSTORE,
-      version       BIGINT,
-      created       timestamp(6) with time zone,
-      updated       timestamp(6) with time zone,
-      changed_by    CHARACTER VARYING(50)
-    );
-
-    ALTER TABLE tag_change
-      OWNER to onix;
-
-    CREATE OR REPLACE FUNCTION change_tag() RETURNS TRIGGER AS $tag_change$
-    BEGIN
-      IF (TG_OP = 'DELETE') THEN
-        INSERT INTO tag_change SELECT 'D', now(), OLD.*;
-        RETURN OLD;
-      ELSIF (TG_OP = 'UPDATE') THEN
-        INSERT INTO tag_change SELECT 'U', now(), NEW.*;
-        RETURN NEW;
-      ELSIF (TG_OP = 'INSERT') THEN
-        INSERT INTO tag_change SELECT 'I', now(), NEW.*;
-        RETURN NEW;
+          ON tag USING btree (root_item_key)
+          TABLESPACE pg_default;
       END IF;
-      RETURN NULL; -- result is ignored since this is an AFTER trigger
-      END;
-    $tag_change$
-    LANGUAGE plpgsql;
 
-    CREATE TRIGGER tag_change
-      AFTER INSERT OR UPDATE OR DELETE ON tag
-      FOR EACH ROW EXECUTE PROCEDURE change_tag();
+      ---------------------------------------------------------------------------
+      -- TAG CHANGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'tag_change')
+      THEN
+        CREATE TABLE tag_change
+        (
+          operation     CHAR(1),
+          changed       timestamp(6) with time zone,
+          id            INTEGER,
+          label         CHARACTER VARYING(50),
+          root_item_key CHARACTER VARYING(100),
+          name          CHARACTER VARYING(200),
+          description   TEXT,
+          item_data     HSTORE,
+          link_data     HSTORE,
+          version       BIGINT,
+          created       timestamp(6) with time zone,
+          updated       timestamp(6) with time zone,
+          changed_by    CHARACTER VARYING(50)
+        );
 
-END IF;
+        ALTER TABLE tag_change
+          OWNER to onix;
 
-END;
-$$
+        CREATE OR REPLACE FUNCTION change_tag() RETURNS TRIGGER AS
+        $tag_change$
+        BEGIN
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO tag_change SELECT 'D', now(), OLD.*;
+            RETURN OLD;
+          ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO tag_change SELECT 'U', now(), NEW.*;
+            RETURN NEW;
+          ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO tag_change SELECT 'I', now(), NEW.*;
+            RETURN NEW;
+          END IF;
+          RETURN NULL; -- result is ignored since this is an AFTER trigger
+        END;
+        $tag_change$
+          LANGUAGE plpgsql;
+
+        CREATE TRIGGER tag_change
+          AFTER INSERT OR UPDATE OR DELETE
+          ON tag
+          FOR EACH ROW
+        EXECUTE PROCEDURE change_tag();
+
+      END IF;
+
+    END;
+    $$

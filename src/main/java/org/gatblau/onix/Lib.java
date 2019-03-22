@@ -167,6 +167,7 @@ public class Lib implements InitializingBean {
         itemType.setAttribute(toJSON(set.getObject("attr_valid")));
         itemType.setFilter(toJSON(set.getObject("filter")));
         itemType.setMetaSchema(toJSON(set.getObject("meta_schema")));
+        itemType.setModel(set.getString("model_key"));
         return itemType;
     }
 
@@ -202,6 +203,7 @@ public class Lib implements InitializingBean {
         linkType.setVersion(set.getInt("version"));
         linkType.setAttribute(toJSON(set.getObject("attr_valid")));
         linkType.setMetaSchema(toJSON(set.getObject("meta_schema")));
+        linkType.setModel(set.getString("model_key"));
         linkType.setChangedBy(set.getString("changed_by"));
         return linkType;
     }
@@ -236,5 +238,19 @@ public class Lib implements InitializingBean {
         tag.setVersion(set.getInt("version"));
         tag.setChangedBy(set.getString("changed_by"));
         return tag;
+    }
+
+    public ModelData toModelData(ResultSet set) throws SQLException {
+        Date updated = set.getDate("updated");
+
+        ModelData model = new ModelData();
+        model.setKey(set.getString("key"));
+        model.setName(set.getString("name"));
+        model.setDescription(set.getString("description"));
+        model.setCreated(dateFormat.format(set.getDate("created")));
+        model.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+        model.setVersion(set.getInt("version"));
+        model.setChangedBy(set.getString("changed_by"));
+        return model;
     }
 }

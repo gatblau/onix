@@ -34,6 +34,7 @@ public class LinkTypeData implements Serializable {
     private String updated;
     private Integer version;
     private String changedBy;
+    private String model;
 
     public LinkTypeData() {
     }
@@ -108,5 +109,13 @@ public class LinkTypeData implements Serializable {
 
     public void setMetaSchema(JSONObject metaSchema) {
         this.metaSchema = metaSchema;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
     }
 }

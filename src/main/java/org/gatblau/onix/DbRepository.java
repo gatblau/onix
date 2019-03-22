@@ -36,8 +36,9 @@ public interface DbRepository {
     Result createOrUpdateItem(String key, JSONObject json);
     ItemData getItem(String key, boolean includeLinks);
     Result deleteItem(String key);
-    ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, Integer top);
+    ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, String modelKey, Integer top);
     JSONObject getItemMeta(String key, String filter);
+    Result deleteAllItems();
 
     /*
         LINKS
@@ -53,7 +54,7 @@ public interface DbRepository {
     */
     ItemTypeData getItemType(String key);
     Result deleteItemTypes();
-    ItemTypeList getItemTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo);
+    ItemTypeList getItemTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelType);
 
     Result createOrUpdateItemType(String key, JSONObject json);
     Result deleteItemType(String key);
@@ -61,7 +62,7 @@ public interface DbRepository {
     /*
         LINK TYPES
     */
-    LinkTypeList getLinkTypes(Map attrMap, ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time);
+    LinkTypeList getLinkTypes(Map attrMap, ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time, String modelKey);
     Result createOrUpdateLinkType(String key, JSONObject json);
     Result deleteLinkType(String key);
     Result deleteLinkTypes();
@@ -87,6 +88,7 @@ public interface DbRepository {
     String getSetItemSQL();
     String getFindItemsSQL();
     String getDeleteItemSQL();
+    String getDeleteAllItemsSQL();
 
     String getDeleteLinkSQL();
     String getGetLinkSQL();
@@ -139,4 +141,15 @@ public interface DbRepository {
 
     /* Readiness probe */
     JSONObject getReadyStatus();
+
+    /* Models */
+    Result deleteModel(String key);
+    Result createOrUpdateModel(String key, JSONObject payload);
+    ModelData getModel(String key);
+    ModelDataList getModels();
+
+    String getDeleteModelSQL();
+    String getSetModelSQL();
+    String getGetModelsSQL();
+    String getGetModelSQL();
 }

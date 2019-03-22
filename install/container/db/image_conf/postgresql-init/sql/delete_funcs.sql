@@ -16,6 +16,34 @@ DO
 $$
 BEGIN
 
+  /*
+  delete_model
+ */
+  CREATE OR REPLACE FUNCTION delete_model(key_param character varying)
+    RETURNS VOID
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+  AS $BODY$
+  BEGIN
+    DELETE
+    FROM item_type it
+    USING model m
+      WHERE m.id = it.model_id;
+
+    DELETE
+    FROM link_type lt
+    USING model m
+      WHERE m.id = lt.model_id;
+
+    DELETE FROM model
+    WHERE key = key_param;
+  END
+  $BODY$;
+
+  ALTER FUNCTION delete_model(character varying)
+    OWNER TO onix;
+
 /*
   delete_item
  */
@@ -33,6 +61,26 @@ $BODY$;
 
 ALTER FUNCTION delete_item(character varying)
   OWNER TO onix;
+
+  /*
+    delete_all_items
+   */
+  CREATE OR REPLACE FUNCTION delete_all_items()
+    RETURNS VOID
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE
+  AS $BODY$
+  BEGIN
+    DELETE FROM link_rule;
+    DELETE FROM tag;
+    DELETE FROM link;
+    DELETE FROM item;
+  END
+  $BODY$;
+
+  ALTER FUNCTION delete_all_items()
+    OWNER TO onix;
 
 /*
   delete_item_type
