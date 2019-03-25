@@ -547,6 +547,8 @@ public class PgSqlRepository implements DbRepository {
         }
         catch (Exception ex) {
             ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
         }
         finally {
             db.close();
@@ -940,7 +942,7 @@ public class PgSqlRepository implements DbRepository {
             for (Map model : models) {
                 String key = (String)model.get("key");
                 Result result = createOrUpdateModel(key, new JSONObject(model));
-                results.getItems().add(result);
+                results.add(result);
             }
         }
         Object itemTypesObject = payload.get("itemTypes");
@@ -949,7 +951,7 @@ public class PgSqlRepository implements DbRepository {
             for (Map itemType : itemTypes) {
                 String key = (String)itemType.get("key");
                 Result result = createOrUpdateItemType(key, new JSONObject(itemType));
-                results.getItems().add(result);
+                results.add(result);
             }
         }
         Object linkTypesObject = payload.get("linkTypes");
@@ -958,7 +960,7 @@ public class PgSqlRepository implements DbRepository {
             for (Map linkType : linkTypes) {
                 String key = (String)linkType.get("key");
                 Result result = createOrUpdateLinkType(key, new JSONObject(linkType));
-                results.getItems().add(result);
+                results.add(result);
             }
         }
         Object linkRulesObject = payload.get("linkRules");
@@ -967,7 +969,7 @@ public class PgSqlRepository implements DbRepository {
             for (Map linkRule : linkRules) {
                 String key = (String)linkRule.get("key");
                 Result result = createOrUpdateLinkRule(key, new JSONObject(linkRule));
-                results.getItems().add(result);
+                results.add(result);
             }
         }
         Object itemsObject = payload.get("items");
@@ -976,7 +978,7 @@ public class PgSqlRepository implements DbRepository {
             for (Map item: items) {
                 String key = (String)item.get("key");
                 Result result = createOrUpdateItem(key, new JSONObject(item));
-                results.getItems().add(result);
+                results.add(result);
             }
         }
         Object linksObject = payload.get("links");
@@ -985,7 +987,7 @@ public class PgSqlRepository implements DbRepository {
             for (Map link : links) {
                 String key = (String) link.get("key");
                 Result result = createOrUpdateLink((String) link.get("key"), new JSONObject(link));
-                results.getItems().add(result);
+                results.add(result);
             }
         }
         return results;
@@ -1067,8 +1069,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(3, (description != null) ? (String) description : null); // description_param
             db.setObject(4, version); // version_param
             db.setString(5, getUser()); // changed_by_param
-            result.setError(!db.execute());
-            result.setOperation("I");
+            result.setOperation(db.executeQueryAndRetrieveStatus("set_model"));
         }
         catch (Exception ex) {
             ex.printStackTrace();
