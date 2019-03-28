@@ -323,6 +323,60 @@ public class WebAPI {
         return ResponseEntity.ok(data.deleteLink(key));
     }
 
+    @ApiOperation(
+            value = "Get an item link based on the specified key.",
+            notes = "Use this search to retrieve a specific item link when its natural key is known.")
+    @RequestMapping(
+            path = "/link/{key}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<LinkData> getLink(
+            @PathVariable("key") String key) {
+        return ResponseEntity.ok(data.getLink(key));
+    }
+
+    @ApiOperation(
+            value = "Search for item linkss based on the specified filters (provided via a query string).",
+            notes = "Use this function to retrieve item links based on type, tags and date range as required. " +
+                    "Results are limited by the top parameter.")
+    @RequestMapping(
+            path = "/link"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<Wrapper> getLinks(
+              @RequestParam(value = "type", required = false) String linkTypeKey
+            , @RequestParam(value = "tag", required = false) String tag
+            , @RequestParam(value = "startItemKey", required = false) String startItemKey
+            , @RequestParam(value = "endItemKey", required = false) String endItemKey
+            , @RequestParam(value = "createdFrom", required = false) String createdFromDate
+            , @RequestParam(value = "createdTo", required = false) String createdToDate
+            , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
+            , @RequestParam(value = "updatedTo", required = false) String updatedToDate
+            , @RequestParam(value = "model", required = false) String modelKey
+            , @RequestParam(value = "top", required = false, defaultValue = "100") Integer top
+    ) {
+        List<String> tagList = null;
+        if (tag != null) {
+            String[] tags = tag.split("[|]"); // separate tags using pipes in the query string
+            tagList = Arrays.asList(tags);
+        }
+        LinkList list = data.findLinks(
+                linkTypeKey,
+                startItemKey,
+                endItemKey,
+                tagList,
+                getDate(createdFromDate),
+                getDate(createdToDate),
+                getDate(updatedFromDate),
+                getDate(updatedToDate),
+                modelKey,
+                top
+        );
+        return ResponseEntity.ok(list);
+    }
+
     /*
         LINK TYPES
      */
@@ -516,6 +570,21 @@ public class WebAPI {
         return ResponseEntity.ok(data.getModels());
     }
 
+    @ApiOperation(
+            value = "Get a list of item types, link types and link rules for a specified model.",
+            notes = "")
+    @RequestMapping(
+            path = "/model/{key}/data"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<TypeGraphData> getTypeData(
+            @PathVariable("key") String modelKey
+    ) {
+        TypeGraphData graph = data.getTypeDataByModel(modelKey);
+        return ResponseEntity.ok(graph);
+    }
+
     /*
         MISCELLANEOUS
      */
@@ -547,53 +616,53 @@ public class WebAPI {
             value = "Updates an existing tag.",
             notes = "A tag is a set of items and their links at a specific point in time.")
     @RequestMapping(
-            path = "/tag/{root_item_key}/{label}"
+            path = "/tag/{item_key}/{tag}"
             , method = RequestMethod.PUT)
     public ResponseEntity<Result> updateTag(
-            @PathVariable("root_item_key") String rootItemKey,
-            @PathVariable("label") String label,
+            @PathVariable("item_key") String itemKey,
+            @PathVariable("tag") String tag,
             @RequestBody JSONObject payload
     ) {
-        return ResponseEntity.ok(data.updateTag(rootItemKey, label, payload));
+        return ResponseEntity.ok(data.updateTag(itemKey, tag, payload));
     }
 
     @ApiOperation(
             value = "Deletes an existing tag.",
             notes = "Takes the key of a root item and a tag label and deletes the matching tag.")
     @RequestMapping(
-            path = "/tag/{root_item_key}/{label}"
+            path = "/tag/{item_key}/{tag}"
             , method = RequestMethod.DELETE)
     public ResponseEntity<Result> deleteTag(
-            @PathVariable("root_item_key") String rootItemKey,
-            @PathVariable("label") String label
+            @PathVariable("item_key") String itemKey,
+            @PathVariable("tag") String tag
     ) {
-        return ResponseEntity.ok(data.deleteTag(rootItemKey, label));
+        return ResponseEntity.ok(data.deleteTag(itemKey, tag));
     }
 
     @ApiOperation(
             value = "Deletes all tags for an item.",
             notes = "Takes the key of a root item and deletes any associated tags.")
     @RequestMapping(
-            path = "/tag/{root_item_key}"
+            path = "/tag/{item_key}"
             , method = RequestMethod.DELETE)
     public ResponseEntity<Result> deleteAllTags(
-            @PathVariable("root_item_key") String rootItemKey
+            @PathVariable("item_key") String itemKey
     ) {
-        return ResponseEntity.ok(data.deleteTag(rootItemKey, null));
+        return ResponseEntity.ok(data.deleteTag(itemKey, null));
     }
 
     @ApiOperation(
             value = "Get a list of available tags for a specific item.",
             notes = "")
     @RequestMapping(
-            path = "/tag/{root_item_key}"
+            path = "/tag/{item_key}"
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<TagList> getItemTags(
-            @PathVariable("root_item_key") String rootItemKey
+            @PathVariable("item_key") String itemKey
     ) {
-        TagList tags = data.getItemTags(rootItemKey);
+        TagList tags = data.getItemTags(itemKey);
         return ResponseEntity.ok(tags);
     }
 
@@ -610,40 +679,38 @@ public class WebAPI {
     )
     public ResponseEntity<ResultList> createOrUpdateData(
             @RequestBody JSONObject payload
+
     ) {
         ResultList results = data.createOrUpdateData(payload);
         return ResponseEntity.ok(results);
     }
 
-    /*
-       ITEM TREE
-     */
     @ApiOperation(
-            value = "Get a list of items and links in a specified item tag.",
+            value = "Get a list of items and links that are children of a specified item for a specified item tag.",
             notes = "")
     @RequestMapping(
-            path = "/tree/{root_item_key}/{label}"
+            path = "/data/{item_key}/tag/{tag}"
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<ItemTreeData> getItemTree(
-            @PathVariable("root_item_key") String rootItemKey,
-            @PathVariable("label") String label
+    public ResponseEntity<GraphData> getDataWithTag(
+            @PathVariable("item_key") String itemKey,
+            @PathVariable("tag") String tag
     ) {
-        ItemTreeData tree = data.getItemTree(rootItemKey, label);
-        return ResponseEntity.ok(tree);
+        GraphData graph = data.getData(itemKey, tag);
+        return ResponseEntity.ok(graph);
     }
 
     @ApiOperation(
-            value = "Deletes an existing item tree.",
+            value = "Deletes an existing item and all its children.",
             notes = "")
     @RequestMapping(
-            path = "/tree/{root_item_key}"
+            path = "/data/{item_key}"
             , method = RequestMethod.DELETE)
-    public ResponseEntity<Result> deleteTree(
-        @PathVariable("root_item_key") String rootItemKey
+    public ResponseEntity<Result> deleteData(
+        @PathVariable("item_key") String rootItemKey
     ) {
-        return ResponseEntity.ok(data.deleteItemTree(rootItemKey));
+        return ResponseEntity.ok(data.deleteData(rootItemKey));
     }
 
     /*

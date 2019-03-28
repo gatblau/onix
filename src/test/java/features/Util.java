@@ -53,7 +53,7 @@ public class Util {
         T value = (T) cache.get(key);
         if (value == null) {
             throw new RuntimeException(
-                    String.format("Value with key %s not found in cache.", key));
+                String.format("Value with key %s not found in cache.", key));
         }
         return value;
     }

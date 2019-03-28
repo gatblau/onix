@@ -24,7 +24,6 @@ import com.jayway.jsonpath.ReadContext;
 import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
 import org.postgresql.util.HStoreConverter;
-import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -134,7 +133,17 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, String modelKey, Integer top) {
+    public ItemList findItems(
+            String itemTypeKey,
+            List<String> tagList,
+            ZonedDateTime createdFrom,
+            ZonedDateTime createdTo,
+            ZonedDateTime updatedFrom,
+            ZonedDateTime updatedTo,
+            Short status,
+            String modelKey,
+            Integer top
+    ) {
         ItemList items = new ItemList();
         try {
             db.prepare(getFindItemsSQL());
@@ -150,11 +159,12 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(10, (top == null) ? 20 : top);
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                items.getItems().add(util.toItemData(set));
+                items.getValues().add(util.toItemData(set));
             }
         }
         catch (Exception ex) {
             ex.printStackTrace();
+            throw new RuntimeException(String.format("Can't retrieve items: %s", ex.getMessage()));
         }
         return items;
     }
@@ -277,9 +287,42 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public LinkList findLinks() {
-        // TODO: implement findLinks()
-        throw new UnsupportedOperationException("findLinks");
+    public LinkList findLinks(
+            String linkTypeKey,
+            String startItemKey,
+            String endItemKey,
+            List<String> tagList,
+            ZonedDateTime createdFrom,
+            ZonedDateTime createdTo,
+            ZonedDateTime updatedFrom,
+            ZonedDateTime updatedTo,
+            String modelKey,
+            Integer top
+    ) {
+        LinkList links = new LinkList();
+        try {
+            db.prepare(getFindLinksSQL());
+            db.setString(1, startItemKey);
+            db.setString(2, endItemKey);
+            db.setString(3, util.toArrayString(tagList));
+            db.setString(4, null); // attribute
+            db.setString(5, linkTypeKey);
+            db.setObject(6, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
+            db.setObject(7, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
+            db.setObject(8, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
+            db.setObject(9, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
+            db.setString(10, modelKey);
+            db.setObject(11, (top == null) ? 20 : top);
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                links.getValues().add(util.toLinkData(set));
+            }
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException(String.format("Cant retrieve links: %s", ex.getMessage()));
+        }
+        return links;
     }
 
     @Override
@@ -354,7 +397,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(6, modelKey);
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                itemTypes.getItems().add(util.toItemTypeData(set));
+                itemTypes.getValues().add(util.toItemTypeData(set));
             }
             return itemTypes;
         }
@@ -423,7 +466,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(6, modelKey);
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                linkTypes.getItems().add(util.toLinkTypeData(set));
+                linkTypes.getValues().add(util.toLinkTypeData(set));
             }
         }
         catch (Exception ex) {
@@ -512,7 +555,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(7, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                linkRules.getItems().add(util.toLinkRuleData(set));
+                linkRules.getValues().add(util.toLinkRuleData(set));
             }
         }
         catch (Exception ex) {
@@ -583,7 +626,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(2, "ANSIBLE_INVENTORY"); // item_type_key_param
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                items.getItems().add(util.toItemData(set));
+                items.getValues().add(util.toItemData(set));
             }
         }
         catch (Exception ex) {
@@ -692,15 +735,17 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public String getFindLinksSQL() {
         return "SELECT * FROM find_links(" +
-                "?::character varying," +
-                "?::character varying," +
-                "?::text[]," +
-                "?::hstore," +
-                "?::character varying," +
-                "?::timestamp with time zone," +
-                "?::timestamp with time zone," +
-                "?::timestamp with time zone," +
-                "?::timestamp with time zone" +
+                    "?::character varying," + // start_item_key_param
+                    "?::character varying," + // end_item_key_param
+                    "?::text[]," + // tag_param
+                    "?::hstore," + // attribute_param
+                    "?::character varying," + // link_type_key_param
+                    "?::timestamp with time zone," + // date_created_from_param
+                    "?::timestamp with time zone," + // date_created_to_param
+                    "?::timestamp with time zone," + // date_updated_from_param
+                    "?::timestamp with time zone," + // date_updated_to_param
+                    "?::character varying," + // model_key_param
+                    "?::integer" + // max_items
                 ")";
     }
 
@@ -893,7 +938,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(1, rootItemKey); // root_item_key_param
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                tags.getItems().add(util.toTagData(set));
+                tags.getValues().add(util.toTagData(set));
             }
         }
         catch (Exception ex) {
@@ -906,22 +951,22 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public ItemTreeData getItemTree(String rootItemKey, String label) {
-        ItemTreeData tree = new ItemTreeData();
+    public GraphData getData(String rootItemKey, String label) {
+        GraphData graph = new GraphData();
         try {
             db.prepare(getGetTreeItemsForTagSQL());
             db.setString(1, rootItemKey); // root_item_key_param
             db.setString(2, label); // label_param
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                tree.getItems().add(util.toItemData(set));
+                graph.getItems().add(util.toItemData(set));
             }
             db.prepare(getGetTreeLinksForTagSQL());
             db.setString(1, rootItemKey); // root_item_key_param
             db.setString(2, label); // label_param
             set = db.executeQuery();
             while (set.next()) {
-                tree.getLinks().add(util.toLinkData(set));
+                graph.getLinks().add(util.toLinkData(set));
             }
         }
         catch (Exception ex) {
@@ -930,7 +975,7 @@ public class PgSqlRepository implements DbRepository {
         finally {
             db.close();
         }
-        return tree;
+        return graph;
     }
 
     @Override
@@ -994,7 +1039,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteItemTree(String rootItemKey) {
+    public Result deleteData(String rootItemKey) {
         Result result = new Result(String.format("ItemTree:%s", rootItemKey));
         try {
             db.prepare(getDeleteItemTreeSQL());
@@ -1107,7 +1152,7 @@ public class PgSqlRepository implements DbRepository {
             db.prepare(getGetModelsSQL());
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                models.getItems().add(util.toModelData(set));
+                models.getValues().add(util.toModelData(set));
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -1136,6 +1181,59 @@ public class PgSqlRepository implements DbRepository {
     public String getGetModelSQL() {
         return "SELECT * FROM model(" +
                 "?::character varying" + // key
+                ")";
+    }
+
+    @Override
+    public TypeGraphData getTypeDataByModel(String modelKey) {
+        TypeGraphData graph = new TypeGraphData();
+        try {
+            db.prepare(getGetModelItemTypesSQL());
+            db.setString(1, modelKey); // model key param
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                graph.getItemTypes().add(util.toItemTypeData(set));
+            }
+            db.prepare(getGetModelLinkTypesSQL());
+            db.setString(1, modelKey); // model key param
+            set = db.executeQuery();
+            while (set.next()) {
+                graph.getLinkTypes().add(util.toLinkTypeData(set));
+            }
+            db.prepare(getGetModelLinkRulesSQL());
+            db.setString(1, modelKey); // model key param
+            set = db.executeQuery();
+            while (set.next()) {
+                graph.getLinkRules().add(util.toLinkRuleData(set));
+            }
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        finally {
+            db.close();
+        }
+        return graph;
+    }
+
+    @Override
+    public String getGetModelItemTypesSQL() {
+        return "SELECT * FROM get_model_item_types(" +
+                "?::character varying" + // model_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetModelLinkTypesSQL() {
+        return "SELECT * FROM get_model_link_types(" +
+                "?::character varying" + // model_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetModelLinkRulesSQL() {
+        return "SELECT * FROM get_model_link_rules(" +
+                "?::character varying" + // model_key_param
                 ")";
     }
 

@@ -14,8 +14,8 @@ public class Key {
     public static final String CONGIG_ITEM_TYPE_ID = "config_item_type_id";
     public static final String CONGIG_ITEM_TYPE_KEY = "config_item_type_key";
     public static final String CONFIG_ITEM_TAG = "config_item_tag";
-    public static final String CONFIG_ITEM_UPDATED_FROM = "config_item_updated_from";
-    public static final String CONFIG_ITEM_UPDATED_TO = "config_item_updated_to";
+    public static final String CONFIG_ITEM_CREATED_FROM = "config_item_created_from";
+    public static final String CONFIG_ITEM_CREATED_TO = "config_item_created_to";
     public static final String LINK_KEY = "link_key";
     public static final String ENDPOINT_URI = "endpoint_uri";
     public static final String ITEM_KEY = "item_key";
@@ -42,4 +42,9 @@ public class Key {
     public static final String META_MODEL_KEY = "meta_model_key";
     public static final String MODEL_URL_WITH_KEY = "model_url_with_key";
     public static final String MODEL_URL_NO_KEY = "model_url_no_key";
+    public static final String LINK_TYPE_FILTER = "link_type_filter";
+    public static final String LINK_TAG_FILTER = "link_tag_filter";
+    public static final String LINK_CREATED_FROM_FILTER = "link_created_from_filter";
+    public static final String LINK_CREATED_TO_FILTER = "link_created_to_filter";
+    public static final String LINK_WITH_KEY_URL = "link_with_key_url";
 }

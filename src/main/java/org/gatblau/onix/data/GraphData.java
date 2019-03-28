@@ -4,12 +4,12 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ItemTreeData implements Serializable {
+public class GraphData implements Serializable {
     private static final long serialVersionUID = 1L;
     private List<ItemData> items = new ArrayList<>();
     private List<LinkData> links = new ArrayList<>();
 
-    public ItemTreeData() {
+    public GraphData() {
     }
 
     public void setLinks(List<LinkData> links) {
