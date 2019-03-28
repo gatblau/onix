@@ -639,7 +639,9 @@
       "key": "test_inventory::test_inventory->OSEv3",
       "description": "Link imported from Ansible inventory.",
       "type": "ANSIBLE_INVENTORY",
-      "tag": [],
+      "tag": [
+        "link", "awesome"
+      ],
       "attribute": {},
       "meta": {},
       "startItemKey": "test_inventory",
@@ -649,7 +651,9 @@
       "key": "test_inventory::OSEv3->masters",
       "description": "Link imported from Ansible inventory.",
       "type": "ANSIBLE_INVENTORY",
-      "tag": [],
+      "tag": [
+        "link", "awesome"
+      ],
       "attribute": {},
       "meta": {},
       "startItemKey": "test_inventory::OSEv3",
@@ -659,7 +663,9 @@
       "key": "test_inventory::masters->master0",
       "description": "Link imported from Ansible inventory.",
       "type": "ANSIBLE_INVENTORY",
-      "tag": [],
+      "tag": [
+        "link", "awesome"
+      ],
       "attribute": {},
       "meta": {},
       "startItemKey": "test_inventory::masters",

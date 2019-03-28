@@ -23,16 +23,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Wrapper<T> {
-    private List<T> items = new ArrayList<>();
+    private List<T> values = new ArrayList<>();
 
     public Wrapper(){
     }
 
-    public Wrapper(List<T> items) {
-       this.items = items;
+    public Wrapper(List<T> values) {
+       this.values = values;
     }
 
-    public List<T> getItems() {
-        return items;
+    public List<T> getValues() {
+        return values;
     }
 }

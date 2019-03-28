@@ -46,7 +46,8 @@ public interface DbRepository {
     LinkData getLink(String key);
     Result createOrUpdateLink(String key, JSONObject json);
     Result deleteLink(String key);
-    LinkList findLinks();
+    LinkList findLinks(String linkTypeKey, String startItemKey, String endItemKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey, Integer top);
+
     Result clear();
 
     /*
@@ -128,21 +129,27 @@ public interface DbRepository {
 
     String getTableCountSQL();
 
-    /* Tags */
+    /* Tag */
     Result createTag(JSONObject payload);
     Result updateTag(String rootItemKey, String label, JSONObject payload);
     Result deleteTag(String rootItemKey, String label);
     TagList getItemTags(String rootItemKey);
 
-    /* Item Tree */
-    ItemTreeData getItemTree(String rootItemKey, String label);
+    /* Graph Data */
+    GraphData getData(String rootItemKey, String label);
     ResultList createOrUpdateData(JSONObject payload);
-    Result deleteItemTree(String rootItemKey);
+    Result deleteData(String rootItemKey);
+
+    TypeGraphData getTypeDataByModel(String modelKey);
+
+    String getGetModelItemTypesSQL();
+    String getGetModelLinkTypesSQL();
+    String getGetModelLinkRulesSQL();
 
     /* Readiness probe */
     JSONObject getReadyStatus();
 
-    /* Models */
+    /* Model */
     Result deleteModel(String key);
     Result createOrUpdateModel(String key, JSONObject payload);
     ModelData getModel(String key);

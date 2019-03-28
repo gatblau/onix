@@ -146,9 +146,6 @@ RETURNS TABLE(
   COST 100
   STABLE
 AS $BODY$
-DECLARE
-  link_type_id_value smallint;
-
 BEGIN
   RETURN QUERY SELECT
     l.id,
@@ -722,6 +719,154 @@ END
 $BODY$;
 
 ALTER FUNCTION get_table_count() OWNER TO onix;
+
+/*
+  get_model_item_types(model_key_param): get all item types in a model
+ */
+CREATE OR REPLACE FUNCTION get_model_item_types(
+  model_key_param character varying -- model natural key
+)
+  RETURNS TABLE(
+    id integer,
+    key character varying,
+    name character varying,
+    description text,
+    attr_valid hstore,
+    filter jsonb,
+    meta_schema jsonb,
+    version bigint,
+    created timestamp(6) with time zone,
+    updated timestamp(6) with time zone,
+    changed_by character varying,
+    model_key character varying
+  )
+  LANGUAGE 'plpgsql'
+  COST 100
+  STABLE
+AS $BODY$
+BEGIN
+  RETURN QUERY
+    SELECT it.id,
+           it.key,
+           it.name,
+           it.description,
+           it.attr_valid,
+           it.filter,
+           it.meta_schema,
+           it.version,
+           it.created,
+           it.updated,
+           it.changed_by,
+           m.key as model_key
+    FROM item_type it
+    INNER JOIN model m
+      ON m.id = it.model_id
+    WHERE m.key = model_key_param;
+END;
+  $BODY$;
+
+ALTER FUNCTION get_model_item_types(character varying) OWNER TO onix;
+
+/*
+  get_model_link_types(model_key_param): get all link types in a model
+ */
+CREATE OR REPLACE FUNCTION get_model_link_types(
+  model_key_param character varying -- model natural key
+)
+  RETURNS TABLE(
+     id integer,
+     key character varying,
+     name character varying,
+     description text,
+     attr_valid hstore,
+     meta_schema jsonb,
+     version bigint,
+     created timestamp(6) with time zone,
+     updated timestamp(6) with time zone,
+     changed_by character varying,
+     model_key character varying
+  )
+  LANGUAGE 'plpgsql'
+  COST 100
+  STABLE
+AS $BODY$
+BEGIN
+  RETURN QUERY
+    SELECT
+      lt.id,
+      lt.key,
+      lt.name,
+      lt.description,
+      lt.attr_valid,
+      lt.meta_schema,
+      lt.version,
+      lt.created,
+      lt.updated,
+      lt.changed_by,
+      m.key as model_key
+    FROM link_type lt
+    INNER JOIN model m
+      ON m.id = lt.model_id
+    WHERE m.key = model_key_param;
+END;
+$BODY$;
+
+ALTER FUNCTION get_model_link_types(character varying) OWNER TO onix;
+
+/*
+  get_model_link_rules(model_key_param): get all link rules in a model
+ */
+CREATE OR REPLACE FUNCTION get_model_link_rules(
+  model_key_param character varying -- model natural key
+)
+  RETURNS TABLE(
+     id bigint,
+     key character varying,
+     name character varying,
+     description text,
+     link_type_key character varying,
+     start_item_type_key character varying,
+     end_item_type_key character varying,
+     version bigint,
+     created timestamp(6) with time zone,
+     updated timestamp(6) with time zone,
+     changed_by character varying
+  )
+  LANGUAGE 'plpgsql'
+  COST 100
+  STABLE
+AS $BODY$
+BEGIN
+  RETURN QUERY
+  SELECT
+    r.id,
+    r.key,
+    r.name,
+    r.description,
+    lt.key as link_type_key,
+    start_item_type.key as start_item_type_key,
+    end_item_type.key as end_item_type_key,
+    r.version,
+    r.created,
+    r.updated,
+    r.changed_by
+  FROM link_rule r
+  INNER JOIN item_type start_item_type
+    ON r.start_item_type_id = start_item_type.id
+  INNER JOIN item_type end_item_type
+    ON r.end_item_type_id = end_item_type.id
+  INNER JOIN model start_item_type_model
+    ON start_item_type_model.id = start_item_type.model_id
+  INNER JOIN model end_item_type_model
+    ON end_item_type_model.id = end_item_type.model_id
+  INNER JOIN link_type lt
+    ON lt.id = r.link_type_id
+  WHERE start_item_type_model.key = end_item_type_model.key
+    AND start_item_type_model.key = model_key_param;
+END;
+$BODY$;
+
+ALTER FUNCTION get_model_link_rules(character varying) OWNER TO onix;
 
 END
 $$;

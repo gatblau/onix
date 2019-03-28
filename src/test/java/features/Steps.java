@@ -309,7 +309,7 @@ public class Steps extends BaseTest {
         StringBuilder uri = new StringBuilder();
         uri.append((String)util.get(ITEM_URL));
 
-        if (util.containsKey(CONGIG_ITEM_TYPE_ID) || util.containsKey(CONFIG_ITEM_TAG) || util.containsKey(CONFIG_ITEM_UPDATED_FROM)) {
+        if (util.containsKey(CONGIG_ITEM_TYPE_ID) || util.containsKey(CONFIG_ITEM_TAG) || util.containsKey(CONFIG_ITEM_CREATED_FROM)) {
             uri.append("?");
         }
 
@@ -323,13 +323,13 @@ public class Steps extends BaseTest {
             uri.append("tag=").append(tag).append("&");
         }
 
-        if (util.containsKey(CONFIG_ITEM_UPDATED_FROM)) {
-            ZonedDateTime from = util.get(CONFIG_ITEM_UPDATED_FROM);
+        if (util.containsKey(CONFIG_ITEM_CREATED_FROM)) {
+            ZonedDateTime from = util.get(CONFIG_ITEM_CREATED_FROM);
             uri.append("createdFrom=").append(from.format(formatter)).append("&");
         }
 
-        if (util.containsKey(CONFIG_ITEM_UPDATED_TO)) {
-            ZonedDateTime to = util.get(CONFIG_ITEM_UPDATED_TO);
+        if (util.containsKey(CONFIG_ITEM_CREATED_TO)) {
+            ZonedDateTime to = util.get(CONFIG_ITEM_CREATED_TO);
             uri.append("createdTo=").append(to.format(formatter)).append("&");
         }
 
@@ -360,8 +360,8 @@ public class Steps extends BaseTest {
 
     @Given("^the filtering config item date range is known$")
     public void theFilteringConfigItemDateRangeIsKnown() throws Throwable {
-        util.put(CONFIG_ITEM_UPDATED_FROM, ZonedDateTime.of(ZonedDateTime.now().getYear() - 100, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()));
-        util.put(CONFIG_ITEM_UPDATED_TO, ZonedDateTime.of(ZonedDateTime.now().getYear() + 100, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()));
+        util.put(CONFIG_ITEM_CREATED_FROM, ZonedDateTime.of(ZonedDateTime.now().getYear() - 100, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()));
+        util.put(CONFIG_ITEM_CREATED_TO, ZonedDateTime.of(ZonedDateTime.now().getYear() + 100, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()));
     }
 
     @Given("^the natural key for the link is known$")
@@ -415,37 +415,18 @@ public class Steps extends BaseTest {
         putItem(ITEM_TWO_KEY, "payload/update_item_payload.json");
     }
 
-//    @Given("^two links between the two configuration items exist in the database$")
-//    public void twoLinksBetweenTheTwoConfigurationItemsExistInTheDatabase() throws Throwable {
-//        putLink(Key.LINK_ONE_KEY, "payload/create_link_payload.json");
-//        putLink(Key.LINK_TWO_KEY, "payload/create_link_payload.json");
-//    }
-
-    @When("^a GET HTTP request to the Link by Item resource is done$")
-    public void aGETHTTPRequestToTheLinkByItemResourceIsDone() throws Throwable {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json");
-        ResponseEntity<LinkList> result = client.exchange(
-            String.format((String)util.get(ENDPOINT_URI), baseUrl),
-            HttpMethod.GET,
-            new HttpEntity<>(null, headers),
-            LinkList.class,
-            (String)util.get(ITEM_ONE_KEY));
-        util.put(RESPONSE, result);
-    }
-
     @Then("^the response contains (\\d+) links$")
     public void theResponseContainsLinks(int count) throws Throwable {
         ResponseEntity<LinkList> response = util.get(RESPONSE);
 
         LinkList links = response.getBody();
         if (links != null) {
-            if (links.getItems().size() != count) {
+            if (links.getValues().size() != count) {
                 throw new RuntimeException(
                     String.format(
                         "Response does not contain '%s' but '%s' links.",
                         count,
-                        response.getBody().getItems().size()
+                        response.getBody().getValues().size()
                     )
                 );
             }
@@ -466,12 +447,12 @@ public class Steps extends BaseTest {
 
         ItemList items = response.getBody();
         if (items != null) {
-            if (items.getItems().size() <= count) {
+            if (items.getValues().size() <= count) {
                 throw new RuntimeException(
                     String.format(
                         "Response does not contain more than '%s' items but '%s' items.",
                         count,
-                        response.getBody().getItems().size()
+                        response.getBody().getValues().size()
                     )
                 );
             }
@@ -516,8 +497,8 @@ public class Steps extends BaseTest {
     @Then("^the response contains more than (\\d+) item types$")
     public void theResponseContainsMoreThanItemTypes(int items) {
         ResponseEntity<ItemTypeList> response = util.get(RESPONSE);
-        int actual = response.getBody().getItems().size();
-        if(response.getBody().getItems().size() <= items){
+        int actual = response.getBody().getValues().size();
+        if(response.getBody().getValues().size() <= items){
             throw new RuntimeException(String.format("Response contains %s items instead of %s items.", actual, items));
         }
     }
@@ -525,8 +506,8 @@ public class Steps extends BaseTest {
     @Then("^the response contains more than (\\d+) link rules$")
     public void theResponseContainsMoreThanLinkRules(int rules) {
         ResponseEntity<LinkRuleList> response = util.get(RESPONSE);
-        int actual = response.getBody().getItems().size();
-        if(response.getBody().getItems().size() <= rules){
+        int actual = response.getBody().getValues().size();
+        if(response.getBody().getValues().size() <= rules){
             throw new RuntimeException(String.format("Response contains %s items which is less than %s items.", actual, rules));
         }
     }
@@ -635,11 +616,11 @@ public class Steps extends BaseTest {
 
         LinkTypeList links = response.getBody();
         if (links != null) {
-            if (links.getItems().size() <= count) {
+            if (links.getValues().size() <= count) {
                 throw new RuntimeException(
                     String.format(
                         "Response contains '%s' links which is less than '%s' links.",
-                        response.getBody().getItems().size(),
+                        response.getBody().getValues().size(),
                         count
                     )
                 );
@@ -960,12 +941,12 @@ public class Steps extends BaseTest {
 
         TagList items = response.getBody();
         if (items != null) {
-            if (items.getItems().size() <= count) {
+            if (items.getValues().size() <= count) {
                 throw new RuntimeException(
                     String.format(
                         "Response does not contain more than '%s' but '%s' tags.",
                         count,
-                        response.getBody().getItems().size()
+                        response.getBody().getValues().size()
                     )
                 );
             }
@@ -992,32 +973,32 @@ public class Steps extends BaseTest {
 
     @Given("^the URL of the item tree get endpoint is known$")
     public void theURLOfTheItemTreeGetEndpointIsKnown() {
-        util.put(TAG_TREE_URL, String.format("%s/tree/{root_item_key}/{label}", baseUrl));
+        util.put(TAG_TREE_URL, String.format("%s/data/{item_key}/tag/{tag}", baseUrl));
     }
 
     @When("^a tag tree retrieval for the tag is requested$")
     public void aTagTreeRetrievalForTheTagIsRequested() {
         String url = util.get(TAG_TREE_URL);
         String itemRootKey = util.get(ROOT_ITEM_KEY);
-        String label = util.get(TAG_LABEL);
+        String tag = util.get(TAG_LABEL);
         Map<String, Object> vars = new HashMap<>();
-        vars.put("root_item_key", itemRootKey);
-        vars.put("label", label);
+        vars.put("item_key", itemRootKey);
+        vars.put("tag", tag);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
-        ResponseEntity<ItemTreeData> result = client.exchange(
+        ResponseEntity<GraphData> result = client.exchange(
                 url,
                 HttpMethod.GET,
                 new HttpEntity<>(null, headers),
-                ItemTreeData.class,
+                GraphData.class,
                 vars);
         util.put(RESPONSE, result);
     }
 
     @Then("^the result contains the tree items and links$")
     public void theResultContainsTheTreeItemsAndLinks() {
-        ResponseEntity<ItemTreeData> response = util.get(RESPONSE);
-        ItemTreeData tree = response.getBody();
+        ResponseEntity<GraphData> response = util.get(RESPONSE);
+        GraphData tree = response.getBody();
         if (tree != null) {
             if (tree.getItems().size() == 0 || tree.getLinks().size() == 0){
                 throw new RuntimeException("Tree does not contain items or links.");
@@ -1055,7 +1036,7 @@ public class Steps extends BaseTest {
     @Then("^the result list contains no errors$")
     public void theResultListContainsNoErrors() {
         ResponseEntity<ResultList> results = util.get(RESPONSE);
-        for (Result result : results.getBody().getItems()) {
+        for (Result result : results.getBody().getValues()) {
             if (result.isError()) {
                 throw new RuntimeException(String.format("Result contains an error as follows: '%s'", result.getMessage()));
             }
@@ -1093,7 +1074,7 @@ public class Steps extends BaseTest {
         ResponseEntity<ResultList> response = util.get(RESPONSE);
         ResultList results = response.getBody();
         boolean updateFound = false;
-        for (Result result : results.getItems()) {
+        for (Result result : results.getValues()) {
             updateFound = result.getOperation().equals("U");
             if (updateFound) break;
         }
@@ -1104,7 +1085,7 @@ public class Steps extends BaseTest {
 
     @Given("^the URL of the item tree DELETE endpoint is known$")
     public void theURLOfTheItemTreeDELETEEndpointIsKnown() {
-        util.put(DELETE_TREE_URL, String.format("%s/tree/{root_item_key}", baseUrl));
+        util.put(DELETE_TREE_URL, String.format("%s/data/{item_key}", baseUrl));
     }
 
     @Given("^the item key of the tree root item is known$")
@@ -1325,12 +1306,12 @@ public class Steps extends BaseTest {
 
         ModelDataList models = response.getBody();
         if (models != null) {
-            if (models.getItems().size() <= count) {
+            if (models.getValues().size() <= count) {
                 throw new RuntimeException(
                     String.format(
                         "Response does not contain '%s' but '%s' models.",
                         count,
-                        response.getBody().getItems().size())
+                        response.getBody().getValues().size())
                 );
             }
         }
@@ -1389,5 +1370,137 @@ public class Steps extends BaseTest {
         if (result.isError()){
             throw new RuntimeException(result.getMessage());
         }
+    }
+
+    @Given("^the link URL search with query parameters is known$")
+    public void theLinkURLSearchWithQueryParametersIsKnown() {
+        util.put(LINK_URL, String.format("%s/link", baseUrl));
+    }
+
+    @Given("^more than one link exist in the database$")
+    public void moreThanOneLinkExistInTheDatabase() {
+        putData("payload/create_data_payload.json");
+    }
+
+    @Given("^the filtering link type is known$")
+    public void theFilteringLinkTypeIsKnown() {
+        util.put(LINK_TYPE_FILTER, "ANSIBLE_INVENTORY");
+    }
+
+    @Given("^the filtering link tag is known$")
+    public void theFilteringLinkTagIsKnown() {
+        util.put(LINK_TAG_FILTER, "link|awesome");
+    }
+
+    @Given("^the filtering link date range is known$")
+    public void theFilteringLinkDateRangeIsKnown() {
+        util.put(LINK_CREATED_FROM_FILTER, ZonedDateTime.of(ZonedDateTime.now().getYear() - 100, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()));
+        util.put(LINK_CREATED_TO_FILTER, ZonedDateTime.of(ZonedDateTime.now().getYear() + 100, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()));
+    }
+
+    @Then("^the response contains more than (\\d+) links$")
+    public void theResponseContainsMoreThanLinks(int count) {
+        ResponseEntity<LinkList> response = util.get(RESPONSE);
+
+        LinkList links = response.getBody();
+        if (links != null) {
+            if (links.getValues().size() <= count) {
+                throw new RuntimeException(
+                    String.format(
+                        "Response does not contain '%s' but '%s' links.",
+                        count,
+                        response.getBody().getValues().size())
+                );
+            }
+        }
+        else {
+            throw new RuntimeException(
+                String.format(
+                    "Response contains no links where '%s' were expected.",
+                    count
+                )
+            );
+        }
+    }
+
+    @When("^a GET HTTP request to the Link uri is done with query parameters$")
+    public void aGETHTTPRequestToTheLinkUriIsDoneWithQueryParameters() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+
+        StringBuilder uri = new StringBuilder();
+        uri.append((String)util.get(LINK_URL));
+
+        if (util.containsKey(LINK_TAG_FILTER) || util.containsKey(LINK_TYPE_FILTER) || util.containsKey(LINK_CREATED_FROM_FILTER)) {
+            uri.append("?");
+        }
+
+        if (util.containsKey(LINK_TYPE_FILTER)) {
+            String typeKey = util.get(LINK_TYPE_FILTER);
+            uri.append("type=").append(typeKey).append("&");
+        }
+
+        if (util.containsKey(LINK_TAG_FILTER)) {
+            String tag = util.get(LINK_TAG_FILTER);
+            uri.append("tag=").append(tag).append("&");
+        }
+
+        if (util.containsKey(LINK_CREATED_FROM_FILTER)) {
+            ZonedDateTime from = util.get(LINK_CREATED_FROM_FILTER);
+            uri.append("createdFrom=").append(from.format(formatter)).append("&");
+        }
+
+        if (util.containsKey(LINK_CREATED_TO_FILTER)) {
+            ZonedDateTime to = util.get(LINK_CREATED_TO_FILTER);
+            uri.append("createdTo=").append(to.format(formatter)).append("&");
+        }
+
+        String uriString = uri.toString();
+        if (uriString.endsWith("&")) {
+            uriString = uriString.substring(0, uriString.length() - 1);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<LinkList> result = client.exchange(
+                uriString,
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                LinkList.class);
+        util.put(RESPONSE, result);
+    }
+
+    @Given("^an item link natural key is known$")
+    public void anItemLinkNaturalKeyIsKnown() {
+        util.put(LINK_KEY, "link_type_1");
+    }
+
+    @Given("^the link URL search by key is known$")
+    public void theLinkURLSearchByKeyIsKnown() {
+        util.put(LINK_WITH_KEY_URL, String.format("%s/link/{key}", baseUrl));
+    }
+
+    @Given("^the link exists in the database$")
+    public void theLinkExistsInTheDatabase() {
+        putLink(util.get(LINK_KEY), "payload/create_link_payload.json");
+    }
+
+    @When("^a GET HTTP request to the Link with Key URL is done$")
+    public void aGETHTTPRequestToTheLinkWithKeyURLIsDone() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<LinkData> result = client.exchange(
+                String.format((String)util.get(LINK_WITH_KEY_URL), baseUrl),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                LinkData.class,
+                (String)util.get(LINK_KEY));
+        util.put(RESPONSE, result);
+    }
+
+    @Then("^the reponse contains the requested link$")
+    public void theReponseContainsTheRequestedLink() {
+        ResponseEntity<LinkData> response = util.get(RESPONSE);
+        LinkData link = response.getBody();
+        assert(link != null);
     }
 }

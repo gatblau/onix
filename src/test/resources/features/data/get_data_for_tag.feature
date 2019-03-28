@@ -1,4 +1,4 @@
-Feature: Get Item Tree for a specified Tag
+Feature: Get Item and children for a specified Tag
   As an API user
   I want to retrieve all items and links that are associated with a root item
     that has a tag identified by a label

@@ -35,7 +35,7 @@ public class ResultList extends Wrapper<Result> {
             if (result.isChanged()) {
                 changed = true;
             }
-            getItems().add(result);
+            getValues().add(result);
         }
     }
 }

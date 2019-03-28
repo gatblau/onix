@@ -1,4 +1,4 @@
-Feature: Delete an existing Item Tree
+Feature: Delete an existing Item and children
   As an API user
   I want to delete all items and links that define a particular configuration
   So that I facilitate the removal of large amount of configuration data at once.
