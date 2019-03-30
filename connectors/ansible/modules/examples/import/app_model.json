@@ -1,0 +1,101 @@
+{
+    "models": [
+    {
+        "key": "APP_MODEL",
+        "name": "Application Meta Model.",
+        "description": "Describes the item and link types required to represent an Application in the CMDB."
+    }],
+    "itemTypes": [
+    {
+        "key": "APPLICATION",
+        "name": "Software Application",
+        "description": "A Software Application.",
+        "modelKey": "APP_MODEL"
+    },
+    {
+        "key": "WEB_SERVICE",
+        "name": "Web Service",
+        "description": "A web service that is part of an application.",
+        "modelKey": "APP_MODEL"
+    },
+    {
+        "key": "DATA_SERVICE",
+        "name": "Data Service",
+        "description": "A data service that is part of an application.",
+        "modelKey": "APP_MODEL"
+    },
+    {
+        "key": "APPLICATION_RUNTIME",
+        "name": "Application Runtime",
+        "description": "A runtime used by an application.",
+        "modelKey": "APP_MODEL"
+    },
+    {
+        "key": "DATABASE_SERVER",
+        "name": "Database Server",
+        "description": "A database server used by an application.",
+        "modelKey": "APP_MODEL"
+    },
+    {
+        "key": "HOST",
+        "name": "A server host",
+        "description": "A host server used by an application.",
+        "modelKey": "APP_MODEL"
+    }],
+    "linkTypes": [
+    {
+        "key": "APPLICATION",
+        "name": "Software Application Link",
+        "description": "Links application services.",
+        "modelKey": "APP_MODEL"
+    }],
+    "linkRules": [
+    {
+        "key": "APPLICATION->WEB-SERVICE",
+        "linkTypeKey": "APPLICATION",
+        "startItemTypeKey": "APPLICATION",
+        "endItemTypeKey": "WEB_SERVICE",
+        "name": "Software Application to Web Service Link Rule.",
+        "description": "Allows linking application items with web-service items."
+    },
+    {
+        "key": "APPLICATION->DATA-SERVICE",
+        "linkTypeKey": "APPLICATION",
+        "startItemTypeKey": "APPLICATION",
+        "endItemTypeKey": "DATA_SERVICE",
+        "name": "Software Application to Data Service Link Rule.",
+        "description": "Allows linking application items with data-service items."
+    },
+    {
+        "key": "APPLICATION-RUNTIME->HOST",
+        "linkTypeKey": "APPLICATION",
+        "startItemTypeKey": "APPLICATION_RUNTIME",
+        "endItemTypeKey": "HOST",
+        "name": "Software Application Runtime to Host Link Rule.",
+        "description": "Allows linking application runtime items with host items."
+    },
+    {
+        "key": "DATABASE-SERVER->HOST",
+        "linkTypeKey": "APPLICATION",
+        "startItemTypeKey": "DATABASE_SERVER",
+        "endItemTypeKey": "HOST",
+        "name": "Database Server to Host Rule.",
+        "description": "Allows linking database server items with host items."
+    },
+    {
+        "key": "WEB-SERVICE->APPLICATION-RUNTIME",
+        "linkTypeKey": "APPLICATION",
+        "startItemTypeKey": "WEB_SERVICE",
+        "endItemTypeKey": "APPLICATION_RUNTIME",
+        "name": "Web Service to Application Runtime Rule.",
+        "description": "Allows linking web service items with application-runtime items."
+    },
+    {
+        "key": "DATA-SERVICE->DATABASE-SERVER",
+        "linkTypeKey": "APPLICATION",
+        "startItemTypeKey": "DATA_SERVICE",
+        "endItemTypeKey": "DATABASE_SERVER",
+        "name": "Web Service to Application Runtime Rule.",
+        "description": "Allows linking data service items with database server items."
+    }]
+}

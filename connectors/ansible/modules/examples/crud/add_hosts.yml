@@ -1,0 +1,182 @@
+---
+- name: Creates a configuration item for Host A
+  ox_item:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "HOST-A"
+    name: "HOST A - ONIX WAPI"
+    description: "Onix Web Service Host"
+    type: "HOST"
+    status: 1
+    meta: {
+      Host: {
+        name: "ONIX-WEB-01",
+        IP: "192.168.0.1",
+        type: "VM"
+      },
+      OS: {
+        type: "RHEL",
+        version: "7.5"
+      },
+      CloudProvider: {
+        name: "AWS-EC2",
+        region: "Ireland",
+        zone: "1"
+      },
+      JDK: {
+        available: "true",
+        version: "1.8"
+      }
+    }
+    tag:
+      - "onix"
+      - "wapi"
+      - "ec2"
+    attribute:
+      WBS: "EU-00023.100002.984"
+      PROJECT: "TheOnixProject"
+      LOCATION: "IRELAND"
+
+- name: Creates a configuration item for Host B
+  ox_item:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "HOST-B"
+    name: "HOST B - ONIX WAPI"
+    description: "Onix Web Service Host"
+    type: "HOST"
+    status: 1
+    meta: {
+      Host: {
+        name: "ONIX-WEB-02",
+        IP: "192.168.0.2",
+        type: "VM"
+      },
+      OS: {
+        type: "RHEL",
+        version: "7.5"
+      },
+      CloudProvider: {
+        name: "AWS-EC2",
+        region: "Ireland",
+        zone: "2"
+      },
+      JDK: {
+        available: "true",
+        version: "1.8"
+      }
+    }
+    tag:
+      - "onix"
+      - "wapi"
+      - "ec2"
+    attribute:
+      WBS: "EU-00023.100002.984"
+      PROJECT: "TheOnixProject"
+      LOCATION: "IRELAND"
+
+- name: Creates a configuration item for Host C
+  ox_item:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "HOST-C"
+    name: "HOST C - ONIX WAPI"
+    description: "Onix Web Service Host"
+    type: "HOST"
+    status: 1
+    meta: {
+      Host: {
+        name: "ONIX-WEB-03",
+        IP: "192.168.0.3",
+        type: "VM"
+      },
+      OS: {
+        type: "RHEL",
+        version: "7.5"
+      },
+      CloudProvider: {
+        name: "AWS-EC2",
+        region: "Ireland",
+        zone: "3"
+      },
+      JDK: {
+        available: "true",
+        version: "1.8"
+      }
+    }
+    tag:
+      - "onix"
+      - "wapi"
+      - "ec2"
+    attribute:
+      WBS: "EU-00023.100002.984"
+      PROJECT: "TheOnixProject"
+      LOCATION: "IRELAND"
+
+- name: Creates a configuration item for Host D
+  ox_item:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "HOST-D"
+    name: "HOST D - ONIX DB"
+    description: "Onix Data Service Host"
+    type: "HOST"
+    status: 1
+    meta: {
+      Host: {
+        name: "ONIX-DB-01",
+        IP: "211.001.0.5",
+        type: "VM"
+      },
+      OS: {
+        type: "RHEL",
+        version: "7.5"
+      },
+      CloudProvider: {
+        name: "AWS-EC2",
+        region: "N. California",
+        zone: "3"
+      }
+    }
+    tag:
+      - "onix"
+      - "wapi"
+      - "ec2"
+    attribute:
+      WBS: "EU-00023.100002.984"
+      PROJECT: "TheOnixProject"
+      LOCATION: "USA"
+
+- name: Creates a configuration item for Host E
+  ox_item:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "HOST-E"
+    name: "HOST E - ONIX DB"
+    description: "Onix Data Service Host"
+    type: "HOST"
+    status: 1
+    meta: {
+      Host: {
+        name: "ONIX-DB-02",
+        IP: "211.001.0.8",
+        type: "VM"
+      },
+      OS: {
+        type: "RHEL",
+        version: "7.5"
+      },
+      CloudProvider: {
+        name: "AWS-EC2",
+        region: "N. California",
+        zone: "3"
+      }
+    }
+    tag:
+      - "onix"
+      - "wapi"
+      - "ec2"
+    attribute:
+      WBS: "EU-00023.100002.984"
+      PROJECT: "TheOnixProject"
+      LOCATION: "USA"

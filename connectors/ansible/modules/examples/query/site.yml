@@ -1,0 +1,38 @@
+- hosts: localhost
+  tasks:
+    - name: configure access to Onix
+      ox_setup:
+        uri: "{{ wapi_uri }}" # the URL where the Onix WAPI is listening
+        username: "{{ user }}" # the username for basic authentication
+        password: "{{ pwd }}" # the password for basic authentication
+        auth_mode: "basic" # the authentication to use (e.g. none, basic, oidc)
+
+    - name: import a model and items from file
+      ox_import:
+        uri: "{{ ox_uri }}"
+        token: "{{ ox_token }}"
+        src: "node_data.json"
+
+    - name: query item data
+      ox_query:
+        uri: "{{ ox_uri }}"
+        token: "{{ ox_token }}"
+        type: "item" # can also use link, link_type, item_type, model, link_rule
+        key: "NODE_1"
+      register: result
+
+    - name: print whole query result
+      debug:
+        var: result
+
+    - name: print item metadata
+      debug:
+        var: result.meta
+
+    - name: print item attributes
+      debug:
+        var: result.attribute
+
+    - name: print item tags
+      debug:
+        var: result.tag
