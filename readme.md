@@ -9,7 +9,7 @@ Onix is a lightweight configuration management database (CMDB) accessible via a 
 - [Installing Onix CMDB](./docs/installation.md)
 - [CMDB Model](./docs/model.md)
 - [Web API](./docs/wapi.md)
-- [Connectors]([./connectors/readme.md))
+- [Connectors]([./connectors/readme.md)
 
 
 ## License Terms
