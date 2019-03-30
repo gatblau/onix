@@ -1,0 +1,77 @@
+{
+  "models": [
+    {
+      "key": "ANSIBLE_MODEL",
+      "name": "Ansible Inventory Meta Model.",
+      "description": "Describes the item and link types required to represent an Ansible inventory in the CMDB."
+    }
+  ],
+  "itemTypes": [
+    {
+      "key": "ANSIBLE_INVENTORY",
+      "name": "Ansible Inventory",
+      "description": "The type of an Ansible inventory CI.",
+      "modelKey": "ANSIBLE_MODEL"
+    },
+    {
+      "key": "ANSIBLE_HOST_GROUP_GROUP",
+      "name": "Ansible Host Group Set",
+      "description": "The type of an Ansible inventory Group of Groups CI.",
+      "modelKey": "ANSIBLE_MODEL"
+    },
+    {
+      "key": "ANSIBLE_HOST_GROUP",
+      "name": "Ansible Host Group",
+      "description": "The type of an Ansible inventory Host Group CI.",
+      "modelKey": "ANSIBLE_MODEL"
+    },
+    {
+      "key": "ANSIBLE_HOST",
+      "name": "Ansible Host",
+      "description": "The type of an Ansible inventory Host.",
+      "modelKey": "ANSIBLE_MODEL"
+    }
+  ],
+  "linkTypes": [
+    {
+      "key": "ANSIBLE_INVENTORY",
+      "name": "Ansible Inventory Link",
+      "description": "The type of links joining CIs in an Ansible inventory.",
+      "modelKey": "ANSIBLE_MODEL"
+    }
+  ],
+  "linkRules": [
+    {
+      "key": "ANSIBLE-INVENTORY->ANSIBLE-HOST-GROUP-GROUP",
+      "name": "Inventory to Group of Host Groups link rule.",
+      "description": "Allows to link an inventory with a group of host groups.",
+      "linkTypeKey": "ANSIBLE_INVENTORY",
+      "startItemTypeKey": "ANSIBLE_INVENTORY",
+      "endItemTypeKey": "ANSIBLE_HOST_GROUP_GROUP"
+    },
+    {
+      "key": "ANSIBLE-INVENTORY->ANSIBLE-HOST-GROUP",
+      "name": "Inventory to Host Groups link rule.",
+      "description": "Allows to link an inventory with a host group.",
+      "linkTypeKey": "ANSIBLE_INVENTORY",
+      "startItemTypeKey": "ANSIBLE_INVENTORY",
+      "endItemTypeKey": "ANSIBLE_HOST_GROUP"
+    },
+    {
+      "key": "ANSIBLE-HOST-GROUP-SET->ANSIBLE-HOST-GROUP",
+      "name": "Group to Host Groups to Host Groups link rule.",
+      "description": "Allows to link a group of host groups with a host group.",
+      "linkTypeKey": "ANSIBLE_INVENTORY",
+      "startItemTypeKey": "ANSIBLE_HOST_GROUP_GROUP",
+      "endItemTypeKey": "ANSIBLE_HOST_GROUP"
+    },
+    {
+      "key": "ANSIBLE-HOST-GROUP->HOST",
+      "name": "Host Group to Host link rule.",
+      "description": "Allows to link a host group with a host.",
+      "linkTypeKey": "ANSIBLE_INVENTORY",
+      "startItemTypeKey": "ANSIBLE_HOST_GROUP",
+      "endItemTypeKey": "ANSIBLE_HOST"
+    }
+  ]
+}

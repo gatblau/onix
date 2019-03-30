@@ -1,0 +1,67 @@
+---
+- name: Creates the Application to Web Service Link Rule
+  ox_link_rule:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "APPLICATION->WEB-SERVICE"
+    linkTypeKey: "APPLICATION"
+    startItemTypeKey: "APPLICATION"
+    endItemTypeKey: "WEB-SERVICE"
+    name: "Software Application to Web Service Link Rule."
+    description: "Allows linking application items with web-service items."
+
+- name: Creates the Application to Data Service Link Rule
+  ox_link_rule:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "APPLICATION->DATA-SERVICE"
+    linkTypeKey: "APPLICATION"
+    startItemTypeKey: "APPLICATION"
+    endItemTypeKey: "DATA-SERVICE"
+    name: "Software Application to Data Service Link Rule."
+    description: "Allows linking application items with data-service items."
+
+- name: Creates the Application Runtime to Host Link Rule
+  ox_link_rule:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "APPLICATION-RUNTIME->HOST"
+    linkTypeKey: "APPLICATION"
+    startItemTypeKey: "APPLICATION-RUNTIME"
+    endItemTypeKey: "HOST"
+    name: "Software Application Runtime to Host Link Rule."
+    description: "Allows linking application runtime items with host items."
+
+- name: Creates the Database Server to Host Link Rule
+  ox_link_rule:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "DATABASE-SERVER->HOST"
+    linkTypeKey: "APPLICATION"
+    startItemTypeKey: "DATABASE-SERVER"
+    endItemTypeKey: "HOST"
+    name: "Database Server to Host Rule."
+    description: "Allows linking database server items with host items."
+
+- name: Creates the Web Service to Application Runtime Link Rule
+  ox_link_rule:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "WEB-SERVICE->APPLICATION-RUNTIME"
+    linkTypeKey: "APPLICATION"
+    startItemTypeKey: "WEB-SERVICE"
+    endItemTypeKey: "APPLICATION-RUNTIME"
+    name: "Web Service to Application Runtime Rule."
+    description: "Allows linking web service items with application-runtime items."
+
+- name: Creates the Web Service to Application Runtime Link Rule
+  ox_link_rule:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "DATA-SERVICE->DATABASE-SERVER"
+    linkTypeKey: "APPLICATION"
+    startItemTypeKey: "DATA-SERVICE"
+    endItemTypeKey: "DATABASE-SERVER"
+    name: "Web Service to Application Runtime Rule."
+    description: "Allows linking data service items with database server items."
+...

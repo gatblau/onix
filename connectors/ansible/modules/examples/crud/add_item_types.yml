@@ -1,0 +1,54 @@
+---
+- name: Creates the Application Item Type
+  ox_item_type:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "APPLICATION"
+    name: "Software Application"
+    description: "A Software Application."
+    modelKey: "APPLICATION_MODEL"
+
+- name: Creates the Web Service Item Type
+  ox_item_type:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "WEB-SERVICE"
+    name: "Web Service"
+    description: "A web service that is part of an application."
+    modelKey: "APPLICATION_MODEL"
+
+- name: Creates the Data Service Item Type
+  ox_item_type:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "DATA-SERVICE"
+    name: "Data Service"
+    description: "A data service that is part of an application."
+    modelKey: "APPLICATION_MODEL"
+
+- name: Creates the Application Runtime Item Type
+  ox_item_type:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "APPLICATION-RUNTIME"
+    name: "Application Runtime"
+    description: "A runtime used by an application."
+    modelKey: "APPLICATION_MODEL"
+
+- name: Creates the Application Item Type
+  ox_item_type:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "DATABASE-SERVER"
+    name: "Database Server"
+    description: "A database server used by an application."
+    modelKey: "APPLICATION_MODEL"
+
+- name: Creates the Host Item Type
+  ox_item_type:
+    uri: "{{ ox_uri }}"
+    token: "{{ ox_token }}"
+    key: "HOST"
+    name: "A server host"
+    description: "A host server used by an application."
+    modelKey: "APPLICATION_MODEL"

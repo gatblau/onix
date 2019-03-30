@@ -1,0 +1,36 @@
+{
+    "models": [
+    {
+        "key": "NODE_MODEL",
+        "name": "Node Meta Model.",
+        "description": "A meta model for representing linked nodes."
+    }],
+    "itemTypes": [
+    {
+        "key": "NODE",
+        "name": "Node",
+        "description": "A Node.",
+        "modelKey": "NODE_MODEL"
+    }],
+    "items": [
+    {
+        "key": "NODE_1",
+        "name": "Node 1",
+        "description": "The first node",
+        "type": "NODE",
+        "modelKey": "NODE_MODEL",
+        "attribute": {
+            "Attribute_1": "Value 1",
+            "Attribute_2": "Value 2"
+        },
+        "meta": {
+            "key_1": "value_1",
+            "key_2": "value_2"
+        },
+        "tag": [
+            "onix",
+            "wapi",
+            "ec2"
+        ]
+    }]
+}

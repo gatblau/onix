@@ -1,0 +1,14 @@
+- hosts: localhost
+  tasks:
+    - name: configure access to Onix
+      ox_setup:
+        uri: "{{ wapi_uri }}" # the URL where the Onix WAPI is listening
+        username: "{{ user }}" # the username for basic authentication
+        password: "{{ pwd }}" # the password for basic authentication
+        auth_mode: "basic" # the authentication to use (e.g. none, basic, oidc)
+
+    - name: import a meta model in file
+      ox_import:
+        uri: "{{ ox_uri }}"
+        token: "{{ ox_token }}"
+        src: "app_model.json"
