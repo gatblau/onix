@@ -2,7 +2,7 @@
 
 This example shows how to use the inventory plugin to read inventories from the CMDB.
 
-In order to use the plugin, ensure the plugin is installed in the control node as described [here](../../plugins/inventory/readme.md).
+In order to use the plugin, ensure the plugin is installed in the control node as described [here](../readme.md).
 
 Then follow the steps below.
 
@@ -12,7 +12,7 @@ The Onix WAPI is the Web API allowing reading and writing CI information to/from
 For the purpose of this example, it can be installed easily in containerised form.
 Ensure you have [docker compose](https://docs.docker.com/compose/) installed in your machine and understand how to use it.
 
-Run docker compose with this [docker-compose.yml](./../docker-compose.yml) file.
+Run docker compose with this [docker-compose.yml](./../../../../install/container/docker-compose.yml) file.
 
 Then run the following command from a linux terminal:
 
