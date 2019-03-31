@@ -69,7 +69,7 @@ To import the meta model follow the steps shown [here](./meta_model/readme.md).
 
 ## Trying it out
 
-In order to try the plugin out, see an example in the [samples folder](./examples/readme.md).
+In order to try the plugin out, see an example in the [examples folder](./examples/readme.md).
 
 ### NOTE
 This plugin is based on the Tower plugin by Matthew Jones and Yunfan Zhang as shown [here](https://github.com/ansible/ansible/blob/stable-2.7/lib/ansible/plugins/inventory/tower.py).
