@@ -35,38 +35,53 @@ func checkResult(result *Result, err error, msg string, t *testing.T) {
 	}
 }
 
+func checkError(err error, msg string, t *testing.T){
+	if err != nil {
+		t.Error(msg, err)
+	}
+}
+
 func TestOnixClient_Put(t *testing.T) {
-	model := Model{
+	msg := "create test_model failed"
+	model := Model {
 		Name:        "Test Model",
 		Description: "Test Model",
 	}
-	result, err := client.Put("model", "test_model", model.ToJSON())
-	checkResult(result, err, "create test_model failed", t)
+	modelBytes, err := model.ToJSON()
+	checkError(err, msg, t)
+	result, err := client.Put("model", "test_model", modelBytes)
+	checkResult(result, err, msg, t)
 
-	itemType := ItemType{
+	itemType := ItemType {
 		Name:        "Test Item Type",
 		Description: "Test Item Type",
 		Model:       "test_model",
 	}
-	result, err = client.Put("itemtype", "test_item_type", itemType.ToJSON())
+	itemTypeBytes, err := itemType.ToJSON()
+	checkError(err, "create test_item_type failed", t)
+	result, err = client.Put("itemtype", "test_item_type", itemTypeBytes)
 	checkResult(result, err, "create test_item_type failed", t)
 
-	item_1 := Item{
+	item_1 := Item {
 		Name:        "Item 1",
 		Description: "Test Item 1",
 		Status:      1,
 		Type:        "test_item_type",
 	}
-	result, err = client.Put("item", "item_1", item_1.ToJSON())
+	item_1_Bytes, err := item_1.ToJSON()
+	checkError(err, "create item_1 failed", t)
+	result, err = client.Put("item", "item_1", item_1_Bytes)
 	checkResult(result, err, "create item_1 failed", t)
 
-	item_2 := Item{
+	item_2 := Item {
 		Name:        "Item 2",
 		Description: "Test Item 2",
 		Status:      2,
 		Type:        "test_item_type",
 	}
-	result, err = client.Put("item", "item_2", item_2.ToJSON())
+	item_2_Bytes, err := item_2.ToJSON()
+	checkError(err, "create item_2 failed", t)
+	result, err = client.Put("item", "item_2", item_2_Bytes)
 	checkResult(result, err, "create item_2 failed", t)
 
 	link_type := LinkType{
@@ -74,7 +89,9 @@ func TestOnixClient_Put(t *testing.T) {
 		Description: "Test Link Type",
 		Model:       "test_model",
 	}
-	result, err = client.Put("linktype", "test_link_type", link_type.ToJSON())
+	link_type_Bytes, err := link_type.ToJSON()
+	checkError(err, "create test_link_type failed", t)
+	result, err = client.Put("linktype", "test_link_type", link_type_Bytes)
 	checkResult(result, err, "create test_link_type failed", t)
 
 	link_rule := LinkRule{
@@ -84,7 +101,9 @@ func TestOnixClient_Put(t *testing.T) {
 		StartItemTypeKey: "test_item_type",
 		EndItemTypeKey:   "test_item_type",
 	}
-	result, err = client.Put("linkrule", "test_item_type->test_item_type", link_rule.ToJSON())
+	link_rule_Bytes, err := link_rule.ToJSON()
+	checkError(err, "create test_item_type->test_item_type failed", t)
+	result, err = client.Put("linkrule", "test_item_type->test_item_type", link_rule_Bytes)
 	checkResult(result, err, "create test_item_type->test_item_type rule failed", t)
 
 	link := Link{
@@ -93,6 +112,8 @@ func TestOnixClient_Put(t *testing.T) {
 		StartItemKey: "item_1",
 		EndItemKey:   "item_2",
 	}
-	result, err = client.Put("link", "link_1", link.ToJSON())
+	link_Bytes, err := link.ToJSON()
+	checkError(err, "create link_1 failed", t)
+	result, err = client.Put("link", "link_1", link_Bytes)
 	checkResult(result, err, "create link_1 failed", t)
 }

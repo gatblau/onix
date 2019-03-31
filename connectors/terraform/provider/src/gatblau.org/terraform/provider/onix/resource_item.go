@@ -84,12 +84,14 @@ func createItem(data *schema.ResourceData, m interface{}) error {
 		Attribute:   attribute,
 		Tag:         tag,
 	}
-	result, err := client.Put("item", key, item.ToJSON())
-
+	itembytes, err := item.ToJSON()
+	if err != nil {
+		return err
+	}
+	result, err := client.Put("item", key, itembytes)
 	if e := check(result, err); e != nil {
 		return e
 	}
-
 	data.SetId(item.Key)
 
 	return nil
