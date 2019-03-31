@@ -29,7 +29,7 @@ type ItemType struct {
 	Model       string                 `json:"modelKey"`
 }
 
-func (itemType *ItemType) ToJSON() *bytes.Reader {
+func (itemType *ItemType) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(itemType)
 }
 
@@ -44,7 +44,7 @@ type Item struct {
 	Attribute   map[string]interface{} `json:"attribute"`
 }
 
-func (item *Item) ToJSON() *bytes.Reader {
+func (item *Item) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(item)
 }
 
@@ -59,7 +59,7 @@ type Link struct {
 	EndItemKey   string                 `json:"endItemKey"`
 }
 
-func (link *Link) ToJSON() *bytes.Reader {
+func (link *Link) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(link)
 }
 
@@ -72,7 +72,7 @@ type LinkType struct {
 	Model       string                 `json:"modelKey"`
 }
 
-func (linkType *LinkType) ToJSON() *bytes.Reader {
+func (linkType *LinkType) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(linkType)
 }
 
@@ -85,7 +85,7 @@ type LinkRule struct {
 	EndItemTypeKey   string `json:"endItemTypeKey"`
 }
 
-func (linkRule *LinkRule) ToJSON() *bytes.Reader {
+func (linkRule *LinkRule) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(linkRule)
 }
 
@@ -95,14 +95,11 @@ type Model struct {
 	Description string `json:"description"`
 }
 
-func (model *Model) ToJSON() *bytes.Reader {
+func (model *Model) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(model)
 }
 
-func getJSONBytesReader(data interface{}) *bytes.Reader {
+func getJSONBytesReader(data interface{}) (*bytes.Reader, error) {
 	jsonBytes, err := json.Marshal(data)
-	if err != nil {
-		panic(err)
-	}
-	return bytes.NewReader(jsonBytes)
+	return bytes.NewReader(jsonBytes), err
 }
