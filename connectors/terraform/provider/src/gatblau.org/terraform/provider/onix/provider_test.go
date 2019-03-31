@@ -15,23 +15,13 @@
 package main
 
 import (
-	"github.com/hashicorp/terraform/helper/schema"
+	"testing"
 )
 
-func importResx() *schema.Resource {
-	return &schema.Resource{
-		Create: putData,
-		Update: putData,
-		Schema: map[string]*schema.Schema{
-			"data": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-			},
-		},
+// verify the structure of the provider and all of the resources,
+// and reports an error if it is invalid.
+func TestProvider(t *testing.T) {
+	if err := Provider().InternalValidate(); err != nil {
+		t.Fatalf("err: %s", err)
 	}
-}
-
-func putData(d *schema.ResourceData, m interface{}) error {
-	return nil
 }
