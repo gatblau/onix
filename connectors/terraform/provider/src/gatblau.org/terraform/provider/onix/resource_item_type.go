@@ -22,9 +22,9 @@ import "github.com/hashicorp/terraform/helper/schema"
 */
 func ItemTypeResource() *schema.Resource {
 	return &schema.Resource{
-		Create: createItemType,
+		Create: createOrUpdateItemType,
 		Read:   readItemType,
-		Update: updateItemType,
+		Update: createOrUpdateItemType,
 		Delete: deleteItemType,
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
@@ -40,18 +40,31 @@ func ItemTypeResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"model_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
 		},
 	}
 }
 
-func createItemType(d *schema.ResourceData, m interface{}) error {
-	return nil
+func createOrUpdateItemType(data *schema.ResourceData, m interface{}) error {
+	return put(data, m, itemTypePayload(data), "itemtype")
 }
 
-func updateItemType(d *schema.ResourceData, m interface{}) error {
-	return nil
+func deleteItemType(data *schema.ResourceData, m interface{}) error {
+	return delete(data, m, itemTypePayload(data), "itemtype")
 }
 
-func deleteItemType(d *schema.ResourceData, m interface{}) error {
-	return nil
+func itemTypePayload(data *schema.ResourceData) Payload {
+	key := data.Get("key").(string)
+	name := data.Get("name").(string)
+	description := data.Get("description").(string)
+	modelKey := data.Get("model_key").(string)
+	return &ItemType{
+		Key:         key,
+		Name:        name,
+		Description: description,
+		Model:       modelKey,
+	}
 }

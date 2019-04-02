@@ -14,8 +14,13 @@
 */
 package main
 
-import "errors"
+import (
+	"bytes"
+	"errors"
+	"github.com/hashicorp/terraform/helper/schema"
+)
 
+// Check for errors in the result and the passed in error
 func check(result *Result, err error) error {
 	if err != nil {
 		return err
@@ -24,4 +29,66 @@ func check(result *Result, err error) error {
 	} else {
 		return nil
 	}
+}
+
+// Configuration information for the Terraform provider
+type Config struct {
+	URI    string
+	User   string
+	Pwd    string
+	Client Client
+}
+
+// Interface implemented by all payload objects to enable
+// generic key extraction and conversion to byte Reader
+type Payload interface {
+	KeyValue() string
+	ToJSON() (*bytes.Reader, error)
+}
+
+// Executes an HTTP PUT request to the Onix WAPI passing the following parameters:
+// - data: a Terraform *schema.ResourceData
+// - m: the Terraform provider metadata
+// - payload: the payload object
+// - resourceName: the WAPI resource name (e.g. item, itemtype, link, etc.)
+func put(data *schema.ResourceData, m interface{}, payload Payload, resourceName string) error {
+	// get the Config instance from the meta object passed-in
+	cfg := m.(Config)
+
+	// converts the passed-in payload to a bytes Reader
+	bytes, err := payload.ToJSON()
+
+	// any errors are returned immediately
+	if err != nil {
+		return err
+	}
+
+	// make an http put request to the service
+	result, err := cfg.Client.Put(resourceName, payload.KeyValue(), bytes)
+
+	// any errors are returned
+	if e := check(result, err); e != nil {
+		return e
+	}
+
+	// sets the id in the resource data
+	data.SetId(payload.KeyValue())
+
+	// return no error
+	return nil
+}
+
+func delete(data *schema.ResourceData, m interface{}, payload Payload, resourceName string) error {
+	// get the Config instance from the meta object passed-in
+	cfg := m.(Config)
+
+	// make an http put request to the service
+	result, err := cfg.Client.Delete(resourceName, payload.KeyValue())
+
+	// any errors are returned
+	if e := check(result, err); e != nil {
+		return e
+	}
+
+	return nil
 }

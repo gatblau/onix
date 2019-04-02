@@ -22,9 +22,9 @@ import "github.com/hashicorp/terraform/helper/schema"
 */
 func ItemResource() *schema.Resource {
 	return &schema.Resource{
-		Create: createItem,
+		Create: createOrUpdateItem,
 		Read:   readItem,
-		Update: updateItem,
+		Update: createOrUpdateItem,
 		Delete: deleteItem,
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
@@ -53,7 +53,7 @@ func ItemResource() *schema.Resource {
 			},
 			"tag": &schema.Schema{
 				Type:     schema.TypeList,
-				Elem:     schema.TypeString,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
 			},
 			"attribute": &schema.Schema{
@@ -64,43 +64,22 @@ func ItemResource() *schema.Resource {
 	}
 }
 
-func createItem(data *schema.ResourceData, m interface{}) error {
-	client := m.(Client)
-
-	key := data.Get("key").(string)
-	name := data.Get("name").(string)
-	description := data.Get("description").(string)
-	itemtype := data.Get("type").(string)
-	meta := data.Get("meta").(map[string]interface{})
-	attribute := data.Get("attribute").(map[string]interface{})
-	tag := data.Get("tag").([]interface{})
-
-	item := Item{
-		Key:         key,
-		Name:        name,
-		Description: description,
-		Type:        itemtype,
-		Meta:        meta,
-		Attribute:   attribute,
-		Tag:         tag,
-	}
-	itembytes, err := item.ToJSON()
-	if err != nil {
-		return err
-	}
-	result, err := client.Put("item", key, itembytes)
-	if e := check(result, err); e != nil {
-		return e
-	}
-	data.SetId(item.Key)
-
-	return nil
+func createOrUpdateItem(data *schema.ResourceData, m interface{}) error {
+	return put(data, m, itemPayload(data), "item")
 }
 
-func updateItem(d *schema.ResourceData, m interface{}) error {
-	return nil
+func deleteItem(data *schema.ResourceData, m interface{}) error {
+	return delete(data, m, itemPayload(data), "item")
 }
 
-func deleteItem(d *schema.ResourceData, m interface{}) error {
-	return nil
+func itemPayload(data *schema.ResourceData) Payload {
+	return &Item{
+		Key:         data.Get("key").(string),
+		Name:        data.Get("name").(string),
+		Description: data.Get("description").(string),
+		Type:        data.Get("type").(string),
+		Meta:        data.Get("meta").(map[string]interface{}),
+		Attribute:   data.Get("attribute").(map[string]interface{}),
+		Tag:         data.Get("tag").([]interface{}),
+	}
 }

@@ -33,6 +33,10 @@ func (itemType *ItemType) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(itemType)
 }
 
+func (itemType *ItemType) KeyValue() string {
+	return itemType.Key
+}
+
 type Item struct {
 	Key         string                 `json:"key"`
 	Name        string                 `json:"name"`
@@ -46,6 +50,10 @@ type Item struct {
 
 func (item *Item) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(item)
+}
+
+func (item *Item) KeyValue() string {
+	return item.Key
 }
 
 type Link struct {
@@ -63,6 +71,10 @@ func (link *Link) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(link)
 }
 
+func (link *Link) KeyValue() string {
+	return link.Key
+}
+
 type LinkType struct {
 	Key         string                 `json:"key"`
 	Name        string                 `json:"name"`
@@ -74,6 +86,10 @@ type LinkType struct {
 
 func (linkType *LinkType) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(linkType)
+}
+
+func (linkType *LinkType) KeyValue() string {
+	return linkType.Key
 }
 
 type LinkRule struct {
@@ -89,6 +105,10 @@ func (linkRule *LinkRule) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(linkRule)
 }
 
+func (rule *LinkRule) KeyValue() string {
+	return rule.Key
+}
+
 type Model struct {
 	Key         string `json:"key"`
 	Name        string `json:"name"`
@@ -97,6 +117,10 @@ type Model struct {
 
 func (model *Model) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(model)
+}
+
+func (model *Model) KeyValue() string {
+	return model.Key
 }
 
 func getJSONBytesReader(data interface{}) (*bytes.Reader, error) {

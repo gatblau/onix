@@ -28,11 +28,13 @@ const (
 	GET    = "GET"
 )
 
+// Onix HTTP client
 type Client struct {
 	BaseURL string
 	Token   string
 }
 
+// Result data retrieved by PUT and DELETE WAPI resources
 type Result struct {
 	Changed   bool   `json:"changed"`
 	Error     bool   `json:"error"`
@@ -41,11 +43,13 @@ type Result struct {
 	Ref       string `json:"ref"`
 }
 
-func (o *Client) initBasicAuthToken(user string, pwd string) {
+// Set up a basic authentication token used by the client
+func (o *Client) setBasicAuth(user string, pwd string) {
 	o.Token = fmt.Sprintf("Basic %s",
 		base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
 }
 
+// Make a generic HTTP request
 func (o *Client) MakeRequest(method string, resourceName string, key string, payload io.Reader) (*Result, error) {
 	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", o.BaseURL, resourceName, key), payload)
 	req.Header.Set("Content-Type", "application/json")
@@ -57,14 +61,17 @@ func (o *Client) MakeRequest(method string, resourceName string, key string, pay
 	return result, err
 }
 
+// Make a PUT HTTP request to the WAPI
 func (o *Client) Put(resourceName string, key string, payload io.Reader) (*Result, error) {
 	return o.MakeRequest(PUT, resourceName, key, payload)
 }
 
+// Make a DELETE HTTP request to the WAPI
 func (o *Client) Delete(resourceName string, key string) (*Result, error) {
 	return o.MakeRequest(DELETE, resourceName, key, nil)
 }
 
+// Make a GET HTTP request to the WAPI
 func (o *Client) Get(resourceName string, key string) (interface{}, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s/%s", o.BaseURL, resourceName, key), nil)
 	req.Header.Set("Content-Type", "application/json")

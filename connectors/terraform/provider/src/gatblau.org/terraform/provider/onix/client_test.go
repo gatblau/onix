@@ -23,7 +23,7 @@ var client Client
 
 func init() {
 	client = Client{BaseURL: "http://localhost:8080"}
-	client.initBasicAuthToken("admin", "0n1x")
+	client.setBasicAuth("admin", "0n1x")
 }
 
 func checkResult(result *Result, err error, msg string, t *testing.T) {
@@ -35,7 +35,7 @@ func checkResult(result *Result, err error, msg string, t *testing.T) {
 	}
 }
 
-func checkError(err error, msg string, t *testing.T){
+func checkError(err error, msg string, t *testing.T) {
 	if err != nil {
 		t.Error(msg, err)
 	}
@@ -43,7 +43,7 @@ func checkError(err error, msg string, t *testing.T){
 
 func TestOnixClient_Put(t *testing.T) {
 	msg := "create test_model failed"
-	model := Model {
+	model := Model{
 		Name:        "Test Model",
 		Description: "Test Model",
 	}
@@ -52,7 +52,7 @@ func TestOnixClient_Put(t *testing.T) {
 	result, err := client.Put("model", "test_model", modelBytes)
 	checkResult(result, err, msg, t)
 
-	itemType := ItemType {
+	itemType := ItemType{
 		Name:        "Test Item Type",
 		Description: "Test Item Type",
 		Model:       "test_model",
@@ -62,7 +62,7 @@ func TestOnixClient_Put(t *testing.T) {
 	result, err = client.Put("itemtype", "test_item_type", itemTypeBytes)
 	checkResult(result, err, "create test_item_type failed", t)
 
-	item_1 := Item {
+	item_1 := Item{
 		Name:        "Item 1",
 		Description: "Test Item 1",
 		Status:      1,
@@ -73,7 +73,7 @@ func TestOnixClient_Put(t *testing.T) {
 	result, err = client.Put("item", "item_1", item_1_Bytes)
 	checkResult(result, err, "create item_1 failed", t)
 
-	item_2 := Item {
+	item_2 := Item{
 		Name:        "Item 2",
 		Description: "Test Item 2",
 		Status:      2,
