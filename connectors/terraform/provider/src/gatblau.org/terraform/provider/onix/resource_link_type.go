@@ -23,9 +23,9 @@ import "github.com/hashicorp/terraform/helper/schema"
 
 func LinkTypeResource() *schema.Resource {
 	return &schema.Resource{
-		Create: createLinkType,
+		Create: createOrUpdateLinkType,
 		Read:   readLinkType,
-		Update: updateLinkType,
+		Update: createOrUpdateLinkType,
 		Delete: deleteLinkType,
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
@@ -41,18 +41,31 @@ func LinkTypeResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"model_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
 		},
 	}
 }
 
-func createLinkType(d *schema.ResourceData, m interface{}) error {
-	return nil
+func createOrUpdateLinkType(data *schema.ResourceData, m interface{}) error {
+	return put(data, m, linkTypePayload(data), "linktype")
 }
 
-func updateLinkType(d *schema.ResourceData, m interface{}) error {
-	return nil
+func deleteLinkType(data *schema.ResourceData, m interface{}) error {
+	return delete(data, m, linkTypePayload(data), "linktype")
 }
 
-func deleteLinkType(d *schema.ResourceData, m interface{}) error {
-	return nil
+func linkTypePayload(data *schema.ResourceData) Payload {
+	key := data.Get("key").(string)
+	name := data.Get("name").(string)
+	description := data.Get("description").(string)
+	modelKey := data.Get("model_key").(string)
+	return &LinkType{
+		Key:         key,
+		Name:        name,
+		Description: description,
+		Model:       modelKey,
+	}
 }

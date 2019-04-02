@@ -23,17 +23,12 @@ import "github.com/hashicorp/terraform/helper/schema"
 
 func LinkResource() *schema.Resource {
 	return &schema.Resource{
-		Create: createLink,
+		Create: createOrUpdateLink,
 		Read:   readLink,
-		Update: updateLink,
+		Update: createOrUpdateLink,
 		Delete: deleteLink,
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-			},
-			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -41,18 +36,52 @@ func LinkResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"type": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"meta": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"tag": &schema.Schema{
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+			},
+			"attribute": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"start_item_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"end_item_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
 		},
 	}
 }
 
-func createLink(d *schema.ResourceData, m interface{}) error {
-	return nil
+func createOrUpdateLink(data *schema.ResourceData, m interface{}) error {
+	return put(data, m, linkPayload(data), "link")
 }
 
-func updateLink(d *schema.ResourceData, m interface{}) error {
-	return nil
+func deleteLink(data *schema.ResourceData, m interface{}) error {
+	return delete(data, m, linkPayload(data), "link")
 }
 
-func deleteLink(d *schema.ResourceData, m interface{}) error {
-	return nil
+func linkPayload(data *schema.ResourceData) Payload {
+	return &Link{
+		Key:          data.Get("key").(string),
+		Description:  data.Get("description").(string),
+		Type:         data.Get("type").(string),
+		Meta:         data.Get("meta").(map[string]interface{}),
+		Attribute:    data.Get("attribute").(map[string]interface{}),
+		Tag:          data.Get("tag").([]interface{}),
+		StartItemKey: data.Get("start_item_key").(string),
+		EndItemKey:   data.Get("end_item_key").(string),
+	}
 }

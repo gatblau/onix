@@ -23,45 +23,35 @@ func Provider() *schema.Provider {
 		Schema: map[string]*schema.Schema{
 			"uri": {
 				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "http://localhost:8080",
+				Required: true,
 			},
 			"user": {
 				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "admin",
+				Required: true,
 			},
 			"pwd": {
 				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "0n1x",
+				Required: true,
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"ox_item_type": ItemTypeResource(),
-			"ox_item":      ItemResource(),
-			"ox_link_type": LinkTypeResource(),
-			"ox_link":      LinkResource(),
-			"ox_link_rule": LinkRuleResource(),
 			"ox_model":     ModelResource(),
+			"ox_item_type": ItemTypeResource(),
+			"ox_link_type": LinkTypeResource(),
+			"ox_link_rule": LinkRuleResource(),
+			"ox_item":      ItemResource(),
+			"ox_link":      LinkResource(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"ox_item_type_data": ItemTypeDataSource(),
-			"ox_item_data":      ItemDataSource(),
-			"ox_link_type_data": ItemTypeDataSource(),
-			"ox_link_data":      LinkDataSource(),
-			"ox_link_rule_data": LinkRuleDataSource(),
-			"ox_model_data":     ModelDataSource(),
+			//"ox_item_type_data": ItemTypeDataSource(),
+			//"ox_item_data":      ItemDataSource(),
+			//"ox_link_type_data": ItemTypeDataSource(),db.execute()
+			//"ox_link_data":      LinkDataSource(),
+			//"ox_link_rule_data": LinkRuleDataSource(),
+			//"ox_model_data":     ModelDataSource(),
 		},
 		ConfigureFunc: configureProvider,
 	}
-}
-
-type Config struct {
-	URI    string
-	User   string
-	Pwd    string
-	Client Client
 }
 
 func configureProvider(d *schema.ResourceData) (interface{}, error) {
@@ -70,7 +60,7 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 	pwd := d.Get("pwd").(string)
 
 	client := Client{BaseURL: uri}
-	client.initBasicAuthToken(user, pwd)
+	client.setBasicAuth(user, pwd)
 
 	config := Config{
 		URI:    uri,

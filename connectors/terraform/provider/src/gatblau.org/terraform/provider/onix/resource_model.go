@@ -25,9 +25,9 @@ import (
 
 func ModelResource() *schema.Resource {
 	return &schema.Resource{
-		Create: createModel,
+		Create: createOrUpdateModel,
 		Read:   readModel,
-		Update: updateModel,
+		Update: createOrUpdateModel,
 		Delete: deleteModel,
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
@@ -47,14 +47,21 @@ func ModelResource() *schema.Resource {
 	}
 }
 
-func createModel(d *schema.ResourceData, m interface{}) error {
-	return nil
+func createOrUpdateModel(data *schema.ResourceData, m interface{}) error {
+	return put(data, m, modelPayload(data), "model")
 }
 
-func updateModel(d *schema.ResourceData, m interface{}) error {
-	return nil
+func deleteModel(data *schema.ResourceData, m interface{}) error {
+	return delete(data, m, modelPayload(data), "model")
 }
 
-func deleteModel(d *schema.ResourceData, m interface{}) error {
-	return nil
+func modelPayload(data *schema.ResourceData) Payload {
+	key := data.Get("key").(string)
+	name := data.Get("name").(string)
+	description := data.Get("description").(string)
+	return &Model{
+		Key:         key,
+		Name:        name,
+		Description: description,
+	}
 }
