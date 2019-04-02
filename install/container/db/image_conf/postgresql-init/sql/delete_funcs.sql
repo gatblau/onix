@@ -35,7 +35,7 @@ BEGIN
     FROM link_type lt
     USING model m
       WHERE m.id = lt.model_id;
-    getGetLinkTypeChildrenSQL
+
     DELETE FROM model
     WHERE key = key_param;
   END
