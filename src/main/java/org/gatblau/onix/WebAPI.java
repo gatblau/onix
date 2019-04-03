@@ -247,6 +247,7 @@ public class WebAPI {
             @PathVariable("key") String key,
             @RequestBody JSONObject payload
         ) throws IOException, SQLException {
+        ResponseEntity<Result> result = null;
         return ResponseEntity.ok(data.createOrUpdateItemType(key, payload));
     }
 

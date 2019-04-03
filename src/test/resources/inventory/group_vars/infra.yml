@@ -1,4 +1,0 @@
----
-openshift_schedulable: "True"
-node_type: infra
-...

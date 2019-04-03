@@ -6,14 +6,27 @@ This section explains how to use Onix Web API.
 <a name="toc"></a>
 ## Table of Contents [(index)](./../readme.md)
 
-- [Using Swagger](#using-swagger)
-- [Identity and Access Management](#identity-and-access-management)
-- [Getting service information](#getting-service-information)
-- [Creating or updating a configuration item type](#creating-or-updating-a-configuration-item-type)
-- [Creating or updating a configuration item](#creating-a-configuration-item)
-- [Retrieving a configuration item by key](#retrieving-a-configuration-item-by-key)
-- [Linking two items](#linking-two-items)
-- [Retrieving a link](#retrieving-a-link)
+- [Web API](#web-api)
+  - [Table of Contents (index)](#table-of-contents-index)
+  - [Using Swagger (up)](#using-swagger-up)
+    - [WAPI User Interface](#wapi-user-interface)
+    - [JSON WAPI Docs](#json-wapi-docs)
+  - [Identity and Access Management (up)](#identity-and-access-management-up)
+  - [Getting Service Information (up)](#getting-service-information-up)
+    - [Usage example:](#usage-example)
+  - [Creating or updating a configuration item type (up)](#creating-or-updating-a-configuration-item-type-up)
+    - [Sample Payload](#sample-payload)
+  - [Creating or updating a configuration item (up)](#creating-or-updating-a-configuration-item-up)
+    - [Sample Payload](#sample-payload-1)
+    - [Payload fields](#payload-fields)
+    - [Example](#example)
+  - [Retrieving a configuration item by key (up)](#retrieving-a-configuration-item-by-key-up)
+  - [Linking two items (up)](#linking-two-items-up)
+    - [Sample Payload](#sample-payload-2)
+    - [Payload fields](#payload-fields-1)
+    - [Example](#example-1)
+  - [Retrieving a link (up)](#retrieving-a-link-up)
+    - [Example](#example-2)
 
 <a name="using-swagger"></a>
 ## Using Swagger [(up)](#toc)
@@ -24,13 +37,13 @@ Onix uses [Swagger](https://swagger.io/) to document its web API.
 
 When Onix is up and running, the Swagger User Interface can be reached at the following URI:
 
-**http://onix_host_name:onix_port_number/swagger-ui.html**
+http://localhost:8080/swagger-ui.html
  
 ### JSON WAPI Docs
 
-Similarly, a JSON representation of the Web API documentation can be obtained from the following URI: 
+Similarly, a JSON representation of the Web API documentation can be retrieved from the following URI: 
  
-**http://onix_host_name:onix_port_number/v2/api-docs**
+http://localhost:8080/v2/api-docs
 
 <a name="identity-and-access-management"></a>
 ## Identity and Access Management [(up)](#toc)

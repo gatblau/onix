@@ -90,6 +90,6 @@ public class Info implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("%s - %s days since release.", version, getSinceReleaseDays());
+        return String.format("%s - %s days ago.", version, getSinceReleaseDays());
     }
 }
