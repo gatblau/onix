@@ -20,15 +20,18 @@ project, to be licensed under the same terms as the rest of the code.
 package org.gatblau.onix;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.WebApplicationContext;
 
+import javax.annotation.Resource;
 import java.sql.*;
 
 @Service
+@Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
 class Database {
-    private Connection conn;
     private PreparedStatement stmt;
-    private String resultKey;
 
     @Autowired
     private DataSourceFactory ds;
@@ -36,16 +39,8 @@ class Database {
     public Database() {
     }
 
-    Connection createConnection() throws SQLException {
-        conn = ds.instance().getConnection();
-        return conn;
-    }
-
     void prepare(String sql) throws SQLException {
-        if (conn == null || conn.isClosed()) {
-            createConnection();
-        }
-        stmt = conn.prepareStatement(sql);
+        stmt = ds.getConn().prepareStatement(sql);
     }
 
     void setString(int parameterIndex, String value) throws SQLException {
@@ -75,7 +70,6 @@ class Database {
     }
 
     String executeQueryAndRetrieveStatus(String query_name) throws SQLException {
-        String result = null;
         ResultSet set = stmt.executeQuery();
         if (set.next()) {
             return set.getString(query_name);
@@ -84,7 +78,6 @@ class Database {
     }
 
     ResultSet executeQuery() throws SQLException {
-        String result = null;
         return stmt.executeQuery();
     }
 
@@ -103,13 +96,14 @@ class Database {
 
     void close() {
         try {
-            stmt.close();
-            conn.close();
-            stmt = null;
-            conn = null;
+            if (stmt != null) {
+                stmt.close();
+                stmt = null;
+            }
+            ds.closeConn();
         }
         catch (Exception ex) {
-            System.out.println("WARNING: failed to close database connection.");
+            System.out.println("WARNING: failed to close database statement.");
             ex.printStackTrace();
         }
     }

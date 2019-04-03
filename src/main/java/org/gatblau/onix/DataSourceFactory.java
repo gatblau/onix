@@ -21,11 +21,15 @@ package org.gatblau.onix;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
+import java.sql.Connection;
+import java.sql.SQLException;
+
+@Service
 public class DataSourceFactory {
     private HikariDataSource ds;
+    private Connection conn;
 
     @Value("${spring.datasource.username}")
     private String dbuser;
@@ -33,17 +37,60 @@ public class DataSourceFactory {
     @Value("${spring.datasource.password}")
     private String dbpwd;
 
+    @Value("${spring.datasource.hikari.data-source-properties.cachePrepStmts}")
+    private boolean cachePrepStmts;
+
+    @Value("${spring.datasource.hikari.data-source-properties.prepStmtCacheSize}")
+    private int prepStmtCacheSize;
+
+    @Value("${spring.datasource.hikari.data-source-properties.prepStmtCacheSqlLimit}")
+    private int prepStmtCacheSqlLimit;
+
+    @Value("${spring.datasource.hikari.data-source-properties.useServerPrepStmts}")
+    private boolean useServerPrepStmts;
+
     @Value("${spring.datasource.url}")
     private String connString;
 
-    public HikariDataSource instance() {
+    private HikariDataSource instance() {
         if (ds == null) {
             ds = new HikariDataSource();
             System.out.println(String.format("JDBC ==> Setting JDBC URL to: '%s'", connString));
             ds.setJdbcUrl(connString);
             ds.setUsername(dbuser);
             ds.setPassword(dbpwd);
+            ds.setPoolName("onix-connection-pool");
+            ds.addDataSourceProperty("cachePrepStmts", cachePrepStmts);
+            ds.addDataSourceProperty("prepStmtCacheSize", prepStmtCacheSize);
+            ds.addDataSourceProperty("prepStmtCacheSqlLimit", prepStmtCacheSqlLimit);
+            ds.addDataSourceProperty("useServerPrepStmts", useServerPrepStmts);
         }
         return ds;
     }
+
+    public Connection getConn() {
+        try {
+            if (conn == null || conn.isClosed()) {
+                try {
+                    conn = instance().getConnection();
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return conn;
+    }
+
+    public void closeConn() {
+        try {
+            if (conn != null || !conn.isClosed()) {
+                conn.close();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
