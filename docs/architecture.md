@@ -1,14 +1,17 @@
-# Overview 
+# Architecture 
 
-This section provides use cases for the CMDB and a technology overview.
+This section provides an architectural overview.
 
 <a name="toc"></a>
-## Table of Contents [(index)](./../readme.md)
+### Table of Contents [(index)](./../readme.md)
 
-- [Use Case Overview](#basic-use-cases)
-- [Technology Overview](#technology-overview)
+- [Business View](#business-view)
+- [Data View](#data_view)
+- [Application View](#application-view)
+- [Technology View](#technology-view)
 
-## Use Case Overview
+<a name="business-view"></a>
+## Use Cases
 
 The diagram below shows high level use cases for Onix based on different personas: 
 
@@ -50,32 +53,49 @@ As configuration data is updated when the automation scripts are executed, and h
 
 Are concerned with **having visibility of applications and services** deployed on the infrastructure.
 
+<a name="data-view"></a>
+## Data View
+<a name="semantic-model"></a>
+## Semantic Model [(up)](#toc)
 
-## Technology Overview
+The following figure shows the [semantic model](https://en.wikipedia.org/wiki/Semantic_data_model) for the CMDB:
+ 
+![Semantic Data Model](./pics/semantic_model.png "Onix Semantic Data Model")
 
-### Web API Service [(up)](#toc)
+- **Items** store configuration information and can be associated to other items using **Links**.
+- **Items** are of a specified **Item Type**.
+- **Links** connect **Items** creating associations.
+- **Links** are of a specified **Link Type**.
+- **Link Rules** apply to particular **Links** and restrict what **Item Types** the **Link** can connect.
+- **Models** are collections of **Item Types** and **Link Types**.
 
-The [Web API](./wapi.md) is built using [Spring Boot](https://spring.io/projects/spring-boot).
-It is a stateless RESTful style web service provided as a docker container image from Docker Hub.
+<a name="relational-model"></a>
+## Logical Model [(up)](#toc)
 
-The [WebAPI](./wapi.md) uses [Swagger](https://swagger.io/) for online documentation and testing of the service endpoints.
+The following picture shows the Onix logical data model:
 
-Access to the database is done using direct JDBC connections to ensure speed. All data logic is implemented as PostgreSQL functions.
+![Logical Data Model](./pics/logical_model.png "Onix Relational Data Model")
 
-### Database Service [(up)](#toc)
+<a name="application-view"></a>
+## Application View
 
-The database is implemented using [PostgreSQL](https://www.postgresql.org/).
+The following picture shows the application components and their interactions:
 
-### User Interface Service [(up)](#toc)
+![Application View](./pics/application_view.png "Application View") 
 
-The user interface service is developed as a client of the Web API using [Vue.JS](https://vuejs.org/), [Nuxt.JS](https://nuxtjs.org/) and [Node.JS](https://nodejs.org/)
+<a name="technology-view"></a>
+## Technology View
 
-### Access Management [(up)](#toc)
+#### Containerised deployment
 
-The [Web API](./wapi.md) can be secured using Basic Authentication or OIDC.
+The following picture shows the deployment for OpenShift or Kubernetes:
 
-### Deployment Configuration [(up)](#toc)
+![Technology View](./pics/openshift.png "Technology View - Traditional") 
 
-The solution requires an instance of PostgreSQL that can host the Onix Database.
 
-The Web API and User Interface services should be deployed from Docker Images either on VM infrastructure (e.g. using Docker-Compose) or in a container platform such as OpenShift or Kubernetes using a deployment configuration.
+#### Traditional deployment
+
+The following picture shows the deployment on traditional infrastructure:
+
+![Technology View](./pics/technology_view.png "Technology View - Traditional") 
+

@@ -65,7 +65,7 @@ should display a list of enabled plugings including onix.
 In order for the inventory plugin to be able to retrieve inventory information, the Ansible Inventory meta model has to be imported into Onix.
 The meta model contains all the item types, link types and link rules required to represent the inventory data in the CMDB.
 
-To import the meta model follow the steps shown [here](./meta_model/readme.md).
+To import the meta model follow the steps shown [here](../../../models/readme.md).
 
 ## Trying it out
 
