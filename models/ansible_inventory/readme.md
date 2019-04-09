@@ -36,4 +36,6 @@ The model is encoded in a JSON file [here](./ansible_model.json).
 
 In order to import it into the CMDB, you can use the Swagger UI and import the file via the [/data PUT](http://localhost:8080/swagger-ui.html#/web-api/createOrUpdateDataUsingPUT) endpoint of the Web API.
 
+Alternatively, a [terraform file](main.tf) is also provided as an alternative way to import the model.
+
 ([back to index](../readme.md))

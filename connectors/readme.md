@@ -8,3 +8,5 @@ The following is a list of currently available connectors:
 |---|---|
 |[Ansible](./ansible/readme.md)| Allow Ansible playbooks to connect to Onix. |
 |[Terraform](./terraform/provider/readme.md) | Provide Terraform resources for Onix. |
+
+([up](../readme.md))
