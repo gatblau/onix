@@ -52,9 +52,16 @@ func (o *Client) setBasicAuth(user string, pwd string) {
 // Make a generic HTTP request
 func (o *Client) MakeRequest(method string, resourceName string, key string, payload io.Reader) (*Result, error) {
 	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", o.BaseURL, resourceName, key), payload)
+	// any errors are returned
+	if err != nil {
+		return &Result{Message: err.Error(), Error: true}, err
+	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", o.Token)
-	response, _ := http.DefaultClient.Do(req)
+	response, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return &Result{Message: err.Error(), Error: true}, err
+	}
 	defer response.Body.Close()
 	result := new(Result)
 	json.NewDecoder(response.Body).Decode(result)
