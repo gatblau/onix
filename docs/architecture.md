@@ -54,10 +54,10 @@ As configuration data is updated when the automation scripts are executed, and h
 Are concerned with **having visibility of applications and services** deployed on the infrastructure.
 
 <a name="data-view"></a>
-## Data View
+## Data View [(up)](#toc)
 
 <a name="semantic-model"></a>
-## Semantic Model [(up)](#toc)
+## Semantic Model 
 
 The following figure shows the [semantic model](https://en.wikipedia.org/wiki/Semantic_data_model) for the CMDB:
  
@@ -71,27 +71,27 @@ The following figure shows the [semantic model](https://en.wikipedia.org/wiki/Se
 - **Models** are collections of **Item Types** and **Link Types**.
 
 <a name="relational-model"></a>
-## Logical Model [(up)](#toc)
+## Logical Model
 
 The following picture shows the Onix logical data model:
 
 ![Logical Data Model](./pics/logical_model.png "Onix Relational Data Model")
 
 <a name="application-view"></a>
-## Application View
+## Application View [(up)](#toc)
 
 The following picture shows the application components and their interactions:
 
 ![Application View](./pics/application_view.png "Application View") 
 
 <a name="technology-view"></a>
-## Technology View
+## Technology View [(up)](#toc)
 
 #### Containerised deployment
 
 The following picture shows the deployment for OpenShift or Kubernetes:
 
-![Technology View](./pics/openshift.png "Technology View - Traditional") 
+![Technology View](./pics/openshift.png "Technology View - Containerised") 
 
 
 #### Traditional deployment
