@@ -6,7 +6,7 @@ This section provides an architectural overview.
 ### Table of Contents [(index)](./../readme.md)
 
 - [Business View](#business-view)
-- [Data View](#data_view)
+- [Data View](#data-view)
 - [Application View](#application-view)
 - [Technology View](#technology-view)
 
@@ -55,6 +55,7 @@ Are concerned with **having visibility of applications and services** deployed o
 
 <a name="data-view"></a>
 ## Data View
+
 <a name="semantic-model"></a>
 ## Semantic Model [(up)](#toc)
 
