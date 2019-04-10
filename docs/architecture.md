@@ -11,7 +11,7 @@ This section provides an architectural overview.
 - [Technology View](#technology-view)
 
 <a name="business-view"></a>
-## Use Cases
+## Business View
 
 The diagram below shows high level use cases for Onix based on different personas: 
 
