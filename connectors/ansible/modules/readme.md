@@ -1,10 +1,14 @@
 # Ansible Modules
 
-This folder contains a list of modules to interact with Onix.
+In order to maintain accurate information in the CMDB it is important that:
+- Changes are recorded in the CMDB as soon as configuration changes are made (If changes are driven by Ansible, then it is important to update the CMDB automatically whilst Ansible performs any configuration changes). Or
+- Changes are driven by information in the CMDB. Or
+- Both of the above cases.
+
+In order to facilitate this, a set of Ansible modules are provided as follows:
 
 - [Ansible Modules](#ansible-modules)
   - [ox_setup](#oxsetup)
-    - [facts](#facts)
   - [ox_item_type](#oxitemtype)
   - [ox_link_type](#oxlinktype)
   - [ox_link_rule](#oxlinkrule)
@@ -15,8 +19,51 @@ This folder contains a list of modules to interact with Onix.
 
 For particular examples of how to use these modules see [here](./examples/readme.md).
 
+### State: Present or Absent
+
+Modules have a "state" property which always default to "present".
+
+If **state: "absent"** is specified, then the item, item type or link will be removed from the database.
+ 
+
+### Idempotency
+
+Modules are idempotent, which means if the module that has created an item/item type/link is run for a second time, changes will not be made to the database.
+
+If however, any of the item/item type/link properties has changed, tan uodated version will be written to the database.
+
+ 
+### How to use the Ansible modules
+ 
+For an example of how to use the above modules, take a look at the [playbook here](../ansible/site.yml).
+ 
+To execute the playbook run the following command from the [ansible](../ansible) folder:
+
+```bash
+$ ansible-playbook -i inventory site.yml -vvv
+```
+
+**NOTE**: it is assumed Onix Service, Onix Database and Keycloak are running in the localhost under the default ports.
+If this is not the case, update the variables in the [inventory](../ansible/inventory) file accordingly.
+
+### How to install the Ansible modules
+
+#### In the same location of the playbooks project
+
+Copy the files [here](../../ansible/modules/) to "binary" folder under the folder where the playbook using the modules is. 
+
+#### In a shared location
+
+To share the modules across multiple projects, add an entry to the **/etc/ansible/ansible.cfg** file pointing to a shared library location as follows:
+
+```bash
+library = /usr/share/ansible/library
+```
+
+## Modules
+
 <a name="login"></a>
-## [ox_setup](../modules/ox_setup.py)
+### [ox_setup](../modules/ox_setup.py)
 
 The **ox_setup** module is used to setup the location and authentication information to 
 connect to the Onix WAPI.
@@ -41,8 +88,7 @@ Use it as follows:
 | **password** | the password for basic authentication | yes |
 | **auth_mode** | the authentication mode to use (i.e. none, basic, openid) | no (default to none) |
 
-### facts
-The module creates two facts meant to be used as input variables on the other modules as follows:
+**NOTE:** the module creates two facts meant to be used as input variables on the other modules as follows:
 
 | name | description |
 |---|---|
@@ -51,7 +97,7 @@ The module creates two facts meant to be used as input variables on the other mo
 
 
 <a name="item_type"></a>
-## [ox_item_type](../modules/ox_item_type.py)
+### [ox_item_type](../modules/ox_item_type.py)
 
 The **ox_item_type** module is used to create/update or delete item types in the CMDB.
 
@@ -79,7 +125,7 @@ Use it as follows:
 | **state** | *'present'* to create/update the item type; or *'absent'* to delete the item type. | no (default to *present*) |
 
 <a name="link_type"></a>
-## [ox_link_type](../modules/ox_link_type.py)
+### [ox_link_type](../modules/ox_link_type.py)
 
 The **ox_link_type** module is used to create/update or delete link types in the CMDB.
 
@@ -107,7 +153,7 @@ Use it as follows:
 | **state** | *'present'* to create/update the link type; or *'absent'* to delete the link type. | no (default to *present*) |
 
 <a name="link_rule"></a>
-## [ox_link_rule](../modules/ox_link_rule.py)
+### [ox_link_rule](../modules/ox_link_rule.py)
 
 The **ox_link_rule** module is used to create/update or delete link rules in the CMDB.
 
@@ -143,7 +189,7 @@ Use it as follows:
 | **state** | *'present'* to create/update the link type; or *'absent'* to delete the link type. | no (default to *present*) |
 
 <a name="item"></a>
-## [ox_item](../modules/ox_item.py)
+### [ox_item](../modules/ox_item.py)
 
 The **ox_item** module is used to create/update or delete configuration items in the CMDB.
 
@@ -186,7 +232,7 @@ Use it as follows:
 | **state** | *'present'* to create/update the item type; or *'absent'* to delete the item type. | no (default to *present*) |
 
 <a name="link"></a>
-## [ox_link](../modules/ox_link.py)
+### [ox_link](../modules/ox_link.py)
 
 The **ox_link** module is used to create/update or delete links between existing configuration items in the CMDB.
 
@@ -232,7 +278,7 @@ Use it as follows:
 | **state** | *'present'* to create/update the item type; or *'absent'* to delete the item type. | no (default to *present*) |
 
 <a name="import"></a>
-## [ox_import](../modules/ox_import.py)
+### [ox_import](../modules/ox_import.py)
 
 This module imports the configuration data in a json file.
 
@@ -299,7 +345,7 @@ Example configuration file:
 }
 ```
 <a name="query"></a>
-## [ox_query](../modules/ox_query.py)
+### [ox_query](../modules/ox_query.py)
 
 This module retrieves configuration data from the CMDB.
 

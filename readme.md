@@ -11,8 +11,7 @@ Automatic synchronisation from various data sources, via Feeders is planned for 
 The following sections explain the solution in more detail:
 
 - [Architecture](./docs/architecture.md)
-- [Installing Onix CMDB](./docs/installation.md)
-- [CMDB Model](./docs/model.md)
+- [Getting started](./docs/installation.md)
 - [Web API](./docs/wapi.md)
 - [Connectors](./connectors/readme.md)
 - [Models](./models/readme.md)
