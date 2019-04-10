@@ -8,7 +8,7 @@ To do that you will need the following dependencies in your system:
 
 - [Docker](https://docs.docker.com/compose/install/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
-- Access to [Docker Hub] Onix image repositories (https://hub.docker.com/u/southwinds)
+- Access to [Docker Hub Onix image repositories](https://hub.docker.com/u/southwinds)
 
 Run the following commands from a terminal window:
 
