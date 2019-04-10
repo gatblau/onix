@@ -17,7 +17,7 @@ Run the following commands from a terminal window:
 $ mkdir onix && cd onix
 
 # second, download the docker compose file and place it into the new directory
-$ wget https://github.com/gatblau/onix/blob/v1/install/container/docker-compose.yml
+$ wget https://raw.githubusercontent.com/gatblau/onix/v1/install/container/docker-compose.yml
 
 # finally, launch docker compose in detached mode
 $ docker-compose up -d
