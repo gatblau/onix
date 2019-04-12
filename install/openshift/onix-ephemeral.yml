@@ -1,0 +1,239 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name:  onix-template
+  annotations:
+    description: "Template to deploy an emphemeral onix cmd db"
+objects:
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    name: onixdb
+  spec:
+    replicas: 1
+    progressDeadlineSeconds: 600
+    revisionHistoryLimit: 10
+    selector:
+        deploymentconfig: onixdb
+    strategy:
+        activeDeadlineSeconds: 21600
+        resources: {}
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+          maxUnavailable: 25%
+          timeoutSeconds: 600
+          updatePeriodSeconds: 1
+        type: Rolling
+    template:
+      metadata:
+        labels:
+          app: onix
+          deploymentconfig: onixdb
+      spec:
+        containers:
+        - env:
+          - name: POSTGRESQL_ADMIN_PASSWORD
+            value: onix
+          image: southwinds/onixdb-snapshot
+          imagePullPolicy: Always
+          name: onixdb
+          ports:
+          - containerPort: 5432
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    name: onixwapi
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+        deploymentconfig: onixwapi
+    strategy:
+        activeDeadlineSeconds: 21600
+        resources: {}
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+          maxUnavailable: 25%
+          timeoutSeconds: 600
+          updatePeriodSeconds: 1
+        type: Rolling
+    template:
+      metadata:
+        labels:
+          app: onix
+          deploymentconfig: onixwapi
+      spec:
+        containers:
+        - env:
+          - name: DB_HOST
+            value: onixdb
+          - name: WAPI_AUTH_MODE
+            value: basic
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                key: user
+                name: onixdb
+          - name: DB_PWD
+            valueFrom:
+              secretKeyRef:
+                key: pwd
+                name: onixdb
+          - name: WAPI_ADMIN_USER
+            valueFrom:
+              secretKeyRef:
+                key: user
+                name: onixadmin
+          - name: WAPI_ADMIN_PWD
+            valueFrom:
+              secretKeyRef:
+                key: pwd
+                name: onixadmin
+          - name: WAPI_READER_USER
+            valueFrom:
+              secretKeyRef:
+                key: user
+                name: onixreader
+          - name: WAPI_READER_PWD
+            valueFrom:
+              secretKeyRef:
+                key: pwd
+                name: onixreader
+          - name: WAPI_WRITER_USER
+            valueFrom:
+              secretKeyRef:
+                key: user
+                name: onixwriter
+          - name: WAPI_WRITER_PWD
+            valueFrom:
+              secretKeyRef:
+                key: pwd
+                name: onixwriter
+          - name: MGMT_ENDPOINT_METRICS_ENABLED
+            value: "true"
+          - name: DS_PREP_STMT_CACHE_SIZE
+            value: "250"
+          - name: DS_PREP_STMT_CACHE_SQL_LIMIT
+            value: "2048"
+          - name: DS_CACHE_PREP_STMTS
+            value: "true"
+          - name: DS_USE_SERVER_PREP_STMTS
+            value: "true"
+          image: southwinds/onixwapi-snapshot
+          imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /live
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: onixwapi
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ready
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: onixadmin
+  type: Opaque
+  data:
+    pwd: MG4xeA==
+    user: YWRtaW4=
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: onixdb
+  type: Opaque
+  data:
+    pwd: b25peA==
+    user: b25peA==
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: onixreader
+  type: Opaque
+  data:
+    pwd: MG4xeA==
+    user: cmVhZGVy
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: onixwriter
+  type: Opaque
+  data:
+    pwd: MG4xeA==
+    user: d3JpdGVy
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: onixdb
+  spec:
+    ports:
+    - name: "5432"
+      port: 5432
+      protocol: TCP
+      targetPort: 5432
+    selector:
+      deploymentconfig: onixdb
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: onixwapi
+  spec:
+    ports:
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      deploymentconfig: onixwapi
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    name: onixwapi
+  spec:
+    port:
+      targetPort: 8080
+    to:
+      kind: Service
+      name: onixwapi
+      weight: 100
+    wildcardPolicy: None
