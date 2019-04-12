@@ -990,9 +990,7 @@ public class PgSqlRepository implements DbRepository {
             }
             status.put("ready", true);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            status.put("ready", false);
-            status.put("error", ex.getMessage());
+            throw new RuntimeException(String.format("Readyness probe failed: %s", ex.getMessage()));
         }
         return status;
     }
