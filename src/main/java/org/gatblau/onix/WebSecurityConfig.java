@@ -76,6 +76,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .csrf().disable()
                 .authorizeRequests()
                 .antMatchers("/").permitAll()
+                .antMatchers("/live").permitAll()
+                .antMatchers("/ready").permitAll()
                 .antMatchers(HttpMethod.GET, "(item|link|data|tag|linktype|itemtype|model)/**").hasAnyRole("READER", "WRITER")
                 .antMatchers(HttpMethod.PUT, "(item|link|tag|data)/**").hasRole("WRITER")
                 .antMatchers(HttpMethod.POST, "(tag)/**").hasRole("WRITER")
