@@ -21,7 +21,7 @@ The following topics give more insight into Onix:
 
 This software is licensed under the [Apache License - Version 2.0, January 2004](http://www.apache.org/licenses/).
 
-Copyright (c) 2018-2019 by gatblau.org
+Copyright (c) 2018-2019 by [gatblau.org](http://gatblau.org).
 
 #### Contributor Notice
 
