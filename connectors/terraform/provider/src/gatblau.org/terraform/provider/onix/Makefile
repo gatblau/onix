@@ -13,9 +13,15 @@
 #    to be licensed under the same terms as the rest of the code.
 #
 
+# the name of the terraform provider for Onix
 BINARY_NAME=terraform-provider-ox
+
+# the name of the folder where the packaged binaries will be placed after the build
 BUILD_FOLDER=build
 
+# compile, install and initialise the terraform provider for onix
+# in a local folder and execute the contents of the main.tf file (terraform apply)
+# use this function to test changes to the terraform provider (integration test)
 tf_test:
 	go fmt
 	terraform fmt
@@ -24,19 +30,23 @@ tf_test:
 	terraform init
 	terraform apply
 
+# run the terraform provider test harness (unit tests in go only)
 test:
 	go fmt
 	go test -v
 
+# build the terraform provider in the current platform
 build:
 	go fmt
 	go build -o $(BINARY_NAME) -v
 
+# package the terraform provider for all platforms
 package:
 	$(MAKE) package_linux
 	$(MAKE) package_darwin
 	$(MAKE) package_windows
 
+# package the terraform provider for linux amd64 platform
 package_linux:
 	CGO_ENABLED=0
 	GOOS=linux
@@ -45,6 +55,7 @@ package_linux:
 	go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
 	zip -mjT $(BUILD_FOLDER)/$(BINARY_NAME)_linux_amd64.zip $(BUILD_FOLDER)/$(BINARY_NAME)
 
+# package the terraform provider for MacOS
 package_darwin:
 	CGO_ENABLED=0
 	GOOS=darwin
@@ -53,6 +64,7 @@ package_darwin:
 	go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
 	zip -mjT $(BUILD_FOLDER)/$(BINARY_NAME)_darwin_amd64.zip $(BUILD_FOLDER)/$(BINARY_NAME)
 
+# package the terraform provider for Windows
 package_windows:
 	$CGO_ENABLED=0
 	GOOS=windows
