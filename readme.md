@@ -1,5 +1,7 @@
 # Onix 
 
+<img src="docs/pics/ox.png" width="300" height="300" align="right">
+
 Onix is a lightweight configuration management database (CMDB) accessible via a [RESTful Web API](./docs/wapi.md), that 
 provides:
  
