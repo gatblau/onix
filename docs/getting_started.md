@@ -1,4 +1,5 @@
-# Getting started
+# Getting started <img src="./pics/ox.png" width="125" height="125" align="right">
+
 
 ## Installing the required services
 
