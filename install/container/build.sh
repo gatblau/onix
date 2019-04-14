@@ -45,6 +45,9 @@ echo "Onix TAG is: ${ONIXTAG}"
 rm ../../src/main/resources/version
 echo ${ONIXTAG} >> ../../src/main/resources/version
 
+# removes existing images from the local registry
+docker images -a | grep "southwinds*" | awk '{print $3}' | xargs docker rmi -f
+
 # builds the onix-db image
 echo building onixdb...
 cd db
@@ -57,5 +60,6 @@ cd wapi
 sh ./build.sh $ONIXTAG
 cd ..
 
-docker push southwinds/onixdb-snapshot
-docker push southwinds/onixwapi-snapshot
+# push to docker hub
+docker push southwinds/onixdb-snapshot:$ONIXTAG
+docker push southwinds/onixwapi-snapshot:$ONIXTAG
