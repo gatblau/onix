@@ -1,4 +1,4 @@
-# Onix Connectors
+# Connectors <img src="./pics/ox.png" width="125" height="125" align="right">
 
 Connectors allow other technologies to write or read configuration information to/from Onix.
 
