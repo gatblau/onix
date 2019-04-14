@@ -18,10 +18,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
-        <keycloak.version>3.4.3.Final</keycloak.version>
         <maven.build.timestamp.format>ddMMyy-HHmmss</maven.build.timestamp.format>
-        <version.number>${build.time}</version.number>
-        <docker.image.prefix>gatoazul</docker.image.prefix>
+        <version.number>${maven.build.timestamp}</version.number>
+        <docker.image.prefix>southwinds</docker.image.prefix>
+        <spring.boot.version>2.1.4.RELEASE</spring.boot.version>
         <!--
         <version.number>${git.commit.id.describe-short}.${build.time}</version.number>
         -->
@@ -160,6 +160,14 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring.boot.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <!-- compiler plugin -->
             <plugin>
