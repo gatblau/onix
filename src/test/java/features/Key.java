@@ -47,4 +47,5 @@ public class Key {
     public static final String LINK_CREATED_FROM_FILTER = "link_created_from_filter";
     public static final String LINK_CREATED_TO_FILTER = "link_created_to_filter";
     public static final String LINK_WITH_KEY_URL = "link_with_key_url";
+    public static final String LIVE_URL = "live_url";
 }

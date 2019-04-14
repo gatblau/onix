@@ -36,7 +36,7 @@ public class ItemTypeData implements Serializable {
     private String created;
     private String updated;
     private Integer version;
-    private String model;
+    private String modelKey;
 
     public ItemTypeData() {
     }
@@ -121,11 +121,11 @@ public class ItemTypeData implements Serializable {
         this.metaSchema = metaSchema;
     }
 
-    public String getModel() {
-        return model;
+    public String getModelKey() {
+        return modelKey;
     }
 
-    public void setModel(String model) {
-        this.model = model;
+    public void setModelKey(String modelKey) {
+        this.modelKey = modelKey;
     }
 }

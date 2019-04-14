@@ -34,7 +34,7 @@ public class LinkTypeData implements Serializable {
     private String updated;
     private Integer version;
     private String changedBy;
-    private String model;
+    private String modelKey;
 
     public LinkTypeData() {
     }
@@ -111,11 +111,11 @@ public class LinkTypeData implements Serializable {
         this.metaSchema = metaSchema;
     }
 
-    public String getModel() {
-        return model;
+    public String getModelKey() {
+        return modelKey;
     }
 
-    public void setModel(String model) {
-        this.model = model;
+    public void setModelKey(String modelKey) {
+        this.modelKey = modelKey;
     }
 }

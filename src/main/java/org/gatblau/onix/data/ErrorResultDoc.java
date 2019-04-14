@@ -23,7 +23,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 import java.io.Serializable;
 
-public class Result implements Serializable {
+public class ErrorResultDoc implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private boolean changed;
@@ -32,11 +32,11 @@ public class Result implements Serializable {
     private boolean error;
     private String ref;
 
-    public Result() {
+    public ErrorResultDoc() {
         this(null);
     }
 
-    public Result(String ref) {
+    public ErrorResultDoc(String ref) {
         this.ref = ref;
         this.changed = false;
         this.error = false;
@@ -60,7 +60,7 @@ public class Result implements Serializable {
             position = 2,
             value = "A message describing an error associated with the response",
             notes = "This value is empty if no error occurred whilst processing the request.",
-            example = "empty"
+            example = "Failed to create the item with key item_01: item_type not found."
     )
     public String getMessage() {
         return message;
@@ -86,7 +86,7 @@ public class Result implements Serializable {
     @ApiModelProperty(
             position = 4,
             value = "A character indicating the type of operation executed on the resource.",
-            notes = "I indicates INSERT, U indicates UPDATE, D indicates DELETE and L indicates OPTIMISTIC LOCK",
+            notes = "I indicates INSERT, U indicates UPDATE, D indicates DELETE and L indicates OPTIMISTIC LOCK, N indicates NO CHANGE",
             example = "N"
     )
     public String getOperation() {
@@ -102,7 +102,7 @@ public class Result implements Serializable {
             position = 5,
             value = "A flag indicating if the request resulted in an error condition.",
             notes = "If the flag is true then the message property contains the detail of the error.",
-            example = "false"
+            example = "true"
     )
     public boolean isError() {
         return error;
@@ -116,7 +116,7 @@ public class Result implements Serializable {
         if (isError()) {
             return 500;
         } else {
-            if (isChanged() && getOperation().equals("I")) {
+            if (isChanged()) {
                 return 201;
             } else {
                 return 200;

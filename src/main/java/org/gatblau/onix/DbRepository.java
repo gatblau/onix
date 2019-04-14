@@ -33,7 +33,7 @@ public interface DbRepository {
     /*
         ITEMS
     */
-    Result createOrUpdateItem(String key, JSONObject json);
+    Result createOrUpdateItem(String key, ItemData json);
     ItemData getItem(String key, boolean includeLinks);
     Result deleteItem(String key);
     ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, String modelKey, Integer top);
@@ -44,7 +44,7 @@ public interface DbRepository {
         LINKS
     */
     LinkData getLink(String key);
-    Result createOrUpdateLink(String key, JSONObject json);
+    Result createOrUpdateLink(String key, LinkData json);
     Result deleteLink(String key);
     LinkList findLinks(String linkTypeKey, String startItemKey, String endItemKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey, Integer top);
 
@@ -57,14 +57,14 @@ public interface DbRepository {
     Result deleteItemTypes();
     ItemTypeList getItemTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelType);
 
-    Result createOrUpdateItemType(String key, JSONObject json);
+    Result createOrUpdateItemType(String key, ItemTypeData json);
     Result deleteItemType(String key);
 
     /*
         LINK TYPES
     */
     LinkTypeList getLinkTypes(Map attrMap, ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time, String modelKey);
-    Result createOrUpdateLinkType(String key, JSONObject json);
+    Result createOrUpdateLinkType(String key, LinkTypeData json);
     Result deleteLinkType(String key);
     Result deleteLinkTypes();
     LinkTypeData getLinkType(String key);
@@ -73,7 +73,7 @@ public interface DbRepository {
         LINK RULES
     */
     LinkRuleList getLinkRules(String linkTypeKey, String startItemType, String endItemType, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo);
-    Result createOrUpdateLinkRule(String key, JSONObject payload);
+    Result createOrUpdateLinkRule(String key, LinkRuleData json);
     Result deleteLinkRule(String key);
     Result deleteLinkRules();
 
@@ -137,7 +137,7 @@ public interface DbRepository {
 
     /* Graph Data */
     GraphData getData(String rootItemKey, String label);
-    ResultList createOrUpdateData(JSONObject payload);
+    ResultList createOrUpdateData(GraphData payload);
     Result deleteData(String rootItemKey);
 
     TypeGraphData getTypeDataByModel(String modelKey);
@@ -151,7 +151,7 @@ public interface DbRepository {
 
     /* Model */
     Result deleteModel(String key);
-    Result createOrUpdateModel(String key, JSONObject payload);
+    Result createOrUpdateModel(String key, ModelData json);
     ModelData getModel(String key);
     ModelDataList getModels();
 
