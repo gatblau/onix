@@ -153,7 +153,7 @@ The following table provides a convention for translating Web API resources into
 
 
 <a name="models"></a>
-## Model [(up)](#toc)
+## Models [(up)](#toc)
 
 In order to create items, it is first necessary to create a model, that is a set of item and link definitions (i.e. item types and link types).
 
@@ -211,10 +211,10 @@ __result__:
 
 The model resource is idempotent. Therefore, if the above request is run for a second time.
 
-#### Delete
+### Delete
 
 [...]
 
-#### Query
+### Query
 
 [...]
