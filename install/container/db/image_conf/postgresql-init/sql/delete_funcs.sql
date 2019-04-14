@@ -185,6 +185,8 @@ DO
       AS
       $BODY$
       BEGIN
+        DELETE FROM tag;
+        DELETE FROM link_rule;
         DELETE FROM link;
         DELETE FROM item;
         PERFORM delete_link_types();

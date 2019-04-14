@@ -167,7 +167,7 @@ public class Lib implements InitializingBean {
         itemType.setAttribute(toJSON(set.getObject("attr_valid")));
         itemType.setFilter(toJSON(set.getObject("filter")));
         itemType.setMetaSchema(toJSON(set.getObject("meta_schema")));
-        itemType.setModel(set.getString("model_key"));
+        itemType.setModelKey(set.getString("model_key"));
         return itemType;
     }
 
@@ -203,7 +203,7 @@ public class Lib implements InitializingBean {
         linkType.setVersion(set.getInt("version"));
         linkType.setAttribute(toJSON(set.getObject("attr_valid")));
         linkType.setMetaSchema(toJSON(set.getObject("meta_schema")));
-        linkType.setModel(set.getString("model_key"));
+        linkType.setModelKey(set.getString("model_key"));
         linkType.setChangedBy(set.getString("changed_by"));
         return linkType;
     }
@@ -215,9 +215,9 @@ public class Lib implements InitializingBean {
         linkRule.setKey(set.getString("key"));
         linkRule.setName(set.getString("name"));
         linkRule.setDescription(set.getString("description"));
-        linkRule.setLinkType(set.getString("link_type_key"));
-        linkRule.setStartItemType(set.getString("start_item_type_key"));
-        linkRule.setEndItemType(set.getString("end_item_type_key"));
+        linkRule.setLinkTypeKey(set.getString("link_type_key"));
+        linkRule.setStartItemTypeKey(set.getString("start_item_type_key"));
+        linkRule.setEndItemTypeKey(set.getString("end_item_type_key"));
         linkRule.setCreated(dateFormat.format(set.getDate("created")));
         linkRule.setUpdated((updated != null) ? dateFormat.format(updated) : null);
         linkRule.setVersion(set.getInt("version"));

@@ -23,7 +23,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 import java.io.Serializable;
 
-public class Result implements Serializable {
+public class CreateOrUpdateResultDoc implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private boolean changed;
@@ -32,11 +32,11 @@ public class Result implements Serializable {
     private boolean error;
     private String ref;
 
-    public Result() {
+    public CreateOrUpdateResultDoc() {
         this(null);
     }
 
-    public Result(String ref) {
+    public CreateOrUpdateResultDoc(String ref) {
         this.ref = ref;
         this.changed = false;
         this.error = false;
@@ -60,7 +60,7 @@ public class Result implements Serializable {
             position = 2,
             value = "A message describing an error associated with the response",
             notes = "This value is empty if no error occurred whilst processing the request.",
-            example = "empty"
+            example = ""
     )
     public String getMessage() {
         return message;
@@ -73,7 +73,7 @@ public class Result implements Serializable {
     @ApiModelProperty(
             position = 3,
             value = "A flag indicating whether the resource was changed as a result of the request.",
-            example = "false"
+            example = "true"
     )
     public boolean isChanged() {
         return changed;
@@ -87,7 +87,7 @@ public class Result implements Serializable {
             position = 4,
             value = "A character indicating the type of operation executed on the resource.",
             notes = "I indicates INSERT, U indicates UPDATE, D indicates DELETE and L indicates OPTIMISTIC LOCK",
-            example = "N"
+            example = "I"
     )
     public String getOperation() {
         return operation;
@@ -116,7 +116,7 @@ public class Result implements Serializable {
         if (isError()) {
             return 500;
         } else {
-            if (isChanged() && getOperation().equals("I")) {
+            if (isChanged()) {
                 return 201;
             } else {
                 return 200;

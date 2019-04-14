@@ -29,7 +29,7 @@ if [ -n "$images_with_no_tag" ]; then
 fi
 
 # builds an onix postgresql database image using the S2I tool (https://github.com/openshift/source-to-image/releases)
-# https://github.com/sclorg/postgresql-container/tree/generated/10
+# https://github.com/sclorg/postgresql-container
 ../s2i build ./image_conf/ centos/postgresql-10-centos7 "southwinds/onixdb-snapshot:${TAG}"
 
 # tags the image as latest

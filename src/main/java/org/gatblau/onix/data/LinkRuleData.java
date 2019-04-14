@@ -27,9 +27,9 @@ public class LinkRuleData implements Serializable {
     private String key;
     private String name;
     private String description;
-    private String linkType;
-    private String startItemType;
-    private String endItemType;
+    private String linkTypeKey;
+    private String startItemTypeKey;
+    private String endItemTypeKey;
     private String created;
     private String updated;
     private Integer version;
@@ -59,28 +59,28 @@ public class LinkRuleData implements Serializable {
         this.description = description;
     }
 
-    public String getLinkType() {
-        return linkType;
+    public String getLinkTypeKey() {
+        return linkTypeKey;
     }
 
-    public void setLinkType(String linkType) {
-        this.linkType = linkType;
+    public void setLinkTypeKey(String linkTypeKey) {
+        this.linkTypeKey = linkTypeKey;
     }
 
-    public String getStartItemType() {
-        return startItemType;
+    public String getStartItemTypeKey() {
+        return startItemTypeKey;
     }
 
-    public void setStartItemType(String startItemType) {
-        this.startItemType = startItemType;
+    public void setStartItemTypeKey(String startItemTypeKey) {
+        this.startItemTypeKey = startItemTypeKey;
     }
 
-    public String getEndItemType() {
-        return endItemType;
+    public String getEndItemTypeKey() {
+        return endItemTypeKey;
     }
 
-    public void setEndItemType(String endItemType) {
-        this.endItemType = endItemType;
+    public void setEndItemTypeKey(String endItemTypeKey) {
+        this.endItemTypeKey = endItemTypeKey;
     }
 
     public String getCreated() {

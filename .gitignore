@@ -6,3 +6,4 @@ install/container/s2i
 src/main/resources/version
 ansible/*.retry
 venv
+.terraform
