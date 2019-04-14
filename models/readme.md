@@ -1,4 +1,4 @@
-# Onix Models
+# Onix Models <img src="../docs/pics/ox.png" width="125" height="125" align="right">
 
 _A model is a collection of __item and link types__ which define a template for storing a domain specific configuration._
 
