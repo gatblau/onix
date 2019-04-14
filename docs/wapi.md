@@ -152,7 +152,7 @@ The following table provides a convention for translating Web API resources into
 | link | ox_link |ox_link |ox_link_data |
 
 
-<a name="model"></a>
+<a name="models"></a>
 ## Model [(up)](#toc)
 
 In order to create items, it is first necessary to create a model, that is a set of item and link definitions (i.e. item types and link types).
@@ -160,7 +160,9 @@ In order to create items, it is first necessary to create a model, that is a set
 Item and Link Types have to belong to one and only one model.
 A model can be created as described below.
 
-### Request attributes
+### Create or Update
+
+#### Request attributes
 
 | _Item_  | _Value_ | 
 |---|---|
@@ -169,7 +171,7 @@ A model can be created as described below.
 | Response Content Type | application/json |
 | Authentication Header | basic authentication token |
 
-### Request payload
+#### Request payload
 
 | _Attribute_ | _Description_ | _Example_ | _Mandatory_|
 |---|---|---|---|
@@ -177,63 +179,7 @@ A model can be created as described below.
 | __description__ | the model description | "Definitions for AWS Elastic Compute Cloud items and their relationships" | no |
 | __version__ | the version of the model for concurrency management purposes. | 34 | no |
 
-### Usage
-
-The PUT request requires a payload in JSON format as the one shown below.
-Note that the natural key for the configuration item type is not part of the payload but specified in the URI.
-```bash
-$ curl \
-    -X PUT \
-    -H 'ContentType: application/json' \
-    -H '${AUTH_HEADER}' \
-    -d '@model_payload.json' \
-    'http://localhost:8080/model/awsec2' 
-```
-__model_payload.json__:
-```json
-{
-  "name": "AWS EC2 Model",
-  "description": "Definitions for AWS Elastic Compute Cloud items and their relationships."
-}
-```
-__result__:
-```json
-{
-  "ref": "model:awsec2",
-  "changed": "true",
-  "error": "false",
-  "message": "", 
-  "operation": "I", 
-}
-```
-### Updates and Deletes
-
-The model resource is idempotent. Therefore, if the above request is run for a second time
-<a name="creating-an-item-type"></a>
-## Creating an item type [(up)](#toc)
-
-Once a model has been created, item and link types can be added to it.
-
-Item Types defined the characteristics of configuration items.
-
-### Request attributes
-
-| _Item_  | _Value_ | 
-|---|---|
-| Method | PUT | 
-| Path | /model/**{model_key}**|
-| Response Content Type | application/json |
-| Authentication Header | basic authentication token |
-
-### Request payload
-
-| _Attribute_ | _Description_ | _Example_ | _Mandatory_|
-|---|---|---|---|
-| __name__ | the human readable name of the model | "AWS EC2  Model"| yes (unique) |
-| __description__ | the model description | "Definitions for AWS Elastic Compute Cloud items and their relationships" | no |
-
-
-### Usage
+#### Usage
 
 The PUT request requires a payload in JSON format as the one shown below.
 Note that the natural key for the configuration item type is not part of the payload but specified in the URI.
@@ -263,36 +209,12 @@ __result__:
 }
 ```
 
-<a name="item-type"></a>
-## Item Type [(up)](#toc)
+The model resource is idempotent. Therefore, if the above request is run for a second time.
 
-| Item  | Value  | 
-|---|---|
-| Method | PUT | 
-| Path | /itemtype/**{item_type_key}**/|
-| Response Content Type | application/json |
- 
-**NOTE**: this operation is idempotent.
+#### Delete
 
-### Usage
+[...]
 
-The PUT request requires a payload in JSON format as the one shown below.
-Note that the natural key for the configuration item type is not part of the payload but specified in the URI.
+#### Query
 
-```bash
-$ curl \
-    -X PUT \
-    -H 'ContentType: application/json' \
-    -H '${AUTH_HEADER}' \
-    -d '@item_type_payload.json' \
-    'http://localhost:8080/itemtype/aws_instance' 
-```
-
-```json
-{
-  "name": "AWS Instance",
-  "description": "A Virtual Machine in AWS EC2",
-  "modelKey": "awsec2"
-}
-```
-
+[...]
