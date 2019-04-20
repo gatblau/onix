@@ -164,10 +164,11 @@ public class Lib implements InitializingBean {
         itemType.setCreated(dateFormat.format(set.getDate("created")));
         itemType.setUpdated((updated != null) ? dateFormat.format(updated) : null);
         itemType.setVersion(set.getInt("version"));
-        itemType.setAttribute(toJSON(set.getObject("attr_valid")));
+        itemType.setAttrValid(toJSON(set.getObject("attr_valid")));
         itemType.setFilter(toJSON(set.getObject("filter")));
         itemType.setMetaSchema(toJSON(set.getObject("meta_schema")));
         itemType.setModelKey(set.getString("model_key"));
+        itemType.setChangedBy(set.getString("changed_by"));
         return itemType;
     }
 
@@ -201,7 +202,7 @@ public class Lib implements InitializingBean {
         linkType.setCreated(dateFormat.format(set.getDate("created")));
         linkType.setUpdated((updated != null) ? dateFormat.format(updated) : null);
         linkType.setVersion(set.getInt("version"));
-        linkType.setAttribute(toJSON(set.getObject("attr_valid")));
+        linkType.setAttrValid(toJSON(set.getObject("attr_valid")));
         linkType.setMetaSchema(toJSON(set.getObject("meta_schema")));
         linkType.setModelKey(set.getString("model_key"));
         linkType.setChangedBy(set.getString("changed_by"));

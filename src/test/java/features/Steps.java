@@ -168,9 +168,8 @@ public class Steps extends BaseTest {
     }
 
     @Given("^the item type does not exist in the database$")
-    public void theItemTypeDoesNotExistInTheDatabase() throws Throwable {
-        theItemTypeURLOfTheServiceIsKnown();
-        thereIsNotAnyErrorInTheResponse();
+    public void theItemTypeDoesNotExistInTheDatabase() {
+        delete(String.format("%sitemtype/{item_type}", baseUrl)+"?force=true", "item_type_1");
     }
 
     @Given("^the item type URL of the service is known$")
@@ -388,8 +387,7 @@ public class Steps extends BaseTest {
         util.put(CONGIG_ITEM_TYPE_KEY, "item_type_1");
     }
 
-//    @When("^a PUT HTTP request with a JSON payload is done$")
-    private void makePutRequestWithPayload(String urlKey, String payload, String itemKey) throws Throwable {
+    private void makePutRequestWithPayload(String urlKey, String payload, String itemKey) {
         String url = util.get(urlKey);
         ResponseEntity<Result> response = null;
         try {
@@ -530,7 +528,7 @@ public class Steps extends BaseTest {
 
     @Given("^the item type exists in the database$")
     public void theItemTypeExistsInTheDatabase() {
-        putItemType(util.get(CONGIG_ITEM_TYPE_KEY), "payload/create_item_type_with_meta_schema_payload.json");
+        putItemType("item_type_1", "payload/create_item_type_1_payload.json");
     }
 
     @When("^a DELETE HTTP request with an item type key is done$")
@@ -1360,12 +1358,12 @@ public class Steps extends BaseTest {
 
     @Given("^an item type exists in the database$")
     public void anItemTypeExistsInTheDatabase() {
-        putItemType("item_type_1","payload/create_item_type_with_attr_payload.json");
+        putItemType("item_type_1","payload/create_item_type_1_payload.json");
     }
 
     @Given("^there are not any item types associated with the model$")
     public void thereAreNotAnyItemTypesAssociatedWithTheModel() {
-        Result result = delete(String.format("%s/itemtype/{key}", baseUrl), "item_type_1");
+        Result result = delete(String.format("%s/itemtype/{key}?force=true", baseUrl), "item_type_1");
         if (result.isError()){
             throw new RuntimeException(result.getMessage());
         }
@@ -1524,5 +1522,11 @@ public class Steps extends BaseTest {
     @Given("^the live URL of the service is known$")
     public void theLiveURLOfTheServiceIsKnown() {
         util.put(LIVE_URL, String.format("%slive", baseUrl));
+    }
+
+    @Given("^the item types to and from exists in the database$")
+    public void theItemTypesToAndFromExistsInTheDatabase() {
+        putItemType("item_type_1", "payload/create_item_type_1_payload.json");
+        putItemType("item_type_2", "payload/create_item_type_2_payload.json");
     }
 }
