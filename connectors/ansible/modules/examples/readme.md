@@ -1,4 +1,4 @@
-# Ansible module examples <img src="../../../../docs/pics/ox.png" width="125" height="125" align="right">
+# Ansible module examples <img src="../../../../docs/pics/ox.png" width="160" height="160" align="right">
 
 This folder contains examples of using the Ansible modules included in this configuration package.
 

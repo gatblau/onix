@@ -1,4 +1,4 @@
-# Web API <img src="./pics/ox.png" width="125" height="125" align="right">
+# Web API <img src="./pics/ox.png" width="160" height="160" align="right">
 
 This section explains how to use Onix Web API. 
 

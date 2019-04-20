@@ -1,4 +1,4 @@
-# Query Module Example <img src="../../../../../docs/pics/ox.png" width="125" height="125" align="right">
+# Query Module Example <img src="../../../../../docs/pics/ox.png" width="160" height="160" align="right">
 
 This example shows how to query an item in the CMDB.
 

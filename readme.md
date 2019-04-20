@@ -1,7 +1,7 @@
 # Onix 
 
 Onix is a lightweight configuration management database (CMDB) designed to support [Infrastructure as a Code](https://en.wikipedia.org/wiki/Infrastructure_as_code) provisioning to ultimately provide a [single source of thruth](https://en.wikipedia.org/wiki/Single_source_of_truth) across [multi-cloud](https://en.wikipedia.org/wiki/Multicloud) environments.
-<img src="docs/pics/ox.png" width="250" height="250" align="right">
+<img src="docs/pics/ox.png" width="300" height="300" align="right">
 
 The key features are:
 - accessible via a [RESTful Web API](./docs/wapi.md), [Ansible](https://www.ansible.com/) and [Terraform](https://www.terraform.io/) compoments ([Connectors](./connectors/readme.md)). A user interface is coming soon. :smiley:
