@@ -32,30 +32,65 @@ objects:
           deploymentconfig: onixdb
       spec:
         containers:
-        - env:
+        - name: onixdb
+          env:
           - name: POSTGRESQL_ADMIN_PASSWORD
             value: onix
-          image: southwinds/onixdb-snapshot
-          imagePullPolicy: Always
-          name: onixdb
+          imagePullPolicy: IfNotPresent
           ports:
           - containerPort: 5432
             protocol: TCP
           resources: {}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /var/lib/pgsql/data
+            name: onixdb-data
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
         securityContext: {}
         terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: onixdb-data
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+        - onixdb
+        from:
+           kind: ImageStreamTag
+           name: onixdb:latest
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    annotations:
+    labels:
+      app: onix
+    name: onixdb
+  spec:
+    lookupPolicy:
+      local: true
+    tags:
+    - annotations:
+      from:
+        kind: DockerImage
+        name: southwinds/onixdb-snapshot
+      importPolicy:
+        scheduled: true
+      name: latest
+      referencePolicy:
+        type: Local
 - apiVersion: apps.openshift.io/v1
   kind: DeploymentConfig
   metadata:
     name: onixwapi
   spec:
     progressDeadlineSeconds: 600
-    replicas: 1
+    replicas: 2
     revisionHistoryLimit: 10
     selector:
         deploymentconfig: onixwapi
@@ -131,8 +166,7 @@ objects:
             value: "true"
           - name: DS_USE_SERVER_PREP_STMTS
             value: "true"
-          image: southwinds/onixwapi-snapshot
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
             httpGet:
@@ -165,6 +199,36 @@ objects:
         schedulerName: default-scheduler
         securityContext: {}
         terminationGracePeriodSeconds: 30
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+        - onixwapi
+        from:
+           kind: ImageStreamTag
+           name: onixwapi:latest
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    annotations:
+    labels:
+      app: onix
+    name: onixwapi
+  spec:
+    lookupPolicy:
+      local: true
+    tags:
+    - annotations:
+      from:
+        kind: DockerImage
+        name: southwinds/onixwapi-snapshot:latest
+      importPolicy:
+        scheduled: true
+      name: latest
+      referencePolicy:
+        type: Local
 - apiVersion: v1
   kind: Secret
   metadata:
