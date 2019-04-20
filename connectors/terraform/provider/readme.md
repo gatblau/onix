@@ -5,7 +5,7 @@ The Terraform provider for Onix allows Terraform to manage configuration informa
 <a name="toc"></a>
 ### Table of Contents [(index)](./../readme.md)
 
-- [Terraform Provider for Onix](#terraform-provider-for-onix)
+- [Provider <img src="../../../docs/pics/ox.png" width="160" height="160" align="right">](#provider-img-src%22docspicsoxpng%22-width%22160%22-height%22160%22-align%22right%22)
     - [Table of Contents (index)](#table-of-contents-index)
   - [Connection information (up)](#connection-information-up)
   - [Installation (up)](#installation-up)
@@ -66,16 +66,6 @@ The list of resources offered in this provider is as follows:
 <a name="data-sources"></a>
 ## Data Sources ([up](#toc))
 
-Data sources allow data to be fetched or computed for use elsewhere in Terraform configuration. Use of Onix data sources allows a Terraform configuration to make use of information defined in the CMDB.
+Data sources allow data to be fetched or computed for use elsewhere in Terraform configuration. 
 
-The list of the data sources offered in this provider is as follows:
-
-| Source | Description |
-|---|---|
-| [ox_model_data](./docs/rs_ox_model_data.md) | Queries a [modelKey](../../../models/readme.md). |
-| [ox_item_data](./docs/rs_ox_item_data.md) | Queries a configuration item. |
-| [ox_item_type_data](./docs/rs_ox_item_type_data.md) | Queries a configuration item type. |
-| [ox_link_data](./docs/rs_ox_link_data.md) | Queries a configuration item link. |
-| [ox_link_type_data](./docs/rs_ox_link_type_data.md) | Queries a configuration item link type. |
-| [ox_link_rule_data](./docs/rs_ox_link_rule_data.md) | Queries a configuration item link rule. |
-
+This provider does not currently support data sources.
