@@ -1,4 +1,4 @@
-# Inventory Plugin <img src="../../../docs/pics/ox.png" width="125" height="125" align="right">
+# Inventory Plugin <img src="../../../docs/pics/ox.png" width="160" height="160" align="right">
 
 The [inventory plugin](./onix.py) allows users to point at a Onix CMDB to retrieve an Ansible inventory. 
 
