@@ -1,4 +1,4 @@
-# Ansible Modules
+# Ansible Modules <img src="../../../docs/pics/ox.png" width="125" height="125" align="right">
 
 In order to maintain accurate information in the CMDB it is important that:
 - Changes are recorded in the CMDB as soon as configuration changes are made (If changes are driven by Ansible, then it is important to update the CMDB automatically whilst Ansible performs any configuration changes). Or
