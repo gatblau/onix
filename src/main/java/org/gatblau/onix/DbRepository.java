@@ -58,14 +58,14 @@ public interface DbRepository {
     ItemTypeList getItemTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelType);
 
     Result createOrUpdateItemType(String key, ItemTypeData json);
-    Result deleteItemType(String key);
+    Result deleteItemType(String key, boolean force);
 
     /*
-        LINK TYPES
-    */
+            LINK TYPES
+        */
     LinkTypeList getLinkTypes(Map attrMap, ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time, String modelKey);
     Result createOrUpdateLinkType(String key, LinkTypeData json);
-    Result deleteLinkType(String key);
+    Result deleteLinkType(String key, boolean force);
     Result deleteLinkTypes();
     LinkTypeData getLinkType(String key);
 
@@ -150,7 +150,7 @@ public interface DbRepository {
     JSONObject getReadyStatus();
 
     /* Model */
-    Result deleteModel(String key);
+    Result deleteModel(String key, boolean force);
     Result createOrUpdateModel(String key, ModelData json);
     ModelData getModel(String key);
     ModelDataList getModels();

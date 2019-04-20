@@ -9,6 +9,6 @@ Feature: Create Meta Model
     Given the meta model does not exist in the database
     Given the meta model URL of the service with key is known
     When a meta model PUT HTTP request with a JSON payload is done
-    Then the response code is 200
+    Then the response code is 201
     Then the response has body
     Then the result contains no errors

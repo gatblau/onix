@@ -19,7 +19,7 @@ DO
       /*
       delete_model
      */
-      CREATE OR REPLACE FUNCTION delete_model(key_param character varying)
+      CREATE OR REPLACE FUNCTION delete_model(key_param character varying, force boolean default false)
         RETURNS VOID
         LANGUAGE 'plpgsql'
         COST 100
@@ -27,13 +27,15 @@ DO
       AS
       $BODY$
       BEGIN
-        DELETE
-        FROM item_type it USING model m
-        WHERE m.id = it.model_id;
+        IF (force = TRUE) THEN
+          DELETE
+          FROM item_type it USING model m
+          WHERE m.id = it.model_id;
 
-        DELETE
-        FROM link_type lt USING model m
-        WHERE m.id = lt.model_id;
+          DELETE
+          FROM link_type lt USING model m
+          WHERE m.id = lt.model_id;
+        END IF;
 
         DELETE
         FROM model
@@ -41,7 +43,7 @@ DO
       END
       $BODY$;
 
-      ALTER FUNCTION delete_model(character varying)
+      ALTER FUNCTION delete_model(character varying, boolean)
         OWNER TO onix;
 
       /*
@@ -55,6 +57,7 @@ DO
       AS
       $BODY$
       BEGIN
+
         DELETE
         FROM item
         WHERE key = key_param;
@@ -105,15 +108,15 @@ DO
             FROM item_type
             WHERE key = key_param
           );
+
+          DELETE
+          FROM link_rule r USING item_type it
+          WHERE r.start_item_type_id = it.id;
+
+          DELETE
+          FROM link_rule r USING item_type it
+          WHERE r.end_item_type_id = it.id;
         END IF;
-
-        DELETE
-        FROM link_rule r USING item_type it
-        WHERE r.start_item_type_id = it.id;
-
-        DELETE
-        FROM link_rule r USING item_type it
-        WHERE r.end_item_type_id = it.id;
 
         DELETE
         FROM item_type
@@ -147,7 +150,7 @@ DO
       /*
         delete_link_type
        */
-      CREATE OR REPLACE FUNCTION delete_link_type(key_param character varying, force boolean default TRUE)
+      CREATE OR REPLACE FUNCTION delete_link_type(key_param character varying, force boolean default false)
         RETURNS VOID
         LANGUAGE 'plpgsql'
         COST 100

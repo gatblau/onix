@@ -27,4 +27,4 @@
     },
     "required": [ "productId", "productName", "price" ]
   }
-},
+}

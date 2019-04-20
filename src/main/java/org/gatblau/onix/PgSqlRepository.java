@@ -308,12 +308,20 @@ public class PgSqlRepository implements DbRepository {
         }
     }
 
-    private synchronized Result delete(String sql, String key) {
+    private synchronized Result delete(String sql, String key){
+        return delete(sql, key, false, false);
+    }
+
+    private synchronized Result delete(String sql, String key, boolean isType, boolean force) {
         Result result = new Result(String.format("Delete(%s)", key));
         try {
             db.prepare(sql);
             if (key != null) {
                 db.setString(1, key);
+                // if the delete is for a type resource, then sets additional force parameter
+                if (isType) {
+                    db.setObject(2, force);
+                }
             }
             result.setOperation((db.execute()) ? "D" : "N");
             if (result.getOperation().equals("D")) {
@@ -384,7 +392,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(1, key); // key_param
             db.setString(2, itemType.getName()); // name_param
             db.setString(3, itemType.getDescription()); // description_param
-            db.setString(4, getAttributeString(itemType.getAttribute())); // attribute_param
+            db.setString(4, getAttributeString(itemType.getAttrValid())); // attribute_param
             db.setString(5, util.toJSONString(itemType.getFilter()));
             db.setString(6, util.toJSONString(itemType.getMetaSchema()));
             db.setObject(7, itemType.getVersion()); // version_param
@@ -402,8 +410,8 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteItemType(String key) {
-        return delete(getDeleteItemTypeSQL(), key);
+    public Result deleteItemType(String key, boolean force) {
+        return delete(getDeleteItemTypeSQL(), key, true, force);
     }
 
     /*
@@ -440,7 +448,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(1, key); // key_param
             db.setString(2, linkType.getName()); // name_param
             db.setString(3, linkType.getDescription()); // description_param
-            db.setString(4, getAttributeString(linkType.getAttribute())); // attribute_param
+            db.setString(4, getAttributeString(linkType.getAttrValid())); // attribute_param
             db.setString(5, util.toJSONString(linkType.getMetaSchema()));
             db.setObject(6, linkType.getVersion()); // version_param
             db.setString(7, linkType.getModelKey()); // model_key_param
@@ -457,8 +465,8 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteLinkType(String key) {
-        return delete(getDeleteLinkTypeSQL(), key);
+    public Result deleteLinkType(String key, boolean force) {
+        return delete(getDeleteLinkTypeSQL(), key, true, force);
     }
 
     @Override
@@ -648,7 +656,10 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteItemTypeSQL() {
-        return "SELECT delete_item_type(?::character varying)";
+        return "SELECT delete_item_type(" +
+                "?::character varying," +
+                "?::boolean" +
+                ")";
     }
 
     @Override
@@ -692,7 +703,10 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteLinkTypeSQL() {
-        return "SELECT delete_link_type(?::character varying)";
+        return "SELECT delete_link_type(" +
+                "?::character varying," +
+                "?::boolean" +
+                ")";
     }
 
     @Override
@@ -934,21 +948,22 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result deleteModel(String key) {
-        Result result = new Result(String.format("Model:%s", key));
-        try {
-            db.prepare(getDeleteModelSQL());
-            db.setString(1, key); // meta model key
-            result.setError(!db.execute());
-            result.setOperation("D");
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setError(true);
-            result.setMessage(String.format("Failed to delete model for key '%s': %s", key, ex.getMessage()));
-        } finally {
-            db.close();
-        }
-        return result;
+    public synchronized Result deleteModel(String key, boolean force) {
+        return delete(getDeleteModelSQL(), key, true, force);
+//        Result result = new Result(String.format("Model:%s", key));
+//        try {
+//            db.prepare(getDeleteModelSQL());
+//            db.setString(1, key); // meta model key
+//            result.setError(!db.execute());
+//            result.setOperation("D");
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//            result.setError(true);
+//            result.setMessage(String.format("Failed to delete model for key '%s': %s", key, ex.getMessage()));
+//        } finally {
+//            db.close();
+//        }
+//        return result;
     }
 
     @Override
@@ -1081,7 +1096,8 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public String getDeleteModelSQL() {
         return "SELECT delete_model(" +
-                "?::character varying" + // model_key_param
+                "?::character varying, " + // model_key_param
+                "?::boolean" + // force
                 ")";
     }
 
