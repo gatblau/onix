@@ -1,4 +1,4 @@
-# Inventory Plugin Example
+# Inventory Plugin Example <img src="../../../../docs/pics/ox.png" width="125" height="125" align="right">
 
 This example shows how to use the inventory plugin to read inventories from the CMDB.
 
