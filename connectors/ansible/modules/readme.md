@@ -1,4 +1,4 @@
-# Ansible Modules
+# Ansible Modules <img src="../../../docs/pics/ox.png" width="160" height="160" align="right">
 
 In order to maintain accurate information in the CMDB it is important that:
 - Changes are recorded in the CMDB as soon as configuration changes are made (If changes are driven by Ansible, then it is important to update the CMDB automatically whilst Ansible performs any configuration changes). Or
@@ -209,7 +209,7 @@ Use it as follows:
     tag:
     - "onix"
     - "db"
-    attribute:
+    attrValid:
       WBS: "EU-00023.100002.984"
       PROJECT: "TheOnixProject"
 ```
@@ -228,7 +228,7 @@ Use it as follows:
 | **meta** | an arbitrary json object associated with the item | no |
 | **status** | an arbitrary flag indicating the status of the item | no |
 | **tag** | a list of tags for searching | no |
-| **attribute** | a map of key-value pairs for searching | no |
+| **attrValid** | a map of key-value pairs for searching | no |
 | **state** | *'present'* to create/update the item type; or *'absent'* to delete the item type. | no (default to *present*) |
 
 <a name="link"></a>
@@ -249,7 +249,7 @@ Use it as follows:
     endItemKey: "HOST-B"
     tag:
     - "runtime"
-    attribute:
+    attrValid:
       WBS: "EU-00023.100002.984"
       PROJECT: "TheOnixProject"
     meta: {
@@ -274,7 +274,7 @@ Use it as follows:
 | **endItemKey** | the key of the item that ends the link | no |
 | **meta** | an arbitrary json object associated with the item | no |
 | **tag** | a list of tags for searching | no |
-| **attribute** | a map of key-value pairs for searching | no |
+| **attrValid** | a map of key-value pairs for searching | no |
 | **state** | *'present'* to create/update the item type; or *'absent'* to delete the item type. | no (default to *present*) |
 
 <a name="import"></a>
@@ -391,7 +391,7 @@ Once the result has been registered, it can be output as follows:
 
 - name: print item attributes
   debug:
-    var: result.attribute
+    var: result.attrValid
 
 - name: print item tags
   debug:

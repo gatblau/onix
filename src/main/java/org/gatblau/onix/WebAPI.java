@@ -19,8 +19,7 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.*;
 import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
@@ -52,18 +51,23 @@ public class WebAPI {
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
 
     @ApiOperation(
-            value = "Returns a JSON payload if the service is alive.",
-            notes = "Use as liveliness probe for the service.",
-            response = JSONObject.class)
+            value = "Returns information about the service.",
+            notes = "",
+            response = String.class)
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<JSONObject> index() {
-        return live();
+    public ResponseEntity<Info> index() {
+        return ResponseEntity.ok(info);
     }
 
     @ApiOperation(
             value = "Returns a JSON payload if the service is alive.",
-            notes = "Use as liveliness probe for the service.",
+            notes = "In Kubernetes, it is used as a liveliness probe for the service. " +
+                    "That is, to know when the web api container should be restarted, as the web service process " +
+                    "is not receiving requests.",
             response = JSONObject.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful connection to the web service endpoint.", response = JSONObject.class)}
+    )
     @RequestMapping(value = "/live", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<JSONObject> live() {
         JSONObject response = new JSONObject();
@@ -72,46 +76,64 @@ public class WebAPI {
     }
 
     @ApiOperation(
-            value = "Returns the readyness status of the service.",
-            notes = "Use as readyness probe for the service.",
+            value = "Returns 200 if the service is ready, i.e. can establish a successful connection to the database.",
+            notes = "In Kubernetes, it is used as a readyness probe. " +
+                    "That is, to know when the web api container is ready to start accepting traffic. " +
+                    "The web api pod is considered ready when the database container is ready and the web api can establish " +
+                    "a database connection. ",
             response = JSONObject.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful connection to the database.", response = JSONObject.class),
+            @ApiResponse(code = 500, message = "Internal server error")}
+    )
     @RequestMapping(value = "/ready", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<JSONObject> ready() {
         return ResponseEntity.ok(data.getReadyStatus());
-    }
-
-    @ApiOperation(
-            value = "Returns information about the service.",
-            notes = "",
-            response = String.class)
-    @RequestMapping(value = "/info", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<Info> info() {
-        return ResponseEntity.ok(info);
     }
 
     /*
         ITEMS
      */
     @ApiOperation(
-        value = "Creates new item or updates an existing item based on the specified key.",
-        notes = "Use this operation to create configuration item if it's not there or update it if it's there.")
+            value = "Creates a new configuration item or updates an existing configuration item based on the passed-in key.",
+            notes = "This operation is idempotent.")
     @RequestMapping(
             path = "/item/{key}", method = RequestMethod.PUT,
-            consumes = {"application/json" },
-            produces = {"application/json" })
+            consumes = {"application/json"},
+            produces = {"application/json"})
+    @ApiResponses(value = {
+        @ApiResponse(code = 200, message = "No changes where performed to the configuration item."),
+        @ApiResponse(code = 201, message = "The configuration item was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+        @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
+        @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+        @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+    )
     public ResponseEntity<Result> createOrUpdateItem(
+            @ApiParam(
+                    name = "key",
+                    value = "A string which uniquely identifies the item and never changes.",
+                    required = true,
+                    example = "item_01_abc"
+            )
             @PathVariable("key") String key,
-            @RequestBody JSONObject payload) {
-        return ResponseEntity.ok(data.createOrUpdateItem(key, payload));
+            @RequestBody ItemData payload) {
+        Result result = data.createOrUpdateItem(key, payload);
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
-        value = "Deletes an existing configuration item.",
-        notes = "Use this operation to remove a configuration item after it has been decommissioned.")
+            value = "Deletes an existing configuration item.",
+            notes = "Use this operation to remove a configuration item after it has been decommissioned.")
     @RequestMapping(
-          path = "/item/{key}"
-        , method = RequestMethod.DELETE)
+            path = "/item/{key}"
+            , method = RequestMethod.DELETE)
     public ResponseEntity<Result> deleteItem(
+            @ApiParam(
+                name = "key",
+                value = "A string which uniquely identifies the item and never changes.",
+                required = true,
+                example = "item_01_abc"
+            )
             @PathVariable("key") String key
     ) {
         return ResponseEntity.ok(data.deleteItem(key));
@@ -137,9 +159,21 @@ public class WebAPI {
             , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<ItemData> getItem(
-            @PathVariable("key") String key,
-            @RequestParam(required = false, name = "links", defaultValue = "false" // true to retrieve link information
-    ) boolean links) {
+        @ApiParam(
+            name = "key",
+            value = "A string which uniquely identifies the item and never changes.",
+            required = true,
+            example = "item_01_abc"
+        )
+        @PathVariable("key") String key,
+        @ApiParam(
+            name = "links",
+            value = "If present in the query string, returns the links that are related to the item.",
+            required = false,
+            example = "?links"
+        )
+        @RequestParam(required = false, name = "links", defaultValue = "false" // true to retrieve link information
+        ) boolean links) {
         return ResponseEntity.ok(data.getItem(key, links));
     }
 
@@ -153,15 +187,79 @@ public class WebAPI {
             , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<Wrapper> getItems(
-            @RequestParam(value = "type", required = false) String itemTypeKey
-            , @RequestParam(value = "tag", required = false) String tag
-            , @RequestParam(value = "createdFrom", required = false) String createdFromDate
-            , @RequestParam(value = "createdTo", required = false) String createdToDate
-            , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
-            , @RequestParam(value = "updatedTo", required = false) String updatedToDate
-            , @RequestParam(value = "status", required = false) Short status
-            , @RequestParam(value = "model", required = false) String modelKey
-            , @RequestParam(value = "top", required = false, defaultValue = "100") Integer top
+            @ApiParam(
+                name = "type",
+                value = "The type of items to retrieve. If no value is passed then all item types are retrieved.",
+                required = false,
+                example = "test_item_type"
+            )
+            @RequestParam(value = "type", required = false)
+            String itemTypeKey,
+            @ApiParam(
+                name = "tag",
+                value = "A list of search item tags separated by '|' in the query string. If no value is passed then all item types are retrieved.",
+                required = false,
+                example = "Europe|VM|Large"
+            )
+            @RequestParam(value = "tag", required = false)
+            String tag,
+            @ApiParam(
+                name = "createdFrom",
+                value = "The minimum creation date for the items to find. If no value is passed then all item types are retrieved.",
+                required = false,
+                example = "12-03-18"
+            )
+            @RequestParam(value = "createdFrom", required = false)
+            String createdFromDate,
+            @ApiParam(
+                name = "createdTo",
+                value = "The maximum creation date for the items to find. If no value is passed then all item types are retrieved.",
+                required = false,
+                example = "12-03-18"
+            )
+            @RequestParam(value = "createdTo", required = false)
+            String createdToDate,
+            @ApiParam(
+                name = "updatedFrom",
+                value = "The minimum last update date of the items to find. If no value is passed then all item types are retrieved.",
+                required = false,
+                example = "12-03-18"
+            )
+            @RequestParam(value = "updatedFrom", required = false)
+            String updatedFromDate,
+            @ApiParam(
+                name = "updatedTo",
+                value = "The maximum last update date of the items to find. If no value is passed then all item types are retrieved.",
+                required = false,
+                example = "12-03-18"
+            )
+            @RequestParam(value = "updatedTo", required = false)
+            String updatedToDate,
+            @ApiParam(
+                name = "status",
+                value = "The status number of the items to find. If no value is passed then all item types are retrieved.",
+                required = false,
+                example = "5"
+            )
+            @RequestParam(value = "status", required = false)
+            Short status,
+            @ApiParam(
+                name = "modelKey",
+                value = "The key of the model containing the items to find. If no value is passed then all item types are retrieved.",
+                required = false,
+                example = "test_model_01"
+            )
+            @RequestParam(value = "model", required = false)
+            String modelKey,
+            @ApiParam(
+                name = "top",
+                value = "The maximum number of items to retrieve.",
+                required = false,
+                example = "12-03-18",
+                defaultValue = "100"
+            )
+            @RequestParam(value = "top", required = false, defaultValue = "100")
+            Integer top
     ) {
         List<String> tagList = null;
         if (tag != null) {
@@ -191,8 +289,15 @@ public class WebAPI {
             , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<JSONObject> getItemMeta(
-        @PathVariable("key") String key
-    ){
+        @ApiParam(
+            name = "key",
+            value = "A string which uniquely identifies the item and never changes.",
+            required = true,
+            example = "item_01_abc"
+        )
+        @PathVariable("key")
+        String key
+    ) {
         return ResponseEntity.ok(data.getItemMeta(key, null));
     }
 
@@ -205,9 +310,23 @@ public class WebAPI {
             , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<JSONObject> getFilteredItemMeta(
-            @PathVariable("key") String key,
-            @PathVariable("filter") String filter
-    ){
+        @ApiParam(
+                name = "key",
+                value = "A string which uniquely identifies the item and never changes.",
+                required = true,
+                example = "item_01_abc"
+        )
+        @PathVariable("key")
+        String key,
+        @ApiParam(
+            name = "filter",
+            value = "A string which uniquely identifies a filter applied to the meta field content.",
+            required = false,
+            example = "books"
+        )
+        @PathVariable("filter")
+        String filter
+    ) {
         return ResponseEntity.ok(data.getItemMeta(key, filter));
     }
 
@@ -219,10 +338,10 @@ public class WebAPI {
         value = "Deletes all non-system specific configuration item types.",
         notes = "")
     @RequestMapping(
-          path = "/itemtype"
+        path = "/itemtype"
         , method = RequestMethod.DELETE
     )
-    public void deleteItemTypes() throws SQLException {
+    public void deleteItemTypes() {
         data.deleteItemTypes();
     }
 
@@ -230,25 +349,57 @@ public class WebAPI {
         value = "Deletes a configuration item type.",
         notes = "")
     @RequestMapping(
-          path = "/itemtype/{key}"
+        path = "/itemtype/{key}"
         , method = RequestMethod.DELETE
     )
-    public ResponseEntity<Result> deleteItemType(@PathVariable("key") String key) throws SQLException {
-        return ResponseEntity.ok(data.deleteItemType(key));
+    public ResponseEntity<Result> deleteItemType(
+        @ApiParam(
+            name = "key",
+            value = "A string which uniquely identifies the item type and never changes.",
+            required = true,
+            example = "item_type_01"
+        )
+        @PathVariable("key")
+        String key,
+        @ApiParam(
+            name = "force",
+            value = "If true, it forces the deletion of existing items linked to the item type.",
+            required = false,
+            example = "?force"
+        )
+        @RequestParam(required = false, name = "force", defaultValue = "false") // true to force deletion of related items
+        boolean force
+    ) {
+        return ResponseEntity.ok(data.deleteItemType(key, force));
     }
 
     @ApiOperation(
         value = "Creates a new configuration item type.",
         notes = "")
     @RequestMapping(
-          path = "/itemtype/{key}"
+        path = "/itemtype/{key}"
         , method = RequestMethod.PUT)
-    public ResponseEntity<Result> createItemType(
-            @PathVariable("key") String key,
-            @RequestBody JSONObject payload
-        ) throws IOException, SQLException {
-        ResponseEntity<Result> result = null;
-        return ResponseEntity.ok(data.createOrUpdateItemType(key, payload));
+    @ApiResponses(value = {
+        @ApiResponse(code = 200, message = "No changes where performed to the configuration item type."),
+        @ApiResponse(code = 201, message = "The configuration item type was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+        @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
+        @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+        @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+    )
+    public ResponseEntity<Result> createOrUpdateItemType(
+        @ApiParam(
+            name = "key",
+            value = "A string which uniquely identifies the item type and never changes.",
+            required = true,
+            example = "item_type_01"
+        )
+        @PathVariable("key")
+        String key,
+        @RequestBody
+        ItemTypeData itemType
+    ) {
+        Result result = data.createOrUpdateItemType(key, itemType);
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -264,37 +415,37 @@ public class WebAPI {
     }
 
     @ApiOperation(
-        value = "Get a list of available configuration item types.",
-        notes = "Only item types marked as custom can be deleted.")
+            value = "Get a list of available configuration item types.",
+            notes = "Only item types marked as custom can be deleted.")
     @RequestMapping(
-          path = "/itemtype"
-        , method = RequestMethod.GET
-        , produces = {"application/json", "application/x-yaml"}
+            path = "/itemtype"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<ItemTypeList> getItemTypes(
-          @RequestParam(value = "attribute", required = false) String attribute
-        , @RequestParam(value = "createdFrom", required = false) String createdFromDate
-        , @RequestParam(value = "createdTo", required = false) String createdToDate
-        , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
-        , @RequestParam(value = "updatedTo", required = false) String updatedToDate
-        , @RequestParam(value = "model", required = false) String modelKey
+            @RequestParam(value = "attribute", required = false) String attribute
+            , @RequestParam(value = "createdFrom", required = false) String createdFromDate
+            , @RequestParam(value = "createdTo", required = false) String createdToDate
+            , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
+            , @RequestParam(value = "updatedTo", required = false) String updatedToDate
+            , @RequestParam(value = "model", required = false) String modelKey
     ) {
         Map attrMap = null;
         if (attribute != null) {
             attrMap = new HashMap<String, String>();
             String[] items = attribute.split("[|]"); // separate tags using pipes in the query string
-            for(String item : items) {
+            for (String item : items) {
                 String[] parts = item.split("->");
-                attrMap.put(parts[0],parts[1]);
+                attrMap.put(parts[0], parts[1]);
             }
         }
         ItemTypeList itemTypes = data.getItemTypes(
-            attrMap,
-            getDate(createdFromDate),
-            getDate(createdToDate),
-            getDate(updatedFromDate),
-            getDate(updatedToDate),
-            modelKey);
+                attrMap,
+                getDate(createdFromDate),
+                getDate(createdToDate),
+                getDate(updatedFromDate),
+                getDate(updatedToDate),
+                modelKey);
         return ResponseEntity.ok(itemTypes);
     }
 
@@ -302,16 +453,24 @@ public class WebAPI {
         LINKS
      */
     @ApiOperation(
-            value = "Creates new link or updates an existing link based on its natural key.",
-            notes = "Use this operation to create a new link between two existing configuration items or to update such link if it already exists.")
+        value = "Creates new link or updates an existing link based on its natural key.",
+        notes = "Use this operation to create a new link between two existing configuration items or to update such link if it already exists.")
     @RequestMapping(
-            path = "/link/{key}", method = RequestMethod.PUT,
-            consumes = {"application/json" },
-            produces = {"application/json" })
+        path = "/link/{key}", method = RequestMethod.PUT,
+        consumes = {"application/json"},
+        produces = {"application/json"})
+    @ApiResponses(value = {
+        @ApiResponse(code = 200, message = "No changes where performed to the link."),
+        @ApiResponse(code = 201, message = "The configuration link was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+        @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
+        @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+        @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+    )
     public ResponseEntity<Result> createOrUpdateLink(
             @PathVariable("key") String key,
-            @RequestBody JSONObject payload) {
-        return ResponseEntity.ok(data.createOrUpdateLink(key, payload));
+            @RequestBody LinkData link) {
+        Result result = data.createOrUpdateLink(key, link);
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -347,7 +506,7 @@ public class WebAPI {
             , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<Wrapper> getLinks(
-              @RequestParam(value = "type", required = false) String linkTypeKey
+            @RequestParam(value = "type", required = false) String linkTypeKey
             , @RequestParam(value = "tag", required = false) String tag
             , @RequestParam(value = "startItemKey", required = false) String startItemKey
             , @RequestParam(value = "endItemKey", required = false) String endItemKey
@@ -399,21 +558,42 @@ public class WebAPI {
             path = "/linktype/{key}"
             , method = RequestMethod.DELETE
     )
-    public ResponseEntity<Result> deleteLinkType(@PathVariable("key") String key) throws SQLException {
-        return ResponseEntity.ok(data.deleteLinkType(key));
+    public ResponseEntity<Result> deleteLinkType(
+            @PathVariable("key")
+            String key,
+            @ApiParam(
+                name = "force",
+                value = "If true, it forces the deletion of existing links of the link type.",
+                required = false,
+                example = "?force"
+            )
+            @RequestParam(value = "force", defaultValue = "false", required = false)
+            boolean force
+    ) {
+        return ResponseEntity.ok(data.deleteLinkType(key, force));
     }
 
     @ApiOperation(
-            value = "Creates a new item link type.",
-            notes = "")
+        value = "Creates a new item link type.",
+        notes = "")
     @RequestMapping(
-            path = "/linktype/{key}"
-            , method = RequestMethod.PUT)
+        path = "/linktype/{key}"
+        , method = RequestMethod.PUT)
+    @ApiResponses(value = {
+        @ApiResponse(code = 200, message = "No changes where performed to the link type."),
+        @ApiResponse(code = 201, message = "The configuration link type was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+        @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
+        @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+        @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+    )
     public ResponseEntity<Result> createOrUpdateLinkType(
-            @PathVariable("key") String key,
-            @RequestBody JSONObject payload
+        @PathVariable("key")
+        String key,
+        @RequestBody
+        LinkTypeData linkType
     ) {
-        return ResponseEntity.ok(data.createOrUpdateLinkType(key, payload));
+        Result result = data.createOrUpdateLinkType(key, linkType);
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -448,9 +628,9 @@ public class WebAPI {
         if (attribute != null) {
             attrMap = new HashMap<String, String>();
             String[] items = attribute.split("[|]"); // separate tags using pipes in the query string
-            for(String item : items) {
+            for (String item : items) {
                 String[] parts = item.split("->");
-                attrMap.put(parts[0],parts[1]);
+                attrMap.put(parts[0], parts[1]);
             }
         }
         LinkTypeList linkTypes = data.getLinkTypes(
@@ -479,28 +659,38 @@ public class WebAPI {
     }
 
     @ApiOperation(
-            value = "Creates a new or updates an existing link rule.",
-            notes = "")
+        value = "Creates a new or updates an existing link rule.",
+        notes = "")
     @RequestMapping(
-            path = "/linkrule/{key}"
-            , method = RequestMethod.PUT)
+        path = "/linkrule/{key}"
+        , method = RequestMethod.PUT)
+    @ApiResponses(value = {
+        @ApiResponse(code = 200, message = "No changes where performed to the link rule."),
+        @ApiResponse(code = 201, message = "The configuration link rule was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+        @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
+        @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+        @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+    )
     public ResponseEntity<Result> createOrUpdateLinkRule(
-            @PathVariable("key") String key,
-            @RequestBody JSONObject payload
-    ) throws IOException, SQLException {
-        return ResponseEntity.ok(data.createOrUpdateLinkRule(key, payload));
+        @PathVariable("key")
+        String key,
+        @RequestBody
+        LinkRuleData linkRule
+    ) {
+        Result result = data.createOrUpdateLinkRule(key, linkRule);
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
-            value = "Get a list of available link rules filtered by the specified query parameters.",
-            notes = "")
+        value = "Get a list of available link rules filtered by the specified query parameters.",
+        notes = "")
     @RequestMapping(
-            path = "/linkrule"
-            , method = RequestMethod.GET
-            , produces = {"application/json", "application/x-yaml"}
+        path = "/linkrule"
+        , method = RequestMethod.GET
+        , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<LinkRuleList> getLinkRules(
-              @RequestParam(value = "linkType", required = false) String linkType
+            @RequestParam(value = "linkType", required = false) String linkType
             , @RequestParam(value = "startItemType", required = false) String startItemType
             , @RequestParam(value = "endItemType", required = false) String endItemType
             , @RequestParam(value = "createdFrom", required = false) String createdFromDate
@@ -530,21 +720,46 @@ public class WebAPI {
             path = "/model/{key}"
             , method = RequestMethod.DELETE
     )
-    public ResponseEntity<Result> deleteModel(@PathVariable("key") String key) {
-        return ResponseEntity.ok(data.deleteModel(key));
+    public ResponseEntity<Result> deleteModel(
+            @PathVariable("key")
+            String key,
+            @ApiParam(
+                name = "force",
+                value = "If true, it forces the deletion of existing item and link types associated with this model.",
+                required = false,
+                example = "?force"
+            )
+            @RequestParam(value="force", required = false, defaultValue = "false")
+            boolean force
+    ) {
+        return ResponseEntity.ok(data.deleteModel(key, force));
     }
 
     @ApiOperation(
-            value = "Creates a new model.",
-            notes = "")
+        value = "Creates a new model.",
+        notes = "")
     @RequestMapping(
-            path = "/model/{key}"
-            , method = RequestMethod.PUT)
+        path = "/model/{key}"
+        , method = RequestMethod.PUT)
+    @ApiResponses(value = {
+        @ApiResponse(code = 200, message = "No changes where performed to the model."),
+        @ApiResponse(code = 201, message = "The configuration model was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+        @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
+        @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+        @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+    )
     public ResponseEntity<Result> createOrUpdateModel(
-            @PathVariable("key") String key,
-            @RequestBody JSONObject payload
+        @ApiParam(
+            name = "key",
+            value = "A string which uniquely identifies the model and never changes.",
+            required = true,
+            example = "model_01_abc"
+        )
+        @PathVariable("key") String key,
+        @RequestBody ModelData model
     ) {
-        return ResponseEntity.ok(data.createOrUpdateModel(key, payload));
+        Result result = data.createOrUpdateModel(key, model);
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -555,13 +770,20 @@ public class WebAPI {
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<ModelData> getModel(@PathVariable("key") String key) {
+    public ResponseEntity<ModelData> getModel(
+            @ApiParam(
+                name = "key",
+                value = "A string which uniquely identifies the model and never changes.",
+                required = true,
+                example = "model_01_abc"
+            )
+            @PathVariable("key") String key) {
         return ResponseEntity.ok(data.getModel(key));
     }
 
     @ApiOperation(
-            value = "Get an item link type based on the specified key.",
-            notes = "Use this search to retrieve the list of models known to the system.")
+            value = "Get all models.",
+            notes = "Use this search to retrieve the list of all models known to the system.")
     @RequestMapping(
             path = "/model"
             , method = RequestMethod.GET
@@ -580,6 +802,12 @@ public class WebAPI {
             , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<TypeGraphData> getTypeData(
+            @ApiParam(
+                name = "key",
+                value = "A string which uniquely identifies the model and never changes.",
+                required = true,
+                example = "model_01_abc"
+            )
             @PathVariable("key") String modelKey
     ) {
         TypeGraphData graph = data.getTypeDataByModel(modelKey);
@@ -594,8 +822,9 @@ public class WebAPI {
             value = "Removes ALL configuration items and links from the database.",
             notes = "Use at your own risk ONLY for testing of the CMDB!")
     @RequestMapping(path = "/clear", method = RequestMethod.DELETE)
-    public void clear() throws SQLException {
-        data.clear();
+    public ResponseEntity<Result> clear() {
+        Result result = data.clear();
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     /*
@@ -678,11 +907,8 @@ public class WebAPI {
             , method = RequestMethod.PUT
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<ResultList> createOrUpdateData(
-            @RequestBody JSONObject payload
-
-    ) {
-        ResultList results = data.createOrUpdateData(payload);
+    public ResponseEntity<ResultList> createOrUpdateData(@RequestBody GraphData graphData) {
+        ResultList results = data.createOrUpdateData(graphData);
         return ResponseEntity.ok(results);
     }
 
@@ -709,7 +935,7 @@ public class WebAPI {
             path = "/data/{item_key}"
             , method = RequestMethod.DELETE)
     public ResponseEntity<Result> deleteData(
-        @PathVariable("item_key") String rootItemKey
+            @PathVariable("item_key") String rootItemKey
     ) {
         return ResponseEntity.ok(data.deleteData(rootItemKey));
     }

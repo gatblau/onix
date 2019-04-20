@@ -19,22 +19,34 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix.data;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import java.io.Serializable;
 
+@ApiModel(
+    description = "A rule determining which items can be connected using a specific link."
+)
 public class LinkRuleData implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String key;
     private String name;
     private String description;
-    private String linkType;
-    private String startItemType;
-    private String endItemType;
+    private String linkTypeKey;
+    private String startItemTypeKey;
+    private String endItemTypeKey;
     private String created;
     private String updated;
     private Integer version;
     private String changedBy;
 
+    @ApiModelProperty(
+        position = 0,
+        required = true,
+        value = "The natural key uniquely identifying this model.",
+        example = "model_01"
+    )
     public String getKey() {
         return key;
     }
@@ -43,6 +55,12 @@ public class LinkRuleData implements Serializable {
         this.key = key;
     }
 
+    @ApiModelProperty(
+        position = 1,
+        required = true,
+        value = "The rule name.",
+        example = "Item Type X to Item Type Y rule."
+    )
     public String getName() {
         return name;
     }
@@ -51,6 +69,12 @@ public class LinkRuleData implements Serializable {
         this.name = name;
     }
 
+    @ApiModelProperty(
+        position = 2,
+        required = false,
+        value = "The description of the link rule.",
+        example = "This rule allow linking items of type X."
+    )
     public String getDescription() {
         return description;
     }
@@ -59,30 +83,54 @@ public class LinkRuleData implements Serializable {
         this.description = description;
     }
 
-    public String getLinkType() {
-        return linkType;
+    @ApiModelProperty(
+        position = 3,
+        required = true,
+        value = "The natural key identifying the type of link this rule is for.",
+        example = "test_link"
+    )
+    public String getLinkTypeKey() {
+        return linkTypeKey;
     }
 
-    public void setLinkType(String linkType) {
-        this.linkType = linkType;
+    public void setLinkTypeKey(String linkTypeKey) {
+        this.linkTypeKey = linkTypeKey;
     }
 
-    public String getStartItemType() {
-        return startItemType;
+    @ApiModelProperty(
+        position = 4,
+        required = true,
+        value = "The item type from which the link should depart.",
+        example = "item_type_A"
+    )
+    public String getStartItemTypeKey() {
+        return startItemTypeKey;
     }
 
-    public void setStartItemType(String startItemType) {
-        this.startItemType = startItemType;
+    public void setStartItemTypeKey(String startItemTypeKey) {
+        this.startItemTypeKey = startItemTypeKey;
     }
 
-    public String getEndItemType() {
-        return endItemType;
+    @ApiModelProperty(
+        position = 5,
+        required = true,
+        value = "The item type to which the link should arrive.",
+        example = "item_type_B"
+    )
+    public String getEndItemTypeKey() {
+        return endItemTypeKey;
     }
 
-    public void setEndItemType(String endItemType) {
-        this.endItemType = endItemType;
+    public void setEndItemTypeKey(String endItemTypeKey) {
+        this.endItemTypeKey = endItemTypeKey;
     }
 
+    @ApiModelProperty(
+        position = 6,
+        required = false,
+        value = "Date and time on which the rule was created.",
+        example = "01-02-2017 09:16:38"
+    )
     public String getCreated() {
         return created;
     }
@@ -91,6 +139,12 @@ public class LinkRuleData implements Serializable {
         this.created = created;
     }
 
+    @ApiModelProperty(
+        position = 7,
+        required = false,
+        value = "Date and time on which the rule was updated.",
+        example = "01-03-2017 14:32:57"
+    )
     public String getUpdated() {
         return updated;
     }
@@ -99,6 +153,12 @@ public class LinkRuleData implements Serializable {
         this.updated = updated;
     }
 
+    @ApiModelProperty(
+        position = 8,
+        required = false,
+        value = "The version number for this rule.",
+        example = "7"
+    )
     public Integer getVersion() {
         return version;
     }
@@ -107,6 +167,12 @@ public class LinkRuleData implements Serializable {
         this.version = version;
     }
 
+    @ApiModelProperty(
+        position = 9,
+        required = false,
+        value = "The user who made the last change.",
+        example = "admin"
+    )
     public String getChangedBy() {
         return changedBy;
     }

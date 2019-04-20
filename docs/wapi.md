@@ -1,32 +1,41 @@
-# Web API 
+# Web API <img src="./pics/ox.png" width="160" height="160" align="right">
 
 This section explains how to use Onix Web API. 
 
-
 <a name="toc"></a>
-## Table of Contents [(index)](./../readme.md)
+## Quick Index [(back)](./../readme.md)
 
-- [Web API](#web-api)
-  - [Table of Contents (index)](#table-of-contents-index)
-  - [Using Swagger (up)](#using-swagger-up)
-    - [WAPI User Interface](#wapi-user-interface)
-    - [JSON WAPI Docs](#json-wapi-docs)
-  - [Identity and Access Management (up)](#identity-and-access-management-up)
-  - [Getting Service Information (up)](#getting-service-information-up)
-    - [Usage example:](#usage-example)
-  - [Creating or updating a configuration item type (up)](#creating-or-updating-a-configuration-item-type-up)
-    - [Sample Payload](#sample-payload)
-  - [Creating or updating a configuration item (up)](#creating-or-updating-a-configuration-item-up)
-    - [Sample Payload](#sample-payload-1)
-    - [Payload fields](#payload-fields)
-    - [Example](#example)
-  - [Retrieving a configuration item by key (up)](#retrieving-a-configuration-item-by-key-up)
-  - [Linking two items (up)](#linking-two-items-up)
-    - [Sample Payload](#sample-payload-2)
-    - [Payload fields](#payload-fields-1)
-    - [Example](#example-1)
-  - [Retrieving a link (up)](#retrieving-a-link-up)
-    - [Example](#example-2)
+### _Good to know_
+
+| _Area_ | _Description_ |
+|---|---|
+| [Using Swagger](#using-swagger) | How to access online Web API documents? |
+| [Access Control](#access-control)| How to authenticate and authorise users? |
+| [Getting WAPI information](#getting-wapi-info)| How to get the Web API version online? |
+| [HTTP return codes](#http-return-codes)| Which codes Web API return? |
+| [HTTP Result](#http-result)| What data is returned by the service when resources are created, updated or deleted? |
+| [Concurrency Management](#concurrency-management)| How to use the Web API in concurrent user scenarios? |
+| [Automation Clients](#automation-clients)| How do I apply this documentation to Ansible and Terraform clients? |
+| [Idempotence](#idempotence)| What happens if I make repeated requests to the same endpoint with the same payload? |
+| [Change History](#change-history)| Is every change made recorded? |
+| [Versioning](#versioning)| Can I version CMDB data? |
+
+### _Reference data: working with models_
+
+| _Area_ | _Description_ |
+|---|---|
+| [Models](#models)| How to create a new or update or delete an existing model definition? |
+| [Item types](#item-types)| How to create a new or update or delete an existing item definition? |
+| [Link types](#link-types)| How to create a new or update or delete an existing link definition? |
+| [Link rules](#link-rules)| How to create a new or update or delete an existing link rule? |
+
+### _Instance data: feeding and querying the database_
+
+| _Area_ | _Description_ |
+|---|---|
+| [Items](#items)| How to create a new or update or delete an existing item type? |
+| [Links](#links)| How to create a new or update or delete an existing link type? |
+
 
 <a name="using-swagger"></a>
 ## Using Swagger [(up)](#toc)
@@ -45,7 +54,7 @@ Similarly, a JSON representation of the Web API documentation can be retrieved f
  
 http://localhost:8080/v2/api-docs
 
-<a name="identity-and-access-management"></a>
+<a name="access-control"></a>
 ## Access Control [(up)](#toc)
 
 If the Onix Service is configured with '**WAPI_AUTH_MODE=basic**', then a basic authentication token must be passed with every request via an authorisation header.
@@ -64,201 +73,230 @@ can be used. Then, the token can be passed to the API call as follows:
 curl -H 'Authorization: TOKEN_HERE' 'http://localhost:8080/itemtype/'
 ```
 
-<a name="getting-service-information"></a>
-## Getting Service Information [(up)](#toc)
+### Authentication Modes
 
-| Item  | Value  | 
+| _Mode_ | _Description_ | _Setting_ |
+|---|---|---|
+| None | No authentication is required. This is mainly used for development activities where authentication is not required. | AUTH_MODE=none|
+| Basic Auth| Basic authentication distinct reader, writer and admin credentials. | AUTH_MODE=basic |
+|OIDC[*] | OpenID Connect supporting identity and access tokens. | AUTH_MODE=oidc |
+
+[*] This is currently work in progress and subject of the next release.
+
+<a name="getting-wapi-info"></a>
+
+## Getting WAPI Information [(up)](#toc)
+
+The root of the service displays service information.
+
+| Item  | Value  |
 |---|---|
-| Method | GET | 
-| Path | /info |
+| Method | GET |
+| Path | / |
 | Response Content Type | application/json |
 
-### Usage example:
+### Usage example
 
 ```bash
-$ curl -u admin:0n1x 'http://localhost:8080/info'
+$ curl -u admin:0n1x 'http://localhost:8080'
 ```
 
-<a name="creating-a-configuration-item-type"></a>
-## Creating or updating a configuration item type [(up)](#toc)
+### Return values
 
-| Item  | Value  | 
+| _Attribute_ | _Description_ |
 |---|---|
-| Method | PUT | 
-| Path | /itemtype/**{item_type_key}**/|
-| Response Content Type | application/json |
- 
-**NOTE**: this operation is idempotent.
+| description | name of the service |
+| version | version of the release |
 
-### Sample Payload
+<a name="http-return-codes"></a>
+
+## HTTP Return Codes [(up)](#toc)
+
+For any resource acting on CMDB entities, the following codes are returned by the HTTP requests:
+
+| _Code_ | _Method_ | _Description_ |
+|---|---|---|
+| 200 | GET, PUT (U, L, N), DELETE | Successful HTTP request |
+| 201 | PUT (I) | Successful HTTP request |
+| 401 | PUT, GET, DELETE | Unauthorised HTTP request |
+| 404 | PUT, GET, DELETE | Resource not found |
+| 500 | PUT, GET, DELETE | Internal server error |
+
+For PUT, DELETE and GET HTTP methods, the following operations are available:
+
+| _Code_ | _Operation_ | _Description_ |
+|---|---|---|
+| __I__ | Insert | entity inserted |
+| __U__ | Update | entity updated |
+| __D__ | Delete | entity deleted |
+| __L__ | Lock | no action taken, version on the client does not match the version on the server
+| __N__ | None | no action taken, client and server data match |
+
+<a name="http-result"></a>
+
+## HTTP Result [(up)](#toc)
+
+In the case of PUT and DELETE HTTP methods, a Result object is returned containing information about the request process as follows:
+
+| _Attribute_ | _Description_ |
+|---|---|
+| __ref__ | a reference containing the entity type and natural key |
+| __operation__ | a character indicating the type of operation executed; namely I, U, D, L or N as described in the table above.
+| __changed__ | true if the entity was created, updated or deleted |
+| __error__ | true if there was a problem processing the request |
+| __message__ | an error message in case _error_ is true |
+
+<a name="concurrency-management"></a>
+
+## Concurrency Management [(up)](#toc)
+
+Every time a resource is updated, an incremental version number is automatically assigned to the resource.
+
+All resource requests can accept a version number when an HTTP PUT method is requested. The version number enables [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control).
+
+If no version number is specified in the PUT request, concurrency is disabled. However, if a value is specified, the following outcomes are possible:
+
+1. __Insert or Update__: an insert/update occurs if the client version number matches the server version number.
+2. __Optimistic Lock__: no action is taken if the client version number is behind the server version number. The response contains an __L__ operation which means that some other client has updated the state of the resource since the last time a copy was retrieved. This feature is helpful for user interfaces updating resources where more than one client could be acting on the same resource at the same time. The client has the option to: a) override the server by sending the request again without a version number; or b) refreshing the client with the new data from the server.
+
+<a name="automation-clients"></a>
+
+## Automation Clients [(up)](#toc)
+
+Onix integrates with [Ansible](https://www.ansible.com/) (via Ansible Modules) and [Terraform](https://www.terraform.io/) (via a Terraform Provider).
+
+Each of the Web API resources maps directly to an Ansible Module or a Terraform Resource/Data Source. Therefore, in order to avoid maintaining multiple document sets, this document should be used to determine which attributes are available for each resource within both, Ansible and Terraform (TF).
+
+The following table provides a convention for translating Web API resources into Ansible module names, Terraform resource names and Terraform data source names:
+
+| Web API Resource | Ansible Module | TF Resource | TF Data Source |
+|---|---|---|---|
+| model |ox_model| ox_model | ox_model_data |
+| itemtype |ox_item_type |ox_item_type | ox_item_type_data |
+| linktype | ox_link_type | ox_link_type | ox_link_type_data |
+| linkrule | ox_link_rule | ox_link_rule | ox_link_rule_data |
+| item | ox_item | ox_item | ox_item_data |
+| link | ox_link |ox_link |ox_link_data |
+
+<a name="idempotence"></a>
+
+## Idempotence [(up)](#toc)
+
+All HTTP resources in the Web API are [idempotent](https://en.wikipedia.org/wiki/Idempotence). 
+
+Resources are uniquely identified by a [natural key](https://en.wikipedia.org/wiki/Natural_key). The natural key is a string with a value that should be decided using a naming convention that is chosen by the implementer.
+
+Using a natural key, for example, in HTTP PUT methods, allow the client to avoid having to think if the HTTP resource has to be created or updated. The request ensures that the resource information is in the CMDB regardless of how many times the method is invoqued.
+
+When a PUT method is executed for the first time, the resource is created. Any subsequent calls to the same method will result in updates if the payload has changed, or no action will be taken if the payload is the same.
+
+<a name="change-history"></a>
+
+## Change History [(up)](#toc)
+
+Every time a CMDB entity is created, updated or deleted, their data get written into change tables recording the type of operation (i.e. **I**nsert, **U**pdate or **D**elete), the date of the change and the user that made the change.
+
+Preserving the whole history of changes allows to retrieve any configuration at any point in time.
+
+<a name="versioning"></a>
+
+## Versioning [(up)](#toc)
+
+Every entity in the CMDB has a version number starting with 1, which increments automatically when changes are made. 
+
+In order to retrieve a configuration, that is a set of items and links at a specific point in time,  a **tag** needs to be created. The tag carries the information of which items and links where related to a specified item at a specified point in time.
+
+Creating a tag in the CMDB is equivalent to creating a tag in Git.
+
+<a name="models"></a>
+
+## Models [(up)](#toc)
+
+In order to create items, it is first necessary to create a model, that is a set of item and link definitions (i.e. item types and link types).
+
+Item and Link Types have to belong to one and only one model.
+A model can be created as described below.
+
+### Create or Update
+
+To create or update a model use the PUT HTTP method.
+
+#### Request attributes
+
+| _Item_  | _Value_ |
+|---|---|
+| Method | PUT |
+| Path | /model/**{model_key}**|
+| Response Content Type | application/json |
+| Authentication Header | basic authentication token |
+
+#### Request payload
+
+| _Attribute_ | _Description_ | _Example_ | _Mandatory_|
+|---|---|---|---|
+| __name__ | the human readable name of the model | "AWS EC2  Model"| yes (unique) |
+| __description__ | the model description | "Definitions for AWS Elastic Compute Cloud items and their relationships" | no |
+| __version__ | the version of the model for concurrency management purposes. | 34 | no |
+
+#### Usage
 
 The PUT request requires a payload in JSON format as the one shown below.
 Note that the natural key for the configuration item type is not part of the payload but specified in the URI.
-
-```json
-{
-  "name": "Item Type 1",
-  "description": "This item type is for testing purposes only.",
-  "modelKey": "meta_model_1"
-}
-```
-
-<a name="creating-a-configuration-item"></a>
-## Creating or updating a configuration item [(up)](#toc)
-
-| Item  | Value  | 
-|---|---|
-| Method | PUT | 
-| Path | /item/**{item_key}**/|
-| Response Content Type | application/json |
- 
-**NOTE**: this operation is idempotent.
-
-### Sample Payload
-
-The PUT request requires a payload in JSON format as the one shown below.
-Note that the natural key for the configuration item is not part of the payload but specified in the URI.
-
-```json
-{
-  "name": "Test Item",
-  "description": "This is a CMDB item for testing purposes.",
-  "type": "item_type_1",
-  "meta": {
-    "productId": 1,
-    "productName": "A green door",
-    "price": 12.50,
-    "tags": [ "home", "green" ]
-  },
-  "tag": ["cmdb", "host", "rhel"],
-  "attribute": {
-    "WBS" : "012csl",
-    "COMPANY" : "ACME"
-  },
-  "status": 1
-}
-```
-**NOTE**: the *meta* field can contain *any* JSON object.
-
-### Payload fields
-
-The following table describes the fields in the payload and provides some examples of use:
-
-| Field  | Description  | Example |
-|---|---|---|
-| name | The name associated with the configuration item. | "OCP Demo Master 1" |
-| description | A description of the configuration item. | "OpenShift Demo platform first master in zone A."
-| type | The natural key of the configuration item type. It must exist as a valid item type. | "HOST" |
-| meta | Stores any well-formed json object. This is the primary mechanism to store configuration item information. | { "host":"OCP-DEMO-M-01", "region":"Ireland", "provider":"AWS" } |
-| tag | Used for annotating the item for searching. For example, a search can be done by items having the EUROPE tag.| "TEST RELEASE-B EUROPE" |
-| status | A number that defines the status of the item, values are arbitrary. | 0 |
-| attribute | A set of of key and value pairs. | As per sample payload above. |
-
-### Example
-
-The following example shows how to execute a PUT request to the service using [cURL](https://curl.haxx.se/):
-
 ```bash
-# execute the PUT operation on the item URI passing a natural key (e.g. KEYDEMOM001) and a payload via json file with contents as per sample above.
 $ curl \
     -X PUT \
     -H 'ContentType: application/json' \
-    -H 'Authorization: TOKEN_HERE'  
-    -d '@item_payload.json' \
-    'http://localhost:8080/item/KEYDEMOM001' 
+    -H '${AUTH_HEADER}' \
+    -d '@model_payload.json' \
+    'http://localhost:8080/model/awsec2' 
 ```
 
-<a name="retrieving-a-configuration-item-by-key"/></a>
-## Retrieving a configuration item by key [(up)](#toc)
-
-| Item  | Value  | 
-|---|---|
-| Method | GET | 
-| Path | /item/**{item_key}**/|
-| Response Content Type | application/json or application/x-yaml |
-
-```bash
-# execute the GET operation on the item URI passing its natural key
-$ curl \
-    -H 'Authorization: TOKEN_HERE'  
-    'http://localhost:8080/item/KEYDEMOM001' 
-```
-
-<a name="linking-two-items"/></a>
-## Linking two items [(up)](#toc)
-
-| Item  | Value  | 
-|---|---|
-| Method | PUT | 
-| Path | /link/**{link_key}**/|
-| Response Content Type | application/json |
-
-### Sample Payload
-
-The PUT request requires a payload in JSON format as the one shown below.
-Note that the natural key for the configuration item is not part of the payload but specified in the URI.
+__model_payload.json__:
 
 ```json
 {
-  "description": "This is a CMDB item link for testing purposes.",
-  "type": "link_type_1",
-  "startItemKey": "item_one_key",
-  "endItemKey": "item_two_key",
-  "tag": ["cmdb", "host", "rhel"],
-  "attribute": {
-    "WBS" : "012csl",
-    "COMPANY" : "ACME"
-  },
-  "meta": {
-    "DeployedBy": "John Wicks",
-    "RequestNo": "RN001234"
-  }
+  "name": "AWS EC2 Model",
+  "description": "Definitions for AWS Elastic Compute Cloud items and their relationships."
 }
 ```
 
-**NOTE**: the *meta* field can contain *any* JSON object.
+__result__:
 
-### Payload fields
+```json
+{
+  "ref": "model:awsec2",
+  "changed": "true",
+  "error": "false",
+  "message": "", 
+  "operation": "I", 
+}
+```
 
-The following table describes the fields in the payload and provides some examples of use:
+### Delete
 
-| Field  | Description  | Example |
-|---|---|---|
-| description | A description of the link. | "Link A to B."
-| meta | Stores any well-formed json object. This is the primary mechanism to store link configuration information. | { "key1":"value1", "key2":"value2", "key3":"value3" } |
-| tag | Used for annotating the link for searching. For example, a search can be done by links having the TEST tag.| "TEST RELEASE-B EUROPE" |
-| type | The the natural key of the type of link. | "item_type_x" |
-| start_item_key | The key of the item from which the link starts. | A configuration item key. |
-| end_item_key | The key of the item to which the link ends. | A configuration item key. |
-| attribute | A set of of key and value pairs. | As per sample payload above. |
-
-### Example
-
-The following example shows how to execute a PUT request to the service using [cURL](https://curl.haxx.se/):
+In order to delete a model the following command can be executed:
 
 ```bash
-# execute the PUT operation on the item URI passing the link natural key and the payload.json file
 $ curl \
-    -X PUT 
-    -H 'ContentType: application/json' \
-    -H 'Authorization: TOKEN_HERE' 
-    -d '@link_payload.json' \
-    'http://localhost:8080/link/my_link_key/' 
+    -X DELETE \
+    -H '${AUTH_HEADER}' \
+    'http://localhost:8080/model/awsec2' 
 ```
-<a name="retrieving-a-link"></a>
-## Retrieving a link [(up)](#toc)
 
-| Item  | Value  | 
+__NOTE__: deleting a Model, forces the deletion of the Link Types and Item Types related to that Model. Item and Links have to be deleted before a model can be deleted.
+
+### Query
+
+The following model queries are available:
+
+| _Query_ | _Description_ |
 |---|---|
-| Method | GET | 
-| Path | /link/**{link_key}**/|
-| Response Content Type | application/json or application/x-yaml |
+| __GET /model/{model_key}__ | Retrieve the model for the specified natural key. |
+| __GET /model/{model_key}/data__| Retrieve a list of Item Types and Link Types that comprise the specified model. |
+| __GET /models__ | Retrieve a list of all models in the system. |
 
-### Example
+--------------------------------
 
-```bash
-# execute the GET operation on the item URI passing the link natural key 
-$ curl \
-    -H 'Authorization: TOKEN_HERE'  
-    'http://localhost:8080/link/my_link_key/' 
-```
+<a name="item-types"></a>
+
+## Item Types [(up)](#toc)

@@ -1,4 +1,4 @@
-# Importing Data Example
+# Importing Data Example <img src="../../../../../docs/pics/ox.png" width="160" height="160" align="right">
 
 In order to import data into the CMDB, the [ox_import](../../../modules/ox_import.py) module is provided.
 

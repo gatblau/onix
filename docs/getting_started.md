@@ -1,4 +1,4 @@
-# Getting started
+# Getting started <img src="./pics/ox.png" width="160" height="160" align="right">
 Getting started with Onix is easiy and required basically only two steps:
 
 ## Step 1: Deploy Container Images

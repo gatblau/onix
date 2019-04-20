@@ -5,6 +5,8 @@ Feature: Update Configuration Item
 
   Scenario: Update an existing Item using a JSON payload
     Given a configuration item natural key is known
+    Given a model exists in the database
+    Given an item type exists in the database
     Given the item exist in the database
     Given the item URL search by key is known
     When a PUT HTTP request with an updated JSON payload is done

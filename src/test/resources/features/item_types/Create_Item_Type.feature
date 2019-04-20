@@ -9,6 +9,6 @@ Feature: Create a new Configuration Item type
     Given the item type URL of the service with key is known
     Given the item type natural key is known
     When an item type PUT HTTP request with a JSON payload is done
-    Then the response code is 200
+    Then the response code is 201
     Then the response has body
     Then the result contains no errors

@@ -1,4 +1,4 @@
-# Ansible Inventory Meta Model
+# Ansible Inventory Model <img src="../../docs/pics/ox.png" width="125" height="125" align="right">
 
 The meta model is comprised of a set of item types, link types and link rules that represent an Ansible inventory within the CMDB. 
 

@@ -51,29 +51,20 @@ public class PgSqlRepository implements DbRepository {
      */
 
     @Override
-    public synchronized Result createOrUpdateItem(String key, JSONObject json) {
+    public synchronized Result createOrUpdateItem(String key, ItemData item) {
         Result result = new Result(String.format("Item:%s", key));
         ResultSet set = null;
         try {
-            Object name = json.get("name");
-            Object description = json.get("description");
-            String meta = util.toJSONString(json.get("meta"));
-            String tag = util.toArrayString(json.get("tag"));
-            Object attribute = json.get("attribute");
-            Object status = json.get("status");
-            Object type = json.get("type");
-            Object version = json.get("version");
-
             db.prepare(getSetItemSQL());
             db.setString(1, key); // key_param
-            db.setString(2, (name != null) ? (String) name : null); // name_param
-            db.setString(3, (description != null) ? (String) description : null); // description_param
-            db.setString(4, meta); // meta_param
-            db.setString(5, tag); // tag_param
-            db.setString(6, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null); // attribute_param
-            db.setInt(7, (status != null) ? (int) status : 0); // status_param
-            db.setString(8, (type != null) ? (String) type : null); // item_type_key_param
-            db.setObject(9, version); // version_param
+            db.setString(2, item.getName()); // name_param
+            db.setString(3, item.getDescription()); // description_param
+            db.setString(4, util.toJSONString(item.getMeta())); // meta_param
+            db.setString(5, util.toArrayString(item.getTag())); // tag_param
+            db.setString(6, getAttributeString(item.getAttribute())); // attribute_param
+            db.setInt(7, item.getStatus()); // status_param
+            db.setString(8, item.getType()); // item_type_key_param
+            db.setObject(9, item.getVersion()); // version_param
             db.setString(10, getUser()); // changed_by_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_item"));
         } catch (Exception ex) {
@@ -237,29 +228,19 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result createOrUpdateLink(String key, JSONObject json) {
+    public synchronized Result createOrUpdateLink(String key, LinkData link) {
         Result result = new Result(String.format("Link:%s", key));
         try {
-            String description = (String) json.get("description");
-            String linkTypeKey = (String) json.get("type");
-            String startItemKey = (String) json.get("startItemKey");
-            String endItemKey = (String) json.get("endItemKey");
-            String meta = util.toJSONString(json.get("meta"));
-            String tag = util.toArrayString(json.get("tag"));
-            Object attribute = json.get("attribute");
-            Object version = json.get("version");
-            Object model = json.get("modelKey");
-
             db.prepare(getSetLinkSQL());
             db.setString(1, key);
-            db.setString(2, linkTypeKey);
-            db.setString(3, startItemKey);
-            db.setString(4, endItemKey);
-            db.setString(5, description);
-            db.setString(6, meta);
-            db.setString(7, tag);
-            db.setString(8, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null);
-            db.setObject(9, version);
+            db.setString(2, link.getType());
+            db.setString(3, link.getStartItemKey());
+            db.setString(4, link.getEndItemKey());
+            db.setString(5, link.getDescription());
+            db.setString(6, util.toJSONString(link.getMeta()));
+            db.setString(7, util.toArrayString(link.getTag()));
+            db.setString(8, getAttributeString(link.getAttribute()));
+            db.setObject(9, link.getVersion());
             db.setString(10, getUser());
             result.setOperation(db.executeQueryAndRetrieveStatus("set_link"));
         } catch (Exception ex) {
@@ -327,15 +308,24 @@ public class PgSqlRepository implements DbRepository {
         }
     }
 
-    private synchronized Result delete(String sql, String key) {
+    private synchronized Result delete(String sql, String key){
+        return delete(sql, key, false, false);
+    }
+
+    private synchronized Result delete(String sql, String key, boolean isType, boolean force) {
         Result result = new Result(String.format("Delete(%s)", key));
         try {
             db.prepare(sql);
             if (key != null) {
                 db.setString(1, key);
-                result.setOperation((db.execute()) ? "D" : "N");
-            } else {
-                throw new RuntimeException(String.format("Key not passed to delete operation: %s", key));
+                // if the delete is for a type resource, then sets additional force parameter
+                if (isType) {
+                    db.setObject(2, force);
+                }
+            }
+            result.setOperation((db.execute()) ? "D" : "N");
+            if (result.getOperation().equals("D")) {
+                result.setChanged(true);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -395,26 +385,18 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result createOrUpdateItemType(String key, JSONObject json) {
+    public synchronized Result createOrUpdateItemType(String key, ItemTypeData itemType) {
         Result result = new Result(String.format("ItemType:%s", key));
         try {
-            Object name = json.get("name");
-            Object description = json.get("description");
-            Object attribute = json.get("attrValid");
-            String filter = util.toJSONString(json.get("filter"));
-            String metaSchema = util.toJSONString(json.get("metaSchema"));
-            Object modelKey = json.get("modelKey");
-            Object version = json.get("version");
-
             db.prepare(getSetItemTypeSQL());
             db.setString(1, key); // key_param
-            db.setString(2, (name != null) ? (String) name : null); // name_param
-            db.setString(3, (description != null) ? (String) description : null); // description_param
-            db.setString(4, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null); // attribute_param
-            db.setString(5, filter);
-            db.setString(6, metaSchema);
-            db.setObject(7, version); // version_param
-            db.setObject(8, modelKey); // meta model key
+            db.setString(2, itemType.getName()); // name_param
+            db.setString(3, itemType.getDescription()); // description_param
+            db.setString(4, getAttributeString(itemType.getAttrValid())); // attribute_param
+            db.setString(5, util.toJSONString(itemType.getFilter()));
+            db.setString(6, util.toJSONString(itemType.getMetaSchema()));
+            db.setObject(7, itemType.getVersion()); // version_param
+            db.setObject(8, itemType.getModelKey()); // meta model key
             db.setString(9, getUser()); // changed_by_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_item_type"));
         } catch (Exception ex) {
@@ -428,8 +410,8 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteItemType(String key) {
-        return delete(getDeleteItemTypeSQL(), key);
+    public Result deleteItemType(String key, boolean force) {
+        return delete(getDeleteItemTypeSQL(), key, true, force);
     }
 
     /*
@@ -459,23 +441,17 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result createOrUpdateLinkType(String key, JSONObject json) {
+    public synchronized Result createOrUpdateLinkType(String key, LinkTypeData linkType) {
         Result result = new Result(String.format("LinkType:%s", key));
         try {
-            Object name = json.get("name");
-            Object description = json.get("description");
-            Object attribute = json.get("attrValid");
-            String metaSchema = util.toJSONString(json.get("metaSchema"));
-            Object version = json.get("version");
-            Object modelKey = json.get("modelKey");
             db.prepare(getSetLinkTypeSQL());
             db.setString(1, key); // key_param
-            db.setString(2, (name != null) ? (String) name : null); // name_param
-            db.setString(3, (description != null) ? (String) description : null); // description_param
-            db.setString(4, (attribute != null) ? HStoreConverter.toString((LinkedHashMap<String, String>) attribute) : null); // attribute_param
-            db.setString(5, metaSchema);
-            db.setObject(6, version); // version_param
-            db.setString(7, (modelKey != null) ? (String) modelKey : null); // model_key_param
+            db.setString(2, linkType.getName()); // name_param
+            db.setString(3, linkType.getDescription()); // description_param
+            db.setString(4, getAttributeString(linkType.getAttrValid())); // attribute_param
+            db.setString(5, util.toJSONString(linkType.getMetaSchema()));
+            db.setObject(6, linkType.getVersion()); // version_param
+            db.setString(7, linkType.getModelKey()); // model_key_param
             db.setString(8, getUser()); // changed_by_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_link_type"));
         } catch (Exception ex) {
@@ -489,8 +465,8 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteLinkType(String key) {
-        return delete(getDeleteLinkTypeSQL(), key);
+    public Result deleteLinkType(String key, boolean force) {
+        return delete(getDeleteLinkTypeSQL(), key, true, force);
     }
 
     @Override
@@ -542,23 +518,17 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result createOrUpdateLinkRule(String key, JSONObject json) {
+    public synchronized Result createOrUpdateLinkRule(String key, LinkRuleData linkRule) {
         Result result = new Result(String.format("LinkRule:%s", key));
-        Object name = json.get("name");
-        Object description = json.get("description");
-        Object linkType = json.get("linkTypeKey");
-        Object startItemType = json.get("startItemTypeKey");
-        Object endItemType = json.get("endItemTypeKey");
-        Object version = json.get("version");
         try {
             db.prepare(getSetLinkRuleSQL());
             db.setString(1, key); // key_param
-            db.setString(2, (name != null) ? (String) name : null); // name_param
-            db.setString(3, (description != null) ? (String) description : null); // description_param
-            db.setString(4, (linkType != null) ? (String) linkType : null); // linkType_param
-            db.setString(5, (startItemType != null) ? (String) startItemType : null); // startItemType_param
-            db.setString(6, (endItemType != null) ? (String) endItemType : null); // endItemType_param
-            db.setObject(7, version); // version_param
+            db.setString(2, linkRule.getName()); // name_param
+            db.setString(3, linkRule.getDescription()); // description_param
+            db.setString(4, linkRule.getLinkTypeKey()); // linkType_param
+            db.setString(5, linkRule.getStartItemTypeKey()); // startItemType_param
+            db.setString(6, linkRule.getEndItemTypeKey()); // endItemType_param
+            db.setObject(7, linkRule.getVersion()); // version_param
             db.setString(8, getUser()); // changed_by_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_link_rule"));
         } catch (Exception ex) {
@@ -686,7 +656,10 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteItemTypeSQL() {
-        return "SELECT delete_item_type(?::character varying)";
+        return "SELECT delete_item_type(" +
+                "?::character varying," +
+                "?::boolean" +
+                ")";
     }
 
     @Override
@@ -730,7 +703,10 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteLinkTypeSQL() {
-        return "SELECT delete_link_type(?::character varying)";
+        return "SELECT delete_link_type(" +
+                "?::character varying," +
+                "?::boolean" +
+                ")";
     }
 
     @Override
@@ -899,61 +875,37 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized ResultList createOrUpdateData(JSONObject payload) {
+    public synchronized ResultList createOrUpdateData(GraphData payload) {
         ResultList results = new ResultList();
-        Object modelsObject = payload.get("models");
-        if (modelsObject != null) {
-            ArrayList<LinkedHashMap> models = (ArrayList<LinkedHashMap>) modelsObject;
-            for (Map model : models) {
-                String key = (String) model.get("key");
-                Result result = createOrUpdateModel(key, new JSONObject(model));
-                results.add(result);
-            }
+        List<ModelData> models = payload.getModels();
+        for (ModelData model : models) {
+            Result result = createOrUpdateModel(model.getKey(), model);
+            results.add(result);
         }
-        Object itemTypesObject = payload.get("itemTypes");
-        if (itemTypesObject != null) {
-            ArrayList<LinkedHashMap> itemTypes = (ArrayList<LinkedHashMap>) itemTypesObject;
-            for (Map itemType : itemTypes) {
-                String key = (String) itemType.get("key");
-                Result result = createOrUpdateItemType(key, new JSONObject(itemType));
-                results.add(result);
-            }
+        List<ItemTypeData> itemTypes = payload.getItemTypes();
+        for (ItemTypeData itemType : itemTypes) {
+            Result result = createOrUpdateItemType(itemType.getKey(), itemType);
+            results.add(result);
         }
-        Object linkTypesObject = payload.get("linkTypes");
-        if (linkTypesObject != null) {
-            ArrayList<LinkedHashMap> linkTypes = (ArrayList<LinkedHashMap>) linkTypesObject;
-            for (Map linkType : linkTypes) {
-                String key = (String) linkType.get("key");
-                Result result = createOrUpdateLinkType(key, new JSONObject(linkType));
-                results.add(result);
-            }
+        List<LinkTypeData> linkTypes = payload.getLinkTypes();
+        for (LinkTypeData linkType : linkTypes) {
+            Result result = createOrUpdateLinkType(linkType.getKey(), linkType);
+            results.add(result);
         }
-        Object linkRulesObject = payload.get("linkRules");
-        if (linkRulesObject != null) {
-            ArrayList<LinkedHashMap> linkRules = (ArrayList<LinkedHashMap>) linkRulesObject;
-            for (Map linkRule : linkRules) {
-                String key = (String) linkRule.get("key");
-                Result result = createOrUpdateLinkRule(key, new JSONObject(linkRule));
-                results.add(result);
-            }
+        List<LinkRuleData> linkRules = payload.getLinkRules();
+        for (LinkRuleData linkRule : linkRules) {
+            Result result = createOrUpdateLinkRule(linkRule.getKey(), linkRule);
+            results.add(result);
         }
-        Object itemsObject = payload.get("items");
-        if (itemsObject != null) {
-            ArrayList<LinkedHashMap> items = (ArrayList<LinkedHashMap>) itemsObject;
-            for (Map item : items) {
-                String key = (String) item.get("key");
-                Result result = createOrUpdateItem(key, new JSONObject(item));
-                results.add(result);
-            }
+        List<ItemData> items = payload.getItems();
+        for (ItemData item : items) {
+            Result result = createOrUpdateItem(item.getKey(), item);
+            results.add(result);
         }
-        Object linksObject = payload.get("links");
-        if (linksObject != null) {
-            ArrayList<LinkedHashMap> links = (ArrayList<LinkedHashMap>) linksObject;
-            for (Map link : links) {
-                String key = (String) link.get("key");
-                Result result = createOrUpdateLink((String) link.get("key"), new JSONObject(link));
-                results.add(result);
-            }
+        List<LinkData> links = payload.getLinks();
+        for (LinkData link : links) {
+            Result result = createOrUpdateLink(link.getKey(), link);
+            results.add(result);
         }
         return results;
     }
@@ -990,43 +942,39 @@ public class PgSqlRepository implements DbRepository {
             }
             status.put("ready", true);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            status.put("ready", false);
-            status.put("error", ex.getMessage());
+            throw new RuntimeException(String.format("Readyness probe failed: %s", ex.getMessage()));
         }
         return status;
     }
 
     @Override
-    public synchronized Result deleteModel(String key) {
-        Result result = new Result(String.format("Model:%s", key));
-        try {
-            db.prepare(getDeleteModelSQL());
-            db.setString(1, key); // meta model key
-            result.setError(!db.execute());
-            result.setOperation("D");
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setError(true);
-            result.setMessage(String.format("Failed to delete model for key '%s': %s", key, ex.getMessage()));
-        } finally {
-            db.close();
-        }
-        return result;
+    public synchronized Result deleteModel(String key, boolean force) {
+        return delete(getDeleteModelSQL(), key, true, force);
+//        Result result = new Result(String.format("Model:%s", key));
+//        try {
+//            db.prepare(getDeleteModelSQL());
+//            db.setString(1, key); // meta model key
+//            result.setError(!db.execute());
+//            result.setOperation("D");
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//            result.setError(true);
+//            result.setMessage(String.format("Failed to delete model for key '%s': %s", key, ex.getMessage()));
+//        } finally {
+//            db.close();
+//        }
+//        return result;
     }
 
     @Override
-    public synchronized Result createOrUpdateModel(String key, JSONObject json) {
+    public synchronized Result createOrUpdateModel(String key, ModelData model) {
         Result result = new Result(String.format("Model:%s", key));
-        Object name = json.get("name");
-        Object description = json.get("description");
-        Object version = json.get("version");
         try {
             db.prepare(getSetModelSQL());
             db.setString(1, key); // model key
-            db.setString(2, (name != null) ? (String) name : null); // name_param
-            db.setString(3, (description != null) ? (String) description : null); // description_param
-            db.setObject(4, version); // version_param
+            db.setString(2, model.getName()); // name_param
+            db.setString(3, model.getDescription()); // description_param
+            db.setObject(4, model.getVersion()); // version_param
             db.setString(5, getUser()); // changed_by_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_model"));
         } catch (Exception ex) {
@@ -1148,7 +1096,8 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public String getDeleteModelSQL() {
         return "SELECT delete_model(" +
-                "?::character varying" + // model_key_param
+                "?::character varying, " + // model_key_param
+                "?::boolean" + // force
                 ")";
     }
 
@@ -1268,5 +1217,12 @@ public class PgSqlRepository implements DbRepository {
             username = principal.toString();
         }
         return username;
+    }
+
+    private String getAttributeString(JSONObject json) {
+        if (json != null) {
+            return HStoreConverter.toString(json);
+        }
+        return null;
     }
 }
