@@ -1,4 +1,4 @@
-# Granular Ansible Modules Example
+# Granular Ansible Modules Example <img src="../../../../../docs/pics/ox.png" width="125" height="125" align="right">
 
 This sample shows how to use the granular Ansible module set for Onix.
 These modules perform CRUD operations on entities in the CMDB.
