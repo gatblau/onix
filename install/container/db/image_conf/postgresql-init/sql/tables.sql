@@ -16,6 +16,305 @@ DO
   $$
     BEGIN
       ---------------------------------------------------------------------------
+      -- PARTITION
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'partition')
+      THEN
+        CREATE SEQUENCE partition_id_seq
+          INCREMENT 1
+          START 10
+          MINVALUE 10
+          MAXVALUE 9223372036854775807
+          CACHE 1;
+
+        ALTER SEQUENCE partition_id_seq
+          OWNER TO onix;
+
+        CREATE TABLE partition
+        (
+          id          INTEGER                NOT NULL DEFAULT nextval('partition_id_seq'::regclass),
+          key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          description TEXT COLLATE pg_catalog."default",
+          version     bigint                 NOT NULL DEFAULT 1,
+          created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
+          updated     timestamp(6) with time zone,
+          changed_by  CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
+          CONSTRAINT partition_id_pk PRIMARY KEY (id),
+          CONSTRAINT partition_key_uc UNIQUE (key),
+          CONSTRAINT partition_name_uc UNIQUE (name)
+        )
+          WITH (
+            OIDS = FALSE
+          )
+          TABLESPACE pg_default;
+
+        ALTER TABLE partition
+          OWNER to onix;
+
+      END IF;
+
+      ---------------------------------------------------------------------------
+      -- PARTITION CHANGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'partition_change')
+      THEN
+        CREATE TABLE partition_change
+        (
+          operation   CHAR(1)               NOT NULL,
+          changed     TIMESTAMP             NOT NULL,
+          id          INTEGER,
+          key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
+          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          description TEXT COLLATE pg_catalog."default",
+          version     bigint,
+          created     timestamp(6) with time zone,
+          updated     timestamp(6) with time zone,
+          changed_by  CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
+        );
+
+        ALTER TABLE partition_change
+          OWNER to onix;
+
+        CREATE OR REPLACE FUNCTION change_partition() RETURNS TRIGGER AS
+        $partition_change$
+        BEGIN
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO partition_change SELECT 'D', now(), OLD.*;
+            RETURN OLD;
+          ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO partition_change SELECT 'U', now(), NEW.*;
+            RETURN NEW;
+          ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO partition_change SELECT 'I', now(), NEW.*;
+            RETURN NEW;
+          END IF;
+          RETURN NULL; -- result is ignored since this is an AFTER trigger
+        END;
+        $partition_change$ LANGUAGE plpgsql;
+
+        CREATE TRIGGER partition_change
+          AFTER INSERT OR UPDATE OR DELETE
+          ON partition
+          FOR EACH ROW
+        EXECUTE PROCEDURE change_partition();
+
+      END IF;
+
+      INSERT INTO partition(id, key, name, description, version, changed_by)
+      VALUES (0, 'DEFAULT_REFERENCE', 'Default Reference Partition', 'Default partition for reference data.', 1, 'onix');
+      INSERT INTO partition(id, key, name, description, version, changed_by)
+      VALUES (1, 'DEFAULT_INSTANCE', 'Default Instance Partition', 'Default partition for instance data.', 1, 'onix');
+
+      ---------------------------------------------------------------------------
+      -- ROLE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'role')
+      THEN
+        CREATE SEQUENCE role_id_seq
+          INCREMENT 1
+          START 1
+          MINVALUE 1
+          MAXVALUE 9223372036854775807
+          CACHE 1;
+
+        ALTER SEQUENCE role_id_seq
+          OWNER TO onix;
+
+        CREATE TABLE role
+        (
+          id          INTEGER                NOT NULL DEFAULT nextval('role_id_seq'::regclass),
+          key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          description TEXT COLLATE pg_catalog."default",
+          version     bigint                 NOT NULL DEFAULT 1,
+          created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
+          updated     timestamp(6) with time zone,
+          changed_by  CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
+          CONSTRAINT role_id_pk PRIMARY KEY (id),
+          CONSTRAINT role_key_uc UNIQUE (key),
+          CONSTRAINT role_name_uc UNIQUE (name)
+        )
+          WITH (
+            OIDS = FALSE
+          )
+          TABLESPACE pg_default;
+
+        ALTER TABLE role
+          OWNER to onix;
+
+      END IF;
+
+      ---------------------------------------------------------------------------
+      -- ROLE CHANGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'role_change')
+      THEN
+        CREATE TABLE role_change
+        (
+          operation   CHAR(1)               NOT NULL,
+          changed     TIMESTAMP             NOT NULL,
+          id          INTEGER,
+          key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
+          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          description TEXT COLLATE pg_catalog."default",
+          version     bigint,
+          created     timestamp(6) with time zone,
+          updated     timestamp(6) with time zone,
+          changed_by  CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
+        );
+
+        ALTER TABLE role_change
+          OWNER to onix;
+
+        CREATE OR REPLACE FUNCTION change_role() RETURNS TRIGGER AS
+        $role_change$
+        BEGIN
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO role_change SELECT 'D', now(), OLD.*;
+            RETURN OLD;
+          ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO role_change SELECT 'U', now(), NEW.*;
+            RETURN NEW;
+          ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO role_change SELECT 'I', now(), NEW.*;
+            RETURN NEW;
+          END IF;
+          RETURN NULL; -- result is ignored since this is an AFTER trigger
+        END;
+        $role_change$ LANGUAGE plpgsql;
+
+        CREATE TRIGGER role_change
+          AFTER INSERT OR UPDATE OR DELETE
+          ON role
+          FOR EACH ROW
+        EXECUTE PROCEDURE change_role();
+
+      END IF;
+
+      INSERT INTO role(id, key, name, description, version, changed_by)
+      VALUES (1, 'SYS_ADMIN', 'System Administrator', 'System Administrator Role.', 1, 'onix');
+      INSERT INTO role(id, key, name, description, version, changed_by)
+      VALUES (2, 'SYS_READER', 'System Reader', 'System Reader Role.', 1, 'onix');
+      INSERT INTO role(id, key, name, description, version, changed_by)
+      VALUES (3, 'SYS_WRITER', 'System Writer', 'System Writer Role.', 1, 'onix');
+
+      ---------------------------------------------------------------------------
+      -- PRIVILEGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'privilege')
+      THEN
+        CREATE SEQUENCE privilege_id_seq
+          INCREMENT 1
+          START 10
+          MINVALUE 10
+          MAXVALUE 9223372036854775807
+          CACHE 1;
+
+        ALTER SEQUENCE privilege_id_seq OWNER TO onix;
+
+        CREATE TABLE privilege
+        (
+          id           INTEGER               NOT NULL DEFAULT nextval('privilege_id_seq'::regclass),
+          role_id      bigint,
+          partition_id bigint,
+          can_create   boolean,
+          can_read     boolean,
+          can_update   boolean,
+          can_delete   boolean,
+          version      bigint                NOT NULL DEFAULT 1,
+          created      timestamp(6) with time zone    DEFAULT CURRENT_TIMESTAMP(6),
+          updated      timestamp(6) with time zone,
+          changed_by   CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
+          CONSTRAINT privilege_id_pk PRIMARY KEY (id, role_id, partition_id),
+          CONSTRAINT privilege_role_id_fk FOREIGN KEY (role_id)
+            REFERENCES role (id) MATCH SIMPLE
+            ON UPDATE NO ACTION
+            ON DELETE NO ACTION,
+          CONSTRAINT privilege_partition_id_fk FOREIGN KEY (partition_id)
+            REFERENCES partition (id) MATCH SIMPLE
+            ON UPDATE NO ACTION
+            ON DELETE NO ACTION
+        )
+          WITH (OIDS = FALSE)
+          TABLESPACE pg_default;
+
+        ALTER TABLE privilege
+          OWNER to onix;
+
+      END IF;
+
+      ---------------------------------------------------------------------------
+      -- PRIVILEGE CHANGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'privilege_change')
+      THEN
+        CREATE TABLE privilege_change
+        (
+          operation    CHAR(1)   NOT NULL,
+          changed      TIMESTAMP NOT NULL,
+          id           INTEGER   NOT NULL,
+          role_id      bigint,
+          partition_id bigint,
+          can_create   boolean,
+          can_read     boolean,
+          can_update   boolean,
+          can_delete   boolean,
+          version      bigint    NOT NULL,
+          created      timestamp(6) with time zone,
+          updated      timestamp(6) with time zone,
+          changed_by   CHARACTER VARYING(50)
+        );
+
+        ALTER TABLE privilege_change
+          OWNER to onix;
+
+        CREATE OR REPLACE FUNCTION change_privilege() RETURNS TRIGGER AS
+        $privilege_change$
+        BEGIN
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO privilege_change SELECT 'D', now(), OLD.*;
+            RETURN OLD;
+          ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO privilege_change SELECT 'U', now(), NEW.*;
+            RETURN NEW;
+          ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO privilege_change SELECT 'I', now(), NEW.*;
+            RETURN NEW;
+          END IF;
+          RETURN NULL; -- result is ignored since this is an AFTER trigger
+        END;
+        $privilege_change$ LANGUAGE plpgsql;
+
+        CREATE TRIGGER privilege_change
+          AFTER INSERT OR UPDATE OR DELETE
+          ON privilege
+          FOR EACH ROW
+        EXECUTE PROCEDURE change_privilege();
+
+      END IF;
+
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_update, can_delete, version,
+                            changed_by)
+      VALUES (1, 1, 0, true, true, true, true, 1, 'onix'); -- sysadmin privilege on part 0
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_update, can_delete, version,
+                            changed_by)
+      VALUES (2, 1, 1, true, true, true, true, 1, 'onix'); -- sysadmin privilege on part 1
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_update, can_delete, version,
+                            changed_by)
+      VALUES (3, 2, 0, false, true, false, false, 1, 'onix'); -- sysreader privilege on part 0
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_update, can_delete, version,
+                            changed_by)
+      VALUES (4, 2, 1, false, true, false, false, 1, 'onix'); -- sysreader privilege on part 1
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_update, can_delete, version,
+                            changed_by)
+      VALUES (5, 3, 0, false, true, false, false, 1, 'onix'); -- syswriter privilege on part 0
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_update, can_delete, version,
+                            changed_by)
+      VALUES (6, 3, 1, true, true, true, true, 1, 'onix');
+      -- syswriter privilege on part 1
+
+      ---------------------------------------------------------------------------
       -- MODEL
       ---------------------------------------------------------------------------
       IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'model')
@@ -129,7 +428,7 @@ DO
           created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated     timestamp(6) with time zone,
           changed_by  CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
-          model_id    int                 NOT NULL,
+          model_id    int                    NOT NULL,
           CONSTRAINT item_type_id_pk PRIMARY KEY (id),
           CONSTRAINT item_type_key_uc UNIQUE (key),
           CONSTRAINT item_type_name_uc UNIQUE (name),
@@ -347,7 +646,7 @@ DO
           created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated     timestamp(6) with time zone,
           changed_by  CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
-          model_id    int                 NOT NULL,
+          model_id    int                    NOT NULL,
           CONSTRAINT link_type_id_pk PRIMARY KEY (id),
           CONSTRAINT link_type_key_uc UNIQUE (key),
           CONSTRAINT link_type_name_uc UNIQUE (name),
