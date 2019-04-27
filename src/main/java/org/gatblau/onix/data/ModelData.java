@@ -12,6 +12,7 @@ public class ModelData implements Serializable {
     private String updated;
     private Integer version;
     private String changedBy;
+    private String partition;
 
     public ModelData(){
     }
@@ -70,5 +71,14 @@ public class ModelData implements Serializable {
 
     public void setChangedBy(String changedBy) {
         this.changedBy = changedBy;
+    }
+
+    public String getPartition() {
+        // if no partition selected, default to REF partition
+        return (partition != null) ? partition : "REF";
+    }
+
+    public void setPartition(String partition) {
+        this.partition = partition;
     }
 }

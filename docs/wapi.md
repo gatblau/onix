@@ -300,3 +300,90 @@ The following model queries are available:
 <a name="item-types"></a>
 
 ## Item Types [(up)](#toc)
+
+Item Types provide the definition of items. Items can record data in two main ways:
+
+- Using a JSON object (meta field)
+- Using Key/Value pairs (attribute field)
+
+Item types can be used to apply specific validation to the data recorded by a configuration item by defining a JSON schema or key/value required/mandatory constraints.
+
+### Create or Update
+
+To create or update an Item Type use the PUT HTTP method.
+
+#### Request attributes
+
+| _Item_  | _Value_ |
+|---|---|
+| Method | PUT |
+| Path | /itemtype/**{item_type_key}**|
+| Response Content Type | application/json |
+| Authentication Header | basic authentication token |
+
+#### Request payload
+
+| _Attribute_ | _Description_ | _Example_ | _Mandatory_|
+|---|---|---|---|
+| __name__ | the human readable name of the item type | "AWS  Instance"| yes (unique) |
+| __description__ | the item type description | "A Virtual Machine running on Aws EC2" | no |
+| __version__ | the version of the model for concurrency management purposes. | 21 | no |
+
+#### Usage
+
+The PUT request requires a payload in JSON format as the one shown below.
+Note that the natural key for the configuration item type is not part of the payload but specified in the URI.
+```bash
+$ curl \
+    -X PUT \
+    -H 'ContentType: application/json' \
+    -H '${AUTH_HEADER}' \
+    -d '@model_payload.json' \
+    'http://localhost:8080/model/awsec2' 
+```
+
+__model_payload.json__:
+
+```json
+{
+  "name": "AWS EC2 Model",
+  "description": "Definitions for AWS Elastic Compute Cloud items and their relationships."
+}
+```
+
+__result__:
+
+```json
+{
+  "ref": "model:awsec2",
+  "changed": "true",
+  "error": "false",
+  "message": "", 
+  "operation": "I", 
+}
+```
+
+### Delete
+
+In order to delete a model the following command can be executed:
+
+```bash
+$ curl \
+    -X DELETE \
+    -H '${AUTH_HEADER}' \
+    'http://localhost:8080/model/awsec2' 
+```
+
+__NOTE__: deleting a Model, forces the deletion of the Link Types and Item Types related to that Model. Item and Links have to be deleted before a model can be deleted.
+
+### Query
+
+The following model queries are available:
+
+| _Query_ | _Description_ |
+|---|---|
+| __GET /model/{model_key}__ | Retrieve the model for the specified natural key. |
+| __GET /model/{model_key}/data__| Retrieve a list of Item Types and Link Types that comprise the specified model. |
+| __GET /models__ | Retrieve a list of all models in the system. |
+
+--------------------------------

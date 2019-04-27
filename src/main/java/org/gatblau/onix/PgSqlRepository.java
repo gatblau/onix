@@ -309,10 +309,18 @@ public class PgSqlRepository implements DbRepository {
     }
 
     private synchronized Result delete(String sql, String key){
-        return delete(sql, key, false, false);
+        return delete(sql, key, false, false, null);
+    }
+
+    private synchronized Result delete(String sql, String key, String role){
+        return delete(sql, key, false, false, role);
     }
 
     private synchronized Result delete(String sql, String key, boolean isType, boolean force) {
+        return delete(sql, key, isType, force, null);
+    }
+
+    private synchronized Result delete(String sql, String key, boolean isType, boolean force, String role) {
         Result result = new Result(String.format("Delete(%s)", key));
         try {
             db.prepare(sql);
@@ -322,6 +330,7 @@ public class PgSqlRepository implements DbRepository {
                 if (isType) {
                     db.setObject(2, force);
                 }
+                if (role != null) db.setString(3, role);
             }
             result.setOperation((db.execute()) ? "D" : "N");
             if (result.getOperation().equals("D")) {
@@ -875,11 +884,11 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized ResultList createOrUpdateData(GraphData payload) {
+    public synchronized ResultList createOrUpdateData(GraphData payload, String role) {
         ResultList results = new ResultList();
         List<ModelData> models = payload.getModels();
         for (ModelData model : models) {
-            Result result = createOrUpdateModel(model.getKey(), model);
+            Result result = createOrUpdateModel(model.getKey(), model, role);
             results.add(result);
         }
         List<ItemTypeData> itemTypes = payload.getItemTypes();
@@ -948,26 +957,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result deleteModel(String key, boolean force) {
-        return delete(getDeleteModelSQL(), key, true, force);
-//        Result result = new Result(String.format("Model:%s", key));
-//        try {
-//            db.prepare(getDeleteModelSQL());
-//            db.setString(1, key); // meta model key
-//            result.setError(!db.execute());
-//            result.setOperation("D");
-//        } catch (Exception ex) {
-//            ex.printStackTrace();
-//            result.setError(true);
-//            result.setMessage(String.format("Failed to delete model for key '%s': %s", key, ex.getMessage()));
-//        } finally {
-//            db.close();
-//        }
-//        return result;
+    public synchronized Result deleteModel(String key, boolean force, String role) {
+        return delete(getDeleteModelSQL(), key, true, force, role);
     }
 
     @Override
-    public synchronized Result createOrUpdateModel(String key, ModelData model) {
+    public synchronized Result createOrUpdateModel(String key, ModelData model, String role) {
         Result result = new Result(String.format("Model:%s", key));
         try {
             db.prepare(getSetModelSQL());
@@ -976,6 +971,8 @@ public class PgSqlRepository implements DbRepository {
             db.setString(3, model.getDescription()); // description_param
             db.setObject(4, model.getVersion()); // version_param
             db.setString(5, getUser()); // changed_by_param
+            db.setString(6, model.getPartition()); // partition_key_param
+            db.setString(7, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("set_model"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -988,11 +985,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized ModelData getModel(String key) {
+    public synchronized ModelData getModel(String key, String role) {
         ModelData model = null;
         try {
             db.prepare(getGetModelSQL());
             db.setString(1, key);
+            db.setString(2, role);
             ResultSet set = db.executeQuerySingleRow();
             model = util.toModelData(set);
             db.close();
@@ -1005,10 +1003,11 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized ModelDataList getModels() {
+    public synchronized ModelDataList getModels(String role) {
         ModelDataList models = new ModelDataList();
         try {
             db.prepare(getGetModelsSQL());
+            db.setString(1, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 models.getValues().add(util.toModelData(set));
@@ -1026,19 +1025,24 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," + // name_param
                 "?::text," + // description_param
                 "?::bigint," + // version_param
-                "?::character varying" + // changed_by
+                "?::character varying," + // changed_by
+                "?::character varying," + // partition_key_param
+                "?::character varying" + // role_key_param
                 ")";
     }
 
     @Override
     public String getGetModelsSQL() {
-        return "SELECT * FROM get_models()";
+        return "SELECT * FROM get_models(" +
+                "?::character varying" + // role_key_param
+                ")";
     }
 
     @Override
     public String getGetModelSQL() {
         return "SELECT * FROM model(" +
-                "?::character varying" + // key
+                "?::character varying," + // key
+                "?::character varying" + // role
                 ")";
     }
 
@@ -1097,7 +1101,8 @@ public class PgSqlRepository implements DbRepository {
     public String getDeleteModelSQL() {
         return "SELECT delete_model(" +
                 "?::character varying, " + // model_key_param
-                "?::boolean" + // force
+                "?::boolean," + // force
+                "?::character varying" + // role_key_param
                 ")";
     }
 

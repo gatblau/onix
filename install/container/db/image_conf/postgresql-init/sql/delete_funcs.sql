@@ -19,14 +19,30 @@ DO
       /*
       delete_model
      */
-      CREATE OR REPLACE FUNCTION delete_model(key_param character varying, force boolean default false)
+      CREATE OR REPLACE FUNCTION delete_model(
+          key_param character varying,
+          force boolean,
+          role_key_param character varying
+        )
         RETURNS VOID
         LANGUAGE 'plpgsql'
         COST 100
         VOLATILE
       AS
       $BODY$
+      DECLARE
+        partition_key_value character varying;
       BEGIN
+        -- gets the partition the model is in
+        SELECT p.key
+        FROM model m
+        INNER JOIN partition p
+           ON p.id = m.partition_id
+        WHERE m.key = key_param INTO partition_key_value;
+
+        -- check the role have delete rights on the partition, if not the raise exception
+        PERFORM check_partition_privilege(role_key_param, partition_key_value, false, false, false, true);
+
         IF (force = TRUE) THEN
           DELETE
           FROM item_type it USING model m
@@ -43,7 +59,7 @@ DO
       END
       $BODY$;
 
-      ALTER FUNCTION delete_model(character varying, boolean)
+      ALTER FUNCTION delete_model(character varying, boolean, character varying)
         OWNER TO onix;
 
       /*

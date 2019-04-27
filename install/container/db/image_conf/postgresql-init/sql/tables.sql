@@ -32,7 +32,7 @@ DO
 
         CREATE TABLE partition
         (
-          id          INTEGER                NOT NULL DEFAULT nextval('partition_id_seq'::regclass),
+          id          bigint                 NOT NULL DEFAULT nextval('partition_id_seq'::regclass),
           key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
           description TEXT COLLATE pg_catalog."default",
@@ -63,7 +63,7 @@ DO
         (
           operation   CHAR(1)               NOT NULL,
           changed     TIMESTAMP             NOT NULL,
-          id          INTEGER,
+          id          bigint,
           key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
           description TEXT COLLATE pg_catalog."default",
@@ -102,9 +102,10 @@ DO
       END IF;
 
       INSERT INTO partition(id, key, name, description, version, changed_by)
-      VALUES (0, 'DEFAULT_REFERENCE', 'Default Reference Partition', 'Default partition for reference data.', 1, 'onix');
+      VALUES (0, 'REF', 'Default Reference Partition', 'Default partition for reference data.', 1,
+              'onix');
       INSERT INTO partition(id, key, name, description, version, changed_by)
-      VALUES (1, 'DEFAULT_INSTANCE', 'Default Instance Partition', 'Default partition for instance data.', 1, 'onix');
+      VALUES (1, 'INS', 'Default Instance Partition', 'Default partition for instance data.', 1, 'onix');
 
       ---------------------------------------------------------------------------
       -- ROLE
@@ -123,7 +124,7 @@ DO
 
         CREATE TABLE role
         (
-          id          INTEGER                NOT NULL DEFAULT nextval('role_id_seq'::regclass),
+          id          bigint                 NOT NULL DEFAULT nextval('role_id_seq'::regclass),
           key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
           description TEXT COLLATE pg_catalog."default",
@@ -154,7 +155,7 @@ DO
         (
           operation   CHAR(1)               NOT NULL,
           changed     TIMESTAMP             NOT NULL,
-          id          INTEGER,
+          id          bigint,
           key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
           description TEXT COLLATE pg_catalog."default",
@@ -193,11 +194,11 @@ DO
       END IF;
 
       INSERT INTO role(id, key, name, description, version, changed_by)
-      VALUES (1, 'SYS_ADMIN', 'System Administrator', 'System Administrator Role.', 1, 'onix');
+      VALUES (1, 'ADMIN', 'System Administrator', 'Can read and write configuration data models.', 1, 'onix');
       INSERT INTO role(id, key, name, description, version, changed_by)
-      VALUES (2, 'SYS_READER', 'System Reader', 'System Reader Role.', 1, 'onix');
+      VALUES (2, 'READER', 'System Reader', 'Can only read configuration data and models.', 1, 'onix');
       INSERT INTO role(id, key, name, description, version, changed_by)
-      VALUES (3, 'SYS_WRITER', 'System Writer', 'System Writer Role.', 1, 'onix');
+      VALUES (3, 'WRITER', 'System Writer', 'Can read and write configuration data and read models.', 1, 'onix');
 
       ---------------------------------------------------------------------------
       -- PRIVILEGE
@@ -215,7 +216,7 @@ DO
 
         CREATE TABLE privilege
         (
-          id           INTEGER               NOT NULL DEFAULT nextval('privilege_id_seq'::regclass),
+          id           bigint                NOT NULL DEFAULT nextval('privilege_id_seq'::regclass),
           role_id      bigint,
           partition_id bigint,
           can_create   boolean,
@@ -331,17 +332,22 @@ DO
 
         CREATE TABLE model
         (
-          id          INTEGER                NOT NULL DEFAULT nextval('model_id_seq'::regclass),
-          key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
-          description TEXT COLLATE pg_catalog."default",
-          version     bigint                 NOT NULL DEFAULT 1,
-          created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
-          updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
+          id           INTEGER                NOT NULL DEFAULT nextval('model_id_seq'::regclass),
+          key          CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+          name         CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          description  TEXT COLLATE pg_catalog."default",
+          version      bigint                 NOT NULL DEFAULT 1,
+          created      timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
+          updated      timestamp(6) with time zone,
+          changed_by   CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
+          partition_id bigint                 NOT NULL DEFAULT 0,
           CONSTRAINT model_id_pk PRIMARY KEY (id),
           CONSTRAINT model_key_uc UNIQUE (key),
-          CONSTRAINT model_name_uc UNIQUE (name)
+          CONSTRAINT model_name_uc UNIQUE (name),
+          CONSTRAINT model_partition_id_fk FOREIGN KEY (partition_id)
+            REFERENCES partition (id) MATCH SIMPLE
+            ON UPDATE NO ACTION
+            ON DELETE NO ACTION
         )
           WITH (
             OIDS = FALSE
@@ -360,16 +366,17 @@ DO
       THEN
         CREATE TABLE model_change
         (
-          operation   CHAR(1)               NOT NULL,
-          changed     TIMESTAMP             NOT NULL,
-          id          INTEGER,
-          key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
-          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
-          description TEXT COLLATE pg_catalog."default",
-          version     bigint,
-          created     timestamp(6) with time zone,
-          updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
+          operation    CHAR(1)               NOT NULL,
+          changed      TIMESTAMP             NOT NULL,
+          id           INTEGER,
+          key          CHARACTER VARYING(100) COLLATE pg_catalog."default",
+          name         CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          description  TEXT COLLATE pg_catalog."default",
+          version      bigint,
+          created      timestamp(6) with time zone,
+          updated      timestamp(6) with time zone,
+          changed_by   CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
+          partition_id bigint default 0
         );
 
         ALTER TABLE model_change
@@ -417,23 +424,28 @@ DO
 
         CREATE TABLE item_type
         (
-          id          INTEGER                NOT NULL DEFAULT nextval('item_type_id_seq'::regclass),
-          key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
-          description TEXT COLLATE pg_catalog."default",
-          attr_valid  HSTORE,
-          filter      jsonb,
-          meta_schema jsonb,
-          version     bigint                 NOT NULL DEFAULT 1,
-          created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
-          updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
-          model_id    int                    NOT NULL,
+          id           INTEGER                NOT NULL DEFAULT nextval('item_type_id_seq'::regclass),
+          key          CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+          name         CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          description  TEXT COLLATE pg_catalog."default",
+          attr_valid   HSTORE,
+          filter       jsonb,
+          meta_schema  jsonb,
+          version      bigint                 NOT NULL DEFAULT 1,
+          created      timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
+          updated      timestamp(6) with time zone,
+          changed_by   CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
+          model_id     int                    NOT NULL,
+          partition_id bigint                 NOT NULL DEFAULT 0,
           CONSTRAINT item_type_id_pk PRIMARY KEY (id),
           CONSTRAINT item_type_key_uc UNIQUE (key),
           CONSTRAINT item_type_name_uc UNIQUE (name),
           CONSTRAINT item_type_model_id_fk FOREIGN KEY (model_id)
             REFERENCES model (id) MATCH SIMPLE
+            ON UPDATE NO ACTION
+            ON DELETE NO ACTION,
+          CONSTRAINT item_type_partition_id_fk FOREIGN KEY (partition_id)
+            REFERENCES partition (id) MATCH SIMPLE
             ON UPDATE NO ACTION
             ON DELETE NO ACTION
         )
@@ -458,20 +470,21 @@ DO
       THEN
         CREATE TABLE item_type_change
         (
-          operation   CHAR(1)               NOT NULL,
-          changed     TIMESTAMP             NOT NULL,
-          id          INTEGER,
-          key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
-          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
-          description TEXT COLLATE pg_catalog."default",
-          attr_valid  HSTORE,
-          filter      jsonb,
-          meta_schema jsonb,
-          version     bigint,
-          created     timestamp(6) with time zone,
-          updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
-          model_id    int
+          operation    CHAR(1)               NOT NULL,
+          changed      TIMESTAMP             NOT NULL,
+          id           INTEGER,
+          key          CHARACTER VARYING(100) COLLATE pg_catalog."default",
+          name         CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          description  TEXT COLLATE pg_catalog."default",
+          attr_valid   HSTORE,
+          filter       jsonb,
+          meta_schema  jsonb,
+          version      bigint,
+          created      timestamp(6) with time zone,
+          updated      timestamp(6) with time zone,
+          changed_by   CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
+          model_id     int,
+          partition_id bigint
         );
 
         ALTER TABLE item_type_change
@@ -532,10 +545,15 @@ DO
           created      timestamp(6) with time zone                                  DEFAULT CURRENT_TIMESTAMP(6),
           updated      timestamp(6) with time zone,
           changed_by   CHARACTER VARYING(100)                              NOT NULL COLLATE pg_catalog."default",
+          partition_id bigint                                              NOT NULL DEFAULT 1,
           CONSTRAINT item_id_pk PRIMARY KEY (id),
           CONSTRAINT item_key_uc UNIQUE (key),
           CONSTRAINT item_item_type_id_fk FOREIGN KEY (item_type_id)
             REFERENCES item_type (id) MATCH SIMPLE
+            ON UPDATE NO ACTION
+            ON DELETE NO ACTION,
+          CONSTRAINT item_partition_id_fk FOREIGN KEY (partition_id)
+            REFERENCES partition (id) MATCH SIMPLE
             ON UPDATE NO ACTION
             ON DELETE NO ACTION
         )
@@ -588,7 +606,8 @@ DO
           version      bigint,
           created      timestamp(6) with time zone,
           updated      timestamp(6) with time zone,
-          changed_by   CHARACTER VARYING(100)      NOT NULL COLLATE pg_catalog."default"
+          changed_by   CHARACTER VARYING(100)      NOT NULL COLLATE pg_catalog."default",
+          partition_id bigint
         );
 
         ALTER TABLE item_change

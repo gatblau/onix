@@ -137,7 +137,7 @@ public interface DbRepository {
 
     /* Graph Data */
     GraphData getData(String rootItemKey, String label);
-    ResultList createOrUpdateData(GraphData payload);
+    ResultList createOrUpdateData(GraphData payload, String role);
     Result deleteData(String rootItemKey);
 
     TypeGraphData getTypeDataByModel(String modelKey);
@@ -150,10 +150,10 @@ public interface DbRepository {
     JSONObject getReadyStatus();
 
     /* Model */
-    Result deleteModel(String key, boolean force);
-    Result createOrUpdateModel(String key, ModelData json);
-    ModelData getModel(String key);
-    ModelDataList getModels();
+    Result deleteModel(String key, boolean force, String role);
+    Result createOrUpdateModel(String key, ModelData json, String role);
+    ModelData getModel(String key, String role);
+    ModelDataList getModels(String role);
 
     String getDeleteModelSQL();
     String getSetModelSQL();

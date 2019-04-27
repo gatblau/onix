@@ -193,7 +193,8 @@ $BODY$;
   RETURNS TABLE(
     operation character,
     changed timestamp with time zone,
-    id bigint, key character varying,
+    id bigint,
+    key character varying,
     name character varying,
     description text,
     meta jsonb,
@@ -202,6 +203,7 @@ $BODY$;
     status smallint,
     item_type_id integer,
     version bigint,
+    partition_id bigint,
     created timestamp with time zone,
     updated timestamp with time zone,
     changed_by character varying,
@@ -214,7 +216,23 @@ $BODY$;
     AS $BODY$
   BEGIN
     RETURN QUERY
-      SELECT i.*, it.key as item_type_key
+      SELECT i.operation,
+             i.changed,
+             i.id,
+             i.key,
+             i.name,
+             i.description,
+             i.meta,
+             i.tag,
+             i.attribute,
+             i.status,
+             i.item_type_id,
+             i.version,
+             i.partition_id,
+             i.created,
+             i.updated,
+             i.changed_by,
+             it.key as item_type_key
       FROM get_tree_content(root_item_key_param, label_param) s
       INNER JOIN item_change i
         ON i.id = s.id::bigint
