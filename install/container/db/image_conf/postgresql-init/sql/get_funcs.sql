@@ -274,7 +274,53 @@ DO
           model(model_key_param): gets the model specified by the model_key_param.
           use: select * model(model_key_param)
          */
-      CREATE OR REPLACE FUNCTION model(model_key_param character varying)
+      CREATE OR REPLACE FUNCTION model(model_key_param character varying, role_key_param character varying)
+        RETURNS TABLE(
+          id integer,
+          key character varying,
+          name character varying,
+          description text,
+          version bigint,
+          created timestamp(6) with time zone,
+          updated timestamp(6) with time zone,
+          changed_by character varying,
+          partition character varying
+          )
+        LANGUAGE 'plpgsql'
+        COST 100
+        STABLE
+      AS
+      $BODY$
+      BEGIN
+        RETURN QUERY
+          SELECT
+            m.id,
+            m.key,
+            m.name,
+            m.description,
+            m.version,
+            m.created,
+            m.updated,
+            m.changed_by,
+            p.key as partition
+          FROM model m
+          INNER JOIN partition p on m.partition_id = p.id
+          INNER JOIN privilege pr on p.id = pr.partition_id
+          INNER JOIN role r on pr.role_id = r.id
+          WHERE m.key = model_key_param
+          AND r.key = role_key_param
+          AND pr.can_read = true;
+      END;
+      $BODY$;
+
+      ALTER FUNCTION model(character varying, character varying)
+        OWNER TO onix;
+
+      /*
+        get_models(): gets all models in the system.
+        use: select * from get_models()
+      */
+      CREATE OR REPLACE FUNCTION get_models(role_key_param character varying)
         RETURNS TABLE(
           id integer,
           key character varying,
@@ -284,7 +330,7 @@ DO
           created timestamp(6) with time zone,
           updated timestamp(6) with time zone,
           changed_by character varying
-          )
+        )
         LANGUAGE 'plpgsql'
         COST 100
         STABLE
@@ -302,49 +348,15 @@ DO
             m.updated,
             m.changed_by
           FROM model m
-          WHERE m.key = model_key_param;
+          INNER JOIN partition p on m.partition_id = p.id
+          INNER JOIN privilege pr on p.id = pr.partition_id
+          INNER JOIN role r on pr.role_id = r.id
+          WHERE r.key = role_key_param
+          AND pr.can_read = TRUE;
       END;
       $BODY$;
 
-      ALTER FUNCTION model(character varying)
-        OWNER TO onix;
-
-      /*
-        get_models(): gets all models in the system.
-        use: select * from get_models()
-      */
-      CREATE OR REPLACE FUNCTION get_models()
-        RETURNS TABLE(
-          id integer,
-          key character varying,
-          name character varying,
-          description text,
-          version bigint,
-          created timestamp(6) with time zone,
-          updated timestamp(6) with time zone,
-          changed_by character varying
-          )
-        LANGUAGE 'plpgsql'
-        COST 100
-        STABLE
-      AS
-      $BODY$
-      BEGIN
-        RETURN QUERY
-          SELECT
-            m.id,
-            m.key,
-            m.name,
-            m.description,
-            m.version,
-            m.created,
-            m.updated,
-            m.changed_by
-          FROM model m;
-      END;
-      $BODY$;
-
-      ALTER FUNCTION get_models()
+      ALTER FUNCTION get_models(character varying)
         OWNER TO onix;
 
     END

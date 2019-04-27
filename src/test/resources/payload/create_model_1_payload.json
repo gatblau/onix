@@ -1,4 +1,5 @@
 {
   "name": "Metal Model 1",
-  "description": "A test meta model."
+  "description": "A test meta model.",
+  "partition": "REF"
 }

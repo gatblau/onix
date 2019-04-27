@@ -25,8 +25,12 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -730,9 +734,10 @@ public class WebAPI {
                 example = "?force"
             )
             @RequestParam(value="force", required = false, defaultValue = "false")
-            boolean force
+            boolean force,
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteModel(key, force));
+        return ResponseEntity.ok(data.deleteModel(key, force, getRole(authentication)));
     }
 
     @ApiOperation(
@@ -756,9 +761,10 @@ public class WebAPI {
             example = "model_01_abc"
         )
         @PathVariable("key") String key,
-        @RequestBody ModelData model
+        @RequestBody ModelData model,
+        Authentication authentication
     ) {
-        Result result = data.createOrUpdateModel(key, model);
+        Result result = data.createOrUpdateModel(key, model, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -777,8 +783,10 @@ public class WebAPI {
                 required = true,
                 example = "model_01_abc"
             )
-            @PathVariable("key") String key) {
-        return ResponseEntity.ok(data.getModel(key));
+            @PathVariable("key") String key,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(data.getModel(key, getRole(authentication)));
     }
 
     @ApiOperation(
@@ -789,8 +797,10 @@ public class WebAPI {
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<ModelDataList> getModels() {
-        return ResponseEntity.ok(data.getModels());
+    public ResponseEntity<ModelDataList> getModels(
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(data.getModels(getRole(authentication)));
     }
 
     @ApiOperation(
@@ -907,8 +917,10 @@ public class WebAPI {
             , method = RequestMethod.PUT
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<ResultList> createOrUpdateData(@RequestBody GraphData graphData) {
-        ResultList results = data.createOrUpdateData(graphData);
+    public ResponseEntity<ResultList> createOrUpdateData(
+            @RequestBody GraphData graphData,
+            Authentication authentication) {
+        ResultList results = data.createOrUpdateData(graphData, getRole(authentication));
         return ResponseEntity.ok(results);
     }
 
@@ -958,5 +970,15 @@ public class WebAPI {
         }
         return date;
     }
+
+    private String getRole(Authentication authentication) {
+        String role = null;
+        for (GrantedAuthority authority : authentication.getAuthorities()){
+            role = authority.getAuthority();
+            break;
+        }
+        return role.substring("ROLE_".length());
+    }
+
 
 }
