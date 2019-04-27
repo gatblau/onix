@@ -221,7 +221,6 @@ DO
           partition_id bigint,
           can_create   boolean,
           can_read     boolean,
-          can_update   boolean,
           can_delete   boolean,
           version      bigint                NOT NULL DEFAULT 1,
           created      timestamp(6) with time zone    DEFAULT CURRENT_TIMESTAMP(6),
@@ -259,7 +258,6 @@ DO
           partition_id bigint,
           can_create   boolean,
           can_read     boolean,
-          can_update   boolean,
           can_delete   boolean,
           version      bigint    NOT NULL,
           created      timestamp(6) with time zone,
@@ -295,25 +293,12 @@ DO
 
       END IF;
 
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_update, can_delete, version,
-                            changed_by)
-      VALUES (1, 1, 0, true, true, true, true, 1, 'onix'); -- sysadmin privilege on part 0
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_update, can_delete, version,
-                            changed_by)
-      VALUES (2, 1, 1, true, true, true, true, 1, 'onix'); -- sysadmin privilege on part 1
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_update, can_delete, version,
-                            changed_by)
-      VALUES (3, 2, 0, false, true, false, false, 1, 'onix'); -- sysreader privilege on part 0
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_update, can_delete, version,
-                            changed_by)
-      VALUES (4, 2, 1, false, true, false, false, 1, 'onix'); -- sysreader privilege on part 1
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_update, can_delete, version,
-                            changed_by)
-      VALUES (5, 3, 0, false, true, false, false, 1, 'onix'); -- syswriter privilege on part 0
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_update, can_delete, version,
-                            changed_by)
-      VALUES (6, 3, 1, true, true, true, true, 1, 'onix');
-      -- syswriter privilege on part 1
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by) VALUES (1, 1, 0, true, true, true, 1, 'onix'); -- admin privilege on part 0
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by) VALUES (2, 1, 1, true, true, true, 1, 'onix'); -- admin privilege on part 1
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by) VALUES (3, 2, 0, false, true, false, 1, 'onix'); -- reader privilege on part 0
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by) VALUES (4, 2, 1, false, true, false, 1, 'onix'); -- reader privilege on part 1
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by) VALUES (5, 3, 0, false, true, false, 1, 'onix'); -- writer privilege on part 0
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by) VALUES (6, 3, 1, true, true, true, 1, 'onix'); -- syswriter privilege on part 1
 
       ---------------------------------------------------------------------------
       -- MODEL

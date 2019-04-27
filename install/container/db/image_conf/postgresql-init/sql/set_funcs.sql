@@ -44,30 +44,34 @@ DO $$
       -- check if the specified role has rights to CREATE or UPDATE in the partition retrieving the partition id for later use
       -- if not an exception is raised
       SELECT p.partition_id
-      FROM check_partition_privilege(role_key_param, partition_key_param, true, false, true, false) p INTO partition_id_value;
+      FROM check_partition_privilege(role_key_param, partition_key_param, true, false, false) p INTO partition_id_value;
 
       -- gets the current item type version
       SELECT version FROM model WHERE key = key_param INTO current_version;
 
       IF (current_version IS NULL) THEN
-        INSERT INTO model (id,
-                           key,
-                           name,
-                           description,
-                           version,
-                           created,
-                           updated,
-                           changed_by,
-                           partition_id)
-        VALUES (nextval('model_id_seq'),
-                key_param,
-                name_param,
-                description_param,
-                1,
-                current_timestamp,
-                null,
-                changed_by_param,
-                partition_id_value);
+        INSERT INTO model (
+           id,
+           key,
+           name,
+           description,
+           version,
+           created,
+           updated,
+           changed_by,
+           partition_id
+        )
+        VALUES (
+          nextval('model_id_seq'),
+          key_param,
+          name_param,
+          description_param,
+          1,
+          current_timestamp,
+          null,
+          changed_by_param,
+          partition_id_value
+        );
         result := 'I';
       ELSE
         UPDATE model
@@ -75,8 +79,7 @@ DO $$
             description  = description_param,
             version      = version + 1,
             updated      = current_timestamp,
-            changed_by   = changed_by_param,
-            partition_id = partition_id_value
+            changed_by   = changed_by_param
         WHERE key = key_param
           -- concurrency management - optimistic locking
           AND (local_version_param = current_version OR local_version_param IS NULL)
@@ -111,20 +114,19 @@ DO $$
           If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
        - If the item is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
      */
-    CREATE OR REPLACE FUNCTION set_item(key_param character varying,
-                                        name_param character varying,
-                                        description_param text,
-                                        meta_param jsonb,
-                                        tag_param text[],
-                                        attribute_param hstore,
-                                        status_param smallint,
-                                        item_type_key_param character varying,
-                                        local_version_param bigint,
-                                        changed_by_param character varying)
-      RETURNS TABLE
-              (
-                result char(1)
-              )
+    CREATE OR REPLACE FUNCTION set_item(
+      key_param character varying,
+      name_param character varying,
+      description_param text,
+      meta_param jsonb,
+      tag_param text[],
+      attribute_param hstore,
+      status_param smallint,
+      item_type_key_param character varying,
+      local_version_param bigint,
+      changed_by_param character varying
+      )
+      RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
       COST 100
       VOLATILE
@@ -165,32 +167,36 @@ DO $$
       SELECT version FROM item WHERE key = key_param INTO current_version;
       -- if no version is found then go for an insert
       IF (current_version IS NULL) THEN
-        INSERT INTO item (id,
-                          key,
-                          name,
-                          description,
-                          meta,
-                          tag,
-                          attribute,
-                          status,
-                          item_type_id,
-                          version,
-                          created,
-                          updated,
-                          changed_by)
-        VALUES (nextval('item_id_seq'),
-                key_param,
-                name_param,
-                description_param,
-                meta_param,
-                tag_param,
-                attribute_param,
-                status_param,
-                item_type_id_value,
-                1,
-                current_timestamp,
-                null,
-                changed_by_param);
+        INSERT INTO item (
+            id,
+            key,
+            name,
+            description,
+            meta,
+            tag,
+            attribute,
+            status,
+            item_type_id,
+            version,
+            created,
+            updated,
+            changed_by
+        )
+        VALUES (
+            nextval('item_id_seq'),
+            key_param,
+            name_param,
+            description_param,
+            meta_param,
+            tag_param,
+            attribute_param,
+            status_param,
+            item_type_id_value,
+            1,
+            current_timestamp,
+            null,
+            changed_by_param
+        );
         result := 'I';
       ELSE
         -- if a version is found, go for an update
@@ -240,30 +246,37 @@ DO $$
           If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
        - If the item type is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
      */
-    CREATE OR REPLACE FUNCTION set_item_type(key_param character varying,
-                                             name_param character varying,
-                                             description_param text,
-                                             attr_valid_param hstore, -- keys allowed or required in item attributes
-                                             filter_param jsonb,
-                                             meta_schema_param jsonb,
-                                             local_version_param bigint,
-                                             model_key_param character varying,
-                                             changed_by_param character varying)
-      RETURNS TABLE
-              (
-                result char(1)
-              )
+    CREATE OR REPLACE FUNCTION set_item_type(
+        key_param character varying,
+        name_param character varying,
+        description_param text,
+        attr_valid_param hstore, -- keys allowed or required in item attributes
+        filter_param jsonb,
+        meta_schema_param jsonb,
+        local_version_param bigint,
+        model_key_param character varying,
+        changed_by_param character varying,
+        partition_key_param character varying,
+        role_key_param character varying
+      )
+      RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
       COST 100
       VOLATILE
     AS
     $BODY$
     DECLARE
-      result          char(1); -- the result status for the upsert
-      current_version bigint; -- the version of the row before the update or null if no row
-      rows_affected   integer;
-      model_id_value  integer;
+      result             char(1); -- the result status for the upsert
+      current_version    bigint; -- the version of the row before the update or null if no row
+      rows_affected      integer;
+      model_id_value     integer;
+      partition_id_value bigint;
     BEGIN
+      -- check if the specified role has rights to CREATE or UPDATE in the partition retrieving the partition id for later use
+      -- if not an exception is raised
+      SELECT p.partition_id
+      FROM check_partition_privilege(role_key_param, partition_key_param, true, false, false) p INTO partition_id_value;
+
       -- checks a model has been specified
       IF (model_key_param IS NULL) THEN
         RAISE EXCEPTION 'Meta Model not specified when trying to set Item Type with key %', key_param;
@@ -284,30 +297,36 @@ DO $$
       SELECT version FROM item_type WHERE key = key_param INTO current_version;
 
       IF (current_version IS NULL) THEN
-        INSERT INTO item_type (id,
-                               key,
-                               name,
-                               description,
-                               attr_valid,
-                               filter,
-                               meta_schema,
-                               version,
-                               created,
-                               updated,
-                               changed_by,
-                               model_id)
-        VALUES (nextval('item_type_id_seq'),
-                key_param,
-                name_param,
-                description_param,
-                attr_valid_param,
-                filter_param,
-                meta_schema_param,
-                1,
-                current_timestamp,
-                null,
-                changed_by_param,
-                model_id_value);
+        INSERT INTO item_type (
+          id,
+          key,
+          name,
+          description,
+          attr_valid,
+          filter,
+          meta_schema,
+          version,
+          created,
+          updated,
+          changed_by,
+          model_id,
+          partition_id
+        )
+        VALUES (
+          nextval('item_type_id_seq'),
+          key_param,
+          name_param,
+          description_param,
+          attr_valid_param,
+          filter_param,
+          meta_schema_param,
+          1,
+          current_timestamp,
+          null,
+          changed_by_param,
+          model_id_value,
+          partition_id_value
+        );
         result := 'I';
       ELSE
         UPDATE item_type
@@ -339,15 +358,17 @@ DO $$
     $BODY$;
 
     ALTER FUNCTION set_item_type(
-      character varying, -- key
-      character varying, -- name
-      text, -- description
-      hstore, -- attribute validation
-      jsonb, -- meta query filter
-      jsonb, -- meta json schema
-      bigint, -- client version
-      character varying, -- meta model key
-      character varying -- changed by
+        character varying, -- key
+        character varying, -- name
+        text, -- description
+        hstore, -- attribute validation
+        jsonb, -- meta query filter
+        jsonb, -- meta json schema
+        bigint, -- client version
+        character varying, -- meta model key
+        character varying, -- changed by
+        character varying, -- partition_key_param
+        character varying -- role_key_param
       )
       OWNER TO onix;
 
@@ -360,18 +381,17 @@ DO $$
           If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
        - If the link type is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
      */
-    CREATE OR REPLACE FUNCTION set_link_type(key_param character varying,
-                                             name_param character varying,
-                                             description_param text,
-                                             attr_valid_param hstore, -- keys allowed or required in item attributes
-                                             meta_schema_param jsonb,
-                                             local_version_param bigint,
-                                             model_key_param character varying,
-                                             changed_by_param character varying)
-      RETURNS TABLE
-              (
-                result char(1)
-              )
+    CREATE OR REPLACE FUNCTION set_link_type(
+        key_param character varying,
+        name_param character varying,
+        description_param text,
+        attr_valid_param hstore, -- keys allowed or required in item attributes
+        meta_schema_param jsonb,
+        local_version_param bigint,
+        model_key_param character varying,
+        changed_by_param character varying
+      )
+      RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
       COST 100
       VOLATILE
@@ -403,17 +423,18 @@ DO $$
       SELECT version FROM link_type WHERE key = key_param INTO current_version;
 
       IF (current_version IS NULL) THEN
-        INSERT INTO link_type (id,
-                               key,
-                               name,
-                               description,
-                               attr_valid,
-                               meta_schema,
-                               version,
-                               created,
-                               updated,
-                               changed_by,
-                               model_id)
+        INSERT INTO link_type (
+           id,
+           key,
+           name,
+           description,
+           attr_valid,
+           meta_schema,
+           version,
+           created,
+           updated,
+           changed_by,
+           model_id)
         VALUES (nextval('link_type_id_seq'),
                 key_param,
                 name_param,

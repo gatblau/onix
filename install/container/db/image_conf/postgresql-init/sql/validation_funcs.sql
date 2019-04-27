@@ -25,7 +25,6 @@ DO $$
         (
           can_create boolean,
           can_read   boolean,
-          can_update boolean,
           can_delete boolean,
           partition_id bigint
         )
@@ -38,7 +37,6 @@ DO $$
       RETURN QUERY
         SELECT pr.can_create,
                pr.can_read,
-               pr.can_update,
                pr.can_delete,
                p.id as partition_id
         FROM role r
@@ -59,7 +57,6 @@ DO $$
         partition_key_param character varying,
         check_create_privilege boolean,
         check_read_privilege boolean,
-        check_update_privilege boolean,
         check_delete_privilege boolean
       )
       RETURNS TABLE (partition_id bigint)
@@ -71,20 +68,16 @@ DO $$
     DECLARE
       can_create         boolean;
       can_read           boolean;
-      can_update         boolean;
       can_delete         boolean;
       partition_id_value bigint;
     BEGIN
-      SELECT p.can_create, p.can_read, p.can_update, p.can_delete, p.partition_id
-      FROM get_privilege(role_key_param, partition_key_param) p INTO can_create, can_read, can_update, can_delete, partition_id_value;
+      SELECT p.can_create, p.can_read, p.can_delete, p.partition_id
+      FROM get_privilege(role_key_param, partition_key_param) p INTO can_create, can_read, can_delete, partition_id_value;
       IF (check_create_privilege = TRUE AND can_create = FALSE) THEN
-        RAISE EXCEPTION 'Role % cannot perform CREATE operation.', role_key_param
+        RAISE EXCEPTION 'Role % cannot perform CREATE or UPDATE operation.', role_key_param
           USING hint = 'The role does not have enough privileges.';
       ELSEIF (check_read_privilege = TRUE AND can_read = FALSE) THEN
         RAISE EXCEPTION 'Role % cannot perform READ operation.', role_key_param
-          USING hint = 'The role does not have enough privileges.';
-      ELSEIF (check_update_privilege = TRUE AND can_update = FALSE) THEN
-        RAISE EXCEPTION 'Role % cannot perform UPDATE operation.', role_key_param
           USING hint = 'The role does not have enough privileges.';
       ELSEIF (check_delete_privilege = TRUE AND can_delete = FALSE) THEN
         RAISE EXCEPTION 'Role % cannot perform DELETE operation.', role_key_param
@@ -94,7 +87,7 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION check_partition_privilege(character varying, character varying, boolean, boolean, boolean, boolean)
+    ALTER FUNCTION check_partition_privilege(character varying, character varying, boolean, boolean, boolean)
       OWNER TO onix;
 
     /*

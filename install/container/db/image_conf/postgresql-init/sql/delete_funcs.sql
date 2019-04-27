@@ -41,7 +41,7 @@ DO
         WHERE m.key = key_param INTO partition_key_value;
 
         -- check the role have delete rights on the partition, if not the raise exception
-        PERFORM check_partition_privilege(role_key_param, partition_key_value, false, false, false, true);
+        PERFORM check_partition_privilege(role_key_param, partition_key_value, false, false, true);
 
         IF (force = TRUE) THEN
           DELETE
