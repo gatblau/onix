@@ -42,6 +42,7 @@ public class ItemTypeData implements Serializable {
     private Integer version;
     private String changedBy;
     private String modelKey;
+    private String partition;
 
     public ItemTypeData() {
     }
@@ -193,5 +194,13 @@ public class ItemTypeData implements Serializable {
 
     public void setMetaSchema(JSONObject metaSchema) {
         this.metaSchema = metaSchema;
+    }
+
+    public String getPartition() {
+        return (partition != null) ? partition : "REF";
+    }
+
+    public void setPartition(String partition) {
+        this.partition = partition;
     }
 }

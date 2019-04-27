@@ -394,7 +394,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result createOrUpdateItemType(String key, ItemTypeData itemType) {
+    public synchronized Result createOrUpdateItemType(String key, ItemTypeData itemType, String role) {
         Result result = new Result(String.format("ItemType:%s", key));
         try {
             db.prepare(getSetItemTypeSQL());
@@ -407,6 +407,8 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(7, itemType.getVersion()); // version_param
             db.setObject(8, itemType.getModelKey()); // meta model key
             db.setString(9, getUser()); // changed_by_param
+            db.setString(10, itemType.getPartition()); // partition_key_param
+            db.setString(11, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("set_item_type"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -699,7 +701,9 @@ public class PgSqlRepository implements DbRepository {
                 "?::jsonb," + // meta_schema
                 "?::bigint," + // version
                 "?::character varying," + // meta model key
-                "?::character varying" + // changed_by
+                "?::character varying," + // changed_by
+                "?::character varying," + // partition_key_param
+                "?::character varying" + // role_key_param
                 ")";
     }
 
@@ -893,7 +897,7 @@ public class PgSqlRepository implements DbRepository {
         }
         List<ItemTypeData> itemTypes = payload.getItemTypes();
         for (ItemTypeData itemType : itemTypes) {
-            Result result = createOrUpdateItemType(itemType.getKey(), itemType);
+            Result result = createOrUpdateItemType(itemType.getKey(), itemType, role);
             results.add(result);
         }
         List<LinkTypeData> linkTypes = payload.getLinkTypes();

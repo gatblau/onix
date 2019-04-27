@@ -400,9 +400,10 @@ public class WebAPI {
         @PathVariable("key")
         String key,
         @RequestBody
-        ItemTypeData itemType
+        ItemTypeData itemType,
+        Authentication authentication
     ) {
-        Result result = data.createOrUpdateItemType(key, itemType);
+        Result result = data.createOrUpdateItemType(key, itemType, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 

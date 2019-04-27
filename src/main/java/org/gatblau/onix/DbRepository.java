@@ -57,7 +57,7 @@ public interface DbRepository {
     Result deleteItemTypes();
     ItemTypeList getItemTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelType);
 
-    Result createOrUpdateItemType(String key, ItemTypeData json);
+    Result createOrUpdateItemType(String key, ItemTypeData json, String role);
     Result deleteItemType(String key, boolean force);
 
     /*
