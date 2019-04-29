@@ -40,7 +40,7 @@ DO
         INNER JOIN model m on p.id = m.partition_id
         INNER JOIN privilege pr on p.id = pr.partition_id
         INNER JOIN role r on pr.role_id = r.id
-          AND pr.can_create = TRUE -- has create permission
+          AND pr.can_delete = TRUE -- has create permission
           AND r.key = role_key_param -- the user role
           AND m.key = key_param -- the model
              INTO partition_id_value;
