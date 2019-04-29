@@ -21,13 +21,13 @@ DO $$
       Inserts a new or updates an existing meta model.
      */
     CREATE OR REPLACE FUNCTION set_model(
-       key_param character varying,
-       name_param character varying,
-       description_param text,
-       local_version_param bigint,
-       changed_by_param character varying,
-       partition_key_param character varying,
-       role_key_param character varying
+         key_param character varying,
+         name_param character varying,
+         description_param text,
+         local_version_param bigint,
+         changed_by_param character varying,
+         partition_key_param character varying,
+         role_key_param character varying
       )
       RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
@@ -41,15 +41,25 @@ DO $$
       rows_affected      integer;
       partition_id_value bigint;
     BEGIN
-      -- check if the specified role has rights to CREATE or UPDATE in the partition retrieving the partition id for later use
-      -- if not an exception is raised
-      SELECT p.partition_id
-      FROM check_partition_privilege(role_key_param, partition_key_param, true, false, false) p INTO partition_id_value;
-
       -- gets the current item type version
       SELECT version FROM model WHERE key = key_param INTO current_version;
 
       IF (current_version IS NULL) THEN
+        -- as no model exists yet, it finds the partition associated with the role
+        SELECT p.id
+        FROM partition p
+           INNER JOIN privilege pr on p.id = pr.partition_id
+           INNER JOIN role r on pr.role_id = r.id
+        AND pr.can_create = TRUE -- has create permission
+        AND r.key = role_key_param -- the user role
+        AND p.key = partition_key_param -- the requested partition
+           INTO partition_id_value;
+
+        IF (partition_id_value IS NULL) THEN
+          RAISE EXCEPTION 'Role % is not authorised to create a Model.', role_key_param
+            USING hint = 'The needs to be granted CREATE privilege or a new role should be used instead.';
+        END IF;
+
         INSERT INTO model (
            id,
            key,
@@ -74,6 +84,24 @@ DO $$
         );
         result := 'I';
       ELSE
+        -- a model exists therefore, it finds the partition associated with the model
+        -- and check the role has create / update rights
+        -- NOTE: the existing partition is used to determine rights (instead of the passed in partition)
+        SELECT p.id
+        FROM partition p
+          INNER JOIN privilege pr on p.id = pr.partition_id
+          INNER JOIN role r on pr.role_id = r.id
+          INNER JOIN model m on p.id = m.partition_id
+          AND pr.can_create = TRUE -- whether the role has update permission on the model
+          AND r.key = role_key_param -- the user role requesting the update
+          AND m.key = key_param -- the model to be updated
+             INTO partition_id_value;
+
+        IF (partition_id_value IS NULL) THEN
+          RAISE EXCEPTION 'Role % is not authorised to update the Model.', role_key_param
+            USING hint = 'The needs to be granted CREATE privilege or a new role should be used instead.';
+        END IF;
+
         UPDATE model
         SET name         = name_param,
             description  = description_param,
@@ -95,13 +123,13 @@ DO $$
     $BODY$;
 
     ALTER FUNCTION set_model(
-      character varying, -- key
-      character varying, -- name
-      text, -- description
-      bigint, -- client version
-      character varying, -- changed by
-      partition_key_param character varying,
-      role_key_param character varying
+        character varying, -- key
+        character varying, -- name
+        text, -- description
+        bigint, -- client version
+        character varying, -- changed by
+        partition_key_param character varying,
+        role_key_param character varying
       )
       OWNER TO onix;
 
@@ -256,7 +284,6 @@ DO $$
         local_version_param bigint,
         model_key_param character varying,
         changed_by_param character varying,
-        partition_key_param character varying,
         role_key_param character varying
       )
       RETURNS TABLE(result char(1))
@@ -272,22 +299,34 @@ DO $$
       model_id_value     integer;
       partition_id_value bigint;
     BEGIN
-      -- check if the specified role has rights to CREATE or UPDATE in the partition retrieving the partition id for later use
-      -- if not an exception is raised
-      SELECT p.partition_id
-      FROM check_partition_privilege(role_key_param, partition_key_param, true, false, false) p INTO partition_id_value;
-
       -- checks a model has been specified
       IF (model_key_param IS NULL) THEN
-        RAISE EXCEPTION 'Meta Model not specified when trying to set Item Type with key %', key_param;
+        RAISE EXCEPTION 'Model not specified when trying to set Item Type with key %', key_param;
       END IF;
 
       -- gets the model id associated with the model key
       SELECT m.id FROM model m WHERE m.key = model_key_param INTO model_id_value;
 
       IF (model_id_value IS NULL) THEN
-        RAISE EXCEPTION 'Meta Model % not found.', model_key_param
-          USING hint = 'Check a meta model with the specified key exist in the database.';
+        RAISE EXCEPTION 'Model % not found.', model_key_param
+          USING hint = 'Check a Model with the specified key exist in the database.';
+      END IF;
+
+      -- finds the partition associated with the model
+      -- for the item type that has create rights for the specified role
+      SELECT p.id
+      FROM partition p
+      INNER JOIN model m on p.id = m.partition_id
+      INNER JOIN privilege pr on p.id = pr.partition_id
+      INNER JOIN role r on pr.role_id = r.id
+        AND pr.can_create = TRUE -- has create permission
+        AND r.key = role_key_param -- the user role
+        AND m.key = model_key_param -- the model the item type is in
+      INTO partition_id_value;
+
+      IF (partition_id_value IS NULL) THEN
+        RAISE EXCEPTION 'Role % is not authorised to create Item Type.', role_key_param
+          USING hint = 'The needs to be granted CREATE privilege or a new role should be used instead.';
       END IF;
 
       -- checks that the attribute store parameter contain the correct values
@@ -367,7 +406,6 @@ DO $$
         bigint, -- client version
         character varying, -- meta model key
         character varying, -- changed by
-        character varying, -- partition_key_param
         character varying -- role_key_param
       )
       OWNER TO onix;

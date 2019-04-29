@@ -37,7 +37,7 @@ public interface DbRepository {
     ItemData getItem(String key, boolean includeLinks);
     Result deleteItem(String key);
     ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, String modelKey, Integer top);
-    JSONObject getItemMeta(String key, String filter);
+    JSONObject getItemMeta(String key, String filter, String role);
     Result deleteAllItems();
 
     /*
@@ -48,17 +48,17 @@ public interface DbRepository {
     Result deleteLink(String key);
     LinkList findLinks(String linkTypeKey, String startItemKey, String endItemKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey, Integer top);
 
-    Result clear();
+    Result clear(String role);
 
     /*
         ITEM TYPES
     */
-    ItemTypeData getItemType(String key);
-    Result deleteItemTypes();
+    ItemTypeData getItemType(String key, String role);
+    Result deleteItemTypes(String role);
     ItemTypeList getItemTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelType);
 
     Result createOrUpdateItemType(String key, ItemTypeData json, String role);
-    Result deleteItemType(String key, boolean force);
+    Result deleteItemType(String key, boolean force, String role);
 
     /*
             LINK TYPES

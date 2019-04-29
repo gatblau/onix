@@ -300,9 +300,10 @@ public class WebAPI {
             example = "item_01_abc"
         )
         @PathVariable("key")
-        String key
+        String key,
+        Authentication authentication
     ) {
-        return ResponseEntity.ok(data.getItemMeta(key, null));
+        return ResponseEntity.ok(data.getItemMeta(key, null, getRole(authentication)));
     }
 
     @ApiOperation(
@@ -329,9 +330,10 @@ public class WebAPI {
             example = "books"
         )
         @PathVariable("filter")
-        String filter
+        String filter,
+        Authentication authentication
     ) {
-        return ResponseEntity.ok(data.getItemMeta(key, filter));
+        return ResponseEntity.ok(data.getItemMeta(key, filter, getRole(authentication)));
     }
 
     /*
@@ -345,8 +347,10 @@ public class WebAPI {
         path = "/itemtype"
         , method = RequestMethod.DELETE
     )
-    public void deleteItemTypes() {
-        data.deleteItemTypes();
+    public void deleteItemTypes(
+            Authentication authentication
+    ) {
+        data.deleteItemTypes(getRole(authentication));
     }
 
     @ApiOperation(
@@ -372,9 +376,10 @@ public class WebAPI {
             example = "?force"
         )
         @RequestParam(required = false, name = "force", defaultValue = "false") // true to force deletion of related items
-        boolean force
+        boolean force,
+        Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteItemType(key, force));
+        return ResponseEntity.ok(data.deleteItemType(key, force, getRole(authentication)));
     }
 
     @ApiOperation(
@@ -415,8 +420,12 @@ public class WebAPI {
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<ItemTypeData> getItemType(@PathVariable("key") String key) throws SQLException, ParseException, IOException {
-        return ResponseEntity.ok(data.getItemType(key));
+    public ResponseEntity<ItemTypeData> getItemType(
+            @PathVariable("key")
+            String key,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(data.getItemType(key, getRole(authentication)));
     }
 
     @ApiOperation(
@@ -833,8 +842,10 @@ public class WebAPI {
             value = "Removes ALL configuration items and links from the database.",
             notes = "Use at your own risk ONLY for testing of the CMDB!")
     @RequestMapping(path = "/clear", method = RequestMethod.DELETE)
-    public ResponseEntity<Result> clear() {
-        Result result = data.clear();
+    public ResponseEntity<Result> clear(
+            Authentication authentication
+    ) {
+        Result result = data.clear(getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 

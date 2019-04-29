@@ -31,17 +31,24 @@ DO
       AS
       $BODY$
       DECLARE
-        partition_key_value character varying;
+        partition_id_value bigint;
       BEGIN
-        -- gets the partition the model is in
-        SELECT p.key
-        FROM model m
-        INNER JOIN partition p
-           ON p.id = m.partition_id
-        WHERE m.key = key_param INTO partition_key_value;
+        -- finds the partition associated with the model
+        -- for the item type that has create rights for the specified role
+        SELECT p.id
+        FROM partition p
+        INNER JOIN model m on p.id = m.partition_id
+        INNER JOIN privilege pr on p.id = pr.partition_id
+        INNER JOIN role r on pr.role_id = r.id
+          AND pr.can_create = TRUE -- has create permission
+          AND r.key = role_key_param -- the user role
+          AND m.key = key_param -- the model
+             INTO partition_id_value;
 
-        -- check the role have delete rights on the partition, if not the raise exception
-        PERFORM check_partition_privilege(role_key_param, partition_key_value, false, false, true);
+        IF (partition_id_value IS NULL) THEN
+          RAISE EXCEPTION 'Role % is not authorised to delete Model.', role_key_param
+            USING hint = 'The role needs to be granted DELETE privilege or a new role should be used instead.';
+        END IF;
 
         IF (force = TRUE) THEN
           DELETE
@@ -107,14 +114,45 @@ DO
       /*
         delete_item_type
        */
-      CREATE OR REPLACE FUNCTION delete_item_type(key_param character varying, force boolean default false)
+      CREATE OR REPLACE FUNCTION delete_item_type(
+        key_param character varying,
+        force boolean,
+        role_key_param character varying
+      )
         RETURNS VOID
         LANGUAGE 'plpgsql'
         COST 100
         VOLATILE
       AS
       $BODY$
+      DECLARE
+        partition_id_value bigint;
+        item_type_id_value bigint;
       BEGIN
+        -- return if the item_type does not exist
+        SELECT id FROM item_type WHERE key = key_param INTO item_type_id_value;
+        IF (item_type_id_value IS NULL) THEN
+          RETURN;
+        END IF;
+
+        -- finds the partition associated with the model
+        -- for the item type that has create rights for the specified role
+        SELECT p.id
+        FROM partition p
+        INNER JOIN model m on p.id = m.partition_id
+        INNER JOIN privilege pr on p.id = pr.partition_id
+        INNER JOIN role r on pr.role_id = r.id
+        INNER JOIN item_type it on m.id = it.model_id
+          AND pr.can_delete = TRUE -- has create permission
+          AND r.key = role_key_param -- the user role
+          AND it.key = key_param -- the item type
+             INTO partition_id_value;
+
+        IF (partition_id_value IS NULL) THEN
+          RAISE EXCEPTION 'Role % is not authorised to delete Item Type %.', role_key_param, key_param
+            USING hint = 'The role needs to be granted DELETE privilege or a new role should be used instead.';
+        END IF;
+
         IF (force = TRUE) THEN
           -- if forcing then it removes all items of this item type
           DELETE
@@ -137,10 +175,10 @@ DO
         DELETE
         FROM item_type
         WHERE key = key_param;
-      END
+      END;
       $BODY$;
 
-      ALTER FUNCTION delete_item_type(character varying, boolean)
+      ALTER FUNCTION delete_item_type(character varying, boolean, character varying)
         OWNER TO onix;
 
       /*
@@ -196,7 +234,9 @@ DO
       /*
         clear_all: deletes all instance data
        */
-      CREATE OR REPLACE FUNCTION clear_all()
+      CREATE OR REPLACE FUNCTION clear_all(
+        role_key_param character varying
+      )
         RETURNS VOID
         LANGUAGE 'plpgsql'
         COST 100
@@ -209,18 +249,20 @@ DO
         DELETE FROM link;
         DELETE FROM item;
         PERFORM delete_link_types();
-        PERFORM delete_item_types();
+        PERFORM delete_item_types(role_key_param);
         PERFORM delete_link_rules();
       END
       $BODY$;
 
-      ALTER FUNCTION clear_all()
+      ALTER FUNCTION clear_all(character varying)
         OWNER TO onix;
 
       /*
         delete_item_types: deletes all item types
        */
-      CREATE OR REPLACE FUNCTION delete_item_types()
+      CREATE OR REPLACE FUNCTION delete_item_types(
+        role_key_param character varying
+      )
         RETURNS VOID
         LANGUAGE 'plpgsql'
         COST 100
@@ -228,11 +270,17 @@ DO
       AS
       $BODY$
       BEGIN
-        DELETE FROM item_type;
+        DELETE FROM item_type it
+          USING partition p, privilege pr, role r
+          WHERE it.partition_id = p.id
+          AND pr.partition_id = p.id
+          AND pr.can_delete = TRUE
+          AND pr.role_id = r.id
+          AND r.key = role_key_param;
       END
       $BODY$;
 
-      ALTER FUNCTION delete_item_types()
+      ALTER FUNCTION delete_item_types(character varying)
         OWNER TO onix;
 
       /*

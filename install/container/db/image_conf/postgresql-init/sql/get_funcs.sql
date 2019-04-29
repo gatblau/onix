@@ -72,7 +72,10 @@ DO
         gets an item_type by its natural key.
         use: select * from item_type('the_item_type_key')
        */
-      CREATE OR REPLACE FUNCTION item_type(key_param character varying)
+      CREATE OR REPLACE FUNCTION item_type(
+          key_param character varying,
+          role_key_param character varying
+        )
         RETURNS TABLE(
           id integer,
           key character varying,
@@ -108,13 +111,17 @@ DO
             i.changed_by,
             m.key AS model_key
           FROM item_type i
-            INNER JOIN model m
-              ON i.model_id = m.id
-          WHERE i.key = key_param;
+          INNER JOIN model m ON i.model_id = m.id
+          INNER JOIN partition p on i.partition_id = p.id
+          INNER JOIN privilege pr on p.id = pr.partition_id
+          INNER JOIN role r on pr.role_id = r.id
+          WHERE i.key = key_param
+          AND pr.can_read = TRUE
+          AND r.key = role_key_param;
       END;
       $BODY$;
 
-      ALTER FUNCTION item_type(character varying)
+      ALTER FUNCTION item_type(character varying, character varying)
         OWNER TO onix;
 
       /*
