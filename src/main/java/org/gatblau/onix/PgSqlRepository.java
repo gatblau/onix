@@ -154,7 +154,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized JSONObject getItemMeta(String key, String filter) {
+    public synchronized JSONObject getItemMeta(String key, String filter, String role) {
         HashMap<String, Object> results = new HashMap<>();
         // gets the item in question
         ItemData item = getItem(key, false);
@@ -164,7 +164,7 @@ public class PgSqlRepository implements DbRepository {
         }
         // as a filter key has been passed in then tries and retrieves the filter expression for
         // the key from the itemType definition
-        ItemTypeData itemType = getItemType(item.getType());
+        ItemTypeData itemType = getItemType(item.getType(), role);
         JSONObject f = itemType.getFilter();
         if (f == null) {
             // if the itemType does not define a filter then returns the plain whole metadata
@@ -296,9 +296,9 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result clear() {
+    public synchronized Result clear(String role) {
         try {
-            return delete(getClearAllSQL(), null);
+            return delete(getClearAllSQL(), null, role);
         } catch (Exception ex) {
             ex.printStackTrace();
             Result result = new Result("CLEAR_ALL");
@@ -331,6 +331,8 @@ public class PgSqlRepository implements DbRepository {
                     db.setObject(2, force);
                 }
                 if (role != null) db.setString(3, role);
+            } else {
+                db.setString(1, role);
             }
             result.setOperation((db.execute()) ? "D" : "N");
             if (result.getOperation().equals("D")) {
@@ -350,11 +352,12 @@ public class PgSqlRepository implements DbRepository {
         ITEM TYPES
      */
     @Override
-    public synchronized ItemTypeData getItemType(String key) {
+    public synchronized ItemTypeData getItemType(String key, String role) {
         ItemTypeData itemType = null;
         try {
             db.prepare(getGetItemTypeSQL());
             db.setString(1, key);
+            db.setString(2, role);
             ResultSet set = db.executeQuerySingleRow();
             itemType = util.toItemTypeData(set);
         } catch (Exception ex) {
@@ -366,8 +369,8 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteItemTypes() {
-        return delete(getDeleteItemTypes(), null);
+    public Result deleteItemTypes(String role) {
+        return delete(getDeleteItemTypes(), null, role);
     }
 
     @Override
@@ -407,8 +410,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(7, itemType.getVersion()); // version_param
             db.setObject(8, itemType.getModelKey()); // meta model key
             db.setString(9, getUser()); // changed_by_param
-            db.setString(10, itemType.getPartition()); // partition_key_param
-            db.setString(11, role);
+            db.setString(10, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("set_item_type"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -421,8 +423,8 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteItemType(String key, boolean force) {
-        return delete(getDeleteItemTypeSQL(), key, true, force);
+    public Result deleteItemType(String key, boolean force, String role) {
+        return delete(getDeleteItemTypeSQL(), key, true, force, role);
     }
 
     /*
@@ -662,20 +664,25 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getClearAllSQL() {
-        return "SELECT clear_all()";
+        return "SELECT clear_all(" +
+                "?::character varying" + // role_key_param
+                ")";
     }
 
     @Override
     public String getDeleteItemTypeSQL() {
         return "SELECT delete_item_type(" +
                 "?::character varying," +
-                "?::boolean" +
+                "?::boolean," +
+                "?::character varying" +
                 ")";
     }
 
     @Override
     public String getDeleteItemTypes() {
-        return "SELECT delete_item_types()";
+        return "SELECT delete_item_types(" +
+                "?::character varying" + // role_key_param
+                ")";
     }
 
     @Override
@@ -702,7 +709,6 @@ public class PgSqlRepository implements DbRepository {
                 "?::bigint," + // version
                 "?::character varying," + // meta model key
                 "?::character varying," + // changed_by
-                "?::character varying," + // partition_key_param
                 "?::character varying" + // role_key_param
                 ")";
     }
@@ -710,7 +716,8 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public String getGetItemTypeSQL() {
         return "SELECT * FROM item_type(" +
-                "?::character varying" + // key
+                "?::character varying," + // key
+                "?::character varying" + // role_key_param
                 ")";
     }
 

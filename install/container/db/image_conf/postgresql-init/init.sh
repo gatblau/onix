@@ -33,13 +33,13 @@ echo '>>> Creating the database tables <<<'
 psql -U postgres -d onix -a -f $DIR/sql/tables.sql
 
 echo '>>> Creating the database functions <<<'
-psql -U postgres -d onix -a -f $DIR/sql/json_schema.sql
-psql -U postgres -d onix -a -f $DIR/sql/validation_funcs.sql
-psql -U postgres -d onix -a -f $DIR/sql/set_funcs.sql
-psql -U postgres -d onix -a -f $DIR/sql/get_funcs.sql
-psql -U postgres -d onix -a -f $DIR/sql/delete_funcs.sql
-psql -U postgres -d onix -a -f $DIR/sql/queries.sql
-psql -U postgres -d onix -a -f $DIR/sql/tree_funcs.sql
-psql -U postgres -d onix -a -f $DIR/sql/tags.sql
+psql -U postgres -v ON_ERROR_STOP=ON -d onix -a -f $DIR/sql/json_schema.sql
+psql -U postgres -v ON_ERROR_STOP=ON -d onix -a -f $DIR/sql/validation_funcs.sql
+psql -U postgres -v ON_ERROR_STOP=ON -d onix -a -f $DIR/sql/set_funcs.sql
+psql -U postgres -v ON_ERROR_STOP=ON -d onix -a -f $DIR/sql/get_funcs.sql
+psql -U postgres -v ON_ERROR_STOP=ON -d onix -a -f $DIR/sql/delete_funcs.sql
+psql -U postgres -v ON_ERROR_STOP=ON -d onix -a -f $DIR/sql/queries.sql
+psql -U postgres -v ON_ERROR_STOP=ON -d onix -a -f $DIR/sql/tree_funcs.sql
+psql -U postgres -v ON_ERROR_STOP=ON -d onix -a -f $DIR/sql/tags.sql
 
 echo '>>> ONIX database initialisation complete! <<<'
