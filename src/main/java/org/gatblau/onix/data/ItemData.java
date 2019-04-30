@@ -45,6 +45,7 @@ public class ItemData implements Serializable {
     private String updated;
     private Integer version;
     private String changedBy;
+    private String partition;
 
     public ItemData() {
     }
@@ -235,5 +236,13 @@ public class ItemData implements Serializable {
 
     public void setChangedBy(String changedBy) {
         this.changedBy = changedBy;
+    }
+
+    public String getPartition() {
+        return partition;
+    }
+
+    public void setPartition(String partition) {
+        this.partition = partition;
     }
 }

@@ -120,8 +120,10 @@ public class WebAPI {
                     example = "item_01_abc"
             )
             @PathVariable("key") String key,
-            @RequestBody ItemData payload) {
-        Result result = data.createOrUpdateItem(key, payload);
+            @RequestBody ItemData payload,
+            Authentication authentication
+        ) {
+        Result result = data.createOrUpdateItem(key, payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 

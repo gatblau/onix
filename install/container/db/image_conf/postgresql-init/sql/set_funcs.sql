@@ -143,16 +143,18 @@ DO $$
        - If the item is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
      */
     CREATE OR REPLACE FUNCTION set_item(
-      key_param character varying,
-      name_param character varying,
-      description_param text,
-      meta_param jsonb,
-      tag_param text[],
-      attribute_param hstore,
-      status_param smallint,
-      item_type_key_param character varying,
-      local_version_param bigint,
-      changed_by_param character varying
+        key_param character varying,
+        name_param character varying,
+        description_param text,
+        meta_param jsonb,
+        tag_param text[],
+        attribute_param hstore,
+        status_param smallint,
+        item_type_key_param character varying,
+        local_version_param bigint,
+        changed_by_param character varying,
+        partition_key_param character varying,
+        role_key_param character varying
       )
       RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
@@ -161,12 +163,14 @@ DO $$
     AS
     $BODY$
     DECLARE
-      result             char(1); -- the result status for the upsert
-      current_version    bigint; -- the version of the row before the update or null if no row
-      rows_affected      integer;
-      item_type_id_value integer;
-      meta_schema_value  jsonb;
-      is_meta_valid      boolean;
+      result                     char(1); -- the result status for the upsert
+      current_version            bigint; -- the version of the row before the update or null if no row
+      rows_affected              integer;
+      item_type_id_value         integer;
+      meta_schema_value          jsonb;
+      is_meta_valid              boolean;
+      partition_id_value         bigint;
+      current_partition_id_value bigint;
     BEGIN
       -- find the item type surrogate key from the provided natural key
       SELECT id FROM item_type WHERE key = item_type_key_param INTO item_type_id_value;
@@ -193,8 +197,30 @@ DO $$
 
       -- get the item current version
       SELECT version FROM item WHERE key = key_param INTO current_version;
+
       -- if no version is found then go for an insert
       IF (current_version IS NULL) THEN
+        -- if a partition is not specified
+        IF (partition_key_param IS NULL) THEN
+          -- it defaults to the INS (instance) default partition
+          partition_key_param = 'INS';
+        END IF;
+
+        -- finds the partition id for the specified key and role / privilege
+        SELECT p.id
+        FROM partition p
+        INNER JOIN privilege pr on p.id = pr.partition_id
+        INNER JOIN role r on pr.role_id = r.id
+          AND p.key = partition_key_param -- the requested partition key
+          AND pr.can_create = TRUE -- has create permission
+          AND r.key = role_key_param -- the user role
+             INTO partition_id_value;
+
+        IF (partition_id_value IS NULL) THEN
+          RAISE EXCEPTION 'Role % is not authorised to create Item %.', role_key_param, key_param
+            USING hint = 'The role needs to be granted CREATE privilege or a new role should be used instead.';
+        END IF;
+
         INSERT INTO item (
             id,
             key,
@@ -208,7 +234,8 @@ DO $$
             version,
             created,
             updated,
-            changed_by
+            changed_by,
+            partition_id
         )
         VALUES (
             nextval('item_id_seq'),
@@ -223,10 +250,47 @@ DO $$
             1,
             current_timestamp,
             null,
-            changed_by_param
+            changed_by_param,
+            partition_id_value
         );
         result := 'I';
       ELSE
+        -- checks the role has privilege on the current partition
+        SELECT i.partition_id
+        FROM partition p
+        INNER JOIN privilege pr on p.id = pr.partition_id
+        INNER JOIN role r on pr.role_id = r.id
+        INNER JOIN item i on p.id = i.partition_id
+          AND i.partition_id = p.id -- the partition associated to the existing item
+          AND pr.can_create = TRUE -- has create permission
+          AND r.key = role_key_param -- the user role
+             INTO current_partition_id_value;
+
+        IF (current_partition_id_value IS NULL) THEN
+          RAISE EXCEPTION 'Role % is not authorised to update Item % on the existing partition.', role_key_param, key_param
+            USING hint = 'The role needs to be granted CREATE privilege or a new role should be used instead.';
+        END IF;
+
+        -- if a partition has been specified
+        IF (partition_key_param IS NOT NULL) THEN
+          -- checks the role has privilege on the passed-in partition
+          SELECT p.id
+          FROM partition p
+                 INNER JOIN privilege pr on p.id = pr.partition_id
+                 INNER JOIN role r on pr.role_id = r.id
+                 INNER JOIN item i on p.id = i.partition_id
+            AND p.key = partition_key_param -- the passed in partition
+            AND pr.can_create = TRUE -- has create permission
+            AND r.key = role_key_param -- the user role
+               INTO partition_id_value;
+
+          -- if the specified partition does not have privilege then raises error
+          IF (partition_id_value IS NULL) THEN
+            RAISE EXCEPTION 'Role % is not authorised to update Item % on the new partition.', role_key_param, key_param
+              USING hint = 'The role needs to be granted CREATE privilege or a new role should be used instead.';
+          END IF;
+        END IF;
+
         -- if a version is found, go for an update
         UPDATE item
         SET name         = name_param,
@@ -262,7 +326,20 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION set_item(character varying,character varying,text,jsonb, text[],hstore,smallint,character varying, bigint, character varying)
+    ALTER FUNCTION set_item(
+        character varying,
+        character varying,
+        text,
+        jsonb,
+        text[],
+        hstore,
+        smallint,
+        character varying,
+        bigint,
+        character varying,
+        character varying, -- partition_key_param
+        character varying -- role_key_param
+      )
       OWNER TO onix;
 
     /*

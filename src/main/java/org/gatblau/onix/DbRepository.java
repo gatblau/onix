@@ -33,7 +33,7 @@ public interface DbRepository {
     /*
         ITEMS
     */
-    Result createOrUpdateItem(String key, ItemData json);
+    Result createOrUpdateItem(String key, ItemData json, String role);
     ItemData getItem(String key, boolean includeLinks);
     Result deleteItem(String key);
     ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, String modelKey, Integer top);
