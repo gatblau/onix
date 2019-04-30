@@ -1,12 +1,13 @@
 # Getting started <img src="./pics/ox.png" width="160" height="160" align="right">
+Getting started with Onix is easiy and required basically only two steps:
 
+## Step 1: Deploy Container Images
+The easiest way to get started is to deploy Onix from containers. Ready to use container images are provided on [docker hub](https://hub.docker.com/r/southwinds/) for each of the components of Onix (e.g. database, web api, user interface). For each component there are two repositories. One containing the stable GA release versions, the other containing latest snapshot releases.
 
-## Installing the required services
-
-The easiest way to get started is to deploy the Web API and Database services from containers.
-
+There are different options to get started easily:
+<a name="installing-using-docker"></a>
+### Option A: Deploy Onix via Docker Compose
 To do that you will need the following dependencies in your system:
-
 - [Docker](https://docs.docker.com/compose/install/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 - Access to [Docker Hub Onix image repositories](https://hub.docker.com/u/southwinds)
@@ -25,18 +26,39 @@ $ docker-compose up -d
 ```
 
 <a name="installing-using-openshift"></a>
-### Installing using OpenShift [(up)](#toc)
+### Option B: using OpenShift
+Deploy using OpenShift is straight forward. Create an OpenShift project and deploy using one of the provided templates in the install/openshift folder.
+Persistant uses an OpenShift volume claim as durable storage for the database component.  
+The ephemeral template use an empty dir as storage for the database, ***which means all data is lost if the database container is restarted***. Use only if you don't have any persistent storage at hand.
 
-To install Onix in OpenShift or Kubernetes, a [Helm Chart](https://helm.sh/docs/developing_charts/) will be provided soon.
+The following steps use the oc command line tool to create a new empty project and deploy using the persistant template.
+
+```bash
+# first, create an empty project
+$ oc oc new-project onix
+
+# Deploy using the template:
+$  oc new-app https://raw.githubusercontent.com/gatblau/onix/v1/install/openshift/onix-persistant.yml
+```
+
+<a name="installing-using-helm"></a>
+### Option C: using Kubernetes and Helm Charts
+To install Onix in plain Kubernetes, a [Helm Chart](https://helm.sh/docs/developing_charts/) will be provided soon.
 
 
-### Image Configuration
 
-#### Onix Web API Image
+## Step 2:  Initial contact using the Web API service
+The easiest way to trying the service is via the Swagger API as describe below.
 
-There are two repositories for the Web API image:
-- [Release Repository](https://hub.docker.com/r/southwinds/onixwapi): used for GA releases.
-- [Snapshot Repository](https://hub.docker.com/r/southwinds/onixwapi-snapshot): used for snapshot releases.
+1. Open the Swagger UI (using the endpoint   `<YourHost>:<YourPort>/swagger-ui.html)` and navigate to the createOrUpdate PUT operation. E.g using docker on localhost, the link would be http://localhost:8080/swagger-ui.html#/web-api/createOrUpdateItemTreeUsingPUT. For OpenShift, replace with `<YourHost>:<YourPort>` with the route.
+2. Paste the payload example found [here](./../connectors/ansible/inventory/examples/inventory.json) in the payload box
+3. Execute the request to create the inventory in the CMDB
+4. You should see the response of the web service showing no errors
+
+## Step 3: Check Image Configuration
+The Container Images use env variables for their internal configuration.  Defaults should be okay for first experiments, but check that they fit to your environment.
+
+## Onix Web API Image
 
 The following variables are available to configure the Web API image:
 
@@ -50,17 +72,6 @@ The following variables are available to configure the Web API image:
 | **DB_NAME**  | the name of the cmdb database the service attempts to connect.  | onix  |
 | **MGMT_ENDPOINT_METRICS_ENABLED** | enable metrics endpoints. | true |
 | **DS_PREP_STMT_CACHE_SIZE** | number of prepared statements that the JDBC driver will cache per connection. | 250 |
-| **DS_PREP_STMT_CACHE_SQL_LIMIT** | maximum length of a prepared SQL statement that the driver will cache. | 2048 | 
+| **DS_PREP_STMT_CACHE_SQL_LIMIT** | maximum length of a prepared SQL statement that the driver will cache. | 2048 |
 | **DS_CACHE_PREP_STMTS** | enable the cache. | true |
 | **DS_USE_SERVER_PREP_STMTS** | add support for server-side prepared statements. | true |
-
-## Trying the Web API service
-
-The easiest way to trying the service is via the Swagger API as describe below.
-
-1. Open the [Swagger UI](http://localhost:8080/swagger-ui.html#/web-api/createOrUpdateItemTreeUsingPUT)
-2. Paste the payload [here](./../connectors/ansible/inventory/examples/inventory.json) in the payload box
-3. Execute the request to create the inventory in the CMDB
-4. You should see the response of the web service showing no errors
-
-
