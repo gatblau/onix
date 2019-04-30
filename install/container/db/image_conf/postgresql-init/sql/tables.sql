@@ -421,16 +421,11 @@ DO
           updated      timestamp(6) with time zone,
           changed_by   CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
           model_id     int                    NOT NULL,
-          partition_id bigint                 NOT NULL DEFAULT 0,
           CONSTRAINT item_type_id_pk PRIMARY KEY (id),
           CONSTRAINT item_type_key_uc UNIQUE (key),
           CONSTRAINT item_type_name_uc UNIQUE (name),
           CONSTRAINT item_type_model_id_fk FOREIGN KEY (model_id)
             REFERENCES model (id) MATCH SIMPLE
-            ON UPDATE NO ACTION
-            ON DELETE NO ACTION,
-          CONSTRAINT item_type_partition_id_fk FOREIGN KEY (partition_id)
-            REFERENCES partition (id) MATCH SIMPLE
             ON UPDATE NO ACTION
             ON DELETE NO ACTION
         )
@@ -468,8 +463,7 @@ DO
           created      timestamp(6) with time zone,
           updated      timestamp(6) with time zone,
           changed_by   CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
-          model_id     int,
-          partition_id bigint
+          model_id     int
         );
 
         ALTER TABLE item_type_change

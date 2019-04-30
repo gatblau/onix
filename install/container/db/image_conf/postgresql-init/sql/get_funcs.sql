@@ -112,8 +112,7 @@ DO
             m.key AS model_key
           FROM item_type i
           INNER JOIN model m ON i.model_id = m.id
-          INNER JOIN partition p on i.partition_id = p.id
-          INNER JOIN privilege pr on p.id = pr.partition_id
+          INNER JOIN privilege pr on m.partition_id = pr.partition_id
           INNER JOIN role r on pr.role_id = r.id
           WHERE i.key = key_param
           AND pr.can_read = TRUE
@@ -183,7 +182,10 @@ DO
         gets a link_type by its natural key.
         use: select * from link_type('the_link_type_key')
        */
-      CREATE OR REPLACE FUNCTION link_type(key_param character varying)
+      CREATE OR REPLACE FUNCTION link_type(
+        key_param character varying,
+        role_key_param character varying
+      )
         RETURNS TABLE(
           id integer,
           key character varying,
@@ -205,25 +207,28 @@ DO
       BEGIN
         RETURN QUERY
           SELECT
-            l.id,
-            l.key,
-            l.name,
-            l.description,
-            l.attr_valid,
-            l.meta_schema,
-            l.version,
-            l.created,
-            l.updated,
-            l.changed_by,
+            lt.id,
+            lt.key,
+            lt.name,
+            lt.description,
+            lt.attr_valid,
+            lt.meta_schema,
+            lt.version,
+            lt.created,
+            lt.updated,
+            lt.changed_by,
             m.key as model_key
-          FROM link_type l
-          INNER JOIN model m
-            ON l.model_id = m.id
-          WHERE l.key = key_param;
+          FROM link_type lt
+          INNER JOIN model m ON lt.model_id = m.id
+          INNER JOIN privilege pr on m.partition_id = pr.partition_id
+          INNER JOIN role r on pr.role_id = r.id
+            WHERE lt.key = key_param
+              AND pr.can_read = TRUE
+              AND r.key = role_key_param;
       END;
       $BODY$;
 
-      ALTER FUNCTION link_type(character varying)
+      ALTER FUNCTION link_type(character varying, character varying)
         OWNER TO onix;
 
       /*

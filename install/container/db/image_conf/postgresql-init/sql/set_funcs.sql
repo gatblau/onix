@@ -325,8 +325,8 @@ DO $$
       INTO partition_id_value;
 
       IF (partition_id_value IS NULL) THEN
-        RAISE EXCEPTION 'Role % is not authorised to create Item Type.', role_key_param
-          USING hint = 'The needs to be granted CREATE privilege or a new role should be used instead.';
+        RAISE EXCEPTION 'Role % is not authorised to create Item Type %.', role_key_param, key_param
+          USING hint = 'The role needs to be granted CREATE privilege or a new role should be used instead.';
       END IF;
 
       -- checks that the attribute store parameter contain the correct values
@@ -348,8 +348,7 @@ DO $$
           created,
           updated,
           changed_by,
-          model_id,
-          partition_id
+          model_id
         )
         VALUES (
           nextval('item_type_id_seq'),
@@ -363,8 +362,7 @@ DO $$
           current_timestamp,
           null,
           changed_by_param,
-          model_id_value,
-          partition_id_value
+          model_id_value
         );
         result := 'I';
       ELSE
@@ -427,7 +425,8 @@ DO $$
         meta_schema_param jsonb,
         local_version_param bigint,
         model_key_param character varying,
-        changed_by_param character varying
+        changed_by_param character varying,
+        role_key_param character varying
       )
       RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
@@ -440,6 +439,7 @@ DO $$
       current_version bigint; -- the version of the row before the update or null if no row
       rows_affected   integer;
       model_id_value  integer;
+      partition_id_value bigint;
     BEGIN
       -- checks a model has been specified
       IF (model_key_param IS NULL) THEN
@@ -452,6 +452,23 @@ DO $$
       IF (model_id_value IS NULL) THEN
         RAISE EXCEPTION 'Meta Model % not found.', model_key_param
           USING hint = 'Check a meta model with the specified key exist in the database.';
+      END IF;
+
+      -- finds the partition associated with the model
+      -- for the link type that has create rights for the specified role
+      SELECT p.id
+      FROM partition p
+      INNER JOIN model m on p.id = m.partition_id
+      INNER JOIN privilege pr on p.id = pr.partition_id
+      INNER JOIN role r on pr.role_id = r.id
+        AND pr.can_create = TRUE -- has create permission
+        AND r.key = role_key_param -- the user role
+        AND m.key = model_key_param -- the model the item type is in
+           INTO partition_id_value;
+
+      IF (partition_id_value IS NULL) THEN
+        RAISE EXCEPTION 'Role % is not authorised to create Link Type %.', role_key_param, key_param
+          USING hint = 'The role needs to be granted CREATE privilege or a new role should be used instead.';
       END IF;
 
       -- checks that the attribute store parameter contain the correct values
@@ -520,7 +537,8 @@ DO $$
       jsonb, -- meta json schema validation
       bigint, -- client version
       character varying, -- meta model key
-      character varying -- changed by
+      character varying, -- changed by
+      character varying -- role_key_param
       )
       OWNER TO onix;
 

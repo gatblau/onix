@@ -295,7 +295,8 @@ CREATE OR REPLACE FUNCTION find_link_types(
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
     date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
     date_updated_to_param timestamp(6) with time zone, -- none (null) or updated to date
-    model_key_param character varying -- meta model key the link is for
+    model_key_param character varying, -- meta model key the link is for
+    role_key_param character varying -- the role is executing the query
   )
   RETURNS TABLE(
     id integer,
@@ -328,8 +329,10 @@ BEGIN
      l.changed_by,
      m.key as model_key
   FROM link_type l
-  INNER JOIN model m
-    ON m.id = l.model_id
+  INNER JOIN model m ON m.id = l.model_id
+  INNER JOIN partition p on m.partition_id = p.id
+  INNER JOIN privilege pr on p.id = pr.partition_id
+  INNER JOIN role r on pr.role_id = r.id
   WHERE
   -- by attributes (hstore)
       (l.attr_valid @> attr_valid_param OR attr_valid_param IS NULL)
@@ -344,7 +347,9 @@ BEGIN
       (date_updated_from_param IS NULL AND date_updated_to_param > l.updated) OR
       (date_updated_from_param <= l.updated AND date_updated_to_param IS NULL))
   -- by model
-  AND (m.key = model_key_param OR model_key_param IS NULL);
+  AND (m.key = model_key_param OR model_key_param IS NULL)
+  AND pr.can_read = TRUE
+  AND r.key = role_key_param;
 END
 $BODY$;
 
@@ -354,7 +359,8 @@ ALTER FUNCTION find_link_types(
   timestamp(6) with time zone, -- created to
   timestamp(6) with time zone, -- updated from
   timestamp(6) with time zone, -- updated to
-  character varying -- meta model key
+  character varying, -- meta model key
+  character varying -- role_key_param
 )
 OWNER TO onix;
 

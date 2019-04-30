@@ -204,7 +204,11 @@ DO
       /*
         delete_link_type
        */
-      CREATE OR REPLACE FUNCTION delete_link_type(key_param character varying, force boolean default false)
+      CREATE OR REPLACE FUNCTION delete_link_type(
+        key_param character varying,
+        force boolean,
+        role_key_param character varying
+      )
         RETURNS VOID
         LANGUAGE 'plpgsql'
         COST 100
@@ -215,20 +219,29 @@ DO
         IF (force = TRUE) THEN
           -- if forcing then it removes all links of this link type
           DELETE
-          FROM link
-          WHERE link_type_id IN (
-            SELECT id
-            FROM link_type
-            WHERE key = key_param
-          );
+          FROM link l
+          USING link_type lt, model m, partition p, privilege pr, role r
+          WHERE lt.id = l.link_type_id
+            AND lt.key = key_param
+            AND r.key = role_key_param
+            AND m.partition_id = p.id
+            AND pr.partition_id = p.id
+            AND pr.role_id = r.id
+            AND pr.can_delete = TRUE;
         END IF;
         DELETE
-        FROM link_type
-        WHERE key = key_param;
+        FROM link_type lt
+        USING model m, partition p, privilege pr, role r
+        WHERE lt.key = key_param
+          AND r.key = role_key_param
+          AND m.partition_id = p.id
+          AND pr.partition_id = p.id
+          AND pr.role_id = r.id
+          AND pr.can_delete = TRUE;
       END
       $BODY$;
 
-      ALTER FUNCTION delete_link_type(character varying, boolean)
+      ALTER FUNCTION delete_link_type(character varying, boolean, character varying)
         OWNER TO onix;
 
       /*
@@ -248,7 +261,7 @@ DO
         DELETE FROM link_rule;
         DELETE FROM link;
         DELETE FROM item;
-        PERFORM delete_link_types();
+        PERFORM delete_link_types(role_key_param);
         PERFORM delete_item_types(role_key_param);
         PERFORM delete_link_rules();
       END
@@ -271,8 +284,9 @@ DO
       $BODY$
       BEGIN
         DELETE FROM item_type it
-          USING partition p, privilege pr, role r
-          WHERE it.partition_id = p.id
+          USING partition p, privilege pr, role r, model m
+          WHERE it.model_id = m.id
+          AND m.partition_id = p.id
           AND pr.partition_id = p.id
           AND pr.can_delete = TRUE
           AND pr.role_id = r.id
@@ -286,7 +300,9 @@ DO
       /*
         delete_link_types: deletes all link types
        */
-      CREATE OR REPLACE FUNCTION delete_link_types()
+      CREATE OR REPLACE FUNCTION delete_link_types(
+        role_key_param character varying
+      )
         RETURNS VOID
         LANGUAGE 'plpgsql'
         COST 100
@@ -294,11 +310,18 @@ DO
       AS
       $BODY$
       BEGIN
-        DELETE FROM link_type;
+        DELETE FROM link_type lt
+        USING partition p, privilege pr, role r, model m
+        WHERE lt.model_id = m.id
+          AND m.partition_id = p.id
+          AND pr.partition_id = p.id
+          AND pr.can_delete = TRUE
+          AND pr.role_id = r.id
+          AND r.key = role_key_param;
       END
       $BODY$;
 
-      ALTER FUNCTION delete_link_types()
+      ALTER FUNCTION delete_link_types(character varying)
         OWNER TO onix;
 
       /*
