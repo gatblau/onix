@@ -51,7 +51,7 @@ public class PgSqlRepository implements DbRepository {
      */
 
     @Override
-    public synchronized Result createOrUpdateItem(String key, ItemData item) {
+    public synchronized Result createOrUpdateItem(String key, ItemData item, String role) {
         Result result = new Result(String.format("Item:%s", key));
         ResultSet set = null;
         try {
@@ -66,6 +66,8 @@ public class PgSqlRepository implements DbRepository {
             db.setString(8, item.getType()); // item_type_key_param
             db.setObject(9, item.getVersion()); // version_param
             db.setString(10, getUser()); // changed_by_param
+            db.setString(11, item.getPartition()); // partition_key_param
+            db.setString(12, role); // role_key_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_item"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -593,7 +595,10 @@ public class PgSqlRepository implements DbRepository {
                 "?::smallint," +
                 "?::character varying," +
                 "?::bigint," +
-                "?::character varying)";
+                "?::character varying," +
+                "?::character varying," + // partition_key_param
+                "?::character varying" + // role_key_param
+                ")";
     }
 
     @Override
@@ -928,7 +933,7 @@ public class PgSqlRepository implements DbRepository {
         }
         List<ItemData> items = payload.getItems();
         for (ItemData item : items) {
-            Result result = createOrUpdateItem(item.getKey(), item);
+            Result result = createOrUpdateItem(item.getKey(), item, role);
             results.add(result);
         }
         List<LinkData> links = payload.getLinks();
