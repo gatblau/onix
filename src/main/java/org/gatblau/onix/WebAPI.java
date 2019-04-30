@@ -561,8 +561,10 @@ public class WebAPI {
             path = "/linktype"
             , method = RequestMethod.DELETE
     )
-    public void deleteLinkTypes() throws SQLException {
-        data.deleteLinkTypes();
+    public void deleteLinkTypes(
+            Authentication authentication
+    ) {
+        data.deleteLinkTypes(getRole(authentication));
     }
 
     @ApiOperation(
@@ -582,9 +584,10 @@ public class WebAPI {
                 example = "?force"
             )
             @RequestParam(value = "force", defaultValue = "false", required = false)
-            boolean force
+            boolean force,
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteLinkType(key, force));
+        return ResponseEntity.ok(data.deleteLinkType(key, force, getRole(authentication)));
     }
 
     @ApiOperation(
@@ -604,9 +607,10 @@ public class WebAPI {
         @PathVariable("key")
         String key,
         @RequestBody
-        LinkTypeData linkType
+        LinkTypeData linkType,
+        Authentication authentication
     ) {
-        Result result = data.createOrUpdateLinkType(key, linkType);
+        Result result = data.createOrUpdateLinkType(key, linkType, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -618,8 +622,12 @@ public class WebAPI {
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<LinkTypeData> getLinkType(@PathVariable("key") String key) throws SQLException, ParseException {
-        return ResponseEntity.ok(data.getLinkType(key));
+    public ResponseEntity<LinkTypeData> getLinkType(
+            @PathVariable("key")
+            String key,
+            Authentication authentication
+        ) {
+        return ResponseEntity.ok(data.getLinkType(key, getRole(authentication)));
     }
 
     @ApiOperation(
@@ -637,7 +645,8 @@ public class WebAPI {
             , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
             , @RequestParam(value = "updatedTo", required = false) String updatedToDate
             , @RequestParam(value = "model", required = false) String modelKey
-    ) throws SQLException, ParseException, IOException {
+            , Authentication authentication
+    ) {
         Map attrMap = null;
         if (attribute != null) {
             attrMap = new HashMap<String, String>();
@@ -653,7 +662,8 @@ public class WebAPI {
                 getDate(createdToDate),
                 getDate(updatedFromDate),
                 getDate(updatedToDate),
-                modelKey);
+                modelKey,
+                getRole(authentication));
         return ResponseEntity.ok(linkTypes);
     }
 
@@ -668,7 +678,7 @@ public class WebAPI {
             path = "/linkrule"
             , method = RequestMethod.DELETE
     )
-    public void deleteLinkRules() throws SQLException {
+    public void deleteLinkRules() {
         data.deleteLinkRules();
     }
 
@@ -711,7 +721,7 @@ public class WebAPI {
             , @RequestParam(value = "createdTo", required = false) String createdToDate
             , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
             , @RequestParam(value = "updatedTo", required = false) String updatedToDate
-    ) throws SQLException, ParseException {
+    ) {
         LinkRuleList linkRules = data.getLinkRules(
                 linkType,
                 startItemType,

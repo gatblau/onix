@@ -431,7 +431,7 @@ public class PgSqlRepository implements DbRepository {
         LINK TYPES
      */
     @Override
-    public synchronized LinkTypeList getLinkTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey) {
+    public synchronized LinkTypeList getLinkTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey, String role) {
         LinkTypeList linkTypes = new LinkTypeList();
         try {
             db.prepare(getFindLinkTypesSQL());
@@ -441,6 +441,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(4, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
             db.setObject(5, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
             db.setObject(6, modelKey);
+            db.setString(7, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 linkTypes.getValues().add(util.toLinkTypeData(set));
@@ -454,7 +455,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result createOrUpdateLinkType(String key, LinkTypeData linkType) {
+    public synchronized Result createOrUpdateLinkType(String key, LinkTypeData linkType, String role) {
         Result result = new Result(String.format("LinkType:%s", key));
         try {
             db.prepare(getSetLinkTypeSQL());
@@ -466,6 +467,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(6, linkType.getVersion()); // version_param
             db.setString(7, linkType.getModelKey()); // model_key_param
             db.setString(8, getUser()); // changed_by_param
+            db.setString(9, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("set_link_type"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -478,21 +480,22 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteLinkType(String key, boolean force) {
-        return delete(getDeleteLinkTypeSQL(), key, true, force);
+    public Result deleteLinkType(String key, boolean force, String role) {
+        return delete(getDeleteLinkTypeSQL(), key, true, force, role);
     }
 
     @Override
-    public Result deleteLinkTypes() {
-        return delete(getDeleteLinkTypes(), null);
+    public Result deleteLinkTypes(String role) {
+        return delete(getDeleteLinkTypes(), null, role);
     }
 
     @Override
-    public synchronized LinkTypeData getLinkType(String key) {
+    public synchronized LinkTypeData getLinkType(String key, String role) {
         LinkTypeData linkType = null;
         try {
             db.prepare(getGetLinkTypeSQL());
             db.setString(1, key);
+            db.setString(2, role);
             ResultSet set = db.executeQuerySingleRow();
             linkType = util.toLinkTypeData(set);
         } catch (Exception ex) {
@@ -725,13 +728,16 @@ public class PgSqlRepository implements DbRepository {
     public String getDeleteLinkTypeSQL() {
         return "SELECT delete_link_type(" +
                 "?::character varying," +
-                "?::boolean" +
+                "?::boolean," +
+                "?::character varying" + // role_key_param
                 ")";
     }
 
     @Override
     public String getDeleteLinkTypes() {
-        return "SELECT delete_link_types()";
+        return "SELECT delete_link_types(" +
+                "?::character varying" + // role_key_param
+                ")";
     }
 
     @Override
@@ -742,7 +748,8 @@ public class PgSqlRepository implements DbRepository {
                 "?::timestamp(6) with time zone," + // date created to
                 "?::timestamp(6) with time zone," + // date updates from
                 "?::timestamp(6) with time zone," + // date updated to
-                "?::character varying" + // model key
+                "?::character varying," + // model key
+                "?::character varying" + // role_key_param
                 ")";
     }
 
@@ -756,14 +763,16 @@ public class PgSqlRepository implements DbRepository {
                 "?::jsonb," + // meta_schema
                 "?::bigint," + // version
                 "?::character varying," + // model_key
-                "?::character varying" + // changed_by
+                "?::character varying," + // changed_by
+                "?::character varying" + // role_change_param
                 ")";
     }
 
     @Override
     public String getGetLinkTypeSQL() {
         return "SELECT * FROM link_type(" +
-                "?::character varying" + // key
+                "?::character varying," + // key
+                "?::character varying" + // role_key_param
                 ")";
     }
 
@@ -909,7 +918,7 @@ public class PgSqlRepository implements DbRepository {
         }
         List<LinkTypeData> linkTypes = payload.getLinkTypes();
         for (LinkTypeData linkType : linkTypes) {
-            Result result = createOrUpdateLinkType(linkType.getKey(), linkType);
+            Result result = createOrUpdateLinkType(linkType.getKey(), linkType, role);
             results.add(result);
         }
         List<LinkRuleData> linkRules = payload.getLinkRules();

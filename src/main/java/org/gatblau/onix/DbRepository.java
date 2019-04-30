@@ -63,11 +63,11 @@ public interface DbRepository {
     /*
             LINK TYPES
         */
-    LinkTypeList getLinkTypes(Map attrMap, ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time, String modelKey);
-    Result createOrUpdateLinkType(String key, LinkTypeData json);
-    Result deleteLinkType(String key, boolean force);
-    Result deleteLinkTypes();
-    LinkTypeData getLinkType(String key);
+    LinkTypeList getLinkTypes(Map attrMap, ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time, String modelKey, String role);
+    Result createOrUpdateLinkType(String key, LinkTypeData json, String role);
+    Result deleteLinkType(String key, boolean force, String role);
+    Result deleteLinkTypes(String role);
+    LinkTypeData getLinkType(String key, String role);
 
     /*
         LINK RULES

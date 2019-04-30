@@ -5,8 +5,6 @@ The Terraform provider for Onix allows Terraform to manage configuration informa
 <a name="toc"></a>
 ### Table of Contents [(index)](./../readme.md)
 
-- [Provider <img src="../../../docs/pics/ox.png" width="160" height="160" align="right">](#provider-img-src%22docspicsoxpng%22-width%22160%22-height%22160%22-align%22right%22)
-    - [Table of Contents (index)](#table-of-contents-index)
   - [Connection information (up)](#connection-information-up)
   - [Installation (up)](#installation-up)
   - [Resources (up)](#resources-up)
