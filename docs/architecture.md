@@ -94,6 +94,16 @@ The following picture shows the deployment for OpenShift or Kubernetes:
 ![Technology View](./pics/openshift.png "Technology View - Containerised") 
 
 
+#### Containerised Web Services using Cloud Native Database services
+
+Alternatively, a deployment with the database outside of the container platform can leverage cloud native database service features offered by public cloud providers.
+
+For example, a deployment using [Amazon RDS in multiple availability zones](https://aws.amazon.com/rds/details/multi-az/) is shown below:
+
+![Technology View](./pics/openshift_ext_db.png "Technology View - Containerised - External DB")
+
+Each Availability Zone (AZ) runs on its own physically distinct, independent infrastructure, and is engineered to be highly reliable. In case of an infrastructure failure, Amazon RDS performs an automatic failover to the stand-by, so that database operations are resumed as soon as the failover is complete. Since the endpoint for the database instance remains the same after a failover, the application can resume database operation without the need for manual administrative intervention.
+
 #### Traditional deployment
 
 The following picture shows the deployment on traditional infrastructure:
