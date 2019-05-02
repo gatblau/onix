@@ -42,33 +42,22 @@ build:
 
 # package the terraform provider for all platforms
 package:
+    go fmt
 	$(MAKE) package_linux
 	$(MAKE) package_darwin
 	$(MAKE) package_windows
 
 # package the terraform provider for linux amd64 platform
 package_linux:
-	CGO_ENABLED=0
-	GOOS=linux
-	GOARCH=amd64
-	go fmt
-	go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
+	export CGO_ENABLED=0; export GOOS=linux; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
 	zip -mjT $(BUILD_FOLDER)/$(BINARY_NAME)_linux_amd64.zip $(BUILD_FOLDER)/$(BINARY_NAME)
 
 # package the terraform provider for MacOS
 package_darwin:
-	CGO_ENABLED=0
-	GOOS=darwin
-	GOARCH=amd64
-	go fmt
-	go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
+	export CGO_ENABLED=0; export GOOS=darwin; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
 	zip -mjT $(BUILD_FOLDER)/$(BINARY_NAME)_darwin_amd64.zip $(BUILD_FOLDER)/$(BINARY_NAME)
 
 # package the terraform provider for Windows
 package_windows:
-	$CGO_ENABLED=0
-	GOOS=windows
-	GOARCH=amd64
-	go fmt
-	go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
+	export CGO_ENABLED=0; export GOOS=windows; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
 	zip -mjT $(BUILD_FOLDER)/$(BINARY_NAME)_windows_amd64.zip $(BUILD_FOLDER)/$(BINARY_NAME)
