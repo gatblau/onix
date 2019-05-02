@@ -332,7 +332,7 @@ DO
           CONSTRAINT model_partition_id_fk FOREIGN KEY (partition_id)
             REFERENCES partition (id) MATCH SIMPLE
             ON UPDATE NO ACTION
-            ON DELETE NO ACTION
+            ON DELETE CASCADE
         )
           WITH (
             OIDS = FALSE
@@ -427,7 +427,7 @@ DO
           CONSTRAINT item_type_model_id_fk FOREIGN KEY (model_id)
             REFERENCES model (id) MATCH SIMPLE
             ON UPDATE NO ACTION
-            ON DELETE NO ACTION
+            ON DELETE CASCADE
         )
           WITH (
             OIDS = FALSE
@@ -530,11 +530,11 @@ DO
           CONSTRAINT item_item_type_id_fk FOREIGN KEY (item_type_id)
             REFERENCES item_type (id) MATCH SIMPLE
             ON UPDATE NO ACTION
-            ON DELETE NO ACTION,
+            ON DELETE CASCADE,
           CONSTRAINT item_partition_id_fk FOREIGN KEY (partition_id)
             REFERENCES partition (id) MATCH SIMPLE
             ON UPDATE NO ACTION
-            ON DELETE NO ACTION
+            ON DELETE CASCADE
         )
           WITH (
             OIDS = FALSE
@@ -651,7 +651,7 @@ DO
           CONSTRAINT link_type_model_id_fk FOREIGN KEY (model_id)
             REFERENCES model (id) MATCH SIMPLE
             ON UPDATE NO ACTION
-            ON DELETE NO ACTION
+            ON DELETE CASCADE
         )
           WITH (OIDS = FALSE)
           TABLESPACE pg_default;
@@ -750,15 +750,15 @@ DO
           CONSTRAINT link_link_type_id_fk FOREIGN KEY (link_type_id)
             REFERENCES link_type (id) MATCH SIMPLE
             ON UPDATE NO ACTION
-            ON DELETE NO ACTION,
+            ON DELETE CASCADE,
           CONSTRAINT link_end_item_id_fk FOREIGN KEY (end_item_id)
             REFERENCES item (id) MATCH SIMPLE
             ON UPDATE NO ACTION
-            ON DELETE NO ACTION,
+            ON DELETE CASCADE,
           CONSTRAINT link_start_item_id_fk FOREIGN KEY (start_item_id)
             REFERENCES item (id) MATCH SIMPLE
             ON UPDATE NO ACTION
-            ON DELETE NO ACTION
+            ON DELETE CASCADE
         )
           WITH (
             OIDS = FALSE
@@ -999,7 +999,7 @@ DO
           CONSTRAINT tag_root_item_key_fk FOREIGN KEY (root_item_key)
             REFERENCES item (key) MATCH SIMPLE
             ON UPDATE NO ACTION
-            ON DELETE NO ACTION
+            ON DELETE CASCADE
         )
           WITH (
             OIDS = FALSE
