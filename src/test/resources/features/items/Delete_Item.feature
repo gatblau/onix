@@ -4,6 +4,8 @@ Feature: Delete Configuration Item
   So that a I can record the fact the item has been decommissioned.
 
   Scenario: Delete Configuration Item
+    Given the meta model natural key is known
+    Given the meta model exists in the database
     Given the item type exists in the database
     Given the item exists in the database
     Given the item URL search by key is known

@@ -140,9 +140,10 @@ public class WebAPI {
                 required = true,
                 example = "item_01_abc"
             )
-            @PathVariable("key") String key
+            @PathVariable("key") String key,
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteItem(key));
+        return ResponseEntity.ok(data.deleteItem(key, getRole(authentication)));
     }
 
     @ApiOperation(
@@ -152,8 +153,9 @@ public class WebAPI {
             path = "/item"
             , method = RequestMethod.DELETE)
     public ResponseEntity<Result> deleteAllItems(
+        Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteAllItems());
+        return ResponseEntity.ok(data.deleteAllItems(getRole(authentication)));
     }
 
     @ApiOperation(
@@ -178,9 +180,11 @@ public class WebAPI {
             required = false,
             example = "?links"
         )
-        @RequestParam(required = false, name = "links", defaultValue = "false" // true to retrieve link information
-        ) boolean links) {
-        return ResponseEntity.ok(data.getItem(key, links));
+        @RequestParam(required = false, name = "links", defaultValue = "false") // true to retrieve link information
+        boolean links,
+        Authentication authentication
+    ) {
+        return ResponseEntity.ok(data.getItem(key, links, getRole(authentication)));
     }
 
     @ApiOperation(
@@ -265,7 +269,8 @@ public class WebAPI {
                 defaultValue = "100"
             )
             @RequestParam(value = "top", required = false, defaultValue = "100")
-            Integer top
+            Integer top,
+            Authentication authentication
     ) {
         List<String> tagList = null;
         if (tag != null) {
@@ -281,7 +286,8 @@ public class WebAPI {
                 getDate(updatedToDate),
                 status,
                 modelKey,
-                top
+                top,
+                getRole(authentication)
         );
         return ResponseEntity.ok(list);
     }
@@ -371,17 +377,9 @@ public class WebAPI {
         )
         @PathVariable("key")
         String key,
-        @ApiParam(
-            name = "force",
-            value = "If true, it forces the deletion of existing items linked to the item type.",
-            required = false,
-            example = "?force"
-        )
-        @RequestParam(required = false, name = "force", defaultValue = "false") // true to force deletion of related items
-        boolean force,
         Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteItemType(key, force, getRole(authentication)));
+        return ResponseEntity.ok(data.deleteItemType(key, getRole(authentication)));
     }
 
     @ApiOperation(
@@ -445,6 +443,7 @@ public class WebAPI {
             , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
             , @RequestParam(value = "updatedTo", required = false) String updatedToDate
             , @RequestParam(value = "model", required = false) String modelKey
+            , Authentication authentication
     ) {
         Map attrMap = null;
         if (attribute != null) {
@@ -456,12 +455,14 @@ public class WebAPI {
             }
         }
         ItemTypeList itemTypes = data.getItemTypes(
-                attrMap,
-                getDate(createdFromDate),
-                getDate(createdToDate),
-                getDate(updatedFromDate),
-                getDate(updatedToDate),
-                modelKey);
+            attrMap,
+            getDate(createdFromDate),
+            getDate(createdToDate),
+            getDate(updatedFromDate),
+            getDate(updatedToDate),
+            modelKey,
+            getRole(authentication)
+        );
         return ResponseEntity.ok(itemTypes);
     }
 
@@ -579,17 +580,9 @@ public class WebAPI {
     public ResponseEntity<Result> deleteLinkType(
             @PathVariable("key")
             String key,
-            @ApiParam(
-                name = "force",
-                value = "If true, it forces the deletion of existing links of the link type.",
-                required = false,
-                example = "?force"
-            )
-            @RequestParam(value = "force", defaultValue = "false", required = false)
-            boolean force,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteLinkType(key, force, getRole(authentication)));
+        return ResponseEntity.ok(data.deleteLinkType(key, getRole(authentication)));
     }
 
     @ApiOperation(
@@ -738,7 +731,6 @@ public class WebAPI {
     /*
         MODEL
      */
-
     @ApiOperation(
             value = "Deletes a model for a specified key.",
             notes = "")
@@ -749,17 +741,9 @@ public class WebAPI {
     public ResponseEntity<Result> deleteModel(
             @PathVariable("key")
             String key,
-            @ApiParam(
-                name = "force",
-                value = "If true, it forces the deletion of existing item and link types associated with this model.",
-                required = false,
-                example = "?force"
-            )
-            @RequestParam(value="force", required = false, defaultValue = "false")
-            boolean force,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteModel(key, force, getRole(authentication)));
+        return ResponseEntity.ok(data.deleteModel(key, getRole(authentication)));
     }
 
     @ApiOperation(

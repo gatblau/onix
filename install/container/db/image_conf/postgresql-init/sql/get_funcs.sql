@@ -21,7 +21,10 @@ DO
         gets an item by its natural key.
         use: select * from item('the_item_key')
        */
-      CREATE OR REPLACE FUNCTION item(key_param character varying)
+      CREATE OR REPLACE FUNCTION item(
+        key_param character varying,
+        role_key_param character varying
+      )
         RETURNS TABLE(
           id bigint,
           key character varying,
@@ -59,13 +62,20 @@ DO
             i.updated,
             i.changed_by
           FROM item i
-                 INNER JOIN item_type it
-                            ON i.item_type_id = it.id
-          WHERE i.key = key_param;
+          INNER JOIN item_type it ON i.item_type_id = it.id
+          INNER JOIN partition p ON i.partition_id = p.id
+          INNER JOIN privilege pr ON p.id = pr.partition_id
+          INNER JOIN role r ON pr.role_id = r.id
+          WHERE i.key = key_param
+          AND pr.can_read = TRUE
+          AND r.key = role_key_param;
       END;
       $BODY$;
 
-      ALTER FUNCTION item(character varying)
+      ALTER FUNCTION item(
+        character varying, -- key_param
+        character varying -- role_key_param
+      )
         OWNER TO onix;
 
       /*
