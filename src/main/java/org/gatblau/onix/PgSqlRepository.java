@@ -80,11 +80,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized ItemData getItem(String key, boolean includeLinks) {
+    public synchronized ItemData getItem(String key, boolean includeLinks, String role) {
         ItemData item = new ItemData();
         try {
             db.prepare(getGetItemSQL());
             db.setString(1, key);
+            db.setString(2, role);
             item = util.toItemData(db.executeQuerySingleRow());
 
             if (includeLinks) {
@@ -116,8 +117,8 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteItem(String key) {
-        return delete(getDeleteItemSQL(), key);
+    public Result deleteItem(String key, String role) {
+        return delete(getDeleteItemSQL(), key, role);
     }
 
     @Override
@@ -130,7 +131,9 @@ public class PgSqlRepository implements DbRepository {
             ZonedDateTime updatedTo,
             Short status,
             String modelKey,
-            Integer top) {
+            Integer top,
+            String role
+    ) {
         ItemList items = new ItemList();
         try {
             db.prepare(getFindItemsSQL());
@@ -144,6 +147,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(8, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
             db.setString(9, modelKey);
             db.setObject(10, (top == null) ? 20 : top);
+            db.setString(11, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 items.getValues().add(util.toItemData(set));
@@ -159,7 +163,7 @@ public class PgSqlRepository implements DbRepository {
     public synchronized JSONObject getItemMeta(String key, String filter, String role) {
         HashMap<String, Object> results = new HashMap<>();
         // gets the item in question
-        ItemData item = getItem(key, false);
+        ItemData item = getItem(key, false, role);
         if (filter == null) {
             // if the query does not specify a filter key then returns the plain metadata
             return item.getMeta();
@@ -194,10 +198,11 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result deleteAllItems() {
+    public synchronized Result deleteAllItems(String role) {
         Result result = new Result();
         try {
             db.prepare(getDeleteAllItemsSQL());
+            db.setString(1, role);
             db.execute();
             result.setOperation("D");
         } catch (Exception ex) {
@@ -311,28 +316,26 @@ public class PgSqlRepository implements DbRepository {
     }
 
     private synchronized Result delete(String sql, String key){
-        return delete(sql, key, false, false, null);
+        return delete(sql, key, false, null);
     }
 
     private synchronized Result delete(String sql, String key, String role){
-        return delete(sql, key, false, false, role);
+        return delete(sql, key, false, role);
     }
 
-    private synchronized Result delete(String sql, String key, boolean isType, boolean force) {
-        return delete(sql, key, isType, force, null);
+    private synchronized Result delete(String sql, String key, boolean isType) {
+        return delete(sql, key, isType, null);
     }
 
-    private synchronized Result delete(String sql, String key, boolean isType, boolean force, String role) {
+    private synchronized Result delete(String sql, String key, boolean isType, String role) {
         Result result = new Result(String.format("Delete(%s)", key));
         try {
             db.prepare(sql);
             if (key != null) {
-                db.setString(1, key);
-                // if the delete is for a type resource, then sets additional force parameter
-                if (isType) {
-                    db.setObject(2, force);
-                }
-                if (role != null) db.setString(3, role);
+                int paramIx = 1;
+                db.setString(paramIx, key);
+                paramIx++;
+                if (role != null) db.setString(paramIx, role);
             } else {
                 db.setString(1, role);
             }
@@ -376,7 +379,15 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized ItemTypeList getItemTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey) {
+    public synchronized ItemTypeList getItemTypes(
+            Map attribute,
+            ZonedDateTime createdFrom,
+            ZonedDateTime createdTo,
+            ZonedDateTime updatedFrom,
+            ZonedDateTime updatedTo,
+            String modelKey,
+            String role
+    ) {
         ItemTypeList itemTypes = new ItemTypeList();
         try {
             db.prepare(getFindItemTypesSQL());
@@ -386,6 +397,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(4, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
             db.setObject(5, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
             db.setString(6, modelKey);
+            db.setString(7, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 itemTypes.getValues().add(util.toItemTypeData(set));
@@ -425,8 +437,8 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteItemType(String key, boolean force, String role) {
-        return delete(getDeleteItemTypeSQL(), key, true, force, role);
+    public Result deleteItemType(String key, String role) {
+        return delete(getDeleteItemTypeSQL(), key, true, role);
     }
 
     /*
@@ -482,8 +494,8 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteLinkType(String key, boolean force, String role) {
-        return delete(getDeleteLinkTypeSQL(), key, true, force, role);
+    public Result deleteLinkType(String key, String role) {
+        return delete(getDeleteLinkTypeSQL(), key, true, role);
     }
 
     @Override
@@ -580,7 +592,10 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getGetItemSQL() {
-        return "SELECT * FROM item(?::character varying)";
+        return "SELECT * FROM item(" +
+                "?::character varying," + // key_param
+                "?::character varying" + // role_key_param
+                ")";
     }
 
     @Override
@@ -613,18 +628,24 @@ public class PgSqlRepository implements DbRepository {
                 "?::timestamp with time zone," + // updated_from
                 "?::timestamp with time zone," + // updated_to
                 "?::character varying," + // model_key
-                "?::integer" + // max_items
+                "?::integer," + // max_items
+                "?::character varying" + // role_key_param
                 ")";
     }
 
     @Override
     public String getDeleteItemSQL() {
-        return "SELECT delete_item(?::character varying)";
+        return "SELECT delete_item(" +
+                "?::character varying," +
+                "?::character varying" + // role_key_param
+                ")";
     }
 
     @Override
     public String getDeleteAllItemsSQL() {
-        return "SELECT delete_all_items()";
+        return "SELECT delete_all_items(" +
+                "?::character varying" + // role_key_param
+                ")";
     }
 
     @Override
@@ -681,7 +702,6 @@ public class PgSqlRepository implements DbRepository {
     public String getDeleteItemTypeSQL() {
         return "SELECT delete_item_type(" +
                 "?::character varying," +
-                "?::boolean," +
                 "?::character varying" +
                 ")";
     }
@@ -701,7 +721,8 @@ public class PgSqlRepository implements DbRepository {
                 "?::timestamp(6) with time zone," + // date created to
                 "?::timestamp(6) with time zone," + // date updates from
                 "?::timestamp(6) with time zone," + // date updated to
-                "?::character varying" + // model key
+                "?::character varying," + // model key
+                "?::character varying" + // role_key_param
                 ")";
     }
 
@@ -733,7 +754,6 @@ public class PgSqlRepository implements DbRepository {
     public String getDeleteLinkTypeSQL() {
         return "SELECT delete_link_type(" +
                 "?::character varying," +
-                "?::boolean," +
                 "?::character varying" + // role_key_param
                 ")";
     }
@@ -982,8 +1002,8 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result deleteModel(String key, boolean force, String role) {
-        return delete(getDeleteModelSQL(), key, true, force, role);
+    public synchronized Result deleteModel(String key, String role) {
+        return delete(getDeleteModelSQL(), key, true, role);
     }
 
     @Override
@@ -1126,7 +1146,6 @@ public class PgSqlRepository implements DbRepository {
     public String getDeleteModelSQL() {
         return "SELECT delete_model(" +
                 "?::character varying, " + // model_key_param
-                "?::boolean," + // force
                 "?::character varying" + // role_key_param
                 ")";
     }

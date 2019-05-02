@@ -29,7 +29,8 @@ CREATE OR REPLACE FUNCTION find_items(
     date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
     date_updated_to_param timestamp(6) with time zone, -- none (null) or updated to date
     model_key_param character varying, -- the meta model key the item is for
-    max_items integer default 20 -- the maximum number of items to return
+    max_items integer, -- the maximum number of items to return
+    role_key_param character varying
   )
   RETURNS TABLE(
     id bigint,
@@ -52,6 +53,10 @@ CREATE OR REPLACE FUNCTION find_items(
   STABLE
 AS $BODY$
 BEGIN
+  IF (max_items IS NULL) THEN
+    max_items = 20;
+  END IF;
+
   RETURN QUERY SELECT
     i.id,
     i.key,
@@ -68,10 +73,11 @@ BEGIN
     i.changed_by,
     m.key as model_key
   FROM item i
-  INNER JOIN item_type it
-    ON i.item_type_id = it.id
-  INNER JOIN model m
-    ON m.id = it.model_id
+  INNER JOIN item_type it ON i.item_type_id = it.id
+  INNER JOIN model m ON m.id = it.model_id
+  INNER JOIN partition p on i.partition_id = p.id
+  INNER JOIN privilege pr on p.id = pr.partition_id
+  INNER JOIN role r on pr.role_id = r.id
   WHERE
   -- by item type
       (it.key = item_type_key_param OR item_type_key_param IS NULL)
@@ -93,6 +99,8 @@ BEGIN
       (date_updated_from_param <= i.updated AND date_updated_to_param IS NULL))
   -- by model
   AND (m.key = model_key_param OR model_key_param IS NULL)
+  AND pr.can_read = TRUE
+  AND r.key = role_key_param
   LIMIT max_items;
 END
 $BODY$;
@@ -107,7 +115,8 @@ ALTER FUNCTION find_items(
     timestamp(6) with time zone, -- updated from
     timestamp(6) with time zone, -- updated to
     character varying, -- model key
-    integer -- max_items
+    integer, -- max_items
+    character varying -- role_key_param
   )
   OWNER TO onix;
 
@@ -221,7 +230,8 @@ CREATE OR REPLACE FUNCTION find_item_types(
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
     date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
     date_updated_to_param timestamp(6) with time zone, -- none (null) or updated to date
-    model_key_param character varying -- the meta model the item type is for
+    model_key_param character varying, -- the meta model the item type is for
+    role_key_param character varying -- the role of the requesting user
   )
   RETURNS TABLE(
     id integer,
@@ -256,8 +266,10 @@ BEGIN
      i.changed_by,
      m.key as model_key
   FROM item_type i
-  INNER JOIN model m
-    ON i.model_id = m.id
+  INNER JOIN model m ON i.model_id = m.id
+  INNER JOIN partition p ON m.partition_id = p.id
+  INNER JOIN privilege pr on p.id = pr.partition_id
+  INNER JOIN role r on pr.role_id = r.id
   WHERE
   -- by attributes (hstore)
      (i.attr_valid @> attr_valid_param OR attr_valid_param IS NULL)
@@ -272,7 +284,9 @@ BEGIN
       (date_updated_from_param IS NULL AND date_updated_to_param > i.updated) OR
       (date_updated_from_param <= i.updated AND date_updated_to_param IS NULL))
   -- by model
-  AND (m.key = model_key_param OR model_key_param IS NULL);
+  AND (m.key = model_key_param OR model_key_param IS NULL)
+  AND pr.can_read = TRUE
+  AND r.key = role_key_param;
 END
 $BODY$;
 
@@ -282,7 +296,8 @@ ALTER FUNCTION find_item_types(
   timestamp(6) with time zone, -- created to
   timestamp(6) with time zone, -- updated from
   timestamp(6) with time zone, -- updated to
-  character varying -- meta model key
+  character varying, -- meta model key
+  character varying -- role_key_param
 )
 OWNER TO onix;
 

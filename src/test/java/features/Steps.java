@@ -48,12 +48,12 @@ public class Steps extends BaseTest {
     }
 
     @Given("^the item URL search by key is known$")
-    public void theItemURLSearchByKeyIsKnown() throws Throwable {
-        util.put(ITEM_URL, String.format("%sitem/{key}", baseUrl));
+    public void theItemURLSearchByKeyIsKnown() {
+        util.put(ENDPOINT_URI, String.format("%sitem/{key}", baseUrl));
     }
 
     @Given("^the item URL search with query parameters is known$")
-    public void theItemURLSearchWithQueryParametersIsKnown() throws Throwable {
+    public void theItemURLSearchWithQueryParametersIsKnown() {
         util.put(ITEM_URL, String.format("%s/item", baseUrl));
     }
 
@@ -184,7 +184,7 @@ public class Steps extends BaseTest {
 
     @When("^a DELETE HTTP request with an item key is done$")
     public void aDELETEHTTPRequestWithAnItemKeyKeyIsDone() throws Throwable {
-        Result result = delete(util.get(ITEM_URL), util.get(ITEM_KEY));
+        Result result = delete(util.get(ENDPOINT_URI), util.get(ITEM_KEY));
         if (result.isError()){
             throw new RuntimeException(result.getMessage());
         }

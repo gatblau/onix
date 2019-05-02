@@ -34,11 +34,11 @@ public interface DbRepository {
         ITEMS
     */
     Result createOrUpdateItem(String key, ItemData json, String role);
-    ItemData getItem(String key, boolean includeLinks);
-    Result deleteItem(String key);
-    ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, String modelKey, Integer top);
+    ItemData getItem(String key, boolean includeLinks, String role);
+    Result deleteItem(String key, String role);
+    ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, String modelKey, Integer top, String role);
     JSONObject getItemMeta(String key, String filter, String role);
-    Result deleteAllItems();
+    Result deleteAllItems(String role);
 
     /*
         LINKS
@@ -55,17 +55,16 @@ public interface DbRepository {
     */
     ItemTypeData getItemType(String key, String role);
     Result deleteItemTypes(String role);
-    ItemTypeList getItemTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelType);
-
+    ItemTypeList getItemTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelType, String role);
     Result createOrUpdateItemType(String key, ItemTypeData json, String role);
-    Result deleteItemType(String key, boolean force, String role);
+    Result deleteItemType(String key, String role);
 
     /*
-            LINK TYPES
-        */
+        LINK TYPES
+     */
     LinkTypeList getLinkTypes(Map attrMap, ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time, String modelKey, String role);
     Result createOrUpdateLinkType(String key, LinkTypeData json, String role);
-    Result deleteLinkType(String key, boolean force, String role);
+    Result deleteLinkType(String key, String role);
     Result deleteLinkTypes(String role);
     LinkTypeData getLinkType(String key, String role);
 
@@ -150,7 +149,7 @@ public interface DbRepository {
     JSONObject getReadyStatus();
 
     /* Model */
-    Result deleteModel(String key, boolean force, String role);
+    Result deleteModel(String key, String role);
     Result createOrUpdateModel(String key, ModelData json, String role);
     ModelData getModel(String key, String role);
     ModelDataList getModels(String role);
