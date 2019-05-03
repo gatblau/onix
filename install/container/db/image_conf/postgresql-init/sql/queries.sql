@@ -134,7 +134,8 @@ CREATE OR REPLACE FUNCTION find_links(
   date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
   date_updated_to_param timestamp(6) with time zone, -- none (null) or updated to date
   model_key_param character varying, -- the meta model key the link is for
-  max_items integer default 20 -- the maximum number of items to return
+  max_items integer, -- the maximum number of items to return
+  role_key_param character varying
 )
 RETURNS TABLE(
     id bigint,
@@ -171,14 +172,13 @@ BEGIN
     l.updated,
     l.changed_by
   FROM link l
-    INNER JOIN item start_item
-      ON l.start_item_id = start_item.id
-    INNER JOIN item end_item
-      ON l.end_item_id = end_item.id
-    INNER JOIN link_type lt
-      ON l.link_type_id = lt.id
-    INNER JOIN model m
-      ON m.id = lt.model_id
+    INNER JOIN item start_item ON l.start_item_id = start_item.id
+    INNER JOIN item end_item ON l.end_item_id = end_item.id
+    INNER JOIN link_type lt ON l.link_type_id = lt.id
+    INNER JOIN model m ON m.id = lt.model_id
+    INNER JOIN partition p on m.partition_id = p.id
+    INNER JOIN privilege pr on p.id = pr.partition_id
+    INNER JOIN role r on pr.role_id = r.id
   WHERE
    -- by link type
    (lt.key = link_type_key_param OR link_type_key_param IS NULL)
@@ -202,6 +202,8 @@ BEGIN
         (date_updated_from_param <= l.updated AND date_updated_to_param IS NULL))
     -- by model
    AND (m.key = model_key_param OR model_key_param IS NULL)
+   AND pr.can_read = TRUE
+   AND r.key = role_key_param
    LIMIT max_items;
 END
 $BODY$;
@@ -217,7 +219,8 @@ ALTER FUNCTION find_links(
   timestamp(6) with time zone, -- updated from
   timestamp(6) with time zone, -- updated to,
   character varying, -- model key
-  integer -- max_items
+  integer, -- max_items
+  character varying -- role_key_param
 )
 OWNER TO onix;
 
@@ -589,7 +592,8 @@ CREATE OR REPLACE FUNCTION find_link_rules(
   date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
   date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
   date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
-  date_updated_to_param timestamp(6) with time zone -- none (null) or updated to date
+  date_updated_to_param timestamp(6) with time zone, -- none (null) or updated to date
+  role_key_param character varying
 )
 RETURNS TABLE(
   id bigint,
@@ -622,12 +626,13 @@ BEGIN
       l.updated,
       l.changed_by
   FROM link_rule l
-    INNER JOIN link_type link_type
-      ON link_type.id = l.link_type_id
-    INNER JOIN item_type start_item_type
-      ON start_item_type.id = l.start_item_type_id
-    INNER JOIN item_type end_item_type
-      ON end_item_type.id = l.end_item_type_id
+    INNER JOIN link_type link_type ON link_type.id = l.link_type_id
+    INNER JOIN item_type start_item_type ON start_item_type.id = l.start_item_type_id
+    INNER JOIN item_type end_item_type ON end_item_type.id = l.end_item_type_id
+    INNER JOIN model m ON link_type.model_id = m.id
+    INNER JOIN partition p ON m.partition_id = p.id
+    INNER JOIN privilege pr ON p.id = pr.partition_id
+    INNER JOIN role r ON pr.role_id = r.id
   WHERE
   -- by link type
      (link_type.key = link_type_key_param OR link_type_key_param IS NULL)
@@ -644,7 +649,9 @@ BEGIN
   AND ((date_updated_from_param <= l.updated AND date_updated_to_param > l.updated) OR
       (date_updated_from_param IS NULL AND date_updated_to_param IS NULL) OR
       (date_updated_from_param IS NULL AND date_updated_to_param > l.updated) OR
-      (date_updated_from_param <= l.updated AND date_updated_to_param IS NULL));
+      (date_updated_from_param <= l.updated AND date_updated_to_param IS NULL))
+  AND r.key = role_key_param
+  AND pr.can_read = TRUE;
 END
 $BODY$;
 
@@ -655,7 +662,8 @@ ALTER FUNCTION find_link_rules(
   timestamp(6) with time zone, -- created from
   timestamp(6) with time zone, -- created to
   timestamp(6) with time zone, -- updated from
-  timestamp(6) with time zone -- updated to
+  timestamp(6) with time zone, -- updated to
+  character varying -- role_key_param
 )
 OWNER TO onix;
 

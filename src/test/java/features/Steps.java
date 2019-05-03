@@ -508,7 +508,7 @@ public class Steps extends BaseTest {
         ResponseEntity<ItemTypeList> response = util.get(RESPONSE);
         int actual = response.getBody().getValues().size();
         if(response.getBody().getValues().size() <= items){
-            throw new RuntimeException(String.format("Response contains %s items instead of %s items.", actual, items));
+            throw new RuntimeException(String.format("Response contains %s item types instead of %s item types.", actual, items));
         }
     }
 

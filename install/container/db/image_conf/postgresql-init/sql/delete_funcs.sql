@@ -132,7 +132,10 @@ DO
       /*
         delete_link
        */
-      CREATE OR REPLACE FUNCTION delete_link(key_param character varying)
+      CREATE OR REPLACE FUNCTION delete_link(
+        key_param character varying,
+        role_key_param character varying
+      )
         RETURNS VOID
         LANGUAGE 'plpgsql'
         COST 100
@@ -141,12 +144,23 @@ DO
       $BODY$
       BEGIN
         DELETE
-        FROM link
-        WHERE key = key_param;
+        FROM link l
+        USING link_type lt, model m, partition p, privilege pr, role r
+        WHERE l.key = key_param
+          AND lt.id = l.link_type_id
+          AND lt.model_id = m.id
+          AND m.partition_id = p.id
+          AND pr.partition_id = p.id
+          AND pr.role_id = r.id
+          AND r.key = role_key_param
+          AND pr.can_delete = TRUE;
       END
       $BODY$;
 
-      ALTER FUNCTION delete_link(character varying)
+      ALTER FUNCTION delete_link(
+        character varying,
+        character varying -- role_key_param
+      )
         OWNER TO onix;
 
       /*
@@ -200,7 +214,7 @@ DO
         DELETE FROM item;
         PERFORM delete_link_types(role_key_param);
         PERFORM delete_item_types(role_key_param);
-        PERFORM delete_link_rules();
+        PERFORM delete_link_rules(role_key_param);
       END
       $BODY$;
 
@@ -264,7 +278,9 @@ DO
       /*
         delete_link_rules: deletes all link rules
        */
-      CREATE OR REPLACE FUNCTION delete_link_rules()
+      CREATE OR REPLACE FUNCTION delete_link_rules(
+        role_key_param character varying
+      )
         RETURNS VOID
         LANGUAGE 'plpgsql'
         COST 100
@@ -272,12 +288,23 @@ DO
       AS
       $BODY$
       BEGIN
-        DELETE FROM link_rule;
+        DELETE
+        FROM link_rule lr
+        USING link_type lt, model m, partition p, privilege pr, role r
+          WHERE lr.link_type_id = lt.id
+          AND lt.model_id = m.id
+          AND m.partition_id = p.id
+          AND pr.partition_id = p.id
+          AND r.id = pr.role_id
+          AND pr.can_delete = TRUE
+          AND r.key = role_key_param;
       END
       $BODY$;
 
-      ALTER FUNCTION delete_link_rules()
-        OWNER TO onix;
+      ALTER FUNCTION delete_link_rules(
+        character varying -- role_key_param
+      )
+      OWNER TO onix;
 
     END
     $$;

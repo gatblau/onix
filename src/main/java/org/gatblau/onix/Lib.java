@@ -64,7 +64,9 @@ public class Lib implements InitializingBean {
         else {
             // the object is not a list, then create an empty JSON object
             json = new JSONObject();
-            System.out.println(String.format("WARNING: incorrect map format found on item '%s', discarding item content.", value));
+            if (value != null) {
+                System.out.println(String.format("WARNING: incorrect map format found on item '%s', discarding item content.", value));
+            }
         }
         return json;
     }
