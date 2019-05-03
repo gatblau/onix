@@ -43,11 +43,14 @@ public interface DbRepository {
     /*
         LINKS
     */
-    LinkData getLink(String key);
-    Result createOrUpdateLink(String key, LinkData json);
-    Result deleteLink(String key);
-    LinkList findLinks(String linkTypeKey, String startItemKey, String endItemKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey, Integer top);
+    LinkData getLink(String key, String role);
+    Result createOrUpdateLink(String key, LinkData link, String role);
+    Result deleteLink(String key, String role);
+    LinkList findLinks(String linkTypeKey, String startItemKey, String endItemKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey, Integer top, String role);
 
+    /*
+       MISC
+     */
     Result clear(String role);
 
     /*
@@ -71,15 +74,10 @@ public interface DbRepository {
     /*
         LINK RULES
     */
-    LinkRuleList getLinkRules(String linkTypeKey, String startItemType, String endItemType, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo);
-    Result createOrUpdateLinkRule(String key, LinkRuleData json);
-    Result deleteLinkRule(String key);
-    Result deleteLinkRules();
-
-    /*
-        CHANGE
-    */
-    List<ChangeItemData> findChangeItems();
+    LinkRuleList getLinkRules(String linkTypeKey, String startItemType, String endItemType, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String role);
+    Result createOrUpdateLinkRule(String key, LinkRuleData linkRule, String role);
+    Result deleteLinkRule(String key, String role);
+    Result deleteLinkRules(String role);
 
     /*
         Function Calls

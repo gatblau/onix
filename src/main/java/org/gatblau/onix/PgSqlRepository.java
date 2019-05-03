@@ -219,11 +219,12 @@ public class PgSqlRepository implements DbRepository {
        LINKS
      */
     @Override
-    public synchronized LinkData getLink(String key) {
+    public synchronized LinkData getLink(String key, String role) {
         LinkData link = null;
         try {
             db.prepare(getGetLinkSQL());
             db.setString(1, key);
+            db.setString(2, role);
             ResultSet set = db.executeQuerySingleRow();
             link = util.toLinkData(set);
         } catch (Exception ex) {
@@ -235,7 +236,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result createOrUpdateLink(String key, LinkData link) {
+    public synchronized Result createOrUpdateLink(String key, LinkData link, String role) {
         Result result = new Result(String.format("Link:%s", key));
         try {
             db.prepare(getSetLinkSQL());
@@ -249,6 +250,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(8, getAttributeString(link.getAttribute()));
             db.setObject(9, link.getVersion());
             db.setString(10, getUser());
+            db.setString(11, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("set_link"));
         } catch (Exception ex) {
             result.setError(true);
@@ -260,8 +262,8 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result deleteLink(String key) {
-        return delete(getDeleteLinkSQL(), key);
+    public synchronized Result deleteLink(String key, String role) {
+        return delete(getDeleteLinkSQL(), key, role);
     }
 
     @Override
@@ -275,7 +277,8 @@ public class PgSqlRepository implements DbRepository {
             ZonedDateTime updatedFrom,
             ZonedDateTime updatedTo,
             String modelKey,
-            Integer top
+            Integer top,
+            String role
     ) {
         LinkList links = new LinkList();
         try {
@@ -291,6 +294,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(9, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
             db.setString(10, modelKey);
             db.setObject(11, (top == null) ? 20 : top);
+            db.setString(12, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 links.getValues().add(util.toLinkData(set));
@@ -313,10 +317,6 @@ public class PgSqlRepository implements DbRepository {
             result.setMessage(ex.getMessage());
             return result;
         }
-    }
-
-    private synchronized Result delete(String sql, String key){
-        return delete(sql, key, false, null);
     }
 
     private synchronized Result delete(String sql, String key, String role){
@@ -524,7 +524,16 @@ public class PgSqlRepository implements DbRepository {
         LINK RULES
      */
     @Override
-    public synchronized LinkRuleList getLinkRules(String linkType, String startItemType, String endItemType, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo) {
+    public synchronized LinkRuleList getLinkRules(
+            String linkType,
+            String startItemType,
+            String endItemType,
+            ZonedDateTime createdFrom,
+            ZonedDateTime createdTo,
+            ZonedDateTime updatedFrom,
+            ZonedDateTime updatedTo,
+            String role
+        ) {
         LinkRuleList linkRules = new LinkRuleList();
         try {
             db.prepare(getFindLinkRulesSQL());
@@ -535,6 +544,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(5, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
             db.setObject(6, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
             db.setObject(7, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
+            db.setString(8, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 linkRules.getValues().add(util.toLinkRuleData(set));
@@ -548,7 +558,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result createOrUpdateLinkRule(String key, LinkRuleData linkRule) {
+    public synchronized Result createOrUpdateLinkRule(String key, LinkRuleData linkRule, String role) {
         Result result = new Result(String.format("LinkRule:%s", key));
         try {
             db.prepare(getSetLinkRuleSQL());
@@ -560,6 +570,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(6, linkRule.getEndItemTypeKey()); // endItemType_param
             db.setObject(7, linkRule.getVersion()); // version_param
             db.setString(8, getUser()); // changed_by_param
+            db.setString(9, role); // roel_key_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_link_rule"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -572,22 +583,13 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteLinkRule(String key) {
-        return delete(getDeleteLinkRuleSQL(), key);
+    public Result deleteLinkRule(String key, String role) {
+        return delete(getDeleteLinkRuleSQL(), key, role);
     }
 
     @Override
-    public Result deleteLinkRules() {
-        return delete(getDeleteLinkRulesSQL(), null);
-    }
-
-    /*
-        CHANGE
-     */
-    @Override
-    public synchronized List<ChangeItemData> findChangeItems() {
-        // TODO: implement findChangeItems()
-        throw new UnsupportedOperationException("findChangeItems");
+    public Result deleteLinkRules(String role) {
+        return delete(getDeleteLinkRulesSQL(), null, role);
     }
 
     @Override
@@ -650,12 +652,18 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteLinkSQL() {
-        return "SELECT delete_link(?::character varying)";
+        return "SELECT delete_link(" +
+                "?::character varying," +
+                "?::character varying" + // role_key_param
+                ")";
     }
 
     @Override
     public String getGetLinkSQL() {
-        return "SELECT * FROM link(?::character varying)";
+        return "SELECT * FROM link(" +
+                "?::character varying," +
+                "?::character varying" + // role_key_param
+                ")";
     }
 
     @Override
@@ -670,7 +678,8 @@ public class PgSqlRepository implements DbRepository {
                 "?::text[]," + // tag
                 "?::hstore," + // attribute
                 "?::bigint," + // version
-                "?::character varying" + // changed_by
+                "?::character varying," + // changed_by
+                "?::character varying" + // role_key_param
                 ")";
     }
 
@@ -687,7 +696,8 @@ public class PgSqlRepository implements DbRepository {
                 "?::timestamp with time zone," + // date_updated_from_param
                 "?::timestamp with time zone," + // date_updated_to_param
                 "?::character varying," + // model_key_param
-                "?::integer" + // max_items
+                "?::integer," + // max_items
+                "?::character varying" + // role_key_param
                 ")";
     }
 
@@ -808,7 +818,9 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteLinkRulesSQL() {
-        return "SELECT delete_link_rules()";
+        return "SELECT delete_link_rules(" +
+                "?::character varying" + // role_key_param
+                ")";
     }
 
     /* tags */
@@ -948,7 +960,7 @@ public class PgSqlRepository implements DbRepository {
         }
         List<LinkRuleData> linkRules = payload.getLinkRules();
         for (LinkRuleData linkRule : linkRules) {
-            Result result = createOrUpdateLinkRule(linkRule.getKey(), linkRule);
+            Result result = createOrUpdateLinkRule(linkRule.getKey(), linkRule, role);
             results.add(result);
         }
         List<ItemData> items = payload.getItems();
@@ -958,7 +970,7 @@ public class PgSqlRepository implements DbRepository {
         }
         List<LinkData> links = payload.getLinks();
         for (LinkData link : links) {
-            Result result = createOrUpdateLink(link.getKey(), link);
+            Result result = createOrUpdateLink(link.getKey(), link, role);
             results.add(result);
         }
         return results;
@@ -1160,7 +1172,8 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," + // start_item_type
                 "?::character varying," + // end_item_type
                 "?::bigint," + // version
-                "?::character varying" + // changed_by
+                "?::character varying," + // changed_by
+                "?::character varying" + // role_key_param
                 ")";
     }
 
@@ -1173,7 +1186,8 @@ public class PgSqlRepository implements DbRepository {
                 "?::timestamp(6) with time zone," +
                 "?::timestamp(6) with time zone," +
                 "?::timestamp(6) with time zone," +
-                "?::timestamp(6) with time zone" +
+                "?::timestamp(6) with time zone," +
+                "?::character varying" + // role_key_param
                 ")";
     }
 

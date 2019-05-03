@@ -276,9 +276,9 @@ DO $$
           -- checks the role has privilege on the passed-in partition
           SELECT p.id
           FROM partition p
-                 INNER JOIN privilege pr on p.id = pr.partition_id
-                 INNER JOIN role r on pr.role_id = r.id
-                 INNER JOIN item i on p.id = i.partition_id
+               INNER JOIN privilege pr on p.id = pr.partition_id
+               INNER JOIN role r on pr.role_id = r.id
+               INNER JOIN item i on p.id = i.partition_id
             AND p.key = partition_key_param -- the passed in partition
             AND pr.can_create = TRUE -- has create permission
             AND r.key = role_key_param -- the user role
@@ -516,7 +516,6 @@ DO $$
       current_version bigint; -- the version of the row before the update or null if no row
       rows_affected   integer;
       model_id_value  integer;
-      partition_id_value bigint;
     BEGIN
       -- checks a model has been specified
       IF (model_key_param IS NULL) THEN
@@ -533,7 +532,7 @@ DO $$
 
       -- finds the partition associated with the model
       -- for the link type that has create rights for the specified role
-      SELECT p.id
+      SELECT COUNT(p.id)
       FROM partition p
       INNER JOIN model m on p.id = m.partition_id
       INNER JOIN privilege pr on p.id = pr.partition_id
@@ -541,9 +540,9 @@ DO $$
         AND pr.can_create = TRUE -- has create permission
         AND r.key = role_key_param -- the user role
         AND m.key = model_key_param -- the model the item type is in
-           INTO partition_id_value;
+      INTO rows_affected;
 
-      IF (partition_id_value IS NULL) THEN
+      IF (rows_affected = 0) THEN
         RAISE EXCEPTION 'Role % is not authorised to create Link Type %.', role_key_param, key_param
           USING hint = 'The role needs to be granted CREATE privilege or a new role should be used instead.';
       END IF;
@@ -628,20 +627,20 @@ DO $$
           If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
        - If the link is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
      */
-    CREATE OR REPLACE FUNCTION set_link(key_param character varying,
-                                        link_type_key_param character varying,
-                                        start_item_key_param character varying,
-                                        end_item_key_param character varying,
-                                        description_param text,
-                                        meta_param jsonb,
-                                        tag_param text[],
-                                        attribute_param hstore,
-                                        local_version_param bigint,
-                                        changed_by_param character varying)
-      RETURNS TABLE
-              (
-                result char(1)
-              )
+    CREATE OR REPLACE FUNCTION set_link(
+      key_param character varying,
+      link_type_key_param character varying,
+      start_item_key_param character varying,
+      end_item_key_param character varying,
+      description_param text,
+      meta_param jsonb,
+      tag_param text[],
+      attribute_param hstore,
+      local_version_param bigint,
+      changed_by_param character varying,
+      role_key_param character varying
+    )
+      RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
       COST 100
       VOLATILE
@@ -681,9 +680,9 @@ DO $$
 
       SELECT i.id, t.key
       FROM item i
-             INNER JOIN item_type t
-                        ON i.item_type_id = t.id
-      WHERE i.key = end_item_key_param INTO end_item_id_value, end_item_type_key_value;
+      INNER JOIN item_type t ON i.item_type_id = t.id
+      WHERE i.key = end_item_key_param
+        INTO end_item_id_value, end_item_type_key_value;
 
       IF (end_item_id_value IS NULL) THEN
         -- the end item does not exist
@@ -711,34 +710,91 @@ DO $$
 
       SELECT version FROM link WHERE key = key_param INTO current_version;
       IF (current_version IS NULL) THEN
-        INSERT INTO link (id,
-                          key,
-                          link_type_id,
-                          start_item_id,
-                          end_item_id,
-                          description,
-                          meta,
-                          tag,
-                          attribute,
-                          version,
-                          created,
-                          updated,
-                          changed_by)
-        VALUES (nextval('link_id_seq'),
-                key_param,
-                link_type_id_value,
-                start_item_id_value,
-                end_item_id_value,
-                description_param,
-                meta_param,
-                tag_param,
-                attribute_param,
-                1,
-                current_timestamp,
-                null,
-                changed_by_param);
+        -- finds if the link can be created by the role
+        SELECT COUNT(*)
+        FROM link_type lt
+          INNER JOIN model m ON lt.model_id = m.id
+          INNER JOIN partition p ON m.partition_id = p.id
+          INNER JOIN privilege pr ON p.id = pr.partition_id
+          INNER JOIN role r ON pr.role_id = r.id
+          WHERE r.key = role_key_param
+          AND pr.can_create = TRUE
+          AND lt.key = link_type_key_param
+          INTO rows_affected;
+
+        IF (rows_affected = 0) THEN
+          RAISE EXCEPTION 'The Role % is not authorised to create the Link % or specified type %.', role_key_param, key_param, link_type_key_param
+            USING hint = 'The role needs to be granted CREATE privilege or a new role should be used instead.';
+        END IF;
+
+        INSERT INTO link (
+          id,
+          key,
+          link_type_id,
+          start_item_id,
+          end_item_id,
+          description,
+          meta,
+          tag,
+          attribute,
+          version,
+          created,
+          updated,
+          changed_by
+        )
+        VALUES (
+          nextval('link_id_seq'),
+          key_param,
+          link_type_id_value,
+          start_item_id_value,
+          end_item_id_value,
+          description_param,
+          meta_param,
+          tag_param,
+          attribute_param,
+          1,
+          current_timestamp,
+          null,
+          changed_by_param
+        );
         result := 'I';
       ELSE
+        -- finds if the link can be updated by the role - using the passed in link type
+        SELECT COUNT(*)
+        FROM link_type lt
+           INNER JOIN model m ON lt.model_id = m.id
+           INNER JOIN partition p ON m.partition_id = p.id
+           INNER JOIN privilege pr ON p.id = pr.partition_id
+           INNER JOIN role r ON pr.role_id = r.id
+        WHERE r.key = role_key_param
+          AND pr.can_create = TRUE
+          AND lt.key = link_type_key_param
+          INTO rows_affected;
+
+        IF (rows_affected = 0) THEN
+          RAISE EXCEPTION 'The Role % is not authorised to create the Link % of specified type %.', role_key_param, key_param, link_type_key_param
+            USING hint = 'The role needs to be granted CREATE privilege or a new role should be used instead.';
+        END IF;
+
+        -- finds if the link can be updated by the role - using the current link type this time
+        SELECT COUNT(*)
+        FROM link_type lt
+           INNER JOIN model m ON lt.model_id = m.id
+           INNER JOIN partition p ON m.partition_id = p.id
+           INNER JOIN privilege pr ON p.id = pr.partition_id
+           INNER JOIN role r ON pr.role_id = r.id
+           INNER JOIN link l ON lt.id = l.link_type_id
+        WHERE r.key = role_key_param
+          AND pr.can_create = TRUE
+          AND lt.id = l.link_type_id
+          AND l.key = key_param
+          INTO rows_affected;
+
+        IF (rows_affected = 0) THEN
+          RAISE EXCEPTION 'The Role % is not authorised to create the Link % of current type %.', role_key_param, key_param, link_type_key_param
+            USING hint = 'The role needs to be granted CREATE privilege or a new role should be used instead.';
+        END IF;
+
         UPDATE link
         SET meta          = meta_param,
             description   = description_param,
@@ -769,7 +825,19 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION set_link(character varying, character varying, character varying, character varying, text, jsonb, text[], hstore, bigint, character varying)
+    ALTER FUNCTION set_link(
+        character varying,
+        character varying,
+        character varying,
+        character varying,
+        text,
+        jsonb,
+        text[],
+        hstore,
+        bigint,
+        character varying,
+        character varying -- role_key_param
+      )
       OWNER TO onix;
 
     /*
@@ -780,20 +848,19 @@ DO $$
           In this case, if a null regex is passed as local_version_param, no optimistic locking is performed.
           If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
        - If the link rule is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
-
      */
-    CREATE OR REPLACE FUNCTION set_link_rule(key_param character varying,
-                                             name_param character varying,
-                                             description_param text,
-                                             link_type_key_param character varying,
-                                             start_item_type_key_param character varying,
-                                             end_item_type_key_param character varying,
-                                             local_version_param bigint,
-                                             changed_by_param character varying)
-      RETURNS TABLE
-              (
-                result char(1)
-              )
+    CREATE OR REPLACE FUNCTION set_link_rule(
+      key_param character varying,
+      name_param character varying,
+      description_param text,
+      link_type_key_param character varying,
+      start_item_type_key_param character varying,
+      end_item_type_key_param character varying,
+      local_version_param bigint,
+      changed_by_param character varying,
+      role_key_param character varying
+    )
+      RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
       COST 100
       VOLATILE
@@ -816,30 +883,70 @@ DO $$
       SELECT id FROM item_type WHERE key = end_item_type_key_param INTO end_item_type_id_value;
 
       IF (current_version IS NULL) THEN
-        INSERT INTO link_rule (id,
-                               key,
-                               name,
-                               description,
-                               link_type_id,
-                               start_item_type_id,
-                               end_item_type_id,
-                               version,
-                               created,
-                               updated,
-                               changed_by)
-        VALUES (nextval('link_rule_id_seq'),
-                key_param,
-                name_param,
-                description_param,
-                link_type_id_value,
-                start_item_type_id_value,
-                end_item_type_id_value,
-                1,
-                current_timestamp,
-                null,
-                changed_by_param);
+        -- check if the role can create the link rule
+        SELECT COUNT(*)
+        FROM link_type lt
+               INNER JOIN model m ON lt.model_id = m.id
+               INNER JOIN partition p ON m.partition_id = p.id
+               INNER JOIN privilege pr ON p.id = pr.partition_id
+               INNER JOIN role r ON pr.role_id = r.id
+        WHERE r.key = role_key_param
+          AND pr.can_create = TRUE
+          AND lt.key = link_type_key_param
+          INTO rows_affected;
+
+        IF (rows_affected = 0) THEN
+          RAISE EXCEPTION 'The Role % is not authorised to create the Link Rule %.', role_key_param, key_param
+            USING hint = 'The role needs to be granted CREATE privilege or a new role should be used instead.';
+        END IF;
+
+        INSERT INTO link_rule (
+           id,
+           key,
+           name,
+           description,
+           link_type_id,
+           start_item_type_id,
+           end_item_type_id,
+           version,
+           created,
+           updated,
+           changed_by
+        )
+        VALUES (
+          nextval('link_rule_id_seq'),
+          key_param,
+          name_param,
+          description_param,
+          link_type_id_value,
+          start_item_type_id_value,
+          end_item_type_id_value,
+          1,
+          current_timestamp,
+          null,
+          changed_by_param
+        );
         result := 'I';
       ELSE
+        -- checks if the existing link rule can be updated by the specified role
+        SELECT COUNT(*)
+        FROM link_rule lr
+               INNER JOIN link_type lt ON lr.link_type_id = lt.id
+               INNER JOIN model m ON lt.model_id = m.id
+               INNER JOIN partition p on m.partition_id = p.id
+               INNER JOIN privilege pr on p.id = pr.partition_id
+               INNER JOIN role r on pr.role_id = r.id
+        WHERE r.key = role_key_param
+          AND pr.can_create = TRUE
+          AND lr.key = key_param
+          AND lt.key = link_type_key_param
+          INTO rows_affected;
+
+        IF (rows_affected = 0) THEN
+          RAISE EXCEPTION 'The Role % is not authorised to update the Link Rule %.', role_key_param, key_param
+            USING hint = 'The role needs to be granted CREATE privilege or a new role should be used instead.';
+        END IF;
+
         UPDATE link_rule
         SET name               = name_param,
             description        = description_param,
@@ -866,7 +973,17 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION set_link_rule(character varying, character varying, text, character varying, character varying, character varying, bigint, character varying)
+    ALTER FUNCTION set_link_rule(
+      character varying,
+      character varying,
+      text,
+      character varying,
+      character varying,
+      character varying,
+      bigint,
+      character varying,
+      character varying -- role_key_param
+    )
       OWNER TO onix;
 
   END

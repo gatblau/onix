@@ -76,7 +76,7 @@ DO
         character varying, -- key_param
         character varying -- role_key_param
       )
-        OWNER TO onix;
+      OWNER TO onix;
 
       /*
         gets an item_type by its natural key.
@@ -137,7 +137,10 @@ DO
         gets a link by its natural key.
         use: select * from link('the_link_key')
        */
-      CREATE OR REPLACE FUNCTION link(key_param character varying)
+      CREATE OR REPLACE FUNCTION link(
+        key_param character varying,
+        role_key_param character varying
+      )
         RETURNS TABLE(
           id bigint,
           "key" character varying,
@@ -175,17 +178,20 @@ DO
             l.updated,
             l.changed_by
           FROM link l
-                 INNER JOIN link_type lt
-                            ON l.link_type_id = lt.id
-                 INNER JOIN item start_item
-                            ON l.start_item_id = start_item.id
-                 INNER JOIN item end_item
-                            ON l.end_item_id = end_item.id
-          WHERE l.key = key_param;
+          INNER JOIN link_type lt ON l.link_type_id = lt.id
+          INNER JOIN item start_item ON l.start_item_id = start_item.id
+          INNER JOIN item end_item ON l.end_item_id = end_item.id
+          INNER JOIN model m on lt.model_id = m.id
+          INNER JOIN partition p on m.partition_id = p.id
+          INNER JOIN privilege pr on p.id = pr.partition_id
+          INNER JOIN role r on pr.role_id = r.id
+          WHERE l.key = key_param
+          AND r.key = role_key_param
+          AND pr.can_read = TRUE;
       END;
       $BODY$;
 
-      ALTER FUNCTION link(character varying)
+      ALTER FUNCTION link(character varying, character varying)
         OWNER TO onix;
 
       /*

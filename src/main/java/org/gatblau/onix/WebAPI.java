@@ -484,9 +484,13 @@ public class WebAPI {
         @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
     )
     public ResponseEntity<Result> createOrUpdateLink(
-            @PathVariable("key") String key,
-            @RequestBody LinkData link) {
-        Result result = data.createOrUpdateLink(key, link);
+            @PathVariable("key")
+            String key,
+            @RequestBody
+            LinkData link,
+            Authentication authentication
+    ) {
+        Result result = data.createOrUpdateLink(key, link, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -495,9 +499,10 @@ public class WebAPI {
             notes = "Use this operation to delete links between existing items.")
     @RequestMapping(path = "/link/{key}", method = RequestMethod.DELETE)
     public ResponseEntity<Result> deleteLink(
-            @PathVariable("key") String key
+            @PathVariable("key") String key,
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteLink(key));
+        return ResponseEntity.ok(data.deleteLink(key, getRole(authentication)));
     }
 
     @ApiOperation(
@@ -509,8 +514,11 @@ public class WebAPI {
             , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<LinkData> getLink(
-            @PathVariable("key") String key) {
-        return ResponseEntity.ok(data.getLink(key));
+        @PathVariable("key")
+        String key,
+        Authentication authentication
+    ) {
+        return ResponseEntity.ok(data.getLink(key, getRole(authentication)));
     }
 
     @ApiOperation(
@@ -533,6 +541,7 @@ public class WebAPI {
             , @RequestParam(value = "updatedTo", required = false) String updatedToDate
             , @RequestParam(value = "model", required = false) String modelKey
             , @RequestParam(value = "top", required = false, defaultValue = "100") Integer top
+            , Authentication authentication
     ) {
         List<String> tagList = null;
         if (tag != null) {
@@ -540,16 +549,17 @@ public class WebAPI {
             tagList = Arrays.asList(tags);
         }
         LinkList list = data.findLinks(
-                linkTypeKey,
-                startItemKey,
-                endItemKey,
-                tagList,
-                getDate(createdFromDate),
-                getDate(createdToDate),
-                getDate(updatedFromDate),
-                getDate(updatedToDate),
-                modelKey,
-                top
+            linkTypeKey,
+            startItemKey,
+            endItemKey,
+            tagList,
+            getDate(createdFromDate),
+            getDate(createdToDate),
+            getDate(updatedFromDate),
+            getDate(updatedToDate),
+            modelKey,
+            top,
+            getRole(authentication)
         );
         return ResponseEntity.ok(list);
     }
@@ -673,8 +683,10 @@ public class WebAPI {
             path = "/linkrule"
             , method = RequestMethod.DELETE
     )
-    public void deleteLinkRules() {
-        data.deleteLinkRules();
+    public void deleteLinkRules(
+            Authentication authentication
+    ) {
+        data.deleteLinkRules(getRole(authentication));
     }
 
     @ApiOperation(
@@ -694,9 +706,10 @@ public class WebAPI {
         @PathVariable("key")
         String key,
         @RequestBody
-        LinkRuleData linkRule
+        LinkRuleData linkRule,
+        Authentication authentication
     ) {
-        Result result = data.createOrUpdateLinkRule(key, linkRule);
+        Result result = data.createOrUpdateLinkRule(key, linkRule, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -716,6 +729,7 @@ public class WebAPI {
             , @RequestParam(value = "createdTo", required = false) String createdToDate
             , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
             , @RequestParam(value = "updatedTo", required = false) String updatedToDate
+            , Authentication authentication
     ) {
         LinkRuleList linkRules = data.getLinkRules(
                 linkType,
@@ -724,7 +738,8 @@ public class WebAPI {
                 getDate(createdFromDate),
                 getDate(createdToDate),
                 getDate(updatedFromDate),
-                getDate(updatedToDate));
+                getDate(updatedToDate),
+                getRole(authentication));
         return ResponseEntity.ok(linkRules);
     }
 
@@ -980,6 +995,12 @@ public class WebAPI {
     }
 
     private String getRole(Authentication authentication) {
+        // if the service is configured not to use authentication
+        if (authentication == null) {
+            // then return the ADMIN role
+            return "ADMIN";
+        }
+        // otherwise uses the role in the first authority
         String role = null;
         for (GrantedAuthority authority : authentication.getAuthorities()){
             role = authority.getAuthority();
@@ -987,6 +1008,4 @@ public class WebAPI {
         }
         return role.substring("ROLE_".length());
     }
-
-
 }

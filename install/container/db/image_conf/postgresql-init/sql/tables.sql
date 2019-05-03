@@ -879,15 +879,15 @@ DO
           CONSTRAINT link_rule_start_item_type_id_fk FOREIGN KEY (start_item_type_id)
             REFERENCES item_type (id) MATCH SIMPLE
             ON UPDATE NO ACTION
-            ON DELETE NO ACTION,
+            ON DELETE CASCADE,
           CONSTRAINT link_rule_end_item_type_id_fk FOREIGN KEY (end_item_type_id)
             REFERENCES item_type (id) MATCH SIMPLE
             ON UPDATE NO ACTION
-            ON DELETE NO ACTION,
+            ON DELETE CASCADE,
           CONSTRAINT link_rule_link_type_id_fk FOREIGN KEY (link_type_id)
             REFERENCES link_type (id) MATCH SIMPLE
             ON UPDATE NO ACTION
-            ON DELETE NO ACTION
+            ON DELETE CASCADE
         )
           WITH (OIDS = FALSE)
           TABLESPACE pg_default;
