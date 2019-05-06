@@ -17,8 +17,10 @@ Contributors to this project, hereby assign copyright in their code to the
 project, to be licensed under the same terms as the rest of the code.
 */
 
-package org.gatblau.onix;
+package org.gatblau.onix.security;
 
+import org.gatblau.onix.security.OIDCFilter;
+import org.gatblau.onix.security.OnixBasicAuthEntryPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -26,15 +28,23 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.OAuth2RestTemplate;
+import org.springframework.security.oauth2.client.filter.OAuth2ClientContextFilter;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+    @Autowired
+    private OAuth2RestTemplate restTemplate;
+
     @Autowired
     private OnixBasicAuthEntryPoint authenticationEntryPoint;
 
@@ -96,10 +106,32 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/**").permitAll().and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         }
+        else if (authMode.equals("oidc")) {
+            http
+                .addFilterAfter(new OAuth2ClientContextFilter(), AbstractPreAuthenticatedProcessingFilter.class)
+                .addFilterAfter(oidcFilter(), OAuth2ClientContextFilter.class)
+                .httpBasic().authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/oidc-login"))
+                .and()
+                .authorizeRequests()
+                .anyRequest().authenticated()
+                ;
+        }
+    }
+
+    @Bean
+    public OIDCFilter oidcFilter() {
+        final OIDCFilter filter = new OIDCFilter("/oidc-login");
+        filter.setRestTemplate(restTemplate);
+        return filter;
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring().antMatchers("/resources/**");
     }
 }

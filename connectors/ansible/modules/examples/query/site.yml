@@ -5,7 +5,7 @@
         uri: "{{ wapi_uri }}" # the URL where the Onix WAPI is listening
         username: "{{ user }}" # the username for basic authentication
         password: "{{ pwd }}" # the password for basic authentication
-        auth_mode: "basic" # the authentication to use (e.g. none, basic, oidc)
+        auth_mode: "basic" # the authentication to use (e.g. none, basic, security)
 
     - name: import a model and items from file
       ox_import:

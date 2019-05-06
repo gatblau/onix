@@ -338,16 +338,17 @@ $ curl \
     -X PUT \
     -H 'ContentType: application/json' \
     -H '${AUTH_HEADER}' \
-    -d '@model_payload.json' \
-    'http://localhost:8080/model/awsec2' 
+    -d '@item_type_payload.json' \
+    'http://localhost:8080/itemtype/AWS_INSTANCE' 
 ```
 
-__model_payload.json__:
+__item_type_payload.json__:
 
 ```json
 {
-  "name": "AWS EC2 Model",
-  "description": "Definitions for AWS Elastic Compute Cloud items and their relationships."
+  "name": "AWS Instance",
+  "description": "An Virtual Machine in AWS EC2.",
+  "modelKey": "meta_model_1"
 }
 ```
 
@@ -355,26 +356,24 @@ __result__:
 
 ```json
 {
-  "ref": "model:awsec2",
+  "ref": "itemType:AWS_INSTANCE",
   "changed": "true",
   "error": "false",
-  "message": "", 
-  "operation": "I", 
+  "message": "",
+  "operation": "I"
 }
 ```
 
 ### Delete
 
-In order to delete a model the following command can be executed:
+In order to delete an item type the following command can be executed:
 
 ```bash
 $ curl \
     -X DELETE \
     -H '${AUTH_HEADER}' \
-    'http://localhost:8080/model/awsec2' 
+    'http://localhost:8080/itemtype/AWS_INSTANCE' 
 ```
-
-__NOTE__: deleting a Model, forces the deletion of the Link Types and Item Types related to that Model. Item and Links have to be deleted before a model can be deleted.
 
 ### Query
 
@@ -382,8 +381,12 @@ The following model queries are available:
 
 | _Query_ | _Description_ |
 |---|---|
-| __GET /model/{model_key}__ | Retrieve the model for the specified natural key. |
-| __GET /model/{model_key}/data__| Retrieve a list of Item Types and Link Types that comprise the specified model. |
-| __GET /models__ | Retrieve a list of all models in the system. |
+| __GET /itemtype/{item_type_key}__ | Retrieve the item type for the specified natural key. |
+| __GET /itemtype__ | Retrieve a list of all item types in the system. |
 
 --------------------------------
+# Using Swagger for Documentation
+
+As all resources in the Web API are documented using Swagger, it makes sense to look at the Onix WAPI Swagger UI for a full reference.
+
+The Swagger UI which can be found under the __http(s)://host:port/swagger-ui.html__ URL.

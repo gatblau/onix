@@ -16,7 +16,6 @@ limitations under the License.
 Contributors to this project, hereby assign copyright in their code to the
 project, to be licensed under the same terms as the rest of the code.
 */
-
 package org.gatblau.onix;
 
 import com.jayway.jsonpath.JsonPath;

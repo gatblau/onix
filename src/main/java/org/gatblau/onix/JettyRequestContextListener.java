@@ -19,24 +19,14 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.context.request.RequestContextListener;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import javax.servlet.annotation.WebListener;
 
-@SpringBootApplication
-public class App {
-
-    public static void main(String[] args) {
-        SpringApplication.run(App.class, args);
-    }
-
-    @PostConstruct
-    private void onStartUp(){
-    }
-
-    @PreDestroy
-    private void onShutDown(){
-    }
+@Configuration
+@WebListener
+public class JettyRequestContextListener extends RequestContextListener {
+    // NOTE: if running Jetty web server, the RequestContextListener needs to
+    // be added to the configuration so that the OIDC feature can work
 }
