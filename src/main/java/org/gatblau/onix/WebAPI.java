@@ -22,17 +22,13 @@ package org.gatblau.onix;
 import io.swagger.annotations.*;
 import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -53,6 +49,16 @@ public class WebAPI {
     private Info info;
 
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+
+    @ApiOperation(
+            value = "Returns the username of the logged on user.",
+            notes = "",
+            response = String.class)
+    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
+    public synchronized final String user() {
+        final String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return String.format("You are logged on as: '%s'", username);
+    }
 
     @ApiOperation(
             value = "Returns information about the service.",

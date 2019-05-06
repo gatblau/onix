@@ -7,6 +7,8 @@ This section provides an architectural overview.
 
 - [Business View](#business-view)
 - [Data View](#data-view)
+  - [Semantic Model](#semantic-model)
+  - [Logical Model](#logical-model)
 - [Application View](#application-view)
 - [Technology View](#technology-view)
 
@@ -70,12 +72,25 @@ The following figure shows the [semantic model](https://en.wikipedia.org/wiki/Se
 - **Link Rules** apply to particular **Links** and restrict what **Item Types** the **Link** can connect.
 - **Models** are collections of **Item Types** and **Link Types**.
 
-<a name="relational-model"></a>
+In addition to the relations described above, role based access controls (RBAC) are also defined in the model - using partitions, privileges and roles - as described in the [RBAC section](./rbac.md#semantic-model).
+
+![Semantic RBAC Data Model](./pics/semantic_rbac_model.png "Onix Semantic RBAC Data Model")
+
+<a name="logical-model"></a>
 ## Logical Model
 
-The following picture shows the Onix logical data model:
+The following picture shows the Onix logical data model, which is comprised of three main areas:
+- [Role Based Access Controls](./rbac.md): contains the entities required to partition the data model and grant privileges to selected partitions based on roles.
+- [Models](../models/readme.md): define the types of items, links and link rules.
+- Configuration Items: stores the configuration information based on predefined models.:
 
-![Logical Data Model](./pics/logical_model.png "Onix Relational Data Model")
+![Logical Data Model](./pics/logical_model.png "Onix Logical Data Model")
+
+### Change Entities
+
+Each entity in the model has a corresponding ___change entity___, which stores any change ever performed to an entity. 
+
+Change entities also record operation executed (**I**nsert, **U**pdate, or **D**elete), the time of the change and the user/role who performed the change.
 
 <a name="application-view"></a>
 ## Application View [(up)](#toc)
