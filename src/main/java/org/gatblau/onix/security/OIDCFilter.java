@@ -114,7 +114,6 @@ public class OIDCFilter extends AbstractAuthenticationProcessingFilter {
         if (
             expireDate.before(now) ||
             !claims.get("iss").equals(issuer) ||
-            !claims.get("aud").equals(audience) ||
             claims.get("role") == null ||
             claims.get("sub") == null
         ) {
