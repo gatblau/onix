@@ -1,4 +1,4 @@
-# Role Based Access Controls
+# Role Based Access Controls <img src="./pics/ox.png" width="160" height="160" align="right">
 
   - [Semantic Model](#semantic-model)
   - [Default partitions](#default-partitions)

@@ -51,18 +51,12 @@ public class OIDCConfig {
 
     @Bean
     public OAuth2ProtectedResourceDetails oidcResourceDetails() {
-        checkConfig("OIDC_CLIENT_ID", clientId);
-        checkConfig("OIDC_CLIENT_SECRET", clientSecret);
-        checkConfig("OIDC_ACCESS_TOKEN_URI", accessTokenUri);
-        checkConfig("OIDC_USER_AUTH_URI", userAuthorizationUri);
-        checkConfig("OIDC_REDIRECT_URI", redirectUri);
-
         AuthorizationCodeResourceDetails details = new AuthorizationCodeResourceDetails();
         details.setClientId(clientId);
         details.setClientSecret(clientSecret);
         details.setAccessTokenUri(accessTokenUri);
         details.setUserAuthorizationUri(userAuthorizationUri);
-        details.setScope(Arrays.asList("openid", "email"));
+        details.setScope(Arrays.asList("openid", "email", "onix"));
         details.setPreEstablishedRedirectUri(redirectUri);
         details.setUseCurrentUri(false);
         return details;
@@ -72,11 +66,5 @@ public class OIDCConfig {
     public OAuth2RestTemplate oidcTemplate(final OAuth2ClientContext clientContext) {
         final OAuth2RestTemplate template = new OAuth2RestTemplate(oidcResourceDetails(), clientContext);
         return template;
-    }
-
-    private static void checkConfig(String variableName, String value) {
-        if (value == null || value.trim().length() == 0) {
-            throw new RuntimeException(String.format("Variable '%s' not specified.", variableName));
-        }
     }
 }
