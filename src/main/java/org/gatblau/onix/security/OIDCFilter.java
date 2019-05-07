@@ -55,6 +55,9 @@ public class OIDCFilter extends AbstractAuthenticationProcessingFilter {
     @Value("${oidc.jwkUrl}")
     private String jwkUrl;
 
+    @Value("${oidc.audience}")
+    private String audience;
+
     public OAuth2RestOperations restTemplate;
 
     public OIDCFilter(String defaultFilterProcessesUrl) {
@@ -74,23 +77,47 @@ public class OIDCFilter extends AbstractAuthenticationProcessingFilter {
             throw new BadCredentialsException("Could not obtain access token", e);
         }
         try {
+            // process the openid id_token
             final String idToken = accessToken.getAdditionalInformation().get("id_token").toString();
             String kid = JwtHelper.headers(idToken).get("kid");
-            final Jwt tokenDecoded = JwtHelper.decodeAndVerify(idToken, verifier(kid));
-            final Map<String, String> authInfo = new ObjectMapper().readValue(tokenDecoded.getClaims(), Map.class);
-            verifyClaims(authInfo);
-            final OIDCUserDetails user = new OIDCUserDetails(authInfo, accessToken);
+            final RsaVerifier verifier = verifier(kid);
+
+            final Jwt decodedIdToken = JwtHelper.decodeAndVerify(idToken, verifier);
+            final Map<String, String> authenticationInfo = new ObjectMapper().readValue(decodedIdToken.getClaims(), Map.class);
+            verifyAuthenticationClaims(authenticationInfo);
+
+            //process the oauth 2.0 access_token
+            final Jwt decodedAccessToken = JwtHelper.decodeAndVerify(accessToken.getValue(), verifier);
+            final Map<String, String> authorisationInfo = new ObjectMapper().readValue(decodedAccessToken.getClaims(), Map.class);
+            verifyAuthorisationClaims(authorisationInfo);
+
+            final OIDCUserDetails user = new OIDCUserDetails(authenticationInfo, authorisationInfo, accessToken);
             return new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
         } catch (final Exception e) {
             throw new BadCredentialsException("Could not obtain user details from token", e);
         }
     }
 
-    public void verifyClaims(Map claims) {
+    public void verifyAuthenticationClaims(Map claims) {
         int exp = (int) claims.get("exp");
         Date expireDate = new Date(exp * 1000L);
         Date now = new Date();
         if (expireDate.before(now) || !claims.get("iss").equals(issuer) || !claims.get("aud").equals(clientId)) {
+            throw new RuntimeException("Invalid claims");
+        }
+    }
+
+    public void verifyAuthorisationClaims(Map claims) {
+        int exp = (int) claims.get("exp");
+        Date expireDate = new Date(exp * 1000L);
+        Date now = new Date();
+        if (
+            expireDate.before(now) ||
+            !claims.get("iss").equals(issuer) ||
+            !claims.get("aud").equals(audience) ||
+            claims.get("role") == null ||
+            claims.get("sub") == null
+        ) {
             throw new RuntimeException("Invalid claims");
         }
     }

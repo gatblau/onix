@@ -2,11 +2,13 @@
 
 In the beginning, there were proprietary approaches to working with external identity providers for authentication and authorisation. 
 
-Then came SAML (Security Assertion Markup Language) – an open standard using XML as its message exchange type. Then, there was OAuth and OAuth 2.0 using a RESTful approach to authorisation using JSON as its data format. 
+Then SAML (Security Assertion Markup Language) was designed as an open standard using SOAP and XML as its data format. 
+
+Then, there was OAuth and OAuth 2.0 using a RESTful approach to authorisation using JSON as its data format instead.
 
 Today, the preferred way of dealing with “secure delegated access” is OpenID Connect (a.k.a OIDC).
 
-[OpenID Connect](https://openid.net/connect/) is a simple identity layer on top of the OAuth 2.0 protocol, that specifies a RESTful HTTP API, using JSON as a data format.
+[OpenID Connect](https://openid.net/connect/) is an identity layer running on top of the OAuth 2.0 protocol, that specifies a RESTful HTTP API, using JSON as a data format.
 
  It allows computing clients to verify the identity of an end-user based on the authentication performed by an authorisation server, as well as to obtain end-user profile information.
 
@@ -67,14 +69,45 @@ Information on how to create an OpenId Connect application in Okta can be found 
 
 ## Authorising users
 
-In order to authorise logged on users, the OpenId token must contain a claim called __ox_role__ with the name of the role granted to the user.
+OpenID Connect employs OAuth 2.0 access tokens to allow client apps to retrieve user information from the UserInfo endpoint.
 
-The following picture shows how to add a static claim in an Okta token:
+Additionally, access tokens can carry claims which are used by the protected resources to determine if the user has access to the resources.
 
-![Adding a ox_claim](./pics/ox_role.png "Adding ox_claim to token")
+### ___Onix Scope___
+An OpenID provider for Onix Web API will have to add a new access token scope called __onix__.
 
-Typically, this claim should be added based on the user group membership in the backing user directory.
+The following picture shows how to add the new scope in Okta:
 
-This role is then mapped within Onix to partitions via Read, Write and/or Delete privileges.
+![Creating an Onix scope](./pics/onix_scope.png "Creating an Onix scope")
 
-For more information about Role Based Access Control see [here](./rbac.md).
+### ___Role Claim___
+In order to authorise logged on users, the OAuth 2.0 access token must contain a claim called __role__ with the name of the role granted to the user.
+
+The following picture shows how to add a static claim in an Okta OAuth 2.0 access token:
+
+![Adding a role claim](./pics/role_claim.png "Adding role claim to the access token")
+
+Typically, the value of this claim should be dynamically determined based on the user group membership in the backing  directory.
+
+The access token should look like this:
+
+```json
+{
+  "ver": 1,
+  "jti": "AT.0W3TBumYCMDdQuL-qMGlon92cUs2gwuuK-u6Y8ILG0I",
+  "iss": "https://dev-447786.okta.com/oauth2/default",
+  "aud": "api://default",
+  "iat": 1557194369,
+  "exp": 1557197969,
+  "cid": "0oajnv4r0YLOYRtO0356",
+  "uid": "00ujnmh8y3dvzmyXY356",
+  "scp": [
+    "openid",
+    "onix"
+  ],
+  "sub": "user@mail.com",
+  "role": "ADMIN"
+}
+```
+
+The role is then mapped within the Onix WAPI to data model logical partitions via Read, Write and/or Delete privileges according to the model described [here](./rbac.md).

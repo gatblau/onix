@@ -33,22 +33,26 @@ public class OIDCUserDetails implements UserDetails {
     private String userId;
     private String username;
     private OAuth2AccessToken token;
-    private List<GrantedAuthority> authorities = new ArrayList<>();
+    private List<GrantedAuthority> authorities;
 
-    public OIDCUserDetails(Map<String, String> userInfo, OAuth2AccessToken token) {
-        this.userId = userInfo.get("sub");
-        this.username = userInfo.get("email");
-
-        // get authority from the "ox_role" claim
-        String role = userInfo.get("ox_role");
-        if (role != null && role.length() > 0) {
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
-        } else {
-            System.out.println(String.format("WARNING: Claim 'ox_role' was not found in access token for user '%s'. " +
-                    "No access to resources will be provided. " +
-                    "Check the configuration of your Authorisation Server.", username));
-        }
+    public OIDCUserDetails(
+            Map<String, String> authenticationInfo,
+            Map<String, String> authorisationInfo,
+            OAuth2AccessToken token
+    ) {
+        this.userId = authenticationInfo.get("sub");
+        this.username = authenticationInfo.get("email");
+        this.authorities = extractAuthorities(authorisationInfo);
         this.token = token;
+    }
+
+    private static List<GrantedAuthority> extractAuthorities(Map<String, String> authorisationInfo) {
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        String role = authorisationInfo.get("role");
+        if (role != null) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+        }
+        return authorities;
     }
 
     @Override
