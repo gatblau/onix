@@ -24,6 +24,7 @@ Today, the preferred way of dealing with “secure delegated access” is OpenID
  |---|---|
  | __AUTH_MODE__ | The authentication mode used by the Onix Web API, must be set it to "__oidc__". |
  | __OIDC_ISSUER__ | The name of the token issuer. |
+ | __OIDC_AUDIENCE__ | Identifies the audience that the ID token is intended for. |
  | __OIDC_JWKURL__ | The URI whwre the issuer has published the JavaScript Web Key certificates used to validate Java Web Tokens. |
  | __OIDC_REDIRECT_URI__ | The resource server endpoint prfroming the login. __Note:__ in the Onix Web API the endpoint is "_/oidc-login_". |
 | __OIDC_USER_AUTH_URI__ | The URI of the authorisation server. |
@@ -81,9 +82,9 @@ The following picture shows how to add the new scope in Okta:
 ![Creating an Onix scope](./pics/onix_scope.png "Creating an Onix scope")
 
 ### ___Role Claim___
-In order to authorise logged on users, the OAuth 2.0 access token must contain a claim called __role__ with the name of the role granted to the user.
+In order to authorise logged on users, the OAuth 2.0 access token must contain a claim called __role__ under the __onix__ scope, with the name of the role granted to the user.
 
-The following picture shows how to add a static claim in an Okta OAuth 2.0 access token:
+The following picture shows an example of adding a static role claim in an Okta OAuth 2.0 access token:
 
 ![Adding a role claim](./pics/role_claim.png "Adding role claim to the access token")
 
