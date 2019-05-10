@@ -55,9 +55,6 @@ public class OIDCFilter extends AbstractAuthenticationProcessingFilter {
     @Value("${oidc.jwkUrl}")
     private String jwkUrl;
 
-    @Value("${oidc.audience}")
-    private String audience;
-
     public OAuth2RestOperations restTemplate;
 
     public OIDCFilter(String defaultFilterProcessesUrl) {

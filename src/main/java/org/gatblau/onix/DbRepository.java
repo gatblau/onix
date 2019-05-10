@@ -156,4 +156,15 @@ public interface DbRepository {
     String getSetModelSQL();
     String getGetModelsSQL();
     String getGetModelSQL();
+
+    /* Partitions */
+    String getDeletePartitionSQL();
+    String getSetPartitionSQL();
+    String getGetAllPartitionsSQL();
+    String getGetPartitionSQL();
+
+    Result deletePartition(String key, String role);
+    Result createOrUpdatePartition(String key, PartitionData partition, String role);
+    PartitionDataList getAllPartitions(String role);
+    PartitionData getPartition(String key, String role);
 }

@@ -256,4 +256,18 @@ public class Lib implements InitializingBean {
         model.setChangedBy(set.getString("changed_by"));
         return model;
     }
+
+    public PartitionData toPartitionData(ResultSet set) throws SQLException {
+        Date updated = set.getDate("updated");
+
+        PartitionData part = new PartitionData();
+        part.setKey(set.getString("key"));
+        part.setName(set.getString("name"));
+        part.setDescription(set.getString("description"));
+        part.setCreated(dateFormat.format(set.getDate("created")));
+        part.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+        part.setVersion(set.getInt("version"));
+        part.setChangedBy(set.getString("changed_by"));
+        return part;
+    }
 }

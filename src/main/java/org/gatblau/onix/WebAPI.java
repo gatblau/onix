@@ -351,6 +351,88 @@ public class WebAPI {
     }
 
     /*
+        PARTITIONS
+     */
+    @ApiOperation(
+            value = "Deletes a logical partition.",
+            notes = "")
+    @RequestMapping(
+            path = "/partition/{key}"
+            , method = RequestMethod.DELETE
+    )
+    public ResponseEntity<Result> deletePartition(
+            @ApiParam(
+                name = "key",
+                value = "A string which uniquely identifies the logical partition and never changes.",
+                required = true,
+                example = "partition_01"
+            )
+            @PathVariable("key")
+            String key,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(data.deletePartition(key, getRole(authentication)));
+    }
+
+    @ApiOperation(
+            value = "Creates a new logical partition for RBAC.",
+            notes = "The role executing this action has to be an admin role.")
+    @RequestMapping(
+            path = "/partition/{key}"
+            , method = RequestMethod.PUT)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "No changes where performed to the configuration item type."),
+            @ApiResponse(code = 201, message = "The configuration item type was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+            @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
+            @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+    )
+    public ResponseEntity<Result> createOrUpdatePartition(
+            @ApiParam(
+                name = "key",
+                value = "A string which uniquely identifies the partition and never changes.",
+                required = true,
+                example = "part_01"
+            )
+            @PathVariable("key")
+            String key,
+            @RequestBody
+            PartitionData partition,
+            Authentication authentication
+    ) {
+        Result result = data.createOrUpdatePartition(key, partition, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
+    }
+
+    @ApiOperation(
+            value = "Get all logical partitions.",
+            notes = "")
+    @RequestMapping(
+            path = "/partition"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<PartitionDataList> getAllPartitions(Authentication authentication) {
+        return ResponseEntity.ok(data.getAllPartitions(getRole(authentication)));
+    }
+
+    @ApiOperation(
+            value = "Get a logical partition based on the specified key.",
+            notes = "")
+    @RequestMapping(
+            path = "/partition/{key}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<PartitionData> getParttition(
+            @PathVariable("key")
+            String key,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(data.getPartition(key, getRole(authentication)));
+    }
+
+    /*
         ITEM TYPES
      */
 

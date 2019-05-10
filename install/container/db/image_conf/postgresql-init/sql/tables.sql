@@ -16,6 +16,33 @@ DO
   $$
     BEGIN
       ---------------------------------------------------------------------------
+      -- VERSION - version of releases (not only database)
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'version')
+      THEN
+        CREATE TABLE version
+        (
+          release       CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+          name          CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          description   TEXT COLLATE pg_catalog."default",
+          created       timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
+          change_schema boolean,
+          change_fxs    boolean,
+          CONSTRAINT version_release_pk PRIMARY KEY (release),
+          CONSTRAINT version_name_uc UNIQUE (name)
+        )
+          WITH (
+            OIDS = FALSE
+          )
+          TABLESPACE pg_default;
+
+        ALTER TABLE version
+          OWNER to onix;
+
+        INSERT INTO version(release, name, change_schema, change_fxs) VALUES ('1.0.0', 'First release.', true, true);
+      END IF;
+
+      ---------------------------------------------------------------------------
       -- PARTITION
       ---------------------------------------------------------------------------
       IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'partition')
@@ -132,6 +159,7 @@ DO
           created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated     timestamp(6) with time zone,
           changed_by  CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
+          admin       boolean                         default false,
           CONSTRAINT role_id_pk PRIMARY KEY (id),
           CONSTRAINT role_key_uc UNIQUE (key),
           CONSTRAINT role_name_uc UNIQUE (name)
@@ -162,7 +190,8 @@ DO
           version     bigint,
           created     timestamp(6) with time zone,
           updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default"
+          changed_by  CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
+          admin       boolean
         );
 
         ALTER TABLE role_change
@@ -193,8 +222,8 @@ DO
 
       END IF;
 
-      INSERT INTO role(id, key, name, description, version, changed_by)
-      VALUES (1, 'ADMIN', 'System Administrator', 'Can read and write configuration data models.', 1, 'onix');
+      INSERT INTO role(id, key, name, description, version, changed_by, admin)
+      VALUES (1, 'ADMIN', 'System Administrator', 'Can read and write configuration data models.', 1, 'onix', true);
       INSERT INTO role(id, key, name, description, version, changed_by)
       VALUES (2, 'READER', 'System Reader', 'Can only read configuration data and models.', 1, 'onix');
       INSERT INTO role(id, key, name, description, version, changed_by)
@@ -293,12 +322,19 @@ DO
 
       END IF;
 
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by) VALUES (1, 1, 0, true, true, true, 1, 'onix'); -- admin privilege on part 0
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by) VALUES (2, 1, 1, true, true, true, 1, 'onix'); -- admin privilege on part 1
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by) VALUES (3, 2, 0, false, true, false, 1, 'onix'); -- reader privilege on part 0
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by) VALUES (4, 2, 1, false, true, false, 1, 'onix'); -- reader privilege on part 1
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by) VALUES (5, 3, 0, false, true, false, 1, 'onix'); -- writer privilege on part 0
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by) VALUES (6, 3, 1, true, true, true, 1, 'onix'); -- syswriter privilege on part 1
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by)
+      VALUES (1, 1, 0, true, true, true, 1, 'onix'); -- admin privilege on part 0
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by)
+      VALUES (2, 1, 1, true, true, true, 1, 'onix'); -- admin privilege on part 1
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by)
+      VALUES (3, 2, 0, false, true, false, 1, 'onix'); -- reader privilege on part 0
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by)
+      VALUES (4, 2, 1, false, true, false, 1, 'onix'); -- reader privilege on part 1
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by)
+      VALUES (5, 3, 0, false, true, false, 1, 'onix'); -- writer privilege on part 0
+      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, version, changed_by)
+      VALUES (6, 3, 1, true, true, true, 1, 'onix');
+      -- syswriter privilege on part 1
 
       ---------------------------------------------------------------------------
       -- MODEL
@@ -409,18 +445,18 @@ DO
 
         CREATE TABLE item_type
         (
-          id           INTEGER                NOT NULL DEFAULT nextval('item_type_id_seq'::regclass),
-          key          CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-          name         CHARACTER VARYING(200) COLLATE pg_catalog."default",
-          description  TEXT COLLATE pg_catalog."default",
-          attr_valid   HSTORE,
-          filter       jsonb,
-          meta_schema  jsonb,
-          version      bigint                 NOT NULL DEFAULT 1,
-          created      timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
-          updated      timestamp(6) with time zone,
-          changed_by   CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
-          model_id     int                    NOT NULL,
+          id          INTEGER                NOT NULL DEFAULT nextval('item_type_id_seq'::regclass),
+          key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          description TEXT COLLATE pg_catalog."default",
+          attr_valid  HSTORE,
+          filter      jsonb,
+          meta_schema jsonb,
+          version     bigint                 NOT NULL DEFAULT 1,
+          created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
+          updated     timestamp(6) with time zone,
+          changed_by  CHARACTER VARYING(50)  NOT NULL COLLATE pg_catalog."default",
+          model_id    int                    NOT NULL,
           CONSTRAINT item_type_id_pk PRIMARY KEY (id),
           CONSTRAINT item_type_key_uc UNIQUE (key),
           CONSTRAINT item_type_name_uc UNIQUE (name),
@@ -450,20 +486,20 @@ DO
       THEN
         CREATE TABLE item_type_change
         (
-          operation    CHAR(1)               NOT NULL,
-          changed      TIMESTAMP             NOT NULL,
-          id           INTEGER,
-          key          CHARACTER VARYING(100) COLLATE pg_catalog."default",
-          name         CHARACTER VARYING(200) COLLATE pg_catalog."default",
-          description  TEXT COLLATE pg_catalog."default",
-          attr_valid   HSTORE,
-          filter       jsonb,
-          meta_schema  jsonb,
-          version      bigint,
-          created      timestamp(6) with time zone,
-          updated      timestamp(6) with time zone,
-          changed_by   CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
-          model_id     int
+          operation   CHAR(1)               NOT NULL,
+          changed     TIMESTAMP             NOT NULL,
+          id          INTEGER,
+          key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
+          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          description TEXT COLLATE pg_catalog."default",
+          attr_valid  HSTORE,
+          filter      jsonb,
+          meta_schema jsonb,
+          version     bigint,
+          created     timestamp(6) with time zone,
+          updated     timestamp(6) with time zone,
+          changed_by  CHARACTER VARYING(50) NOT NULL COLLATE pg_catalog."default",
+          model_id    int
         );
 
         ALTER TABLE item_type_change

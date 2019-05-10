@@ -1287,4 +1287,104 @@ public class PgSqlRepository implements DbRepository {
         }
         return null;
     }
+
+    @Override
+    public Result deletePartition(String key, String role) {
+        return delete(getDeletePartitionSQL(), key, role);
+    }
+
+    @Override
+    public Result createOrUpdatePartition(String key, PartitionData part, String role) {
+        Result result = new Result(String.format("Partition:%s", key));
+        ResultSet set = null;
+        try {
+            db.prepare(getSetPartitionSQL());
+            db.setString(1, key); // key_param
+            db.setString(2, part.getName()); // name_param
+            db.setString(3, part.getDescription()); // description_param
+            db.setObject(4, part.getVersion()); // version_param
+            db.setString(5, getUser()); // changed_by_param
+            db.setString(6, role); // role_key_param
+            result.setOperation(db.executeQueryAndRetrieveStatus("set_partition"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(String.format("Failed to create or update partition with key '%s': %s", key, ex.getMessage()));
+        } finally {
+            db.close();
+        }
+        return result;
+    }
+
+    @Override
+    public PartitionDataList getAllPartitions(String role) {
+        PartitionDataList parts = new PartitionDataList();
+        try {
+            db.prepare(getGetAllPartitionsSQL());
+            db.setString(1, role);
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                parts.getValues().add(util.toPartitionData(set));
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to get partitions.", ex);
+        } finally {
+            db.close();
+        }
+        return parts;
+    }
+
+    @Override
+    public PartitionData getPartition(String key, String role) {
+        PartitionData part = null;
+        try {
+            db.prepare(getGetPartitionSQL());
+            db.setString(1, key);
+            db.setString(2, role);
+            ResultSet set = db.executeQuerySingleRow();
+            part = util.toPartitionData(set);
+            db.close();
+        } catch (Exception ex) {
+            throw new RuntimeException(String.format("Failed to get partition with key '%s': %s", key, ex.getMessage()), ex);
+        } finally {
+            db.close();
+        }
+        return part;
+    }
+
+    @Override
+    public String getDeletePartitionSQL() {
+        return "SELECT delete_partition(" +
+                "?::character varying," + // key_param
+                "?::character varying" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public String getSetPartitionSQL() {
+        return "SELECT set_partition(" +
+                "?::character varying," + // key_param
+                "?::character varying," + // name_param
+                "?::text," + // description_param
+                "?::bigint," + // version_param
+                "?::character varying," + // changed_by
+                "?::character varying" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetAllPartitionsSQL() {
+        return "SELECT * FROM get_partitions(" +
+                "?::character varying" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetPartitionSQL() {
+        return "SELECT * FROM partition(" +
+                "?::character varying," + // key_param
+                "?::character varying" + // role_key_param
+                ")";
+    }
+
 }
