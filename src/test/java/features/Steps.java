@@ -1272,6 +1272,16 @@ public class Steps extends BaseTest {
         return client.exchange(url, HttpMethod.PUT, getEntity(util.getFile(payload)), Result.class, vars);
     }
 
+    private ResponseEntity<Result> putPartition(String key, String payload) {
+        String url = String.format("%s/partition/{key}", baseUrl);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("key", key);
+        vars.put("payload", payload);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        return client.exchange(url, HttpMethod.PUT, getEntity(util.getFile(payload)), Result.class, vars);
+    }
+
     private ResultList putData(String payloadFilePath){
         String payload = util.getFile(payloadFilePath);
         String url = String.format("%s/data", baseUrl);
@@ -1528,5 +1538,122 @@ public class Steps extends BaseTest {
     public void theItemTypesToAndFromExistsInTheDatabase() {
         putItemType("item_type_1", "payload/create_item_type_1_payload.json");
         putItemType("item_type_2", "payload/create_item_type_2_payload.json");
+    }
+
+    @Given("^a partition natural key is known$")
+    public void aPartitionNaturalKeyIsKnown() {
+        util.put(PARTITION_ONE_KEY, PARTITION_ONE_KEY);
+    }
+
+    @Given("^the partition does not exist in the database$")
+    public void thePartitionDoesNotExistInTheDatabase() {
+        Result r = delete(String.format("%spartition/{partition_key}", baseUrl), util.get(PARTITION_ONE_KEY));
+        if (r.isError()) {
+            throw new RuntimeException(r.getMessage());
+        }
+    }
+
+    @Given("^the partition PUT URL by key is known$")
+    public void thePartitionPUTURLByKeyIsKnown() {
+        util.put(ENDPOINT_URI, String.format("%spartition/{partition_key}", baseUrl));
+    }
+
+    @Given("^the partition exists in the database$")
+    public void thePartitionExistsInTheDatabase() {
+        putPartition(PARTITION_ONE_KEY, "payload/create_partition_1_payload.json");
+    }
+
+    @Given("^the partition DELETE URL by key is known$")
+    public void thePartitionDELETEURLByKeyIsKnown() {
+        util.put(PARTITION_DELETE_URL, String.format("%spartition/{partition_key}", baseUrl));
+    }
+
+    @When("^a PUT HTTP request to the partition endpoint with a new JSON payload is done$")
+    public void aPUTHTTPRequestToThePartitionEndpointWithANewJSONPayloadIsDone() {
+        ResponseEntity<Result> response = putPartition(PARTITION_ONE_KEY, "payload/create_partition_1_payload.json");
+        util.put(RESPONSE, response);
+    }
+
+    @When("^a DELETE HTTP request to the partition resource with an item key is done$")
+    public void aDELETEHTTPRequestToThePartitionResourceWithAnItemKeyIsDone() {
+        delete(util.get(PARTITION_DELETE_URL), util.get(PARTITION_ONE_KEY));
+    }
+
+    @Given("^there are multiple partitions in the database$")
+    public void thereAreMultiplePartitionsInTheDatabase() {
+        delete( String.format("%spartition/{partition_key}", baseUrl), "PART_01");
+        delete( String.format("%spartition/{partition_key}", baseUrl), "PART_02");
+        delete( String.format("%spartition/{partition_key}", baseUrl), "PART_03");
+        putPartition("PART_01", "payload/create_partition_1_payload.json");
+        putPartition("PART_02", "payload/create_partition_2_payload.json");
+        putPartition("PART_03", "payload/create_partition_3_payload.json");
+    }
+
+    @Given("^the partition URL of the service with no query parameters exist$")
+    public void thePartitionURLOfTheServiceWithNoQueryParametersExist() {
+        util.put(PARTITION_GET_URL, String.format("%spartition", baseUrl));
+    }
+
+    @When("^a request to GET a list of partitions is done$")
+    public void aRequestToGETAListOfPartitionsIsDone() {
+        get(PartitionDataList.class, util.get(PARTITION_GET_URL));
+    }
+
+    @Then("^the response contains more than (\\d+) partitions$")
+    public void theResponseContainsMoreThanPartitions(int count) {
+        ResponseEntity<PartitionDataList> response = util.get(RESPONSE);
+
+        PartitionDataList items = response.getBody();
+        if (items != null) {
+            if (items.getValues().size() <= count) {
+                throw new RuntimeException(
+                    String.format(
+                        "Response does not contain more than '%s' items but '%s' items.",
+                        count,
+                        response.getBody().getValues().size()
+                    )
+                );
+            }
+        }
+        else {
+            throw new RuntimeException(
+                    String.format(
+                            "Response contains no items where '%s' were expected.",
+                            count
+                    )
+            );
+        }
+    }
+
+    @Given("^the partition natural key is known$")
+    public void thePartitionNaturalKeyIsKnown() {
+        util.put(PARTITION_ONE_KEY, PARTITION_ONE_KEY);
+    }
+
+    @Given("^the partition is in the database$")
+    public void thePartitionIsInTheDatabase() {
+        putPartition(util.get(PARTITION_ONE_KEY), "payload/create_partition_1_payload.json");
+    }
+
+    @When("^a request to GET the partition is made$")
+    public void aRequestToGETThePartitionIsMade() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<PartitionData> result = client.exchange(
+                String.format("%spartition/{key}", baseUrl),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                PartitionData.class,
+                (String)util.get(PARTITION_ONE_KEY));
+        util.put(RESPONSE, result);
+    }
+
+    @Then("^the response contains the requested partition$")
+    public void theResponseContainsTheRequestedPartition() {
+        ResponseEntity<PartitionData> partData = util.get(RESPONSE);
+        PartitionData part = partData.getBody();
+        if (part == null) {
+            throw new RuntimeException("Partition not found");
+        }
     }
 }

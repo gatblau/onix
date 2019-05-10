@@ -48,4 +48,7 @@ public class Key {
     public static final String LINK_CREATED_TO_FILTER = "link_created_to_filter";
     public static final String LINK_WITH_KEY_URL = "link_with_key_url";
     public static final String LIVE_URL = "live_url";
+    public static final String PARTITION_ONE_KEY = "PART_01";
+    public static final String PARTITION_DELETE_URL = "partition_delete_url";
+    public static final String PARTITION_GET_URL = "partition_get_url";
 }

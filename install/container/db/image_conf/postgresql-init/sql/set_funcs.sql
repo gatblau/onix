@@ -15,6 +15,97 @@
 */
 DO $$
   BEGIN
+    /*
+      set_partition(...)
+      Inserts a new or updates an existing partition.
+     */
+    CREATE OR REPLACE FUNCTION set_partition(
+      key_param character varying,
+      name_param character varying,
+      description_param text,
+      local_version_param bigint,
+      changed_by_param character varying,
+      role_key_param character varying
+    )
+      RETURNS TABLE(result char(1))
+      LANGUAGE 'plpgsql'
+      COST 100
+      VOLATILE
+    AS
+    $BODY$
+    DECLARE
+      result          char(1); -- the result status for the upsert
+      current_version bigint; -- the version of the row before the update or null if no row
+      rows_affected   integer;
+      is_admin        boolean;
+    BEGIN
+      -- gets the current item type version
+      SELECT version FROM partition WHERE key = key_param INTO current_version;
+
+      -- check if the role can create/update a partition -> is admin role
+      SELECT COUNT(*) = 1
+      FROM role r
+      WHERE r.admin = TRUE
+        AND r.key = role_key_param
+        INTO is_admin;
+
+      IF (NOT is_admin) THEN
+        RAISE EXCEPTION 'Role % is not authorised to modify partition information.', role_key_param
+          USING hint = 'The role needs to be as admin role or an admin role should be used instead.';
+      END IF;
+
+      IF (current_version IS NULL) THEN
+        INSERT INTO partition (
+          id,
+          key,
+          name,
+          description,
+          version,
+          created,
+          updated,
+          changed_by
+        )
+        VALUES (
+           nextval('partition_id_seq'),
+           key_param,
+           name_param,
+           description_param,
+           1,
+           current_timestamp,
+           null,
+           changed_by_param
+        );
+        result := 'I';
+      ELSE
+        UPDATE partition
+        SET name         = name_param,
+            description  = description_param,
+            version      = version + 1,
+            updated      = current_timestamp,
+            changed_by   = changed_by_param
+        WHERE key = key_param
+          -- concurrency management - optimistic locking
+          AND (local_version_param = current_version OR local_version_param IS NULL)
+          AND (
+              name != name_param OR
+              description != description_param
+          );
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+        SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
+      END IF;
+      RETURN QUERY SELECT result;
+    END;
+    $BODY$;
+
+    ALTER FUNCTION set_partition(
+      character varying, -- key
+      character varying, -- name
+      text, -- description
+      bigint, -- client version
+      character varying, -- changed by
+      role_key_param character varying
+      )
+      OWNER TO onix;
 
     /*
       set_model(...)
@@ -41,7 +132,7 @@ DO $$
       rows_affected      integer;
       partition_id_value bigint;
     BEGIN
-      -- gets the current item type version
+      -- gets the current model version
       SELECT version FROM model WHERE key = key_param INTO current_version;
 
       IF (current_version IS NULL) THEN
