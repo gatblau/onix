@@ -270,4 +270,18 @@ public class Lib implements InitializingBean {
         part.setChangedBy(set.getString("changed_by"));
         return part;
     }
+
+    public RoleData toRoleData(ResultSet set) throws SQLException {
+        Date updated = set.getDate("updated");
+
+        RoleData role = new RoleData();
+        role.setKey(set.getString("key"));
+        role.setName(set.getString("name"));
+        role.setDescription(set.getString("description"));
+        role.setCreated(dateFormat.format(set.getDate("created")));
+        role.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+        role.setVersion(set.getInt("version"));
+        role.setChangedBy(set.getString("changed_by"));
+        return role;
+    }
 }

@@ -16,7 +16,7 @@ DO
   $$
     BEGIN
 
-      /*
+     /*
       delete_partition
      */
       CREATE OR REPLACE FUNCTION delete_partition(
@@ -52,6 +52,43 @@ DO
 
       ALTER FUNCTION delete_partition(character varying, character varying)
         OWNER TO onix;
+
+     /*
+       delete_role
+      */
+     CREATE OR REPLACE FUNCTION delete_role(
+       key_param character varying,
+       role_key_param character varying
+     )
+       RETURNS VOID
+       LANGUAGE 'plpgsql'
+       COST 100
+       VOLATILE
+     AS
+     $BODY$
+     DECLARE
+       is_admin boolean;
+     BEGIN
+       -- check if the role can create/update a partition -> is admin role
+       SELECT COUNT(*) = 1
+       FROM role r
+       WHERE r.admin = TRUE
+         AND r.key = role_key_param
+         INTO is_admin;
+
+       IF (NOT is_admin) THEN
+         RAISE EXCEPTION 'Role % is not authorised to modify partition information.', role_key_param
+           USING hint = 'The role needs to be as admin role or an admin role should be used instead.';
+       END IF;
+
+       DELETE
+       FROM role r
+       WHERE r.key = key_param;
+     END
+     $BODY$;
+
+     ALTER FUNCTION delete_role(character varying, character varying)
+       OWNER TO onix;
 
       /*
       delete_model

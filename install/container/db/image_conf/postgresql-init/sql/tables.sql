@@ -49,8 +49,8 @@ DO
       THEN
         CREATE SEQUENCE partition_id_seq
           INCREMENT 1
-          START 10
-          MINVALUE 10
+          START 100
+          MINVALUE 100
           MAXVALUE 9223372036854775807
           CACHE 1;
 
@@ -141,8 +141,8 @@ DO
       THEN
         CREATE SEQUENCE role_id_seq
           INCREMENT 1
-          START 1
-          MINVALUE 1
+          START 100
+          MINVALUE 100
           MAXVALUE 9223372036854775807
           CACHE 1;
 

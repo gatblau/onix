@@ -1353,6 +1353,105 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public String getDeleteRoleSQL() {
+        return "SELECT delete_role(" +
+                "?::character varying," + // key_param
+                "?::character varying" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public String getSetRoleSQL() {
+        return "SELECT set_role(" +
+                "?::character varying," + // key_param
+                "?::character varying," + // name_param
+                "?::text," + // description_param
+                "?::bigint," + // version_param
+                "?::character varying," + // changed_by
+                "?::character varying" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetRoleSQL() {
+        return "SELECT * FROM role(" +
+                "?::character varying," + // key_param
+                "?::character varying" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetAllRolesSQL() {
+        return "SELECT * FROM get_roles(" +
+                "?::character varying" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public Result deleteRole(String key, String role) {
+        return delete(getDeleteRoleSQL(), key, role);
+    }
+
+    @Override
+    public Result createOrUpdateRole(String key, RoleData roleData, String role) {
+        Result result = new Result(String.format("Partition:%s", key));
+        ResultSet set = null;
+        try {
+            db.prepare(getSetRoleSQL());
+            db.setString(1, key); // key_param
+            db.setString(2, roleData.getName()); // name_param
+            db.setString(3, roleData.getDescription()); // description_param
+            db.setObject(4, roleData.getVersion()); // version_param
+            db.setString(5, getUser()); // changed_by_param
+            db.setString(6, role); // role_key_param
+            result.setOperation(db.executeQueryAndRetrieveStatus("set_role"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(String.format("Failed to create or update role with key '%s': %s", key, ex.getMessage()));
+        } finally {
+            db.close();
+        }
+        return result;
+    }
+
+    @Override
+    public RoleData getRole(String key, String role) {
+        RoleData roleData = null;
+        try {
+            db.prepare(getGetRoleSQL());
+            db.setString(1, key);
+            db.setString(2, role);
+            ResultSet set = db.executeQuerySingleRow();
+            roleData = util.toRoleData(set);
+            db.close();
+        } catch (Exception ex) {
+            throw new RuntimeException(String.format("Failed to get role with key '%s': %s", key, ex.getMessage()), ex);
+        } finally {
+            db.close();
+        }
+        return roleData;
+    }
+
+    @Override
+    public RoleDataList getAllRoles(String role) {
+        RoleDataList parts = new RoleDataList();
+        try {
+            db.prepare(getGetAllRolesSQL());
+            db.setString(1, role);
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                parts.getValues().add(util.toRoleData(set));
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to get roles.", ex);
+        } finally {
+            db.close();
+        }
+        return parts;
+    }
+
+    @Override
     public String getDeletePartitionSQL() {
         return "SELECT delete_partition(" +
                 "?::character varying," + // key_param

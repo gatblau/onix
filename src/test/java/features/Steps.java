@@ -1282,6 +1282,18 @@ public class Steps extends BaseTest {
         return client.exchange(url, HttpMethod.PUT, getEntity(util.getFile(payload)), Result.class, vars);
     }
 
+    private ResponseEntity<Result> putResource(String resource, String key, String payload) {
+        String url = String.format("%s/%s/{key}", baseUrl, resource);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("key", key);
+        vars.put("payload", payload);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<Result> response = client.exchange(url, HttpMethod.PUT, getEntity(util.getFile(payload)), Result.class, vars);
+        util.put(RESPONSE, response);
+        return response;
+    }
+
     private ResultList putData(String payloadFilePath){
         String payload = util.getFile(payloadFilePath);
         String url = String.format("%s/data", baseUrl);
@@ -1654,6 +1666,106 @@ public class Steps extends BaseTest {
         PartitionData part = partData.getBody();
         if (part == null) {
             throw new RuntimeException("Partition not found");
+        }
+    }
+
+    @Given("^a role natural key is known$")
+    public void aRoleNaturalKeyIsKnown() {
+        util.put(ROLE_ONE_KEY, ROLE_ONE_KEY);
+    }
+
+    @Given("^the role exists in the database$")
+    public void theRoleExistsInTheDatabase() {
+        aDELETEHTTPRequestToTheRoleResourceWithAnItemKeyIsDone();
+        putResource("role", util.get(ROLE_ONE_KEY), "payload/create_role_1_payload.json");
+    }
+
+    @Given("^the role DELETE URL by key is known$")
+    public void theRoleDELETEURLByKeyIsKnown() {
+        util.put(ROLE_DELETE_URL, String.format("%srole/{key}", baseUrl));
+    }
+
+    @When("^a DELETE HTTP request to the role resource with an item key is done$")
+    public void aDELETEHTTPRequestToTheRoleResourceWithAnItemKeyIsDone() {
+        theRoleDELETEURLByKeyIsKnown();
+        delete(util.get(ROLE_DELETE_URL), util.get(ROLE_ONE_KEY));
+    }
+
+    @Given("^the role does not exist in the database$")
+    public void theRoleDoesNotExistInTheDatabase() {
+        aDELETEHTTPRequestToTheRoleResourceWithAnItemKeyIsDone();
+    }
+
+    @Given("^the role PUT URL by key is known$")
+    public void theRolePUTURLByKeyIsKnown() {
+        util.put(ROLE_PUT_URL, String.format("%srole/{key}", baseUrl));
+    }
+
+    @When("^a PUT HTTP request to the role endpoint with a new JSON payload is done$")
+    public void aPUTHTTPRequestToTheRoleEndpointWithANewJSONPayloadIsDone() {
+        putResource("role", util.get(ROLE_ONE_KEY), "payload/create_role_1_payload.json");
+    }
+
+    @When("^a request to GET the role is made$")
+    public void aRequestToGETTheRoleIsMade() {
+        getByKey("role", util.get(ROLE_ONE_KEY));
+    }
+
+    private void getByKey(String resource, String key) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<PartitionData> result = client.exchange(
+                String.format("%s%s/{key}", baseUrl, resource),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                PartitionData.class,
+                key);
+        util.put(RESPONSE, result);
+    }
+
+    @Given("^there are multiple roles in the database$")
+    public void thereAreMultipleRolesInTheDatabase() {
+        delete(String.format("%srole/{key}", baseUrl), "ROLE_01");
+        delete(String.format("%srole/{key}", baseUrl), "ROLE_02");
+        delete(String.format("%srole/{key}", baseUrl), "ROLE_03");
+        putPartition("ROLE_01", "payload/create_role_1_payload.json");
+        putPartition("ROLE_02", "payload/create_role_2_payload.json");
+        putPartition("ROLE_03", "payload/create_role_3_payload.json");
+    }
+
+    @Given("^the role URL of the service with no query parameters exist$")
+    public void theRoleURLOfTheServiceWithNoQueryParametersExist() {
+        util.put(ROLE_GET_URL, String.format("%srole", baseUrl));
+    }
+
+    @When("^a request to GET a list of roles is done$")
+    public void aRequestToGETAListOfRolesIsDone() {
+        get(RoleDataList.class, util.get(ROLE_GET_URL));
+    }
+
+    @Then("^the response contains more than (\\d+) roles$")
+    public void theResponseContainsMoreThanRoles(int count) {
+        ResponseEntity<RoleDataList> response = util.get(RESPONSE);
+
+        RoleDataList items = response.getBody();
+        if (items != null) {
+            if (items.getValues().size() <= count) {
+                throw new RuntimeException(
+                    String.format(
+                        "Response does not contain more than '%s' roles but '%s' roles.",
+                        count,
+                        response.getBody().getValues().size()
+                    )
+                );
+            }
+        }
+        else {
+            throw new RuntimeException(
+                String.format(
+                    "Response contains no roles where '%s' were expected.",
+                    count
+                )
+            );
         }
     }
 }
