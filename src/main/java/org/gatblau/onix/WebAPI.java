@@ -389,15 +389,15 @@ public class WebAPI {
     )
     public ResponseEntity<Result> createOrUpdatePartition(
             @ApiParam(
-                name = "key",
-                value = "A string which uniquely identifies the partition and never changes.",
-                required = true,
-                example = "part_01"
+                    name = "key",
+                    value = "A string which uniquely identifies the partition and never changes.",
+                    required = true,
+                    example = "part_01"
             )
             @PathVariable("key")
-            String key,
+                    String key,
             @RequestBody
-            PartitionData partition,
+                    PartitionData partition,
             Authentication authentication
     ) {
         Result result = data.createOrUpdatePartition(key, partition, getRole(authentication));
@@ -430,6 +430,88 @@ public class WebAPI {
             Authentication authentication
     ) {
         return ResponseEntity.ok(data.getPartition(key, getRole(authentication)));
+    }
+
+    /*
+        ROLES
+     */
+    @ApiOperation(
+            value = "Deletes a logical partition.",
+            notes = "")
+    @RequestMapping(
+            path = "/role/{key}"
+            , method = RequestMethod.DELETE
+    )
+    public ResponseEntity<Result> deleteRole(
+            @ApiParam(
+                name = "key",
+                value = "A string which uniquely identifies the role and never changes.",
+                required = true,
+                example = "role_01"
+            )
+            @PathVariable("key")
+            String key,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(data.deleteRole(key, getRole(authentication)));
+    }
+
+    @ApiOperation(
+            value = "Creates a new role for RBAC.",
+            notes = "The role executing this action has to be an admin role.")
+    @RequestMapping(
+            path = "/role/{key}"
+            , method = RequestMethod.PUT)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "No changes where performed to the configuration item type."),
+            @ApiResponse(code = 201, message = "The configuration item type was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+            @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
+            @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+    )
+    public ResponseEntity<Result> createOrUpdateRole(
+            @ApiParam(
+                name = "key",
+                value = "A string which uniquely identifies the role and never changes.",
+                required = true,
+                example = "role_01"
+            )
+            @PathVariable("key")
+            String key,
+            @RequestBody
+            RoleData role,
+            Authentication authentication
+    ) {
+        Result result = data.createOrUpdateRole(key, role, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
+    }
+
+    @ApiOperation(
+            value = "Get all roles.",
+            notes = "")
+    @RequestMapping(
+            path = "/role"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<RoleDataList> getAllRoles(Authentication authentication) {
+        return ResponseEntity.ok(data.getAllRoles(getRole(authentication)));
+    }
+
+    @ApiOperation(
+            value = "Get a logical partition based on the specified key.",
+            notes = "")
+    @RequestMapping(
+            path = "/role/{key}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<RoleData> getRole(
+            @PathVariable("key")
+            String key,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(data.getRole(key, getRole(authentication)));
     }
 
     /*

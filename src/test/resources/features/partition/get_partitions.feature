@@ -1,4 +1,4 @@
-Feature: Find Item Types
+Feature: Find Partitions
   As an Web API user
   I want to find Partitions
   So that I can see their configuration for administration purposes.

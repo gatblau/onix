@@ -388,10 +388,10 @@ DO
         OWNER TO onix;
 
       /*
-            partition(partition_key_param): gets the partition specified by the partition_key_param.
-            use: select * partition(partition_key_param)
-           */
-      CREATE OR REPLACE FUNCTION partition(partition_key_param character varying, role_key_param character varying)
+        partition(key_param, role_key_param): gets the partition specified by the key_param.
+        use: select * partition(key_param, role_key_param)
+       */
+      CREATE OR REPLACE FUNCTION partition(key_param character varying, role_key_param character varying)
         RETURNS TABLE(
            id bigint,
            key character varying,
@@ -433,7 +433,7 @@ DO
             p.updated,
             p.changed_by
           FROM partition p
-          WHERE p.key = partition_key_param;
+          WHERE p.key = key_param;
       END;
       $BODY$;
 
@@ -446,15 +446,15 @@ DO
       */
       CREATE OR REPLACE FUNCTION get_partitions(role_key_param character varying)
         RETURNS TABLE(
-           id bigint,
-           key character varying,
-           name character varying,
-           description text,
-           version bigint,
-           created timestamp(6) with time zone,
-           updated timestamp(6) with time zone,
-           changed_by character varying
-         )
+                       id bigint,
+                       key character varying,
+                       name character varying,
+                       description text,
+                       version bigint,
+                       created timestamp(6) with time zone,
+                       updated timestamp(6) with time zone,
+                       changed_by character varying
+                     )
         LANGUAGE 'plpgsql'
         COST 100
         STABLE
@@ -490,6 +490,111 @@ DO
       $BODY$;
 
       ALTER FUNCTION get_partitions(character varying)
+        OWNER TO onix;
+
+      /*
+        role(key_param, role_key_param): gets the role specified by the key_param.
+        use: select * role(key_param, role_key_param)
+       */
+      CREATE OR REPLACE FUNCTION role(key_param character varying, role_key_param character varying)
+        RETURNS TABLE(
+           id bigint,
+           key character varying,
+           name character varying,
+           description text,
+           version bigint,
+           created timestamp(6) with time zone,
+           updated timestamp(6) with time zone,
+           changed_by character varying
+        )
+        LANGUAGE 'plpgsql'
+        COST 100
+        STABLE
+      AS
+      $BODY$
+      DECLARE
+        is_admin boolean;
+      BEGIN
+        -- check if the role can create/update a partition -> is admin role
+        SELECT COUNT(*) = 1
+        FROM role r
+        WHERE r.admin = TRUE
+          AND r.key = role_key_param
+          INTO is_admin;
+
+        IF (NOT is_admin) THEN
+          RAISE EXCEPTION 'Role % is not authorised to read role information.', role_key_param
+            USING hint = 'The role needs to be as admin role or an admin role should be used instead.';
+        END IF;
+
+        RETURN QUERY
+          SELECT
+            r.id,
+            r.key,
+            r.name,
+            r.description,
+            r.version,
+            r.created,
+            r.updated,
+            r.changed_by
+          FROM role r
+          WHERE r.key = key_param;
+      END;
+      $BODY$;
+
+      ALTER FUNCTION role(character varying, character varying)
+        OWNER TO onix;
+
+      /*
+        get_roles(): gets all roles in the system.
+        use: select * from get_roles(role_key_param)
+      */
+      CREATE OR REPLACE FUNCTION get_roles(role_key_param character varying)
+        RETURNS TABLE(
+           id bigint,
+           key character varying,
+           name character varying,
+           description text,
+           version bigint,
+           created timestamp(6) with time zone,
+           updated timestamp(6) with time zone,
+           changed_by character varying
+        )
+        LANGUAGE 'plpgsql'
+        COST 100
+        STABLE
+      AS
+      $BODY$
+      DECLARE
+        is_admin boolean;
+      BEGIN
+        -- check if the role can create/update a partition -> is admin role
+        SELECT COUNT(*) = 1
+        FROM role r
+        WHERE r.admin = TRUE
+          AND r.key = role_key_param
+          INTO is_admin;
+
+        IF (NOT is_admin) THEN
+          RAISE EXCEPTION 'Role % is not authorised to read role information.', role_key_param
+            USING hint = 'The role needs to be as admin role or an admin role should be used instead.';
+        END IF;
+
+        RETURN QUERY
+          SELECT
+            r.id,
+            r.key,
+            r.name,
+            r.description,
+            r.version,
+            r.created,
+            r.updated,
+            r.changed_by
+          FROM role r;
+      END;
+      $BODY$;
+
+      ALTER FUNCTION get_roles(character varying)
         OWNER TO onix;
 
     END

@@ -167,4 +167,15 @@ public interface DbRepository {
     Result createOrUpdatePartition(String key, PartitionData partition, String role);
     PartitionDataList getAllPartitions(String role);
     PartitionData getPartition(String key, String role);
+
+    /* Roles */
+    String getDeleteRoleSQL();
+    String getSetRoleSQL();
+    String getGetRoleSQL();
+    String getGetAllRolesSQL();
+
+    Result deleteRole(String key, String role);
+    Result createOrUpdateRole(String key, RoleData role, String role1);
+    RoleData getRole(String key, String role);
+    RoleDataList getAllRoles(String role);
 }
