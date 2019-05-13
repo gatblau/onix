@@ -178,4 +178,11 @@ public interface DbRepository {
     Result createOrUpdateRole(String key, RoleData role, String role1);
     RoleData getRole(String key, String role);
     RoleDataList getAllRoles(String role);
+
+    /* Privileges */
+    String getAddPrivilegeSQL();
+    String getRemovePrivilegeSQL();
+
+    Result addPrivilege(String partitionKey, String roleKey, PrivilegeData privilege, String role);
+    Result removePrivilege(String partitionKey, String roleKey, String role);
 }

@@ -1,8 +1,9 @@
-# Role Based Access Controls <img src="./pics/ox.png" width="160" height="160" align="right">
+# Role Based Access Controls <img src="./pics/ox.png" width="20" height="200" align="right">
 
   - [Semantic Model](#semantic-model)
   - [Default partitions](#default-partitions)
   - [Default Roles](#default-roles)
+    - [Role Levels](#role-levels)
   - [Authentication Modes](#authentication-modes)
   - [Controlling access witn OpenId Connect](#controlling-access)
 
@@ -53,6 +54,23 @@ In other words:
 | __WRITER__ | INS | Y | Y | Y |
 | __READER__ | REF | N | Y | N |
 | __READER__ | INS | N | Y | N |
+
+<a href="role-levels"></a>
+### ___Role Levels___
+
+Any role is associated with an administration level.
+
+The administration level determines the privilege the role has to create, update, read and delete partitions and other roles.
+
+In other words, the administration level determines which kind of administrator the role is.
+
+The following table shows the three available levels:
+
+| Level | Description |
+|:--:|---|
+| __0__ | The role cannot modify or read neither partitions nor roles data. This level is associated with non-admin roles. It is the default level for any role. |
+| __1__ | The role can only modify / read partitions or roles data for the ones which are owned by the role. That is, partitions and roles that have been created by the role in the first place. If the role attempts to modify or read a partition or role owned by another role, then an error message is displayed. |
+| __2__ | The role can modify / read any partition or role data. This is the case of a super administrator role (i.e. ADMIN role) |
 
 <a href="authentication-modes"></a>
 ## Authentication Modes

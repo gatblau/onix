@@ -37,22 +37,12 @@ DO $$
       result          char(1); -- the result status for the upsert
       current_version bigint; -- the version of the row before the update or null if no row
       rows_affected   integer;
-      is_admin        boolean;
     BEGIN
       -- gets the current item type version
       SELECT version FROM partition WHERE key = key_param INTO current_version;
 
-      -- check if the role can create/update a partition -> is admin role
-      SELECT COUNT(*) = 1
-      FROM role r
-      WHERE r.admin = TRUE
-        AND r.key = role_key_param
-        INTO is_admin;
-
-      IF (NOT is_admin) THEN
-        RAISE EXCEPTION 'Role % is not authorised to modify partition information.', role_key_param
-          USING hint = 'The role needs to be as admin role or an admin role should be used instead.';
-      END IF;
+      -- checks the role can modify this role
+      PERFORM can_manage_partition(role_key_param);
 
       IF (current_version IS NULL) THEN
         INSERT INTO partition (
@@ -63,7 +53,8 @@ DO $$
           version,
           created,
           updated,
-          changed_by
+          changed_by,
+          owner
         )
         VALUES (
            nextval('partition_id_seq'),
@@ -73,7 +64,8 @@ DO $$
            1,
            current_timestamp,
            null,
-           changed_by_param
+           changed_by_param,
+           role_key_param
         );
         result := 'I';
       ELSE
@@ -98,18 +90,18 @@ DO $$
     $BODY$;
 
     ALTER FUNCTION set_partition(
-      character varying, -- key
-      character varying, -- name
-      text, -- description
-      bigint, -- client version
-      character varying, -- changed by
-      role_key_param character varying
+        character varying, -- key
+        character varying, -- name
+        text, -- description
+        bigint, -- client version
+        character varying, -- changed by
+        role_key_param character varying
       )
       OWNER TO onix;
 
     /*
       set_role(...)
-      Inserts a new or updates an existing partition.
+      Inserts a new or updates an existing role.
     */
     CREATE OR REPLACE FUNCTION set_role(
       key_param character varying,
@@ -129,22 +121,12 @@ DO $$
       result          char(1); -- the result status for the upsert
       current_version bigint; -- the version of the row before the update or null if no row
       rows_affected   integer;
-      is_admin        boolean;
     BEGIN
       -- gets the current item type version
       SELECT version FROM partition WHERE key = key_param INTO current_version;
 
-      -- check if the role can create/update a partition -> is admin role
-      SELECT COUNT(*) = 1
-      FROM role r
-      WHERE r.admin = TRUE
-        AND r.key = role_key_param
-        INTO is_admin;
-
-      IF (NOT is_admin) THEN
-        RAISE EXCEPTION 'Role % is not authorised to modify partition information.', role_key_param
-          USING hint = 'The role needs to be as admin role or an admin role should be used instead.';
-      END IF;
+      -- checks the role can modify this role
+      PERFORM can_manage_partition(role_key_param);
 
       IF (current_version IS NULL) THEN
         INSERT INTO role (
@@ -155,7 +137,8 @@ DO $$
           version,
           created,
           updated,
-          changed_by
+          changed_by,
+          owner
         )
         VALUES (
            nextval('role_id_seq'),
@@ -165,7 +148,8 @@ DO $$
            1,
            current_timestamp,
            null,
-           changed_by_param
+           changed_by_param,
+           role_key_param
         );
         result := 'I';
       ELSE
@@ -190,12 +174,12 @@ DO $$
     $BODY$;
 
     ALTER FUNCTION set_role(
-      character varying, -- key
-      character varying, -- name
-      text, -- description
-      bigint, -- client version
-      character varying, -- changed by
-      role_key_param character varying
+        character varying, -- key
+        character varying, -- name
+        text, -- description
+        bigint, -- client version
+        character varying, -- changed by
+        role_key_param character varying
       )
       OWNER TO onix;
 
@@ -1167,6 +1151,153 @@ DO $$
       character varying,
       character varying -- role_key_param
     )
+      OWNER TO onix;
+
+    /*
+      add_privilege()
+    */
+    CREATE OR REPLACE FUNCTION add_privilege(
+      partition_key_param character varying,
+      role_key_param character varying,
+      can_create_param boolean,
+      can_read_param boolean,
+      can_delete_param boolean,
+      changed_by_param character varying,
+      logged_role_key_param character varying
+    )
+      RETURNS TABLE(result char(1))
+      LANGUAGE 'plpgsql'
+      COST 100
+      VOLATILE
+    AS
+    $BODY$
+    DECLARE
+      role_id_value      bigint;
+      partition_id_value bigint;
+      role_owner         character varying;
+      partition_owner    character varying;
+      logged_role_level  integer;
+    BEGIN
+      -- finds the level of the logged role
+      SELECT r.level
+      FROM role r
+      WHERE r.key = logged_role_key_param
+        INTO logged_role_level;
+
+      -- finds the owner of the role to add the privilege to
+      SELECT r.owner, r.id
+      FROM role r
+      WHERE r.key = role_key_param
+        INTO role_owner, role_id_value;
+
+      -- fins the owner of the partition to add the privilege to
+      SELECT p.owner, p.id
+      FROM partition p
+      WHERE p.key = partition_key_param
+        INTO partition_owner, partition_id_value;
+
+      IF (logged_role_level = 0) THEN
+        -- logged role cannot mess with privileges
+        RAISE EXCEPTION 'Role level 0: "%" is not authorised to add privilege.', logged_role_key_param;
+      ELSEIF NOT(logged_role_level = 1 OR role_owner = logged_role_key_param OR partition_owner = logged_role_key_param) THEN
+        -- logged role can only add privileges if it owns both the role and partition, so cannot do it in this case
+        RAISE EXCEPTION 'Role level 1: "%" is not authorised to add privilege because it does not own privilege or role to add the privilege to. Role owner is "%s" and Partition owner is "%s".', logged_role_key_param, role_owner, partition_owner;
+      END IF;
+
+      -- logged role is either level 1 owning role and partition or level 2
+      INSERT INTO privilege(
+        partition_id,
+        role_id,
+        can_create,
+        can_read,
+        can_delete,
+        changed_by
+      )
+      VALUES(
+        partition_id_value,
+        role_id_value,
+        can_create_param,
+        can_read_param,
+        can_delete_param,
+        changed_by_param
+      );
+      RETURN QUERY SELECT 'I'::char(1);
+    END;
+    $BODY$;
+
+    ALTER FUNCTION add_privilege(
+       character varying,
+       character varying,
+       boolean,
+       boolean,
+       boolean,
+       character varying,
+       character varying
+    )
+    OWNER TO onix;
+
+
+    /*
+      remove_privilege()
+    */
+    CREATE OR REPLACE FUNCTION remove_privilege(
+      partition_key_param character varying,
+      role_key_param character varying,
+      logged_role_key_param character varying
+    )
+      RETURNS TABLE(result char(1))
+      LANGUAGE 'plpgsql'
+      COST 100
+      VOLATILE
+    AS
+    $BODY$
+    DECLARE
+      role_id_value      bigint;
+      partition_id_value bigint;
+      role_owner         character varying;
+      partition_owner    character varying;
+      logged_role_level  integer;
+    BEGIN
+      -- finds the level of the logged role
+      SELECT r.level
+      FROM role r
+      WHERE r.key = logged_role_key_param
+            INTO logged_role_level;
+
+      -- finds the owner of the role to add the privilege to
+      SELECT r.owner, r.id
+      FROM role r
+      WHERE r.key = role_key_param
+            INTO role_owner, role_id_value;
+
+      -- fins the owner of the partition to add the privilege to
+      SELECT p.owner, p.id
+      FROM partition p
+      WHERE p.key = partition_key_param
+            INTO partition_owner, partition_id_value;
+
+      IF (logged_role_level = 0) THEN
+        -- logged role cannot mess with privileges
+        RAISE EXCEPTION 'Role level 0: "%" is not authorised to remove privilege.', logged_role_key_param;
+      ELSEIF NOT(logged_role_level = 1 OR role_owner = logged_role_key_param OR partition_owner = logged_role_key_param) THEN
+        -- logged role can only add privileges if it owns both the role and partition, so cannot do it in this case
+        RAISE EXCEPTION 'Role level 1: "%" is not authorised to remove privilege because it does not own privilege or role to add the privilege to. Role owner is "%s" and Partition owner is "%s".', logged_role_key_param, role_owner, partition_owner;
+      END IF;
+
+      -- logged role is either level 1 owning role and partition or level 2
+      DELETE FROM privilege p
+        WHERE p.partition_id = partition_id_value
+        AND p.role_id = role_id_value;
+
+      RETURN QUERY SELECT 'D'::char(1);
+    END;
+    $BODY$;
+
+    ALTER FUNCTION remove_privilege(
+        character varying,
+        character varying,
+        character varying
+      )
       OWNER TO onix;
 
   END

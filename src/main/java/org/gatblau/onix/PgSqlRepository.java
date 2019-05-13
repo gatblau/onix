@@ -1452,6 +1452,74 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public Result addPrivilege(String partitionKey, String roleKey, PrivilegeData privilege, String role) {
+        Result result = new Result(String.format("Privilege:%s:%s", roleKey, partitionKey));
+        ResultSet set = null;
+        try {
+            db.prepare(getAddPrivilegeSQL());
+            db.setString(1, partitionKey); // partition_key_param
+            db.setString(2, roleKey); // role_key_param
+            db.setObject(3, privilege.isCanCreate()); // can_create_param
+            db.setObject(4, privilege.isCanRead()); // can_read_param
+            db.setObject(5, privilege.isCanDelete()); // can_delete_param
+            db.setString(6, getUser()); // changed_by_param
+            db.setString(7, role); // role_key_param
+            result.setOperation(db.executeQueryAndRetrieveStatus("add_privilege"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(String.format("Failed to add privilege with role '%s' and partition '%s': %s.", roleKey, partitionKey, ex.getMessage()));
+        } finally {
+            db.close();
+        }
+        return result;
+    }
+
+    @Override
+    public Result removePrivilege(String partitionKey, String roleKey, String role) {
+        Result result = new Result(String.format("Remove_Privilege_%s_%s", roleKey, partitionKey));
+        try {
+            db.prepare(getRemovePrivilegeSQL());
+            db.setString(1, partitionKey);
+            db.setString(2, roleKey);
+            db.setString(3, role);
+            result.setOperation((db.execute()) ? "D" : "N");
+            if (result.getOperation().equals("D")) {
+                result.setChanged(true);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
+        } finally {
+            db.close();
+        }
+        return result;
+    }
+
+    @Override
+    public String getAddPrivilegeSQL() {
+        return "SELECT add_privilege(" +
+                "?::character varying," + // role_key_param
+                "?::character varying," + // privilege_key_param
+                "?::boolean," + // can_create_param
+                "?::boolean," + // can_read_param
+                "?::boolean," + // can_delete_param
+                "?::character varying," + // changed_by_param
+                "?::character varying" + // logged_role_key_param
+                ")";
+    }
+
+    @Override
+    public String getRemovePrivilegeSQL() {
+        return "SELECT remove_privilege(" +
+                "?::character varying," + // role_key_param
+                "?::character varying," + // privilege_key_param
+                "?::character varying" + // logged_role_key_param
+                ")";
+    }
+
+    @Override
     public String getDeletePartitionSQL() {
         return "SELECT delete_partition(" +
                 "?::character varying," + // key_param

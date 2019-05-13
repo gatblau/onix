@@ -29,20 +29,9 @@ DO
         VOLATILE
       AS
       $BODY$
-      DECLARE
-        is_admin boolean;
       BEGIN
-        -- check if the role can create/update a partition -> is admin role
-        SELECT COUNT(*) = 1
-        FROM role r
-        WHERE r.admin = TRUE
-          AND r.key = role_key_param
-          INTO is_admin;
-
-        IF (NOT is_admin) THEN
-          RAISE EXCEPTION 'Role % is not authorised to modify partition information.', role_key_param
-            USING hint = 'The role needs to be as admin role or an admin role should be used instead.';
-        END IF;
+        -- checks the role can modify this role
+        PERFORM can_manage_partition(role_key_param);
 
         DELETE
         FROM partition p
@@ -66,20 +55,9 @@ DO
        VOLATILE
      AS
      $BODY$
-     DECLARE
-       is_admin boolean;
      BEGIN
-       -- check if the role can create/update a partition -> is admin role
-       SELECT COUNT(*) = 1
-       FROM role r
-       WHERE r.admin = TRUE
-         AND r.key = role_key_param
-         INTO is_admin;
-
-       IF (NOT is_admin) THEN
-         RAISE EXCEPTION 'Role % is not authorised to modify partition information.', role_key_param
-           USING hint = 'The role needs to be as admin role or an admin role should be used instead.';
-       END IF;
+       -- checks the role can modify this role
+       PERFORM can_manage_partition(role_key_param);
 
        DELETE
        FROM role r
