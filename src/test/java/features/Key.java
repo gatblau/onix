@@ -55,5 +55,6 @@ public class Key {
     public static final String ROLE_DELETE_URL = "delete_role_url";
     public static final String ROLE_PUT_URL = "role_put_url";
     public static final String ROLE_GET_URL = "role_get_url";
+    public static final String PRIVILEGE_PUT_URL = "privilege_put_url";
 }
 

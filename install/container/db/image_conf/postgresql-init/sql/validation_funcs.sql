@@ -15,6 +15,41 @@
 */
 DO $$
   BEGIN
+    /*
+      checks that the specified role can modify partition, privilege and role tables
+      based on its role level
+     */
+    CREATE OR REPLACE FUNCTION can_manage_partition(
+      role_key_param character varying
+    )
+      RETURNS VOID
+      LANGUAGE 'plpgsql'
+      COST 100
+      STABLE
+    AS
+    $BODY$
+    DECLARE
+      level integer;
+      owner character varying(100);
+    BEGIN
+      -- finds the logged role level and owner
+      SELECT r.level, r.owner
+      FROM role r
+      WHERE r.key = role_key_param
+        INTO level, owner;
+
+      IF (level = 0) THEN
+        RAISE EXCEPTION 'Role % is not authorised to modify role/partition information.', role_key_param
+          USING hint = 'The role is a level 0 role, it needs to be level 1 or 2.';
+      ELSEIF (level = 1 AND owner != role_key_param) THEN
+        RAISE EXCEPTION 'Role % is not authorised to modify a role/partition with a different owner.', role_key_param
+          USING hint = 'The role is a level 1 role, it needs to be level 2.';
+      END IF;
+    END;
+    $BODY$;
+
+    ALTER FUNCTION can_manage_partition(character varying)
+      OWNER TO onix;
 
     /*
       Encapsulates the logic to determine the status of a record update:

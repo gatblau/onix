@@ -515,9 +515,54 @@ public class WebAPI {
     }
 
     /*
+        PRIVILEGES
+     */
+    @ApiOperation(
+        value = "Add a privilege to an existing role.",
+        notes = "")
+    @RequestMapping(
+        path = "/privilege/{role_key}/{partition_key}"
+        , method = RequestMethod.PUT)
+    @ApiResponses(value = {
+        @ApiResponse(code = 200, message = "No changes where performed to the configuration privilege."),
+        @ApiResponse(code = 201, message = "The configuration privilege was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+        @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the right to execute the request. "),
+        @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+        @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+    )
+    public ResponseEntity<Result> addPrivilege(
+        @PathVariable("partition_key")
+        String partitionKey,
+        @PathVariable("role_key")
+        String roleKey,
+        @RequestBody
+        PrivilegeData privilege,
+        Authentication authentication
+    ) {
+        Result result = data.addPrivilege(partitionKey, roleKey, privilege, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
+    }
+
+    @ApiOperation(
+            value = "Deletes a privilege.",
+            notes = "")
+    @RequestMapping(
+            path = "/privilege/{role_key}/{partition_key}"
+            , method = RequestMethod.DELETE
+    )
+    public ResponseEntity<Result> deletePrivilege(
+        @PathVariable("partition_key")
+        String partitionKey,
+        @PathVariable("role_key")
+        String roleKey,
+        Authentication authentication
+    ) {
+        return ResponseEntity.ok(data.removePrivilege(partitionKey, roleKey, getRole(authentication)));
+    }
+
+    /*
         ITEM TYPES
      */
-
     @ApiOperation(
         value = "Deletes all non-system specific configuration item types.",
         notes = "")

@@ -4,7 +4,6 @@ import cucumber.api.java.en.And;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
-import org.gatblau.onix.Info;
 import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
 import org.springframework.http.HttpEntity;
@@ -13,7 +12,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 
 import javax.annotation.PostConstruct;
-import javax.xml.ws.Response;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -1294,6 +1292,19 @@ public class Steps extends BaseTest {
         return response;
     }
 
+    private ResponseEntity<Result> putPrivilege(String roleKey, String partitionKey, String payload) {
+        String url = String.format("%s/privilege/{role_key}/{partition_key}", baseUrl);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("payload", payload);
+        vars.put("role_key", roleKey);
+        vars.put("partition_key", partitionKey);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        ResponseEntity<Result> response = client.exchange(url, HttpMethod.PUT, getEntity(util.getFile(payload)), Result.class, vars);
+        util.put(RESPONSE, response);
+        return response;
+    }
+
     private ResultList putData(String payloadFilePath){
         String payload = util.getFile(payloadFilePath);
         String url = String.format("%s/data", baseUrl);
@@ -1676,6 +1687,7 @@ public class Steps extends BaseTest {
 
     @Given("^the role exists in the database$")
     public void theRoleExistsInTheDatabase() {
+        aRoleNaturalKeyIsKnown();
         aDELETEHTTPRequestToTheRoleResourceWithAnItemKeyIsDone();
         putResource("role", util.get(ROLE_ONE_KEY), "payload/create_role_1_payload.json");
     }
@@ -1767,5 +1779,50 @@ public class Steps extends BaseTest {
                 )
             );
         }
+    }
+
+    @When("^a PUT HTTP request to the privilege endpoint with a new JSON payload is done$")
+    public void aPUTHTTPRequestToThePrivilegeEndpointWithANewJSONPayloadIsDone() {
+        putPrivilege(ROLE_ONE_KEY, PARTITION_ONE_KEY,"payload/create_privilege_1_payload.json");
+    }
+
+    @Given("^the privilege does not exist in the database$")
+    public void thePrivilegeDoesNotExistInTheDatabase() {
+        aDELETEHTTPRequestToThePrivilegeEndpointIsDone();
+    }
+
+    @Given("^the privilege exists in the database$")
+    public void thePrivilegeExistsInTheDatabase() {
+        putPrivilege(ROLE_ONE_KEY, PARTITION_ONE_KEY,"payload/create_privilege_1_payload.json");
+    }
+
+    @When("^a DELETE HTTP request to the privilege endpoint is done$")
+    public void aDELETEHTTPRequestToThePrivilegeEndpointIsDone() {
+        Result result;
+        ResponseEntity<Result> response = null;
+        response = client.exchange(
+                String.format("%s/privilege/{role_key}/{partition_key}", baseUrl),
+                HttpMethod.DELETE,
+                getEntity(util.getFile("payload/delete_privilege_1_payload.json")),
+                Result.class,
+                ROLE_ONE_KEY,
+                PARTITION_ONE_KEY);
+        util.put(RESPONSE, response);
+        util.remove(EXCEPTION);
+        result = response.getBody();
+    }
+
+    @Given("^there are multiple privileges for a role in the database$")
+    public void thereAreMultiplePrivilegesForARoleInTheDatabase() {
+        
+    }
+
+    @When("^a request to GET a list of privileges by role is done$")
+    public void aRequestToGETAListOfPrivilegesByRoleIsDone() {
+        
+    }
+
+    @Then("^the response contains more than (\\d+) privileges$")
+    public void theResponseContainsMoreThanPrivileges(int arg0) {
     }
 }
