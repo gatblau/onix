@@ -21,7 +21,7 @@ package org.gatblau.onix.data;
 
 import java.io.Serializable;
 
-public class PrivilegeData implements Serializable {
+public class NewPrivilegeData implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String roleKey;
@@ -29,10 +29,8 @@ public class PrivilegeData implements Serializable {
     private boolean canCreate;
     private boolean canRead;
     private boolean canDelete;
-    private String created;
-    private String changedBy;
 
-    public PrivilegeData(){
+    public NewPrivilegeData() {
     }
 
     public String getRoleKey() {
@@ -73,21 +71,5 @@ public class PrivilegeData implements Serializable {
 
     public void setCanDelete(boolean canDelete) {
         this.canDelete = canDelete;
-    }
-
-    public String getCreated() {
-        return created;
-    }
-
-    public void setCreated(String created) {
-        this.created = created;
-    }
-
-    public String getChangedBy() {
-        return changedBy;
-    }
-
-    public void setChangedBy(String changedBy) {
-        this.changedBy = changedBy;
     }
 }

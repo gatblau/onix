@@ -261,11 +261,11 @@ DO
           CONSTRAINT privilege_role_id_fk FOREIGN KEY (role_id)
             REFERENCES role (id) MATCH SIMPLE
             ON UPDATE NO ACTION
-            ON DELETE NO ACTION,
+            ON DELETE CASCADE,
           CONSTRAINT privilege_partition_id_fk FOREIGN KEY (partition_id)
             REFERENCES partition (id) MATCH SIMPLE
             ON UPDATE NO ACTION
-            ON DELETE NO ACTION
+            ON DELETE CASCADE
         )
           WITH (OIDS = FALSE)
           TABLESPACE pg_default;

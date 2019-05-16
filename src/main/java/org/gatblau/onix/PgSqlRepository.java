@@ -50,7 +50,7 @@ public class PgSqlRepository implements DbRepository {
      */
 
     @Override
-    public synchronized Result createOrUpdateItem(String key, ItemData item, String role) {
+    public synchronized Result createOrUpdateItem(String key, ItemData item, String[] role) {
         Result result = new Result(String.format("Item:%s", key));
         ResultSet set = null;
         try {
@@ -66,7 +66,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(9, item.getVersion()); // version_param
             db.setString(10, getUser()); // changed_by_param
             db.setString(11, item.getPartition()); // partition_key_param
-            db.setString(12, role); // role_key_param
+            db.setArray(12, role); // role_key_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_item"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -79,12 +79,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized ItemData getItem(String key, boolean includeLinks, String role) {
+    public synchronized ItemData getItem(String key, boolean includeLinks, String[] role) {
         ItemData item = new ItemData();
         try {
             db.prepare(getGetItemSQL());
             db.setString(1, key);
-            db.setString(2, role);
+            db.setArray(2, role);
             item = util.toItemData(db.executeQuerySingleRow());
 
             if (includeLinks) {
@@ -116,7 +116,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteItem(String key, String role) {
+    public Result deleteItem(String key, String[] role) {
         return delete(getDeleteItemSQL(), key, role);
     }
 
@@ -131,7 +131,7 @@ public class PgSqlRepository implements DbRepository {
             Short status,
             String modelKey,
             Integer top,
-            String role
+            String[] role
     ) {
         ItemList items = new ItemList();
         try {
@@ -146,7 +146,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(8, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
             db.setString(9, modelKey);
             db.setObject(10, (top == null) ? 20 : top);
-            db.setString(11, role);
+            db.setArray(11, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 items.getValues().add(util.toItemData(set));
@@ -159,7 +159,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized JSONObject getItemMeta(String key, String filter, String role) {
+    public synchronized JSONObject getItemMeta(String key, String filter, String[] role) {
         HashMap<String, Object> results = new HashMap<>();
         // gets the item in question
         ItemData item = getItem(key, false, role);
@@ -197,11 +197,11 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result deleteAllItems(String role) {
+    public synchronized Result deleteAllItems(String[] role) {
         Result result = new Result();
         try {
             db.prepare(getDeleteAllItemsSQL());
-            db.setString(1, role);
+            db.setArray(1, role);
             db.execute();
             result.setOperation("D");
         } catch (Exception ex) {
@@ -218,12 +218,12 @@ public class PgSqlRepository implements DbRepository {
        LINKS
      */
     @Override
-    public synchronized LinkData getLink(String key, String role) {
+    public synchronized LinkData getLink(String key, String[] role) {
         LinkData link = null;
         try {
             db.prepare(getGetLinkSQL());
             db.setString(1, key);
-            db.setString(2, role);
+            db.setArray(2, role);
             ResultSet set = db.executeQuerySingleRow();
             link = util.toLinkData(set);
         } catch (Exception ex) {
@@ -235,7 +235,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result createOrUpdateLink(String key, LinkData link, String role) {
+    public synchronized Result createOrUpdateLink(String key, LinkData link, String[] role) {
         Result result = new Result(String.format("Link:%s", key));
         try {
             db.prepare(getSetLinkSQL());
@@ -249,7 +249,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(8, getAttributeString(link.getAttribute()));
             db.setObject(9, link.getVersion());
             db.setString(10, getUser());
-            db.setString(11, role);
+            db.setArray(11, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("set_link"));
         } catch (Exception ex) {
             result.setError(true);
@@ -261,7 +261,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result deleteLink(String key, String role) {
+    public synchronized Result deleteLink(String key, String[] role) {
         return delete(getDeleteLinkSQL(), key, role);
     }
 
@@ -277,7 +277,7 @@ public class PgSqlRepository implements DbRepository {
             ZonedDateTime updatedTo,
             String modelKey,
             Integer top,
-            String role
+            String[] role
     ) {
         LinkList links = new LinkList();
         try {
@@ -293,7 +293,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(9, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
             db.setString(10, modelKey);
             db.setObject(11, (top == null) ? 20 : top);
-            db.setString(12, role);
+            db.setArray(12, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 links.getValues().add(util.toLinkData(set));
@@ -306,7 +306,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result clear(String role) {
+    public synchronized Result clear(String[] role) {
         try {
             return delete(getClearAllSQL(), null, role);
         } catch (Exception ex) {
@@ -318,7 +318,7 @@ public class PgSqlRepository implements DbRepository {
         }
     }
 
-    private synchronized Result delete(String sql, String key, String role){
+    private synchronized Result delete(String sql, String key, String[] role){
         return delete(sql, key, false, role);
     }
 
@@ -326,7 +326,7 @@ public class PgSqlRepository implements DbRepository {
         return delete(sql, key, isType, null);
     }
 
-    private synchronized Result delete(String sql, String key, boolean isType, String role) {
+    private synchronized Result delete(String sql, String key, boolean isType, String[] role) {
         Result result = new Result(String.format("Delete(%s)", key));
         try {
             db.prepare(sql);
@@ -334,9 +334,9 @@ public class PgSqlRepository implements DbRepository {
                 int paramIx = 1;
                 db.setString(paramIx, key);
                 paramIx++;
-                if (role != null) db.setString(paramIx, role);
+                if (role != null) db.setArray(paramIx, role);
             } else {
-                db.setString(1, role);
+                db.setArray(1, role);
             }
             result.setOperation((db.execute()) ? "D" : "N");
             if (result.getOperation().equals("D")) {
@@ -356,12 +356,12 @@ public class PgSqlRepository implements DbRepository {
         ITEM TYPES
      */
     @Override
-    public synchronized ItemTypeData getItemType(String key, String role) {
+    public synchronized ItemTypeData getItemType(String key, String[] role) {
         ItemTypeData itemType = null;
         try {
             db.prepare(getGetItemTypeSQL());
             db.setString(1, key);
-            db.setString(2, role);
+            db.setArray(2, role);
             ResultSet set = db.executeQuerySingleRow();
             itemType = util.toItemTypeData(set);
         } catch (Exception ex) {
@@ -373,7 +373,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteItemTypes(String role) {
+    public Result deleteItemTypes(String[] role) {
         return delete(getDeleteItemTypes(), null, role);
     }
 
@@ -385,7 +385,7 @@ public class PgSqlRepository implements DbRepository {
             ZonedDateTime updatedFrom,
             ZonedDateTime updatedTo,
             String modelKey,
-            String role
+            String[] role
     ) {
         ItemTypeList itemTypes = new ItemTypeList();
         try {
@@ -396,7 +396,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(4, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
             db.setObject(5, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
             db.setString(6, modelKey);
-            db.setString(7, role);
+            db.setArray(7, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 itemTypes.getValues().add(util.toItemTypeData(set));
@@ -410,7 +410,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result createOrUpdateItemType(String key, ItemTypeData itemType, String role) {
+    public synchronized Result createOrUpdateItemType(String key, ItemTypeData itemType, String[] role) {
         Result result = new Result(String.format("ItemType:%s", key));
         try {
             db.prepare(getSetItemTypeSQL());
@@ -423,7 +423,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(7, itemType.getVersion()); // version_param
             db.setObject(8, itemType.getModelKey()); // meta model key
             db.setString(9, getUser()); // changed_by_param
-            db.setString(10, role);
+            db.setArray(10, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("set_item_type"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -436,7 +436,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteItemType(String key, String role) {
+    public Result deleteItemType(String key, String[] role) {
         return delete(getDeleteItemTypeSQL(), key, true, role);
     }
 
@@ -444,7 +444,7 @@ public class PgSqlRepository implements DbRepository {
         LINK TYPES
      */
     @Override
-    public synchronized LinkTypeList getLinkTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey, String role) {
+    public synchronized LinkTypeList getLinkTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey, String[] role) {
         LinkTypeList linkTypes = new LinkTypeList();
         try {
             db.prepare(getFindLinkTypesSQL());
@@ -454,7 +454,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(4, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
             db.setObject(5, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
             db.setObject(6, modelKey);
-            db.setString(7, role);
+            db.setArray(7, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 linkTypes.getValues().add(util.toLinkTypeData(set));
@@ -468,7 +468,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result createOrUpdateLinkType(String key, LinkTypeData linkType, String role) {
+    public synchronized Result createOrUpdateLinkType(String key, LinkTypeData linkType, String[] role) {
         Result result = new Result(String.format("LinkType:%s", key));
         try {
             db.prepare(getSetLinkTypeSQL());
@@ -480,7 +480,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(6, linkType.getVersion()); // version_param
             db.setString(7, linkType.getModelKey()); // model_key_param
             db.setString(8, getUser()); // changed_by_param
-            db.setString(9, role);
+            db.setArray(9, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("set_link_type"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -493,22 +493,22 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteLinkType(String key, String role) {
+    public Result deleteLinkType(String key, String[] role) {
         return delete(getDeleteLinkTypeSQL(), key, true, role);
     }
 
     @Override
-    public Result deleteLinkTypes(String role) {
+    public Result deleteLinkTypes(String[] role) {
         return delete(getDeleteLinkTypes(), null, role);
     }
 
     @Override
-    public synchronized LinkTypeData getLinkType(String key, String role) {
+    public synchronized LinkTypeData getLinkType(String key, String[] role) {
         LinkTypeData linkType = null;
         try {
             db.prepare(getGetLinkTypeSQL());
             db.setString(1, key);
-            db.setString(2, role);
+            db.setArray(2, role);
             ResultSet set = db.executeQuerySingleRow();
             linkType = util.toLinkTypeData(set);
         } catch (Exception ex) {
@@ -531,7 +531,7 @@ public class PgSqlRepository implements DbRepository {
             ZonedDateTime createdTo,
             ZonedDateTime updatedFrom,
             ZonedDateTime updatedTo,
-            String role
+            String[] role
         ) {
         LinkRuleList linkRules = new LinkRuleList();
         try {
@@ -543,7 +543,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(5, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
             db.setObject(6, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
             db.setObject(7, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
-            db.setString(8, role);
+            db.setArray(8, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 linkRules.getValues().add(util.toLinkRuleData(set));
@@ -557,7 +557,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result createOrUpdateLinkRule(String key, LinkRuleData linkRule, String role) {
+    public synchronized Result createOrUpdateLinkRule(String key, LinkRuleData linkRule, String[] role) {
         Result result = new Result(String.format("LinkRule:%s", key));
         try {
             db.prepare(getSetLinkRuleSQL());
@@ -569,7 +569,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(6, linkRule.getEndItemTypeKey()); // endItemType_param
             db.setObject(7, linkRule.getVersion()); // version_param
             db.setString(8, getUser()); // changed_by_param
-            db.setString(9, role); // roel_key_param
+            db.setArray(9, role); // roel_key_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_link_rule"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -582,12 +582,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteLinkRule(String key, String role) {
+    public Result deleteLinkRule(String key, String[] role) {
         return delete(getDeleteLinkRuleSQL(), key, role);
     }
 
     @Override
-    public Result deleteLinkRules(String role) {
+    public Result deleteLinkRules(String[] role) {
         return delete(getDeleteLinkRulesSQL(), null, role);
     }
 
@@ -595,7 +595,7 @@ public class PgSqlRepository implements DbRepository {
     public String getGetItemSQL() {
         return "SELECT * FROM item(" +
                 "?::character varying," + // key_param
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -613,7 +613,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::bigint," +
                 "?::character varying," +
                 "?::character varying," + // partition_key_param
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -630,7 +630,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::timestamp with time zone," + // updated_to
                 "?::character varying," + // model_key
                 "?::integer," + // max_items
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -638,14 +638,14 @@ public class PgSqlRepository implements DbRepository {
     public String getDeleteItemSQL() {
         return "SELECT delete_item(" +
                 "?::character varying," +
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
     @Override
     public String getDeleteAllItemsSQL() {
         return "SELECT delete_all_items(" +
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -653,7 +653,7 @@ public class PgSqlRepository implements DbRepository {
     public String getDeleteLinkSQL() {
         return "SELECT delete_link(" +
                 "?::character varying," +
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -661,7 +661,7 @@ public class PgSqlRepository implements DbRepository {
     public String getGetLinkSQL() {
         return "SELECT * FROM link(" +
                 "?::character varying," +
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -678,7 +678,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::hstore," + // attribute
                 "?::bigint," + // version
                 "?::character varying," + // changed_by
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -696,14 +696,14 @@ public class PgSqlRepository implements DbRepository {
                 "?::timestamp with time zone," + // date_updated_to_param
                 "?::character varying," + // model_key_param
                 "?::integer," + // max_items
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
     @Override
     public String getClearAllSQL() {
         return "SELECT clear_all(" +
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -711,14 +711,14 @@ public class PgSqlRepository implements DbRepository {
     public String getDeleteItemTypeSQL() {
         return "SELECT delete_item_type(" +
                 "?::character varying," +
-                "?::character varying" +
+                "?::character varying[]" +
                 ")";
     }
 
     @Override
     public String getDeleteItemTypes() {
         return "SELECT delete_item_types(" +
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -731,7 +731,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::timestamp(6) with time zone," + // date updates from
                 "?::timestamp(6) with time zone," + // date updated to
                 "?::character varying," + // model key
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -747,7 +747,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::bigint," + // version
                 "?::character varying," + // meta model key
                 "?::character varying," + // changed_by
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -755,7 +755,7 @@ public class PgSqlRepository implements DbRepository {
     public String getGetItemTypeSQL() {
         return "SELECT * FROM item_type(" +
                 "?::character varying," + // key
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -763,14 +763,14 @@ public class PgSqlRepository implements DbRepository {
     public String getDeleteLinkTypeSQL() {
         return "SELECT delete_link_type(" +
                 "?::character varying," +
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
     @Override
     public String getDeleteLinkTypes() {
         return "SELECT delete_link_types(" +
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -783,7 +783,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::timestamp(6) with time zone," + // date updates from
                 "?::timestamp(6) with time zone," + // date updated to
                 "?::character varying," + // model key
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -798,7 +798,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::bigint," + // version
                 "?::character varying," + // model_key
                 "?::character varying," + // changed_by
-                "?::character varying" + // role_change_param
+                "?::character varying[]" + // role_change_param
                 ")";
     }
 
@@ -806,7 +806,7 @@ public class PgSqlRepository implements DbRepository {
     public String getGetLinkTypeSQL() {
         return "SELECT * FROM link_type(" +
                 "?::character varying," + // key
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -940,7 +940,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized ResultList createOrUpdateData(GraphData payload, String role) {
+    public synchronized ResultList createOrUpdateData(GraphData payload, String[] role) {
         ResultList results = new ResultList();
         List<ModelData> models = payload.getModels();
         for (ModelData model : models) {
@@ -1013,12 +1013,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result deleteModel(String key, String role) {
+    public synchronized Result deleteModel(String key, String[] role) {
         return delete(getDeleteModelSQL(), key, true, role);
     }
 
     @Override
-    public synchronized Result createOrUpdateModel(String key, ModelData model, String role) {
+    public synchronized Result createOrUpdateModel(String key, ModelData model, String[] role) {
         Result result = new Result(String.format("Model:%s", key));
         try {
             db.prepare(getSetModelSQL());
@@ -1028,7 +1028,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(4, model.getVersion()); // version_param
             db.setString(5, getUser()); // changed_by_param
             db.setString(6, model.getPartition()); // partition_key_param
-            db.setString(7, role);
+            db.setArray(7, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("set_model"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -1041,12 +1041,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized ModelData getModel(String key, String role) {
+    public synchronized ModelData getModel(String key, String[] role) {
         ModelData model = null;
         try {
             db.prepare(getGetModelSQL());
             db.setString(1, key);
-            db.setString(2, role);
+            db.setArray(2, role);
             ResultSet set = db.executeQuerySingleRow();
             model = util.toModelData(set);
             db.close();
@@ -1059,11 +1059,11 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized ModelDataList getModels(String role) {
+    public synchronized ModelDataList getModels(String[] role) {
         ModelDataList models = new ModelDataList();
         try {
             db.prepare(getGetModelsSQL());
-            db.setString(1, role);
+            db.setArray(1, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 models.getValues().add(util.toModelData(set));
@@ -1083,14 +1083,14 @@ public class PgSqlRepository implements DbRepository {
                 "?::bigint," + // version_param
                 "?::character varying," + // changed_by
                 "?::character varying," + // partition_key_param
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
     @Override
     public String getGetModelsSQL() {
         return "SELECT * FROM get_models(" +
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -1098,7 +1098,7 @@ public class PgSqlRepository implements DbRepository {
     public String getGetModelSQL() {
         return "SELECT * FROM model(" +
                 "?::character varying," + // key
-                "?::character varying" + // role
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -1157,7 +1157,7 @@ public class PgSqlRepository implements DbRepository {
     public String getDeleteModelSQL() {
         return "SELECT delete_model(" +
                 "?::character varying, " + // model_key_param
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -1172,7 +1172,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," + // end_item_type
                 "?::bigint," + // version
                 "?::character varying," + // changed_by
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -1186,7 +1186,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::timestamp(6) with time zone," +
                 "?::timestamp(6) with time zone," +
                 "?::timestamp(6) with time zone," +
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -1289,12 +1289,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deletePartition(String key, String role) {
+    public Result deletePartition(String key, String[] role) {
         return delete(getDeletePartitionSQL(), key, role);
     }
 
     @Override
-    public Result createOrUpdatePartition(String key, PartitionData part, String role) {
+    public Result createOrUpdatePartition(String key, PartitionData part, String[] role) {
         Result result = new Result(String.format("Partition:%s", key));
         ResultSet set = null;
         try {
@@ -1304,7 +1304,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(3, part.getDescription()); // description_param
             db.setObject(4, part.getVersion()); // version_param
             db.setString(5, getUser()); // changed_by_param
-            db.setString(6, role); // role_key_param
+            db.setArray(6, role); // role_key_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_partition"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -1317,11 +1317,11 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public PartitionDataList getAllPartitions(String role) {
+    public PartitionDataList getAllPartitions(String[] role) {
         PartitionDataList parts = new PartitionDataList();
         try {
             db.prepare(getGetAllPartitionsSQL());
-            db.setString(1, role);
+            db.setArray(1, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 parts.getValues().add(util.toPartitionData(set));
@@ -1335,12 +1335,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public PartitionData getPartition(String key, String role) {
+    public PartitionData getPartition(String key, String[] role) {
         PartitionData part = null;
         try {
             db.prepare(getGetPartitionSQL());
             db.setString(1, key);
-            db.setString(2, role);
+            db.setArray(2, role);
             ResultSet set = db.executeQuerySingleRow();
             part = util.toPartitionData(set);
             db.close();
@@ -1356,7 +1356,7 @@ public class PgSqlRepository implements DbRepository {
     public String getDeleteRoleSQL() {
         return "SELECT delete_role(" +
                 "?::character varying," + // key_param
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -1368,7 +1368,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::text," + // description_param
                 "?::bigint," + // version_param
                 "?::character varying," + // changed_by
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -1376,25 +1376,25 @@ public class PgSqlRepository implements DbRepository {
     public String getGetRoleSQL() {
         return "SELECT * FROM role(" +
                 "?::character varying," + // key_param
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
     @Override
     public String getGetAllRolesSQL() {
         return "SELECT * FROM get_roles(" +
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
     @Override
-    public Result deleteRole(String key, String role) {
+    public Result deleteRole(String key, String[] role) {
         return delete(getDeleteRoleSQL(), key, role);
     }
 
     @Override
-    public Result createOrUpdateRole(String key, RoleData roleData, String role) {
-        Result result = new Result(String.format("Partition:%s", key));
+    public Result createOrUpdateRole(String key, RoleData roleData, String[] role) {
+        Result result = new Result(String.format("Role:%s", key));
         ResultSet set = null;
         try {
             db.prepare(getSetRoleSQL());
@@ -1403,7 +1403,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(3, roleData.getDescription()); // description_param
             db.setObject(4, roleData.getVersion()); // version_param
             db.setString(5, getUser()); // changed_by_param
-            db.setString(6, role); // role_key_param
+            db.setArray(6, role); // role_key_param
             result.setOperation(db.executeQueryAndRetrieveStatus("set_role"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -1416,12 +1416,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public RoleData getRole(String key, String role) {
+    public RoleData getRole(String key, String[] role) {
         RoleData roleData = null;
         try {
             db.prepare(getGetRoleSQL());
             db.setString(1, key);
-            db.setString(2, role);
+            db.setArray(2, role);
             ResultSet set = db.executeQuerySingleRow();
             roleData = util.toRoleData(set);
             db.close();
@@ -1434,11 +1434,11 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public RoleDataList getAllRoles(String role) {
+    public RoleDataList getAllRoles(String[] role) {
         RoleDataList parts = new RoleDataList();
         try {
             db.prepare(getGetAllRolesSQL());
-            db.setString(1, role);
+            db.setArray(1, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 parts.getValues().add(util.toRoleData(set));
@@ -1452,7 +1452,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result addPrivilege(String partitionKey, String roleKey, PrivilegeData privilege, String role) {
+    public Result addPrivilege(String partitionKey, String roleKey, NewPrivilegeData privilege, String[] role) {
         Result result = new Result(String.format("Privilege:%s:%s", roleKey, partitionKey));
         ResultSet set = null;
         try {
@@ -1463,7 +1463,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(4, privilege.isCanRead()); // can_read_param
             db.setObject(5, privilege.isCanDelete()); // can_delete_param
             db.setString(6, getUser()); // changed_by_param
-            db.setString(7, role); // role_key_param
+            db.setArray(7, role); // role_key_param
             result.setOperation(db.executeQueryAndRetrieveStatus("add_privilege"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -1476,13 +1476,13 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result removePrivilege(String partitionKey, String roleKey, String role) {
+    public Result removePrivilege(String partitionKey, String roleKey, String[] role) {
         Result result = new Result(String.format("Remove_Privilege_%s_%s", roleKey, partitionKey));
         try {
             db.prepare(getRemovePrivilegeSQL());
             db.setString(1, partitionKey);
             db.setString(2, roleKey);
-            db.setString(3, role);
+            db.setArray(3, role);
             result.setOperation((db.execute()) ? "D" : "N");
             if (result.getOperation().equals("D")) {
                 result.setChanged(true);
@@ -1498,6 +1498,25 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public PrivilegeDataList getPrivilegesByRole(String roleKey, String[] loggedRoleKey) {
+        PrivilegeDataList priv = new PrivilegeDataList();
+        try {
+            db.prepare(getGetAllPrivilegeByRoleSQL());
+            db.setString(1, roleKey);
+            db.setArray(2, loggedRoleKey);
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                priv.getValues().add(util.toPrivilegeData(set));
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to get privileges.", ex);
+        } finally {
+            db.close();
+        }
+        return priv;
+    }
+
+    @Override
     public String getAddPrivilegeSQL() {
         return "SELECT add_privilege(" +
                 "?::character varying," + // role_key_param
@@ -1506,7 +1525,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::boolean," + // can_read_param
                 "?::boolean," + // can_delete_param
                 "?::character varying," + // changed_by_param
-                "?::character varying" + // logged_role_key_param
+                "?::character varying[]" + // logged_role_key_param
                 ")";
     }
 
@@ -1515,7 +1534,15 @@ public class PgSqlRepository implements DbRepository {
         return "SELECT remove_privilege(" +
                 "?::character varying," + // role_key_param
                 "?::character varying," + // privilege_key_param
-                "?::character varying" + // logged_role_key_param
+                "?::character varying[]" + // logged_role_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetAllPrivilegeByRoleSQL() {
+        return "SELECT * FROM get_privileges_by_role(" +
+                "?::character varying," + // privileges_role_key_param
+                "?::character varying[]" + // logged_role_key_param
                 ")";
     }
 
@@ -1523,7 +1550,7 @@ public class PgSqlRepository implements DbRepository {
     public String getDeletePartitionSQL() {
         return "SELECT delete_partition(" +
                 "?::character varying," + // key_param
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -1535,14 +1562,14 @@ public class PgSqlRepository implements DbRepository {
                 "?::text," + // description_param
                 "?::bigint," + // version_param
                 "?::character varying," + // changed_by
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
     @Override
     public String getGetAllPartitionsSQL() {
         return "SELECT * FROM get_partitions(" +
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -1550,7 +1577,7 @@ public class PgSqlRepository implements DbRepository {
     public String getGetPartitionSQL() {
         return "SELECT * FROM partition(" +
                 "?::character varying," + // key_param
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
