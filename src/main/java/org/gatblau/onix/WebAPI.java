@@ -514,6 +514,21 @@ public class WebAPI {
         return ResponseEntity.ok(data.getRole(key, getRole(authentication)));
     }
 
+    @ApiOperation(
+            value = "Get a list of privileges for the specified role.",
+            notes = "")
+    @RequestMapping(
+            path = "/role/{key}/privilege"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<PrivilegeDataList> getRolePrivileges(
+            @PathVariable("key") String key,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(data.getPrivilegesByRole(key, getRole(authentication)));
+    }
+
     /*
         PRIVILEGES
      */
@@ -536,7 +551,7 @@ public class WebAPI {
         @PathVariable("role_key")
         String roleKey,
         @RequestBody
-        PrivilegeData privilege,
+        NewPrivilegeData privilege,
         Authentication authentication
     ) {
         Result result = data.addPrivilege(partitionKey, roleKey, privilege, getRole(authentication));
@@ -1209,18 +1224,20 @@ public class WebAPI {
         return date;
     }
 
-    private String getRole(Authentication authentication) {
+    private String[] getRole(Authentication authentication) {
+        String[] roles = new String[authentication.getAuthorities().size()];
         // if the service is configured not to use authentication
         if (authentication == null) {
             // then return the ADMIN role
-            return "ADMIN";
+            return new String[]{"ADMIN"};
         }
         // otherwise uses the role in the first authority
-        String role = null;
+        int ix = 0;
         for (GrantedAuthority authority : authentication.getAuthorities()){
-            role = authority.getAuthority();
+            roles[ix] = authority.getAuthority().substring("ROLE_".length());
+            ix++;
             break;
         }
-        return role.substring("ROLE_".length());
+        return roles;
     }
 }

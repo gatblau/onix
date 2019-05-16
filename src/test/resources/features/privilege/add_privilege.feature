@@ -5,6 +5,8 @@ Feature: Add privilege to Role
     read, write and delete operations on resources.
 
   Scenario: Add privilege to role
+    Given the partition exists in the database
+    Given the role exists in the database
     Given the privilege does not exist in the database
     When a PUT HTTP request to the privilege endpoint with a new JSON payload is done
     Then the response code is 201

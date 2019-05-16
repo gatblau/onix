@@ -47,6 +47,10 @@ class Database {
         stmt.setString(parameterIndex, value);
     }
 
+    void setArray(int parameterIndex, String[] value) throws SQLException {
+        stmt.setArray(parameterIndex, ds.getConn().createArrayOf("varchar", value));
+    }
+
     void setInt(int parameterIndex, Integer value) throws SQLException {
         stmt.setInt(parameterIndex, value);
     }

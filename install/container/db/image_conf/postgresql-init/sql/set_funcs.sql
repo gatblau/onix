@@ -25,7 +25,7 @@ DO $$
       description_param text,
       local_version_param bigint,
       changed_by_param character varying,
-      role_key_param character varying
+      role_key_param character varying[]
     )
       RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
@@ -95,7 +95,7 @@ DO $$
         text, -- description
         bigint, -- client version
         character varying, -- changed by
-        role_key_param character varying
+        role_key_param character varying[]
       )
       OWNER TO onix;
 
@@ -109,7 +109,7 @@ DO $$
       description_param text,
       local_version_param bigint,
       changed_by_param character varying,
-      role_key_param character varying
+      role_key_param character varying[]
     )
       RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
@@ -123,7 +123,7 @@ DO $$
       rows_affected   integer;
     BEGIN
       -- gets the current item type version
-      SELECT version FROM partition WHERE key = key_param INTO current_version;
+      SELECT version FROM role WHERE key = key_param INTO current_version;
 
       -- checks the role can modify this role
       PERFORM can_manage_partition(role_key_param);
@@ -179,7 +179,7 @@ DO $$
         text, -- description
         bigint, -- client version
         character varying, -- changed by
-        role_key_param character varying
+        role_key_param character varying[]
       )
       OWNER TO onix;
 
@@ -194,7 +194,7 @@ DO $$
          local_version_param bigint,
          changed_by_param character varying,
          partition_key_param character varying,
-         role_key_param character varying
+         role_key_param character varying[]
       )
       RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
@@ -218,8 +218,9 @@ DO $$
            INNER JOIN privilege pr on p.id = pr.partition_id
            INNER JOIN role r on pr.role_id = r.id
         AND pr.can_create = TRUE -- has create permission
-        AND r.key = role_key_param -- the user role
+        AND r.key = ANY(role_key_param) -- the user role
         AND p.key = partition_key_param -- the requested partition
+        LIMIT 1
            INTO partition_id_value;
 
         IF (partition_id_value IS NULL) THEN
@@ -260,8 +261,9 @@ DO $$
           INNER JOIN role r on pr.role_id = r.id
           INNER JOIN model m on p.id = m.partition_id
           AND pr.can_create = TRUE -- whether the role has update permission on the model
-          AND r.key = role_key_param -- the user role requesting the update
+          AND r.key = ANY(role_key_param) -- the user role requesting the update
           AND m.key = key_param -- the model to be updated
+          LIMIT 1
              INTO partition_id_value;
 
         IF (partition_id_value IS NULL) THEN
@@ -296,7 +298,7 @@ DO $$
         bigint, -- client version
         character varying, -- changed by
         partition_key_param character varying,
-        role_key_param character varying
+        role_key_param character varying[]
       )
       OWNER TO onix;
 
@@ -321,7 +323,7 @@ DO $$
         local_version_param bigint,
         changed_by_param character varying,
         partition_key_param character varying,
-        role_key_param character varying
+        role_key_param character varying[]
       )
       RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
@@ -380,7 +382,8 @@ DO $$
         INNER JOIN role r on pr.role_id = r.id
           AND p.key = partition_key_param -- the requested partition key
           AND pr.can_create = TRUE -- has create permission
-          AND r.key = role_key_param -- the user role
+          AND r.key = ANY(role_key_param) -- the user role
+        LIMIT 1
              INTO partition_id_value;
 
         IF (partition_id_value IS NULL) THEN
@@ -430,7 +433,8 @@ DO $$
         INNER JOIN item i on p.id = i.partition_id
           AND i.partition_id = p.id -- the partition associated to the existing item
           AND pr.can_create = TRUE -- has create permission
-          AND r.key = role_key_param -- the user role
+          AND r.key = ANY(role_key_param) -- the user role
+        LIMIT 1
              INTO current_partition_id_value;
 
         IF (current_partition_id_value IS NULL) THEN
@@ -505,7 +509,7 @@ DO $$
         bigint,
         character varying,
         character varying, -- partition_key_param
-        character varying -- role_key_param
+        character varying[] -- role_key_param
       )
       OWNER TO onix;
 
@@ -528,7 +532,7 @@ DO $$
         local_version_param bigint,
         model_key_param character varying,
         changed_by_param character varying,
-        role_key_param character varying
+        role_key_param character varying[]
       )
       RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
@@ -564,8 +568,9 @@ DO $$
       INNER JOIN privilege pr on p.id = pr.partition_id
       INNER JOIN role r on pr.role_id = r.id
         AND pr.can_create = TRUE -- has create permission
-        AND r.key = role_key_param -- the user role
+        AND r.key = ANY(role_key_param) -- the user role
         AND m.key = model_key_param -- the model the item type is in
+      LIMIT 1
       INTO partition_id_value;
 
       IF (partition_id_value IS NULL) THEN
@@ -648,7 +653,7 @@ DO $$
         bigint, -- client version
         character varying, -- meta model key
         character varying, -- changed by
-        character varying -- role_key_param
+        character varying[] -- role_key_param
       )
       OWNER TO onix;
 
@@ -670,7 +675,7 @@ DO $$
         local_version_param bigint,
         model_key_param character varying,
         changed_by_param character varying,
-        role_key_param character varying
+        role_key_param character varying[]
       )
       RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
@@ -705,7 +710,7 @@ DO $$
       INNER JOIN privilege pr on p.id = pr.partition_id
       INNER JOIN role r on pr.role_id = r.id
         AND pr.can_create = TRUE -- has create permission
-        AND r.key = role_key_param -- the user role
+        AND r.key = ANY(role_key_param) -- the user role
         AND m.key = model_key_param -- the model the item type is in
       INTO rows_affected;
 
@@ -781,7 +786,7 @@ DO $$
       bigint, -- client version
       character varying, -- meta model key
       character varying, -- changed by
-      character varying -- role_key_param
+      character varying[] -- role_key_param
       )
       OWNER TO onix;
 
@@ -805,7 +810,7 @@ DO $$
       attribute_param hstore,
       local_version_param bigint,
       changed_by_param character varying,
-      role_key_param character varying
+      role_key_param character varying[]
     )
       RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
@@ -835,8 +840,8 @@ DO $$
 
       SELECT i.id, t.key
       FROM item i
-             INNER JOIN item_type t
-                        ON i.item_type_id = t.id
+      INNER JOIN item_type t
+        ON i.item_type_id = t.id
       WHERE i.key = start_item_key_param INTO start_item_id_value, start_item_type_key_value;
 
       IF (start_item_id_value IS NULL) THEN
@@ -884,7 +889,7 @@ DO $$
           INNER JOIN partition p ON m.partition_id = p.id
           INNER JOIN privilege pr ON p.id = pr.partition_id
           INNER JOIN role r ON pr.role_id = r.id
-          WHERE r.key = role_key_param
+          WHERE r.key = ANY(role_key_param)
           AND pr.can_create = TRUE
           AND lt.key = link_type_key_param
           INTO rows_affected;
@@ -933,7 +938,7 @@ DO $$
            INNER JOIN partition p ON m.partition_id = p.id
            INNER JOIN privilege pr ON p.id = pr.partition_id
            INNER JOIN role r ON pr.role_id = r.id
-        WHERE r.key = role_key_param
+        WHERE r.key = ANY(role_key_param)
           AND pr.can_create = TRUE
           AND lt.key = link_type_key_param
           INTO rows_affected;
@@ -951,7 +956,7 @@ DO $$
            INNER JOIN privilege pr ON p.id = pr.partition_id
            INNER JOIN role r ON pr.role_id = r.id
            INNER JOIN link l ON lt.id = l.link_type_id
-        WHERE r.key = role_key_param
+        WHERE r.key = ANY(role_key_param)
           AND pr.can_create = TRUE
           AND lt.id = l.link_type_id
           AND l.key = key_param
@@ -1003,7 +1008,7 @@ DO $$
         hstore,
         bigint,
         character varying,
-        character varying -- role_key_param
+        character varying[] -- role_key_param
       )
       OWNER TO onix;
 
@@ -1025,7 +1030,7 @@ DO $$
       end_item_type_key_param character varying,
       local_version_param bigint,
       changed_by_param character varying,
-      role_key_param character varying
+      role_key_param character varying[]
     )
       RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
@@ -1057,7 +1062,7 @@ DO $$
                INNER JOIN partition p ON m.partition_id = p.id
                INNER JOIN privilege pr ON p.id = pr.partition_id
                INNER JOIN role r ON pr.role_id = r.id
-        WHERE r.key = role_key_param
+        WHERE r.key = ANY(role_key_param)
           AND pr.can_create = TRUE
           AND lt.key = link_type_key_param
           INTO rows_affected;
@@ -1103,7 +1108,7 @@ DO $$
                INNER JOIN partition p on m.partition_id = p.id
                INNER JOIN privilege pr on p.id = pr.partition_id
                INNER JOIN role r on pr.role_id = r.id
-        WHERE r.key = role_key_param
+        WHERE r.key = ANY(role_key_param)
           AND pr.can_create = TRUE
           AND lr.key = key_param
           AND lt.key = link_type_key_param
@@ -1149,7 +1154,7 @@ DO $$
       character varying,
       bigint,
       character varying,
-      character varying -- role_key_param
+      character varying[] -- role_key_param
     )
       OWNER TO onix;
 
@@ -1163,7 +1168,7 @@ DO $$
       can_read_param boolean,
       can_delete_param boolean,
       changed_by_param character varying,
-      logged_role_key_param character varying
+      logged_role_key_param character varying[]
     )
       RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
@@ -1181,7 +1186,9 @@ DO $$
       -- finds the level of the logged role
       SELECT r.level
       FROM role r
-      WHERE r.key = logged_role_key_param
+      WHERE r.key = ANY(logged_role_key_param)
+      ORDER BY r.level DESC
+      LIMIT 1
         INTO logged_role_level;
 
       -- finds the owner of the role to add the privilege to
@@ -1198,10 +1205,12 @@ DO $$
 
       IF (logged_role_level = 0) THEN
         -- logged role cannot mess with privileges
-        RAISE EXCEPTION 'Role level 0: "%" is not authorised to add privilege.', logged_role_key_param;
-      ELSEIF NOT(logged_role_level = 1 OR role_owner = logged_role_key_param OR partition_owner = logged_role_key_param) THEN
-        -- logged role can only add privileges if it owns both the role and partition, so cannot do it in this case
-        RAISE EXCEPTION 'Role level 1: "%" is not authorised to add privilege because it does not own privilege or role to add the privilege to. Role owner is "%s" and Partition owner is "%s".', logged_role_key_param, role_owner, partition_owner;
+        RAISE EXCEPTION 'Role level %: "%" is not authorised to remove privilege.', logged_role_level, logged_role_key_param;
+      ELSEIF (logged_role_level = 1) THEN
+        IF NOT(role_owner = ANY(logged_role_key_param) AND partition_owner = ANY(logged_role_key_param)) THEN
+          -- logged role can only add privileges if it owns both the role and partition, so cannot do it in this case
+          RAISE EXCEPTION 'Role level %: "%" is not authorised to remove privilege because it does not own privilege or role to add the privilege to. Role owner is "%" and Partition owner is "%".', logged_role_level, logged_role_key_param, role_owner, partition_owner;
+        END IF;
       END IF;
 
       -- logged role is either level 1 owning role and partition or level 2
@@ -1232,7 +1241,7 @@ DO $$
        boolean,
        boolean,
        character varying,
-       character varying
+       character varying[]
     )
     OWNER TO onix;
 
@@ -1243,7 +1252,7 @@ DO $$
     CREATE OR REPLACE FUNCTION remove_privilege(
       partition_key_param character varying,
       role_key_param character varying,
-      logged_role_key_param character varying
+      logged_role_key_param character varying[]
     )
       RETURNS TABLE(result char(1))
       LANGUAGE 'plpgsql'
@@ -1261,27 +1270,31 @@ DO $$
       -- finds the level of the logged role
       SELECT r.level
       FROM role r
-      WHERE r.key = logged_role_key_param
-            INTO logged_role_level;
+      WHERE r.key = ANY(logged_role_key_param)
+      ORDER BY r.level DESC
+      LIMIT 1
+        INTO logged_role_level;
 
       -- finds the owner of the role to add the privilege to
       SELECT r.owner, r.id
       FROM role r
       WHERE r.key = role_key_param
-            INTO role_owner, role_id_value;
+        INTO role_owner, role_id_value;
 
       -- fins the owner of the partition to add the privilege to
       SELECT p.owner, p.id
       FROM partition p
       WHERE p.key = partition_key_param
-            INTO partition_owner, partition_id_value;
+        INTO partition_owner, partition_id_value;
 
       IF (logged_role_level = 0) THEN
         -- logged role cannot mess with privileges
-        RAISE EXCEPTION 'Role level 0: "%" is not authorised to remove privilege.', logged_role_key_param;
-      ELSEIF NOT(logged_role_level = 1 OR role_owner = logged_role_key_param OR partition_owner = logged_role_key_param) THEN
-        -- logged role can only add privileges if it owns both the role and partition, so cannot do it in this case
-        RAISE EXCEPTION 'Role level 1: "%" is not authorised to remove privilege because it does not own privilege or role to add the privilege to. Role owner is "%s" and Partition owner is "%s".', logged_role_key_param, role_owner, partition_owner;
+        RAISE EXCEPTION 'Role level %: "%" is not authorised to remove privilege.', logged_role_level, logged_role_key_param;
+      ELSEIF (logged_role_level = 1) THEN
+        IF NOT(role_owner = ANY(logged_role_key_param) AND partition_owner = ANY(logged_role_key_param)) THEN
+          -- logged role can only remove privileges if it owns both the role and partition, so cannot do it in this case
+          RAISE EXCEPTION 'Role level %: "%" is not authorised to remove privilege because it does not own privilege or role to add the privilege to. Role owner is "%" and Partition owner is "%".', logged_role_level, logged_role_key_param, role_owner, partition_owner;
+        END IF;
       END IF;
 
       -- logged role is either level 1 owning role and partition or level 2
@@ -1296,7 +1309,7 @@ DO $$
     ALTER FUNCTION remove_privilege(
         character varying,
         character varying,
-        character varying
+        character varying[]
       )
       OWNER TO onix;
 

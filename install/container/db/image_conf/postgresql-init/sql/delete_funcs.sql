@@ -21,7 +21,7 @@ DO
      */
       CREATE OR REPLACE FUNCTION delete_partition(
         key_param character varying,
-        role_key_param character varying
+        role_key_param character varying[]
       )
         RETURNS VOID
         LANGUAGE 'plpgsql'
@@ -39,7 +39,7 @@ DO
       END
       $BODY$;
 
-      ALTER FUNCTION delete_partition(character varying, character varying)
+      ALTER FUNCTION delete_partition(character varying, character varying[])
         OWNER TO onix;
 
      /*
@@ -47,7 +47,7 @@ DO
       */
      CREATE OR REPLACE FUNCTION delete_role(
        key_param character varying,
-       role_key_param character varying
+       role_key_param character varying[]
      )
        RETURNS VOID
        LANGUAGE 'plpgsql'
@@ -65,7 +65,7 @@ DO
      END
      $BODY$;
 
-     ALTER FUNCTION delete_role(character varying, character varying)
+     ALTER FUNCTION delete_role(character varying, character varying[])
        OWNER TO onix;
 
       /*
@@ -73,7 +73,7 @@ DO
      */
       CREATE OR REPLACE FUNCTION delete_model(
           key_param character varying,
-          role_key_param character varying
+          role_key_param character varying[]
         )
         RETURNS VOID
         LANGUAGE 'plpgsql'
@@ -90,11 +90,11 @@ DO
           AND pr.partition_id = p.id
           AND pr.can_delete = TRUE
           AND pr.role_id = r.id
-          AND r.key = role_key_param;
+          AND r.key = ANY(role_key_param);
       END
       $BODY$;
 
-      ALTER FUNCTION delete_model(character varying, character varying)
+      ALTER FUNCTION delete_model(character varying, character varying[])
         OWNER TO onix;
 
       /*
@@ -102,7 +102,7 @@ DO
        */
       CREATE OR REPLACE FUNCTION delete_item(
         key_param character varying,
-        role_key_param character varying
+        role_key_param character varying[]
       )
         RETURNS VOID
         LANGUAGE 'plpgsql'
@@ -117,18 +117,18 @@ DO
         WHERE i.key = key_param
           AND p.id = i.partition_id
           AND pr.can_delete = TRUE
-          AND r.key = role_key_param;
+          AND r.key = ANY(role_key_param);
       END
       $BODY$;
 
-      ALTER FUNCTION delete_item(character varying, character varying)
+      ALTER FUNCTION delete_item(character varying, character varying[])
         OWNER TO onix;
 
       /*
         delete_all_items
        */
       CREATE OR REPLACE FUNCTION delete_all_items(
-        role_key_param character varying
+        role_key_param character varying[]
       )
         RETURNS VOID
         LANGUAGE 'plpgsql'
@@ -144,11 +144,11 @@ DO
         AND p.id = pr.partition_id
         AND pr.can_delete = TRUE
         AND pr.role_id = r.id
-        AND r.key = role_key_param;
+        AND r.key = ANY(role_key_param);
       END
       $BODY$;
 
-      ALTER FUNCTION delete_all_items(character varying)
+      ALTER FUNCTION delete_all_items(character varying[])
         OWNER TO onix;
 
       /*
@@ -156,7 +156,7 @@ DO
        */
       CREATE OR REPLACE FUNCTION delete_item_type(
         key_param character varying,
-        role_key_param character varying
+        role_key_param character varying[]
       )
         RETURNS VOID
         LANGUAGE 'plpgsql'
@@ -174,11 +174,11 @@ DO
           AND p.id = pr.partition_id
           AND pr.role_id = r.id
           AND pr.can_delete = TRUE
-          AND r.key = role_key_param;
+          AND r.key = ANY(role_key_param);
       END;
       $BODY$;
 
-      ALTER FUNCTION delete_item_type(character varying, character varying)
+      ALTER FUNCTION delete_item_type(character varying, character varying[])
         OWNER TO onix;
 
       /*
@@ -186,7 +186,7 @@ DO
        */
       CREATE OR REPLACE FUNCTION delete_link(
         key_param character varying,
-        role_key_param character varying
+        role_key_param character varying[]
       )
         RETURNS VOID
         LANGUAGE 'plpgsql'
@@ -204,14 +204,14 @@ DO
           AND m.partition_id = p.id
           AND pr.partition_id = p.id
           AND pr.role_id = r.id
-          AND r.key = role_key_param
+          AND r.key = ANY(role_key_param)
           AND pr.can_delete = TRUE;
       END
       $BODY$;
 
       ALTER FUNCTION delete_link(
         character varying,
-        character varying -- role_key_param
+        character varying[] -- role_key_param
       )
         OWNER TO onix;
 
@@ -220,7 +220,7 @@ DO
        */
       CREATE OR REPLACE FUNCTION delete_link_type(
         key_param character varying,
-        role_key_param character varying
+        role_key_param character varying[]
       )
         RETURNS VOID
         LANGUAGE 'plpgsql'
@@ -233,7 +233,7 @@ DO
         FROM link_type lt
         USING model m, partition p, privilege pr, role r
         WHERE lt.key = key_param
-          AND r.key = role_key_param
+          AND r.key = ANY(role_key_param)
           AND m.partition_id = p.id
           AND pr.partition_id = p.id
           AND pr.role_id = r.id
@@ -243,7 +243,7 @@ DO
 
       ALTER FUNCTION delete_link_type(
         character varying,
-        character varying
+        character varying[]
       )
         OWNER TO onix;
 
@@ -251,7 +251,7 @@ DO
         clear_all: deletes all instance data
        */
       CREATE OR REPLACE FUNCTION clear_all(
-        role_key_param character varying
+        role_key_param character varying[]
       )
         RETURNS VOID
         LANGUAGE 'plpgsql'
@@ -270,14 +270,14 @@ DO
       END
       $BODY$;
 
-      ALTER FUNCTION clear_all(character varying)
+      ALTER FUNCTION clear_all(character varying[])
         OWNER TO onix;
 
       /*
         delete_item_types: deletes all item types
        */
       CREATE OR REPLACE FUNCTION delete_item_types(
-        role_key_param character varying
+        role_key_param character varying[]
       )
         RETURNS VOID
         LANGUAGE 'plpgsql'
@@ -293,18 +293,18 @@ DO
           AND pr.partition_id = p.id
           AND pr.can_delete = TRUE
           AND pr.role_id = r.id
-          AND r.key = role_key_param;
+          AND r.key = ANY(role_key_param);
       END
       $BODY$;
 
-      ALTER FUNCTION delete_item_types(character varying)
+      ALTER FUNCTION delete_item_types(character varying[])
         OWNER TO onix;
 
       /*
         delete_link_types: deletes all link types
        */
       CREATE OR REPLACE FUNCTION delete_link_types(
-        role_key_param character varying
+        role_key_param character varying[]
       )
         RETURNS VOID
         LANGUAGE 'plpgsql'
@@ -320,18 +320,18 @@ DO
           AND pr.partition_id = p.id
           AND pr.can_delete = TRUE
           AND pr.role_id = r.id
-          AND r.key = role_key_param;
+          AND r.key = ANY(role_key_param);
       END
       $BODY$;
 
-      ALTER FUNCTION delete_link_types(character varying)
+      ALTER FUNCTION delete_link_types(character varying[])
         OWNER TO onix;
 
       /*
         delete_link_rules: deletes all link rules
        */
       CREATE OR REPLACE FUNCTION delete_link_rules(
-        role_key_param character varying
+        role_key_param character varying[]
       )
         RETURNS VOID
         LANGUAGE 'plpgsql'
@@ -349,12 +349,12 @@ DO
           AND pr.partition_id = p.id
           AND r.id = pr.role_id
           AND pr.can_delete = TRUE
-          AND r.key = role_key_param;
+          AND r.key = ANY(role_key_param);
       END
       $BODY$;
 
       ALTER FUNCTION delete_link_rules(
-        character varying -- role_key_param
+        character varying[] -- role_key_param
       )
       OWNER TO onix;
 

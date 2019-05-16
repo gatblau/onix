@@ -22,9 +22,28 @@
 #   sets up all variables required to connect to the Onix WAPI.
 #
 from ansible.module_utils.basic import *
+from ansible.module_utils.urls import *
 
 import base64
 
+# using the OpenId Client Credentials Flow, obtains a bearer token
+def get_bearer_token(token_uri, clientId, secret):
+    # creates a basic auth token using the authorisation server client id and secret
+    basic_token = "Basic %s" % (base64.b64encode("%s:%s" % (clientId, secret)))
+    # pepares the headers for the post request to the token endpoint
+    headers = {
+        "accept":"application/json",
+        "authorization":basic_token,
+        "cache-control":"no-cache",
+        "content-type":"application/x-www-form-urlencoded"
+    }
+    # with a payload indicating a client credentials flow and the onix scope
+    payloadStr = 'grant_type=client_credentials&scope=onix'
+    # request the access token
+    stream = open_url(token_uri, method="POST", data=payloadStr, headers=headers)
+    # reads the returned token
+    response = json.loads(stream.read())
+    return "Bearer %s" % response["access_token"]
 
 # returns an access token for the Onix WAPI
 def get_access_token(data):
@@ -32,6 +51,7 @@ def get_access_token(data):
     password = data['password']
     auth_mode = data["auth_mode"]
     wapi_uri = data['uri']
+    token_uri = data['token_uri']
 
     access_token = ""
 
@@ -39,8 +59,8 @@ def get_access_token(data):
         access_token = "Basic %s" % (base64.b64encode("%s:%s" % (username, password)))
     if auth_mode == "none":
         access_token = "none"
-    if auth_mode == "openid":
-        raise Exception('OpenId auth_mode is not supported.')
+    if auth_mode == "oidc":
+        access_token = get_bearer_token(token_uri, username, password)
 
     if access_token == "":
         raise Exception('auth_mode value is not supported.')
@@ -54,7 +74,8 @@ def main():
         "uri": {"required": True, "type": "str"},
         "username": {"required": True, "type": "str"},
         "password": {"required": True, "type": "str", "no_log": True},
-        "auth_mode": {"required": False, "type": "str", "default": "none"}
+        "auth_mode": {"required": False, "type": "str", "default": "none"},
+        "token_uri": {"required": False, "type": "str", "default": "none"}
     }
 
     # handle incoming parameters

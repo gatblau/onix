@@ -20,7 +20,7 @@ DO $$
       based on its role level
      */
     CREATE OR REPLACE FUNCTION can_manage_partition(
-      role_key_param character varying
+      role_key_param character varying[]
     )
       RETURNS VOID
       LANGUAGE 'plpgsql'
@@ -35,20 +35,22 @@ DO $$
       -- finds the logged role level and owner
       SELECT r.level, r.owner
       FROM role r
-      WHERE r.key = role_key_param
+      WHERE r.key = ANY(role_key_param)
+      ORDER BY r.level DESC
+      LIMIT 1
         INTO level, owner;
 
       IF (level = 0) THEN
         RAISE EXCEPTION 'Role % is not authorised to modify role/partition information.', role_key_param
           USING hint = 'The role is a level 0 role, it needs to be level 1 or 2.';
-      ELSEIF (level = 1 AND owner != role_key_param) THEN
+      ELSEIF (level = 1 AND owner != ANY(role_key_param)) THEN
         RAISE EXCEPTION 'Role % is not authorised to modify a role/partition with a different owner.', role_key_param
           USING hint = 'The role is a level 1 role, it needs to be level 2.';
       END IF;
     END;
     $BODY$;
 
-    ALTER FUNCTION can_manage_partition(character varying)
+    ALTER FUNCTION can_manage_partition(character varying[])
       OWNER TO onix;
 
     /*

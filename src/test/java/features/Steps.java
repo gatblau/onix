@@ -1295,7 +1295,7 @@ public class Steps extends BaseTest {
     private ResponseEntity<Result> putPrivilege(String roleKey, String partitionKey, String payload) {
         String url = String.format("%s/privilege/{role_key}/{partition_key}", baseUrl);
         Map<String, Object> vars = new HashMap<>();
-        vars.put("payload", payload);
+//        vars.put("payload", payload);
         vars.put("role_key", roleKey);
         vars.put("partition_key", partitionKey);
         HttpHeaders headers = new HttpHeaders();
@@ -1689,7 +1689,8 @@ public class Steps extends BaseTest {
     public void theRoleExistsInTheDatabase() {
         aRoleNaturalKeyIsKnown();
         aDELETEHTTPRequestToTheRoleResourceWithAnItemKeyIsDone();
-        putResource("role", util.get(ROLE_ONE_KEY), "payload/create_role_1_payload.json");
+        ResponseEntity<Result> response = putResource("role", util.get(ROLE_ONE_KEY), "payload/create_role_1_payload.json");
+        Result result = response.getBody();
     }
 
     @Given("^the role DELETE URL by key is known$")
@@ -1798,31 +1799,42 @@ public class Steps extends BaseTest {
 
     @When("^a DELETE HTTP request to the privilege endpoint is done$")
     public void aDELETEHTTPRequestToThePrivilegeEndpointIsDone() {
+        deletePrivilege(ROLE_ONE_KEY, PARTITION_ONE_KEY);
+    }
+
+    @Given("^there are multiple privileges for a role in the database$")
+    public void thereAreMultiplePrivilegesForARoleInTheDatabase() {
+        delete(String.format("%s/partition/{key}", baseUrl), "PART_01");
+        delete(String.format("%s/role/{key}", baseUrl), "ROLE_01");
+        deletePrivilege("ROLE_01", "PART_01");
+        putResource("partition", "PART_01", "payload/create_partition_1_payload.json");
+        putResource("partition", "PART_02", "payload/create_partition_2_payload.json");
+        putResource("role", "ROLE_01", "payload/create_role_1_payload.json");
+        putPrivilege("ROLE_01", "PART_01","payload/create_privilege_1_payload.json");
+        putPrivilege("ROLE_01", "PART_02","payload/create_privilege_2_payload.json");
+    }
+
+    @When("^a request to GET a list of privileges by role is done$")
+    public void aRequestToGETAListOfPrivilegesByRoleIsDone() {
+        get(PrivilegeDataList.class, String.format("%s/role/ROLE_01/privilege", baseUrl));
+    }
+
+    @Then("^the response contains more than (\\d+) privileges$")
+    public void theResponseContainsMoreThanPrivileges(int arg0) {
+    }
+
+    private void deletePrivilege(String roleKey, String partitionKey) {
         Result result;
         ResponseEntity<Result> response = null;
         response = client.exchange(
                 String.format("%s/privilege/{role_key}/{partition_key}", baseUrl),
                 HttpMethod.DELETE,
-                getEntity(util.getFile("payload/delete_privilege_1_payload.json")),
+                null,
                 Result.class,
                 ROLE_ONE_KEY,
                 PARTITION_ONE_KEY);
         util.put(RESPONSE, response);
         util.remove(EXCEPTION);
         result = response.getBody();
-    }
-
-    @Given("^there are multiple privileges for a role in the database$")
-    public void thereAreMultiplePrivilegesForARoleInTheDatabase() {
-        
-    }
-
-    @When("^a request to GET a list of privileges by role is done$")
-    public void aRequestToGETAListOfPrivilegesByRoleIsDone() {
-        
-    }
-
-    @Then("^the response contains more than (\\d+) privileges$")
-    public void theResponseContainsMoreThanPrivileges(int arg0) {
     }
 }
