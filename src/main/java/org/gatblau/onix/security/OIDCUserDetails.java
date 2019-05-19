@@ -26,6 +26,9 @@ import org.springframework.security.oauth2.common.OAuth2AccessToken;
 
 import java.util.*;
 
+/*
+    Stores user information including access token claims.
+ */
 public class OIDCUserDetails implements UserDetails {
 
     private static final long serialVersionUID = 1L;
@@ -46,11 +49,18 @@ public class OIDCUserDetails implements UserDetails {
         this.token = token;
     }
 
+    /*
+        When using grant-type=authorization_code then it extracts the 'roles' claim
+        and populates the authorities
+    */
     private static List<GrantedAuthority> extractAuthorities(Map<String, String> authorisationInfo) {
         List<GrantedAuthority> authorities = new ArrayList<>();
         String role = authorisationInfo.get("role");
         if (role != null) {
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+            String[] parts = role.split(",");
+            for (String part : parts) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + part.trim()));
+            }
         }
         return authorities;
     }
