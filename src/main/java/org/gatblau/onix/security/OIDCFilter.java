@@ -45,6 +45,9 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
 import java.util.Map;
 
+/*
+    Authenticates against the specified OpenId server
+ */
 public class OIDCFilter extends AbstractAuthenticationProcessingFilter {
     @Value("${oidc.clientid}")
     private String clientId;
@@ -111,7 +114,7 @@ public class OIDCFilter extends AbstractAuthenticationProcessingFilter {
         if (
             expireDate.before(now) ||
             !claims.get("iss").equals(issuer) ||
-            claims.get("role") == null ||
+            claims.get("roles") == null ||
             claims.get("sub") == null
         ) {
             throw new RuntimeException("Invalid claims");

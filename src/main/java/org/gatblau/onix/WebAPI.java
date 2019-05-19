@@ -1234,9 +1234,11 @@ public class WebAPI {
         // otherwise uses the role in the first authority
         int ix = 0;
         for (GrantedAuthority authority : authentication.getAuthorities()){
-            roles[ix] = authority.getAuthority().substring("ROLE_".length());
+            String r = authority.getAuthority();
+            if (r.startsWith("ROLE_")) {
+                roles[ix] = r.substring("ROLE_".length());
+            }
             ix++;
-            break;
         }
         return roles;
     }

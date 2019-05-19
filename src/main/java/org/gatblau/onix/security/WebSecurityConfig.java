@@ -82,6 +82,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         if (authMode.equals("basic")) {
+            // Basic Access Authentication: the request should contain a header field of the form Authorization: Basic <credentials>
+            //  where credentials is the base64 encoding of username and password joined by a single colon (e.g. user:password)
             http
                 .csrf().disable()
                 .authorizeRequests()
@@ -107,14 +109,35 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         }
         else if (authMode.equals("oidc")) {
+            // OpenId Connect authentication and OAuth 2.0 authorisation
+            // Implements both authorisation code and password grant types (flows) to support
+            //   Web UI and Native or Automated client implementations
             http
+                // required by the grant_type=authorization_code
                 .addFilterAfter(new OAuth2ClientContextFilter(), AbstractPreAuthenticatedProcessingFilter.class)
                 .addFilterAfter(oidcFilter(), OAuth2ClientContextFilter.class)
-                .httpBasic().authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/oidc-login"))
+                .httpBasic()
+                    .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/oidc-login"))
                 .and()
-                .authorizeRequests()
-                .anyRequest().authenticated()
+                    .authorizeRequests()
+                    // permits access to endpoints foe liveliness and readyness probes
+                    .antMatchers("/").permitAll()
+                    .antMatchers("/live").permitAll()
+                    .antMatchers("/ready").permitAll()
+                    .anyRequest()
+                        .authenticated()
+                // required by the grant_type=password
+                .and()
+                    .oauth2ResourceServer()
+                        .jwt()
+                            // adds a Jwt Token Converter to extract the 'roles' claim from the token and turn it into
+                            // authorities for authorisation
+                            .jwtAuthenticationConverter(new JwtTokenClaimsConverter())
                 ;
+        }
+        else {
+            throw new RuntimeException(
+                String.format("Incorrect AUTH_MODE value '%s': expected one of 'none', 'basic' or 'oidc'.", authMode));
         }
     }
 
