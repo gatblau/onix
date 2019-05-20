@@ -1,6 +1,7 @@
-# Using OpenId Connect and OAuth 2.0 for authentication and authorisation <img src="./pics/ox.png" width="220" height="220" align="right">
+# Using OpenId Connect and OAuth 2.0 for authentication and authorisation 
+<img src="./pics/ox.png" width="220" height="220" align="right">
 
-- [Using OpenId Connect and OAuth 2.0 for authentication and authorisation <img src="./pics/ox.png" width="220" height="220" align="right">](#using-openid-connect-and-oauth-20-for-authentication-and-authorisation-img-src%22picsoxpng%22-width%22220%22-height%22220%22-align%22right%22)
+- [Using OpenId Connect and OAuth 2.0 for authentication and authorisation](#using-openid-connect-and-oauth-20-for-authentication-and-authorisation)
   - [Introduction](#introduction)
   - [Tested Flows](#tested-flows)
     - [Authorisation Code Flow](#authorisation-code-flow)
