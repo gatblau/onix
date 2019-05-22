@@ -19,8 +19,6 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix.security;
 
-import org.gatblau.onix.security.OIDCFilter;
-import org.gatblau.onix.security.OnixBasicAuthEntryPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
