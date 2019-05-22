@@ -3,9 +3,14 @@
     - name: configure access to Onix
       ox_setup:
         uri: "{{ wapi_uri }}" # the URL where the Onix WAPI is listening
-        username: "{{ user }}" # the username for basic authentication
-        password: "{{ pwd }}" # the password for basic authentication
-        auth_mode: "basic" # the authentication to use (e.g. none, basic, openid)
+        username: "{{ user }}" # the username
+        password: "{{ pwd }}" # the password
+        auth_mode: "basic"
+        # un-comment below to configure OpenId authentication / OAuth 2.0 authorisation
+#        auth_mode: "oidc"
+#        token_uri: "https://the-token-url-at-the-authorisation-server"
+#        client_id: "the-client-id"
+#        secret: "the-authorisation-server-secret"
 
     - name: create application meta model
       ox_model:

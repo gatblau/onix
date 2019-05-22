@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.JwtClaimAccessor;
 import org.springframework.stereotype.Service;
 
 import java.sql.ResultSet;
@@ -1272,11 +1273,15 @@ public class PgSqlRepository implements DbRepository {
             UserDetails details = (UserDetails) principal;
             username = details.getUsername();
             for (GrantedAuthority a : details.getAuthorities()) {
-                username += "|" + a.getAuthority();
+                username += "," + a.getAuthority();
             }
-            ;
-        } else {
-            username = principal.toString();
+        } else if (principal instanceof JwtClaimAccessor){
+            JwtClaimAccessor jwt = (JwtClaimAccessor)principal;
+            username = jwt.getSubject();
+            String[] roles = jwt.getClaimAsString("roles").split(",");
+            for (String role : roles) {
+                username += "," + role.trim();
+            }
         }
         return username;
     }

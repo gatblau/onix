@@ -26,27 +26,39 @@ from ansible.module_utils.urls import *
 
 import base64
 
-# using the OpenId Client Credentials Flow, obtains a bearer token
-def get_bearer_token(token_uri, clientId, secret):
+# following the OpenId Resource Owner Password Flow, gets a bearer token
+def get_bearer_token(token_uri, clientId, secret, username, password):
+
     # creates a basic auth token using the authorisation server client id and secret
     basic_token = "Basic %s" % (base64.b64encode("%s:%s" % (clientId, secret)))
-    # pepares the headers for the post request to the token endpoint
+
+    # prepares the headers for the post request to the token endpoint
     headers = {
         "accept":"application/json",
         "authorization":basic_token,
         "cache-control":"no-cache",
         "content-type":"application/x-www-form-urlencoded"
     }
+
     # with a payload indicating a client credentials flow and the onix scope
-    payloadStr = 'grant_type=client_credentials&scope=onix'
+    payloadStr = 'grant_type=password&username={}&password={}&scope=openid%20onix'.format(username, password)
+
     # request the access token
     stream = open_url(token_uri, method="POST", data=payloadStr, headers=headers)
+
     # reads the returned token
     response = json.loads(stream.read())
+
+    # returns a bearer token
     return "Bearer %s" % response["access_token"]
+
+def get_basic_token(username, password):
+    return "Basic %s" % (base64.b64encode("%s:%s" % (username, password)))
 
 # returns an access token for the Onix WAPI
 def get_access_token(data):
+    client_id = data['client_id']
+    secret = data['secret']
     username = data['username']
     password = data['password']
     auth_mode = data["auth_mode"]
@@ -56,22 +68,21 @@ def get_access_token(data):
     access_token = ""
 
     if auth_mode == "basic":
-        access_token = "Basic %s" % (base64.b64encode("%s:%s" % (username, password)))
-    if auth_mode == "none":
-        access_token = "none"
-    if auth_mode == "oidc":
-        access_token = get_bearer_token(token_uri, username, password)
+        # the access token is a basic access authentication token
+        access_token = get_basic_token(username, password)
 
-    if access_token == "":
-        raise Exception('auth_mode value is not supported.')
+    elif auth_mode == "oidc":
+        # the access token is a OAuth 2.0 bearer token
+        access_token = get_bearer_token(token_uri, client_id, secret, username, password)
 
     return (access_token, wapi_uri)
-
 
 # module entry point
 def main():
     params = {
         "uri": {"required": True, "type": "str"},
+        "client_id": {"required": False, "type": "str"},
+        "secret": {"required": False, "type": "str", "no_log": True},
         "username": {"required": True, "type": "str"},
         "password": {"required": True, "type": "str", "no_log": True},
         "auth_mode": {"required": False, "type": "str", "default": "none"},
