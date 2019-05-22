@@ -26,11 +26,15 @@ from ansible.module_utils.urls import *
 
 import base64
 
+# creates a basic auth token using the passed in username and password
+def get_basic_token(username, password):
+    return "Basic %s" % (base64.b64encode("%s:%s" % (username, password)))
+
 # following the OpenId Resource Owner Password Flow, gets a bearer token
 def get_bearer_token(token_uri, clientId, secret, username, password):
 
     # creates a basic auth token using the authorisation server client id and secret
-    basic_token = "Basic %s" % (base64.b64encode("%s:%s" % (clientId, secret)))
+    basic_token = get_basic_token(clientId, secret)
 
     # prepares the headers for the post request to the token endpoint
     headers = {
@@ -51,9 +55,6 @@ def get_bearer_token(token_uri, clientId, secret, username, password):
 
     # returns a bearer token
     return "Bearer %s" % response["access_token"]
-
-def get_basic_token(username, password):
-    return "Basic %s" % (base64.b64encode("%s:%s" % (username, password)))
 
 # returns an access token for the Onix WAPI
 def get_access_token(data):
