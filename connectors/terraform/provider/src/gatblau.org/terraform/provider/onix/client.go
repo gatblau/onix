@@ -109,8 +109,6 @@ func (o *Client) getBearerToken(tokenURI string, clientId string, secret string,
 	// decodes the response
 	err = json.NewDecoder(response.Body).Decode(result)
 
-	print(result.AccessToken)
-
 	// if any errors then return
 	if err != nil {
 		return "", err
