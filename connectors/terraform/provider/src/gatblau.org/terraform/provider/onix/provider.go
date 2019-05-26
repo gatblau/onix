@@ -15,6 +15,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -33,6 +35,26 @@ func Provider() *schema.Provider {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"auth_mode": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "basic",
+			},
+			"client_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
+			"secret": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
+			"token_uri": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"ox_model":     ModelResource(),
@@ -42,6 +64,7 @@ func Provider() *schema.Provider {
 			"ox_item":      ItemResource(),
 			"ox_link":      LinkResource(),
 		},
+		// data sources are not implemented yet!
 		DataSourcesMap: map[string]*schema.Resource{
 			//"ox_item_type_data": ItemTypeDataSource(),
 			//"ox_item_data":      ItemDataSource(),
@@ -58,9 +81,34 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 	uri := d.Get("uri").(string)
 	user := d.Get("user").(string)
 	pwd := d.Get("pwd").(string)
+	authMode := d.Get("auth_mode").(string)
+	tokenURI := d.Get("token_uri").(string)
+	clientId := d.Get("client_id").(string)
+	secret := d.Get("secret").(string)
 
 	client := Client{BaseURL: uri}
-	client.setBasicAuth(user, pwd)
+
+	switch authMode {
+	case "none":
+		// ensure no token value is specified
+		client.setAuthToken("")
+
+	case "basic":
+		// sets a basic authentication token
+		client.setAuthToken(client.newBasicToken(user, pwd))
+
+	case "oidc":
+		// sets an OAuth Bearer token
+		bearerToken, err := client.getBearerToken(tokenURI, clientId, secret, user, pwd)
+		if err != nil {
+			return "", err
+		}
+		client.setAuthToken(bearerToken)
+
+	default:
+		// can't recognise the auth_mode provided
+		return "", errors.New(fmt.Sprintf("auth_mode = '%s' is not valid value. Use either 'none', 'basic' or 'oidc'.", authMode))
+	}
 
 	config := Config{
 		URI:    uri,

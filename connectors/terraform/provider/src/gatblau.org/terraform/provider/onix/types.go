@@ -46,6 +46,7 @@ type Item struct {
 	Tag         []interface{}          `json:"tag"`
 	Meta        map[string]interface{} `json:"meta"`
 	Attribute   map[string]interface{} `json:"attribute"`
+	Partition   string                 `json:"partition"`
 }
 
 func (item *Item) ToJSON() (*bytes.Reader, error) {
@@ -113,6 +114,7 @@ type Model struct {
 	Key         string `json:"key"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	Partition   string `json:"partition"`
 }
 
 func (model *Model) ToJSON() (*bytes.Reader, error) {

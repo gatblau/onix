@@ -1,7 +1,15 @@
 provider "ox" {
-  uri  = "http://localhost:8080"
-  user = "admin"
-  pwd  = "0n1x"
+  uri       = "http://localhost:8080"
+//  use basic authentication
+  auth_mode = "basic"
+  user      = "admin"
+  pwd       = "0n1x"
+//  uncomment & reset values below to
+//  use OpenId authentication
+//  auth_mode = "oidc"
+//  client_id = "application-client-id-here"
+//  secret    = "application-secret-here"
+//  token_uri = "uri-of-the-token-endpoint-at-authorisation-server"
 }
 
 resource "ox_model" "Test_Model" {
