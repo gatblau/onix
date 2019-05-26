@@ -23,7 +23,25 @@ var client Client
 
 func init() {
 	client = Client{BaseURL: "http://localhost:8080"}
-	client.setBasicAuth("admin", "0n1x")
+
+	// test using a basic authentication token
+	t := client.newBasicToken("admin", "0n1x")
+
+	// uncomment below & reset configuration vars
+	// to test using using an OAuth bearer token
+
+	//t, err := client.getBearerToken(
+	//	"https://dev-447786.okta.com/oauth2/default/v1/token",
+	//	"0oalyh...356",
+	//	"Tsed........OP0oEf9H7",
+	//	"user@email.com",
+	//	"user_pwd_xxxxx")
+	//
+	//if err != nil {
+	//	panic(err)
+	//}
+
+	client.setAuthToken(t)
 }
 
 func checkResult(result *Result, err error, msg string, t *testing.T) {

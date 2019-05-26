@@ -43,6 +43,10 @@ func ModelResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"partition": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -59,9 +63,11 @@ func modelPayload(data *schema.ResourceData) Payload {
 	key := data.Get("key").(string)
 	name := data.Get("name").(string)
 	description := data.Get("description").(string)
+	partition := data.Get("partition").(string)
 	return &Model{
 		Key:         key,
 		Name:        name,
 		Description: description,
+		Partition:   partition,
 	}
 }

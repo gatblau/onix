@@ -17,15 +17,18 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 const (
 	DELETE = "DELETE"
 	PUT    = "PUT"
 	GET    = "GET"
+	POST   = "POST"
 )
 
 // Onix HTTP client
@@ -43,28 +46,117 @@ type Result struct {
 	Ref       string `json:"ref"`
 }
 
-// Set up a basic authentication token used by the client
-func (o *Client) setBasicAuth(user string, pwd string) {
-	o.Token = fmt.Sprintf("Basic %s",
+// Response to an OAUth 2.0 token request
+type OAuthTokenResponse struct {
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	ExpiresIn   int    `json:"expires_in"`
+	Scope       string `json:"scope"`
+	IdToken     string `json:"id_token"`
+}
+
+// creates a new Basic Authentication Token
+func (o *Client) newBasicToken(user string, pwd string) string {
+	return fmt.Sprintf("Basic %s",
 		base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
+}
+
+// Set up the authentication token used by the client
+func (o *Client) setAuthToken(token string) {
+	o.Token = token
+}
+
+// Gets an OAuth Bearer token
+func (o *Client) getBearerToken(tokenURI string, clientId string, secret string, user string, pwd string) (string, error) {
+	// constructs a payload for the form POST to the authorisation server token URI
+	// passing the type of grant,the username, password and scopes
+	payload := strings.NewReader(
+		fmt.Sprintf("grant_type=password&username=%s&password=%s&scope=openid%%20onix", user, pwd))
+
+	// creates the http request
+	req, err := http.NewRequest(POST, tokenURI, payload)
+
+	// if any errors then return
+	if err != nil {
+		return "", errors.New("Failed to create request: " + err.Error())
+	}
+
+	// adds the relevant http headers
+	req.Header.Add("accept", "application/json")                        // need a response in json format
+	req.Header.Add("authorization", o.newBasicToken(clientId, secret))  // authenticates with client id and secret
+	req.Header.Add("cache-control", "no-cache")                         // forces caches to submit the request to the origin server for validation before releasing a cached copy
+	req.Header.Add("content-type", "application/x-www-form-urlencoded") // posting an http form
+
+	// submits the request to the authorisation server
+	response, err := http.DefaultClient.Do(req)
+
+	// if any errors then return
+	if err != nil {
+		return "", errors.New("Failed when submitting request: " + err.Error())
+	}
+	if response.StatusCode != 200 {
+		return "", errors.New("Failed to obtain access token: " + response.Status + " Hint: the client might be unauthorised.")
+	}
+
+	defer func() {
+		if ferr := response.Body.Close(); ferr != nil {
+			err = ferr
+		}
+	}()
+
+	result := new(OAuthTokenResponse)
+
+	// decodes the response
+	err = json.NewDecoder(response.Body).Decode(result)
+
+	print(result.AccessToken)
+
+	// if any errors then return
+	if err != nil {
+		return "", err
+	}
+
+	// constructs and returns a bearer token
+	return fmt.Sprintf("Bearer %s", result.AccessToken), nil
 }
 
 // Make a generic HTTP request
 func (o *Client) MakeRequest(method string, resourceName string, key string, payload io.Reader) (*Result, error) {
+	// creates the request
 	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", o.BaseURL, resourceName, key), payload)
+
 	// any errors are returned
 	if err != nil {
 		return &Result{Message: err.Error(), Error: true}, err
 	}
+
+	// requires a response in json format
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", o.Token)
+
+	// if an authentication token has been specified then add it to the request header
+	if o.Token != "" && len(o.Token) > 0 {
+		req.Header.Set("Authorization", o.Token)
+	}
+
+	// submits the request
 	response, err := http.DefaultClient.Do(req)
+
+	// if the response contains an error then returns
 	if err != nil {
 		return &Result{Message: err.Error(), Error: true}, err
 	}
-	defer response.Body.Close()
+
+	defer func() {
+		if ferr := response.Body.Close(); ferr != nil {
+			err = ferr
+		}
+	}()
+
+	// decodes the response
 	result := new(Result)
-	json.NewDecoder(response.Body).Decode(result)
+	err = json.NewDecoder(response.Body).Decode(result)
+
+	// returns the result
 	return result, err
 }
 
@@ -84,27 +176,31 @@ func (o *Client) Get(resourceName string, key string) (interface{}, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", o.Token)
 	resp, err := http.DefaultClient.Do(req)
-	defer resp.Body.Close()
+	defer func() {
+		if ferr := resp.Body.Close(); ferr != nil {
+			err = ferr
+		}
+	}()
 	switch {
 	case resourceName == "item":
 		result := new(Item)
-		json.NewDecoder(resp.Body).Decode(result)
+		err = json.NewDecoder(resp.Body).Decode(result)
 		return *result, err
 	case resourceName == "itemtype":
 		result := new(ItemType)
-		json.NewDecoder(resp.Body).Decode(result)
+		err = json.NewDecoder(resp.Body).Decode(result)
 		return *result, err
 	case resourceName == "link":
 		result := new(Link)
-		json.NewDecoder(resp.Body).Decode(result)
+		err = json.NewDecoder(resp.Body).Decode(result)
 		return *result, err
 	case resourceName == "linktype":
 		result := new(LinkType)
-		json.NewDecoder(resp.Body).Decode(result)
+		err = json.NewDecoder(resp.Body).Decode(result)
 		return *result, err
 	case resourceName == "model":
 		result := new(Model)
-		json.NewDecoder(resp.Body).Decode(result)
+		err = json.NewDecoder(resp.Body).Decode(result)
 		return *result, err
 	}
 	return nil, nil

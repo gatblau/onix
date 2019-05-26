@@ -42,7 +42,7 @@ build:
 
 # package the terraform provider for all platforms
 package:
-    go fmt
+	go fmt
 	$(MAKE) package_linux
 	$(MAKE) package_darwin
 	$(MAKE) package_windows
