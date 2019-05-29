@@ -1,3 +1,24 @@
+#!/usr/bin/python
+#
+# Onix CMDB - Copyright (c) 2018-2019 by www.gatblau.org
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Contributors to this project, hereby assign copyright in their code to the
+# project, to be licensed under the same terms as the rest of the code.
+#
+# Inventory Plugin for the Onix CMDB.
+#
 from __future__ import (absolute_import, division, print_function)
 
 __metaclass__ = type
@@ -60,8 +81,31 @@ DOCUMENTATION = '''
             env:
                 - name: OX_VERIFY_SSL
             required: False
+        token_uri:
+            description: The OAuth 2.0 server endpoint where the ox provider exchanges the user credentials, client ID and client secret, for an access token.
+            type: string
+            env:
+                - name: OX_TOKEN_URI
+            required: False
+        client_id:
+            description: The public identifier for the Onix Web API defined by the OAUth 2.0 server. 
+            type: string
+            env:
+                - name: OX_CLIENT_ID
+            required: False
+        secret:
+            description: A secret known only to the application and the authorisation server.
+            type: string
+            env:
+                - name: OX_SECRET
+            required: False
+        auth_mode:
+            description: The type of authentication used by the plugin. 
+            choices: ['none', 'basic', 'oidc']
+            env:
+                - name: OX_AUTH_MODE
+            required: True
 '''
-
 EXAMPLES = '''
 # Before you execute the following commands, you should make sure this file is in your plugin path,
 # and you enabled this plugin.
@@ -93,6 +137,8 @@ from ansible.module_utils.urls import Request, urllib_error, ConnectionError, so
 from ansible.module_utils._text import to_native
 from ansible.errors import AnsibleParserError
 from ansible.plugins.inventory import BaseInventoryPlugin
+from ansible.module_utils.basic import *
+from ansible.module_utils.urls import *
 
 # Python 2/3 Compatibility
 try:
@@ -108,10 +154,10 @@ class InventoryModule(BaseInventoryPlugin):
     no_config_file_supplied = False
 
     def add_group_host(self, item):
-        if item['type'] == 'ANSIBLE_HOST_GROUP' or item['type'] == 'ANSIBLE_HOST_SUPER_SET':
+        if item['type'] == 'ANSIBLE_HOST_GROUP' or item['type'] == 'ANSIBLE_HOST_GROUP_GROUP':
             self.inventory.add_group(item['key'])
 
-        if item['type'] == 'ANSIBLE_HOST_SUPER_SET':
+        if item['type'] == 'ANSIBLE_HOST_GROUP_GROUP':
             group_name = item['key']
             hostvars = item['meta']['hostvars']
             if hostvars:
@@ -129,7 +175,7 @@ class InventoryModule(BaseInventoryPlugin):
                     self.inventory.set_variable(host_name, var_name, var_value)
 
     def add_group_host_relationhip(self, item, json):
-        if item['type'] == 'ANSIBLE_HOST_SUPER_SET':
+        if item['type'] == 'ANSIBLE_HOST_GROUP_GROUP':
             group_group_key = item['key']
             for i in json['items']:
                 group_key = i['key']
@@ -175,6 +221,58 @@ class InventoryModule(BaseInventoryPlugin):
         else:
             return False
 
+    # creates a basic auth token using the passed in username and password
+    def get_basic_token(self, username, password):
+        return "Basic %s" % (base64.b64encode("%s:%s" % (username, password)))
+
+    # following the OpenId Resource Owner Password Flow, gets a bearer token
+    def get_bearer_token(self, token_uri, clientId, secret, username, password):
+
+        # creates a basic auth token using the authorisation server client id and secret
+        basic_token = self.get_basic_token(clientId, secret)
+
+        # prepares the headers for the post request to the token endpoint
+        headers = {
+            "accept":"application/json",
+            "authorization":basic_token,
+            "cache-control":"no-cache",
+            "content-type":"application/x-www-form-urlencoded"
+        }
+
+        # with a payload indicating a client credentials flow and the onix scope
+        payloadStr = 'grant_type=password&username={}&password={}&scope=openid%20onix'.format(username, password)
+
+        # request the access token
+        stream = open_url(token_uri, method="POST", data=payloadStr, headers=headers)
+
+        # reads the returned token
+        response = json.loads(stream.read())
+
+        # returns a bearer token
+        return "Bearer %s" % response["access_token"]
+
+    # gets the http request headers
+    def get_headers(self):
+        # get the authentication mode selected
+        auth_mode = self.get_option('auth_mode')
+
+        # creates the right type of token
+        if auth_mode == 'none':
+            return {
+                "Content-Type": "application/json"
+            }
+        elif auth_mode == 'basic':
+            return {
+                "Content-Type": "application/json",
+                "Authorization": self.get_basic_token(self.get_option('username'), self.get_option('password'))
+            }
+        elif auth_mode == 'oidc':
+            return {
+                "Content-Type": "application/json",
+                "Authorization": self.get_bearer_token(self.get_option("token_uri"), self.get_option("client_id"), self.get_option("secret"), self.get_option('username'), self.get_option('password'))
+            }
+        raise Exception('auth_mode {} is not supported'.format(auth_mode))
+
     def parse(self, inventory, loader, path, cache=True):
         super(InventoryModule, self).parse(inventory, loader, path)
         if not self.no_config_file_supplied and os.path.isfile(path):
@@ -186,16 +284,16 @@ class InventoryModule(BaseInventoryPlugin):
         if not re.match('(?:http|https)://', onix_host):
             onix_host = 'https://{onix_host}'.format(onix_host=onix_host)
 
-        request_handler = Request(url_username=self.get_option('username'),
-                                  url_password=self.get_option('password'),
-                                  force_basic_auth=True,
-                                  validate_certs=self.get_option('verify_ssl'))
+        # creates a request handler
+        request_handler = Request(headers=self.get_headers(),validate_certs=self.get_option('verify_ssl'))
 
+        # constructs the URL
         inventory_key = self.get_option('inventory_key').replace('/', '')
         inventory_tag = self.get_option('inventory_tag').replace('/', '')
         inventory_url = '/data/{inv_key}/tag/{inv_tag}'.format(inv_key=inventory_key, inv_tag=inventory_tag)
         inventory_url = urljoin(onix_host, inventory_url)
 
+        # makes a request to the Onix Web API
         inventory_json = self.make_request(request_handler, inventory_url)
 
         # first adds groups and hosts to the inventory

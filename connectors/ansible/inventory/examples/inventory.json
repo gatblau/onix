@@ -14,8 +14,8 @@
     {
       "key": "test_inventory::OSEv3",
       "name": "OSEv3",
-      "description": "Host Super Set imported from Ansible inventory.",
-      "type": "ANSIBLE_HOST_SUPER_SET",
+      "description": "Group of Host Groups imported from Ansible inventory.",
+      "type": "ANSIBLE_HOST_GROUP_GROUP",
       "status": 1,
       "meta": {
         "hostvars": {

@@ -20,6 +20,13 @@ Then run the following command from a linux terminal:
 $ docker-compose up -d
 ```
 
+### Ensure the CMDB is configured for Ansible Inventories
+
+In order for the inventory plugin to be able to retrieve inventory information, the Ansible Inventory meta model has to be imported into Onix.
+The meta model contains all the item types, link types and link rules required to represent the inventory data in the CMDB.
+
+To import the meta model follow the steps shown [here](../../../../models/readme.md).
+
 ### Import the inventory into the CMDB
 
 In order to import Ansible inventory data into the CMDB, Swagger can be used to put an inventory [JSON payload](./inventory.json) 
@@ -39,6 +46,10 @@ To take a tag:
 1. Open the [Swagger UI](http://localhost:8080/swagger-ui.html#/web-api/createTagUsingPOST)
 2. Paste the payload [here](tag.json) in the payload box
 3. Put the request to create the tag in the CMDB
+
+### Check the inventory configuration values are correct
+
+Finally, make sure the configuration required by the plugin to connect to the CMDB is correct for your setup within the [onix_inventory.yml](./onix_inventory.yml) file.
 
 ### Test the plugin
 
