@@ -1,9 +1,15 @@
 ---
 plugin: 'onix'
 host: 'http://localhost:8080'
+auth_mode: 'basic'
 username: 'admin'
 password: '0n1x'
 inventory_key: 'test_inventory'
 inventory_tag: 'v1'
-verify_ssl : False
+verify_ssl: False
+# the attributes below are required for OpenId - OAuth 2.0 authentication / authorisation
+#auth_mode: 'oidc'
+#client_id: 'wapi-client-id-here'
+#secret: 'wapi-client-secret-here'
+#token_uri: 'token-endpoint-uri-here'
 ...

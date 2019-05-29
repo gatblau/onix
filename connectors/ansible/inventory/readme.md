@@ -29,7 +29,7 @@ to read them from environment variables.
 
 The following table describes the configuration variables required:
 
-|Name | Description | Env Variable | Example |
+|Attribute | Description | Environment Var. | Example value|
 |---|---|---|---|
 |**plugin**| The name of the plugin. Set to onix.| N/A| onix |
 |**host**| The network address of the Onix WAPI service. | OX_HOST | localhost:8080 |
@@ -38,6 +38,10 @@ The following table describes the configuration variables required:
 |**inventory_key**| The natural key for the inventory in the CMDB. | OX_INVENTORY_KEY | inventory_01 |
 |**inventory_version**| The tag associated to a version of the inventory in the CMDB. | OX_INVENTORY_TAG | v1 |
 |**verify_ssl**| Whether to verify TLS keys when calling the Onix WAPI service. | OX_VERIFY_SSL | false |
+|**auth_mode**| The approach used to authenticate with the Web API. Possible values are __none__, __basic__ (basic authentication) or __oidc__ (OpenId/OAuth 2.0). | OX_AUTH_MODE | basic |
+|**client_id**| The unique identifier for the Onix Web API application as defined in the OAuth 2.0 server. It is only required if auth_mode is set to oidc. | OX_CLIENT_ID | dece7re....sxsxndj |
+|**secret** | A secret known only to the application and the authorisation server. It is only required if auth_mode is set to oidc. | OX_SECRET | SXOUND...xssiuxnSIQ |
+|**token_uri**| The OAuth 2.0 server endpoint where the ox provider exchanges the user credentials, client ID and client secret, for an access token. It is only required if auth_mode is set to oidc. | OX_TOKEN_URI | https://dev-1234.okta.com/oauth2/default/v1/token |
 
 ## Enabling the plugin
 

@@ -47,10 +47,57 @@ Onix uses [Swagger](https://swagger.io/) to document its web API.
 When Onix is up and running, the Swagger User Interface can be reached at the following URI:
 
 http://localhost:8080/swagger-ui.html
+
+#### Authenticating Users
+
+If the Web API is set to use Basic authentication, the browser will display a user credentials challenge window and automatcally create a base 64 encoded basic authentication header.
+
+However, if the Web API is set to use OpenId for authentication then the Swagger UI will need to send a Bearer token to the server. To this extent, an "Authorize" button will show at the top right corner of the Swagger UI if __auth_mode__ is set to __oidc__.
+
+Use this button to set the Bearer token required for authentication and authorisation purposes. If a token is not set then access to the Web API resources will be forbidden.
+
+#### Obtaining a Bearer token
+In order to get a bearer token use the cURL command below, replacing the following variables with the correct values:
+
+- __token_endpoint_url__
+- __base64_encoded_client_id_and_secret__ ([use this online tool](https://www.blitter.se/utils/basic-authentication-header-generator/) to create the token using the OAuth server application client id and secret)
+- __user_name_here__
+- __user_password_here__
+
+ ```bash
+curl --request POST \
+  --url 'token_endpoint_url' \
+  --header 'accept: application/json' \
+  --header 'Authorization: Basic base64_encoded_client_id_and_secret' \
+  --header 'cache-control: no-cache' \
+  --header 'content-type: application/x-www-form-urlencoded' \
+  --data 'grant_type=password&username=user_name_here&password=user_password_here&scope=openid%20onix'
+ ```
+
+ The result should look like the following:
+ ```bash
+{
+  "access_token":"eyJraWQiO...sAg",
+  "token_type":"Bearer",
+  "expires_in":3600,
+  "scope":"onix openid",
+  "id_token":"eyJraW...1Q"
+}
+ ```
+
+- Extract the __access_token__ variable from the response above. 
+- Create a string with the format "__Bearer access_token_value__" 
+- Paste it in the value textbox of the "Available authorizations" popup modal window that shows after clicking on the "Authorize" button on the Swagger UI:
  
+ <img src="./pics/swagger_ui_authorize.png" width="400" height="220"/>
+
+Then click on "Authorize". Now every Swagger UI request will send the Bearer token as an Authorization header.
+
+__NOTE__: _the bearer token is set to expire after a period defined by the authorization server access policy. In the example above it is set to expire after 3600 seconds or 1 hour. After this time, the bearer token will have to be reset to prevent unauthorised access errors._
+
 ### JSON WAPI Docs
 
-Similarly, a JSON representation of the Web API documentation can be retrieved from the following URI: 
+Similarly, a JSON representation of the Web API documentation can be retrieved from the following URI:
  
 http://localhost:8080/v2/api-docs
 
