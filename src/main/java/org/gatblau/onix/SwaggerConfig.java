@@ -21,6 +21,7 @@ package org.gatblau.onix;
 
 import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -42,15 +43,25 @@ import java.util.List;
 @Configuration
 @EnableSwagger2
 public class SwaggerConfig extends WebMvcConfigurationSupport {
+    @Value("${wapi.auth.mode}")
+    private String authMode;
+
     @Bean
     public Docket productApi() {
-        return new Docket(DocumentationType.SWAGGER_2)
+        Docket docket = new Docket(DocumentationType.SWAGGER_2)
                 .select()
                 .apis(RequestHandlerSelectors.withClassAnnotation(Api.class))
                 .paths(PathSelectors.any())
-                .build().apiInfo(apiInfo())
+                .build().apiInfo(apiInfo());
+        // if authentication mode is OpenId then
+        // enables the Swagger UI authorize feature so that bearer tokens can be passed in the
+        // request made by the UI as authorization header
+        if (authMode != null && authMode.toLowerCase().equals("oidc")) {
+            docket
                 .securitySchemes(Arrays.asList(apiKey()))
                 .securityContexts(Arrays.asList(securityContext()));
+        }
+        return docket;
     }
 
     @Autowired
