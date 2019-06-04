@@ -30,29 +30,29 @@ import (
  */
 func main() {
 	// determines the operation mode i.e. webhook or msg broker
-	mode := get_mode()
+	mode := getMode()
 
 	switch mode {
 	case "webhook":
-		run_webhook()
+		runWebhook()
 	case "broker":
 		panic("Mode 'broker' is not implemented.")
 	default:
-		panic(fmt.Sprintf("Mode '%s' is not implemented.", get_mode()))
+		panic(fmt.Sprintf("Mode '%s' is not implemented.", getMode()))
 	}
 }
 
 // launch a webhook on a TCP port listening for events
-func run_webhook() {
+func runWebhook() {
 	// creates an http server listening on the specified TCP port
-	server := &http.Server{Addr: fmt.Sprintf(":%s", get_port()), Handler: nil}
+	server := &http.Server{Addr: fmt.Sprintf(":%s", getPort()), Handler: nil}
 
 	// registers a handler for the /webhook endpoint
 	http.HandleFunc("/webhook", webhook)
 
 	// runs the server asynchronously
 	go func() {
-		log.Println(fmt.Sprintf("oxkube listening on :%s/webhook", get_port()))
+		log.Println(fmt.Sprintf("oxkube listening on :%s/webhook", getPort()))
 		if err := server.ListenAndServe(); err != nil {
 			log.Fatal(err)
 		}
@@ -80,15 +80,15 @@ func run_webhook() {
 	}
 }
 
-func get_port() string {
-	return get_env("OX_KUBE_PORT", "8080")
+func getPort() string {
+	return getEnv("OX_KUBE_PORT", "8080")
 }
 
-func get_mode() string {
-	return get_env("OX_KUBE_MODE", "webhook")
+func getMode() string {
+	return getEnv("OX_KUBE_MODE", "webhook")
 }
 
-func get_env(key string, defaultValue string) string {
+func getEnv(key string, defaultValue string) string {
 	value := ""
 	if os.Getenv(key) != "" {
 		value = os.Getenv(key)
