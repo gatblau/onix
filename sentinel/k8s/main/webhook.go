@@ -14,22 +14,26 @@
 */
 package main
 
-/*
-	Sentinel is a is a Kubernetes event observer that publishes events to either a webhook or a message broker.
-*/
-func main() {
-	sentinel := Sentinel{
-		config: &Config{
-			Handler: &Webhook{URI: ""},
-			Observe: ObservedResources{Pod: true},
-		},
-	}
+import (
+	"github.com/sirupsen/logrus"
+)
 
-	err := sentinel.Start()
+type Webhook struct {
+	URI string
+}
 
-	if err != nil {
-		panic(err)
-	}
+func (hook *Webhook) OnCreate(event Event, obj interface{}) {
+	hook.notify(event, obj, "created")
+}
 
-	select {}
+func (hook *Webhook) OnDelete(event Event, obj interface{}) {
+	hook.notify(event, obj, "deleted")
+}
+
+func (hook *Webhook) OnUpdate(event Event, obj interface{}) {
+	hook.notify(event, obj, "updated")
+}
+
+func (hook *Webhook) notify(event Event, obj interface{}, action string) {
+	logrus.Infof("action %s - event %+v --> %+v\n", action, event, obj)
 }

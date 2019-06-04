@@ -14,33 +14,30 @@
 */
 package main
 
+// configuration info for the Sentinel process
 type Config struct {
-	Handler EventHandler
+	Handler Publisher
 	Observe ObservedResources
 }
 
-/*
-
- */
+// the type of resources that can be observed by the controller
 type ObservedResources struct {
-	Deployment            bool `json:"deployment"`
-	ReplicationController bool `json:"rc"`
-	ReplicaSet            bool `json:"rs"`
-	DaemonSet             bool `json:"ds"`
-	Services              bool `json:"svc"`
-	Pod                   bool `json:"pod"`
-	Job                   bool `json:"job"`
-	PersistentVolume      bool `json:"pv"`
-	Namespace             bool `json:"namespace"`
-	Secret                bool `json:"secret"`
-	ConfigMap             bool `json:"configmap"`
-	Ingress               bool `json:"ingress"`
+	Service          bool
+	Pod              bool
+	PersistentVolume bool
+	Namespace        bool
+	//Deployment            bool
+	//ReplicationController bool
+	//ReplicaSet            bool
+	//DaemonSet             bool
+	//Job                   bool
+	//Secret                bool
+	//ConfigMap             bool
+	//Ingress               bool
 }
 
-/*
-
- */
-type EventHandler interface {
+// the interface implemented by a controller publisher
+type Publisher interface {
 	OnCreate(e Event, o interface{})
 	OnDelete(e Event, o interface{})
 	OnUpdate(e Event, o interface{})
@@ -56,7 +53,7 @@ type Event struct {
 // Event represent an event got from k8s api server
 // Events from different endpoints need to be casted to KubewatchEvent
 // before being able to be handled by Handler
-type KubeEvent struct {
+type PublishedEvent struct {
 	Namespace string
 	Kind      string
 	Component string

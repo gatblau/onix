@@ -16,7 +16,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	appsV1 "k8s.io/api/apps/v1"
 	batchV1 "k8s.io/api/batch/v1"
 	apiV1 "k8s.io/api/core/v1"
@@ -28,9 +28,7 @@ import (
 	"os"
 )
 
-/*
-	get an environment variable or the defaultValue if the variable is not set
-*/
+// gets an environment variable or the defaultValue if the variable is not set
 func getEnv(key string, defaultValue string) string {
 	value := ""
 	if os.Getenv(key) != "" {
@@ -41,17 +39,13 @@ func getEnv(key string, defaultValue string) string {
 	return value
 }
 
-/*
-   gets the kube config default path
-*/
+// gets the kube config default path
 func getKubeConfigPath() string {
 	return getEnv("KUBECONFIG", fmt.Sprintf("%s/.kube/config", os.Getenv("HOME")))
 }
 
-/*
-	gets the K8S client configuration either inside or outside of the cluster depending on
-	whether the kube config file could be found
-*/
+// gets the K8S client configuration either inside or outside of the cluster depending on
+// whether the kube config file could be found
 func getKubeConfig() (*rest.Config, error) {
 	// k8s client configuration
 	var config *rest.Config
@@ -86,6 +80,7 @@ func getKubeConfig() (*rest.Config, error) {
 	return config, nil
 }
 
+// gets an instance of the k8s client
 func getKubeClient() (kubernetes.Interface, error) {
 	config, err := getKubeConfig()
 	if err != nil {
@@ -99,6 +94,7 @@ func getKubeClient() (kubernetes.Interface, error) {
 	return client, nil
 }
 
+// gets the metadata for the persisted resource
 func getMetaData(obj interface{}) metaV1.ObjectMeta {
 	var objectMeta metaV1.ObjectMeta
 	switch object := obj.(type) {
