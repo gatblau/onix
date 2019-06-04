@@ -14,24 +14,17 @@
 */
 package main
 
-import "fmt"
+func main() {
+	sentinel := &Sentinel{
+		config: &Config{
+			Handler: &Webhook{URI: ""},
+			Observe: ObservedResources{Pod: true},
+		},
+	}
 
-type Webhook struct {
-	URI string
-}
+	err := sentinel.Start()
 
-func (hook *Webhook) OnCreate(event Event, obj interface{}) {
-	hook.notify(event, obj, "created")
-}
-
-func (hook *Webhook) OnDelete(event Event, obj interface{}) {
-	hook.notify(event, obj, "deleted")
-}
-
-func (hook *Webhook) OnUpdate(event Event, obj interface{}) {
-	hook.notify(event, obj, "updated")
-}
-
-func (hook *Webhook) notify(event Event, obj interface{}, action string) {
-	fmt.Printf("action %s - event %+v --> %+v\n", action, event, obj)
+	if err != nil {
+		panic(err)
+	}
 }
