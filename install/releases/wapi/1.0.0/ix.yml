@@ -1,7 +1,0 @@
----
-wapi:
-  version: "1.0.0"
-db:
-  versions:
-    - 1
-...
