@@ -18,10 +18,12 @@
 #
 TAG=$1
 
-if [ $# -eq 0 ]; then
-    echo "An image tag is required for Onix. Provide it as a parameter."
-    echo "Usage is: sh run.sh [ONIX TAG]"
-    exit 1
-fi
+#if [ $# -eq 0 ]; then
+#    echo "An image tag is required for Onix. Provide it as a parameter."
+#    echo "Usage is: sh run.sh [ONIX TAG]"
+#    exit 1
+#fi
 
-docker run --name onixdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "southwinds/onixdb-snapshot:${TAG}"
+#docker run --name onixdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "southwinds/onixdb-snapshot:${TAG}"
+
+docker run --name onixdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "centos/postgresql-10-centos7"

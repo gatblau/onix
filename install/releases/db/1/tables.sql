@@ -40,7 +40,7 @@ DO
         ALTER TABLE version
           OWNER to onix;
 
---         INSERT INTO version(release, name, change_schema, change_fxs) VALUES ('1.0.0', 'First release.', true, true);
+        --         INSERT INTO version(release, name, change_schema, change_fxs) VALUES ('1.0.0', 'First release.', true, true);
       END IF;
 
       ---------------------------------------------------------------------------
@@ -67,7 +67,7 @@ DO
           version     bigint                 NOT NULL DEFAULT 1,
           created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(100)  NOT NULL COLLATE pg_catalog."default",
+          changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           owner       CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default" DEFAULT 'ADMIN',
           CONSTRAINT partition_id_pk PRIMARY KEY (id),
           CONSTRAINT partition_key_uc UNIQUE (key),
@@ -90,8 +90,8 @@ DO
       THEN
         CREATE TABLE partition_change
         (
-          operation   CHAR(1)               NOT NULL,
-          changed     TIMESTAMP             NOT NULL,
+          operation   CHAR(1)                NOT NULL,
+          changed     TIMESTAMP              NOT NULL,
           id          bigint,
           key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
@@ -161,7 +161,7 @@ DO
           version     bigint                 NOT NULL DEFAULT 1,
           created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(100)  NOT NULL COLLATE pg_catalog."default",
+          changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           level       integer                         default 0,
           owner       CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default" DEFAULT 'ADMIN',
           CONSTRAINT role_id_pk PRIMARY KEY (id),
@@ -185,8 +185,8 @@ DO
       THEN
         CREATE TABLE role_change
         (
-          operation   CHAR(1)               NOT NULL,
-          changed     TIMESTAMP             NOT NULL,
+          operation   CHAR(1)                NOT NULL,
+          changed     TIMESTAMP              NOT NULL,
           id          bigint,
           key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
@@ -250,13 +250,13 @@ DO
 
         CREATE TABLE privilege
         (
-          id           bigint                NOT NULL DEFAULT nextval('privilege_id_seq'::regclass),
+          id           bigint                 NOT NULL DEFAULT nextval('privilege_id_seq'::regclass),
           role_id      bigint,
           partition_id bigint,
           can_create   boolean,
           can_read     boolean,
           can_delete   boolean,
-          created      timestamp(6) with time zone    DEFAULT CURRENT_TIMESTAMP(6),
+          created      timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           changed_by   CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           CONSTRAINT privilege_id_pk PRIMARY KEY (id, role_id, partition_id),
           CONSTRAINT privilege_role_id_fk FOREIGN KEY (role_id)
@@ -361,7 +361,7 @@ DO
           version      bigint                 NOT NULL DEFAULT 1,
           created      timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated      timestamp(6) with time zone,
-          changed_by   CHARACTER VARYING(100)  NOT NULL COLLATE pg_catalog."default",
+          changed_by   CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           partition_id bigint                 NOT NULL DEFAULT 0,
           CONSTRAINT model_id_pk PRIMARY KEY (id),
           CONSTRAINT model_key_uc UNIQUE (key),
@@ -388,8 +388,8 @@ DO
       THEN
         CREATE TABLE model_change
         (
-          operation    CHAR(1)               NOT NULL,
-          changed      TIMESTAMP             NOT NULL,
+          operation    CHAR(1)                NOT NULL,
+          changed      TIMESTAMP              NOT NULL,
           id           INTEGER,
           key          CHARACTER VARYING(100) COLLATE pg_catalog."default",
           name         CHARACTER VARYING(200) COLLATE pg_catalog."default",
@@ -456,7 +456,7 @@ DO
           version     bigint                 NOT NULL DEFAULT 1,
           created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(100)  NOT NULL COLLATE pg_catalog."default",
+          changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           model_id    int                    NOT NULL,
           CONSTRAINT item_type_id_pk PRIMARY KEY (id),
           CONSTRAINT item_type_key_uc UNIQUE (key),
@@ -487,8 +487,8 @@ DO
       THEN
         CREATE TABLE item_type_change
         (
-          operation   CHAR(1)               NOT NULL,
-          changed     TIMESTAMP             NOT NULL,
+          operation   CHAR(1)                NOT NULL,
+          changed     TIMESTAMP              NOT NULL,
           id          INTEGER,
           key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
@@ -680,7 +680,7 @@ DO
           version     bigint                 NOT NULL DEFAULT 1,
           created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(100)  NOT NULL COLLATE pg_catalog."default",
+          changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           model_id    int                    NOT NULL,
           CONSTRAINT link_type_id_pk PRIMARY KEY (id),
           CONSTRAINT link_type_key_uc UNIQUE (key),
@@ -709,8 +709,8 @@ DO
       THEN
         CREATE TABLE link_type_change
         (
-          operation   CHAR(1)               NOT NULL,
-          changed     TIMESTAMP             NOT NULL,
+          operation   CHAR(1)                NOT NULL,
+          changed     TIMESTAMP              NOT NULL,
           id          INTEGER,
           key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
@@ -1029,7 +1029,7 @@ DO
           version       BIGINT,
           created       timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated       timestamp(6) with time zone,
-          changed_by    CHARACTER VARYING(100)  NOT NULL COLLATE pg_catalog."default",
+          changed_by    CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           CONSTRAINT tag_id_pk PRIMARY KEY (id),
           CONSTRAINT label_root_item_key_uc UNIQUE (label, root_item_key),
           CONSTRAINT root_item_key_item_data_link_data_uc UNIQUE (root_item_key, item_data, link_data),

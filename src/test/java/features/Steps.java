@@ -12,6 +12,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 
 import javax.annotation.PostConstruct;
+import java.io.Serializable;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -1836,5 +1837,19 @@ public class Steps extends BaseTest {
         util.put(RESPONSE, response);
         util.remove(EXCEPTION);
         result = response.getBody();
+    }
+
+    @When("^a request to deploy a new database is made$")
+    public void aRequestToDeployANewDatabaseIsMade() {
+        String url = baseUrl + "/db/deploy";
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.POST, null, Result.class);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+        }
     }
 }

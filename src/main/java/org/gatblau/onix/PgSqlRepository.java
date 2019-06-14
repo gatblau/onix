@@ -24,13 +24,16 @@ import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
 import org.postgresql.util.HStoreConverter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.JwtClaimAccessor;
 import org.springframework.stereotype.Service;
 
+import java.sql.Array;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.*;
 
@@ -1519,6 +1522,46 @@ public class PgSqlRepository implements DbRepository {
             db.close();
         }
         return priv;
+    }
+
+    @Override
+    public Result deployDb(String[] role, String dbAdminPwd) {
+        Result result = new Result();
+        // if the user is not admin, then go away
+        if (!(Arrays.asList(role).contains("ADMIN"))){
+            result.setError(true);
+            result.setMessage("User does not have enough privileges to perform this operation.");
+            return result;
+        }
+        // creates the onix database
+        result = createDb(dbAdminPwd);
+        if (result.isError()) return result;
+
+        // deploys the db schema objects
+        result = deploySchema(dbAdminPwd);
+        if (result.isError()) return result;
+
+        return result;
+    }
+
+    /*
+        creates the Onix database and user and deploy the required extensions
+     */
+    private Result createDb(String dbAdminPwd) {
+        Result result = new Result();
+        try {
+            db.createDb(dbAdminPwd);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result.setError(true);
+            result.setMessage(e.getMessage());
+        }
+        return result;
+    }
+
+    private Result deploySchema(String dbAdminPwd) {
+        Result result = new Result();
+        return result;
     }
 
     @Override

@@ -4,6 +4,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpHost;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -23,13 +24,19 @@ public class BaseTest implements InitializingBean {
     @LocalServerPort
     protected int port;
 
+    @Value("${wapi.admin.user}")
+    private String adminUsername;
+
+    @Value("${wapi.admin.pwd}")
+    private String adminPassword;
+
     protected RestTemplate client;
 
     public void afterPropertiesSet()  {
         try {
             HttpHost host = new HttpHost("localhost", port, "http");
             client = new RestTemplate(new HttpComponentsClientHttpRequestFactoryBasicAuth(host));
-            client.getInterceptors().add(new BasicAuthenticationInterceptor(util.adminUsername, util.adminPassword));
+            client.getInterceptors().add(new BasicAuthenticationInterceptor(adminUsername, adminPassword));
         }
         catch (Exception ex) {
         }
@@ -56,7 +63,7 @@ public class BaseTest implements InitializingBean {
     }
 
     private String getAuthHeaderValue() {
-        String auth = util.adminUsername + ":" + util.adminPassword;
+        String auth = adminUsername + ":" + adminPassword;
         byte[] encodedAuth = Base64.encodeBase64(auth.getBytes(Charset.forName("US-ASCII")));
         return "Basic " + new String( encodedAuth );
     }
