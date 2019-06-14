@@ -1,0 +1,33 @@
+release = 1
+
+[[script]]
+  file = "tables.ql"
+  checksum = 0
+
+[[script]]
+  file = "validation.sql"
+  checksum = 0
+
+[[script]]
+  file = "set.sql"
+  checksum = 0
+
+[[script]]
+  file = "get.sql"
+  checksum = 0
+
+[[script]]
+  file = "delete.sql"
+  checksum = 0
+
+[[script]]
+  file = "queries.sql"
+  checksum = 0
+
+[[script]]
+  file = "tree.sql"
+  checksum = 0
+
+[[script]]
+  file = "tags.sql"
+  checksum = 0

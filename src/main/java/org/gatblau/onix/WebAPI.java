@@ -395,9 +395,9 @@ public class WebAPI {
                     example = "part_01"
             )
             @PathVariable("key")
-                    String key,
+            String key,
             @RequestBody
-                    PartitionData partition,
+            PartitionData partition,
             Authentication authentication
     ) {
         Result result = data.createOrUpdatePartition(key, partition, getRole(authentication));
@@ -586,7 +586,7 @@ public class WebAPI {
         , method = RequestMethod.DELETE
     )
     public void deleteItemTypes(
-            Authentication authentication
+        Authentication authentication
     ) {
         data.deleteItemTypes(getRole(authentication));
     }
@@ -1203,6 +1203,30 @@ public class WebAPI {
             @PathVariable("item_key") String rootItemKey
     ) {
         return ResponseEntity.ok(data.deleteData(rootItemKey));
+    }
+
+    /*
+        database management
+     */
+    @ApiOperation(
+            value = "Deploys the database.",
+            notes = "")
+    @RequestMapping(
+            path = "/db/deploy"
+            , method = RequestMethod.POST)
+    public ResponseEntity<Result> deployDb(Authentication authentication) {
+        data.deployDb(getRole(authentication), "onix");
+        return null;
+    }
+
+    @ApiOperation(
+            value = "Upgrades the database.",
+            notes = "")
+    @RequestMapping(
+            path = "/db/upgrade"
+            , method = RequestMethod.POST)
+    public ResponseEntity<Result> upgradeDb(Authentication authentication) {
+        return null;
     }
 
     /*

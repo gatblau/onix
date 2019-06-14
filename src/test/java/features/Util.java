@@ -16,12 +16,6 @@ import java.util.Scanner;
 public class Util {
     private Map<String, Object> cache = new HashMap<>();
 
-    @Value("${wapi.admin.user}")
-    public String adminUsername;
-
-    @Value("${wapi.admin.pwd}")
-    public String adminPassword;
-
     public Util(){
     }
 

@@ -19,14 +19,20 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix;
 
+import com.google.common.base.Utf8;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.WebApplicationContext;
 
 import javax.annotation.Resource;
+import java.io.File;
+import java.io.IOException;
 import java.sql.*;
+import java.sql.Date;
+import java.util.*;
 
 @Service
 @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
@@ -35,6 +41,18 @@ class Database {
 
     @Autowired
     private DataSourceFactory ds;
+
+    @Value("${database.server.url}")
+    private String dbServerUrl;
+
+    @Value("${database.name}")
+    private String dbName;
+
+    @Value("${spring.datasource.username}")
+    private String dbUser;
+
+    @Value("${spring.datasource.password}")
+    private String dbPwd;
 
     public Database() {
     }
@@ -110,5 +128,47 @@ class Database {
             System.out.println("WARNING: failed to close database statement.");
             ex.printStackTrace();
         }
+    }
+
+    void createDb(String adminPwd) throws SQLException {
+        Map<String, String> vars = new HashMap<>();
+        vars.put("<DB_NAME>", dbName);
+        vars.put("<DB_USER>", dbUser);
+        vars.put("<DB_PWD>", dbPwd);
+        // creates the database and db user as postgres user
+        runScript(String.format("%s/postgres", dbServerUrl), "postgres", adminPwd, "db/1_create_db_user.sql", vars);
+        // creates the extensions in onix db as postgres user
+        runScript(String.format("%s/%s", dbServerUrl, dbName), "postgres", adminPwd, "db/2_create_ext.sql", null);
+    }
+
+    void runScript(String dbServerUrl, String user, String pwd, String script, Map<String, String> vars) throws SQLException {
+        Connection conn = DriverManager.getConnection(dbServerUrl, user, pwd);
+        Statement stmt = conn.createStatement();
+        final List<String> msg = Arrays.asList(getFile(script));
+        if (vars != null) {
+            vars.forEach((key, value) -> msg.set(0, msg.get(0).replace(key, value)));
+        }
+        stmt.execute(msg.get(0));
+        stmt.close();
+        conn.close();
+    }
+
+    public String getFile(String fileName) {
+        StringBuilder result = new StringBuilder("");
+        //Get file from resources folder
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource(fileName).getFile());
+        try (Scanner scanner = new Scanner(file)) {
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                result.append(line).append("\n");
+            }
+            scanner.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return result.toString();
+
     }
 }
