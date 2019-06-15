@@ -19,7 +19,6 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix;
 
-import com.google.common.base.Utf8;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
@@ -27,7 +26,6 @@ import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.WebApplicationContext;
 
-import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.sql.*;
@@ -136,12 +134,12 @@ class Database {
         vars.put("<DB_USER>", dbUser);
         vars.put("<DB_PWD>", dbPwd);
         // creates the database and db user as postgres user
-        runScript(String.format("%s/postgres", dbServerUrl), "postgres", adminPwd, "db/1_create_db_user.sql", vars);
+        runScriptFromResx(String.format("%s/postgres", dbServerUrl), "postgres", adminPwd, "db/1_create_db_user.sql", vars);
         // creates the extensions in onix db as postgres user
-        runScript(String.format("%s/%s", dbServerUrl, dbName), "postgres", adminPwd, "db/2_create_ext.sql", null);
+        runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", adminPwd, "db/2_create_ext.sql", null);
     }
 
-    void runScript(String dbServerUrl, String user, String pwd, String script, Map<String, String> vars) throws SQLException {
+    private void runScriptFromResx(String dbServerUrl, String user, String pwd, String script, Map<String, String> vars) throws SQLException {
         Connection conn = DriverManager.getConnection(dbServerUrl, user, pwd);
         Statement stmt = conn.createStatement();
         final List<String> msg = Arrays.asList(getFile(script));
@@ -153,7 +151,25 @@ class Database {
         conn.close();
     }
 
-    public String getFile(String fileName) {
+    private void runScriptFromString(String adminPwd, String script) throws SQLException {
+        Connection conn = DriverManager.getConnection(String.format("%s/onix", dbServerUrl), "postgres", adminPwd);
+        Statement stmt = conn.createStatement();
+        stmt.execute(script);
+        stmt.close();
+        conn.close();
+    }
+
+    void deployScripts(Map<String, String> scripts, String adminPwd) {
+        for (Map.Entry<String, String> script: scripts.entrySet()) {
+            try {
+                runScriptFromString(adminPwd, script.getValue());
+            } catch (SQLException e) {
+                throw new RuntimeException(String.format("Failed to apply %s script.", script.getKey()), e);
+            }
+        }
+    }
+
+    private String getFile(String fileName) {
         StringBuilder result = new StringBuilder("");
         //Get file from resources folder
         ClassLoader classLoader = getClass().getClassLoader();
@@ -163,7 +179,6 @@ class Database {
                 String line = scanner.nextLine();
                 result.append(line).append("\n");
             }
-            scanner.close();
 
         } catch (IOException e) {
             e.printStackTrace();
