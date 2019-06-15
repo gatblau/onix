@@ -2,7 +2,7 @@
   "release": 1,
   "schemas": [
     {
-      "file": "tables.ql",
+      "file": "tables.sql",
       "checksum": ""
     }
   ],
