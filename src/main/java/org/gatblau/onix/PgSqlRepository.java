@@ -46,6 +46,9 @@ public class PgSqlRepository implements DbRepository {
     @Autowired
     private Database db;
 
+    @Autowired
+    private ScriptSource script;
+
     public PgSqlRepository() {
     }
 
@@ -1526,6 +1529,8 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deployDb(String[] role, String dbAdminPwd) {
+        JSONObject manifest = script.getManifest();
+
         Result result = new Result();
         // if the user is not admin, then go away
         if (!(Arrays.asList(role).contains("ADMIN"))){

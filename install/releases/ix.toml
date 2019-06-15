@@ -1,5 +1,0 @@
-[[release]]
-   app= "0.0.1"
-   db = 1
-   upgrade = [ 2, 5 ]
-
