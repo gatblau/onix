@@ -24,14 +24,12 @@ import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
 import org.postgresql.util.HStoreConverter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.JwtClaimAccessor;
 import org.springframework.stereotype.Service;
 
-import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
@@ -1529,22 +1527,29 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deployDb(String[] role, String dbAdminPwd) {
-        JSONObject manifest = script.getManifest();
-
         Result result = new Result();
+
         // if the user is not admin, then go away
         if (!(Arrays.asList(role).contains("ADMIN"))){
             result.setError(true);
             result.setMessage("User does not have enough privileges to perform this operation.");
             return result;
         }
+
+        // retrieve the relevat db scripts to be deployed before doing anything else
+        Map<String, Map<String, String>> scripts = script.getDbScripts();
+
         // creates the onix database
         result = createDb(dbAdminPwd);
         if (result.isError()) return result;
 
-        // deploys the db schema objects
-        result = deploySchema(dbAdminPwd);
-        if (result.isError()) return result;
+        // deploys the schemas first
+        Map<String, String> schemas = scripts.get("schemas");
+        db.deployScripts(schemas, dbAdminPwd);
+
+        // deploys the functions
+        Map<String, String> funcs = scripts.get("functions");
+        db.deployScripts(funcs, dbAdminPwd);
 
         return result;
     }
@@ -1561,11 +1566,6 @@ public class PgSqlRepository implements DbRepository {
             result.setError(true);
             result.setMessage(e.getMessage());
         }
-        return result;
-    }
-
-    private Result deploySchema(String dbAdminPwd) {
-        Result result = new Result();
         return result;
     }
 
