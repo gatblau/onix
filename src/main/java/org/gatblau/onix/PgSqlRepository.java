@@ -1007,7 +1007,7 @@ public class PgSqlRepository implements DbRepository {
             // gets the version information from the database
             Database.Version v = db.getVersion();
             // if the schemas have not been deployed
-            if (v == null) {
+            if (v.app == null) {
                 db.deployDb();
             }
             // if version in db does not match version of app and auto-upgrade then try upgrade

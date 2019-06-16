@@ -233,6 +233,7 @@ class Database {
             deployScripts(funcs, ap);
 
             // updates the version table
+            setVersion(script.getAppVersion(), script.getAppManifest().get("db").toString(), "Database automatically deployed by Onix", script.scriptsUrl);
         } else {
             throw new RuntimeException(String.format(
                     "Database does not exists.\n" +
@@ -272,7 +273,7 @@ class Database {
      * gets the version information from the database
      * @return a varsion instance containing app and db versions
      */
-    private Version getVersion() {
+    Version getVersion() {
         if (version == null) {
             version = new Version();
             Connection conn = null;
@@ -325,5 +326,23 @@ class Database {
      */
     public void upgrade() {
         throw new RuntimeException("Upgrade process not implemented.");
+    }
+
+    private void setVersion(String appVer, String dbVer, String desc, String scriptSrc) {
+        try {
+            prepare("SELECT set_version(" +
+                    "?::character varying," +
+                    "?::character varying," +
+                    "?::text," +
+                    "?::character varying" +
+                    ")");
+            setString(1, appVer);
+            setString(2, dbVer);
+            setString(3, desc);
+            setString(4,scriptSrc);
+            executeQuery();
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to set version in database.", ex);
+        }
     }
 }
