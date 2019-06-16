@@ -13,26 +13,14 @@
 #    Contributors to this project, hereby assign copyright in this code to the project,
 #    to be licensed under the same terms as the rest of the code.
 #
-
-TAG=$1
-
-if [ $# -eq 0 ]; then
-    echo "An image tag is required for Onix. Provide it as a parameter."
-    echo "Usage is: sh rebuild.sh [ONIX TAG]"
-    exit 1
-fi
-
+# re-creates a docker container with a postgres database
+# usage:  sh refresh.sh
+#
 # removes the container
 docker rm -f onixdb
 
-# deletes the image
-docker rmi "onixdb-snapshot:${TAG}"
-
-# builds the image
-sh build.sh "${TAG}"
-
-# creates the container
-sh run.sh "${TAG}"
+# re-creates the container
+docker run --name onixdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "centos/postgresql-10-centos7"
 
 # wait for the container to initialise
 sleep 5

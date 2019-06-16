@@ -13,18 +13,8 @@
 #    Contributors to this project, hereby assign copyright in this code to the project,
 #    to be licensed under the same terms as the rest of the code.
 #
-#  Creates the WAPI and DB containers required by the application.
-
+#  Launches Onix in the local machine without using docker-compose
 #
-if [ $# -eq 0 ]; then
-    echo "An image tag is required for Onix. Provide it as a parameter."
-    echo "Usage is: sh up.sh [ONIX TAG]"
-    exit 1
-fi
-
-# assigns the first parameter to the ONIXTAG
-ONIXTAG=$1
-
 # check docker is installed
 if [ ! -x "$(command -v docker)" ]; then
     echo "Docker is required to execute this script."
@@ -38,9 +28,9 @@ if [ -n "$images_with_no_tag" ]; then
 fi
 
 # try and delete existing Onix containers
-docker rm -f onixdb
-docker rm -f onixwapi
+docker rm -f oxdb
+docker rm -f ox
 
 # creates the Onix containers
-docker run --name onixdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "creoworks/onixdb-snapshot:${ONIXTAG}"
-docker run --name onixwapi -it -d -p 8080:8080 --link onix-db -eDB_HOST=onix-db "creoworks/onixwapi:snapshot${ONIXTAG}"
+docker run --name oxdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "centos/postgresql-10-centos7"
+docker run --name ox -it -d -p 8080:8080 --link oxdb -eDB_HOST=oxdb "gatblau/onix-snapshot"

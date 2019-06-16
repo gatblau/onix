@@ -1,10 +1,8 @@
 .idea
 *.iml
 target
-install/container/wapi/tmp
-install/container/s2i
+install/container/tmp
 src/main/resources/version
 ansible/*.retry
 venv
 .terraform
-pkg
