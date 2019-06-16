@@ -1,7 +1,9 @@
 Feature: Deploy Database
   As a system administrator
-  I want to deploy a new Onix database
-  So that it is ready to use by the Web API
+  I want to deploy a new Onix database when the readiness probe is called and the database does not exist
+  So that the database is deployed automatically if not there
 
   Scenario: Deploy new database
-    When a request to deploy a new database is made
+    Given the database does not exist
+    When the readiness probe is checked
+    Then the database is deployed

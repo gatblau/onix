@@ -1839,8 +1839,8 @@ public class Steps extends BaseTest {
         result = response.getBody();
     }
 
-    @When("^a request to deploy a new database is made$")
-    public void aRequestToDeployANewDatabaseIsMade() {
+    @When("^the readiness probe is checked$")
+    public void theReadinessProbeIsChecked() {
         String url = baseUrl + "/ready";
         ResponseEntity<Result> response = null;
         try {
@@ -1850,6 +1850,18 @@ public class Steps extends BaseTest {
         }
         catch (Exception ex) {
             util.put(EXCEPTION, ex);
+        }
+    }
+
+    @Given("^the database does not exist$")
+    public void theDatabaseDoesNotExist() {
+        // delete the database here
+    }
+
+    @Then("^the database is deployed$")
+    public void theDatabaseIsDeployed() {
+        if (util.containsKey(EXCEPTION)){
+            throw new RuntimeException((Exception)util.get(EXCEPTION));
         }
     }
 }

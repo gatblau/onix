@@ -161,7 +161,7 @@ public class ScriptSource {
     }
 
     public Map<String, Map<String, String>> getDbScripts() {
-        log.info("Fetching database deployment scripts from %s.", scriptsUrl);
+        log.info(String.format("Fetching database deployment scripts from %s.", scriptsUrl));
         Map<String, Map<String, String>> scripts = new HashMap<>();
         JSONObject dbManifest = getDbManifest();
         scripts.put("schemas", getScript(dbManifest, "schemas"));
