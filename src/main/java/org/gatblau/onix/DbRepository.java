@@ -144,7 +144,7 @@ public interface DbRepository {
     String getGetModelLinkRulesSQL();
 
     /* Readiness probe */
-    JSONObject getReadyStatus();
+    JSONObject checkReady();
 
     /* Model */
     Result deleteModel(String key, String[] role);

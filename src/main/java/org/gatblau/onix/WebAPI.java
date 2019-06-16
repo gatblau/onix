@@ -98,7 +98,7 @@ public class WebAPI {
     )
     @RequestMapping(value = "/ready", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<JSONObject> ready() {
-        return ResponseEntity.ok(data.getReadyStatus());
+        return ResponseEntity.ok(data.checkReady());
     }
 
     /*
