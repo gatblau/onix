@@ -14,17 +14,11 @@
 #    to be licensed under the same terms as the rest of the code.
 #
 
-# Builds the Onix WAPI and DB images required to run the application
+# Builds the Onix image
 
 # check docker is installed
 if [ ! -x "$(command -v docker)" ]; then
     echo "Docker is required to execute this script."
-    exit 1
-fi
-
-# check s2i command is installed
-if [ ! -x "$(command -v ./s2i)" ]; then
-    echo "s2i is required to execute this script. See here: https://github.com/openshift/source-to-image"
     exit 1
 fi
 
@@ -46,20 +40,34 @@ rm ../../src/main/resources/version
 echo ${ONIXTAG} >> ../../src/main/resources/version
 
 # removes existing images from the local registry
-docker images -a | grep "southwinds*" | awk '{print $3}' | xargs docker rmi -f
+docker images -a | grep "gatblau*" | awk '{print $3}' | xargs docker rmi -f
 
-# builds the onix-db image
-echo building onixdb...
-cd db
-sh ./build.sh $ONIXTAG
-cd ..
+# builds the onix image
+echo "building onix image"
 
-# builds the onixwapi image
-echo building onixwapi
-cd wapi
-sh ./build.sh $ONIXTAG
-cd ..
+# deletes any images with no tag
+images_with_no_tag=$(docker images -f dangling=true -q)
+if [ -n "$images_with_no_tag" ]; then
+    docker rmi $images_with_no_tag
+fi
 
-# push to docker hub
-docker push southwinds/onixdb-snapshot:$ONIXTAG
-docker push southwinds/onixwapi-snapshot:$ONIXTAG
+echo "removing the target directory"
+rm -rf ././../../target/
+
+echo "deleting the app temp folder"
+rm -rf ./tmp
+
+echo "packaging the application"
+mvn -f ././../../pom.xml package
+
+echo "unzipping the application jar file"
+unzip -o ././../../target/*.jar -d ./tmp
+
+echo "building the docker image"
+docker build -t gatblau/onix-snapshot:$ONIXTAG .
+
+echo "tagging the image as latest"
+docker tag gatblau/onix-snapshot:$ONIXTAG gatblau/onix-snapshot:latest
+
+echo "pushing to docker.io"
+docker push gatblau/onix-snapshot:$ONIXTAG

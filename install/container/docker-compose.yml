@@ -18,22 +18,22 @@
 #
 version: '3'
 services:
-  onixdb:
-    image: southwinds/onixdb-snapshot
-    container_name: onixdb
+  oxdb:
+    image: centos/postgresql-10-centos7
+    container_name: oxdb
     restart: always
     environment:
       - POSTGRESQL_ADMIN_PASSWORD=onix
     ports:
       - "5432:5432"
-  onixwapi:
-    image: southwinds/onixwapi-snapshot
+  onix:
+    image: gatblau/onix-snapshot
     depends_on:
-      - onixdb
-    container_name: onixwapi
+      - oxdb
+    container_name: ox
     restart: always
     environment:
-      - DB_HOST=onixdb
+      - DB_HOST=oxdb
       - WAPI_AUTH_MODE=none
 #     uncomment below to enable basic authentication
 #      - WAPI_AUTH_MODE=basic
