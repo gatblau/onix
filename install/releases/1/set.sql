@@ -15,6 +15,35 @@
 */
 DO $$
   BEGIN
+    CREATE OR REPLACE FUNCTION set_version(
+      application_version_param CHARACTER VARYING(25),
+      database_version_param    CHARACTER VARYING(25),
+      description_param         TEXT,
+      scripts_source_param      CHARACTER VARYING(250)
+    )
+    RETURNS VOID
+      LANGUAGE 'plpgsql'
+      COST 100
+      VOLATILE
+    AS
+    $BODY$
+      INSERT INTO version (
+         application_version,
+         database_version,
+         description,
+         time,
+         scripts_source
+      )
+      VALUES (
+         application_version_param,
+         database_version_param,
+         description_param,
+         current_timestamp,
+         scripts_source_param
+      );
+    END;
+    $BODY$;
+
     /*
       set_partition(...)
       Inserts a new or updates an existing partition.

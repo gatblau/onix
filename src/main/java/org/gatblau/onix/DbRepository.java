@@ -188,6 +188,4 @@ public interface DbRepository {
     Result removePrivilege(String partitionKey, String roleKey, String[] role);
 
     PrivilegeDataList getPrivilegesByRole(String roleKey, String[] loggedRoleKey);
-
-    Result deployDb(String[] role, String dbAdminPwd);
 }

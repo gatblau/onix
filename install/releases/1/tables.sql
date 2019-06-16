@@ -16,34 +16,6 @@ DO
   $$
     BEGIN
       ---------------------------------------------------------------------------
-      -- VERSION - version of releases (not only database)
-      ---------------------------------------------------------------------------
-      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'version')
-      THEN
-        CREATE TABLE version
-        (
-          app_version      CHARACTER VARYING(25) NOT NULL COLLATE pg_catalog."default",
-          db_release       integer,
-          description      TEXT COLLATE pg_catalog."default",
-          deployed         timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
-          schema_uri       character varying(250),
-          schema_checksum  character varying(50),
-          objects_uri      character varying(250),
-          objects_checksum character varying(50),
-          CONSTRAINT version_app_version_db_release_pk PRIMARY KEY (app_version, db_release)
-        )
-          WITH (
-            OIDS = FALSE
-          )
-          TABLESPACE pg_default;
-
-        ALTER TABLE version
-          OWNER to onix;
-
-        --         INSERT INTO version(release, name, change_schema, change_fxs) VALUES ('1.0.0', 'First release.', true, true);
-      END IF;
-
-      ---------------------------------------------------------------------------
       -- PARTITION
       ---------------------------------------------------------------------------
       IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'partition')

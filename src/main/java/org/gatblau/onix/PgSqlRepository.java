@@ -44,9 +44,6 @@ public class PgSqlRepository implements DbRepository {
     @Autowired
     private Database db;
 
-    @Autowired
-    private ScriptSource script;
-
     public PgSqlRepository() {
     }
 
@@ -1002,17 +999,35 @@ public class PgSqlRepository implements DbRepository {
     public synchronized JSONObject getReadyStatus() {
         JSONObject status = new JSONObject();
         try {
-            db.prepare(getTableCountSQL());
-            ResultSet set = db.executeQuerySingleRow();
-            while (set.next()) {
-                int count = set.getInt("get_table_count");
-                if (count == 0) {
-                    throw new RuntimeException("No tables found in the database.");
-                }
+            // if db not created, then if auto-deploy=true try and create db and deploy schemas
+            if (!db.exists()) {
+                db.createDb("onix");
             }
-            status.put("ready", true);
+            // if db deployed but no schemas and auto-deploy then try deploy schemas
+            // gets the version information from the database
+            Database.Version v = db.getVersion();
+            // if the schemas have not been deployed
+            if (v == null) {
+                db.deployDb();
+            }
+            // if version in db does not match version of app and auto-upgrade then try upgrade
+            int upgrade =  db.shouldUpgrade();
+            switch (upgrade){
+                // should not upgrade, everything is ok
+                case 0:
+                    break;
+                // should upgrade db
+                case 1:
+                    db.upgrade();
+                    break;
+                // the database is newer than the app, it should upgrade the app
+                case -1:
+                    throw new RuntimeException(
+                            "Database version is not compatible with application. \n" +
+                            "Please upgrade the application.");
+            }
         } catch (Exception ex) {
-            throw new RuntimeException(String.format("Readyness probe failed: %s", ex.getMessage()));
+            throw new RuntimeException("Application is not ready.", ex);
         }
         return status;
     }
@@ -1523,50 +1538,6 @@ public class PgSqlRepository implements DbRepository {
             db.close();
         }
         return priv;
-    }
-
-    @Override
-    public Result deployDb(String[] role, String dbAdminPwd) {
-        Result result = new Result();
-
-        // if the user is not admin, then go away
-        if (!(Arrays.asList(role).contains("ADMIN"))){
-            result.setError(true);
-            result.setMessage("User does not have enough privileges to perform this operation.");
-            return result;
-        }
-
-        // retrieve the relevat db scripts to be deployed before doing anything else
-        Map<String, Map<String, String>> scripts = script.getDbScripts();
-
-        // creates the onix database
-        result = createDb(dbAdminPwd);
-        if (result.isError()) return result;
-
-        // deploys the schemas first
-        Map<String, String> schemas = scripts.get("schemas");
-        db.deployScripts(schemas, dbAdminPwd);
-
-        // deploys the functions
-        Map<String, String> funcs = scripts.get("functions");
-        db.deployScripts(funcs, dbAdminPwd);
-
-        return result;
-    }
-
-    /*
-        creates the Onix database and user and deploy the required extensions
-     */
-    private Result createDb(String dbAdminPwd) {
-        Result result = new Result();
-        try {
-            db.createDb(dbAdminPwd);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            result.setError(true);
-            result.setMessage(e.getMessage());
-        }
-        return result;
     }
 
     @Override
