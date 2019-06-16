@@ -78,7 +78,7 @@ objects:
     - annotations:
       from:
         kind: DockerImage
-        name: southwinds/onixdb-snapshot
+        name: centos/postgresql-10-centos7
       importPolicy:
         scheduled: true
       name: latest
@@ -223,7 +223,7 @@ objects:
     - annotations:
       from:
         kind: DockerImage
-        name: southwinds/onixwapi-snapshot:latest
+        name: gatblau/onix-snapshot
       importPolicy:
         scheduled: true
       name: latest
