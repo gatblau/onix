@@ -19,6 +19,9 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix;
 
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
@@ -35,7 +38,12 @@ import java.util.*;
 @Service
 @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
 class Database {
+    Logger log = LoggerFactory.getLogger(Database.class);
+
     private PreparedStatement stmt;
+
+    @Autowired
+    private ScriptSource script;
 
     @Autowired
     private DataSourceFactory ds;
@@ -52,7 +60,23 @@ class Database {
     @Value("${spring.datasource.password}")
     private String dbPwd;
 
+    @Value("${database.admin.pwd}")
+    private char[] dbAdminPwd;
+
+    @Value("${database.auto.deploy}")
+    private boolean dbAutoDeploy;
+
+    @Value("${database.auto.upgrade}")
+    private boolean dbAutoUpgrade;
+
+    private Version version;
+
     public Database() {
+    }
+
+    class Version {
+        String app;
+        String db;
     }
 
     void prepare(String sql) throws SQLException {
@@ -134,9 +158,13 @@ class Database {
         vars.put("<DB_USER>", dbUser);
         vars.put("<DB_PWD>", dbPwd);
         // creates the database and db user as postgres user
-        runScriptFromResx(String.format("%s/postgres", dbServerUrl), "postgres", adminPwd, "db/1_create_db_user.sql", vars);
+        log.info(String.format("Creating database %s and user %s.", dbName, dbUser));
+        runScriptFromResx(String.format("%s/postgres", dbServerUrl), "postgres", adminPwd, "db/db_and_user.sql", vars);
         // creates the extensions in onix db as postgres user
-        runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", adminPwd, "db/2_create_ext.sql", null);
+        log.info(String.format("Creating extensions in database %s.", dbName));
+        runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", adminPwd, "db/extensions.sql", null);
+        log.info(String.format("Creating version control table in database %s.", dbName));
+        runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", adminPwd, "db/version_table.sql", null);
     }
 
     private void runScriptFromResx(String dbServerUrl, String user, String pwd, String script, Map<String, String> vars) throws SQLException {
@@ -159,7 +187,7 @@ class Database {
         conn.close();
     }
 
-    void deployScripts(Map<String, String> scripts, String adminPwd) {
+    private void deployScripts(Map<String, String> scripts, String adminPwd) {
         for (Map.Entry<String, String> script: scripts.entrySet()) {
             try {
                 runScriptFromString(adminPwd, script.getValue());
@@ -185,5 +213,117 @@ class Database {
         }
         return result.toString();
 
+    }
+
+    public void deployDb() throws SQLException {
+        if (dbAutoDeploy) {
+            // retrieve the relevant db scripts to be deployed before doing anything else
+            Map<String, Map<String, String>> scripts = script.getDbScripts();
+
+            // creates a local variable pwd that should go out of scope at the end of the scope and
+            // be GC by the JVM
+            String ap = new String(dbAdminPwd);
+
+            // deploys the schemas first
+            Map<String, String> schemas = scripts.get("schemas");
+            deployScripts(schemas, ap);
+
+            // deploys the functions
+            Map<String, String> funcs = scripts.get("functions");
+            deployScripts(funcs, ap);
+
+            // updates the version table
+        } else {
+            throw new RuntimeException(String.format(
+                    "Database does not exists.\n" +
+                    "Database automatic deployment is disabled.\n" +
+                    "Deploy database manually or enable auto deployment in the configuration."));
+        }
+    }
+
+    /**
+     * determines if the onix database exists
+     * @return true if the onix database exists, otherwise false
+     */
+    public boolean exists() {
+        boolean exists = false;
+        Connection conn = null;
+        try {
+            conn = DriverManager.getConnection(String.format("%s/postgres", dbServerUrl), "postgres", new String(dbAdminPwd));
+            Statement stmt = conn.createStatement();
+            if (stmt.execute(String.format("SELECT 1 from pg_database WHERE datname='%s';", dbName))){
+                ResultSet set = stmt.getResultSet();
+                exists = set.next();
+                if (exists) {
+                    log.info("Database %s already exists.", dbName);
+                }
+            }
+            stmt.close();
+            conn.close();
+        } catch (SQLException e) {
+            // if it failed it is because the db does not exists
+            // no need to close the connection as if it could not be obtained it is null anyway
+            log.info("Database %s does not exist.", dbName);
+        }
+        return exists;
+    }
+
+    /**
+     * gets the version information from the database
+     * @return a varsion instance containing app and db versions
+     */
+    private Version getVersion() {
+        if (version == null) {
+            version = new Version();
+            Connection conn = null;
+            try {
+                conn = DriverManager.getConnection(String.format("%s/postgres", dbServerUrl), "postgres", new String(dbAdminPwd));
+                Statement stmt = conn.createStatement();
+                if (stmt.execute(String.format("SELECT * from version ORDER BY time DESC TOP 1;", dbName))) {
+                    ResultSet set = stmt.getResultSet();
+                    if (set.next()) {
+                        version.app = set.getString("application_version");
+                        version.db = set.getString("db_version");
+                    }
+                }
+                stmt.close();
+                conn.close();
+            } catch (SQLException e) {
+            }
+        }
+        return version;
+    }
+
+    /**
+     * determines whether the db should be upgraded based on the app version running
+     * @return if 0, then should not upgrade
+     * if 1, then it should upgrade db
+     * if -1 then it should upgrade app, can't run on the current db version
+     */
+    public int shouldUpgrade() {
+        Version v = getVersion();
+        JSONObject appManifest = script.getAppManifest();
+        int dbv = Integer.parseInt(v.db); // the current db version
+        int appdbv = Integer.parseInt(appManifest.get("db").toString()); // the db version required by the app
+        if (dbv < appdbv){
+            // version in the database is less than the one the app requires
+            // should upgrade
+            return 1;
+        }
+        else if (dbv == appdbv) {
+            // should not upgrade
+            return 0;
+        }
+        else {
+            // app cannot run, db version is newer than required by the app!
+            return -1;
+        }
+    }
+
+    /**
+     * upgrades the database to the version indicated by the current application
+     */
+    public void upgrade() {
+        throw new RuntimeException("Upgrade process not implemented.");
     }
 }

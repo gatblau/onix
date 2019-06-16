@@ -24,6 +24,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -46,12 +48,16 @@ import java.util.regex.Pattern;
  */
 @Service
 public class ScriptSource {
+    Logger log = LoggerFactory.getLogger(ScriptSource.class);
+
     @Value("${database.scripts}")
     private String scriptsUrl;
 
     private Pattern versionPattern = Pattern.compile("\\d*\\.\\d*\\.\\d*");
 
     private JSONParser jsonParser = new JSONParser();
+
+    private JSONObject appManifest;
 
     @Autowired
     private Info info;
@@ -71,7 +77,7 @@ public class ScriptSource {
         return String.format("%s/%s/%s", scriptsUrl, dbVersion, scriptName);
     }
 
-    private String getAppVersion(){
+    String getAppVersion(){
         Matcher matcher = versionPattern.matcher(info.getVersion());
         if (matcher.find()) {
             return matcher.group(0);
@@ -121,8 +127,11 @@ public class ScriptSource {
         return json;
     }
 
-    private JSONObject getAppManifest() {
-        return getJSON(getAppManifestUrl(), null, null);
+    JSONObject getAppManifest() {
+        if (appManifest == null) {
+            appManifest = getJSON(getAppManifestUrl(), null, null);
+        }
+        return appManifest;
     }
 
     private JSONObject getDbManifest() {
@@ -152,6 +161,7 @@ public class ScriptSource {
     }
 
     public Map<String, Map<String, String>> getDbScripts() {
+        log.info("Fetching database deployment scripts from %s.", scriptsUrl);
         Map<String, Map<String, String>> scripts = new HashMap<>();
         JSONObject dbManifest = getDbManifest();
         scripts.put("schemas", getScript(dbManifest, "schemas"));

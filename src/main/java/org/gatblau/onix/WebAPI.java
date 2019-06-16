@@ -1205,20 +1205,6 @@ public class WebAPI {
         return ResponseEntity.ok(data.deleteData(rootItemKey));
     }
 
-    /*
-        database management
-     */
-    @ApiOperation(
-            value = "Deploys the database.",
-            notes = "")
-    @RequestMapping(
-            path = "/db/deploy"
-            , method = RequestMethod.POST)
-    public ResponseEntity<Result> deployDb(Authentication authentication) {
-        data.deployDb(getRole(authentication), "onix");
-        return null;
-    }
-
     @ApiOperation(
             value = "Upgrades the database.",
             notes = "")

@@ -1841,10 +1841,10 @@ public class Steps extends BaseTest {
 
     @When("^a request to deploy a new database is made$")
     public void aRequestToDeployANewDatabaseIsMade() {
-        String url = baseUrl + "/db/deploy";
+        String url = baseUrl + "/ready";
         ResponseEntity<Result> response = null;
         try {
-            response = client.exchange(url, HttpMethod.POST, null, Result.class);
+            response = client.exchange(url, HttpMethod.GET, null, Result.class);
             util.put(RESPONSE, response);
             util.remove(EXCEPTION);
         }
