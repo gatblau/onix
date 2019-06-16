@@ -24,7 +24,7 @@ DO
 $$
   BEGIN
 
-    CREATE OR REPLACE FUNCTION validate_json_schema_type(type text, data jsonb) RETURNS boolean AS
+    CREATE OR REPLACE FUNCTION _validate_json_schema_type(type text, data jsonb) RETURNS boolean AS
     $f$
     BEGIN
       IF type = 'integer' THEN
