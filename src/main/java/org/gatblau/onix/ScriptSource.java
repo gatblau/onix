@@ -51,7 +51,7 @@ public class ScriptSource {
     Logger log = LoggerFactory.getLogger(ScriptSource.class);
 
     @Value("${database.scripts}")
-    private String scriptsUrl;
+    String scriptsUrl;
 
     private Pattern versionPattern = Pattern.compile("\\d*\\.\\d*\\.\\d*");
 

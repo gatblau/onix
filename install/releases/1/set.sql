@@ -15,6 +15,10 @@
 */
 DO $$
   BEGIN
+    /*
+      set_version(...)
+      Inserts a new record in the version control table.
+     */
     CREATE OR REPLACE FUNCTION set_version(
       application_version_param CHARACTER VARYING(25),
       database_version_param    CHARACTER VARYING(25),
@@ -27,6 +31,7 @@ DO $$
       VOLATILE
     AS
     $BODY$
+    BEGIN
       INSERT INTO version (
          application_version,
          database_version,
