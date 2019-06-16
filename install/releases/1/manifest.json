@@ -8,6 +8,10 @@
   ],
   "functions": [
     {
+      "file": "json.sql",
+      "checksum": ""
+    },
+    {
       "file": "validation.sql",
       "checksum": ""
     },
