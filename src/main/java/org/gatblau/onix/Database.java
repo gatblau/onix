@@ -77,6 +77,15 @@ class Database {
     class Version {
         String app;
         String db;
+
+        @Override
+        public String toString() {
+            if (app != null && db != null) {
+                return String.format("App Version: '%s'; Db Version: '%s'.", app, db);
+            } else {
+                return super.toString();
+            }
+        }
     }
 
     void prepare(String sql) throws SQLException {
@@ -158,12 +167,12 @@ class Database {
         vars.put("<DB_USER>", dbUser);
         vars.put("<DB_PWD>", dbPwd);
         // creates the database and db user as postgres user
-        log.info(String.format("Creating database %s and user %s.", dbName, dbUser));
+        log.info(String.format("Creating database '%s' and user '%s'.", dbName, dbUser));
         runScriptFromResx(String.format("%s/postgres", dbServerUrl), "postgres", adminPwd, "db/db_and_user.sql", vars);
         // creates the extensions in onix db as postgres user
-        log.info(String.format("Creating extensions in database %s.", dbName));
+        log.info(String.format("Creating extensions in database '%s'.", dbName));
         runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", adminPwd, "db/extensions.sql", null);
-        log.info(String.format("Creating version control table in database %s.", dbName));
+        log.info(String.format("Creating version control table in database '%s'.", dbName));
         runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", adminPwd, "db/version_table.sql", null);
     }
 
@@ -190,9 +199,10 @@ class Database {
     private void deployScripts(Map<String, String> scripts, String adminPwd) {
         for (Map.Entry<String, String> script: scripts.entrySet()) {
             try {
+                log.info(String.format("Executing script '%s'.", script.getKey()));
                 runScriptFromString(adminPwd, script.getValue());
             } catch (SQLException e) {
-                throw new RuntimeException(String.format("Failed to apply %s script.", script.getKey()), e);
+                throw new RuntimeException(String.format("Failed to apply script '%s'.", script.getKey()), e);
             }
         }
     }
@@ -207,7 +217,6 @@ class Database {
                 String line = scanner.nextLine();
                 result.append(line).append("\n");
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -234,6 +243,9 @@ class Database {
 
             // updates the version table
             setVersion(script.getAppVersion(), script.getAppManifest().get("db").toString(), "Database automatically deployed by Onix", script.scriptsUrl);
+
+            // resets the version in memory
+            version = null;
         } else {
             throw new RuntimeException(String.format(
                     "Database does not exists.\n" +
@@ -256,15 +268,15 @@ class Database {
                 ResultSet set = stmt.getResultSet();
                 exists = set.next();
                 if (exists) {
-                    log.info("Database %s already exists.", dbName);
+                    log.info(String.format("Database %s already exists.", dbName));
+                } else {
+                    log.info(String.format("Database %s does not exist.", dbName));
                 }
             }
             stmt.close();
             conn.close();
         } catch (SQLException e) {
-            // if it failed it is because the db does not exists
-            // no need to close the connection as if it could not be obtained it is null anyway
-            log.info("Database %s does not exist.", dbName);
+            throw new RuntimeException("Failed to check if database exists.", e);
         }
         return exists;
     }
@@ -278,18 +290,19 @@ class Database {
             version = new Version();
             Connection conn = null;
             try {
-                conn = DriverManager.getConnection(String.format("%s/postgres", dbServerUrl), "postgres", new String(dbAdminPwd));
+                conn = DriverManager.getConnection(String.format("%s/%s", dbServerUrl, dbName), "postgres", new String(dbAdminPwd));
                 Statement stmt = conn.createStatement();
-                if (stmt.execute(String.format("SELECT * from version ORDER BY time DESC TOP 1;", dbName))) {
+                if (stmt.execute(String.format("SELECT * from version ORDER BY time DESC LIMIT 1;", dbName))) {
                     ResultSet set = stmt.getResultSet();
                     if (set.next()) {
                         version.app = set.getString("application_version");
-                        version.db = set.getString("db_version");
+                        version.db = set.getString("database_version");
                     }
                 }
                 stmt.close();
                 conn.close();
             } catch (SQLException e) {
+                throw new RuntimeException("Failed to retrieve version from database", e);
             }
         }
         return version;
@@ -302,6 +315,7 @@ class Database {
      * if -1 then it should upgrade app, can't run on the current db version
      */
     public int shouldUpgrade() {
+        log.info("Verifying database and application compatibility.");
         Version v = getVersion();
         JSONObject appManifest = script.getAppManifest();
         int dbv = Integer.parseInt(v.db); // the current db version
@@ -309,14 +323,20 @@ class Database {
         if (dbv < appdbv){
             // version in the database is less than the one the app requires
             // should upgrade
+            log.warn(String.format("Database version '%s' should be upgraded to version '%s' to meet the requirements of the application.", dbv, appdbv));
             return 1;
         }
         else if (dbv == appdbv) {
             // should not upgrade
+            log.info(String.format("Database version '%s' is correct for the running application version '%s'.", v.db, v.app));
             return 0;
         }
         else {
             // app cannot run, db version is newer than required by the app!
+            log.error(String.format(
+                "The application cannot start. \n" +
+                "The current database version (i.e. %s), is newer than the version required by the running application (i.e. %s).\n" +
+                "The application should be upgraded for the current database version.", dbv, appdbv));
             return -1;
         }
     }
@@ -329,6 +349,7 @@ class Database {
     }
 
     private void setVersion(String appVer, String dbVer, String desc, String scriptSrc) {
+        log.info(String.format("Recording version of database installed: %s:%s.", appVer, dbVer));
         try {
             prepare("SELECT set_version(" +
                     "?::character varying," +

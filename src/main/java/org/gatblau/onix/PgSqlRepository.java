@@ -1029,6 +1029,9 @@ public class PgSqlRepository implements DbRepository {
         } catch (Exception ex) {
             throw new RuntimeException("Application is not ready.", ex);
         }
+        status.put("status", "ready");
+        status.put("appVersion", db.getVersion().app);
+        status.put("dbVersion", db.getVersion().db);
         return status;
     }
 
