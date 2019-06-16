@@ -58,7 +58,7 @@ class Database {
     private String dbUser;
 
     @Value("${spring.datasource.password}")
-    private String dbPwd;
+    private char[] dbPwd;
 
     @Value("${database.admin.pwd}")
     private char[] dbAdminPwd;
@@ -161,19 +161,20 @@ class Database {
         }
     }
 
-    void createDb(String adminPwd) throws SQLException {
+    void createDb() throws SQLException {
+        String ap = new String(dbAdminPwd);
         Map<String, String> vars = new HashMap<>();
         vars.put("<DB_NAME>", dbName);
         vars.put("<DB_USER>", dbUser);
-        vars.put("<DB_PWD>", dbPwd);
+        vars.put("<DB_PWD>", new String(dbPwd));
         // creates the database and db user as postgres user
         log.info(String.format("Creating database '%s' and user '%s'.", dbName, dbUser));
-        runScriptFromResx(String.format("%s/postgres", dbServerUrl), "postgres", adminPwd, "db/db_and_user.sql", vars);
+        runScriptFromResx(String.format("%s/postgres", dbServerUrl), "postgres", ap, "db/db_and_user.sql", vars);
         // creates the extensions in onix db as postgres user
         log.info(String.format("Creating extensions in database '%s'.", dbName));
-        runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", adminPwd, "db/extensions.sql", null);
+        runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", ap, "db/extensions.sql", null);
         log.info(String.format("Creating version control table in database '%s'.", dbName));
-        runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", adminPwd, "db/version_table.sql", null);
+        runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", ap, "db/version_table.sql", null);
     }
 
     private void runScriptFromResx(String dbServerUrl, String user, String pwd, String script, Map<String, String> vars) throws SQLException {
@@ -189,7 +190,7 @@ class Database {
     }
 
     private void runScriptFromString(String adminPwd, String script) throws SQLException {
-        Connection conn = DriverManager.getConnection(String.format("%s/onix", dbServerUrl), "postgres", adminPwd);
+        Connection conn = DriverManager.getConnection(String.format("%s/%s", dbServerUrl, dbName), "postgres", adminPwd);
         Statement stmt = conn.createStatement();
         stmt.execute(script);
         stmt.close();

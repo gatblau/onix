@@ -996,12 +996,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized JSONObject getReadyStatus() {
+    public synchronized JSONObject checkReady() {
         JSONObject status = new JSONObject();
         try {
             // if db not created, then if auto-deploy=true try and create db and deploy schemas
             if (!db.exists()) {
-                db.createDb("onix");
+                db.createDb();
             }
             // if db deployed but no schemas and auto-deploy then try deploy schemas
             // gets the version information from the database
