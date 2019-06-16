@@ -998,6 +998,7 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public synchronized JSONObject checkReady() {
         JSONObject status = new JSONObject();
+        boolean isUpgrade = false;
         try {
             // if db not created, then if auto-deploy=true try and create db and deploy schemas
             if (!db.exists()) {
@@ -1018,6 +1019,7 @@ public class PgSqlRepository implements DbRepository {
                     break;
                 // should upgrade db
                 case 1:
+                    isUpgrade = true;
                     db.upgrade();
                     break;
                 // the database is newer than the app, it should upgrade the app
@@ -1027,6 +1029,11 @@ public class PgSqlRepository implements DbRepository {
                             "Please upgrade the application.");
             }
         } catch (Exception ex) {
+            // only if we are not upgrading can delete db to go back to a clean state
+            if (!isUpgrade) {
+                // if the process of deploying a brand new db failed, then remove the database
+                db.deleteDb();
+            }
             throw new RuntimeException("Application is not ready.", ex);
         }
         status.put("status", "ready");

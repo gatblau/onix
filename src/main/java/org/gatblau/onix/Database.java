@@ -189,8 +189,8 @@ class Database {
         conn.close();
     }
 
-    private void runScriptFromString(String adminPwd, String script) throws SQLException {
-        Connection conn = DriverManager.getConnection(String.format("%s/%s", dbServerUrl, dbName), "postgres", adminPwd);
+    private void runScriptFromString(String adminPwd, String script, String targetDb) throws SQLException {
+        Connection conn = DriverManager.getConnection(String.format("%s/%s", dbServerUrl, targetDb), "postgres", adminPwd);
         Statement stmt = conn.createStatement();
         stmt.execute(script);
         stmt.close();
@@ -201,7 +201,7 @@ class Database {
         for (Map.Entry<String, String> script: scripts.entrySet()) {
             try {
                 log.info(String.format("Executing script '%s'.", script.getKey()));
-                runScriptFromString(adminPwd, script.getValue());
+                runScriptFromString(adminPwd, script.getValue(), dbName);
             } catch (SQLException e) {
                 throw new RuntimeException(String.format("Failed to apply script '%s'.", script.getKey()), e);
             }
@@ -365,6 +365,24 @@ class Database {
             executeQuery();
         } catch (Exception ex) {
             throw new RuntimeException("Failed to set version in database.", ex);
+        }
+    }
+
+    /**
+     * deletes the database.
+     */
+    void deleteDb() {
+        try {
+            // kills all existing connections and drops the database
+            runScriptFromString(new String(dbAdminPwd),
+                String.format(
+                    "SELECT pid, pg_terminate_backend(pid) \n" +
+                    "FROM pg_stat_activity \n" +
+                    "WHERE datname = '%s' AND pid <> pg_backend_pid();\n" +
+                    "DROP DATABASE IF EXISTS %s;\n" +
+                    "DROP USER %s", dbName, dbName, dbUser), "postgres");
+        } catch (Exception e) {
+            log.warn(String.format("Failed to drop database '%s' after deployment failure: %s.", dbName, e.getMessage()));
         }
     }
 }
