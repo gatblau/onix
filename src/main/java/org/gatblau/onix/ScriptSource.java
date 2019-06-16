@@ -54,6 +54,7 @@ public class ScriptSource {
     String scriptsUrl;
 
     private Pattern versionPattern = Pattern.compile("\\d*\\.\\d*\\.\\d*");
+    private Pattern commitPattern = Pattern.compile("-([^-]+)-");
 
     private JSONParser jsonParser = new JSONParser();
 
@@ -66,21 +67,30 @@ public class ScriptSource {
     }
 
     private String getAppManifestUrl(){
-        return String.format("%s/%s.json", scriptsUrl, getAppVersion());
+        return String.format("%s/%s.json", getScriptsUrl(), getAppVersion());
     }
 
     private String getDbManifestUrl(String dbVersion) {
-        return String.format("%s/%s/manifest.json", scriptsUrl, dbVersion);
+        return String.format("%s/%s/manifest.json", getScriptsUrl(), dbVersion);
     }
 
     private String getDbScriptUrl(String dbVersion, String scriptName) {
-        return String.format("%s/%s/%s", scriptsUrl, dbVersion, scriptName);
+        return String.format("%s/%s/%s", getScriptsUrl(), dbVersion, scriptName);
     }
 
     String getAppVersion(){
         Matcher matcher = versionPattern.matcher(info.getVersion());
         if (matcher.find()) {
             return matcher.group(0);
+        }
+        throw new RuntimeException("Can't find version.");
+    }
+
+    String getCommit(){
+        Matcher matcher = commitPattern.matcher(info.getVersion());
+        if (matcher.find()) {
+            String v = matcher.group(0);
+            return v.substring(1, v.length()-1);
         }
         throw new RuntimeException("Can't find version.");
     }
@@ -161,11 +171,19 @@ public class ScriptSource {
     }
 
     public Map<String, Map<String, String>> getDbScripts() {
-        log.info(String.format("Fetching database deployment scripts from %s.", scriptsUrl));
+        log.info(String.format("Fetching database deployment scripts from %s.", getScriptsUrl()));
         Map<String, Map<String, String>> scripts = new HashMap<>();
         JSONObject dbManifest = getDbManifest();
         scripts.put("schemas", getScript(dbManifest, "schemas"));
         scripts.put("functions", getScript(dbManifest, "functions"));
         return scripts;
+    }
+
+    private String getScriptsUrl() {
+        // if the url has a commit variable the replace it with the commit number of the app
+        if (scriptsUrl.contains("<app_commit>")) {
+            scriptsUrl = scriptsUrl.replace("<app_commit>", getCommit());
+        }
+        return scriptsUrl;
     }
 }
