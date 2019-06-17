@@ -20,7 +20,9 @@ project, to be licensed under the same terms as the rest of the code.
 package org.gatblau.onix;
 
 import io.swagger.annotations.*;
+import org.gatblau.onix.conf.Info;
 import org.gatblau.onix.data.*;
+import org.gatblau.onix.db.DbRepository;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -46,7 +48,7 @@ public class WebAPI {
     private DbRepository data;
 
     @Autowired
-    private Info info;
+    private org.gatblau.onix.conf.Info info;
 
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
 
