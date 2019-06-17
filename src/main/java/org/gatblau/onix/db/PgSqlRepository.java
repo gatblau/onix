@@ -16,10 +16,11 @@ limitations under the License.
 Contributors to this project, hereby assign copyright in their code to the
 project, to be licensed under the same terms as the rest of the code.
 */
-package org.gatblau.onix;
+package org.gatblau.onix.db;
 
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ReadContext;
+import org.gatblau.onix.Lib;
 import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
 import org.postgresql.util.HStoreConverter;
@@ -31,7 +32,6 @@ import org.springframework.security.oauth2.jwt.JwtClaimAccessor;
 import org.springframework.stereotype.Service;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.*;
 

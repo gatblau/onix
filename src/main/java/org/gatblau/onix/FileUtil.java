@@ -19,16 +19,28 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix;
 
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.io.File;
+import java.io.IOException;
+import java.util.Scanner;
 
-@Configuration
-public class YamlConfiguration implements WebMvcConfigurer {
-    @Override
-    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
-        converters.add(new YamlJackson2HttpMessageConverter());
+@Service
+public class FileUtil {
+    public String getFile(String fileName) {
+        StringBuilder result = new StringBuilder("");
+        //Get file from resources folder
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource(fileName).getFile());
+        try (Scanner scanner = new Scanner(file)) {
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                result.append(line).append("\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return result.toString();
+
     }
 }

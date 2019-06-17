@@ -13,6 +13,7 @@ The following topics give more insight into Onix:
 
 - [Architecture](./docs/architecture.md)
 - [Getting started](./docs/getting_started.md)
+- [Database deployment](./docs/db_deploy.md)
 - [Web API](./docs/wapi.md)
 - [Role Based Access](./docs/rbac.md)
   - [OpenId Connect](./docs/oidc.md)

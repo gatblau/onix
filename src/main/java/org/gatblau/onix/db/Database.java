@@ -17,8 +17,11 @@ Contributors to this project, hereby assign copyright in their code to the
 project, to be licensed under the same terms as the rest of the code.
 */
 
-package org.gatblau.onix;
+package org.gatblau.onix.db;
 
+import org.gatblau.onix.FileUtil;
+import org.gatblau.onix.scripts.ScriptSource;
+import org.gatblau.onix.scripts.ScriptSourceFactory;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,11 +32,11 @@ import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.*;
-import java.sql.Date;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
@@ -42,11 +45,11 @@ class Database {
 
     private PreparedStatement stmt;
 
-    @Autowired
-    private ScriptSource script;
+    private final ScriptSource script;
 
-    @Autowired
-    private DataSourceFactory ds;
+    private final DataSourceFactory ds;
+
+    private final FileUtil file;
 
     @Value("${database.server.url}")
     private String dbServerUrl;
@@ -71,7 +74,12 @@ class Database {
 
     private Version version;
 
-    public Database() {
+    @Autowired
+    public Database(ScriptSourceFactory selector, DataSourceFactory ds, FileUtil file) {
+        // switches to the configured script source
+        this.script = selector.source;
+        this.ds = ds;
+        this.file = file;
     }
 
     class Version {
@@ -169,18 +177,18 @@ class Database {
         vars.put("<DB_PWD>", new String(dbPwd));
         // creates the database and db user as postgres user
         log.info(String.format("Creating database '%s' and user '%s'.", dbName, dbUser));
-        runScriptFromResx(String.format("%s/postgres", dbServerUrl), "postgres", ap, "db/db_and_user.sql", vars);
+        runScriptFromResx(String.format("%s/postgres", dbServerUrl), "postgres", ap, "db/init/db_and_user.sql", vars);
         // creates the extensions in onix db as postgres user
         log.info(String.format("Creating extensions in database '%s'.", dbName));
-        runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", ap, "db/extensions.sql", null);
+        runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", ap, "db/init/extensions.sql", null);
         log.info(String.format("Creating version control table in database '%s'.", dbName));
-        runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", ap, "db/version_table.sql", null);
+        runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", ap, "db/init/version_table.sql", null);
     }
 
     private void runScriptFromResx(String dbServerUrl, String user, String pwd, String script, Map<String, String> vars) throws SQLException {
         Connection conn = DriverManager.getConnection(dbServerUrl, user, pwd);
         Statement stmt = conn.createStatement();
-        final List<String> msg = Arrays.asList(getFile(script));
+        final List<String> msg = Arrays.asList(file.getFile(script));
         if (vars != null) {
             vars.forEach((key, value) -> msg.set(0, msg.get(0).replace(key, value)));
         }
@@ -208,23 +216,6 @@ class Database {
         }
     }
 
-    private String getFile(String fileName) {
-        StringBuilder result = new StringBuilder("");
-        //Get file from resources folder
-        ClassLoader classLoader = getClass().getClassLoader();
-        File file = new File(classLoader.getResource(fileName).getFile());
-        try (Scanner scanner = new Scanner(file)) {
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
-                result.append(line).append("\n");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return result.toString();
-
-    }
-
     public void deployDb() throws SQLException {
         if (dbAutoDeploy) {
             // retrieve the relevant db scripts to be deployed before doing anything else
@@ -243,7 +234,7 @@ class Database {
             deployScripts(funcs, ap);
 
             // updates the version table
-            setVersion(script.getAppVersion(), script.getAppManifest().get("db").toString(), "Database automatically deployed by Onix", script.scriptsUrl);
+            setVersion(script.getAppVersion(), script.appManifest.get("db").toString(), "Database automatically deployed by Onix", script.getSource());
 
             // resets the version in memory
             version = null;

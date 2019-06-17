@@ -1,0 +1,43 @@
+{
+  "release": 1,
+  "schemas": [
+    {
+      "file": "tables.sql",
+      "checksum": ""
+    }
+  ],
+  "functions": [
+    {
+      "file": "json.sql",
+      "checksum": ""
+    },
+    {
+      "file": "validation.sql",
+      "checksum": ""
+    },
+    {
+      "file": "set.sql",
+      "checksum": ""
+    },
+    {
+      "file": "get.sql",
+      "checksum": ""
+    },
+    {
+      "file": "delete.sql",
+      "checksum": ""
+    },
+    {
+      "file": "queries.sql",
+      "checksum": ""
+    },
+    {
+      "file": "tree.sql",
+      "checksum": ""
+    },
+    {
+      "file": "tags.sql",
+      "checksum": ""
+    }
+  ]
+}

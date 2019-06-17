@@ -17,16 +17,22 @@ Contributors to this project, hereby assign copyright in their code to the
 project, to be licensed under the same terms as the rest of the code.
 */
 
-package org.gatblau.onix;
+package org.gatblau.onix.scripts;
 
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.context.request.RequestContextListener;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
-import javax.servlet.annotation.WebListener;
+/**
+ * a dynamic factory to select the local or remote source dynamically based on configuration
+ */
+@Service
+public class ScriptSourceFactory {
+    public final ScriptSource source;
 
-@Configuration
-@WebListener
-public class JettyRequestContextListener extends RequestContextListener {
-    // NOTE: if running Jetty web server, the RequestContextListener needs to
-    // be added to the configuration so that the OIDC feature can work
+    public ScriptSourceFactory(
+            @Value("${database.scripts.remote}") boolean remSource,
+            LocalSource local,
+            RemoteSource remote) {
+        source = (remSource) ? remote : local;
+    }
 }

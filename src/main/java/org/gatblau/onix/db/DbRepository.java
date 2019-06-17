@@ -17,7 +17,7 @@ Contributors to this project, hereby assign copyright in their code to the
 project, to be licensed under the same terms as the rest of the code.
 */
 
-package org.gatblau.onix;
+package org.gatblau.onix.db;
 
 import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
