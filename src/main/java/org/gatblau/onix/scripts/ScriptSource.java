@@ -81,7 +81,7 @@ public class ScriptSource {
     }
 
     protected String getDbScriptURI(String dbVersion, String scriptName) {
-        return String.format("%s/%s/%s", getScriptsURI(), dbVersion, scriptName);
+        return String.format("%s/db/install/%s/%s", getScriptsURI(), dbVersion, scriptName);
     }
 
     protected String getScriptsURI() {
