@@ -13,22 +13,18 @@
    to be licensed under the same terms as the rest of the code.
 */
 
-package main
+package provider
 
-import (
-	"github.com/hashicorp/terraform/helper/schema"
-)
+import "github.com/hashicorp/terraform/helper/schema"
 
 /*
-   MODEL RESOURCE
+	LINK TYPE DATA SOURCE
 */
 
-func ModelResource() *schema.Resource {
+func LinkTypeDataSource() *schema.Resource {
 	return &schema.Resource{
-		Create: createOrUpdateModel,
-		Read:   readModel,
-		Update: createOrUpdateModel,
-		Delete: deleteModel,
+		Read: readLinkType,
+
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
@@ -43,31 +39,10 @@ func ModelResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"partition": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
 		},
 	}
 }
 
-func createOrUpdateModel(data *schema.ResourceData, m interface{}) error {
-	return put(data, m, modelPayload(data), "model")
-}
-
-func deleteModel(data *schema.ResourceData, m interface{}) error {
-	return delete(data, m, modelPayload(data), "model")
-}
-
-func modelPayload(data *schema.ResourceData) Payload {
-	key := data.Get("key").(string)
-	name := data.Get("name").(string)
-	description := data.Get("description").(string)
-	partition := data.Get("partition").(string)
-	return &Model{
-		Key:         key,
-		Name:        name,
-		Description: description,
-		Partition:   partition,
-	}
+func readLinkType(d *schema.ResourceData, m interface{}) error {
+	return nil
 }

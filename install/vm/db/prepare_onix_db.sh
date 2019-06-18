@@ -37,6 +37,11 @@ DB_PORT=$2
 # the password of the onix user
 DB_PWD=$3
 
+DB_VER="1"
+
+INIT_SCRIPT_PATH="../../../src/main/resources/db/init"
+INSTALL_SCRIPT_PATH="../../../src/main/resources/db/install/$DB_VER"
+
 echo 'creating the database user...'
 psql -U postgres -h $DB_HOST -p $DB_PORT -c "CREATE USER onix WITH PASSWORD '$DB_PWD';"
 
@@ -46,11 +51,16 @@ createdb -h $DB_HOST -p $DB_PORT -E UTF8 -e -O onix onix
 echo '>>> Installing HSTORE extension <<<'
 psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -c 'create extension if not exists hstore;'
 
-echo '>>> Creating the database objects <<<'
-psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f ../container/db/image_conf/postgresql-init/create_tables.sql
-psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f ../container/db/image_conf/postgresql-init/validation_funcs.sql
-psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f ../container/db/image_conf/postgresql-init/set_funcs.sql
-psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f ../container/db/image_conf/postgresql-init/get_funcs.sql
-psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f ../container/db/image_conf/postgresql-init/delete_funcs.sql
-psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f ../container/db/image_conf/postgresql-init/queries.sql
+echo '>>> Installing INTARRAY extension <<<'
+psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -c 'create extension if not exists intarray;'
 
+echo '>>> Creating the database objects <<<'
+psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f $INSTALL_SCRIPT_PATH/tables.sql
+psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f $INSTALL_SCRIPT_PATH/json.sql
+psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f $INSTALL_SCRIPT_PATH/validation.sql
+psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f $INSTALL_SCRIPT_PATH/set.sql
+psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f $INSTALL_SCRIPT_PATH/get.sql
+psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f $INSTALL_SCRIPT_PATH/delete.sql
+psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f $INSTALL_SCRIPT_PATH/queries.sql
+psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f $INSTALL_SCRIPT_PATH/tree.sql
+psql -U postgres -h $DB_HOST -p $DB_PORT -d onix -a -f $INSTALL_SCRIPT_PATH/tags.sql

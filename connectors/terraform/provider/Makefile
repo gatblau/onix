@@ -25,7 +25,7 @@ BUILD_FOLDER=build
 tf_test:
 	go fmt
 	terraform fmt
-	go build -o terraform.d/plugins/darwin_amd64/$(BINARY_NAME) -v
+	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; go build -o terraform.d/plugins/darwin_amd64/$(BINARY_NAME) -v
 	export TF_LOG=DEBUG
 	terraform init
 	terraform apply
@@ -38,7 +38,7 @@ test:
 # build the terraform provider in the current platform
 build:
 	go fmt
-	go build -o $(BINARY_NAME) -v
+	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; go build -o $(BINARY_NAME) -v
 
 # package the terraform provider for all platforms
 package:
@@ -49,15 +49,15 @@ package:
 
 # package the terraform provider for linux amd64 platform
 package_linux:
-	export CGO_ENABLED=0; export GOOS=linux; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
+	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export CGO_ENABLED=0; export GOOS=linux; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
 	zip -mjT $(BUILD_FOLDER)/$(BINARY_NAME)_linux_amd64.zip $(BUILD_FOLDER)/$(BINARY_NAME)
 
 # package the terraform provider for MacOS
 package_darwin:
-	export CGO_ENABLED=0; export GOOS=darwin; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
+	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export CGO_ENABLED=0; export GOOS=darwin; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
 	zip -mjT $(BUILD_FOLDER)/$(BINARY_NAME)_darwin_amd64.zip $(BUILD_FOLDER)/$(BINARY_NAME)
 
 # package the terraform provider for Windows
 package_windows:
-	export CGO_ENABLED=0; export GOOS=windows; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
+	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export CGO_ENABLED=0; export GOOS=windows; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
 	zip -mjT $(BUILD_FOLDER)/$(BINARY_NAME)_windows_amd64.zip $(BUILD_FOLDER)/$(BINARY_NAME)

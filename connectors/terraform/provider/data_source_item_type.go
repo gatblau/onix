@@ -12,16 +12,37 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
-package main
 
-import (
-	"testing"
-)
+package provider
 
-// verify the structure of the provider and all of the resources,
-// and reports an error if it is invalid.
-func TestProvider(t *testing.T) {
-	if err := Provider().InternalValidate(); err != nil {
-		t.Fatalf("err: %s", err)
+import "github.com/hashicorp/terraform/helper/schema"
+
+/*
+	ITEM TYPE DATA SOURCE
+*/
+
+func ItemTypeDataSource() *schema.Resource {
+	return &schema.Resource{
+		Read: readItemType,
+
+		Schema: map[string]*schema.Schema{
+			"key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+		},
 	}
+}
+
+func readItemType(d *schema.ResourceData, m interface{}) error {
+	return nil
 }
