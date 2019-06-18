@@ -13,23 +13,21 @@
    to be licensed under the same terms as the rest of the code.
 */
 
-package main
+package provider
 
 import "github.com/hashicorp/terraform/helper/schema"
 
 /*
-	MODEL DATA SOURCE
+	ITEM DATA SOURCE
 */
-
-func ModelDataSource() *schema.Resource {
+func ItemDataSource() *schema.Resource {
 	return &schema.Resource{
-		Read: readModel,
+		Read: readItem,
 
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -39,10 +37,47 @@ func ModelDataSource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"itemtype": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"status": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"meta": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"tag": &schema.Schema{
+				Type:     schema.TypeList,
+				Elem:     schema.TypeString,
+				Optional: true,
+			},
+			"attribute": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"created": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"updated": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"changedby": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
 
-func readModel(d *schema.ResourceData, m interface{}) error {
+func readItem(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
