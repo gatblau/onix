@@ -6,3 +6,7 @@ src/main/resources/version
 ansible/*.retry
 venv
 .terraform
+build
+pkg
+terraform.d
+terraform-provider*
