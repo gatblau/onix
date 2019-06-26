@@ -82,31 +82,35 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public synchronized ItemData getItem(String key, boolean includeLinks, String[] role) {
-        ItemData item = new ItemData();
+        ItemData item = null;
         try {
             db.prepare(getGetItemSQL());
             db.setString(1, key);
             db.setArray(2, role);
-            item = util.toItemData(db.executeQuerySingleRow());
+            ResultSet set = db.executeQuerySingleRow();
+            if (set != null) {
+                item = util.toItemData(set);
+            }
 
             if (includeLinks) {
-                ResultSet set;
-
                 db.prepare(getFindLinksSQL());
                 db.setString(1, item.getKey()); // start_item
                 db.setObjectRange(2, 9, null);
                 set = db.executeQuery();
-                while (set.next()) {
-                    item.getToLinks().add(util.toLinkData(set));
+                if (set != null) {
+                    while (set.next()) {
+                        item.getToLinks().add(util.toLinkData(set));
+                    }
                 }
-
                 db.prepare(getFindLinksSQL());
                 db.setString(1, null); // start_item
                 db.setString(2, item.getKey()); // end_item
                 db.setObjectRange(3, 9, null);
                 set = db.executeQuery();
-                while (set.next()) {
-                    item.getFromLinks().add(util.toLinkData(set));
+                if (set != null) {
+                    while (set.next()) {
+                        item.getFromLinks().add(util.toLinkData(set));
+                    }
                 }
             }
         } catch (Exception ex) {
@@ -227,7 +231,9 @@ public class PgSqlRepository implements DbRepository {
             db.setString(1, key);
             db.setArray(2, role);
             ResultSet set = db.executeQuerySingleRow();
-            link = util.toLinkData(set);
+            if (set != null) {
+                link = util.toLinkData(set);
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         } finally {
@@ -365,7 +371,9 @@ public class PgSqlRepository implements DbRepository {
             db.setString(1, key);
             db.setArray(2, role);
             ResultSet set = db.executeQuerySingleRow();
-            itemType = util.toItemTypeData(set);
+            if (set != null) {
+                itemType = util.toItemTypeData(set);
+            }
         } catch (Exception ex) {
             throw new RuntimeException(String.format("Failed to get item type with key '%s': %s", key, ex.getMessage()), ex);
         } finally {
@@ -512,7 +520,9 @@ public class PgSqlRepository implements DbRepository {
             db.setString(1, key);
             db.setArray(2, role);
             ResultSet set = db.executeQuerySingleRow();
-            linkType = util.toLinkTypeData(set);
+            if (set != null) {
+                linkType = util.toLinkTypeData(set);
+            }
         } catch (Exception ex) {
             throw new RuntimeException(String.format("Failed to get link type with key '%s': %s", key, ex.getMessage()), ex);
         } finally {
@@ -1078,7 +1088,9 @@ public class PgSqlRepository implements DbRepository {
             db.setString(1, key);
             db.setArray(2, role);
             ResultSet set = db.executeQuerySingleRow();
-            model = util.toModelData(set);
+            if (set != null) {
+                model = util.toModelData(set);
+            }
             db.close();
         } catch (Exception ex) {
             throw new RuntimeException(String.format("Failed to get model with key '%s': %s", key, ex.getMessage()), ex);

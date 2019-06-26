@@ -25,6 +25,7 @@ import org.gatblau.onix.data.*;
 import org.gatblau.onix.db.DbRepository;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -192,7 +193,11 @@ public class WebAPI {
         boolean links,
         Authentication authentication
     ) {
-        return ResponseEntity.ok(data.getItem(key, links, getRole(authentication)));
+        ItemData item = data.getItem(key, links, getRole(authentication));
+        if (item != null) {
+            return ResponseEntity.ok(item);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     @ApiOperation(
@@ -657,7 +662,11 @@ public class WebAPI {
             String key,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(data.getItemType(key, getRole(authentication)));
+        ItemTypeData itemType = data.getItemType(key, getRole(authentication));
+        if (itemType != null) {
+            return ResponseEntity.ok(itemType);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     @ApiOperation(
@@ -750,7 +759,11 @@ public class WebAPI {
         String key,
         Authentication authentication
     ) {
-        return ResponseEntity.ok(data.getLink(key, getRole(authentication)));
+        LinkData link = data.getLink(key, getRole(authentication));
+        if (link != null) {
+            return ResponseEntity.ok(link);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     @ApiOperation(
@@ -864,7 +877,11 @@ public class WebAPI {
             String key,
             Authentication authentication
         ) {
-        return ResponseEntity.ok(data.getLinkType(key, getRole(authentication)));
+        LinkTypeData linkType = data.getLinkType(key, getRole(authentication));
+        if (linkType != null) {
+            return ResponseEntity.ok(linkType);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     @ApiOperation(
@@ -1039,7 +1056,12 @@ public class WebAPI {
             @PathVariable("key") String key,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(data.getModel(key, getRole(authentication)));
+        ModelData model = data.getModel(key, getRole(authentication));
+        // if the model is null then return 404 not found
+        if (model == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        return ResponseEntity.ok(model);
     }
 
     @ApiOperation(
@@ -1237,12 +1259,12 @@ public class WebAPI {
     }
 
     private String[] getRole(Authentication authentication) {
-        String[] roles = new String[authentication.getAuthorities().size()];
         // if the service is configured not to use authentication
         if (authentication == null) {
             // then return the ADMIN role
             return new String[]{"ADMIN"};
         }
+        String[] roles = new String[authentication.getAuthorities().size()];
         // otherwise uses the role in the first authority
         int ix = 0;
         for (GrantedAuthority authority : authentication.getAuthorities()){

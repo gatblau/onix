@@ -148,7 +148,8 @@ class Database {
         if (set.next()) {
             return set;
         }
-        throw new RuntimeException("No results found.");
+        // if no row if found then return null
+        return null;
     }
 
     boolean execute() throws SQLException {

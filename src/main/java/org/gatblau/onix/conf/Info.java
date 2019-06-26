@@ -71,17 +71,20 @@ public class Info implements Serializable {
     }
 
     public long getSinceReleaseDays() {
+        // TODO: what happens when the version does not have a date? = release
         try {
             int i = version.lastIndexOf('-');
-            String dateString = version.substring(i + 1, version.length() - 1);
-            int day = Integer.parseInt(dateString.substring(0, 2));
-            int month = Integer.parseInt(dateString.substring(2, 4));
-            int year = Integer.parseInt("20" + dateString.substring(4, 6));
-            LocalDate today = LocalDate.now();
-            LocalDate release = LocalDate.of(year, month, day);
-            Period p = Period.between(release, today);
-            return ChronoUnit.DAYS.between(release, today);
-
+            if (i > 0) {
+                String dateString = version.substring(i + 1, version.length() - 1);
+                int day = Integer.parseInt(dateString.substring(0, 2));
+                int month = Integer.parseInt(dateString.substring(2, 4));
+                int year = Integer.parseInt("20" + dateString.substring(4, 6));
+                LocalDate today = LocalDate.now();
+                LocalDate release = LocalDate.of(year, month, day);
+                Period p = Period.between(release, today);
+                return ChronoUnit.DAYS.between(release, today);
+            }
+            return 0;
         } catch (Exception e) {
             e.printStackTrace();
         }
