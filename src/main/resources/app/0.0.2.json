@@ -1,0 +1,28 @@
+{
+  "db": 2,
+  "upgrade": [
+    1
+  ],
+  "fixes": [
+    {
+      "code": "2.1",
+      "desc": "get endpoints return 404 if resource is not found."
+    },
+    {
+      "code": "2.2",
+      "desc": "if partition is empty string, then INS is selected for items"
+    },
+    {
+      "code": "2.3",
+      "desc": "if partition is empty string, then REF is selected for models"
+    },
+    {
+      "code": "2.4",
+      "desc": "detect hstore changes on item updates"
+    },
+    {
+      "code": "2.5",
+      "desc": "detect hstore changes on item type updates"
+    }
+  ]
+}

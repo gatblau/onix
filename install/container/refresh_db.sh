@@ -27,3 +27,6 @@ sleep 5
 
 # shows the logs
 docker logs onixdb
+
+# re-deploys the database
+curl localhost:8080/ready

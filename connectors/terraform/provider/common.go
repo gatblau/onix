@@ -78,7 +78,7 @@ func put(data *schema.ResourceData, m interface{}, payload Payload, resourceName
 	return nil
 }
 
-func delete(data *schema.ResourceData, m interface{}, payload Payload, resourceName string) error {
+func delete(m interface{}, payload Payload, resourceName string) error {
 	// get the Config instance from the meta object passed-in
 	cfg := m.(Config)
 

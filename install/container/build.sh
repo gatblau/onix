@@ -33,6 +33,9 @@ fi
 DATE=`date '+%d%m%y%H%M%S'`
 HASH=`git rev-parse --short HEAD`
 ONIXTAG="${VERSION}-${HASH}-${DATE}"
+
+#ONIXTAG="${VERSION}"
+
 echo "Onix TAG is: ${ONIXTAG}"
 
 # writes the version to the resources folder so it is available for the wapi to report on
@@ -64,10 +67,13 @@ echo "unzipping the application jar file"
 unzip -o ././../../target/*.jar -d ./tmp
 
 echo "building the docker image"
+#docker build -t gatblau/onix:$ONIXTAG .
 docker build -t gatblau/onix-snapshot:$ONIXTAG .
 
 echo "tagging the image as latest"
+#docker tag gatblau/onix:$ONIXTAG gatblau/onix:latest
 docker tag gatblau/onix-snapshot:$ONIXTAG gatblau/onix-snapshot:latest
 
 echo "pushing to docker.io"
+#docker push gatblau/onix:$ONIXTAG
 docker push gatblau/onix-snapshot:$ONIXTAG
