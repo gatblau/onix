@@ -1323,6 +1323,8 @@ public class PgSqlRepository implements DbRepository {
             for (String role : roles) {
                 username += "," + role.trim();
             }
+        } else if (principal instanceof String) {
+            username = String.format("%s, ADMIN", principal);
         }
         return username;
     }
