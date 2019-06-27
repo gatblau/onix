@@ -77,3 +77,4 @@ docker tag gatblau/onix-snapshot:$ONIXTAG gatblau/onix-snapshot:latest
 echo "pushing to docker.io"
 #docker push gatblau/onix:$ONIXTAG
 docker push gatblau/onix-snapshot:$ONIXTAG
+docker push gatblau/onix-snapshot:latest

@@ -23,6 +23,10 @@
     {
       "code": "2.5",
       "desc": "detect hstore changes on item type updates"
+    },
+    {
+      "code": "2.6",
+      "desc": "user not set when AuthMode=none, default to anonymous user"
     }
   ]
 }
