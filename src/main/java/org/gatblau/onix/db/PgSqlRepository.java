@@ -136,6 +136,7 @@ public class PgSqlRepository implements DbRepository {
             ZonedDateTime updatedTo,
             Short status,
             String modelKey,
+            Map<String, String> attributes,
             Integer top,
             String[] role
     ) {
@@ -143,7 +144,7 @@ public class PgSqlRepository implements DbRepository {
         try {
             db.prepare(getFindItemsSQL());
             db.setString(1, util.toArrayString(tagList));
-            db.setString(2, null); // attribute
+            db.setString(2, getAttributeString(new JSONObject(attributes))); // attribute
             db.setObject(3, status);
             db.setString(4, itemTypeKey);
             db.setObject(5, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
@@ -190,11 +191,18 @@ public class PgSqlRepository implements DbRepository {
             // matches the filter key with the key in the list of predefined filters
             ArrayList<JSONObject> jsonPaths = (ArrayList) json.get(filter);
             if (jsonPaths != null) {
-                // if there are json paths defined, runs an extraction for each path
-                for (JSONObject jsonPath : jsonPaths) {
-                    HashMap.Entry<String, String> path = (HashMap.Entry<String, String>) jsonPath.entrySet().toArray()[0];
-                    Object result = ctx.read(path.getValue());
-                    results.put(path.getKey(), result);
+                if (jsonPaths.size() > 1) {
+                    // if there are more than one json paths defined, runs an extraction for each path
+                    // and builds a map result object
+                    for (JSONObject jsonPath : jsonPaths) {
+                        HashMap.Entry<String, String> path = (HashMap.Entry<String, String>) jsonPath.entrySet().toArray()[0];
+                        Object result = ctx.read(path.getValue());
+                        results.put(path.getKey(), result);
+                    }
+                } else {
+                    // if there is only on json path then return the single result as an object
+                    HashMap.Entry<String, String> path = (HashMap.Entry<String, String>) jsonPaths.get(0).entrySet().toArray()[0];
+                    return new JSONObject(ctx.read(path.getValue()));
                 }
                 break;
             }

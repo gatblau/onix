@@ -3,30 +3,50 @@
   "upgrade": [
     1
   ],
-  "fixes": [
+  "notes": [
     {
-      "code": "2.1",
+      "ref": "2.1",
       "desc": "get endpoints return 404 if resource is not found."
     },
     {
-      "code": "2.2",
+      "ref": "2.2",
       "desc": "if partition is empty string, then INS is selected for items"
     },
     {
-      "code": "2.3",
+      "ref": "2.3",
       "desc": "if partition is empty string, then REF is selected for models"
     },
     {
-      "code": "2.4",
+      "ref": "2.4",
       "desc": "detect hstore changes on item updates"
     },
     {
-      "code": "2.5",
+      "ref": "2.5",
       "desc": "detect hstore changes on item type updates"
     },
     {
-      "code": "2.6",
+      "ref": "2.6",
       "desc": "user not set when AuthMode=none, default to anonymous user"
+    },
+    {
+      "ref": "2.7",
+      "desc": "item search returns changed_by"
+    },
+    {
+      "ref": "2.8",
+      "desc": "item search returns partition_key"
+    },
+    {
+      "ref": "2.9",
+      "desc": "item get returns partition_key"
+    },
+    {
+      "ref": "2.10",
+      "desc": "query meta with filter returns a single result entry if only one path expression is defined in the filter as opposed to a map with one entry"
+    },
+    {
+      "ref": "2.11",
+      "desc": "enable item search using attributes"
     }
   ]
 }
