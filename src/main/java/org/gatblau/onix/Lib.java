@@ -137,6 +137,8 @@ public class Lib implements InitializingBean {
         item.setTag(toList(set.getObject("tag")));
         item.setVersion(set.getInt("version"));
         item.setAttribute(toJSON(set.getObject("attribute")));
+        item.setChangedBy(set.getString("changed_by"));
+        item.setPartition(set.getString("partition_key"));
         return item;
     }
 

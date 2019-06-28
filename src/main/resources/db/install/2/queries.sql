@@ -46,7 +46,8 @@ CREATE OR REPLACE FUNCTION find_items(
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
     changed_by character varying,
-    model_key character varying
+    model_key character varying,
+    partition_key character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -71,7 +72,8 @@ BEGIN
     i.created,
     i.updated,
     i.changed_by,
-    m.key as model_key
+    m.key as model_key,
+    p.key as partition_key
   FROM item i
   INNER JOIN item_type it ON i.item_type_id = it.id
   INNER JOIN model m ON m.id = it.model_id

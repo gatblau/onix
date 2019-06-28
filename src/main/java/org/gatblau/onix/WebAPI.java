@@ -275,6 +275,14 @@ public class WebAPI {
             @RequestParam(value = "model", required = false)
             String modelKey,
             @ApiParam(
+                    name = "attrs",
+                    value = "A list of atributes (key,value) pair separated by '|' in the query string. If no value is passed then all item types are retrieved.",
+                    required = false,
+                    example = "key1,value1|key2,value2|key3,value3"
+            )
+            @RequestParam(value = "attrs", required = false)
+            String attrs,
+            @ApiParam(
                 name = "top",
                 value = "The maximum number of items to retrieve.",
                 required = false,
@@ -290,6 +298,14 @@ public class WebAPI {
             String[] tags = tag.split("[|]"); // separate tags using pipes in the query string
             tagList = Arrays.asList(tags);
         }
+        Map<String, String> attributes = new HashMap<>();
+        if (attrs != null) {
+            String[] attrsPairs = attrs.split("[|]"); // separate key value pairs using pipes in the query string
+            for (int i=0; i<attrsPairs.length; i++){
+                String[] slice = attrsPairs[i].split(",");
+                attributes.put(slice[0], slice[1]);
+            }
+        }
         ItemList list = data.findItems(
                 itemTypeKey,
                 tagList,
@@ -299,6 +315,7 @@ public class WebAPI {
                 getDate(updatedToDate),
                 status,
                 modelKey,
+                attributes,
                 top,
                 getRole(authentication)
         );

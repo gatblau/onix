@@ -37,7 +37,8 @@ DO
                   version       bigint,
                   created       timestamp(6) with time zone,
                   updated       timestamp(6) with time zone,
-                  changed_by    character varying
+                  changed_by    character varying,
+                  partition_key character varying
                 )
         LANGUAGE 'plpgsql'
         COST 100
@@ -58,7 +59,8 @@ DO
                  i.version,
                  i.created,
                  i.updated,
-                 i.changed_by
+                 i.changed_by,
+                 p.key as partition_key
           FROM item i
                  INNER JOIN item_type it ON i.item_type_id = it.id
                  INNER JOIN partition p ON i.partition_id = p.id

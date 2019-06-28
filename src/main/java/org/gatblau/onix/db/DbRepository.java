@@ -36,7 +36,7 @@ public interface DbRepository {
     Result createOrUpdateItem(String key, ItemData json, String[] role);
     ItemData getItem(String key, boolean includeLinks, String[] role);
     Result deleteItem(String key, String[] role);
-    ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, String modelKey, Integer top, String[] role);
+    ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, String modelKey, Map<String, String> attributes, Integer top, String[] role);
     JSONObject getItemMeta(String key, String filter, String[] role);
     Result deleteAllItems(String[] role);
 
