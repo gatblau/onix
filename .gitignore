@@ -10,3 +10,4 @@ build
 pkg
 terraform.d
 terraform-provider*
+version
