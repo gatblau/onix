@@ -27,24 +27,14 @@ $ docker-compose up -d
 
 <a name="installing-using-openshift"></a>
 ### Option B: using OpenShift
-Deploy using OpenShift is straight forward. Create an OpenShift project and deploy using one of the provided templates in the install/openshift folder.
-Persistant uses an OpenShift volume claim as durable storage for the database component.  
-The ephemeral template use an empty dir as storage for the database, ***which means all data is lost if the database container is restarted***. Use only if you don't have any persistent storage at hand.
+Deploy using OpenShift is straightforward. 
 
-The following steps use the oc command line tool to create a new empty project and deploy using the persistant template.
+Create an OpenShift project and deploy using one of the provided [templates here](../install/openshift/readme.md).
 
-```bash
-# first, create an empty project
-$ oc oc new-project onix
-
-# Deploy using the template:
-$  oc new-app https://raw.githubusercontent.com/gatblau/onix/v1/install/openshift/onix-persistant.yml
-```
 
 <a name="installing-using-helm"></a>
 ### Option C: using Kubernetes and Helm Charts
 To install Onix in plain Kubernetes, a [Helm Chart](https://helm.sh/docs/developing_charts/) will be provided soon.
-
 
 
 ## Step 2:  Initial contact using the Web API service

@@ -33,15 +33,14 @@ version:
 	sh version.sh $(APP_VER)
 
 # build the ox-kube docker image
-docker-image:
-	$(MAKE) version
+image:
 	docker build -t $(REPO_NAME)/$(APP_NAME):$(shell cat src/main/resources/version) .
 	docker tag $(REPO_NAME)/$(APP_NAME):$(shell cat src/main/resources/version) $(REPO_NAME)/$(APP_NAME):latest
 
-docker-push:
-	docker push $(REPO_NAME)/$(APP_NAME)-snapshot:$(shell cat src/main/resources/version)
-	docker push $(REPO_NAME)/$(APP_NAME)-snapshot:latest
+push:
+	docker push $(REPO_NAME)/$(APP_NAME):$(shell cat src/main/resources/version)
+	docker push $(REPO_NAME)/$(APP_NAME):latest
 
 # deletes dangling images
-docker-clean:
+clean:
 	docker rmi $(DANGLING_IMS) -f

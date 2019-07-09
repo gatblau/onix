@@ -47,6 +47,18 @@
     {
       "ref": "2.11",
       "desc": "enable item search using attributes"
+    },
+    {
+      "ref": "2.12",
+      "desc": "Delete resources return 200 if deleted or 404 if not found"
+    },
+    {
+      "ref": "2.13",
+      "desc": "Operation result returns N instead of L if there was not an update and the version passed by the client was NULL"
+    },
+    {
+      "ref": "2.14",
+      "desc": "Assigns change table ownership after trigger is created to avoid error deploying in Amazon RDS"
     }
   ]
 }

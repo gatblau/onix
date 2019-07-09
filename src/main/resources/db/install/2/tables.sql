@@ -75,9 +75,6 @@ DO
           owner       CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
         );
 
-        ALTER TABLE partition_change
-          OWNER to onix;
-
         CREATE OR REPLACE FUNCTION change_partition() RETURNS TRIGGER AS
         $partition_change$
         BEGIN
@@ -101,6 +98,8 @@ DO
           FOR EACH ROW
         EXECUTE PROCEDURE change_partition();
 
+        ALTER TABLE partition_change
+          OWNER to onix;
       END IF;
 
       INSERT INTO partition(id, key, name, description, version, changed_by)
@@ -171,9 +170,6 @@ DO
           owner       CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
         );
 
-        ALTER TABLE role_change
-          OWNER to onix;
-
         CREATE OR REPLACE FUNCTION change_role() RETURNS TRIGGER AS
         $role_change$
         BEGIN
@@ -197,6 +193,8 @@ DO
           FOR EACH ROW
         EXECUTE PROCEDURE change_role();
 
+        ALTER TABLE role_change
+          OWNER to onix;
       END IF;
 
       INSERT INTO role(id, key, name, description, version, changed_by, level)
@@ -267,9 +265,6 @@ DO
           changed_by   CHARACTER VARYING(100)
         );
 
-        ALTER TABLE privilege_change
-          OWNER to onix;
-
         CREATE OR REPLACE FUNCTION change_privilege() RETURNS TRIGGER AS
         $privilege_change$
         BEGIN
@@ -293,6 +288,8 @@ DO
           FOR EACH ROW
         EXECUTE PROCEDURE change_privilege();
 
+        ALTER TABLE privilege_change
+          OWNER to onix;
       END IF;
 
       INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, changed_by)
@@ -373,9 +370,6 @@ DO
           partition_id bigint default 0
         );
 
-        ALTER TABLE model_change
-          OWNER to onix;
-
         CREATE OR REPLACE FUNCTION change_model() RETURNS TRIGGER AS
         $model_change$
         BEGIN
@@ -399,6 +393,8 @@ DO
           FOR EACH ROW
         EXECUTE PROCEDURE change_model();
 
+        ALTER TABLE model_change
+          OWNER to onix;
       END IF;
 
       ---------------------------------------------------------------------------
@@ -475,9 +471,6 @@ DO
           model_id    int
         );
 
-        ALTER TABLE item_type_change
-          OWNER to onix;
-
         CREATE OR REPLACE FUNCTION change_item_type() RETURNS TRIGGER AS
         $item_type_change$
         BEGIN
@@ -501,6 +494,8 @@ DO
           FOR EACH ROW
         EXECUTE PROCEDURE change_item_type();
 
+        ALTER TABLE item_type_change
+          OWNER to onix;
       END IF;
 
       ---------------------------------------------------------------------------
@@ -598,9 +593,6 @@ DO
           partition_id bigint
         );
 
-        ALTER TABLE item_change
-          OWNER to onix;
-
         CREATE OR REPLACE FUNCTION change_item() RETURNS TRIGGER AS
         $item_change$
         BEGIN
@@ -624,6 +616,8 @@ DO
           FOR EACH ROW
         EXECUTE PROCEDURE change_item();
 
+        ALTER TABLE item_change
+          OWNER to onix;
       END IF;
 
       ---------------------------------------------------------------------------
@@ -696,9 +690,6 @@ DO
           model_id    int
         );
 
-        ALTER TABLE link_type_change
-          OWNER to onix;
-
         CREATE OR REPLACE FUNCTION change_link_type() RETURNS TRIGGER AS
         $link_type_change$
         BEGIN
@@ -722,6 +713,8 @@ DO
           FOR EACH ROW
         EXECUTE PROCEDURE change_link_type();
 
+        ALTER TABLE link_type_change
+          OWNER to onix;
       END IF;
 
       ---------------------------------------------------------------------------
@@ -827,9 +820,6 @@ DO
           changed_by    CHARACTER VARYING(100)      NOT NULL COLLATE pg_catalog."default"
         );
 
-        ALTER TABLE link_change
-          OWNER to onix;
-
         CREATE OR REPLACE FUNCTION change_link() RETURNS TRIGGER AS
         $link_change$
         BEGIN
@@ -853,6 +843,8 @@ DO
           FOR EACH ROW
         EXECUTE PROCEDURE change_link();
 
+        ALTER TABLE link_change
+          OWNER to onix;
       END IF;
 
       ---------------------------------------------------------------------------
@@ -945,9 +937,6 @@ DO
           changed_by         CHARACTER VARYING(100)
         );
 
-        ALTER TABLE link_rule_change
-          OWNER to onix;
-
         CREATE OR REPLACE FUNCTION change_link_rule() RETURNS TRIGGER AS
         $link_rule_change$
         BEGIN
@@ -972,6 +961,8 @@ DO
           FOR EACH ROW
         EXECUTE PROCEDURE change_link_rule();
 
+        ALTER TABLE link_rule_change
+          OWNER to onix;
       END IF;
 
       ---------------------------------------------------------------------------
@@ -1045,9 +1036,6 @@ DO
           changed_by    CHARACTER VARYING(100)
         );
 
-        ALTER TABLE tag_change
-          OWNER to onix;
-
         CREATE OR REPLACE FUNCTION change_tag() RETURNS TRIGGER AS
         $tag_change$
         BEGIN
@@ -1072,6 +1060,8 @@ DO
           FOR EACH ROW
         EXECUTE PROCEDURE change_tag();
 
+        ALTER TABLE tag_change
+          OWNER to onix;
       END IF;
 
     END;

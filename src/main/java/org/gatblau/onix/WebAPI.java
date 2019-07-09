@@ -152,7 +152,8 @@ public class WebAPI {
             @PathVariable("key") String key,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteItem(key, getRole(authentication)));
+        Result result = data.deleteItem(key, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -164,7 +165,8 @@ public class WebAPI {
     public ResponseEntity<Result> deleteAllItems(
         Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteAllItems(getRole(authentication)));
+        Result result = data.deleteAllItems(getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -341,7 +343,11 @@ public class WebAPI {
         String key,
         Authentication authentication
     ) {
-        return ResponseEntity.ok(data.getItemMeta(key, null, getRole(authentication)));
+        JSONObject meta = data.getItemMeta(key, null, getRole(authentication));
+        if (meta != null){
+            return ResponseEntity.ok(meta);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     @ApiOperation(
@@ -371,7 +377,11 @@ public class WebAPI {
         String filter,
         Authentication authentication
     ) {
-        return ResponseEntity.ok(data.getItemMeta(key, filter, getRole(authentication)));
+        JSONObject meta = data.getItemMeta(key, filter, getRole(authentication));
+        if (meta != null){
+            return ResponseEntity.ok(meta);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     /*
@@ -395,7 +405,8 @@ public class WebAPI {
             String key,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deletePartition(key, getRole(authentication)));
+        Result result = data.deletePartition(key, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -453,7 +464,11 @@ public class WebAPI {
             String key,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(data.getPartition(key, getRole(authentication)));
+        PartitionData partition = data.getPartition(key, getRole(authentication));
+        if (partition != null){
+            return ResponseEntity.ok(partition);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     /*
@@ -477,7 +492,8 @@ public class WebAPI {
             String key,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteRole(key, getRole(authentication)));
+        Result result = data.deleteRole(key, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -535,22 +551,11 @@ public class WebAPI {
             String key,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(data.getRole(key, getRole(authentication)));
-    }
-
-    @ApiOperation(
-            value = "Get a list of privileges for the specified role.",
-            notes = "")
-    @RequestMapping(
-            path = "/role/{key}/privilege"
-            , method = RequestMethod.GET
-            , produces = {"application/json", "application/x-yaml"}
-    )
-    public ResponseEntity<PrivilegeDataList> getRolePrivileges(
-            @PathVariable("key") String key,
-            Authentication authentication
-    ) {
-        return ResponseEntity.ok(data.getPrivilegesByRole(key, getRole(authentication)));
+        RoleData role = data.getRole(key, getRole(authentication));
+        if (role != null) {
+            return ResponseEntity.ok(role);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     /*
@@ -583,6 +588,21 @@ public class WebAPI {
     }
 
     @ApiOperation(
+            value = "Get a list of privileges for the specified role.",
+            notes = "")
+    @RequestMapping(
+            path = "/role/{key}/privilege"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<PrivilegeDataList> getRolePrivileges(
+            @PathVariable("key") String key,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(data.getPrivilegesByRole(key, getRole(authentication)));
+    }
+
+    @ApiOperation(
             value = "Deletes a privilege.",
             notes = "")
     @RequestMapping(
@@ -596,7 +616,8 @@ public class WebAPI {
         String roleKey,
         Authentication authentication
     ) {
-        return ResponseEntity.ok(data.removePrivilege(partitionKey, roleKey, getRole(authentication)));
+        Result result = data.removePrivilege(partitionKey, roleKey, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     /*
@@ -609,10 +630,11 @@ public class WebAPI {
         path = "/itemtype"
         , method = RequestMethod.DELETE
     )
-    public void deleteItemTypes(
+    public ResponseEntity<Result> deleteItemTypes(
         Authentication authentication
     ) {
-        data.deleteItemTypes(getRole(authentication));
+        Result result = data.deleteItemTypes(getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -633,7 +655,8 @@ public class WebAPI {
         String key,
         Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteItemType(key, getRole(authentication)));
+        Result result = data.deleteItemType(key, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -760,7 +783,8 @@ public class WebAPI {
             @PathVariable("key") String key,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteLink(key, getRole(authentication)));
+        Result result = data.deleteLink(key, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -836,10 +860,11 @@ public class WebAPI {
             path = "/linktype"
             , method = RequestMethod.DELETE
     )
-    public void deleteLinkTypes(
+    public ResponseEntity<Result> deleteLinkTypes(
             Authentication authentication
     ) {
-        data.deleteLinkTypes(getRole(authentication));
+        Result result = data.deleteLinkTypes(getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -854,7 +879,8 @@ public class WebAPI {
             String key,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteLinkType(key, getRole(authentication)));
+        Result result = data.deleteLinkType(key, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -949,10 +975,11 @@ public class WebAPI {
             path = "/linkrule"
             , method = RequestMethod.DELETE
     )
-    public void deleteLinkRules(
+    public ResponseEntity<Result> deleteLinkRules(
             Authentication authentication
     ) {
-        data.deleteLinkRules(getRole(authentication));
+        Result result = data.deleteLinkRules(getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -1024,7 +1051,8 @@ public class WebAPI {
             String key,
             Authentication authentication
     ) {
-        return ResponseEntity.ok(data.deleteModel(key, getRole(authentication)));
+        Result result = data.deleteModel(key, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -1113,7 +1141,10 @@ public class WebAPI {
             @PathVariable("key") String modelKey
     ) {
         TypeGraphData graph = data.getTypeDataByModel(modelKey);
-        return ResponseEntity.ok(graph);
+        if (graph != null) {
+            return ResponseEntity.ok(graph);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     /*
@@ -1143,7 +1174,8 @@ public class WebAPI {
     public ResponseEntity<Result> createTag(
             @RequestBody JSONObject payload
     ) {
-        return ResponseEntity.ok(data.createTag(payload));
+        Result result = data.createTag(payload);
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -1157,7 +1189,8 @@ public class WebAPI {
             @PathVariable("tag") String tag,
             @RequestBody JSONObject payload
     ) {
-        return ResponseEntity.ok(data.updateTag(itemKey, tag, payload));
+        Result result = data.updateTag(itemKey, tag, payload);
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -1170,7 +1203,8 @@ public class WebAPI {
             @PathVariable("item_key") String itemKey,
             @PathVariable("tag") String tag
     ) {
-        return ResponseEntity.ok(data.deleteTag(itemKey, tag));
+        Result result = data.deleteTag(itemKey, tag);
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -1182,7 +1216,8 @@ public class WebAPI {
     public ResponseEntity<Result> deleteAllTags(
             @PathVariable("item_key") String itemKey
     ) {
-        return ResponseEntity.ok(data.deleteTag(itemKey, null));
+        Result result = data.deleteTag(itemKey, null);
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(
@@ -1231,7 +1266,10 @@ public class WebAPI {
             @PathVariable("tag") String tag
     ) {
         GraphData graph = data.getData(itemKey, tag);
-        return ResponseEntity.ok(graph);
+        if (graph != null){
+            return ResponseEntity.ok(graph);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     @ApiOperation(
@@ -1243,7 +1281,8 @@ public class WebAPI {
     public ResponseEntity<Result> deleteData(
             @PathVariable("item_key") String rootItemKey
     ) {
-        return ResponseEntity.ok(data.deleteData(rootItemKey));
+        Result result = data.deleteData(rootItemKey);
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(

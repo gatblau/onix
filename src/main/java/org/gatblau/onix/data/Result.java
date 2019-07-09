@@ -20,6 +20,7 @@ project, to be licensed under the same terms as the rest of the code.
 package org.gatblau.onix.data;
 
 import io.swagger.annotations.ApiModelProperty;
+import org.springframework.http.HttpStatus;
 
 import java.io.Serializable;
 
@@ -95,7 +96,7 @@ public class Result implements Serializable {
 
     public void setOperation(String operation) {
         this.operation = operation;
-        changed = (operation.equals("I") || operation.equals("U"));
+        changed = (operation.equals("I") || operation.equals("U") || operation.equals("D"));
     }
 
     @ApiModelProperty(
@@ -114,13 +115,28 @@ public class Result implements Serializable {
 
     public int getStatus() {
         if (isError()) {
-            return 500;
+            return HttpStatus.INTERNAL_SERVER_ERROR.value();
         } else {
-            if (isChanged() && getOperation().equals("I")) {
-                return 201;
+            if (isChanged()) {
+                if (getOperation().equals("I")){
+                    return HttpStatus.CREATED.value();
+                }
+                if (getOperation().equals("D") || getOperation().equals("U")){
+                    return HttpStatus.OK.value();
+                }
             } else {
-                return 200;
+                if (getOperation().equals("L")){
+                    // optimistic lock case
+                    return HttpStatus.CONFLICT.value();
+                }
+                if (getOperation().equals("D")) {
+                    return HttpStatus.NOT_FOUND.value();
+                }
+                if (getOperation().equals("N")) {
+                    return HttpStatus.OK.value();
+                }
             }
         }
+        throw new RuntimeException("Return Status not identified.");
     }
 }

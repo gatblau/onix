@@ -123,7 +123,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteItem(String key, String[] role) {
-        return delete(getDeleteItemSQL(), key, role);
+        return delete(getDeleteItemSQL(), "delete_item", key, role);
     }
 
     @Override
@@ -278,7 +278,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public synchronized Result deleteLink(String key, String[] role) {
-        return delete(getDeleteLinkSQL(), key, role);
+        return delete(getDeleteLinkSQL(), "delete_link", key, role);
     }
 
     @Override
@@ -324,7 +324,7 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public synchronized Result clear(String[] role) {
         try {
-            return delete(getClearAllSQL(), null, role);
+            return delete(getClearAllSQL(), "clear_all", null, role);
         } catch (Exception ex) {
             ex.printStackTrace();
             Result result = new Result("CLEAR_ALL");
@@ -334,15 +334,15 @@ public class PgSqlRepository implements DbRepository {
         }
     }
 
-    private synchronized Result delete(String sql, String key, String[] role){
-        return delete(sql, key, false, role);
+    private synchronized Result delete(String sql, String resultColName, String key, String[] role){
+        return delete(sql, resultColName, key, false, role);
     }
 
-    private synchronized Result delete(String sql, String key, boolean isType) {
-        return delete(sql, key, isType, null);
+    private synchronized Result delete(String sql, String resultColName, String key, boolean isType) {
+        return delete(sql, resultColName, key, isType, null);
     }
 
-    private synchronized Result delete(String sql, String key, boolean isType, String[] role) {
+    private synchronized Result delete(String sql, String resultColName, String key, boolean isType, String[] role) {
         Result result = new Result(String.format("Delete(%s)", key));
         try {
             db.prepare(sql);
@@ -354,10 +354,7 @@ public class PgSqlRepository implements DbRepository {
             } else {
                 db.setArray(1, role);
             }
-            result.setOperation((db.execute()) ? "D" : "N");
-            if (result.getOperation().equals("D")) {
-                result.setChanged(true);
-            }
+            result.setOperation(db.executeQueryAndRetrieveStatus(resultColName));
         } catch (Exception ex) {
             ex.printStackTrace();
             result.setError(true);
@@ -392,7 +389,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteItemTypes(String[] role) {
-        return delete(getDeleteItemTypes(), null, role);
+        return delete(getDeleteItemTypes(), "delete_item_types", null, role);
     }
 
     @Override
@@ -455,7 +452,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteItemType(String key, String[] role) {
-        return delete(getDeleteItemTypeSQL(), key, true, role);
+        return delete(getDeleteItemTypeSQL(), "delete_item_type", key, true, role);
     }
 
     /*
@@ -512,12 +509,12 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteLinkType(String key, String[] role) {
-        return delete(getDeleteLinkTypeSQL(), key, true, role);
+        return delete(getDeleteLinkTypeSQL(), "delete_link_type", key, true, role);
     }
 
     @Override
     public Result deleteLinkTypes(String[] role) {
-        return delete(getDeleteLinkTypes(), null, role);
+        return delete(getDeleteLinkTypes(), "delete_link_types", null, role);
     }
 
     @Override
@@ -603,12 +600,12 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteLinkRule(String key, String[] role) {
-        return delete(getDeleteLinkRuleSQL(), key, role);
+        return delete(getDeleteLinkRuleSQL(), "delete_link_rule", key, role);
     }
 
     @Override
     public Result deleteLinkRules(String[] role) {
-        return delete(getDeleteLinkRulesSQL(), null, role);
+        return delete(getDeleteLinkRulesSQL(), "delete_link_rules",null, role);
     }
 
     @Override
@@ -818,7 +815,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::bigint," + // version
                 "?::character varying," + // model_key
                 "?::character varying," + // changed_by
-                "?::character varying[]" + // role_change_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -832,13 +829,13 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteLinkRuleSQL() {
-        return "SELECT delete_link_rule(?::character varying)";
+        return "SELECT delete_link_rule(?::character varying[])";
     }
 
     @Override
     public String getDeleteLinkRulesSQL() {
         return "SELECT delete_link_rules(" +
-                "?::character varying" + // role_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
@@ -857,8 +854,10 @@ public class PgSqlRepository implements DbRepository {
             db.setString(4, (description != null) ? (String) description : null); // description_param
             db.setString(2, (label != null) ? (String) label : null); // label
             db.setString(5, getUser()); // changed_by_param
-            result.setError(!db.execute());
-            result.setOperation("I");
+            result.setOperation(db.executeQueryAndRetrieveStatus("create_tag"));
+            if (result.getOperation().equals("L")){
+                result.setMessage(String.format("Tag data for label '%s' already exists and cannot be overridden.", label));
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
             result.setError(true);
@@ -1062,7 +1061,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public synchronized Result deleteModel(String key, String[] role) {
-        return delete(getDeleteModelSQL(), key, true, role);
+        return delete(getDeleteModelSQL(), "delete_model", key, true, role);
     }
 
     @Override
@@ -1346,7 +1345,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deletePartition(String key, String[] role) {
-        return delete(getDeletePartitionSQL(), key, role);
+        return delete(getDeletePartitionSQL(), "delete_partition", key, role);
     }
 
     @Override
@@ -1445,7 +1444,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteRole(String key, String[] role) {
-        return delete(getDeleteRoleSQL(), key, role);
+        return delete(getDeleteRoleSQL(), "delete_role", key, role);
     }
 
     @Override

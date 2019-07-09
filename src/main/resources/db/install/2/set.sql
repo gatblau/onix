@@ -1090,8 +1090,28 @@ DO $$
 
       -- gets the required id's
       SELECT id FROM link_type WHERE key = link_type_key_param INTO link_type_id_value;
+
+      -- the link type must exist
+      IF link_type_id_value IS NULL THEN
+        RAISE EXCEPTION 'The specified link type "%" could not be found or does not exist.', link_type_key_param
+          USING hint = 'A link rule needs a link type, make sure it exists before creating the rule.';
+      END IF;
+
       SELECT id FROM item_type WHERE key = start_item_type_key_param INTO start_item_type_id_value;
+
+      -- the start item type must exist
+      IF start_item_type_id_value IS NULL THEN
+        RAISE EXCEPTION 'The specified item type "%" for the start item could not be found or does not exist.', start_item_type_key_param
+          USING hint = 'A link rule needs item types for start and end items the link is connecting, make sure they exists before creating the rule.';
+      END IF;
+
       SELECT id FROM item_type WHERE key = end_item_type_key_param INTO end_item_type_id_value;
+
+      -- the end item type must exist
+      IF end_item_type_id_value IS NULL THEN
+        RAISE EXCEPTION 'The specified item type "%" for the end item could not be found or does not exist.', end_item_type_key_param
+          USING hint = 'A link rule needs item types for start and end items the link is connecting, make sure they exists before creating the rule.';
+      END IF;
 
       IF (current_version IS NULL) THEN
         -- check if the role can create the link rule
