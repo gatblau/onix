@@ -63,7 +63,7 @@ public class Steps extends BaseTest {
             throw ex;
         }
         ResponseEntity<Result> response = util.get(RESPONSE);
-        if (response.getStatusCodeValue() != responseCode) {
+        if (response.getStatusCode().value() != responseCode) {
             throw new RuntimeException(
                 String.format(
                     "Expected response code was '%s' but instead got '%s': '%s'.",
@@ -834,21 +834,18 @@ public class Steps extends BaseTest {
 
     @Given("^the tag already exists$")
     public void theTagAlreadyExists() {
-        try {
-            // replays create_tag.feature
-            theURLOfTheTagCreateEndpointIsKnown();
-            putData("payload/create_data_payload.json");
-            aPayloadExistsWithTheDataRequiredToCreateTheTag();
-            aTagCreationIsRequested();
-            theResponseCodeIs(200);
-            theResultContainsNoErrors();
-        } catch (Exception ex) {
-            if (ex.getMessage().contains("duplicate key value violates unique constraint")) {
-                // the tag is already in the database so do nothing
-            } else {
-                throw ex;
-            }
+        // replays create_tag.feature
+        theURLOfTheTagCreateEndpointIsKnown();
+        putData("payload/create_data_payload.json");
+        aPayloadExistsWithTheDataRequiredToCreateTheTag();
+        aTagCreationIsRequested();
+        Exception e = null;
+        if (util.exists(EXCEPTION)) {
+            e = util.get(EXCEPTION);
         }
+        if (e != null && !e.getMessage().contains("409")) {
+            throw new RuntimeException(String.format("Error creating tag"));
+        };
     }
 
     @Given("^a payload exists with the data required to update the tag$")
@@ -1319,6 +1316,7 @@ public class Steps extends BaseTest {
 
     @Given("^the meta model exists in the database$")
     public void theMetaModelExistsInTheDatabase() {
+        theMetaModelNaturalKeyIsKnown();
         putModel(util.get(META_MODEL_KEY),"payload/create_model_1_payload.json");
     }
 

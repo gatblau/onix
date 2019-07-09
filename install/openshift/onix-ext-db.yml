@@ -1,90 +1,31 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name:  Onix Persistent
+  name:  Onix External DB
   annotations:
-    description: "Deploys Onix CMDB with persistent storage."
+    description: "Deploys Onix CMDB connected to an external PostgreSQL server."
+parameters:
+  - name: DB_EXTERNAL_NAME
+    displayName: Database DNS Name
+    description: The external DNS name for the Onix Database Server
+    required: true
+  - name: DB_ADMIN_USER
+      displayName: Database Admin Username
+      description: The administrator username for the Onix Database Server
+      required: true
+  - name: DB_ADMIN_PWD
+    displayName: Database Admin Password
+    description: The administrator password for the Onix Database Server
+    required: true
 objects:
-- apiVersion: apps.openshift.io/v1
-  kind: DeploymentConfig
+- apiVersion: v1
+  kind: Service
   metadata:
     name: onixdb
   spec:
-    replicas: 1
-    progressDeadlineSeconds: 600
-    revisionHistoryLimit: 10
-    selector:
-        deploymentconfig: onixdb
-    strategy:
-        activeDeadlineSeconds: 21600
-        resources: {}
-        rollingParams:
-          intervalSeconds: 1
-          maxSurge: 25%
-          maxUnavailable: 25%
-          timeoutSeconds: 600
-          updatePeriodSeconds: 1
-        type: Rolling
-    template:
-      metadata:
-        labels:
-          app: onix
-          deploymentconfig: onixdb
-      spec:
-        containers:
-        - name: onixdb
-          env:
-          - name: POSTGRESQL_ADMIN_PASSWORD
-            value: onix
-          imagePullPolicy: IfNotPresent
-          ports:
-          - containerPort: 5432
-            protocol: TCP
-          resources: {}
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
-          volumeMounts:
-          - mountPath: /var/lib/pgsql/data
-            name: onixdb-data
-        dnsPolicy: ClusterFirst
-        restartPolicy: Always
-        schedulerName: default-scheduler
-        securityContext: {}
-        terminationGracePeriodSeconds: 30
-        volumes:
-        - name: onixdb-data
-          persistentVolumeClaim:
-            claimName: onixdb
-    triggers:
-    - type: ConfigChange
-    - type: ImageChange
-      imageChangeParams:
-        automatic: true
-        containerNames:
-        - onixdb
-        from:
-           kind: ImageStreamTag
-           name: onixdb:latest
-- apiVersion: image.openshift.io/v1
-  kind: ImageStream
-  metadata:
-    annotations:
-    labels:
-      app: onix
-    name: onixdb
-  spec:
-    lookupPolicy:
-      local: true
-    tags:
-    - annotations:
-      from:
-        kind: DockerImage
-        name: centos/postgresql-10-centos7
-      importPolicy:
-        scheduled: true
-      name: latest
-      referencePolicy:
-        type: Local
+    type: ExternalName
+    externalName: "${DB_EXTERNAL_NAME}"
+  selector: {}
 - apiVersion: apps.openshift.io/v1
   kind: DeploymentConfig
   metadata:
@@ -243,9 +184,9 @@ objects:
   metadata:
     name: onixdb
   type: Opaque
-  data:
-    pwd: b25peA==
-    user: b25peA==
+  stringData:
+    pwd: "${DB_ADMIN_PWD}"
+    user: "${DB_ADMIN_USER}"
 - apiVersion: v1
   kind: Secret
   metadata:
@@ -302,16 +243,3 @@ objects:
       name: onixwapi
       weight: 100
     wildcardPolicy: None
-- apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    annotations:
-    finalizers:
-    - kubernetes.io/pvc-protection
-    name: onixdb
-  spec:
-    accessModes:
-    - ReadWriteOnce
-    resources:
-      requests:
-        storage: 10Gi

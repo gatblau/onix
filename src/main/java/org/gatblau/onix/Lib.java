@@ -125,6 +125,12 @@ public class Lib implements InitializingBean {
 
     public ItemData toItemData(ResultSet set) throws SQLException, ParseException, IOException {
         Date updated = set.getDate("updated");
+        String partitionKey = null;
+        try {
+            set.findColumn("partition_key");
+            partitionKey = set.getString("partition_key");
+        } catch (SQLException e){
+        }
         ItemData item = new ItemData();
         item.setKey(set.getString("key"));
         item.setName(set.getString("name"));
@@ -138,7 +144,7 @@ public class Lib implements InitializingBean {
         item.setVersion(set.getInt("version"));
         item.setAttribute(toJSON(set.getObject("attribute")));
         item.setChangedBy(set.getString("changed_by"));
-        item.setPartition(set.getString("partition_key"));
+        item.setPartition(partitionKey);
         return item;
     }
 

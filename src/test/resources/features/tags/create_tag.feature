@@ -9,5 +9,5 @@ Feature: Create Item Tree Tag
     Given a payload exists with the data required to create the tag
     Given the tag does not already exist
     When a tag creation is requested
-    Then the response code is 200
+    Then the response code is 201
     Then the result contains no errors

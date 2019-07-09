@@ -16,6 +16,30 @@ DO
   $$
     BEGIN
 
+    CREATE OR REPLACE FUNCTION get_delete_result(
+      row_count int
+    )
+    RETURNS TABLE(result char(1))
+      LANGUAGE 'plpgsql'
+      COST 100
+      VOLATILE
+    AS
+    $BODY$
+    DECLARE
+      result char(1);
+    BEGIN
+      IF row_count > 0 THEN
+        result := 'D';
+      ELSE
+        result := 'N';
+      END IF;
+      RETURN QUERY SELECT result;
+    END
+    $BODY$;
+
+    ALTER FUNCTION get_delete_result(int)
+      OWNER TO onix;
+
      /*
       delete_partition
      */
@@ -23,12 +47,14 @@ DO
         key_param character varying,
         role_key_param character varying[]
       )
-        RETURNS VOID
+        RETURNS TABLE(result char(1))
         LANGUAGE 'plpgsql'
         COST 100
         VOLATILE
       AS
       $BODY$
+      DECLARE
+        rows_affected INTEGER;
       BEGIN
         -- checks the role can modify this role
         PERFORM can_manage_partition(role_key_param);
@@ -36,6 +62,9 @@ DO
         DELETE
         FROM partition p
         WHERE p.key = key_param;
+
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+        RETURN QUERY SELECT get_delete_result(rows_affected);
       END
       $BODY$;
 
@@ -49,12 +78,14 @@ DO
        key_param character varying,
        role_key_param character varying[]
      )
-       RETURNS VOID
+       RETURNS TABLE(result char(1))
        LANGUAGE 'plpgsql'
        COST 100
        VOLATILE
      AS
      $BODY$
+     DECLARE
+       rows_affected INTEGER;
      BEGIN
        -- checks the role can modify this role
        PERFORM can_manage_partition(role_key_param);
@@ -62,6 +93,9 @@ DO
        DELETE
        FROM role r
        WHERE r.key = key_param;
+
+       GET DIAGNOSTICS rows_affected := ROW_COUNT;
+       RETURN QUERY SELECT get_delete_result(rows_affected);
      END
      $BODY$;
 
@@ -75,12 +109,14 @@ DO
           key_param character varying,
           role_key_param character varying[]
         )
-        RETURNS VOID
+        RETURNS TABLE(result char(1))
         LANGUAGE 'plpgsql'
         COST 100
         VOLATILE
       AS
       $BODY$
+      DECLARE
+        rows_affected INTEGER;
       BEGIN
         DELETE
         FROM model m
@@ -91,6 +127,9 @@ DO
           AND pr.can_delete = TRUE
           AND pr.role_id = r.id
           AND r.key = ANY(role_key_param);
+
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+        RETURN QUERY SELECT get_delete_result(rows_affected);
       END
       $BODY$;
 
@@ -104,12 +143,14 @@ DO
         key_param character varying,
         role_key_param character varying[]
       )
-        RETURNS VOID
+        RETURNS TABLE(result char(1))
         LANGUAGE 'plpgsql'
         COST 100
         VOLATILE
       AS
       $BODY$
+      DECLARE
+        rows_affected      integer;
       BEGIN
         DELETE
         FROM item i
@@ -118,6 +159,10 @@ DO
           AND p.id = i.partition_id
           AND pr.can_delete = TRUE
           AND r.key = ANY(role_key_param);
+
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+
+        RETURN QUERY SELECT get_delete_result(rows_affected);
       END
       $BODY$;
 
@@ -158,12 +203,14 @@ DO
         key_param character varying,
         role_key_param character varying[]
       )
-        RETURNS VOID
+        RETURNS TABLE(result char(1))
         LANGUAGE 'plpgsql'
         COST 100
         VOLATILE
       AS
       $BODY$
+      DECLARE
+        rows_affected INTEGER;
       BEGIN
         DELETE
         FROM item_type it
@@ -175,6 +222,9 @@ DO
           AND pr.role_id = r.id
           AND pr.can_delete = TRUE
           AND r.key = ANY(role_key_param);
+
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+        RETURN QUERY SELECT get_delete_result(rows_affected);
       END;
       $BODY$;
 
@@ -188,12 +238,14 @@ DO
         key_param character varying,
         role_key_param character varying[]
       )
-        RETURNS VOID
+        RETURNS TABLE(result char(1))
         LANGUAGE 'plpgsql'
         COST 100
         VOLATILE
       AS
       $BODY$
+      DECLARE
+        rows_affected INTEGER;
       BEGIN
         DELETE
         FROM link l
@@ -206,6 +258,9 @@ DO
           AND pr.role_id = r.id
           AND r.key = ANY(role_key_param)
           AND pr.can_delete = TRUE;
+
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+        RETURN QUERY SELECT get_delete_result(rows_affected);
       END
       $BODY$;
 
@@ -222,12 +277,14 @@ DO
         key_param character varying,
         role_key_param character varying[]
       )
-        RETURNS VOID
+        RETURNS TABLE(result char(1))
         LANGUAGE 'plpgsql'
         COST 100
         VOLATILE
       AS
       $BODY$
+      DECLARE
+        rows_affected INTEGER;
       BEGIN
         DELETE
         FROM link_type lt
@@ -238,6 +295,9 @@ DO
           AND pr.partition_id = p.id
           AND pr.role_id = r.id
           AND pr.can_delete = TRUE;
+
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+        RETURN QUERY SELECT get_delete_result(rows_affected);
       END
       $BODY$;
 
@@ -253,20 +313,22 @@ DO
       CREATE OR REPLACE FUNCTION clear_all(
         role_key_param character varying[]
       )
-        RETURNS VOID
+        RETURNS TABLE(result char(1))
         LANGUAGE 'plpgsql'
         COST 100
         VOLATILE
       AS
       $BODY$
+      DECLARE
+        rows_affected INTEGER;
       BEGIN
         DELETE FROM tag;
-        DELETE FROM link_rule;
-        DELETE FROM link;
-        DELETE FROM item;
         PERFORM delete_link_types(role_key_param);
         PERFORM delete_item_types(role_key_param);
         PERFORM delete_link_rules(role_key_param);
+        PERFORM delete_all_items(role_key_param);
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+        RETURN QUERY SELECT get_delete_result(rows_affected);
       END
       $BODY$;
 
@@ -279,12 +341,14 @@ DO
       CREATE OR REPLACE FUNCTION delete_item_types(
         role_key_param character varying[]
       )
-        RETURNS VOID
+        RETURNS TABLE(result char(1))
         LANGUAGE 'plpgsql'
         COST 100
         VOLATILE
       AS
       $BODY$
+      DECLARE
+        rows_affected INTEGER;
       BEGIN
         DELETE FROM item_type it
           USING partition p, privilege pr, role r, model m
@@ -294,6 +358,9 @@ DO
           AND pr.can_delete = TRUE
           AND pr.role_id = r.id
           AND r.key = ANY(role_key_param);
+
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+        RETURN QUERY SELECT get_delete_result(rows_affected);
       END
       $BODY$;
 
@@ -306,12 +373,14 @@ DO
       CREATE OR REPLACE FUNCTION delete_link_types(
         role_key_param character varying[]
       )
-        RETURNS VOID
+        RETURNS TABLE(result char(1))
         LANGUAGE 'plpgsql'
         COST 100
         VOLATILE
       AS
       $BODY$
+      DECLARE
+        rows_affected INTEGER;
       BEGIN
         DELETE FROM link_type lt
         USING partition p, privilege pr, role r, model m
@@ -321,6 +390,9 @@ DO
           AND pr.can_delete = TRUE
           AND pr.role_id = r.id
           AND r.key = ANY(role_key_param);
+
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+        RETURN QUERY SELECT get_delete_result(rows_affected);
       END
       $BODY$;
 
@@ -333,12 +405,14 @@ DO
       CREATE OR REPLACE FUNCTION delete_link_rules(
         role_key_param character varying[]
       )
-        RETURNS VOID
+        RETURNS TABLE(result char(1))
         LANGUAGE 'plpgsql'
         COST 100
         VOLATILE
       AS
       $BODY$
+      DECLARE
+        rows_affected INTEGER;
       BEGIN
         DELETE
         FROM link_rule lr
@@ -350,6 +424,9 @@ DO
           AND r.id = pr.role_id
           AND pr.can_delete = TRUE
           AND r.key = ANY(role_key_param);
+
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+        RETURN QUERY SELECT get_delete_result(rows_affected);
       END
       $BODY$;
 
