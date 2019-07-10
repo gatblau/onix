@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name:  Onix Persistent
+  name:  onix-persistent
   annotations:
     description: "Deploys Onix CMDB with persistent storage."
 objects:

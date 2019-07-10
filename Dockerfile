@@ -30,7 +30,6 @@ FROM openjdk:8-jdk-alpine
 MAINTAINER Gatblau <onix@gatblau.org>
 LABEL author="gatblau.org"
 COPY --from=builder /tmp/BOOT-INF/lib /app/lib
-COPY --from=builder /tmp/BOOT-INF/lib /app/lib
 COPY --from=builder /tmp/META-INF /app/META-INF
 COPY --from=builder /tmp/BOOT-INF/classes /app
 USER 20

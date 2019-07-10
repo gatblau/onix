@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name:  Onix Ephemeral
+  name:  onix-ephemeral
   annotations:
     description: "Deploys the Onix CMDB service with ephemeral storage."
 objects:

@@ -29,7 +29,7 @@ $ docker-compose up -d
 ### Option B: using OpenShift
 Deploy using OpenShift is straightforward. 
 
-Create an OpenShift project and deploy using one of the provided [templates here](../install/openshift/readme.md).
+Create an OpenShift project and deploy using one of the provided [templates here](install/openshift/readme.md).
 
 
 <a name="installing-using-helm"></a>
