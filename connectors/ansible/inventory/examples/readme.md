@@ -12,7 +12,7 @@ The Onix WAPI is the Web API allowing reading and writing CI information to/from
 For the purpose of this example, it can be installed easily in containerised form.
 Ensure you have [docker compose](https://docs.docker.com/compose/) installed in your machine and understand how to use it.
 
-Run docker compose with this [docker-compose.yml](./../../../../install/container/docker-compose.yml) file.
+Run docker compose with this [docker-compose.yml](../../../../docs/install/container/docker-compose.yml) file.
 
 Then run the following command from a linux terminal:
 
@@ -25,7 +25,7 @@ $ docker-compose up -d
 In order for the inventory plugin to be able to retrieve inventory information, the Ansible Inventory meta model has to be imported into Onix.
 The meta model contains all the item types, link types and link rules required to represent the inventory data in the CMDB.
 
-To import the meta model follow the steps shown [here](../../../../models/readme.md).
+To import the meta model follow the steps shown [here](../../../../docs/models/readme.md).
 
 ### Import the inventory into the CMDB
 

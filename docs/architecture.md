@@ -81,7 +81,7 @@ In addition to the relations described above, role based access controls (RBAC) 
 
 The following picture shows the Onix logical data model, which is comprised of three main areas:
 - [Role Based Access Controls](./rbac.md): contains the entities required to partition the data model and grant privileges to selected partitions based on roles.
-- [Models](../models/readme.md): define the types of items, links and link rules.
+- [Models](models/readme.md): define the types of items, links and link rules.
 - Configuration Items: stores the configuration information based on predefined models.:
 
 ![Logical Data Model](./pics/logical_model.png "Onix Logical Data Model")

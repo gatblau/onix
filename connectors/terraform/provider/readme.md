@@ -105,7 +105,7 @@ The list of resources offered in this provider is as follows:
 
 | Resource | Description |
 |---|---|
-| [ox_model](./docs/rs_ox_model.md) | Creates, updates or deletes a [modelKey](../../../models/readme.md). |
+| [ox_model](./docs/rs_ox_model.md) | Creates, updates or deletes a [modelKey](../../../docs/models/readme.md). |
 | [ox_item](./docs/rs_ox_item.md) | Creates, updates or deletes a configuration item. |
 | [ox_item_type](./docs/rs_ox_item_type.md) | Creates, updates or deletes a configuration item type. |
 | [ox_link](./docs/rs_ox_link.md) | Creates, updates or deletes a configuration item link. |
