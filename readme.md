@@ -4,7 +4,7 @@ Onix is a lightweight configuration management database (CMDB) designed to suppo
 <img src="docs/pics/ox.png" width="300" height="300" align="right">
 
 The key features are:
-- accessible via a [RESTful Web API](./docs/wapi.md), [Ansible](https://www.ansible.com/) and [Terraform](https://www.terraform.io/) compoments ([Connectors](./connectors/readme.md)). A user interface is coming soon. :smiley:
+- accessible via a [RESTful Web API](./docs/wapi.md), [Ansible](https://www.ansible.com/) and [Terraform](https://www.terraform.io/) compoments ([Connectors](./connectors/readme.md)) and a [Web Console](wc/readme.md).
 - flexible customisation via [Models](docs/models/readme.md)  
 - fully containerised, runs natively on Openshift and Kubernetes
 - automatic population to avoid data misalignments, via Feeders is planned for a near future release.
