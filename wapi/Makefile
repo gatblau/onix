@@ -19,9 +19,6 @@ REPO_NAME=gatblau
 # the name of the ox-kube binary file
 APP_NAME=onix-snapshot
 
-# the name of the go command to use to build the binary
-GO_CMD = go
-
 # the version of the application
 APP_VER = v0.0.2
 
