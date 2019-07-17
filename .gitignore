@@ -2,7 +2,7 @@
 *.iml
 target
 install/container/tmp
-src/main/resources/version
+wapi/src/main/resources/version
 ansible/*.retry
 venv
 .terraform
