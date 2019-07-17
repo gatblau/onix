@@ -1,0 +1,39 @@
+# the K8S cluster instance Id for logging identification purposes
+Id = "OxKube-01"
+
+# verbosity of logging (Trace, Debug, Warning, Info, Error, Fatal, Panic)
+LogLevel = "Trace"
+
+# enables metrics
+Metrics = "true"
+
+# CMDB endpoint to update
+[Onix]
+    URL = "http://localhost:8080"
+    AuthMode = "basic"
+    Username = "admin"
+    Password = "0n1x"
+    ClientId = ""
+	ClientSecret = ""
+	TokenURI = ""
+
+# event consumers
+[Consumers]
+    # selected event consumer (i.e. webhook, broker)
+    Consumer = 'webhook'
+
+    # webhook consumer details
+    [Consumers.Webhook]
+        # the port used by the webhook endpoint
+        Port = "8000"
+
+        # the web path of the webhook endpoint
+        Path = "/webhook"
+
+        # credentials for authenticating webhook endpoint clients
+        AuthMode = "basic" # none or basic
+        Username = "admin"
+        Password = "0n1x"
+
+    # broker consumer details
+    [Consumers.Broker]
