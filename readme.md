@@ -19,6 +19,8 @@ The following topics give more insight into Onix:
   - [OpenId Connect](./docs/oidc.md)
 - [Connectors](./connectors/readme.md)
 - [Models](docs/models/readme.md)
+- [Web Console](wc/readme.md)
+- [Agents](agents/readme.md)
 
 ## License Terms
 
