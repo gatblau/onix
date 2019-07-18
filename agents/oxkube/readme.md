@@ -11,6 +11,6 @@ Ox-Kube is an [Onix CMDB](http://onix.gatblau.org) agent for [Kubernetes](http:/
 
  The following diagram shows the model implemented in [Onix](http://onix.gatblau.org) to represent Kubernetes objects:
 
- ![k8s Model](pics/k8s_model.png)
+ ![k8s Model](../../docs/models/k8s/k8s_model.png)
 
  

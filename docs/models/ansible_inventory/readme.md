@@ -1,4 +1,4 @@
-# Ansible Inventory Model <img src="../../docs/pics/ox.png" width="125" height="125" align="right">
+# Ansible Inventory Model <img src="../../pics/ox.png" width="125" height="125" align="right">
 
 The meta model is comprised of a set of item types, link types and link rules that represent an Ansible inventory within the CMDB. 
 
@@ -12,7 +12,7 @@ They are shown in the figure below:
 |---|---|---|
 | ANSIBLE_HOST | Ansible Host | An host to pre provisioned by Ansible. |
 | ANSIBLE_HOST_GROUP | Ansible Host Group | A group of hosts to be provisioned by Ansible. |
-| ANSIBLE_HOST_GROUP_SUPER_SET | Ansible Host Group Superset| A superset of host groups to be provisioned by Ansible. |
+| ANSIBLE_HOST_GROUP_GROUP | Groups of Ansible Host Group | A superset of host groups to be provisioned by Ansible. |
 | ANSIBLE_INVENTORY | Ansible Inventory | A collection of hosts to be provisioned by Ansible. |
 
 ## Link Types
