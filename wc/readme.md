@@ -1,3 +1,5 @@
+<img src="../docs/pics/ox.png" width="125" height="125" align="right">
+
 # Onix Web Console
 
 The web console allows users to visualise and manage data in the CMDB.
