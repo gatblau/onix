@@ -1,3 +1,5 @@
+<img src="./pics/ox.png" width="200" height="200" align="right">
+
 # Database Deployment
 
 The Onix database is based on the [PostgreSQL](https://www.postgresql.org/) open source object-relational database system.

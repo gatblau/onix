@@ -13,23 +13,17 @@
 #    Contributors to this project, hereby assign copyright in this code to the project,
 #    to be licensed under the same terms as the rest of the code.
 #
+#  Launches Onix in the local machine without using docker-compose
+#
+echo "starting Onix with docker compose"
+docker-compose up -d
 
-# Installs a postgres 10 database on a server host
+echo "please wait for the Web API to become available"
+sleep 10
 
-echo 'installing the yum repository for postgres 10...'
-yum install https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-7-x86_64/pgdg-centos10-10-2.noarch.rpm
+echo "deploying database schemas"
+curl localhost:8080/ready
 
-echo 'installing the client packages...'
-yum install -y postgresql10
-
-echo 'installing the server packages...'
-yum install -y postgresql10-server
-
-echo 'enabling the server on system start up...'
-systemctl enable postgresql-10
-
-echo 'starting the server...'
-sudo systemctl start postgresql-10
-
-echo 'the server status is:'
-systemctl status postgresql-10
+echo 
+echo "Web API ready to use @ localhost:8080"
+echo "Ox Kube ready to use @ localhost:8000"

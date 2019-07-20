@@ -15,6 +15,7 @@
 #   Docker Compose file to get the ONIX CMDB up and running
 #   use as follows:
 #     docker-compose up -d | docker-compose down, stop, start
+#     NOTE: after start need to call the readyness probe to deploy the database!
 #
 version: '3'
 services:
@@ -23,7 +24,7 @@ services:
     container_name: oxdb
     restart: always
     environment:
-      - POSTGRESQL_ADMIN_PASSWORD=onix
+      - POSTGRESQL_ADMIN_PASSWORD=${PG_ADMIN_PASSWORD}
     ports:
       - "5432:5432"
   onix:
@@ -34,10 +35,25 @@ services:
     restart: always
     environment:
       - DB_HOST=oxdb
-      - WAPI_AUTH_MODE=none
-#     uncomment below to enable basic authentication
-#      - WAPI_AUTH_MODE=basic
-#      - WAPI_ADMIN_USER=admin
-#      - WAPI_ADMIN_PWD=0n1x
+      - DB_ADMIN_PWD=${PG_ADMIN_PASSWORD}
+      - WAPI_AUTH_MODE=${AUTH_MODE}
+      - WAPI_ADMIN_USER=${ADMIN_USER}
+      - WAPI_ADMIN_PWD=${ADMIN_PWD}
     ports:
       - "8080:8080"
+  oxkube:
+    image: gatblau/oxkube-snapshot
+    depends_on:
+      - onix
+    container_name: oxku
+    restart: always
+    environment:
+      - OXKU_ID=kube-01
+      - OXKU_ONIX_URL=http://onix:8080
+      - OXKU_CONSUMERS_CONSUMER=webhook
+      - OXKU_LOGINLEVEL=${LOGIN_LEVEL}
+      - OXKU_ONIX_AUTHMODE=${AUTH_MODE}
+      - OXKU_ONIX_USER=${ADMIN_USER}
+      - OXKU_ONIX_PASSWORD=${ADMIN_PWD}
+    ports:
+      - "8000:8000"

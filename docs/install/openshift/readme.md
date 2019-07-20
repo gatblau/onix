@@ -1,4 +1,4 @@
-# OpenShift Templates
+# OpenShift Templates <img src="../../../docs/pics/ox.png" width="200" height="200" align="right">
 
 This folder contains various OpenShift templates for different deployment scenarios:
 

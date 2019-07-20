@@ -1,4 +1,4 @@
-# Getting started <img src="./pics/ox.png" width="160" height="160" align="right">
+# Getting started <img src="./pics/ox.png" width="200" height="200" align="right">
 Getting started with Onix is easiy and required basically only two steps:
 
 ## Step 1: Deploy Container Images
@@ -10,7 +10,7 @@ There are different options to get started easily:
 To do that you will need the following dependencies in your system:
 - [Docker](https://docs.docker.com/compose/install/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
-- Access to [Docker Hub Onix image repositories](https://hub.docker.com/u/southwinds)
+- Access to [Docker Hub Onix image repositories](https://hub.docker.com/u/gatblau)
 
 Run the following commands from a terminal window:
 
