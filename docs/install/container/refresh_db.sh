@@ -13,7 +13,7 @@
 #    Contributors to this project, hereby assign copyright in this code to the project,
 #    to be licensed under the same terms as the rest of the code.
 #
-# re-creates a docker container with a postgres database
+# re-creates a docker container with a postgres database for testing only
 # usage:  sh refresh.sh
 #
 # removes the container

@@ -1,22 +1,55 @@
-# Building the docker images [(index)](./../readme.md)
+<img src="./pics/ox.png" width="200" height="200" align="right">
 
-In order to build the Onix docker images follow the steps below:
+# Building the docker image [(index)](./../readme.md)
 
-- Clone the [Onix](https://github.com/gatblau/onix.git) repository.
-- Change the directory to the folder where [build.sh](install/container/build.sh) script is.
-- Ensure [Docker](https://www.docker.com/) is installed on the host.
-- Ensure the [s2i tool](https://github.com/openshift/source-to-image/releases) is installed on the folder.
-- Execute the command below.
+The build process uses the [make](https://www.gnu.org/software/make/manual/make.html) utility. [Git]() and [Docker](https://docs.docker.com/engine/reference/commandline/cli/) are also required.
 
-```bash
-$ sh build.sh
-```
+## Web API
 
-Then check the images have been created:
+To build the web api, no dependencies are required other than :
 
 ```bash
-$ docker images
+# clone the repository
+git clone https://github.com/gatblau/onix
+
+# navigate to the wapi root folder
+cd ./onix/wapi
+
+# create a version tag from commit and time stamp
+make version
+
+# build the docker image
+make image
+
+# check the onix image has been created
+ docker images
 ```
 
-**NOTE**: a new docker image tag is created automatically by the [build.sh](install/container/build.sh) script and used for both the database and the service images.
-The convention for the tag is as follows: **[abbreviated last commit hash].[ddMMyy-HHmmss]**
+## Ox-Kube
+
+Building ox-kube is done in the same way as with the web api as follows:
+
+```bash
+# clone the repository
+git clone https://github.com/gatblau/onix
+
+# navigate to the oxkube root folder
+cd ./onix/agents/oxkube
+
+# create a version tag from commit and time stamp
+make version
+
+# build the docker image
+make image
+
+# check the oxkube image has been created
+ docker images
+```
+
+## Version Tag
+
+The "*make version*" command creates a tag following the convention:
+
+**[semantic version number]-[git abbreviated last commit hash]-[ddMMyyHHmmss]**
+
+For example: v0.0.2-b2a6da0-170719155635

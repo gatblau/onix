@@ -15,22 +15,55 @@
 #
 #  Launches Onix in the local machine without using docker-compose
 #
-# check docker is installed
+
+echo check docker is installed
 if [ ! -x "$(command -v docker)" ]; then
     echo "Docker is required to execute this script."
     exit 1
 fi
 
-# deletes any images with no tag
+echo deletes any images with no tag
 images_with_no_tag=$(docker images -f dangling=true -q)
 if [ -n "$images_with_no_tag" ]; then
     docker rmi $images_with_no_tag
 fi
 
-# try and delete existing Onix containers
+echo try and delete existing Onix containers
 docker rm -f oxdb
 docker rm -f ox
+docker rm -f oxku
 
-# creates the Onix containers
-docker run --name oxdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "centos/postgresql-10-centos7"
-docker run --name ox -it -d -p 8080:8080 --link oxdb -eDB_HOST=oxdb "gatblau/onix-snapshot"
+echo creates the Onix database
+docker run --name oxdb -it -d -p 5432:5432 \
+    -e POSTGRESQL_ADMIN_PASSWORD=onix \
+    "centos/postgresql-10-centos7"
+
+echo creates the Onix Web API
+docker run --name ox -it -d -p 8080:8080 --link oxdb \
+    -e DB_HOST=oxdb \
+    -e DB_ADMIN_PWD=onix \
+    -e WAPI_AUTH_MODE=basic \
+    -e WAPI_ADMIN_USER=admin \
+    -e WAPI_ADMIN_PWD=0n1x \
+    "gatblau/onix-snapshot"
+
+echo create the Onix Kubernetes agent
+docker run --name oxku -it -d -p 8000:8000 --link ox \
+    -e OXKU_ID=kube-01 \
+    -e OXKU_ONIX_URL=http://ox:8080 \
+    -e OXKU_CONSUMERS_CONSUMER=webhook \
+    -e OXKU_LOGINLEVEL=Trace \
+    -e OXKU_ONIX_AUTHMODE=basic \
+    -e OXKU_ONIX_USER=basic \
+    -e OXKU_ONIX_PASSWORD=0n1x \
+    "gatblau/oxkube-snapshot"
+
+echo "please wait for the Web API to become available"
+sleep 10
+
+echo "deploying database schemas"
+curl localhost:8080/ready
+
+echo 
+echo "Web API ready to use @ localhost:8080"
+echo "Ox Kube ready to use @ localhost:8000"
