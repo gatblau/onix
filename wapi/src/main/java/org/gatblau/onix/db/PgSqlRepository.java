@@ -636,7 +636,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getFindItemsSQL() {
-        return "SELECT * FROM find_items(" +
+        return "SELECT * FROM ox_find_items(" +
                 "?::text[]," + // tag
                 "?::hstore," + // attribute
                 "?::smallint," + // status
@@ -701,7 +701,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getFindLinksSQL() {
-        return "SELECT * FROM find_links(" +
+        return "SELECT * FROM ox_find_links(" +
                 "?::character varying," + // start_item_key_param
                 "?::character varying," + // end_item_key_param
                 "?::text[]," + // tag_param
@@ -741,7 +741,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getFindItemTypesSQL() {
-        return "SELECT * FROM find_item_types(" +
+        return "SELECT * FROM ox_find_item_types(" +
                 "?::hstore," + // attr_valid
                 "?::timestamp(6) with time zone," + // date created from
                 "?::timestamp(6) with time zone," + // date created to
@@ -793,7 +793,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getFindLinkTypesSQL() {
-        return "SELECT * FROM find_link_types(" +
+        return "SELECT * FROM ox_find_link_types(" +
                 "?::hstore," + // attr_valid
                 "?::timestamp(6) with time zone," + // date created from
                 "?::timestamp(6) with time zone," + // date created to
@@ -1183,21 +1183,21 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getGetModelItemTypesSQL() {
-        return "SELECT * FROM get_model_item_types(" +
+        return "SELECT * FROM ox_get_model_item_types(" +
                 "?::character varying" + // model_key_param
                 ")";
     }
 
     @Override
     public String getGetModelLinkTypesSQL() {
-        return "SELECT * FROM get_model_link_types(" +
+        return "SELECT * FROM ox_get_model_link_types(" +
                 "?::character varying" + // model_key_param
                 ")";
     }
 
     @Override
     public String getGetModelLinkRulesSQL() {
-        return "SELECT * FROM get_model_link_rules(" +
+        return "SELECT * FROM ox_get_model_link_rules(" +
                 "?::character varying" + // model_key_param
                 ")";
     }
@@ -1227,7 +1227,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getFindLinkRulesSQL() {
-        return "SELECT * FROM find_link_rules(" +
+        return "SELECT * FROM ox_find_link_rules(" +
                 "?::character varying," +
                 "?::character varying," +
                 "?::character varying," +
@@ -1241,7 +1241,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getFindChildItemsSQL() {
-        return "SELECT * FROM find_child_items(" +
+        return "SELECT * FROM ox_find_child_items(" +
                 "?::character varying," + // parent_item_key_param
                 "?::character varying" + // link_type_key_param
                 ")";
@@ -1311,7 +1311,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getTableCountSQL() {
-        return "SELECT get_table_count();";
+        return "SELECT ox_get_table_count();";
     }
 
     private String getUser() {
