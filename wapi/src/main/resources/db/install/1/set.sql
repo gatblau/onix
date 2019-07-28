@@ -390,7 +390,7 @@ DO $$
       IF (meta_param IS NOT NULL) THEN
         SELECT meta_schema FROM item_type it WHERE it.key = item_type_key_param INTO meta_schema_value;
         IF (meta_schema_value IS NOT NULL) THEN
-          SELECT validate_json_schema(meta_schema_value, meta_param) INTO is_meta_valid;
+          SELECT ox_validate_json_schema(meta_schema_value, meta_param) INTO is_meta_valid;
           IF (NOT is_meta_valid) THEN
             RAISE EXCEPTION 'Meta field % for Item % is not valid as defined by the schema % in its type %.', meta_param, key_param, meta_schema_value, item_type_key_param
               USING hint = 'Check the JSON value meets the requirement of the schema defined by the item type.';
@@ -906,7 +906,7 @@ DO $$
       IF (meta_param IS NOT NULL) THEN
         SELECT meta_schema FROM link_type it WHERE it.key = link_type_key_param INTO meta_schema_value;
         IF (meta_schema_value IS NOT NULL) THEN
-          SELECT validate_json_schema(meta_schema_value, meta_param) INTO is_meta_valid;
+          SELECT ox_validate_json_schema(meta_schema_value, meta_param) INTO is_meta_valid;
           IF (NOT is_meta_valid) THEN
             RAISE EXCEPTION 'Meta field for Link % is not valid as defined by the schema in its type %.', key_param, link_type_key_param
               USING hint = 'Check the JSON value meets the requirement of the schema defined by the link type.';
