@@ -7,6 +7,7 @@ This folder contains various OpenShift templates for different deployment scenar
 |[Onix with ephemeral storage](onix-ephemeral.yml) | Deploys Onix and PostgreSQL with [ephemeral storage](https://docs.openshift.com/online/architecture/additional_concepts/ephemeral-storage.html). |
 |[Onix with persistent storage](onix-persistent.yml) | Deploys Onix and PostgreSQL with [persistent storage](https://docs.openshift.com/online/architecture/additional_concepts/storage.html). |
 |[Onix with external database](onix-ext-db.yml)| Deploys Onix and connects it to an external PostgreSQL database. |
+| [Onix Kubernetes Agent](oxkube.yml) | Deploys the Kubernetes Agent for Onix. |
 
 __NOTE__: Onix will automatically deploy the SQL schemas when the readyness probe is called upon deployment of the Onix WAPI container.
 
