@@ -24,7 +24,7 @@ DO
 $$
   BEGIN
 
-    CREATE OR REPLACE FUNCTION _validate_json_schema_type(type text, data jsonb) RETURNS boolean AS
+    CREATE OR REPLACE FUNCTION ox__validate_json_schema_type(type text, data jsonb) RETURNS boolean AS
     $f$
     BEGIN
       IF type = 'integer' THEN
@@ -45,7 +45,7 @@ $$
         IMMUTABLE;
 
 
-    CREATE OR REPLACE FUNCTION validate_json_schema(schema jsonb, data jsonb, root_schema jsonb DEFAULT NULL) RETURNS boolean AS
+    CREATE OR REPLACE FUNCTION ox_validate_json_schema(schema jsonb, data jsonb, root_schema jsonb DEFAULT NULL) RETURNS boolean AS
     $f$
     DECLARE
       prop    text;
@@ -65,7 +65,7 @@ $$
         ELSE
           types = ARRAY [schema ->> 'type'];
         END IF;
-        IF (SELECT NOT bool_or(_validate_json_schema_type(type, data)) FROM unnest(types) type) THEN
+        IF (SELECT NOT bool_or(ox__validate_json_schema_type(type, data)) FROM unnest(types) type) THEN
           RETURN false;
         END IF;
       END IF;
@@ -74,7 +74,7 @@ $$
         FOR prop IN SELECT jsonb_object_keys(schema -> 'properties')
           LOOP
             IF data ? prop AND
-               NOT validate_json_schema(schema -> 'properties' -> prop, data -> prop, root_schema) THEN
+               NOT ox_validate_json_schema(schema -> 'properties' -> prop, data -> prop, root_schema) THEN
               RETURN false;
             END IF;
           END LOOP;
@@ -91,14 +91,14 @@ $$
         IF jsonb_typeof(schema -> 'items') = 'object' THEN
           FOR item IN SELECT jsonb_array_elements(data)
             LOOP
-              IF NOT validate_json_schema(schema -> 'items', item, root_schema) THEN
+              IF NOT ox_validate_json_schema(schema -> 'items', item, root_schema) THEN
                 RETURN false;
               END IF;
             END LOOP;
         ELSE
           IF NOT (
             SELECT bool_and(i > jsonb_array_length(schema -> 'items') OR
-                            validate_json_schema(schema -> 'items' -> (i::int - 1), elem, root_schema))
+                            ox_validate_json_schema(schema -> 'items' -> (i::int - 1), elem, root_schema))
             FROM jsonb_array_elements(data) WITH ORDINALITY AS t (elem, i)
           ) THEN
             RETURN false;
@@ -115,7 +115,7 @@ $$
 
       IF jsonb_typeof(schema -> 'additionalItems') = 'object' THEN
         IF NOT (
-          SELECT bool_and(validate_json_schema(schema -> 'additionalItems', elem, root_schema))
+          SELECT bool_and(ox_validate_json_schema(schema -> 'additionalItems', elem, root_schema))
           FROM jsonb_array_elements(data) WITH ORDINALITY AS t (elem, i)
           WHERE i > jsonb_array_length(schema -> 'items')
         ) THEN
@@ -148,14 +148,14 @@ $$
       END IF;
 
       IF schema ? 'anyOf' THEN
-        IF NOT (SELECT bool_or(validate_json_schema(sub_schema, data, root_schema))
+        IF NOT (SELECT bool_or(ox_validate_json_schema(sub_schema, data, root_schema))
                 FROM jsonb_array_elements(schema -> 'anyOf') sub_schema) THEN
           RETURN false;
         END IF;
       END IF;
 
       IF schema ? 'allOf' THEN
-        IF NOT (SELECT bool_and(validate_json_schema(sub_schema, data, root_schema))
+        IF NOT (SELECT bool_and(ox_validate_json_schema(sub_schema, data, root_schema))
                 FROM jsonb_array_elements(schema -> 'allOf') sub_schema) THEN
           RETURN false;
         END IF;
@@ -164,7 +164,7 @@ $$
       IF schema ? 'oneOf' THEN
         IF 1 != (SELECT COUNT(*)
                  FROM jsonb_array_elements(schema -> 'oneOf') sub_schema
-                 WHERE validate_json_schema(sub_schema, data, root_schema)) THEN
+                 WHERE ox_validate_json_schema(sub_schema, data, root_schema)) THEN
           RETURN false;
         END IF;
       END IF;
@@ -189,7 +189,7 @@ $$
             RETURN false;
           END IF;
         ELSEIF NOT (
-          SELECT bool_and(validate_json_schema(schema -> 'additionalProperties', data -> key, root_schema))
+          SELECT bool_and(ox_validate_json_schema(schema -> 'additionalProperties', data -> key, root_schema))
           FROM unnest(props) key
         ) THEN
           RETURN false;
@@ -202,7 +202,7 @@ $$
             FROM UNNEST(regexp_split_to_array(schema ->> '$ref', '/')) path_part
           );
         -- ASSERT path[1] = '#', 'only refs anchored at the root are supported';
-        IF NOT validate_json_schema(root_schema #> path [ 2 : array_length(path, 1)], data, root_schema) THEN
+        IF NOT ox_validate_json_schema(root_schema #> path [ 2 : array_length(path, 1)], data, root_schema) THEN
           RETURN false;
         END IF;
       END IF;
@@ -226,7 +226,7 @@ $$
       END IF;
 
       IF schema ? 'not' THEN
-        IF validate_json_schema(schema -> 'not', data, root_schema) THEN
+        IF ox_validate_json_schema(schema -> 'not', data, root_schema) THEN
           RETURN false;
         END IF;
       END IF;
@@ -265,7 +265,7 @@ $$
                   RETURN false;
                 END IF;
               ELSE
-                IF NOT validate_json_schema(schema -> 'dependencies' -> prop, data, root_schema) THEN
+                IF NOT ox_validate_json_schema(schema -> 'dependencies' -> prop, data, root_schema) THEN
                   RETURN false;
                 END IF;
               END IF;
@@ -286,7 +286,7 @@ $$
               LOOP
                 RAISE NOTICE 'prop %s, pattern %, schema %', prop, pattern, schema -> 'patternProperties' -> pattern;
                 IF prop ~ pattern AND
-                   NOT validate_json_schema(schema -> 'patternProperties' -> pattern, data -> prop, root_schema) THEN
+                   NOT ox_validate_json_schema(schema -> 'patternProperties' -> pattern, data -> prop, root_schema) THEN
                   RETURN false;
                 END IF;
               END LOOP;
