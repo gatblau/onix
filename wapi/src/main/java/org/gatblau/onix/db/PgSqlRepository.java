@@ -44,6 +44,8 @@ public class PgSqlRepository implements DbRepository {
     @Autowired
     private Database db;
 
+    private boolean ready;
+
     public PgSqlRepository() {
     }
 
@@ -1015,18 +1017,22 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public synchronized JSONObject checkReady() {
         JSONObject status = new JSONObject();
+        Database.Version v = null;
         boolean isUpgrade = false;
+        boolean freshInstall = false;
         try {
             // if db not created, then if auto-deploy=true try and create db and deploy schemas
             if (!db.exists()) {
+                freshInstall = true;
                 db.createDb();
             }
             // if db deployed but no schemas and auto-deploy then try deploy schemas
             // gets the version information from the database
-            Database.Version v = db.getVersion();
+            v = db.getVersion();
             // if the schemas have not been deployed
             if (v.app == null) {
                 db.deployDb(false);
+                v = db.getVersion();
             }
             // if version in db does not match version of app and auto-upgrade then try upgrade
             int upgrade =  db.shouldUpgrade();
@@ -1038,24 +1044,32 @@ public class PgSqlRepository implements DbRepository {
                 case 1:
                     isUpgrade = true;
                     db.deployDb(true);
+                    v = db.getVersion(false);
                     break;
                 // the database is newer than the app, it should upgrade the app
                 case -1:
                     throw new RuntimeException(
-                            "Database version is not compatible with application. \n" +
-                            "Please upgrade the application.");
+                        "Database version is not compatible with application. \n" +
+                        "Please upgrade the application.");
+                // the database requires upgrade but it is more than one version behind
+                case -2:
+                    throw new RuntimeException(
+                        "Database requires to be upgraded to work with this version of the application. \n" +
+                        "However, the database is behind more than one version.\n" +
+                        "More than one version upgrades are not supported.\n" +
+                        "To upgrade the database, a previous version of the application has to be deployed first.");
             }
         } catch (Exception ex) {
-            // only if we are not upgrading can delete db to go back to a clean state
-            if (!isUpgrade) {
+            // only if this is a failed fresh installation can delete db to go back to a clean state
+            if (freshInstall) {
                 // if the process of deploying a brand new db failed, then remove the database
                 db.deleteDb();
             }
             throw new RuntimeException("Application is not ready.", ex);
         }
         status.put("status", "ready");
-        status.put("appVersion", db.getVersion().app);
-        status.put("dbVersion", db.getVersion().db);
+        status.put("appVersion", v.app);
+        status.put("dbVersion", v.db);
         return status;
     }
 

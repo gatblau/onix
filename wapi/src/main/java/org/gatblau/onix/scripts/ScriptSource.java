@@ -107,13 +107,16 @@ public class ScriptSource {
         // uses a LinkedHashMap instead of a HashMap so as to keep keys in order
         // then applying scripts occur in the intended sequence as per manifest order
         Map<String, String> map = new LinkedHashMap<>();
-        JSONArray scripts = (JSONArray)dbManifest.get(type);
-        for (Object obj: scripts) {
-            JSONObject schema = (JSONObject)obj;
-            String scriptName = (String)schema.get("file");
-            String dbScriptUrl = getDbScriptURI(dbManifest.get("release").toString(), scriptName);
-            String dbScript = getContent(dbScriptUrl, null, null);
-            map.put(scriptName, dbScript);
+        Object sc = dbManifest.get(type);
+        if (sc != null) {
+            JSONArray scripts = (JSONArray) sc;
+            for (Object obj : scripts) {
+                JSONObject schema = (JSONObject) obj;
+                String scriptName = (String) schema.get("file");
+                String dbScriptUrl = getDbScriptURI(dbManifest.get("release").toString(), scriptName);
+                String dbScript = getContent(dbScriptUrl, null, null);
+                map.put(scriptName, dbScript);
+            }
         }
         return map;
     }
