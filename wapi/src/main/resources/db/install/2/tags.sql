@@ -17,10 +17,10 @@ DO $$
   BEGIN
 
     /*
-      create_tag(...):
+      ox_create_tag(...):
         creates a new tag for a subtree starting at the specified root item.
       */
-    CREATE OR REPLACE FUNCTION create_tag(root_item_key_param character varying,
+    CREATE OR REPLACE FUNCTION ox_create_tag(root_item_key_param character varying,
                                           tag_label_param character varying,
                                           tag_name_param character varying,
                                           tag_description_param text,
@@ -103,10 +103,10 @@ DO $$
     $BODY$;
 
     /*
-      update_tag(...):
+      ox_update_tag(...):
         updates some of the attributes of an existing tag (e.g. label, name and description).
       */
-    CREATE OR REPLACE FUNCTION update_tag(root_item_key_param character varying,
+    CREATE OR REPLACE FUNCTION ox_update_tag(root_item_key_param character varying,
                                           current_label_param character varying,
                                           new_label_param character varying,
                                           name_param character varying,
@@ -155,9 +155,9 @@ DO $$
     $BODY$;
 
     /*
-      delete_tag: deletes the specified tag.
+      ox_delete_tag: deletes the specified tag.
      */
-    CREATE OR REPLACE FUNCTION delete_tag(root_item_key_param character varying,
+    CREATE OR REPLACE FUNCTION ox_delete_tag(root_item_key_param character varying,
                                           label_param character varying -- if no label, then deletes all tags for the item
     )
       RETURNS VOID
@@ -174,14 +174,14 @@ DO $$
     END
     $BODY$;
 
-    ALTER FUNCTION delete_tag(character varying, character varying)
+    ALTER FUNCTION ox_delete_tag(character varying, character varying)
       OWNER TO onix;
 
     /*
-      get_tree_content(root_item_key_param, label_param): inspects the tag hstores for information
+      ox_get_tree_content(root_item_key_param, label_param): inspects the tag hstores for information
         about a specific tag items and links and retrieve a set of ids and versions for them.
      */
-    CREATE OR REPLACE FUNCTION get_tree_content(root_item_key_param character varying,
+    CREATE OR REPLACE FUNCTION ox_get_tree_content(root_item_key_param character varying,
                                                 label_param character varying)
       RETURNS TABLE
               (
@@ -206,14 +206,14 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION get_tree_content(character varying, character varying)
+    ALTER FUNCTION ox_get_tree_content(character varying, character varying)
       OWNER TO onix;
 
     /*
-      get_tree_items(root_item_key_param, label_param): gets a list of all the items that are part
+      ox_get_tree_items(root_item_key_param, label_param): gets a list of all the items that are part
         of a tag tree for a specific parent item and a label.
     */
-    CREATE OR REPLACE FUNCTION get_tree_items(root_item_key_param character varying,
+    CREATE OR REPLACE FUNCTION ox_get_tree_items(root_item_key_param character varying,
                                               label_param character varying)
       RETURNS TABLE
               (
@@ -260,7 +260,7 @@ DO $$
                i.updated,
                i.changed_by,
                it.key as item_type_key
-        FROM get_tree_content(root_item_key_param, label_param) s
+        FROM ox_get_tree_content(root_item_key_param, label_param) s
                INNER JOIN item_change i
                           ON i.id = s.id::bigint
                             AND i.version = s.version::bigint
@@ -271,14 +271,14 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION get_tree_items(character varying, character varying)
+    ALTER FUNCTION ox_get_tree_items(character varying, character varying)
       OWNER TO onix;
 
     /*
-      get_tree_links(root_item_key_param, label_param): gets a list of all the links that are part
+      ox_get_tree_links(root_item_key_param, label_param): gets a list of all the links that are part
         of a tag tree for a specific parent item and a label.
      */
-    CREATE OR REPLACE FUNCTION get_tree_links(root_item_key_param character varying,
+    CREATE OR REPLACE FUNCTION ox_get_tree_links(root_item_key_param character varying,
                                               label_param character varying)
       RETURNS TABLE
               (
@@ -310,7 +310,7 @@ DO $$
     BEGIN
       RETURN QUERY
         SELECT l.*, lt.key as link_type_key, start_item.key as start_item_key, end_item.key as end_item_key
-        FROM get_tree_content(root_item_key_param, label_param) s
+        FROM ox_get_tree_content(root_item_key_param, label_param) s
                INNER JOIN link_change l
                           ON l.id = s.id::bigint
                             AND l.version = s.version::bigint
@@ -328,14 +328,14 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION get_tree_links(character varying, character varying)
+    ALTER FUNCTION ox_get_tree_links(character varying, character varying)
       OWNER TO onix;
 
     /*
-      get_item_tags(root_item_key_param): gets a list of tags for a specified items that
+      ox_get_item_tags(root_item_key_param): gets a list of tags for a specified items that
         is the parent for the tag tree.
      */
-    CREATE OR REPLACE FUNCTION get_item_tags(root_item_key_param character varying)
+    CREATE OR REPLACE FUNCTION ox_get_item_tags(root_item_key_param character varying)
       RETURNS TABLE
               (
                 id            integer,
@@ -364,7 +364,7 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION get_item_tags(character varying)
+    ALTER FUNCTION ox_get_item_tags(character varying)
       OWNER TO onix;
 
   END
