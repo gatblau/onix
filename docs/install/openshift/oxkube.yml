@@ -1,0 +1,183 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name:  ox-kube
+  annotations:
+    description: "Deploys the Onix Agent for Kubernetes"
+parameters:
+- name: PLATFORM_ID
+  value: KUBE-01
+  displayName: Platform Identifier
+  description: The unique identifier string for the platform in which the Onix Kube Agent is deployed and processing events.
+  required: true
+- name: LOG_LEVEL
+  value: Info
+  displayName: Log Level
+  description: >-
+    The level of login used by the Onix Kube Agent
+    - i.e. Trace, Debug, Info, Warn, Error, Fatal, Panic
+  required: true
+- name: METRICS
+  value: "false"
+  displayName: Metrics
+  description: >-
+    A flag indicating whether the metrics endpoint should be enabled.
+    - i.e. true or false
+  required: false
+- name: CONSUMER
+  value: webhook
+  displayName: Events Consumer
+  description: >-
+    The type of event consumer used by the Onix Kube Agent to receive event information
+    - i.e. webhook or broker
+  required: true
+- name: ONIX_URL
+  value: http://onixwapi-onix.192.168.64.6.nip.io
+  displayName: Onix WAPI URL
+  description: >-
+    The URL of the Onix Web API
+  required: true
+- name: ONIX_AUTHMODE
+  value: basic
+  displayName: Onix Authentication Method
+  description: >-
+    The method used by the Onix Web API to authenticate requests
+    - i.e. none, basic, oidc
+  required: true
+- name: ONIX_USERNAME
+  value: admin
+  displayName: Onix Username
+  description: >-
+    The username used by the Onix Kube Agent to connect to the Onix Web API
+  required: true
+- name: ONIX_PASSWORD
+  value: 0n1x
+  displayName: Onix Password
+  description: >-
+    The password used by the Onix Kube Agent to connect to the Onix Web API
+  required: true
+objects:
+  - apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      name: oxkube
+    spec:
+      replicas: 1
+      progressDeadlineSeconds: 600
+      revisionHistoryLimit: 10
+      selector:
+        deploymentconfig: oxkube
+      strategy:
+        activeDeadlineSeconds: 21600
+        resources: {}
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+          maxUnavailable: 25%
+          timeoutSeconds: 600
+          updatePeriodSeconds: 1
+        type: Rolling
+      template:
+        metadata:
+          labels:
+            app: oxkube
+            deploymentconfig: oxkube
+        spec:
+          containers:
+            - name: oxkube
+              env:
+                - name: OXKU_ID
+                  value: "${PLATFORM_ID}"
+                - name: OXKU_LOGINLEVEL
+                  value: "${LOG_LEVEL}"
+                - name: OXKU_METRICS
+                  value: "${METRICS}"
+                - name: OXKU_ONIX_AUTHMODE
+                  value: "${ONIX_AUTHMODE}"
+                - name: OXKU_ONIX_URL
+                  value: "${ONIX_URL}"
+                - name: OXKU_ONIX_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: onix-user-secret
+                      key: username
+                - name: OXKU_ONIX_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: onix-user-secret
+                      key: password
+                - name: OXKU_CONSUMERS_CONSUMER
+                  value: "${CONSUMER}"
+              imagePullPolicy: IfNotPresent
+              resources: {}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+      triggers:
+        - type: ConfigChange
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - oxkube
+            from:
+              kind: ImageStreamTag
+              name: oxkube:latest
+  - apiVersion: image.openshift.io/v1
+    kind: ImageStream
+    metadata:
+      annotations:
+      labels:
+        app: oxkube
+      name: oxkube
+    spec:
+      lookupPolicy:
+        local: true
+      tags:
+        - annotations:
+          from:
+            kind: DockerImage
+            name: gatblau/oxkube
+          importPolicy:
+            scheduled: true
+          name: latest
+          referencePolicy:
+            type: Local
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: onix-user-secret
+    type: Opaque
+    stringData:
+      username: "${ONIX_USERNAME}"
+      password: "${ONIX_PASSWORD}"
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: oxkube
+    spec:
+      ports:
+        - name: "8080"
+          port: 8080
+          protocol: TCP
+          targetPort: 8000
+      selector:
+        deploymentconfig: oxkube
+      sessionAffinity: None
+      type: ClusterIP
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: oxkube
+    spec:
+      port:
+        targetPort: 8080
+      to:
+        kind: Service
+        name: oxkube
+        weight: 100
+      wildcardPolicy: None
