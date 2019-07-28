@@ -1026,7 +1026,7 @@ public class PgSqlRepository implements DbRepository {
             Database.Version v = db.getVersion();
             // if the schemas have not been deployed
             if (v.app == null) {
-                db.deployDb();
+                db.deployDb(false);
             }
             // if version in db does not match version of app and auto-upgrade then try upgrade
             int upgrade =  db.shouldUpgrade();
@@ -1037,7 +1037,7 @@ public class PgSqlRepository implements DbRepository {
                 // should upgrade db
                 case 1:
                     isUpgrade = true;
-                    db.upgrade();
+                    db.deployDb(true);
                     break;
                 // the database is newer than the app, it should upgrade the app
                 case -1:

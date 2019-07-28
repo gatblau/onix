@@ -142,6 +142,7 @@ public class ScriptSource {
         JSONObject dbManifest = getDbManifest();
         scripts.put("schemas", getScript(dbManifest, "schemas"));
         scripts.put("functions", getScript(dbManifest, "functions"));
+        scripts.put("upgrade", getScript(dbManifest, "upgrade"));
         return scripts;
     }
 
