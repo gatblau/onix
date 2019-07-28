@@ -123,7 +123,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteItem(String key, String[] role) {
-        return delete(getDeleteItemSQL(), "delete_item", key, role);
+        return delete(getDeleteItemSQL(), "ox_delete_item", key, role);
     }
 
     @Override
@@ -278,7 +278,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public synchronized Result deleteLink(String key, String[] role) {
-        return delete(getDeleteLinkSQL(), "delete_link", key, role);
+        return delete(getDeleteLinkSQL(), "ox_delete_link", key, role);
     }
 
     @Override
@@ -324,7 +324,7 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public synchronized Result clear(String[] role) {
         try {
-            return delete(getClearAllSQL(), "clear_all", null, role);
+            return delete(getClearAllSQL(), "ox_clear_all", null, role);
         } catch (Exception ex) {
             ex.printStackTrace();
             Result result = new Result("CLEAR_ALL");
@@ -389,7 +389,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteItemTypes(String[] role) {
-        return delete(getDeleteItemTypes(), "delete_item_types", null, role);
+        return delete(getDeleteItemTypes(), "ox_delete_item_types", null, role);
     }
 
     @Override
@@ -452,7 +452,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteItemType(String key, String[] role) {
-        return delete(getDeleteItemTypeSQL(), "delete_item_type", key, true, role);
+        return delete(getDeleteItemTypeSQL(), "ox_delete_item_type", key, true, role);
     }
 
     /*
@@ -509,12 +509,12 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteLinkType(String key, String[] role) {
-        return delete(getDeleteLinkTypeSQL(), "delete_link_type", key, true, role);
+        return delete(getDeleteLinkTypeSQL(), "ox_delete_link_type", key, true, role);
     }
 
     @Override
     public Result deleteLinkTypes(String[] role) {
-        return delete(getDeleteLinkTypes(), "delete_link_types", null, role);
+        return delete(getDeleteLinkTypes(), "ox_delete_link_types", null, role);
     }
 
     @Override
@@ -600,12 +600,12 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteLinkRule(String key, String[] role) {
-        return delete(getDeleteLinkRuleSQL(), "delete_link_rule", key, role);
+        return delete(getDeleteLinkRuleSQL(), "ox_delete_link_rule", key, role);
     }
 
     @Override
     public Result deleteLinkRules(String[] role) {
-        return delete(getDeleteLinkRulesSQL(), "delete_link_rules",null, role);
+        return delete(getDeleteLinkRulesSQL(), "ox_delete_link_rules",null, role);
     }
 
     @Override
@@ -653,7 +653,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteItemSQL() {
-        return "SELECT delete_item(" +
+        return "SELECT ox_delete_item(" +
                 "?::character varying," +
                 "?::character varying[]" + // role_key_param
                 ")";
@@ -661,14 +661,14 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteAllItemsSQL() {
-        return "SELECT delete_all_items(" +
+        return "SELECT ox_delete_all_items(" +
                 "?::character varying[]" + // role_key_param
                 ")";
     }
 
     @Override
     public String getDeleteLinkSQL() {
-        return "SELECT delete_link(" +
+        return "SELECT ox_delete_link(" +
                 "?::character varying," +
                 "?::character varying[]" + // role_key_param
                 ")";
@@ -719,14 +719,14 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getClearAllSQL() {
-        return "SELECT clear_all(" +
+        return "SELECT ox_clear_all(" +
                 "?::character varying[]" + // role_key_param
                 ")";
     }
 
     @Override
     public String getDeleteItemTypeSQL() {
-        return "SELECT delete_item_type(" +
+        return "SELECT ox_delete_item_type(" +
                 "?::character varying," +
                 "?::character varying[]" +
                 ")";
@@ -734,7 +734,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteItemTypes() {
-        return "SELECT delete_item_types(" +
+        return "SELECT ox_delete_item_types(" +
                 "?::character varying[]" + // role_key_param
                 ")";
     }
@@ -778,7 +778,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteLinkTypeSQL() {
-        return "SELECT delete_link_type(" +
+        return "SELECT ox_delete_link_type(" +
                 "?::character varying," +
                 "?::character varying[]" + // role_key_param
                 ")";
@@ -786,7 +786,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteLinkTypes() {
-        return "SELECT delete_link_types(" +
+        return "SELECT ox_delete_link_types(" +
                 "?::character varying[]" + // role_key_param
                 ")";
     }
@@ -829,12 +829,12 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteLinkRuleSQL() {
-        return "SELECT delete_link_rule(?::character varying[])";
+        return "SELECT ox_delete_link_rule(?::character varying[])";
     }
 
     @Override
     public String getDeleteLinkRulesSQL() {
-        return "SELECT delete_link_rules(" +
+        return "SELECT ox_delete_link_rules(" +
                 "?::character varying[]" + // role_key_param
                 ")";
     }
@@ -1061,7 +1061,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public synchronized Result deleteModel(String key, String[] role) {
-        return delete(getDeleteModelSQL(), "delete_model", key, true, role);
+        return delete(getDeleteModelSQL(), "ox_delete_model", key, true, role);
     }
 
     @Override
@@ -1204,7 +1204,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteModelSQL() {
-        return "SELECT delete_model(" +
+        return "SELECT ox_delete_model(" +
                 "?::character varying, " + // model_key_param
                 "?::character varying[]" + // role_key_param
                 ")";
@@ -1345,7 +1345,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deletePartition(String key, String[] role) {
-        return delete(getDeletePartitionSQL(), "delete_partition", key, role);
+        return delete(getDeletePartitionSQL(), "ox_delete_partition", key, role);
     }
 
     @Override
@@ -1409,7 +1409,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteRoleSQL() {
-        return "SELECT delete_role(" +
+        return "SELECT ox_delete_role(" +
                 "?::character varying," + // key_param
                 "?::character varying[]" + // role_key_param
                 ")";
@@ -1444,7 +1444,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteRole(String key, String[] role) {
-        return delete(getDeleteRoleSQL(), "delete_role", key, role);
+        return delete(getDeleteRoleSQL(), "ox_delete_role", key, role);
     }
 
     @Override
@@ -1603,7 +1603,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeletePartitionSQL() {
-        return "SELECT delete_partition(" +
+        return "SELECT ox_delete_partition(" +
                 "?::character varying," + // key_param
                 "?::character varying[]" + // role_key_param
                 ")";

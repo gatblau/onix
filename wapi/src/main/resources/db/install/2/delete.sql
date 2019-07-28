@@ -16,7 +16,7 @@ DO
   $$
     BEGIN
 
-    CREATE OR REPLACE FUNCTION get_delete_result(
+    CREATE OR REPLACE FUNCTION ox_get_delete_result(
       row_count int
     )
     RETURNS TABLE(result char(1))
@@ -37,13 +37,13 @@ DO
     END
     $BODY$;
 
-    ALTER FUNCTION get_delete_result(int)
+    ALTER FUNCTION ox_get_delete_result(int)
       OWNER TO onix;
 
      /*
-      delete_partition
+      ox_delete_partition
      */
-      CREATE OR REPLACE FUNCTION delete_partition(
+      CREATE OR REPLACE FUNCTION ox_delete_partition(
         key_param character varying,
         role_key_param character varying[]
       )
@@ -64,17 +64,17 @@ DO
         WHERE p.key = key_param;
 
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        RETURN QUERY SELECT get_delete_result(rows_affected);
+        RETURN QUERY SELECT ox_get_delete_result(rows_affected);
       END
       $BODY$;
 
-      ALTER FUNCTION delete_partition(character varying, character varying[])
+      ALTER FUNCTION ox_delete_partition(character varying, character varying[])
         OWNER TO onix;
 
      /*
-       delete_role
+       ox_delete_role
       */
-     CREATE OR REPLACE FUNCTION delete_role(
+     CREATE OR REPLACE FUNCTION ox_delete_role(
        key_param character varying,
        role_key_param character varying[]
      )
@@ -95,17 +95,17 @@ DO
        WHERE r.key = key_param;
 
        GET DIAGNOSTICS rows_affected := ROW_COUNT;
-       RETURN QUERY SELECT get_delete_result(rows_affected);
+       RETURN QUERY SELECT ox_get_delete_result(rows_affected);
      END
      $BODY$;
 
-     ALTER FUNCTION delete_role(character varying, character varying[])
+     ALTER FUNCTION ox_delete_role(character varying, character varying[])
        OWNER TO onix;
 
       /*
-      delete_model
+      ox_delete_model
      */
-      CREATE OR REPLACE FUNCTION delete_model(
+      CREATE OR REPLACE FUNCTION ox_delete_model(
           key_param character varying,
           role_key_param character varying[]
         )
@@ -129,17 +129,17 @@ DO
           AND r.key = ANY(role_key_param);
 
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        RETURN QUERY SELECT get_delete_result(rows_affected);
+        RETURN QUERY SELECT ox_get_delete_result(rows_affected);
       END
       $BODY$;
 
-      ALTER FUNCTION delete_model(character varying, character varying[])
+      ALTER FUNCTION ox_delete_model(character varying, character varying[])
         OWNER TO onix;
 
       /*
-        delete_item
+        ox_delete_item
        */
-      CREATE OR REPLACE FUNCTION delete_item(
+      CREATE OR REPLACE FUNCTION ox_delete_item(
         key_param character varying,
         role_key_param character varying[]
       )
@@ -162,17 +162,17 @@ DO
 
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
 
-        RETURN QUERY SELECT get_delete_result(rows_affected);
+        RETURN QUERY SELECT ox_get_delete_result(rows_affected);
       END
       $BODY$;
 
-      ALTER FUNCTION delete_item(character varying, character varying[])
+      ALTER FUNCTION ox_delete_item(character varying, character varying[])
         OWNER TO onix;
 
       /*
-        delete_all_items
+        ox_delete_all_items
        */
-      CREATE OR REPLACE FUNCTION delete_all_items(
+      CREATE OR REPLACE FUNCTION ox_delete_all_items(
         role_key_param character varying[]
       )
         RETURNS VOID
@@ -193,13 +193,13 @@ DO
       END
       $BODY$;
 
-      ALTER FUNCTION delete_all_items(character varying[])
+      ALTER FUNCTION ox_delete_all_items(character varying[])
         OWNER TO onix;
 
       /*
-        delete_item_type
+        ox_delete_item_type
        */
-      CREATE OR REPLACE FUNCTION delete_item_type(
+      CREATE OR REPLACE FUNCTION ox_delete_item_type(
         key_param character varying,
         role_key_param character varying[]
       )
@@ -224,17 +224,17 @@ DO
           AND r.key = ANY(role_key_param);
 
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        RETURN QUERY SELECT get_delete_result(rows_affected);
+        RETURN QUERY SELECT ox_get_delete_result(rows_affected);
       END;
       $BODY$;
 
-      ALTER FUNCTION delete_item_type(character varying, character varying[])
+      ALTER FUNCTION ox_delete_item_type(character varying, character varying[])
         OWNER TO onix;
 
       /*
-        delete_link
+        ox_delete_link
        */
-      CREATE OR REPLACE FUNCTION delete_link(
+      CREATE OR REPLACE FUNCTION ox_delete_link(
         key_param character varying,
         role_key_param character varying[]
       )
@@ -260,20 +260,20 @@ DO
           AND pr.can_delete = TRUE;
 
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        RETURN QUERY SELECT get_delete_result(rows_affected);
+        RETURN QUERY SELECT ox_get_delete_result(rows_affected);
       END
       $BODY$;
 
-      ALTER FUNCTION delete_link(
+      ALTER FUNCTION ox_delete_link(
         character varying,
         character varying[] -- role_key_param
       )
         OWNER TO onix;
 
       /*
-        delete_link_type
+        ox_delete_link_type
        */
-      CREATE OR REPLACE FUNCTION delete_link_type(
+      CREATE OR REPLACE FUNCTION ox_delete_link_type(
         key_param character varying,
         role_key_param character varying[]
       )
@@ -297,20 +297,20 @@ DO
           AND pr.can_delete = TRUE;
 
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        RETURN QUERY SELECT get_delete_result(rows_affected);
+        RETURN QUERY SELECT ox_get_delete_result(rows_affected);
       END
       $BODY$;
 
-      ALTER FUNCTION delete_link_type(
+      ALTER FUNCTION ox_delete_link_type(
         character varying,
         character varying[]
       )
         OWNER TO onix;
 
       /*
-        clear_all: deletes all instance data
+        ox_clear_all: deletes all instance data
        */
-      CREATE OR REPLACE FUNCTION clear_all(
+      CREATE OR REPLACE FUNCTION ox_clear_all(
         role_key_param character varying[]
       )
         RETURNS TABLE(result char(1))
@@ -323,22 +323,22 @@ DO
         rows_affected INTEGER;
       BEGIN
         DELETE FROM tag;
-        PERFORM delete_link_types(role_key_param);
-        PERFORM delete_item_types(role_key_param);
-        PERFORM delete_link_rules(role_key_param);
-        PERFORM delete_all_items(role_key_param);
+        PERFORM ox_delete_link_types(role_key_param);
+        PERFORM ox_delete_item_types(role_key_param);
+        PERFORM ox_delete_link_rules(role_key_param);
+        PERFORM ox_delete_all_items(role_key_param);
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        RETURN QUERY SELECT get_delete_result(rows_affected);
+        RETURN QUERY SELECT ox_get_delete_result(rows_affected);
       END
       $BODY$;
 
-      ALTER FUNCTION clear_all(character varying[])
+      ALTER FUNCTION ox_clear_all(character varying[])
         OWNER TO onix;
 
       /*
-        delete_item_types: deletes all item types
+        ox_delete_item_types: deletes all item types
        */
-      CREATE OR REPLACE FUNCTION delete_item_types(
+      CREATE OR REPLACE FUNCTION ox_delete_item_types(
         role_key_param character varying[]
       )
         RETURNS TABLE(result char(1))
@@ -360,17 +360,17 @@ DO
           AND r.key = ANY(role_key_param);
 
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        RETURN QUERY SELECT get_delete_result(rows_affected);
+        RETURN QUERY SELECT ox_get_delete_result(rows_affected);
       END
       $BODY$;
 
-      ALTER FUNCTION delete_item_types(character varying[])
+      ALTER FUNCTION ox_delete_item_types(character varying[])
         OWNER TO onix;
 
       /*
-        delete_link_types: deletes all link types
+        ox_delete_link_types: deletes all link types
        */
-      CREATE OR REPLACE FUNCTION delete_link_types(
+      CREATE OR REPLACE FUNCTION ox_delete_link_types(
         role_key_param character varying[]
       )
         RETURNS TABLE(result char(1))
@@ -392,17 +392,17 @@ DO
           AND r.key = ANY(role_key_param);
 
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        RETURN QUERY SELECT get_delete_result(rows_affected);
+        RETURN QUERY SELECT ox_get_delete_result(rows_affected);
       END
       $BODY$;
 
-      ALTER FUNCTION delete_link_types(character varying[])
+      ALTER FUNCTION ox_delete_link_types(character varying[])
         OWNER TO onix;
 
       /*
-        delete_link_rules: deletes all link rules
+        ox_delete_link_rules: deletes all link rules
        */
-      CREATE OR REPLACE FUNCTION delete_link_rules(
+      CREATE OR REPLACE FUNCTION ox_delete_link_rules(
         role_key_param character varying[]
       )
         RETURNS TABLE(result char(1))
@@ -426,11 +426,11 @@ DO
           AND r.key = ANY(role_key_param);
 
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        RETURN QUERY SELECT get_delete_result(rows_affected);
+        RETURN QUERY SELECT ox_get_delete_result(rows_affected);
       END
       $BODY$;
 
-      ALTER FUNCTION delete_link_rules(
+      ALTER FUNCTION ox_delete_link_rules(
         character varying[] -- role_key_param
       )
       OWNER TO onix;
