@@ -39,5 +39,11 @@
       "file": "tags.sql",
       "checksum": ""
     }
+  ],
+  "upgrade": [
+    {
+      "file": "upgrade.sql",
+      "checksum": ""
+    }
   ]
 }
