@@ -17,10 +17,10 @@ DO $$
 BEGIN
 
   /*
-    select array_dedup(array_param):
+    select ox_array_dedup(array_param):
       de-duplicates the elements in the passed-in array.
     */
-  CREATE OR REPLACE FUNCTION array_dedup(array_param anyarray)
+  CREATE OR REPLACE FUNCTION ox_array_dedup(array_param anyarray)
     RETURNS anyarray
     LANGUAGE 'plpgsql'
     STABLE
@@ -48,14 +48,14 @@ BEGIN
   END;
   $BODY$;
 
-  ALTER FUNCTION array_dedup(anyarray)
+  ALTER FUNCTION ox_array_dedup(anyarray)
     OWNER TO onix;
 
   /*
-    select get_child_item_ids(parent_item_ids):
+    select ox_get_child_item_ids(parent_item_ids):
       gets an array of Ids of all child items of the specified parent items.
   */
-  CREATE OR REPLACE FUNCTION get_child_item_ids(parent_item_ids bigint[])
+  CREATE OR REPLACE FUNCTION ox_get_child_item_ids(parent_item_ids bigint[])
     RETURNS TABLE(ids bigint[])
     LANGUAGE 'plpgsql'
     STABLE
@@ -68,14 +68,14 @@ BEGIN
   END;
   $BODY$;
 
-  ALTER FUNCTION get_child_item_ids(bigint[])
+  ALTER FUNCTION ox_get_child_item_ids(bigint[])
     OWNER TO onix;
 
   /*
-    select get_parent_item_ids(child_item_ids):
+    select ox_get_parent_item_ids(child_item_ids):
       gets an array of Ids of all parent items of the specified child items.
   */
-  CREATE OR REPLACE FUNCTION get_parent_item_ids(child_item_ids bigint[])
+  CREATE OR REPLACE FUNCTION ox_get_parent_item_ids(child_item_ids bigint[])
     RETURNS TABLE(ids bigint[])
     LANGUAGE 'plpgsql'
     STABLE
@@ -88,14 +88,14 @@ BEGIN
   END;
   $BODY$;
 
-  ALTER FUNCTION get_parent_item_ids(bigint[])
+  ALTER FUNCTION ox_get_parent_item_ids(bigint[])
     OWNER TO onix;
 
   /*
-    select get_child_item_records(parent_item_ids):
+    select ox_get_child_item_records(parent_item_ids):
       gets set of records containing array of Ids of all child items in the tree for all tree levels.
   */
-  CREATE OR REPLACE FUNCTION get_child_item_records(parent_item_ids bigint[])
+  CREATE OR REPLACE FUNCTION ox_get_child_item_records(parent_item_ids bigint[])
     RETURNS TABLE(ids bigint[])
     LANGUAGE 'plpgsql'
     STABLE
@@ -106,19 +106,19 @@ BEGIN
     -- recurse
     IF (child_item_ids IS NOT NULL) THEN
       RETURN QUERY SELECT child_item_ids;
-      RETURN QUERY SELECT get_child_item_records(child_item_ids::BIGINT[]);
+      RETURN QUERY SELECT ox_get_child_item_records(child_item_ids::BIGINT[]);
     END IF;
   END;
   $BODY$;
 
-  ALTER FUNCTION get_child_item_records(bigint[])
+  ALTER FUNCTION ox_get_child_item_records(bigint[])
     OWNER TO onix;
 
   /*
-    select get_child_link_records(parent_item_ids):
+    select ox_get_child_link_records(parent_item_ids):
       gets set of records containing array of Ids of all child links in the tree for all tree levels.
   */
-  CREATE OR REPLACE FUNCTION get_child_link_records(parent_item_ids bigint[])
+  CREATE OR REPLACE FUNCTION ox_get_child_link_records(parent_item_ids bigint[])
     RETURNS TABLE(ids bigint[])
     LANGUAGE 'plpgsql'
     STABLE
@@ -132,19 +132,19 @@ BEGIN
     -- recurse
     IF (child_link_ids IS NOT NULL) THEN
       RETURN QUERY SELECT child_link_ids;
-      RETURN QUERY SELECT get_child_link_records(child_item_ids::BIGINT[]);
+      RETURN QUERY SELECT ox_get_child_link_records(child_item_ids::BIGINT[]);
     END IF;
   END;
   $BODY$;
 
-  ALTER FUNCTION get_child_link_records(bigint[])
+  ALTER FUNCTION ox_get_child_link_records(bigint[])
     OWNER TO onix;
 
   /*
-    get_child_items(parent_id bigint):
+    ox_get_child_items(parent_id bigint):
       returns an array of the Ids of the child items of a specified item in a tree.
    */
-  CREATE OR REPLACE FUNCTION get_child_items(parent_id bigint)
+  CREATE OR REPLACE FUNCTION ox_get_child_items(parent_id bigint)
     RETURNS BIGINT[]
     LANGUAGE 'plpgsql'
     STABLE
@@ -154,23 +154,23 @@ BEGIN
     item RECORD;
   BEGIN
     FOR item IN
-      SELECT get_child_item_records(ARRAY[parent_id]) AS ids
+      SELECT ox_get_child_item_records(ARRAY[parent_id]) AS ids
       LOOP
         children := children || item.ids;
       END LOOP;
-    children := array_dedup(children);
+    children := ox_array_dedup(children);
     RETURN SORT(children::INT[]);
   END;
   $BODY$;
 
-  ALTER FUNCTION get_child_items(bigint)
+  ALTER FUNCTION ox_get_child_items(bigint)
     OWNER TO onix;
 
   /*
-    get_child_links(parent_id bigint):
+    ox_get_child_links(parent_id bigint):
       returns an array of the Ids of the child links of a specified item in a tree.
    */
-  CREATE OR REPLACE FUNCTION get_child_links(parent_id bigint)
+  CREATE OR REPLACE FUNCTION ox_get_child_links(parent_id bigint)
     RETURNS BIGINT[]
     LANGUAGE 'plpgsql'
     STABLE
@@ -180,22 +180,22 @@ BEGIN
     item RECORD;
   BEGIN
     FOR item IN
-    SELECT get_child_link_records(ARRAY[parent_id]) AS ids
+    SELECT ox_get_child_link_records(ARRAY[parent_id]) AS ids
        LOOP
          children := children || item.ids;
     END LOOP;
-    children := array_dedup(children);
+    children := ox_array_dedup(children);
     RETURN SORT(children::INT[]);
   END;
   $BODY$;
 
-  ALTER FUNCTION get_child_links(bigint)
+  ALTER FUNCTION ox_get_child_links(bigint)
     OWNER TO onix;
 
   /*
-    delete_tree(bigint): deletes all items and links under a specified parent item in an item tree.
+    ox_delete_tree(bigint): deletes all items and links under a specified parent item in an item tree.
    */
-  CREATE OR REPLACE FUNCTION delete_tree(root_item_key character varying)
+  CREATE OR REPLACE FUNCTION ox_delete_tree(root_item_key character varying)
     RETURNS TABLE(links_affected INTEGER, items_affected INTEGER)
     LANGUAGE 'plpgsql'
     VOLATILE
@@ -204,7 +204,7 @@ BEGIN
     links_affected INTEGER := 0;
     items_affected INTEGER := 0;
     root_item_id BIGINT := (SELECT id FROM item WHERE key = root_item_key);
-    child_item_ids BIGINT[] := get_child_items(root_item_id);
+    child_item_ids BIGINT[] := ox_get_child_items(root_item_id);
   BEGIN
     DELETE FROM link WHERE start_item_id = ANY(child_item_ids::BIGINT[]) OR end_item_id = ANY(child_item_ids::BIGINT[]);
     GET DIAGNOSTICS links_affected := ROW_COUNT;
@@ -214,7 +214,7 @@ BEGIN
   END;
   $BODY$;
 
-  ALTER FUNCTION delete_tree(character varying)
+  ALTER FUNCTION ox_delete_tree(character varying)
     OWNER TO onix;
 
 END

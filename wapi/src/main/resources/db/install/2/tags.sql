@@ -44,7 +44,7 @@ DO $$
     BEGIN
       root_item_id := (SELECT i.id FROM item i WHERE i.key = root_item_key_param);
 
-      tree_ids := (SELECT get_child_items(root_item_id));
+      tree_ids := (SELECT ox_get_child_items(root_item_id));
       FOR loop_item IN
         SELECT DISTINCT ON (ic.id) ic.id, ic.version
         FROM item_change ic
@@ -54,7 +54,7 @@ DO $$
           item_store := item_store || hstore(loop_item.id::TEXT, loop_item.version::TEXT);
         END LOOP;
 
-      tree_ids := (SELECT get_child_links(root_item_id));
+      tree_ids := (SELECT ox_get_child_links(root_item_id));
       FOR loop_item IN
         SELECT DISTINCT ON (lc.id) lc.id, lc.version
         FROM link_change lc
