@@ -69,7 +69,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(10, getUser()); // changed_by_param
             db.setString(11, item.getPartition()); // partition_key_param
             db.setArray(12, role); // role_key_param
-            result.setOperation(db.executeQueryAndRetrieveStatus("set_item"));
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_item"));
         } catch (Exception ex) {
             ex.printStackTrace();
             result.setError(true);
@@ -266,7 +266,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(9, link.getVersion());
             db.setString(10, getUser());
             db.setArray(11, role);
-            result.setOperation(db.executeQueryAndRetrieveStatus("set_link"));
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_link"));
         } catch (Exception ex) {
             result.setError(true);
             result.setMessage(String.format("Failed to create or update link with key '%s': %s", key, ex.getMessage()));
@@ -439,7 +439,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(8, itemType.getModelKey()); // meta model key
             db.setString(9, getUser()); // changed_by_param
             db.setArray(10, role);
-            result.setOperation(db.executeQueryAndRetrieveStatus("set_item_type"));
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_item_type"));
         } catch (Exception ex) {
             ex.printStackTrace();
             result.setMessage(ex.getMessage());
@@ -496,7 +496,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(7, linkType.getModelKey()); // model_key_param
             db.setString(8, getUser()); // changed_by_param
             db.setArray(9, role);
-            result.setOperation(db.executeQueryAndRetrieveStatus("set_link_type"));
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_link_type"));
         } catch (Exception ex) {
             ex.printStackTrace();
             result.setMessage(ex.getMessage());
@@ -587,7 +587,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(7, linkRule.getVersion()); // version_param
             db.setString(8, getUser()); // changed_by_param
             db.setArray(9, role); // roel_key_param
-            result.setOperation(db.executeQueryAndRetrieveStatus("set_link_rule"));
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_link_rule"));
         } catch (Exception ex) {
             ex.printStackTrace();
             result.setError(true);
@@ -618,7 +618,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getSetItemSQL() {
-        return "SELECT set_item(" +
+        return "SELECT ox_set_item(" +
                 "?::character varying," +
                 "?::character varying," +
                 "?::text," +
@@ -684,7 +684,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getSetLinkSQL() {
-        return "SELECT set_link(" +
+        return "SELECT ox_set_link(" +
                 "?::character varying," + // key
                 "?::character varying," + // link_type_key
                 "?::character varying," + // start_item_key
@@ -754,7 +754,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getSetItemTypeSQL() {
-        return "SELECT set_item_type(" +
+        return "SELECT ox_set_item_type(" +
                 "?::character varying," + // key
                 "?::character varying," + // name
                 "?::text," + // description
@@ -806,7 +806,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getSetLinkTypeSQL() {
-        return "SELECT set_link_type(" +
+        return "SELECT ox_set_link_type(" +
                 "?::character varying," + // key
                 "?::character varying," + // name
                 "?::text," + // description
@@ -1076,7 +1076,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(5, getUser()); // changed_by_param
             db.setString(6, model.getPartition()); // partition_key_param
             db.setArray(7, role);
-            result.setOperation(db.executeQueryAndRetrieveStatus("set_model"));
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_model"));
         } catch (Exception ex) {
             ex.printStackTrace();
             result.setError(true);
@@ -1125,7 +1125,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getSetModelSQL() {
-        return "SELECT set_model(" +
+        return "SELECT ox_set_model(" +
                 "?::character varying," + // key_param
                 "?::character varying," + // name_param
                 "?::text," + // description_param
@@ -1212,7 +1212,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getSetLinkRuleSQL() {
-        return "SELECT set_link_rule(" +
+        return "SELECT ox_set_link_rule(" +
                 "?::character varying," + // key
                 "?::character varying," + // name
                 "?::text," + // description
@@ -1360,7 +1360,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(4, part.getVersion()); // version_param
             db.setString(5, getUser()); // changed_by_param
             db.setArray(6, role); // role_key_param
-            result.setOperation(db.executeQueryAndRetrieveStatus("set_partition"));
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_partition"));
         } catch (Exception ex) {
             ex.printStackTrace();
             result.setError(true);
@@ -1417,7 +1417,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getSetRoleSQL() {
-        return "SELECT set_role(" +
+        return "SELECT ox_set_role(" +
                 "?::character varying," + // key_param
                 "?::character varying," + // name_param
                 "?::text," + // description_param
@@ -1459,7 +1459,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(4, roleData.getVersion()); // version_param
             db.setString(5, getUser()); // changed_by_param
             db.setArray(6, role); // role_key_param
-            result.setOperation(db.executeQueryAndRetrieveStatus("set_role"));
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_role"));
         } catch (Exception ex) {
             ex.printStackTrace();
             result.setError(true);
@@ -1519,7 +1519,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(5, privilege.isCanDelete()); // can_delete_param
             db.setString(6, getUser()); // changed_by_param
             db.setArray(7, role); // role_key_param
-            result.setOperation(db.executeQueryAndRetrieveStatus("add_privilege"));
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_add_privilege"));
         } catch (Exception ex) {
             ex.printStackTrace();
             result.setError(true);
@@ -1573,7 +1573,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getAddPrivilegeSQL() {
-        return "SELECT add_privilege(" +
+        return "SELECT ox_add_privilege(" +
                 "?::character varying," + // role_key_param
                 "?::character varying," + // privilege_key_param
                 "?::boolean," + // can_create_param
@@ -1586,7 +1586,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getRemovePrivilegeSQL() {
-        return "SELECT remove_privilege(" +
+        return "SELECT ox_remove_privilege(" +
                 "?::character varying," + // role_key_param
                 "?::character varying," + // privilege_key_param
                 "?::character varying[]" + // logged_role_key_param
@@ -1611,7 +1611,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getSetPartitionSQL() {
-        return "SELECT set_partition(" +
+        return "SELECT ox_set_partition(" +
                 "?::character varying," + // key_param
                 "?::character varying," + // name_param
                 "?::text," + // description_param

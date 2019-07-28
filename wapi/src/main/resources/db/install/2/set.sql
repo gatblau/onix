@@ -16,10 +16,10 @@
 DO $$
   BEGIN
     /*
-      set_version(...)
+      ox_set_version(...)
       Inserts a new record in the version control table.
      */
-    CREATE OR REPLACE FUNCTION set_version(
+    CREATE OR REPLACE FUNCTION ox_set_version(
       application_version_param CHARACTER VARYING(25),
       database_version_param    CHARACTER VARYING(25),
       description_param         TEXT,
@@ -50,10 +50,10 @@ DO $$
     $BODY$;
 
     /*
-      set_partition(...)
+      ox_set_partition(...)
       Inserts a new or updates an existing partition.
      */
-    CREATE OR REPLACE FUNCTION set_partition(
+    CREATE OR REPLACE FUNCTION ox_set_partition(
       key_param character varying,
       name_param character varying,
       description_param text,
@@ -123,7 +123,7 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION set_partition(
+    ALTER FUNCTION ox_set_partition(
         character varying, -- key
         character varying, -- name
         text, -- description
@@ -134,10 +134,10 @@ DO $$
       OWNER TO onix;
 
     /*
-      set_role(...)
+      ox_set_role(...)
       Inserts a new or updates an existing role.
     */
-    CREATE OR REPLACE FUNCTION set_role(
+    CREATE OR REPLACE FUNCTION ox_set_role(
       key_param character varying,
       name_param character varying,
       description_param text,
@@ -207,7 +207,7 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION set_role(
+    ALTER FUNCTION ox_set_role(
         character varying, -- key
         character varying, -- name
         text, -- description
@@ -218,10 +218,10 @@ DO $$
       OWNER TO onix;
 
     /*
-      set_model(...)
+      ox_set_model(...)
       Inserts a new or updates an existing meta model.
      */
-    CREATE OR REPLACE FUNCTION set_model(
+    CREATE OR REPLACE FUNCTION ox_set_model(
          key_param character varying,
          name_param character varying,
          description_param text,
@@ -330,7 +330,7 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION set_model(
+    ALTER FUNCTION ox_set_model(
         character varying, -- key
         character varying, -- name
         text, -- description
@@ -342,7 +342,7 @@ DO $$
       OWNER TO onix;
 
     /*
-      set_item(...)
+      ox_set_item(...)
       Inserts a new or updates an existing item.
       Concurrency Management:
        - If the item is found in the database, the function attempts an update of the existing record.
@@ -350,7 +350,7 @@ DO $$
           If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
        - If the item is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
      */
-    CREATE OR REPLACE FUNCTION set_item(
+    CREATE OR REPLACE FUNCTION ox_set_item(
         key_param character varying,
         name_param character varying,
         description_param text,
@@ -536,7 +536,7 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION set_item(
+    ALTER FUNCTION ox_set_item(
         character varying,
         character varying,
         text,
@@ -553,7 +553,7 @@ DO $$
       OWNER TO onix;
 
     /*
-      set_item_type(...)
+      ox_set_item_type(...)
       Inserts a new or updates an existing item item.
       Concurrency Management:
        - If the item type is found in the database, the function attempts an update of the existing record.
@@ -561,7 +561,7 @@ DO $$
           If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
        - If the item type is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
      */
-    CREATE OR REPLACE FUNCTION set_item_type(
+    CREATE OR REPLACE FUNCTION ox_set_item_type(
         key_param character varying,
         name_param character varying,
         description_param text,
@@ -682,7 +682,7 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION set_item_type(
+    ALTER FUNCTION ox_set_item_type(
         character varying, -- key
         character varying, -- name
         text, -- description
@@ -697,7 +697,7 @@ DO $$
       OWNER TO onix;
 
     /*
-      set_link_type(...)
+      ox_set_link_type(...)
       Inserts a new or updates an existing link type.
       Concurrency Management:
        - If the link type is found in the database, the function attempts an update of the existing record.
@@ -705,7 +705,7 @@ DO $$
           If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
        - If the link type is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
      */
-    CREATE OR REPLACE FUNCTION set_link_type(
+    CREATE OR REPLACE FUNCTION ox_set_link_type(
         key_param character varying,
         name_param character varying,
         description_param text,
@@ -816,7 +816,7 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION set_link_type(
+    ALTER FUNCTION ox_set_link_type(
       character varying, -- key
       character varying, -- name
       text, -- description
@@ -830,7 +830,7 @@ DO $$
       OWNER TO onix;
 
     /*
-      set_link(...)
+      ox_set_link(...)
       Inserts a new or updates an existing link.
       Concurrency Management:
        - If the link is found in the database, the function attempts an update of the existing record.
@@ -838,7 +838,7 @@ DO $$
           If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
        - If the link is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
      */
-    CREATE OR REPLACE FUNCTION set_link(
+    CREATE OR REPLACE FUNCTION ox_set_link(
       key_param character varying,
       link_type_key_param character varying,
       start_item_key_param character varying,
@@ -1036,7 +1036,7 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION set_link(
+    ALTER FUNCTION ox_set_link(
         character varying,
         character varying,
         character varying,
@@ -1052,7 +1052,7 @@ DO $$
       OWNER TO onix;
 
     /*
-      set_link_rule(...)
+      ox_set_link_rule(...)
       Inserts a new or updates an existing link rule.
       Concurrency Management:
        - If the link rule is found in the database, the function attempts an update of the existing record.
@@ -1060,7 +1060,7 @@ DO $$
           If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
        - If the link rule is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
      */
-    CREATE OR REPLACE FUNCTION set_link_rule(
+    CREATE OR REPLACE FUNCTION ox_set_link_rule(
       key_param character varying,
       name_param character varying,
       description_param text,
@@ -1204,7 +1204,7 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION set_link_rule(
+    ALTER FUNCTION ox_set_link_rule(
       character varying,
       character varying,
       text,
@@ -1218,9 +1218,9 @@ DO $$
       OWNER TO onix;
 
     /*
-      add_privilege()
+      ox_add_privilege()
     */
-    CREATE OR REPLACE FUNCTION add_privilege(
+    CREATE OR REPLACE FUNCTION ox_add_privilege(
       partition_key_param character varying,
       role_key_param character varying,
       can_create_param boolean,
@@ -1293,7 +1293,7 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION add_privilege(
+    ALTER FUNCTION ox_add_privilege(
        character varying,
        character varying,
        boolean,
@@ -1306,9 +1306,9 @@ DO $$
 
 
     /*
-      remove_privilege()
+      ox_remove_privilege()
     */
-    CREATE OR REPLACE FUNCTION remove_privilege(
+    CREATE OR REPLACE FUNCTION ox_remove_privilege(
       partition_key_param character varying,
       role_key_param character varying,
       logged_role_key_param character varying[]
@@ -1365,7 +1365,7 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION remove_privilege(
+    ALTER FUNCTION ox_remove_privilege(
         character varying,
         character varying,
         character varying[]

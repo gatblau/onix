@@ -344,7 +344,7 @@ class Database {
     private void setVersion(String appVer, String dbVer, String desc, String scriptSrc) {
         log.info(String.format("Recording version of database installed: %s:%s.", appVer, dbVer));
         try {
-            prepare("SELECT set_version(" +
+            prepare("SELECT ox_set_version(" +
                     "?::character varying," +
                     "?::character varying," +
                     "?::text," +
