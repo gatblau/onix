@@ -1,4 +1,4 @@
-# Onix Models <img src="../pics/ox.png" width="125" height="125" align="right">
+# Onix Models <img src="../pics/ox.png" width="200" height="200" align="right">
 
 _A model is a collection of __item and link types__ which define a template for storing a domain specific configuration._
 
@@ -10,5 +10,6 @@ This section provides a list of pre-configured models as follows:
 |---|---|
 | [Ansible Inventory](ansible_inventory/readme.md) | Provides the types and rules required to support storage of Ansible inventories. |
 | [AWS EC2](aws_ec2/readme.md) | Provides the types and rules required to support storage of AWS EC2 resources. |
+| [Kubernetes](k8s/readme.md) | Provides the types and rules to support the recording of Kubernetes namespaces, services, pods, etc. |
 
 ([up](../../readme.md))
