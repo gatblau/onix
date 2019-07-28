@@ -33,10 +33,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.sql.*;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.sql.Date;
+import java.util.*;
 
 @Service
 @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
@@ -229,8 +227,11 @@ class Database {
             // deploys the schemas first
             Map<String, String> sc = null;
             if (isUpgrade) {
+                log.info("Upgrading database.");
                 // if this is an upgrade, then load upgrade scripts
                 sc = scripts.get("upgrade");
+                // drops the existing database functions
+                dropFunctions();
             } else {
                 // if not an upgrade, load the table schemas
                 sc = scripts.get("schemas");
@@ -281,12 +282,16 @@ class Database {
         return exists;
     }
 
+    Version getVersion(){
+        return getVersion(false);
+    }
+
     /**
      * gets the version information from the database
      * @return a varsion instance containing app and db versions
      */
-    Version getVersion() {
-        if (version == null) {
+    Version getVersion(boolean refresh) {
+        if (version == null || refresh) {
             version = new Version();
             Connection conn = null;
             try {
@@ -324,6 +329,10 @@ class Database {
             // version in the database is less than the one the app requires
             // should upgrade
             log.warn(String.format("Database version '%s' should be upgraded to version '%s' to meet the requirements of the application.", dbv, appdbv));
+            if (appdbv - dbv > 1) {
+                // more than one version difference exists
+                return -2;
+            }
             return 1;
         }
         else if (dbv == appdbv) {
@@ -375,6 +384,29 @@ class Database {
                     "DROP USER %s", dbName, dbName, dbUser), "postgres");
         } catch (Exception e) {
             log.warn(String.format("Failed to drop database '%s' after deployment failure: %s.", dbName, e.getMessage()));
+        }
+    }
+
+    /**
+     * drops all onix functions in the database
+     */
+    void dropFunctions() {
+        StringBuilder dropStatement = new StringBuilder();
+        // retrieve all function names
+        String query = "SELECT routines.routine_name as fx_name\n" +
+                "FROM information_schema.routines\n" +
+                "WHERE routines.specific_schema='public'\n" +
+                "AND routines.routine_name LIKE 'ox_%'\n" +
+                "ORDER BY routines.routine_name;";
+        try {
+            prepare(query);
+            ResultSet set = executeQuery();
+            while (set.next()){
+                dropStatement.append(String.format("DROP FUNCTION IF EXISTS %s;\n", set.getString("fx_name")));
+            }
+            runScriptFromString(new String(dbAdminPwd), dropStatement.toString(), dbName);
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }
