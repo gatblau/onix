@@ -26,7 +26,7 @@ APP_VER = v0.0.2
 DANGLING_IMS = $(shell docker images -f dangling=true -q)
 
 # produce a new version tag
-version:
+set-version:
 	sh version.sh $(APP_VER)
 
 # build the onix docker image
