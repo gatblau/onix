@@ -17,9 +17,9 @@ $$
 BEGIN
 
 /*
-  find_items: find items that comply with the passed-in query parameters
+  ox_find_items: find items that comply with the passed-in query parameters
  */
-CREATE OR REPLACE FUNCTION find_items(
+CREATE OR REPLACE FUNCTION ox_find_items(
     tag_param text[], -- zero (null) or more tags
     attribute_param hstore, -- zero (null) or more key->regex pair attributes
     status_param smallint, -- zero (null) or one status
@@ -107,7 +107,7 @@ BEGIN
 END
 $BODY$;
 
-ALTER FUNCTION find_items(
+ALTER FUNCTION ox_find_items(
     text[],
     hstore,
     smallint,
@@ -123,9 +123,9 @@ ALTER FUNCTION find_items(
   OWNER TO onix;
 
 /*
-  find_links: find links that comply with the passed-in query parameters
+  ox_find_links: find links that comply with the passed-in query parameters
  */
-CREATE OR REPLACE FUNCTION find_links(
+CREATE OR REPLACE FUNCTION ox_find_links(
   start_item_key_param character varying, -- zero (null) or one start item
   end_item_key_param character varying, -- zero (null) or one end item
   tag_param text[], -- zero (null) or more tags
@@ -210,7 +210,7 @@ BEGIN
 END
 $BODY$;
 
-ALTER FUNCTION find_links(
+ALTER FUNCTION ox_find_links(
   character varying,
   character varying,
   text[],
@@ -227,9 +227,9 @@ ALTER FUNCTION find_links(
 OWNER TO onix;
 
 /*
-  find_item_types: find item types that comply with the passed-in query parameters
+  ox_find_item_types: find item types that comply with the passed-in query parameters
  */
-CREATE OR REPLACE FUNCTION find_item_types(
+CREATE OR REPLACE FUNCTION ox_find_item_types(
     attr_valid_param hstore, -- zero (null) or more key->regex pair attributes
     date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
@@ -295,7 +295,7 @@ BEGIN
 END
 $BODY$;
 
-ALTER FUNCTION find_item_types(
+ALTER FUNCTION ox_find_item_types(
   hstore,
   timestamp(6) with time zone, -- created from
   timestamp(6) with time zone, -- created to
@@ -307,9 +307,9 @@ ALTER FUNCTION find_item_types(
 OWNER TO onix;
 
 /*
-  find_link_types: find link types that comply with the passed-in query parameters
+  ox_find_link_types: find link types that comply with the passed-in query parameters
  */
-CREATE OR REPLACE FUNCTION find_link_types(
+CREATE OR REPLACE FUNCTION ox_find_link_types(
     attr_valid_param hstore, -- zero (null) or more key->regex pair attributes
     date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
@@ -373,7 +373,7 @@ BEGIN
 END
 $BODY$;
 
-ALTER FUNCTION find_link_types(
+ALTER FUNCTION ox_find_link_types(
   hstore,
   timestamp(6) with time zone, -- created from
   timestamp(6) with time zone, -- created to
@@ -385,9 +385,9 @@ ALTER FUNCTION find_link_types(
 OWNER TO onix;
 
 /*
-  find_items_change: find change records for items that comply with the passed-in query parameters
+  ox_find_items_change: find change records for items that comply with the passed-in query parameters
  */
-CREATE OR REPLACE FUNCTION find_items_change(
+CREATE OR REPLACE FUNCTION ox_find_items_change(
   item_key_param character varying,
   date_changed_from_param timestamp(6) with time zone, -- none (null) or updated from date
   date_changed_to_param timestamp(6) with time zone -- none (null) or updated to date
@@ -440,7 +440,7 @@ BEGIN
 END
 $BODY$;
 
-ALTER FUNCTION find_items_change(
+ALTER FUNCTION ox_find_items_change(
   character varying, -- item natural key
   timestamp(6) with time zone, -- change date from
   timestamp(6) with time zone -- change date to
@@ -448,9 +448,9 @@ ALTER FUNCTION find_items_change(
 OWNER TO onix;
 
 /*
-  find_links_change: find change records for links that comply with the passed-in query parameters
+  ox_find_links_change: find change records for links that comply with the passed-in query parameters
  */
-CREATE OR REPLACE FUNCTION find_links_change(
+CREATE OR REPLACE FUNCTION ox_find_links_change(
     link_key_param character varying,
     date_changed_from_param timestamp(6) with time zone, -- none (null) or updated from date
     date_changed_to_param timestamp(6) with time zone -- none (null) or updated to date
@@ -509,7 +509,7 @@ BEGIN
 END
 $BODY$;
 
-ALTER FUNCTION find_links_change(
+ALTER FUNCTION ox_find_links_change(
   character varying, -- item natural key
   timestamp(6) with time zone, -- change date from
   timestamp(6) with time zone -- change date to
@@ -517,10 +517,10 @@ ALTER FUNCTION find_links_change(
 OWNER TO onix;
 
 /*
-  get_links_from_item_count: find the number of links of a particular type that are associated with an start item.
+  ox_get_links_from_item_count: find the number of links of a particular type that are associated with an start item.
      Can use the link attributes to filter the result.
  */
-CREATE OR REPLACE FUNCTION get_links_from_item_count(
+CREATE OR REPLACE FUNCTION ox_get_links_from_item_count(
     item_key_param character varying, -- item natural key
     attribute_param hstore -- filter for links
   )
@@ -544,17 +544,17 @@ BEGIN
 END
 $BODY$;
 
-ALTER FUNCTION get_links_from_item_count(
+ALTER FUNCTION ox_get_links_from_item_count(
   character varying, -- item natural key
   hstore -- filter for links
 )
 OWNER TO onix;
 
 /*
-  get_links_to_item_count: find the number of links of a particular type that are associated with an end item.
+  ox_get_links_to_item_count: find the number of links of a particular type that are associated with an end item.
      Can use the link attributes to filter the result.
  */
-CREATE OR REPLACE FUNCTION get_links_to_item_count(
+CREATE OR REPLACE FUNCTION ox_get_links_to_item_count(
     item_key_param character varying, -- item natural key
     attribute_param hstore -- filter for links
   )
@@ -578,16 +578,16 @@ BEGIN
 END
 $BODY$;
 
-ALTER FUNCTION get_links_to_item_count(
+ALTER FUNCTION ox_get_links_to_item_count(
   character varying, -- item natural key
   hstore -- filter for links
 )
 OWNER TO onix;
 
 /*
-  find_link_rules: find link rules that comply with the passed-in query parameters
+  ox_find_link_rules: find link rules that comply with the passed-in query parameters
  */
-CREATE OR REPLACE FUNCTION find_link_rules(
+CREATE OR REPLACE FUNCTION ox_find_link_rules(
   link_type_key_param character varying, -- none (null) or link type key
   start_item_type_key_param character varying, -- none (null) or start item type key
   end_item_type_key_param character varying, -- none (null) or end item type key
@@ -657,7 +657,7 @@ BEGIN
 END
 $BODY$;
 
-ALTER FUNCTION find_link_rules(
+ALTER FUNCTION ox_find_link_rules(
   character varying, -- link_type key
   character varying, -- start item_type key
   character varying, -- end item_type key
@@ -670,9 +670,9 @@ ALTER FUNCTION find_link_rules(
 OWNER TO onix;
 
 /*
-  find_child_items: returns a list of child items which are linked to the specified item.
+  ox_find_child_items: returns a list of child items which are linked to the specified item.
  */
-CREATE OR REPLACE FUNCTION find_child_items(
+CREATE OR REPLACE FUNCTION ox_find_child_items(
   parent_item_key_param character varying,
   link_type_key_param character varying
 )
@@ -727,14 +727,14 @@ BEGIN
 END
 $BODY$;
 
-ALTER FUNCTION find_child_items(character varying, character varying) OWNER TO onix;
+ALTER FUNCTION ox_find_child_items(character varying, character varying) OWNER TO onix;
 
 /*
-  get_table_count:
+  ox_get_table_count:
     returns the number of tables in the database.
     this function is used to test readiness of the database service.
  */
-CREATE OR REPLACE FUNCTION get_table_count()
+CREATE OR REPLACE FUNCTION ox_get_table_count()
 RETURNS TABLE(count bigint)
   LANGUAGE 'plpgsql'
   COST 100
@@ -749,12 +749,12 @@ BEGIN
 END
 $BODY$;
 
-ALTER FUNCTION get_table_count() OWNER TO onix;
+ALTER FUNCTION ox_get_table_count() OWNER TO onix;
 
 /*
-  get_model_item_types(model_key_param): get all item types in a model
+  ox_get_model_item_types(model_key_param): get all item types in a model
  */
-CREATE OR REPLACE FUNCTION get_model_item_types(
+CREATE OR REPLACE FUNCTION ox_get_model_item_types(
   model_key_param character varying -- model natural key
 )
   RETURNS TABLE(
@@ -796,12 +796,12 @@ BEGIN
 END;
   $BODY$;
 
-ALTER FUNCTION get_model_item_types(character varying) OWNER TO onix;
+ALTER FUNCTION ox_get_model_item_types(character varying) OWNER TO onix;
 
 /*
-  get_model_link_types(model_key_param): get all link types in a model
+  ox_get_model_link_types(model_key_param): get all link types in a model
  */
-CREATE OR REPLACE FUNCTION get_model_link_types(
+CREATE OR REPLACE FUNCTION ox_get_model_link_types(
   model_key_param character varying -- model natural key
 )
   RETURNS TABLE(
@@ -842,12 +842,12 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION get_model_link_types(character varying) OWNER TO onix;
+ALTER FUNCTION ox_get_model_link_types(character varying) OWNER TO onix;
 
 /*
-  get_model_link_rules(model_key_param): get all link rules in a model
+  ox_get_model_link_rules(model_key_param): get all link rules in a model
  */
-CREATE OR REPLACE FUNCTION get_model_link_rules(
+CREATE OR REPLACE FUNCTION ox_get_model_link_rules(
   model_key_param character varying -- model natural key
 )
   RETURNS TABLE(
@@ -897,7 +897,7 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION get_model_link_rules(character varying) OWNER TO onix;
+ALTER FUNCTION ox_get_model_link_rules(character varying) OWNER TO onix;
 
 END
 $$;
