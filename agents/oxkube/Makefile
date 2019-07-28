@@ -23,7 +23,7 @@ BINARY_NAME=oxkube
 GO_CMD = go
 
 # the version of the application
-APP_VER = v0.0.1
+APP_VER = v0.0.2
 
 # the name of the folder where the packaged binaries will be placed after the build
 BUILD_FOLDER=build
@@ -37,7 +37,7 @@ build:
 	export GOROOT=/usr/local/go; export GOPATH=$HOME/go; $(GO_CMD) build -o $(BINARY_NAME) -v
 
 # produce a new version tag
-version:
+set-version:
 	sh version.sh $(APP_VER)
 
 # build the ox-kube docker image
