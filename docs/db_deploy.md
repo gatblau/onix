@@ -27,15 +27,17 @@ The auto upgrade logic is as follows:
 1. Compares the current database schema version against the one required by the current application, then
 2. If the current database schema version is the same as the version required by the application then go to ready state
 3. If the current database schema version is greater than the version required by the application then raises an exception - the container will not run
-4. If the current database schema version is smaller than the version required by the application then triggers the update procedure if auto updates is enabled 
+4. If the current database schema version is less than the version required by the application then triggers the update procedure if auto updates are enabled.
 
 ### Upgrade Procedure
 
-Currently, the upgrade procedure logic is not implemented (i.e. raises Unsupported Operation Exception). However, the logic when implemented, will be as follows:
+The upgrade logic is as follows:
 
 1. Drop all functions for the current schema version
-2. Execute schema changes and data migrations
+2. Execute schema changes and data migrations for each subsequent version until the target upgrade version is reached.
 3. Re-create all functions for the new schema version
+
+The automatic upgrade process will sequentially apply schema upgrades version by version until reaching the version required by the running application.
 
 ------
 
@@ -57,25 +59,23 @@ The following structure is required for the deploy/upgrade algorithm to select t
 |           +-- script_2.sql { sql script }
 |           +-- script_3.sql { sql script }
 |       +-- 2/ { schema version 2 forlder }
-|           +-- upgrade/ { upgrades from previous version (1) script folder }
-|               +-- script.sql
 |           +-- db.json { db manifest for schema version 2 }
 |           +-- script_1.sql { sql script }
 |           +-- script_2.sql { sql script }
 |           +-- script_3.sql { sql script }
+|           +-- upgrade.sql { one or more upgrade scripts }
 |       +-- 3/ { schema version 3 forlder }
-|           +-- upgrade/ { upgrades from previous version (2) script folder }
-|               +-- script.sql
 |           +-- db.json { db manifest for schema version 3 }
 |           +-- script_1.sql { sql script }
 |           +-- script_2.sql { sql script }
 |           +-- script_3.sql { sql script }
+|           +-- upgrade.sql { one or more upgrade scripts }
 
 ```
 
 **NOTE**: *the structure above is embedded as resources in the application jar file in the docker image. It can also be deployed on a github repository for remote reading although it is not the preferred storage approach and might be deprecated in future version*.
 
-----------
+------
 
 ## Environment Variables
 
@@ -84,6 +84,6 @@ The following variables control the behaviour of the database operational algori
 | Name | Description | Default |
 |---|---|---|
 | **DB_SCRIPTS_REMOTE** | Whether to use remote scripts (deployed on remote git). The default behaviour is to use local scripts (embedded in the image) | false |
-| **DB_SCRIPTS_URL** | The URL of the folder structure root in the remote git repository. | "https://raw.githubusercontent.com/ gatblau/onix/ <app_commit>/src/main/resources". Note that **<app_commit>** tag in the URL is automatically replaced by the commit hash of the application release in git. |
+| **DB_SCRIPTS_URL** | The URL of the folder structure root in the remote git repository. | "[https://raw.githubusercontent.com/gatblau/onix/<app_commit>/wapi/src/main/resources](https://raw.githubusercontent.com/gatblau/onix/develop/wapi/src/main/resources)". Note that **<app_commit>** tag in the URL is automatically replaced by the commit hash of the application release in git. |
 | **DB_AUTO_DEPLOY** | Whether the readyness probe will attempt to auto deploy the database if it does not exist. | true |
 | **DB_AUTO_UPGRADE** | Whether the readyness probe will attempt to auto upgrade the database if its version is lower than the one required by the current application. | false |
