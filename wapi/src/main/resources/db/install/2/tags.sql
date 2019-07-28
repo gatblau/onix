@@ -149,7 +149,7 @@ DO $$
           description != description_param
         );
       GET DIAGNOSTICS rows_affected := ROW_COUNT;
-      SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
+      SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
       RETURN QUERY SELECT result;
     END;
     $BODY$;
