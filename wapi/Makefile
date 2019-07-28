@@ -17,7 +17,7 @@
 REPO_NAME=gatblau
 
 # the name of the ox-kube binary file
-APP_NAME=onix-snapshot
+APP_NAME=onix
 
 # the version of the application
 APP_VER = v0.0.2
@@ -29,12 +29,21 @@ DANGLING_IMS = $(shell docker images -f dangling=true -q)
 version:
 	sh version.sh $(APP_VER)
 
-# build the ox-kube docker image
-image:
+# build the onix docker image
+snapshot-image:
+	docker build -t $(REPO_NAME)/$(APP_NAME)-snapshot:$(shell cat src/main/resources/version) .
+	docker tag $(REPO_NAME)/$(APP_NAME)-snapshot:$(shell cat src/main/resources/version) $(REPO_NAME)/$(APP_NAME)-snapshot:latest
+
+snapshot-push:
+	docker push $(REPO_NAME)/$(APP_NAME)-snapshot:$(shell cat src/main/resources/version)
+	docker push $(REPO_NAME)/$(APP_NAME)-snapshot:latest
+
+# build the onix docker image
+release-image:
 	docker build -t $(REPO_NAME)/$(APP_NAME):$(shell cat src/main/resources/version) .
 	docker tag $(REPO_NAME)/$(APP_NAME):$(shell cat src/main/resources/version) $(REPO_NAME)/$(APP_NAME):latest
 
-push:
+release-push:
 	docker push $(REPO_NAME)/$(APP_NAME):$(shell cat src/main/resources/version)
 	docker push $(REPO_NAME)/$(APP_NAME):latest
 
