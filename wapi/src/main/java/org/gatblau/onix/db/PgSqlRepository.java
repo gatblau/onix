@@ -1304,7 +1304,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteItemTreeSQL() {
-        return "SELECT delete_tree(" +
+        return "SELECT ox_delete_tree(" +
                 "?::character varying" + // root_item_key_param
                 ")";
     }
