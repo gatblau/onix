@@ -7,8 +7,7 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-rm ./version
-sleep 2
+rm version
 
 # creates a TAG for the newly built docker images
 DATE=`date '+%d%m%y%H%M%S'`
