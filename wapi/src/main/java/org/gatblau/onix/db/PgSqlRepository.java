@@ -1017,47 +1017,33 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public synchronized JSONObject checkReady() {
         JSONObject status = new JSONObject();
-        Database.Version v = null;
-        boolean isUpgrade = false;
+        Database.Version v;
         boolean freshInstall = false;
+        int currentVersion, targetVersion = 0;
         try {
             // if db not created, then if auto-deploy=true try and create db and deploy schemas
             if (!db.exists()) {
                 freshInstall = true;
                 db.createDb();
             }
-            // if db deployed but no schemas and auto-deploy then try deploy schemas
-            // gets the version information from the database
+            // tries and gets the version information from the database
             v = db.getVersion();
-            // if the schemas have not been deployed
-            if (v.app == null) {
-                db.deployDb(false);
-                v = db.getVersion();
-            }
-            // if version in db does not match version of app and auto-upgrade then try upgrade
-            int upgrade =  db.shouldUpgrade();
-            switch (upgrade){
-                // should not upgrade, everything is ok
-                case 0:
-                    break;
-                // should upgrade db
-                case 1:
-                    isUpgrade = true;
-                    db.deployDb(true);
-                    v = db.getVersion(false);
-                    break;
-                // the database is newer than the app, it should upgrade the app
-                case -1:
-                    throw new RuntimeException(
-                        "Database version is not compatible with application. \n" +
-                        "Please upgrade the application.");
-                // the database requires upgrade but it is more than one version behind
-                case -2:
-                    throw new RuntimeException(
-                        "Database requires to be upgraded to work with this version of the application. \n" +
-                        "However, the database is behind more than one version.\n" +
-                        "More than one version upgrades are not supported.\n" +
-                        "To upgrade the database, a previous version of the application has to be deployed first.");
+            // if the schemas have not been deployed (no info found), prepares for a
+            // fresh install by making the current version 0, otherwise the current version is
+            // the one in the database
+            currentVersion = (v.app == null) ? 0 : Integer.parseInt(v.db);
+            // the target version comes from the manifest, and is the one required by the application
+            targetVersion = db.getTargetDbVersion();
+            if (currentVersion == targetVersion) {
+                // nothing to do
+            } else if (currentVersion < targetVersion) {
+                // deploys the schemas/functions
+                db.deployDb(currentVersion, targetVersion);
+                // gets the deployed version
+                v = db.getVersion(true);
+            } else {
+                // the db is newer than the app, the app must stop
+                throw new RuntimeException("The application is too old for this database: upgrade the application to a newer version.");
             }
         } catch (Exception ex) {
             // only if this is a failed fresh installation can delete db to go back to a clean state
@@ -1065,7 +1051,7 @@ public class PgSqlRepository implements DbRepository {
                 // if the process of deploying a brand new db failed, then remove the database
                 db.deleteDb();
             }
-            throw new RuntimeException("Application is not ready.", ex);
+            throw new RuntimeException(ex);
         }
         status.put("status", "ready");
         status.put("appVersion", v.app);

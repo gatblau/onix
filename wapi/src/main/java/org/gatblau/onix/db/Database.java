@@ -215,32 +215,40 @@ class Database {
         }
     }
 
-    public void deployDb(boolean isUpgrade) throws SQLException {
+    public void deployDb(int currentVersion, int targetVersion) throws SQLException {
+        // creates a local variable pwd that should go out of scope at the end of the scope and
+        // be GC by the JVM
+        String ap = new String(dbAdminPwd);
         if (dbAutoDeploy) {
-            // retrieve the relevant db scripts to be deployed before doing anything else
-            Map<String, Map<String, String>> scripts = script.getDbScripts();
+            Map<String, Map<String, String>> targetScripts = script.getDbScripts(Integer.toString(targetVersion));
+            Map<String, String> targetSchemas = targetScripts.get("schemas");
+            Map<String, String> targetFunctions = targetScripts.get("functions");
 
-            // creates a local variable pwd that should go out of scope at the end of the scope and
-            // be GC by the JVM
-            String ap = new String(dbAdminPwd);
-
-            // deploys the schemas first
-            Map<String, String> sc = null;
-            if (isUpgrade) {
-                log.info("Upgrading database.");
-                // if this is an upgrade, then load upgrade scripts
-                sc = scripts.get("upgrade");
-                // drops the existing database functions
-                dropFunctions();
+            // if it is not an upgrade, but a fresh installation
+            if (currentVersion < 1) {
+                // deploy the schemas
+                deployScripts(targetSchemas, ap);
+                log.info("Database schemas successfully created.");
             } else {
-                // if not an upgrade, load the table schemas
-                sc = scripts.get("schemas");
+                log.info("Initiating database upgrade.");
+                // it is an upgrade
+                // drop all current database functions
+                dropFunctions();
+                log.info("Dropped existing database functions.");
+                // loop through upgrade versions and execute upgrade scripts
+                for (int version = currentVersion + 1; version <= targetVersion; version++) {
+                    // retrieve the relevant db scripts to be deployed before doing anything else
+                    // gets the db version is supposed to apply to the app version
+                    Map<String, Map<String, String>> scripts = script.getDbScripts(Integer.toString(version));
+                    Map<String, String> upgradeScripts = scripts.get("upgrade");
+                    deployScripts(upgradeScripts, ap);
+                    log.info(String.format("Database upgraded to version %s.", version));
+                }
             }
-            deployScripts(sc, ap);
 
-            // deploys the functions
-            Map<String, String> funcs = scripts.get("functions");
-            deployScripts(funcs, ap);
+            // now can deploy the functions for the target version
+            deployScripts(targetFunctions, ap);
+            log.info("Database functions deployed.");
 
             // updates the version table
             setVersion(script.getAppVersion(), script.appManifest.get("db").toString(), "Database automatically deployed by Onix", script.getSource());
@@ -319,35 +327,9 @@ class Database {
      * if 1, then it should upgrade db
      * if -1 then it should upgrade app, can't run on the current db version
      */
-    public int shouldUpgrade() {
-        log.info("Verifying database and application compatibility.");
-        Version v = getVersion();
+    public int getTargetDbVersion() {
         JSONObject appManifest = script.getAppManifest();
-        int dbv = Integer.parseInt(v.db); // the current db version
-        int appdbv = Integer.parseInt(appManifest.get("db").toString()); // the db version required by the app
-        if (dbv < appdbv){
-            // version in the database is less than the one the app requires
-            // should upgrade
-            log.warn(String.format("Database version '%s' should be upgraded to version '%s' to meet the requirements of the application.", dbv, appdbv));
-            if (appdbv - dbv > 1) {
-                // more than one version difference exists
-                return -2;
-            }
-            return 1;
-        }
-        else if (dbv == appdbv) {
-            // should not upgrade
-            log.info(String.format("Database version '%s' is correct for the running application version '%s'.", v.db, v.app));
-            return 0;
-        }
-        else {
-            // app cannot run, db version is newer than required by the app!
-            log.error(String.format(
-                "The application cannot start. \n" +
-                "The current database version (i.e. %s), is newer than the version required by the running application (i.e. %s).\n" +
-                "The application should be upgraded for the current database version.", dbv, appdbv));
-            return -1;
-        }
+        return Integer.parseInt(appManifest.get("db").toString()); // the db version required by the app
     }
 
     private void setVersion(String appVer, String dbVer, String desc, String scriptSrc) {

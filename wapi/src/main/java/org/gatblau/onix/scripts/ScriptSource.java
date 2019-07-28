@@ -121,11 +121,9 @@ public class ScriptSource {
         return map;
     }
 
-    private JSONObject getDbManifest() {
-        // gets the db version is supposed to apply to the app version
-        String dbVersion = getAppManifest().get("db").toString();
+    private JSONObject getDbManifest(String databaseVersion) {
         // works out the url of the db manifest
-        String dbManifestUrl = getDbManifestURI(dbVersion);
+        String dbManifestUrl = getDbManifestURI(databaseVersion);
         // fetches the db manifest from the remote url
         return getJSON(dbManifestUrl, null, null);
     }
@@ -139,10 +137,10 @@ public class ScriptSource {
         throw new RuntimeException("Can't find version.");
     }
 
-    public Map<String, Map<String, String>> getDbScripts() {
+    public Map<String, Map<String, String>> getDbScripts(String dbVersion) {
         log.info(String.format("Fetching database deployment scripts from %s.", getSource()));
         Map<String, Map<String, String>> scripts = new HashMap<>();
-        JSONObject dbManifest = getDbManifest();
+        JSONObject dbManifest = getDbManifest(dbVersion);
         scripts.put("schemas", getScript(dbManifest, "schemas"));
         scripts.put("functions", getScript(dbManifest, "functions"));
         scripts.put("upgrade", getScript(dbManifest, "upgrade"));
