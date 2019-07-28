@@ -76,7 +76,7 @@ DO $$
       SELECT version FROM partition WHERE key = key_param INTO current_version;
 
       -- checks the role can modify this role
-      PERFORM can_manage_partition(role_key_param);
+      PERFORM ox_can_manage_partition(role_key_param);
 
       IF (current_version IS NULL) THEN
         INSERT INTO partition (
@@ -117,7 +117,7 @@ DO $$
               description != description_param
           );
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
+        SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
       END IF;
       RETURN QUERY SELECT result;
     END;
@@ -160,7 +160,7 @@ DO $$
       SELECT version FROM role WHERE key = key_param INTO current_version;
 
       -- checks the role can modify this role
-      PERFORM can_manage_partition(role_key_param);
+      PERFORM ox_can_manage_partition(role_key_param);
 
       IF (current_version IS NULL) THEN
         INSERT INTO role (
@@ -201,7 +201,7 @@ DO $$
               description != description_param
           );
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
+        SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
       END IF;
       RETURN QUERY SELECT result;
     END;
@@ -319,7 +319,7 @@ DO $$
             description != description_param
           );
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
+        SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
       END IF;
       RETURN QUERY SELECT result;
     END;
@@ -384,7 +384,7 @@ DO $$
       END IF;
 
       -- checks that the attributes passed in comply with the validation in the item_type
-      PERFORM check_item_attr(item_type_key_param, attribute_param);
+      PERFORM ox_check_item_attr(item_type_key_param, attribute_param);
 
       -- checks that the meta field complies with the json schema defined by the item type
       IF (meta_param IS NOT NULL) THEN
@@ -525,7 +525,7 @@ DO $$
         -- determines if the update has gone ahead
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
         -- works out the update status
-        SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
+        SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
       END IF;
       RETURN QUERY SELECT result;
     END;
@@ -613,7 +613,7 @@ DO $$
       END IF;
 
       -- checks that the attribute store parameter contain the correct values
-      PERFORM check_attr_valid(attr_valid_param);
+      PERFORM ox_check_attr_valid(attr_valid_param);
 
       -- gets the current item type version
       SELECT version FROM item_type WHERE key = key_param INTO current_version;
@@ -671,7 +671,7 @@ DO $$
             model_id != model_id_value
           );
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
+        SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
       END IF;
       RETURN QUERY SELECT result;
     END;
@@ -754,7 +754,7 @@ DO $$
       END IF;
 
       -- checks that the attribute store parameter contain the correct values
-      PERFORM check_attr_valid(attr_valid_param);
+      PERFORM ox_check_attr_valid(attr_valid_param);
 
       -- gets the link type current version
       SELECT version FROM link_type WHERE key = key_param INTO current_version;
@@ -805,7 +805,7 @@ DO $$
             model_id != model_id_value
           );
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
+        SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
       END IF;
       RETURN QUERY SELECT result;
     END;
@@ -897,10 +897,10 @@ DO $$
       END IF;
 
       -- checks that the link is allowed
-      PERFORM check_link(link_type_key_param, start_item_type_key_value, end_item_type_key_value);
+      PERFORM ox_check_link(link_type_key_param, start_item_type_key_value, end_item_type_key_value);
 
       -- checks that the attributes passed in comply with the validation in the link_type
-      PERFORM check_link_attr(link_type_key_param, attribute_param);
+      PERFORM ox_ox_check_link_attr(link_type_key_param, attribute_param);
 
       -- checks that the meta field complies with the json schema defined by the item type
       IF (meta_param IS NOT NULL) THEN
@@ -1025,7 +1025,7 @@ DO $$
             end_item_id != end_item_id_value
           );
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
+        SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
       END IF;
       RETURN QUERY SELECT result;
     END;
@@ -1173,7 +1173,7 @@ DO $$
             end_item_type_id != end_item_type_id_value
           );
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
-        SELECT get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
+        SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
       END IF;
       RETURN QUERY SELECT result;
     END;

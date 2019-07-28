@@ -404,7 +404,7 @@ DO
       $BODY$
       BEGIN
         -- checks the role can modify this role
-        PERFORM can_manage_partition(role_key_param);
+        PERFORM ox_can_manage_partition(role_key_param);
 
         RETURN QUERY
           SELECT p.id,
@@ -446,7 +446,7 @@ DO
       $BODY$
       BEGIN
         -- checks the role can modify this role
-        PERFORM can_manage_partition(role_key_param);
+        PERFORM ox_can_manage_partition(role_key_param);
 
         RETURN QUERY
           SELECT p.id,
@@ -487,7 +487,7 @@ DO
       $BODY$
       BEGIN
         -- checks the role can modify this role
-        PERFORM can_manage_partition(role_key_param);
+        PERFORM ox_can_manage_partition(role_key_param);
 
         RETURN QUERY
           SELECT r.id,
@@ -529,7 +529,7 @@ DO
       $BODY$
       BEGIN
         -- checks the role can modify this role
-        PERFORM can_manage_partition(role_key_param);
+        PERFORM ox_can_manage_partition(role_key_param);
 
         RETURN QUERY
           SELECT r.id,

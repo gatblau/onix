@@ -19,7 +19,7 @@ DO $$
       checks that the specified role can modify partition, privilege and role tables
       based on its role level
      */
-    CREATE OR REPLACE FUNCTION can_manage_partition(
+    CREATE OR REPLACE FUNCTION ox_can_manage_partition(
       role_key_param character varying[]
     )
       RETURNS VOID
@@ -50,7 +50,7 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION can_manage_partition(character varying[])
+    ALTER FUNCTION ox_can_manage_partition(character varying[])
       OWNER TO onix;
 
     /*
@@ -59,7 +59,7 @@ DO $$
         - L: no update as the old record was updated by another client before this update could be committed
         - U: update - the record was updated successfully
      */
-    CREATE OR REPLACE FUNCTION get_update_status(
+    CREATE OR REPLACE FUNCTION ox_get_update_status(
       current_version bigint, -- the version of the record in the database
       local_version bigint, -- the version in the new specified record
       updated boolean -- whether or not the record was updated in the database by the last update statement
@@ -93,14 +93,14 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION get_update_status(bigint, bigint, boolean)
+    ALTER FUNCTION ox_get_update_status(bigint, bigint, boolean)
       OWNER TO onix;
 
     /*
       Validates that an item attribute store contains the keys required or allowed
       by its item type definition.
      */
-    CREATE OR REPLACE FUNCTION check_item_attr(item_type_key character varying, attributes hstore)
+    CREATE OR REPLACE FUNCTION ox_check_item_attr(item_type_key character varying, attributes hstore)
       RETURNS VOID
       LANGUAGE 'plpgsql'
       COST 100
@@ -152,14 +152,14 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION check_item_attr(character varying, hstore)
+    ALTER FUNCTION ox_check_item_attr(character varying, hstore)
       OWNER TO onix;
 
     /*
       Validates that a link attribute store contains the keys required or allowed
       by its link type definition.
      */
-    CREATE OR REPLACE FUNCTION check_link_attr(link_type_key character varying, attributes hstore)
+    CREATE OR REPLACE FUNCTION ox_ox_check_link_attr(link_type_key character varying, attributes hstore)
       RETURNS VOID
       LANGUAGE 'plpgsql'
       COST 100
@@ -211,13 +211,13 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION check_link_attr(character varying, hstore)
+    ALTER FUNCTION ox_ox_check_link_attr(character varying, hstore)
       OWNER TO onix;
 
     /*
       checks that the specified hstore contains only 'required' or 'allowed' values
      */
-    CREATE OR REPLACE FUNCTION check_attr_valid(attributes hstore)
+    CREATE OR REPLACE FUNCTION ox_check_attr_valid(attributes hstore)
       RETURNS VOID
       LANGUAGE 'plpgsql'
       COST 100
@@ -243,15 +243,15 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION check_attr_valid(hstore)
+    ALTER FUNCTION ox_check_attr_valid(hstore)
       OWNER TO onix;
 
     /*
-      select check_link(link_type_key_param, start_item_type_key_param, end_item_type_key_param):
+      select ox_check_link(link_type_key_param, start_item_type_key_param, end_item_type_key_param):
         checks that a link of a given type is valid (i.e. can be used to join to items of given types
         in a particular direction)
      */
-    CREATE OR REPLACE FUNCTION check_link(link_type_key_param character varying,
+    CREATE OR REPLACE FUNCTION ox_check_link(link_type_key_param character varying,
                                           start_item_type_key_param character varying,
                                           end_item_type_key_param character varying)
       RETURNS VOID
@@ -282,7 +282,7 @@ DO $$
     END;
     $BODY$;
 
-    ALTER FUNCTION check_link(character varying, character varying, character varying)
+    ALTER FUNCTION ox_check_link(character varying, character varying, character varying)
       OWNER TO onix;
 
   END
