@@ -610,7 +610,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getGetItemSQL() {
-        return "SELECT * FROM item(" +
+        return "SELECT * FROM ox_item(" +
                 "?::character varying," + // key_param
                 "?::character varying[]" + // role_key_param
                 ")";
@@ -676,7 +676,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getGetLinkSQL() {
-        return "SELECT * FROM link(" +
+        return "SELECT * FROM ox_link(" +
                 "?::character varying," +
                 "?::character varying[]" + // role_key_param
                 ")";
@@ -770,7 +770,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getGetItemTypeSQL() {
-        return "SELECT * FROM item_type(" +
+        return "SELECT * FROM ox_item_type(" +
                 "?::character varying," + // key
                 "?::character varying[]" + // role_key_param
                 ")";
@@ -821,7 +821,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getGetLinkTypeSQL() {
-        return "SELECT * FROM link_type(" +
+        return "SELECT * FROM ox_link_type(" +
                 "?::character varying," + // key
                 "?::character varying[]" + // role_key_param
                 ")";
@@ -1138,14 +1138,14 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getGetModelsSQL() {
-        return "SELECT * FROM get_models(" +
+        return "SELECT * FROM ox_get_models(" +
                 "?::character varying[]" + // role_key_param
                 ")";
     }
 
     @Override
     public String getGetModelSQL() {
-        return "SELECT * FROM model(" +
+        return "SELECT * FROM ox_model(" +
                 "?::character varying," + // key
                 "?::character varying[]" + // role_key_param
                 ")";
@@ -1429,7 +1429,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getGetRoleSQL() {
-        return "SELECT * FROM role(" +
+        return "SELECT * FROM ox_role(" +
                 "?::character varying," + // key_param
                 "?::character varying[]" + // role_key_param
                 ")";
@@ -1437,7 +1437,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getGetAllRolesSQL() {
-        return "SELECT * FROM get_roles(" +
+        return "SELECT * FROM ox_get_roles(" +
                 "?::character varying[]" + // role_key_param
                 ")";
     }
@@ -1595,7 +1595,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getGetAllPrivilegeByRoleSQL() {
-        return "SELECT * FROM get_privileges_by_role(" +
+        return "SELECT * FROM ox_get_privileges_by_role(" +
                 "?::character varying," + // privileges_role_key_param
                 "?::character varying[]" + // logged_role_key_param
                 ")";
@@ -1623,14 +1623,14 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getGetAllPartitionsSQL() {
-        return "SELECT * FROM get_partitions(" +
+        return "SELECT * FROM ox_get_partitions(" +
                 "?::character varying[]" + // role_key_param
                 ")";
     }
 
     @Override
     public String getGetPartitionSQL() {
-        return "SELECT * FROM partition(" +
+        return "SELECT * FROM ox_partition(" +
                 "?::character varying," + // key_param
                 "?::character varying[]" + // role_key_param
                 ")";

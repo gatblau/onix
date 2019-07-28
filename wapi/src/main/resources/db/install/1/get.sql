@@ -21,7 +21,7 @@ DO
         gets an item by its natural key.
         use: select * from item('the_item_key')
        */
-      CREATE OR REPLACE FUNCTION item(key_param character varying,
+      CREATE OR REPLACE FUNCTION ox_item(key_param character varying,
                                       role_key_param character varying[])
         RETURNS TABLE
                 (
@@ -70,7 +70,7 @@ DO
       END;
       $BODY$;
 
-      ALTER FUNCTION item(
+      ALTER FUNCTION ox_item(
         character varying, -- key_param
         character varying[] -- role_key_param
         )
@@ -80,7 +80,7 @@ DO
         gets an item_type by its natural key.
         use: select * from item_type('the_item_type_key')
        */
-      CREATE OR REPLACE FUNCTION item_type(key_param character varying,
+      CREATE OR REPLACE FUNCTION ox_item_type(key_param character varying,
                                            role_key_param character varying[])
         RETURNS TABLE
                 (
@@ -126,14 +126,14 @@ DO
       END;
       $BODY$;
 
-      ALTER FUNCTION item_type(character varying, character varying[])
+      ALTER FUNCTION ox_item_type(character varying, character varying[])
         OWNER TO onix;
 
       /*
         gets a link by its natural key.
         use: select * from link('the_link_key')
        */
-      CREATE OR REPLACE FUNCTION link(key_param character varying,
+      CREATE OR REPLACE FUNCTION ox_link(key_param character varying,
                                       role_key_param character varying[])
         RETURNS TABLE
                 (
@@ -185,14 +185,14 @@ DO
       END;
       $BODY$;
 
-      ALTER FUNCTION link(character varying, character varying[])
+      ALTER FUNCTION ox_link(character varying, character varying[])
         OWNER TO onix;
 
       /*
         gets a link_type by its natural key.
         use: select * from link_type('the_link_type_key')
        */
-      CREATE OR REPLACE FUNCTION link_type(key_param character varying,
+      CREATE OR REPLACE FUNCTION ox_link_type(key_param character varying,
                                            role_key_param character varying[])
         RETURNS TABLE
                 (
@@ -236,14 +236,14 @@ DO
       END;
       $BODY$;
 
-      ALTER FUNCTION link_type(character varying, character varying[])
+      ALTER FUNCTION ox_link_type(character varying, character varying[])
         OWNER TO onix;
 
       /*
         gets a Link_rule by its natural key.
         use: select * from link_rule('the_link_rule_key')
        */
-      CREATE OR REPLACE FUNCTION link_rule(key_param character varying)
+      CREATE OR REPLACE FUNCTION ox_link_rule(key_param character varying)
         RETURNS TABLE
                 (
                   id                  bigint,
@@ -287,14 +287,14 @@ DO
       END;
       $BODY$;
 
-      ALTER FUNCTION link_rule(character varying)
+      ALTER FUNCTION ox_link_rule(character varying)
         OWNER TO onix;
 
       /*
           model(model_key_param): gets the model specified by the model_key_param.
           use: select * model(model_key_param)
          */
-      CREATE OR REPLACE FUNCTION model(model_key_param character varying, role_key_param character varying[])
+      CREATE OR REPLACE FUNCTION ox_model(model_key_param character varying, role_key_param character varying[])
         RETURNS TABLE
                 (
                   id          integer,
@@ -333,14 +333,14 @@ DO
       END;
       $BODY$;
 
-      ALTER FUNCTION model(character varying, character varying[])
+      ALTER FUNCTION ox_model(character varying, character varying[])
         OWNER TO onix;
 
       /*
         get_models(): gets all models in the system.
         use: select * from get_models()
       */
-      CREATE OR REPLACE FUNCTION get_models(role_key_param character varying[])
+      CREATE OR REPLACE FUNCTION ox_get_models(role_key_param character varying[])
         RETURNS TABLE
                 (
                   id          integer,
@@ -376,14 +376,14 @@ DO
       END;
       $BODY$;
 
-      ALTER FUNCTION get_models(character varying[])
+      ALTER FUNCTION ox_get_models(character varying[])
         OWNER TO onix;
 
       /*
         partition(key_param, role_key_param): gets the partition specified by the key_param.
         use: select * partition(key_param, role_key_param)
        */
-      CREATE OR REPLACE FUNCTION partition(key_param character varying, role_key_param character varying[])
+      CREATE OR REPLACE FUNCTION ox_partition(key_param character varying, role_key_param character varying[])
         RETURNS TABLE
                 (
                   id          bigint,
@@ -418,14 +418,14 @@ DO
       END;
       $BODY$;
 
-      ALTER FUNCTION partition(character varying, character varying[])
+      ALTER FUNCTION ox_partition(character varying, character varying[])
         OWNER TO onix;
 
       /*
         get_partitions(): gets all partitions in the system.
         use: select * from get_partitions(role_key_param)
       */
-      CREATE OR REPLACE FUNCTION get_partitions(role_key_param character varying[])
+      CREATE OR REPLACE FUNCTION ox_get_partitions(role_key_param character varying[])
         RETURNS TABLE
                 (
                   id          bigint,
@@ -459,14 +459,14 @@ DO
       END;
       $BODY$;
 
-      ALTER FUNCTION get_partitions(character varying[])
+      ALTER FUNCTION ox_get_partitions(character varying[])
         OWNER TO onix;
 
       /*
         role(key_param, role_key_param): gets the role specified by the key_param.
         use: select * role(key_param, role_key_param)
        */
-      CREATE OR REPLACE FUNCTION role(key_param character varying, role_key_param character varying[])
+      CREATE OR REPLACE FUNCTION ox_role(key_param character varying, role_key_param character varying[])
         RETURNS TABLE
                 (
                   id          bigint,
@@ -501,14 +501,14 @@ DO
       END;
       $BODY$;
 
-      ALTER FUNCTION role(character varying, character varying[])
+      ALTER FUNCTION ox_role(character varying, character varying[])
         OWNER TO onix;
 
       /*
         get_roles(): gets all roles in the system.
         use: select * from get_roles(role_key_param)
       */
-      CREATE OR REPLACE FUNCTION get_roles(role_key_param character varying[])
+      CREATE OR REPLACE FUNCTION ox_get_roles(role_key_param character varying[])
         RETURNS TABLE
                 (
                   id          bigint,
@@ -542,10 +542,10 @@ DO
       END;
       $BODY$;
 
-      ALTER FUNCTION get_roles(character varying[])
+      ALTER FUNCTION ox_get_roles(character varying[])
         OWNER TO onix;
 
-      CREATE OR REPLACE FUNCTION get_privileges_by_role(role_key_param character varying,
+      CREATE OR REPLACE FUNCTION ox_get_privileges_by_role(role_key_param character varying,
                                                         logged_role_key_param character varying[])
         RETURNS TABLE
                 (
@@ -588,7 +588,7 @@ DO
       END
       $BODY$;
 
-      ALTER FUNCTION get_privileges_by_role(character varying, character varying[])
+      ALTER FUNCTION ox_get_privileges_by_role(character varying, character varying[])
         OWNER TO onix;
     END
     $$;
