@@ -217,7 +217,7 @@ class Database {
         }
     }
 
-    public void deployDb() throws SQLException {
+    public void deployDb(boolean isUpgrade) throws SQLException {
         if (dbAutoDeploy) {
             // retrieve the relevant db scripts to be deployed before doing anything else
             Map<String, Map<String, String>> scripts = script.getDbScripts();
@@ -227,8 +227,15 @@ class Database {
             String ap = new String(dbAdminPwd);
 
             // deploys the schemas first
-            Map<String, String> schemas = scripts.get("schemas");
-            deployScripts(schemas, ap);
+            Map<String, String> sc = null;
+            if (isUpgrade) {
+                // if this is an upgrade, then load upgrade scripts
+                sc = scripts.get("upgrade");
+            } else {
+                // if not an upgrade, load the table schemas
+                sc = scripts.get("schemas");
+            }
+            deployScripts(sc, ap);
 
             // deploys the functions
             Map<String, String> funcs = scripts.get("functions");
@@ -332,13 +339,6 @@ class Database {
                 "The application should be upgraded for the current database version.", dbv, appdbv));
             return -1;
         }
-    }
-
-    /**
-     * upgrades the database to the version indicated by the current application
-     */
-    public void upgrade() {
-        throw new RuntimeException("Upgrade process not implemented.");
     }
 
     private void setVersion(String appVer, String dbVer, String desc, String scriptSrc) {
