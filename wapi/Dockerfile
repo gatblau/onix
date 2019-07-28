@@ -23,7 +23,7 @@ RUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/ap
   rm apache-maven-$MAVEN_VERSION-bin.tar.gz && \
   mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
 WORKDIR /app
-COPY .. .
+COPY . .
 RUN rm -rf ./target && mvn -f pom.xml package && unzip -o ./target/*.jar -d /tmp
 # the final deployment image
 FROM openjdk:8-jdk-alpine
