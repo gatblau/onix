@@ -41,13 +41,22 @@ version:
 	sh version.sh $(APP_VER)
 
 # build the ox-kube docker image
-image:
+snapshot-image:
 	docker build -t $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version) .
 	docker tag $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version) $(REPO_NAME)/$(BINARY_NAME)-snapshot:latest
 
-push:
+snapshot-push:
 	docker push $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version)
 	docker push $(REPO_NAME)/$(BINARY_NAME)-snapshot:latest
+
+# build the ox-kube docker image
+release-image:
+	docker build -t $(REPO_NAME)/$(BINARY_NAME):$(shell cat ./version) .
+	docker tag $(REPO_NAME)/$(BINARY_NAME):$(shell cat ./version) $(REPO_NAME)/$(BINARY_NAME):latest
+
+release-push:
+	docker push $(REPO_NAME)/$(BINARY_NAME):$(shell cat ./version)
+	docker push $(REPO_NAME)/$(BINARY_NAME):latest
 
 # deletes dangling
 clean:
