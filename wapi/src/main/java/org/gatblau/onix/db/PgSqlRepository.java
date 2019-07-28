@@ -854,7 +854,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(4, (description != null) ? (String) description : null); // description_param
             db.setString(2, (label != null) ? (String) label : null); // label
             db.setString(5, getUser()); // changed_by_param
-            result.setOperation(db.executeQueryAndRetrieveStatus("create_tag"));
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_create_tag"));
             if (result.getOperation().equals("L")){
                 result.setMessage(String.format("Tag data for label '%s' already exists and cannot be overridden.", label));
             }
@@ -884,7 +884,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(5, (description != null) ? (String) description : null); // description_param
             db.setString(6, getUser()); // changed_by_param
             db.setObject(7, version); // version_param
-            result.setOperation(db.executeQueryAndRetrieveStatus("update_tag"));
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_update_tag"));
         } catch (Exception ex) {
             ex.printStackTrace();
             result.setError(true);
@@ -1249,7 +1249,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getCreateTagSQL() {
-        return "SELECT create_tag(" +
+        return "SELECT ox_create_tag(" +
                 "?::character varying," + // root_item_key_param
                 "?::character varying," + // tag_label_param
                 "?::character varying," + // tag_name_param
@@ -1260,7 +1260,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteTagSQL() {
-        return "SELECT delete_tag(" +
+        return "SELECT ox_delete_tag(" +
                 "?::character varying," + // root_item_key_param
                 "?::character varying" + // tag_label_param
                 ")";
@@ -1268,7 +1268,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getUpdateTagSQL() {
-        return "SELECT update_tag(" +
+        return "SELECT ox_update_tag(" +
                 "?::character varying," + // root_item_key_param
                 "?::character varying," + // current_label_param
                 "?::character varying," + // new_label_param
@@ -1281,14 +1281,14 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getGetItemTagsSQL() {
-        return "SELECT * FROM get_item_tags(" +
+        return "SELECT * FROM ox_get_item_tags(" +
                 "?::character varying" + // root_item_key_param
                 ")";
     }
 
     @Override
     public String getGetTreeItemsForTagSQL() {
-        return "SELECT * FROM get_tree_items(" +
+        return "SELECT * FROM ox_get_tree_items(" +
                 "?::character varying," + // root_item_key_param
                 "?::character varying" + // tag_label_param
                 ")";
@@ -1296,7 +1296,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getGetTreeLinksForTagSQL() {
-        return "SELECT * FROM get_tree_links(" +
+        return "SELECT * FROM ox_get_tree_links(" +
                 "?::character varying," + // root_item_key_param
                 "?::character varying" + // tag_label_param
                 ")";
