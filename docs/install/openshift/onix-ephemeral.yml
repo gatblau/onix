@@ -223,7 +223,7 @@ objects:
     - annotations:
       from:
         kind: DockerImage
-        name: gatblau/onix-snapshot
+        name: gatblau/onix
       importPolicy:
         scheduled: true
       name: latest
