@@ -35,5 +35,8 @@ Metrics = "true"
         Username = "admin"
         Password = "0n1x"
 
+        # skip verification of TLS certificate
+        InsecureSkipVerify = "true"
+
     # broker consumer details
     [Consumers.Broker]

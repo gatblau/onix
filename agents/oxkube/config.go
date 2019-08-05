@@ -43,12 +43,13 @@ type Consumers struct {
 }
 
 type WebhookConf struct {
-	Port     string
-	Path     string
-	AuthMode string
-	Username string
-	Password string
-	Metrics  bool
+	Port               string
+	Path               string
+	AuthMode           string
+	Username           string
+	Password           string
+	Metrics            bool
+	InsecureSkipVerify bool
 }
 
 type BrokerConf struct {
@@ -86,6 +87,7 @@ func NewConfig() (Config, error) {
 	_ = v.BindEnv("Consumers.Consumer")
 	_ = v.BindEnv("Consumers.Webhook.Port")
 	_ = v.BindEnv("Consumers.Webhook.Path")
+	_ = v.BindEnv("Consumers.Webhook.InsecureSkipVerify")
 	_ = v.BindEnv("Consumers.Webhook.AuthMode")
 	_ = v.BindEnv("Consumers.Webhook.Username")
 	_ = v.BindEnv("Consumers.Webhook.Password")
@@ -107,6 +109,7 @@ func NewConfig() (Config, error) {
 	c.Consumers.Consumer = v.GetString("Consumers.Consumer")
 	c.Consumers.Webhook.Port = v.GetString("Consumers.Webhook.Port")
 	c.Consumers.Webhook.Path = v.GetString("Consumers.Webhook.Path")
+	c.Consumers.Webhook.InsecureSkipVerify = v.GetBool("Consumers.Webhook.InsecureSkipVerify")
 	c.Consumers.Webhook.AuthMode = v.GetString("Consumers.Webhook.AuthMode")
 	c.Consumers.Webhook.Username = v.GetString("Consumers.Webhook.Username")
 	c.Consumers.Webhook.Password = v.GetString("Consumers.Webhook.Password")

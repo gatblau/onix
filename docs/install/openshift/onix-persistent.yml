@@ -4,6 +4,37 @@ metadata:
   name:  onix-persistent
   annotations:
     description: "Deploys Onix CMDB with persistent storage."
+parameters:
+  - name: OX_DB_ADM_PWD
+    displayName: Onix PostgreSQL Administrator Password
+    description: The admin password for the PostgreSQL database used by Onix.
+    required: true
+    from: "[a-zA-Z0-9]{8}"
+    generate: expression
+  - name: OX_DB_PWD
+    displayName: Onix Database User Password
+    description: The Onix database user password.
+    required: true
+    from: "[a-zA-Z0-9]{8}"
+    generate: expression
+  - name: OX_WAPI_ADMIN_PWD
+    displayName: Onix Web API Administrator Role Password
+    description: The Onix Web API administrator role password.
+    required: true
+    from: "[a-zA-Z0-9]{8}"
+    generate: expression
+  - name: OX_WAPI_WRITER_PWD
+    displayName: Onix Web API Writer Role Password
+    description: The Onix Web API writer role password.
+    required: true
+    from: "[a-zA-Z0-9]{8}"
+    generate: expression
+  - name: OX_WAPI_READER_PWD
+    displayName: Onix Web API Reader Role Password
+    description: The Onix Web API reader role password.
+    required: true
+    from: "[a-zA-Z0-9]{8}"
+    generate: expression
 objects:
 - apiVersion: apps.openshift.io/v1
   kind: DeploymentConfig
@@ -35,7 +66,10 @@ objects:
         - name: onixdb
           env:
           - name: POSTGRESQL_ADMIN_PASSWORD
-            value: onix
+            valueFrom:
+              secretKeyRef:
+                name: onix-db-admin
+                key: pwd
           imagePullPolicy: IfNotPresent
           ports:
           - containerPort: 5432
@@ -117,46 +151,51 @@ objects:
             value: onixdb
           - name: WAPI_AUTH_MODE
             value: basic
+          - name: DB_ADMIN_PWD
+            valueFrom:
+              secretKeyRef:
+                key: pwd
+                name: onix-db-admin
           - name: DB_USER
             valueFrom:
               secretKeyRef:
                 key: user
-                name: onixdb
+                name: onix-db-user
           - name: DB_PWD
             valueFrom:
               secretKeyRef:
                 key: pwd
-                name: onixdb
+                name: onix-db-user
           - name: WAPI_ADMIN_USER
             valueFrom:
               secretKeyRef:
                 key: user
-                name: onixadmin
+                name: onix-wapi-admin-user
           - name: WAPI_ADMIN_PWD
             valueFrom:
               secretKeyRef:
                 key: pwd
-                name: onixadmin
+                name: onix-wapi-admin-user
           - name: WAPI_READER_USER
             valueFrom:
               secretKeyRef:
                 key: user
-                name: onixreader
+                name: onix-wapi-reader-user
           - name: WAPI_READER_PWD
             valueFrom:
               secretKeyRef:
                 key: pwd
-                name: onixreader
+                name: onix-wapi-reader-user
           - name: WAPI_WRITER_USER
             valueFrom:
               secretKeyRef:
                 key: user
-                name: onixwriter
+                name: onix-wapi-writer-user
           - name: WAPI_WRITER_PWD
             valueFrom:
               secretKeyRef:
                 key: pwd
-                name: onixwriter
+                name: onix-wapi-writer-user
           - name: MGMT_ENDPOINT_METRICS_ENABLED
             value: "true"
           - name: DS_PREP_STMT_CACHE_SIZE
@@ -233,35 +272,46 @@ objects:
 - apiVersion: v1
   kind: Secret
   metadata:
-    name: onixadmin
+    name: onix-db-user
   type: Opaque
   data:
-    pwd: MG4xeA==
-    user: YWRtaW4=
-- apiVersion: v1
-  kind: Secret
-  metadata:
-    name: onixdb
-  type: Opaque
-  data:
-    pwd: b25peA==
     user: b25peA==
+  stringData:
+    pwd: "${OX_DB_PWD}"
 - apiVersion: v1
   kind: Secret
   metadata:
-    name: onixreader
+    name: onix-db-admin
+  type: Opaque
+  stringData:
+    pwd: "${OX_DB_ADM_PWD}"
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: onix-wapi-admin-user
   type: Opaque
   data:
-    pwd: MG4xeA==
+    user: YWRtaW4=
+  stringData:
+    pwd: "${OX_WAPI_ADMIN_PWD}"
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: onix-wapi-reader-user
+  type: Opaque
+  data:
     user: cmVhZGVy
+  stringData:
+    pwd: "${OX_WAPI_READER_PWD}"
 - apiVersion: v1
   kind: Secret
   metadata:
-    name: onixwriter
+    name: onix-wapi-writer-user
   type: Opaque
   data:
-    pwd: MG4xeA==
     user: d3JpdGVy
+  stringData:
+    pwd: "${OX_WAPI_WRITER_PWD}"
 - apiVersion: v1
   kind: Service
   metadata:
@@ -297,6 +347,9 @@ objects:
   spec:
     port:
       targetPort: 8080
+    tls:
+      insecureEdgeTerminationPolicy: Redirect
+      termination: edge
     to:
       kind: Service
       name: onixwapi

@@ -6,7 +6,7 @@ metadata:
     description: "Deploys the Onix Agent for Kubernetes"
 parameters:
 - name: PLATFORM_ID
-  value: KUBE-01
+  value: ocp-01
   displayName: Platform Identifier
   description: The unique identifier string for the platform in which the Onix Kube Agent is deployed and processing events.
   required: true
@@ -51,11 +51,22 @@ parameters:
     The username used by the Onix Kube Agent to connect to the Onix Web API
   required: true
 - name: ONIX_PASSWORD
-  value: 0n1x
+  value: 5PRKFvoy
   displayName: Onix Password
   description: >-
     The password used by the Onix Kube Agent to connect to the Onix Web API
   required: true
+- name: OXKU_WEBHOOK_USERNAME
+  displayName: Onix Kube Webhook User Username
+  description: The user username used by the Onix Kube Agent webhook to authenticate requests.
+  required: true
+  value: 'sentinel'
+- name: OXKU_WEBHOOK_PASSWORD
+  displayName: Onix Kube Webhook User Password
+  description: The user password used by the Onix Kube Agent webhook to authenticate requests.
+  required: true
+  from: "[a-zA-Z0-9]{8}"
+  generate: expression
 objects:
   - apiVersion: apps.openshift.io/v1
     kind: DeploymentConfig
@@ -108,6 +119,20 @@ objects:
                       key: password
                 - name: OXKU_CONSUMERS_CONSUMER
                   value: "${CONSUMER}"
+                - name: OXKU_CONSUMERS_WEBHOOK_AUTHMODE
+                  value: "basic"
+                - name: OXKU_CONSUMERS_WEBHOOK_INSECURESKIPVERIFY
+                  value: "true"
+                - name: OXKU_CONSUMERS_WEBHOOK_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: oxkube-user-secret
+                      key: username
+                - name: OXKU_CONSUMERS_WEBHOOK_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: oxkube-user-secret
+                      key: password
               imagePullPolicy: IfNotPresent
               resources: {}
               terminationMessagePath: /dev/termination-log
@@ -126,14 +151,14 @@ objects:
               - oxkube
             from:
               kind: ImageStreamTag
-              name: oxkube:latest
+              name: oxkube-snapshot:latest
   - apiVersion: image.openshift.io/v1
     kind: ImageStream
     metadata:
       annotations:
       labels:
         app: oxkube
-      name: oxkube
+      name: oxkube-snapshot
     spec:
       lookupPolicy:
         local: true
@@ -141,7 +166,7 @@ objects:
         - annotations:
           from:
             kind: DockerImage
-            name: gatblau/oxkube
+            name: gatblau/oxkube-snapshot
           importPolicy:
             scheduled: true
           name: latest
@@ -155,6 +180,14 @@ objects:
     stringData:
       username: "${ONIX_USERNAME}"
       password: "${ONIX_PASSWORD}"
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: oxkube-user-secret
+    type: Opaque
+    stringData:
+      username: "${OXKU_WEBHOOK_USERNAME}"
+      password: "${OXKU_WEBHOOK_PASSWORD}"
   - apiVersion: v1
     kind: Service
     metadata:
@@ -175,7 +208,10 @@ objects:
       name: oxkube
     spec:
       port:
-        targetPort: 8080
+        targetPort: '8080'
+      tls:
+        insecureEdgeTerminationPolicy: Redirect
+        termination: edge
       to:
         kind: Service
         name: oxkube
