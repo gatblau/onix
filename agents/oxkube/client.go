@@ -15,6 +15,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -46,6 +47,7 @@ type Client struct {
 	Log    *logrus.Entry
 	Token  string
 	Config *Config
+	self   *http.Client
 }
 
 type MAP map[string]interface{}
@@ -79,6 +81,13 @@ func NewClient(log *logrus.Entry, cfg *Config) (*Client, error) {
 	err := client.setAuthenticationToken()
 	if err != nil {
 		return client, err
+	}
+	client.self = &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: cfg.Consumers.Webhook.InsecureSkipVerify,
+			},
+		},
 	}
 	return client, err
 }
@@ -137,7 +146,7 @@ func (c *Client) makeRequest(method string, resourceName string, key string, pay
 	}
 
 	// submits the request
-	response, err := http.DefaultClient.Do(req)
+	response, err := c.self.Do(req)
 
 	// if the response contains an error then returns
 	if err != nil {
@@ -185,7 +194,7 @@ func (c *Client) getResource(resourceName string, key string, filter map[string]
 	if len(c.Token) > 0 {
 		req.Header.Set("Authorization", c.Token)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.self.Do(req)
 	if resp != nil {
 		defer func() {
 			if ferr := resp.Body.Close(); ferr != nil {
