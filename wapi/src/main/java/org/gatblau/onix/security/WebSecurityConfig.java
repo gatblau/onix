@@ -36,6 +36,7 @@ import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 import org.springframework.security.oauth2.client.filter.OAuth2ClientContextFilter;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -67,6 +68,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Value("${wapi.writer.pwd}")
     private String writerPassword;
 
+    @Value("${WAPI_CSRF_ENABLED:false}")
+    private boolean csrfEnabled;
+
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
         if (authMode.equals("basic")) {
@@ -83,7 +87,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             // Basic Access Authentication: the request should contain a header field of the form Authorization: Basic <credentials>
             //  where credentials is the base64 encoding of username and password joined by a single colon (e.g. user:password)
             http
-                .csrf().disable()
                 .authorizeRequests()
                 .antMatchers("/").permitAll()
                 .antMatchers("/live").permitAll()
@@ -101,7 +104,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         }
         else if (authMode.equals("none")) {
-            http.csrf().disable()
+            http.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and()
                 .authorizeRequests()
                 .antMatchers("/**").permitAll().and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
@@ -111,6 +114,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             // Implements both authorisation code and password grant types (flows) to support
             //   Web UI and Native or Automated client implementations
             http
+                .csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and()
                 // required by the grant_type=authorization_code
                 .addFilterAfter(new OAuth2ClientContextFilter(), AbstractPreAuthenticatedProcessingFilter.class)
                 .addFilterAfter(oidcFilter(), OAuth2ClientContextFilter.class)
@@ -136,6 +140,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         else {
             throw new RuntimeException(
                 String.format("Incorrect AUTH_MODE value '%s': expected one of 'none', 'basic' or 'oidc'.", authMode));
+        }
+
+        if (csrfEnabled) {
+            // persists the CSRF token in a cookie named "XSRF-TOKEN"
+            http.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
         }
     }
 

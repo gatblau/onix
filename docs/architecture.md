@@ -17,10 +17,10 @@ This section provides an architectural overview.
 
 The diagram below shows high level use cases for Onix based on different personas: 
 
-![Onix Data Model](./pics/onix_arc.png "Onix Architecture") 
+![Onix Data Model](./pics/onix_arc.png "Onix Architecture")
 
 ### Automation developer [1] [(up)](#toc)
- 
+
 Is concerned with **recording and testing configuration data changes** in a seamless way.
 
 Developers write automation scripts and use connectors to record configuration data changes in the Onix CMDB via its Web API.
@@ -34,7 +34,7 @@ To achieve this Onix provides [OIDC](https://openid.net/connect/) support.
 
 ### Operations team [3] [(up)](#toc)
 
-Is concerned with **recording configuration data changes seamlessly** whilst executing automation scripts. 
+Is concerned with **recording configuration data changes seamlessly** whilst executing automation scripts.
 
 As the development phase embedded and tested configuration data recording in the automation scripts, there is nothing for the Operations team to do other than execute the automation and observe changes made to the CMDB.
 
@@ -54,6 +54,10 @@ As configuration data is updated when the automation scripts are executed, and h
 ### Development Project Members [6] [(up)](#toc)
 
 Are concerned with **having visibility of applications and services** deployed on the infrastructure.
+
+### Discovery Agents [7]
+
+Automatically pick deployment changes and update the CMDB.
 
 <a name="data-view"></a>
 ## Data View [(up)](#toc)
@@ -97,7 +101,9 @@ Change entities also record operation executed (**I**nsert, **U**pdate, or **D**
 
 The following picture shows the application components and their interactions:
 
-![Application View](./pics/application_view.png "Application View") 
+![Application View](./pics/application_view.png "Application View")
+
+The Web Console, the connectors (e.g. Ansible modules, Terraform provider) and the agents (e.g. oxkube) interact with the Web API, that is an HTTP service on top of an object-relational database.
 
 <a name="technology-view"></a>
 ## Technology View [(up)](#toc)
