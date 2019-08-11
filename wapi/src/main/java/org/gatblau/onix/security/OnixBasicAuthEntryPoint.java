@@ -36,6 +36,10 @@ import java.io.PrintWriter;
 public class OnixBasicAuthEntryPoint extends BasicAuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authEx) throws IOException, ServletException {
+        // if an authorisation header is passed then do not request the client to authenticate
+        if (request.getHeader("Authorization") != null) return;
+
+        // if no authorisation header is passed then request the client to authenticate
         response.addHeader("WWW-Authenticate", "Basic realm=" + getRealmName() + "");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         PrintWriter writer = response.getWriter();
