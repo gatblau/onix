@@ -12,33 +12,6 @@
  *   Contributors to this project, hereby assign copyright in this code to the project,
  *   to be licensed under the same terms as the rest of the code.
 */
-import axios from 'axios';
 
-export const state = () => ({
-})
-
-export const mutations = {
-    setData(state, chartData) {
-        state.chartData = chartData;
-    }
-}
-
-export const actions = {
-    getMetaModel(vuexContext, context) {
-        return axios
-            .get('test.json')
-            .then(res => {
-                vuexContext.commit('setData', res.data);
-
-                console.log("++++++++++++++++++" + res.data)
-
-            })
-            .catch(e => context.error(e));
-    }
-}
-
-export const getters = {
-    chartData(state) {
-        return state.chartData;
-    }
+export default function ({ $axios, redirect }) {
 }

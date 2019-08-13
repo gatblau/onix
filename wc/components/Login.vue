@@ -14,7 +14,7 @@
           <div class="input-group-prepend">
             <span class="input-group-text"><i class="material-icons">vpn_key</i></span>
           </div>
-          <input type="text" class="form-control" placeholder="Password" aria-label="Password">
+          <input type="password" class="form-control" placeholder="Password" aria-label="Password" v-model="user.password">
         </div>
 
         <div class="form-group">
@@ -27,7 +27,7 @@
 
 <script>
   import splash from '@/components/Splash';
-
+  import login from '@/services/login.js';
   export default {
     name: 'login',
     components: {
@@ -43,9 +43,7 @@
     },
     methods: {
       handleSubmit() {
-
-        // this.$emit('clicked', this.user.username);
-        this.$router.push('dashboard');
+        login(this.$axios, this.$router, this.user.username, this.user.password)
       }
     }
   };

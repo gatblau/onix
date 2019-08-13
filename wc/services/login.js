@@ -12,33 +12,13 @@
  *   Contributors to this project, hereby assign copyright in this code to the project,
  *   to be licensed under the same terms as the rest of the code.
 */
-import axios from 'axios';
-
-export const state = () => ({
-})
-
-export const mutations = {
-    setData(state, chartData) {
-        state.chartData = chartData;
-    }
-}
-
-export const actions = {
-    getMetaModel(vuexContext, context) {
-        return axios
-            .get('test.json')
-            .then(res => {
-                vuexContext.commit('setData', res.data);
-
-                console.log("++++++++++++++++++" + res.data)
-
-            })
-            .catch(e => context.error(e));
-    }
-}
-
-export const getters = {
-    chartData(state) {
-        return state.chartData;
-    }
+export default async function login(axios, router, username, password) {
+    var token = btoa(`${username}:${password}`)
+    var url = 'api/item?top=1'
+    axios.setHeader('Authorization', `Basic ${token}`)
+    axios.$get(url).then( result => {
+        router.push('dashboard')
+    }).catch(error => {
+        alert(error.response.data)
+    })
 }
