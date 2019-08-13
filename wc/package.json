@@ -1,8 +1,8 @@
 {
   "name": "onix-ui",
   "version": "1.0.0",
-  "description": "Onix Web App",
-  "author": "gatblau",
+  "description": "Onix Web Console",
+  "author": "gatblau.org",
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_ENV=development nodemon server/index.js --watch server",
@@ -30,7 +30,7 @@
     "babel-core": "7.0.0-bridge.0",
     "babel-jest": "^24.1.0",
     "jest": "^24.1.0",
-    "node-sass": "^4.11.0",
+    "node-sass": "^4.12.0",
     "nodemon": "^1.18.9",
     "sass-loader": "^7.1.0",
     "vue-jest": "^3.0.3"

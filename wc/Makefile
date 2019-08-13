@@ -17,7 +17,7 @@
 REPO_NAME=gatblau
 
 # the name of the onix web console app
-APP_NAME=oxwc-snapshot
+APP_NAME=oxwc
 
 # the version of the application
 APP_VER = v0.0.2
@@ -26,17 +26,17 @@ APP_VER = v0.0.2
 DANGLING_IMS = $(shell docker images -f dangling=true -q)
 
 # produce a new version tag
-version:
+set-version:
 	sh version.sh $(APP_VER)
 
 # build the ox-kube docker image
-image:
-	docker build -t $(REPO_NAME)/$(APP_NAME):$(shell cat version) .
-	docker tag $(REPO_NAME)/$(APP_NAME):$(shell cat version) $(REPO_NAME)/$(APP_NAME):latest
+snapshot-image:
+	docker build -t $(REPO_NAME)/$(APP_NAME)-snapshot:$(shell cat version) .
+	docker tag $(REPO_NAME)/$(APP_NAME)-snapshot:$(shell cat version) $(REPO_NAME)/$(APP_NAME)-snapshot:latest
 
-push:
-	docker push $(REPO_NAME)/$(APP_NAME):$(shell cat version)
-	docker push $(REPO_NAME)/$(APP_NAME):latest
+snapshot-push:
+	docker push $(REPO_NAME)/$(APP_NAME)-snapshot:$(shell cat version)
+	docker push $(REPO_NAME)/$(APP_NAME)-snapshot:latest
 
 # deletes dangling images
 clean:
