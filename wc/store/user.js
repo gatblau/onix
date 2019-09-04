@@ -13,7 +13,7 @@
  *   to be licensed under the same terms as the rest of the code.
 */
 export const state = () => ({
-    token: '',
+    token: null,
     username: '',
 })
 
@@ -21,5 +21,11 @@ export const mutations = {
     set: (state, usernameValue, tokenValue) => {
         state.username = usernameValue
         state.token = tokenValue
+    },
+}
+
+export const getters = {
+    isAuthenticated(state) {
+        return !state.token
     },
 }
