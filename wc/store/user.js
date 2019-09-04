@@ -12,14 +12,14 @@
  *   Contributors to this project, hereby assign copyright in this code to the project,
  *   to be licensed under the same terms as the rest of the code.
 */
-export default async function login(axios, router, username, password) {
-    var token = btoa(`${username}:${password}`)
-    var url = 'api/item?top=1'
-    axios.setHeader('Authorization', `Basic ${token}`)
-    axios.$get(url).then( result => {
-        router.push('dashboard')
-    }).catch(error => {
-        // alert(error.response.data)
-        router.push('notification')
-    })
+export const state = () => ({
+    token: '',
+    username: '',
+})
+
+export const mutations = {
+    set: (state, usernameValue, tokenValue) => {
+        state.username = usernameValue
+        state.token = tokenValue
+    },
 }
