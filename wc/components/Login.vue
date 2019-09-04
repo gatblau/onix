@@ -47,16 +47,27 @@
     },
     methods: {
       async handleSubmit() {
+        // constructs a basic authentication token (base64 encoded)
         const token = btoa(`${this.user.username}:${this.user.password}`)
+        // defines the URL of the resource to try and get
         const url = 'api/item?top=1'
+        // sets the authentication header
         this.$axios.setHeader('Authorization', `Basic ${token}`)
         try {
+          // hides the error message
           this.showMsg = false
+          // issues a call for a resource to check if the authentication token worked
           const res = await this.$axios.$get(url)
+          // everything went ok so the token was ok
+          // set the user name and token in the user store
           this.$store.commit('user/set', this.user.username, token)
+          // send the user to the dashboard page
           this.$router.push('dashboard');
         } catch(e) {
+          // oops, an error occurred querying the resource with the token
+          // sets the error message
           this.message = e
+          // shows the error message
           this.showMsg = true
         }
       }
