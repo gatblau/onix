@@ -3,6 +3,9 @@
     <main>
       <form @submit.prevent="handleSubmit">
         <splash/>
+        <div v-if="showMsg">
+          <p>{{message}}</p>
+        </div>
         <div class="input-group">
           <div class="input-group-prepend">
             <span class="input-group-text"><i class="material-icons">person</i></span>
@@ -27,7 +30,6 @@
 
 <script>
   import splash from '@/components/Splash';
-  import login from '@/services/login.js';
   export default {
     name: 'login',
     components: {
@@ -38,12 +40,25 @@
         user: {
           username: '',
           password: ''
-        }
+        },
+        showMsg: true,
+        message: '',
       };
     },
     methods: {
-      handleSubmit() {
-        login(this.$axios, this.$router, this.user.username, this.user.password)
+      async handleSubmit() {
+        const token = btoa(`${this.user.username}:${this.user.password}`)
+        const url = 'api/item?top=1'
+        this.$axios.setHeader('Authorization', `Basic ${token}`)
+        try {
+          this.showMsg = false
+          const res = await this.$axios.$get(url)
+          this.$store.commit('user/set', this.user.username, token)
+          this.$router.push('dashboard');
+        } catch(e) {
+          this.message = e
+          this.showMsg = true
+        }
       }
     }
   };
