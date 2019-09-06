@@ -145,6 +145,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         if (csrfEnabled) {
             // persists the CSRF token in a cookie named "XSRF-TOKEN"
             http.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
+        } else {
+            // disables CSRF
+            http.csrf().disable();
         }
     }
 
