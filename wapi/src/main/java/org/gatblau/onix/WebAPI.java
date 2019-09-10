@@ -1285,16 +1285,6 @@ public class WebAPI {
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
-    @ApiOperation(
-            value = "Upgrades the database.",
-            notes = "")
-    @RequestMapping(
-            path = "/db/upgrade"
-            , method = RequestMethod.POST)
-    public ResponseEntity<Result> upgradeDb(Authentication authentication) {
-        return null;
-    }
-
     /*
         helper methods
      */
