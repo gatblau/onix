@@ -148,8 +148,11 @@ func (c *Client) makeRequest(method string, resourceName string, key string, pay
 	// submits the request
 	response, err := c.self.Do(req)
 
-	// if the response contains an error then returns
-	if err != nil {
+	// checks there are no errors in the response
+	if response != nil && response.StatusCode > 300 {
+		// if the response contains an error then returns
+		return &Result{Message: response.Status, Error: true}, errors.New(response.Status)
+	} else if err != nil {
 		return &Result{Message: err.Error(), Error: true}, err
 	}
 
