@@ -1,0 +1,32 @@
+{
+  "db": 3,
+  "upgrade": [
+    1
+  ],
+  "notes": [
+    {
+      "ref": "3.1",
+      "desc": "ox_get_child_item_records now calls ox_get_child_item_ids function."
+    },
+    {
+      "ref": "3.2",
+      "desc": "ox_get_child_link_records now calls ox_get_child_item_ids function."
+    },
+    {
+      "ref": "3.3",
+      "desc": "new ox_get_child_link_ids function."
+    },
+    {
+      "ref": "3.4",
+      "desc": "ox_get_child_link_records now calls ox_get_child_link_ids function."
+    },
+    {
+      "ref": "3.5",
+      "desc": "new ox_get_child_link_rule_ids function."
+    },
+    {
+      "ref": "3.6",
+      "desc": "new ox_get_child_link_rule_records function."
+    }
+  ]
+}

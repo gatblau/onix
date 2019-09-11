@@ -1254,6 +1254,24 @@ public class WebAPI {
     }
 
     @ApiOperation(
+            value = "Get a list of items and links that are children of a specified item.",
+            notes = "")
+    @RequestMapping(
+            path = "/data/{item_key}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<GraphData> getDataWithTag(
+            @PathVariable("item_key") String itemKey
+    ) {
+        GraphData graph = data.getData(itemKey);
+        if (graph != null){
+            return ResponseEntity.ok(graph);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @ApiOperation(
             value = "Get a list of items and links that are children of a specified item for a specified item tag.",
             notes = "")
     @RequestMapping(
