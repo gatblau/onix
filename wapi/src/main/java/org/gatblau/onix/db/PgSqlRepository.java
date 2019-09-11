@@ -145,8 +145,8 @@ public class PgSqlRepository implements DbRepository {
         ItemList items = new ItemList();
         try {
             db.prepare(getFindItemsSQL());
-            db.setString(1, util.toArrayString(tagList));
-            db.setString(2, getAttributeString(new JSONObject(attributes))); // attribute
+            db.setString(1, (tagList != null && !tagList.isEmpty()) ? util.toArrayString(tagList) : null);
+            db.setString(2, (attributes != null && !attributes.isEmpty()) ? getAttributeString(new JSONObject(attributes)) : null);
             db.setObject(3, status);
             db.setString(4, itemTypeKey);
             db.setObject(5, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
@@ -1321,7 +1321,11 @@ public class PgSqlRepository implements DbRepository {
             UserDetails details = (UserDetails) principal;
             username = details.getUsername();
             for (GrantedAuthority a : details.getAuthorities()) {
-                username += "," + a.getAuthority();
+                String r = a.getAuthority();
+                if (r.startsWith("ROLE_")) {
+                    r = r.substring("ROLE_".length());
+                }
+                username += "," + r;
             }
         } else if (principal instanceof JwtClaimAccessor){
             JwtClaimAccessor jwt = (JwtClaimAccessor)principal;
