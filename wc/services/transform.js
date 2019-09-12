@@ -12,6 +12,32 @@
  *   Contributors to this project, hereby assign copyright in this code to the project,
  *   to be licensed under the same terms as the rest of the code.
 */
+export function transformModel(model) {
+    const output = [];
+    output.nodes = transformItemTypes(model.itemTypes);
+    output.links = transformLinkRules(model.linkRules);
+    return output;
+}
 
-export default function ({ $axios, redirect }) {
+function transformItemTypes(itemTypes) {
+    const list = [];
+    for (let item of itemTypes) {
+        list.push({
+            "id": item.key,
+            "name": item.name,
+            "_color": "blue"
+        });
+    }
+    return list;
+}
+
+function transformLinkRules(linkRules) {
+    const list = [];
+    for (let rule of linkRules) {
+        list.push({
+            "sid": rule.startItemTypeKey,
+            "tid": rule.endItemTypeKey
+        });
+    }
+    return list;
 }

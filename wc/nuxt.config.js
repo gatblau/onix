@@ -42,7 +42,6 @@ module.exports = {
   plugins: [
     {src: '~/plugins/material-icons'},
     {src: '~/plugins/flag-icon-css'},
-    {src: '~/plugins/axios'},
   ],
 
   modules: [
@@ -61,6 +60,10 @@ module.exports = {
     ** You can extend webpack config here
     */
     extend(config, ctx) {
+      // NuxtJS debugging support
+      // eval-source-map: a SourceMap that matchers exactly to the line number and this help to debug the NuxtJS app in the client
+      // inline-source-map: help to debug the NuxtJS app in the server
+      config.devtool = ctx.isClient ? 'eval-source-map' : 'inline-source-map'
     }
   },
 

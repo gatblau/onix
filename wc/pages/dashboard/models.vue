@@ -11,36 +11,34 @@
 <script>
     import D3Network from 'vue-d3-network';
     import 'vue-d3-network/dist/vue-d3-network.css';
-    import axios from 'axios';
-
-    const options = {
-        canvas: false,
-        force: 3000,
-        nodeSize: 50,
-        nodeLabels: true,
-        linkWidth: 2,
-        linkLabels: true,
-    };
+    import { transformModel } from '@/services/transform';
 
     export default {
+        name: "models",
         components: {
             D3Network
         },
         beforeCreate() {
-            axios.get('/test.json')
+            // setToken(this)
+            this.$axios.get('/api/model/K8S/data')
                 .then(response => {
-                    this.chart = response.data;
+                    this.chart = transformModel(response.data);
                 })
                 .catch(error => console.error(error));
         },
         data() {
             return {
-                options: options,
                 chart: null
             };
-        }
-    };
+        },
+        computed: {
+            options() {
+                return this.$store.state.graph.options
+            }
+        },
+    }
 </script>
 
 <style scoped>
+
 </style>
