@@ -233,10 +233,10 @@ BEGIN
     STABLE
   AS $BODY$
   DECLARE
-    child_item_type_ids BIGINT[];
+    child_item_type_ids INT[];
     child_link_rule_ids BIGINT[];
   BEGIN
-    child_item_type_ids := (SELECT ox_get_child_item_type_ids(parent_item_ids::BIGINT[]))::BIGINT[];
+    child_item_type_ids := (SELECT ox_get_child_item_type_ids(parent_item_ids::INT[]))::INT[];
     child_link_rule_ids := (SELECT ox_get_child_link_rule_ids(parent_item_ids::BIGINT[]))::BIGINT[];
     -- recurse
     IF (child_link_rule_ids IS NOT NULL) THEN
