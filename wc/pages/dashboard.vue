@@ -9,7 +9,7 @@
           <nuxt-link to="/dashboard"><i class="material-icons">home</i><span>Dashboard</span></nuxt-link>
         </div>
         <div @click="title='Meta Model'">
-          <nuxt-link to="/dashboard/metaModel"><i class="material-icons">device_hub</i><span>Meta-Model</span></nuxt-link>
+          <nuxt-link to="/dashboard/models"><i class="material-icons">device_hub</i><span>Models</span></nuxt-link>
         </div>
       </nav>
       <hr>
