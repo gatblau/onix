@@ -47,14 +47,14 @@ func (c *Webhook) Start(client *Client) {
 	mux := http.NewServeMux()
 
 	// registers web handlers
-	c.log.Tracef("Registering web root / and livelyness probe /live handlers")
+	c.log.Tracef("Registering web root / and liveliness probe /live handlers")
 	mux.HandleFunc("/", c.rootHandler)
 	mux.HandleFunc("/live", c.rootHandler)
 
-	c.log.Tracef("Registering readyness probe handler /ready")
+	c.log.Tracef("Registering readiness probe handler /ready")
 	mux.HandleFunc("/ready", c.readyHandler)
 
-	c.log.Tracef("Registering handler for web path /%s.", c.config.Path)
+	c.log.Tracef("Registering handler for web path %s.", c.config.Path)
 	mux.HandleFunc(c.config.Path, c.webhookHandler)
 
 	if c.config.Metrics {
