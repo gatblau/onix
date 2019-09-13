@@ -97,7 +97,8 @@ public class PgSqlRepository implements DbRepository {
             if (includeLinks) {
                 db.prepare(getFindLinksSQL());
                 db.setString(1, item.getKey()); // start_item
-                db.setObjectRange(2, 9, null);
+                db.setObjectRange(2, 11, null);
+                db.setArray(12, role);
                 set = db.executeQuery();
                 if (set != null) {
                     while (set.next()) {
@@ -107,7 +108,8 @@ public class PgSqlRepository implements DbRepository {
                 db.prepare(getFindLinksSQL());
                 db.setString(1, null); // start_item
                 db.setString(2, item.getKey()); // end_item
-                db.setObjectRange(3, 9, null);
+                db.setObjectRange(3, 11, null);
+                db.setArray(12, role);
                 set = db.executeQuery();
                 if (set != null) {
                     while (set.next()) {
