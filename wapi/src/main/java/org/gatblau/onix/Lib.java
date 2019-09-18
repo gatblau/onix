@@ -180,6 +180,7 @@ public class Lib implements InitializingBean {
         itemType.setMetaSchema(toJSON(set.getObject("meta_schema")));
         itemType.setModelKey(set.getString("model_key"));
         itemType.setChangedBy(set.getString("changed_by"));
+        itemType.setRoot(set.getBoolean("root"));
         return itemType;
     }
 

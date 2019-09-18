@@ -137,7 +137,7 @@ public interface DbRepository {
     ResultList createOrUpdateData(GraphData payload, String[] role);
     Result deleteData(String rootItemKey);
 
-    TypeGraphData getTypeDataByModel(String modelKey);
+    TypeGraphData getTypeDataByModel(String modelKey, String[] role);
 
     String getGetModelItemTypesSQL();
     String getGetModelLinkTypesSQL();

@@ -27,6 +27,26 @@
     {
       "ref": "3.6",
       "desc": "new ox_get_child_link_rule_records function."
+    },
+    {
+      "ref": "3.7",
+      "desc": "new function ox_get_item_children to retrieve all the children of an item."
+    },
+    {
+      "ref": "3.8",
+      "desc": "ox_get_model_item_types updated to retrieve item_type root flag."
+    },
+    {
+      "ref": "3.9",
+      "desc": "enable RBAC on ox_get_model_link_rules, ox_get_model_link_types and ox_get_model_item_types."
+    },
+    {
+      "ref": "3.10",
+      "desc": "ox_find_item_types updated to retrieve item_type root flag."
+    },
+    {
+      "ref": "3.11",
+      "desc": "ox_item_type updated to retrieve item_type root flag."
     }
   ]
 }

@@ -1138,9 +1138,10 @@ public class WebAPI {
                 required = true,
                 example = "model_01_abc"
             )
-            @PathVariable("key") String modelKey
+            @PathVariable("key") String modelKey,
+            Authentication authentication
     ) {
-        TypeGraphData graph = data.getTypeDataByModel(modelKey);
+        TypeGraphData graph = data.getTypeDataByModel(modelKey, getRole(authentication));
         if (graph != null) {
             return ResponseEntity.ok(graph);
         }
