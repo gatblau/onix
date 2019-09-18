@@ -22,7 +22,7 @@ DO
         use: select * from item('the_item_key')
        */
       CREATE OR REPLACE FUNCTION ox_item(key_param character varying,
-                                      role_key_param character varying[])
+                                         role_key_param character varying[])
         RETURNS TABLE
                 (
                   id            bigint,
@@ -60,7 +60,7 @@ DO
                  i.created,
                  i.updated,
                  i.changed_by,
-                 p.key as partition_key
+                 p.key  as partition_key
           FROM item i
                  INNER JOIN item_type it ON i.item_type_id = it.id
                  INNER JOIN partition p ON i.partition_id = p.id
@@ -68,7 +68,7 @@ DO
                  INNER JOIN role r ON pr.role_id = r.id
           WHERE i.key = key_param
             AND pr.can_read = TRUE
-            AND r.key = ANY(role_key_param);
+            AND r.key = ANY (role_key_param);
       END;
       $BODY$;
 
@@ -83,7 +83,7 @@ DO
         use: select * from item_type('the_item_type_key')
        */
       CREATE OR REPLACE FUNCTION ox_item_type(key_param character varying,
-                                           role_key_param character varying[])
+                                              role_key_param character varying[])
         RETURNS TABLE
                 (
                   id          integer,
@@ -97,7 +97,8 @@ DO
                   created     timestamp(6) with time zone,
                   updated     timestamp(6) with time zone,
                   changed_by  character varying,
-                  model_key   character varying
+                  model_key   character varying,
+                  root        boolean
                 )
         LANGUAGE 'plpgsql'
         COST 100
@@ -117,14 +118,29 @@ DO
                  i.created,
                  i.updated,
                  i.changed_by,
-                 m.key AS model_key
+                 m.key AS model_key,
+                 k.root
           FROM item_type i
                  INNER JOIN model m ON i.model_id = m.id
                  INNER JOIN privilege pr on m.partition_id = pr.partition_id
                  INNER JOIN role r on pr.role_id = r.id
+            -- works out if it is a root item below
+                 LEFT OUTER JOIN (
+            SELECT t.id, (t.id IS NOT NULL) AS root
+            FROM (
+                   SELECT it.*
+                   FROM item_type it
+                     EXCEPT
+                   SELECT it.*
+                   FROM item_type it
+                          INNER JOIN link_rule r
+                                     ON it.id = r.end_item_type_id
+                 ) AS t
+          ) AS k
+                                 ON k.id = i.id
           WHERE i.key = key_param
             AND pr.can_read = TRUE
-            AND r.key = ANY(role_key_param);
+            AND r.key = ANY (role_key_param);
       END;
       $BODY$;
 
@@ -136,7 +152,7 @@ DO
         use: select * from link('the_link_key')
        */
       CREATE OR REPLACE FUNCTION ox_link(key_param character varying,
-                                      role_key_param character varying[])
+                                         role_key_param character varying[])
         RETURNS TABLE
                 (
                   id             bigint,
@@ -182,7 +198,7 @@ DO
                  INNER JOIN privilege pr on p.id = pr.partition_id
                  INNER JOIN role r on pr.role_id = r.id
           WHERE l.key = key_param
-            AND r.key = ANY(role_key_param)
+            AND r.key = ANY (role_key_param)
             AND pr.can_read = TRUE;
       END;
       $BODY$;
@@ -195,7 +211,7 @@ DO
         use: select * from ox_link_type('the_link_type_key')
        */
       CREATE OR REPLACE FUNCTION ox_link_type(key_param character varying,
-                                           role_key_param character varying[])
+                                              role_key_param character varying[])
         RETURNS TABLE
                 (
                   id          integer,
@@ -234,7 +250,7 @@ DO
                  INNER JOIN role r on pr.role_id = r.id
           WHERE lt.key = key_param
             AND pr.can_read = TRUE
-            AND r.key = ANY(role_key_param);
+            AND r.key = ANY (role_key_param);
       END;
       $BODY$;
 
@@ -330,7 +346,7 @@ DO
                  INNER JOIN privilege pr on p.id = pr.partition_id
                  INNER JOIN role r on pr.role_id = r.id
           WHERE m.key = model_key_param
-            AND r.key = ANY(role_key_param)
+            AND r.key = ANY (role_key_param)
             AND pr.can_read = true;
       END;
       $BODY$;
@@ -373,7 +389,7 @@ DO
                  INNER JOIN partition p on m.partition_id = p.id
                  INNER JOIN privilege pr on p.id = pr.partition_id
                  INNER JOIN role r on pr.role_id = r.id
-          WHERE r.key = ANY(role_key_param)
+          WHERE r.key = ANY (role_key_param)
             AND pr.can_read = TRUE;
       END;
       $BODY$;
@@ -548,7 +564,7 @@ DO
         OWNER TO onix;
 
       CREATE OR REPLACE FUNCTION ox_get_privileges_by_role(role_key_param character varying,
-                                                        logged_role_key_param character varying[])
+                                                           logged_role_key_param character varying[])
         RETURNS TABLE
                 (
                   role_key      character varying,
@@ -569,7 +585,7 @@ DO
       BEGIN
         SELECT r.level
         FROM role r
-        WHERE r.key = ANY(logged_role_key_param)
+        WHERE r.key = ANY (logged_role_key_param)
         ORDER BY r.level DESC
         LIMIT 1
           INTO role_level;
@@ -583,10 +599,10 @@ DO
                  pr.changed_by,
                  pr.created
           FROM privilege pr
-             INNER JOIN partition p ON p.id = pr.partition_id
-             INNER JOIN role r ON pr.role_id = r.id
+                 INNER JOIN partition p ON p.id = pr.partition_id
+                 INNER JOIN role r ON pr.role_id = r.id
           WHERE r.key = role_key_param
-            AND ((r.owner = p.owner AND r.owner = ANY(logged_role_key_param) AND role_level = 1) OR (role_level = 2));
+            AND ((r.owner = p.owner AND r.owner = ANY (logged_role_key_param) AND role_level = 1) OR (role_level = 2));
       END
       $BODY$;
 

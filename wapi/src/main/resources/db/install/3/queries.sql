@@ -250,7 +250,8 @@ CREATE OR REPLACE FUNCTION ox_find_item_types(
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
     changed_by character varying,
-    model_key character varying
+    model_key character varying,
+    root boolean
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -269,12 +270,27 @@ BEGIN
      i.created,
      i.updated,
      i.changed_by,
-     m.key as model_key
+     m.key as model_key,
+     k.root
   FROM item_type i
   INNER JOIN model m ON i.model_id = m.id
   INNER JOIN partition p ON m.partition_id = p.id
   INNER JOIN privilege pr on p.id = pr.partition_id
   INNER JOIN role r on pr.role_id = r.id
+  -- works out if it is a root item below
+  LEFT OUTER JOIN (
+    SELECT t.id, (t.id IS NOT NULL) AS root
+    FROM (
+           SELECT it.*
+           FROM item_type it
+             EXCEPT
+           SELECT it.*
+           FROM item_type it
+              INNER JOIN link_rule r
+                  ON it.id = r.end_item_type_id
+         ) AS t
+  ) AS k
+  ON  k.id = i.id
   WHERE
   -- by attributes (hstore)
      (i.attr_valid @> attr_valid_param OR attr_valid_param IS NULL)
@@ -755,7 +771,8 @@ ALTER FUNCTION ox_get_table_count() OWNER TO onix;
   ox_get_model_item_types(model_key_param): get all item types in a model
  */
 CREATE OR REPLACE FUNCTION ox_get_model_item_types(
-  model_key_param character varying -- model natural key
+  model_key_param character varying, -- model natural key
+  role_key_param character varying[]
 )
   RETURNS TABLE(
     id integer,
@@ -769,7 +786,8 @@ CREATE OR REPLACE FUNCTION ox_get_model_item_types(
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
     changed_by character varying,
-    model_key character varying
+    model_key character varying,
+    root boolean -- true if the item type has all its links departing from it (a root node)
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -788,21 +806,42 @@ BEGIN
            it.created,
            it.updated,
            it.changed_by,
-           m.key as model_key
+           m.key as model_key,
+           k.root is not null as root
     FROM item_type it
-    INNER JOIN model m
-      ON m.id = it.model_id
-    WHERE m.key = model_key_param;
+    INNER JOIN model m ON m.id = it.model_id
+    INNER JOIN partition p ON m.partition_id = p.id
+    INNER JOIN privilege pr ON p.id = pr.partition_id
+    INNER JOIN role r ON pr.role_id = r.id
+    -- works out if it is a root item below
+    LEFT OUTER JOIN (
+      SELECT t.id, (t.id IS NOT NULL) AS root
+      FROM (
+         SELECT it.*
+         FROM item_type it
+        EXCEPT
+         SELECT it.*
+         FROM item_type it
+            INNER JOIN link_rule r
+               ON it.id = r.end_item_type_id
+       ) AS t
+    ) AS k
+    ON  k.id = it.id
+    WHERE m.key = model_key_param
+    -- ensure RBAC
+    AND pr.can_read = TRUE
+    AND r.key = ANY(role_key_param);
 END;
-  $BODY$;
+$BODY$;
 
-ALTER FUNCTION ox_get_model_item_types(character varying) OWNER TO onix;
+ALTER FUNCTION ox_get_model_item_types(character varying, character varying[]) OWNER TO onix;
 
 /*
   ox_get_model_link_types(model_key_param): get all link types in a model
  */
 CREATE OR REPLACE FUNCTION ox_get_model_link_types(
-  model_key_param character varying -- model natural key
+  model_key_param character varying, -- model natural key
+  role_key_param character varying[] -- roles
 )
   RETURNS TABLE(
      id integer,
@@ -836,19 +875,25 @@ BEGIN
       lt.changed_by,
       m.key as model_key
     FROM link_type lt
-    INNER JOIN model m
-      ON m.id = lt.model_id
-    WHERE m.key = model_key_param;
+    INNER JOIN model m ON m.id = lt.model_id
+    INNER JOIN partition p ON m.partition_id = p.id
+    INNER JOIN privilege pr ON p.id = pr.partition_id
+    INNER JOIN role r ON pr.role_id = r.id
+    WHERE m.key = model_key_param
+    -- ensure RBAC
+    AND pr.can_read = TRUE
+    AND r.key = ANY(role_key_param);
 END;
 $BODY$;
 
-ALTER FUNCTION ox_get_model_link_types(character varying) OWNER TO onix;
+ALTER FUNCTION ox_get_model_link_types(character varying, character varying[]) OWNER TO onix;
 
 /*
   ox_get_model_link_rules(model_key_param): get all link rules in a model
  */
 CREATE OR REPLACE FUNCTION ox_get_model_link_rules(
-  model_key_param character varying -- model natural key
+  model_key_param character varying, -- model natural key
+  role_key_param character varying[] -- roles
 )
   RETURNS TABLE(
      id bigint,
@@ -882,22 +927,23 @@ BEGIN
     r.updated,
     r.changed_by
   FROM link_rule r
-  INNER JOIN item_type start_item_type
-    ON r.start_item_type_id = start_item_type.id
-  INNER JOIN item_type end_item_type
-    ON r.end_item_type_id = end_item_type.id
-  INNER JOIN model start_item_type_model
-    ON start_item_type_model.id = start_item_type.model_id
-  INNER JOIN model end_item_type_model
-    ON end_item_type_model.id = end_item_type.model_id
-  INNER JOIN link_type lt
-    ON lt.id = r.link_type_id
+  INNER JOIN item_type start_item_type ON r.start_item_type_id = start_item_type.id
+  INNER JOIN item_type end_item_type ON r.end_item_type_id = end_item_type.id
+  INNER JOIN model start_item_type_model ON start_item_type_model.id = start_item_type.model_id
+  INNER JOIN model end_item_type_model ON end_item_type_model.id = end_item_type.model_id
+  INNER JOIN link_type lt ON lt.id = r.link_type_id
+  INNER JOIN partition p ON start_item_type_model.partition_id = p.id
+  INNER JOIN privilege pr ON p.id = pr.partition_id
+  INNER JOIN role ro ON pr.role_id = ro.id
   WHERE start_item_type_model.key = end_item_type_model.key
-    AND start_item_type_model.key = model_key_param;
+    AND start_item_type_model.key = model_key_param
+    -- ensure RBAC
+    AND pr.can_read = TRUE
+    AND ro.key = ANY(role_key_param);
 END;
 $BODY$;
 
-ALTER FUNCTION ox_get_model_link_rules(character varying) OWNER TO onix;
+ALTER FUNCTION ox_get_model_link_rules(character varying, character varying[]) OWNER TO onix;
 
 /*
     ox_get_item_children: get all child items of the specified item.

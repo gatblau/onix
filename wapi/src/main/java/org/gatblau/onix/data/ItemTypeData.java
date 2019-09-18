@@ -42,6 +42,7 @@ public class ItemTypeData implements Serializable {
     private Integer version;
     private String changedBy;
     private String modelKey;
+    private boolean root;
 
     public ItemTypeData() {
     }
@@ -193,5 +194,19 @@ public class ItemTypeData implements Serializable {
 
     public void setMetaSchema(JSONObject metaSchema) {
         this.metaSchema = metaSchema;
+    }
+
+    @ApiModelProperty(
+        position = 10,
+        required = false,
+        value = "A read only computed property indicating if the item type is a root node on a tree - i.e. it has links departing from it but no links converging to it.",
+        example = "true"
+    )
+    public boolean isRoot() {
+        return root;
+    }
+
+    public void setRoot(boolean root) {
+        this.root = root;
     }
 }

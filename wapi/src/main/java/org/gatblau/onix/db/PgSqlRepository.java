@@ -1156,23 +1156,26 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized TypeGraphData getTypeDataByModel(String modelKey) {
+    public synchronized TypeGraphData getTypeDataByModel(String modelKey, String[] role) {
         TypeGraphData graph = new TypeGraphData();
         try {
             db.prepare(getGetModelItemTypesSQL());
             db.setString(1, modelKey); // model key param
+            db.setArray(2, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 graph.getItemTypes().add(util.toItemTypeData(set));
             }
             db.prepare(getGetModelLinkTypesSQL());
             db.setString(1, modelKey); // model key param
+            db.setArray(2, role);
             set = db.executeQuery();
             while (set.next()) {
                 graph.getLinkTypes().add(util.toLinkTypeData(set));
             }
             db.prepare(getGetModelLinkRulesSQL());
             db.setString(1, modelKey); // model key param
+            db.setArray(2, role);
             set = db.executeQuery();
             while (set.next()) {
                 graph.getLinkRules().add(util.toLinkRuleData(set));
@@ -1188,21 +1191,24 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public String getGetModelItemTypesSQL() {
         return "SELECT * FROM ox_get_model_item_types(" +
-                "?::character varying" + // model_key_param
+                "?::character varying," + // model_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
     @Override
     public String getGetModelLinkTypesSQL() {
         return "SELECT * FROM ox_get_model_link_types(" +
-                "?::character varying" + // model_key_param
+                "?::character varying," + // model_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
     @Override
     public String getGetModelLinkRulesSQL() {
         return "SELECT * FROM ox_get_model_link_rules(" +
-                "?::character varying" + // model_key_param
+                "?::character varying," + // model_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 
