@@ -16,10 +16,13 @@ export const state = () => ({
     options: {
         canvas: false,
         force: 3000,
-        nodeSize: 50,
+        nodeSize: 30,
+        size: { w:1400, h:700 },
+        offset: { x:-250, y:0 },
         nodeLabels: true,
         linkWidth: 2,
         linkLabels: true,
+        fontSize: 16,
     }
 })
 

@@ -71,11 +71,7 @@ public class DataSourceFactory {
     public Connection getConn() {
         try {
             if (conn == null || conn.isClosed()) {
-                try {
-                    conn = instance().getConnection();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
+                conn = instance().getConnection();
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);

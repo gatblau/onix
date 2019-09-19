@@ -277,7 +277,7 @@ class Database {
                 ResultSet set = stmt.getResultSet();
                 exists = set.next();
                 if (exists) {
-                    log.info(String.format("Database %s already exists.", dbName));
+                    log.info(String.format("Check database %s exists: OK.", dbName));
                 } else {
                     log.info(String.format("Database %s does not exist.", dbName));
                 }
@@ -285,7 +285,7 @@ class Database {
             stmt.close();
             conn.close();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to check if database exists.", e);
+            throw new RuntimeException(String.format("Check database %s exists: FAILED - ", dbName), e);
         }
         return exists;
     }
