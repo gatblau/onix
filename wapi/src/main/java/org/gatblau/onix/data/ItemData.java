@@ -35,6 +35,7 @@ public class ItemData implements Serializable {
     private String name;
     private String description;
     private String type;
+    private String typeName;
     private Short status;
     private JSONObject meta;
     private JSONObject attribute;
@@ -244,5 +245,13 @@ public class ItemData implements Serializable {
 
     public void setPartition(String partition) {
         this.partition = partition;
+    }
+
+    public String getTypeName() {
+        return typeName;
+    }
+
+    public void setTypeName(String typeName) {
+        this.typeName = typeName;
     }
 }

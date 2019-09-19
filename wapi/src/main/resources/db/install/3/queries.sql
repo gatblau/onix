@@ -949,7 +949,7 @@ ALTER FUNCTION ox_get_model_link_rules(character varying, character varying[]) O
     ox_get_item_children: get all child items of the specified item.
  */
 CREATE OR REPLACE FUNCTION ox_get_item_children(
-  item_id bigint,
+  item_id_key character varying,
   role_key_param character varying[]
 )
   RETURNS TABLE(
@@ -959,6 +959,7 @@ CREATE OR REPLACE FUNCTION ox_get_item_children(
      description text,
      status smallint,
      item_type_key character varying,
+     item_type_name character varying,
      meta jsonb,
      tag text[],
      attribute hstore,
@@ -973,7 +974,11 @@ CREATE OR REPLACE FUNCTION ox_get_item_children(
   COST 100
   STABLE
 AS $BODY$
+DECLARE
+  item_id bigint;
 BEGIN
+  SELECT i.id FROM item i WHERE i.key = item_id_key INTO item_id;
+
   RETURN QUERY SELECT
     i.id,
     i.key,
@@ -981,6 +986,7 @@ BEGIN
     i.description,
     i.status,
     it.key as item_type_key,
+    it.name as item_type_name,
     i.meta,
     i.tag,
     i.attribute,
@@ -1008,7 +1014,7 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION ox_get_item_children(bigint, character varying[])
+ALTER FUNCTION ox_get_item_children(character varying, character varying[])
   OWNER TO onix;
 
 END

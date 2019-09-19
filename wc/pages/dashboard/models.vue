@@ -1,6 +1,12 @@
 <template>
     <div>
-        <nuxt-link :to="itemTypeLink"><i class="material-icons"></i><span>{{this.itemTypeLinkLabel}}</span></nuxt-link>
+        <button
+                v-if="itemTypeLinkLabel.length > 0"
+                type="button"
+                class="btn btn-primary"
+                v-on:click="onSelectionClick"
+                :value="itemTypeName"
+        >{{itemTypeLinkLabel}}</button>
         <d3-network
                 v-if="chart != null"
                 :net-nodes="chart.nodes"
@@ -80,6 +86,9 @@
                     this.itemTypeKey = "";
                     this.itemTypeName = "";
                 }
+            },
+            onSelectionClick(data) {
+                this.$router.push(this.itemTypeLink);
             }
         },
     }

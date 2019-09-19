@@ -188,4 +188,8 @@ public interface DbRepository {
     Result removePrivilege(String partitionKey, String roleKey, String[] role);
 
     PrivilegeDataList getPrivilegesByRole(String roleKey, String[] loggedRoleKey);
+
+    ItemList getItemChildren(String key, String[] role);
+
+    String getGetItemChildrenSQL();
 }
