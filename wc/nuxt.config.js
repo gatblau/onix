@@ -42,6 +42,7 @@ module.exports = {
   plugins: [
     {src: '~/plugins/material-icons'},
     {src: '~/plugins/flag-icon-css'},
+    {src: '~/plugins/vuetify'},
   ],
 
   modules: [
