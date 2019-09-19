@@ -1586,6 +1586,27 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public ItemList getItemChildren(String key, String[] role) {
+        ItemList items = new ItemList();
+        try {
+            db.prepare(getGetItemChildrenSQL());
+            db.setString(1, key);
+            db.setArray(2, role);
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                ItemData item = util.toItemData(set);
+                item.setTypeName(set.getString("item_type_name"));
+                items.getValues().add(item);
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to get child items.", ex);
+        } finally {
+            db.close();
+        }
+        return items;
+    }
+
+    @Override
     public String getAddPrivilegeSQL() {
         return "SELECT ox_add_privilege(" +
                 "?::character varying," + // role_key_param
@@ -1595,6 +1616,14 @@ public class PgSqlRepository implements DbRepository {
                 "?::boolean," + // can_delete_param
                 "?::character varying," + // changed_by_param
                 "?::character varying[]" + // logged_role_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetItemChildrenSQL() {
+        return "SELECT * FROM ox_get_item_children(" +
+                "?::character varying," + // item_key_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 

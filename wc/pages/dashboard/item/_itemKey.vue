@@ -7,6 +7,7 @@
                 <th scope="col">Key</th>
                 <th scope="col">Name</th>
                 <th scope="col">Description</th>
+                <th scope="col">Type</th>
                 <th scope="col">Action</th>
             </tr>
             </thead>
@@ -15,12 +16,13 @@
                 <td>{{ item.key }}</td>
                 <td>{{ item.name }}</td>
                 <td>{{ item.description }}</td>
+                <td>{{ item.typeName }}</td>
                 <td>
                     <button
-                        type="button"
-                        class="btn btn-primary"
-                        v-on:click="onItemClick"
-                        :value="item.key"
+                            type="button"
+                            class="btn btn-primary"
+                            v-on:click="onItemClick"
+                            :value="item.key"
                     >view</button></td>
             </tr>
             </tbody>
@@ -30,18 +32,17 @@
 
 <script>
     export default {
-        name: "itemTypeKey",
+        name: "itemKey",
         data() {
             return {
                 items: [],
             }
         },
         beforeCreate() {
-            this.items = [];
-            this.$axios.get('/api/item?type=' + this.$route.params.itemTypeKey)
-                .then((result) => {
-                    this.items = result.data.values;
-            }).catch(error => console.error(error));
+            this.$axios.get('/api/item/' + this.$route.params.itemKey + "/children")
+                .then((items) => {
+                    this.items = items.data.values;
+                }).catch(error => console.error(error));
         },
         methods: {
             onItemClick(data){

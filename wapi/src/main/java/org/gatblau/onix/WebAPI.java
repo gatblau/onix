@@ -384,6 +384,29 @@ public class WebAPI {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
+    @ApiOperation(
+            value = "Gets the children associated with the specified item.",
+            notes = "Use this function to retrieve a list of items linked to an item.")
+    @RequestMapping(
+            path = "/item/{key}/children"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<Wrapper> getItemChildren(
+            @ApiParam(
+                    name = "key",
+                    value = "A string which uniquely identifies the item and never changes.",
+                    required = true,
+                    example = "item_01_abc"
+            )
+            @PathVariable("key")
+                    String key,
+            Authentication authentication
+    ) {
+        ItemList list = data.getItemChildren(key, getRole(authentication));
+        return ResponseEntity.ok(list);
+    }
+
     /*
         PARTITIONS
      */
