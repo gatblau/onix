@@ -21,7 +21,7 @@ COPY . .
 RUN go get . && CGO_ENABLED=0 GOOS=linux go build -o oxkube .
 
 # package stage: copy the binary into the deployment image
-FROM scratch
+FROM registry.access.redhat.com/ubi8/ubi-minimal
 MAINTAINER gatblau <admin@gatblau.org>
 LABEL author="gatblau.org"
 WORKDIR /app
