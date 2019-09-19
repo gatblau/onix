@@ -54,16 +54,10 @@ func (k *OxKube) start() error {
 		if err == nil {
 			break
 		}
-		if strings.Contains(err.Error(), "500") {
-			// there is a CMDB error so exit
-			k.log.Errorf("Can't connect to Onix: %s.", err)
-			return err
-		} else {
-			attempts = attempts + 1
-			k.log.Warnf("Can't connect to Onix: %s. "+
-				"Attempt %s, waiting before attempting to connect again.", err, strconv.Itoa(attempts))
-			time.Sleep(interval * time.Second)
-		}
+		attempts = attempts + 1
+		k.log.Warnf("Can't connect to Onix: %s. "+
+			"Attempt %s, waiting before attempting to connect again.", err, strconv.Itoa(attempts))
+		time.Sleep(interval * time.Second)
 	}
 	// if not...
 	if !exist {
