@@ -26,18 +26,34 @@ export const state = () => ({
     },
     items : [],
     itemTypes: [],
+    meta : {},
+    title: "",
 })
 
 export const mutations = {
     setItems(state, data) {
         state.items = [];
         state.items = data.items;
-        // data.app.$forceUpdate();
     },
     setItemTypes(state, data) {
         state.itemTypes = [];
         state.itemTypes = data.itemTypes;
-        // data.app.$forceUpdate();
+    },
+    setMeta(state, data) {
+        let key = data.itemKey;
+        if (key == "") {
+            state.meta = null;
+        } else {
+            for (let i of state.items) {
+                if (i.key == key) {
+                    state.meta = i.meta;
+                    break;
+                }
+            }
+        }
+    },
+    setTitle(state, data) {
+        state.title = data.title;
     }
 }
 
