@@ -33,21 +33,22 @@
 <script>
     export default {
         name: "itemKey",
-        data() {
-            return {
-                items: [],
-            }
-        },
-        beforeCreate() {
-            this.$axios.get('/api/item/' + this.$route.params.itemKey + "/children")
-                .then((items) => {
-                    this.items = items.data.values;
-                }).catch(error => console.error(error));
-        },
         methods: {
             onItemClick(data){
                 this.$router.push('../item/' + data.target.value);
             }
+        },
+        computed: {
+            items () {
+                return this.$store.state.graph.items;
+            }
+        },
+        // watchQuery: true,
+        async asyncData ({ params, $axios, app, store }) {
+            $axios.get('/api/item/' + params.itemKey + "/children")
+                .then((result) => {
+                    store.commit('graph/setItems', { items: result.data.values, app: app });
+                }).catch(error => console.error(error));
         }
     }
 </script>
