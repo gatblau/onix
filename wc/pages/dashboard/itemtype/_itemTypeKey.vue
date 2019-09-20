@@ -1,6 +1,6 @@
 <template>
     <div class="table-wrapper-scroll-y my-custom-scrollbar">
-        <!--<button type="button" class="btn btn-outline-primary" onclick="window.history.back()"><- Back</button>-->
+        <button type="button" class="btn btn-outline-primary" onclick="window.history.back()"><i class="material-icons">keyboard_arrow_up</i></button>
         <table class="table table-bordered table-striped table-hover mb-0">
             <thead class="thead-light">
             <tr>
@@ -18,7 +18,7 @@
                 <td>
                     <button
                         type="button"
-                        class="btn btn-primary"
+                        class="btn btn-outline-primary"
                         v-on:click="onItemClick"
                         :value="item.key"
                     >view</button>
