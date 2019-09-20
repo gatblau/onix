@@ -23,10 +23,22 @@ export const state = () => ({
         linkWidth: 2,
         linkLabels: true,
         fontSize: 16,
-    }
+    },
+    items : [],
+    itemTypes: [],
 })
 
 export const mutations = {
+    setItems(state, data) {
+        state.items = [];
+        state.items = data.items;
+        // data.app.$forceUpdate();
+    },
+    setItemTypes(state, data) {
+        state.itemTypes = [];
+        state.itemTypes = data.itemTypes;
+        // data.app.$forceUpdate();
+    }
 }
 
 export const getters = {
