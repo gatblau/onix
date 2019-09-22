@@ -20,7 +20,7 @@ REPO_NAME=gatblau
 APP_NAME=onix
 
 # the version of the application
-APP_VER = v0.0.2
+APP_VER = v0.0.3
 
 # get old images that are left without a name from new image builds (i.e. dangling images)
 DANGLING_IMS = $(shell docker images -f dangling=true -q)
