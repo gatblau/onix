@@ -49,7 +49,7 @@ services:
     restart: always
     environment:
       - OXKU_ID=kube-01
-      - OXKU_ONIX_URL=http://onix:8080
+      - OXKU_ONIX_URL=${WAPI_URI}
       - OXKU_CONSUMERS_CONSUMER=webhook
       - OXKU_LOGINLEVEL=${LOGIN_LEVEL}
       - OXKU_ONIX_AUTHMODE=${AUTH_MODE}
@@ -57,3 +57,14 @@ services:
       - OXKU_ONIX_PASSWORD=${ADMIN_PWD}
     ports:
       - "8000:8000"
+  oxwc:
+    image: gatblau/oxwc-snapshot
+    depends_on:
+      - onix
+    container_name: oxwc
+    restart: always
+    environment:
+      - WC_OX_WAPI_URI=${WAPI_URI}
+      - WC_OX_WAPI_AUTH_MODE=${AUTH_MODE}
+    ports:
+      - "3000:3000"
