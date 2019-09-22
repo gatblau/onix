@@ -1,0 +1,121 @@
+# Onix Web Console only deployment
+apiVersion: v1
+kind: Template
+metadata:
+  name:  onix-web-console
+  annotations:
+    description: "Deploys the Onix Web Console only."
+parameters:
+  - name: WC_OX_WAPI_URI
+    value: "http://onixwapi:8080"
+    displayName: Onix Web API URI
+    description: The URI for the Onix Web API Service to which the Web Console Connects.
+    required: true
+  - name: WC_OX_WAPI_AUTH_MODE
+    value: "basic"
+    displayName: Onix Web API Authentication Mode
+    description: >-
+      The authentication mode used to connect to the Onix Web API (i.e. none, basic, oidc)
+    required: true
+objects:
+  - apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      name: oxwc
+    spec:
+      replicas: 1
+      progressDeadlineSeconds: 600
+      revisionHistoryLimit: 10
+      selector:
+        deploymentconfig: oxwc
+      strategy:
+        activeDeadlineSeconds: 21600
+        resources: {}
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+          maxUnavailable: 25%
+          timeoutSeconds: 600
+          updatePeriodSeconds: 1
+        type: Rolling
+      template:
+        metadata:
+          labels:
+            app: oxwc
+            deploymentconfig: oxwc
+        spec:
+          containers:
+            - name: oxwc
+              env:
+                - name: WC_OX_WAPI_URI
+                  value: "${WC_OX_WAPI_URI}"
+                - name: OXKU_LOGINLEVEL
+                  value: "${WC_OX_WAPI_AUTH_MODE}"
+              imagePullPolicy: IfNotPresent
+              resources: {}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+      triggers:
+        - type: ConfigChange
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - oxwc
+            from:
+              kind: ImageStreamTag
+              name: oxwc-snapshot:latest
+  - apiVersion: image.openshift.io/v1
+    kind: ImageStream
+    metadata:
+      annotations:
+      labels:
+        app: oxwc
+      name: oxwc-snapshot
+    spec:
+      lookupPolicy:
+        local: true
+      tags:
+        - annotations:
+          from:
+            kind: DockerImage
+            name: gatblau/oxwc-snapshot
+          importPolicy:
+            scheduled: true
+          name: latest
+          referencePolicy:
+            type: Local
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: oxwc
+    spec:
+      ports:
+        - name: "8080"
+          port: 8080
+          protocol: TCP
+          targetPort: 3000
+      selector:
+        deploymentconfig: oxwc
+      sessionAffinity: None
+      type: ClusterIP
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: oxwc
+    spec:
+      port:
+        targetPort: "8080"
+      tls:
+        insecureEdgeTerminationPolicy: Redirect
+        termination: edge
+      to:
+        kind: Service
+        name: oxwc
+        weight: 100
+      wildcardPolicy: None
