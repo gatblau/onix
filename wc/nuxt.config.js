@@ -15,7 +15,12 @@
 const pkg = require('./package');
 
 module.exports = {
-  mode: 'spa',
+  // mode: 'spa',
+
+  server: {
+    // allow connections outside of the host machine (default is 'localhost')
+    host: '0.0.0.0',
+  },
 
   head: {
     title: pkg.name,

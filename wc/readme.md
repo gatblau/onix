@@ -1,4 +1,4 @@
-npm<img src="../docs/pics/ox.png" width="125" height="125" align="right">
+<img src="../docs/pics/ox.png" width="125" height="125" align="right">
 
 # Onix Web Console
 
