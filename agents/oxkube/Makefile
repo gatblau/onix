@@ -23,7 +23,7 @@ BINARY_NAME=oxkube
 GO_CMD = go
 
 # the version of the application
-APP_VER = v0.0.2
+APP_VER = v0.0.3
 
 # the name of the folder where the packaged binaries will be placed after the build
 BUILD_FOLDER=build
