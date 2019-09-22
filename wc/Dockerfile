@@ -21,9 +21,7 @@ MAINTAINER Gatblau <onix@gatblau.org>
 WORKDIR ./
 ARG DEPENDENCY=tmp
 COPY . .
-RUN npm install
-# for production
-# RUN npm ci --only=production
-EXPOSE 8080
+RUN npm install && npm run build
+EXPOSE 3000
 USER 20
 CMD [ "npm", "start" ]
