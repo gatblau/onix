@@ -1,0 +1,690 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name:  onix-all-persistent
+  annotations:
+    description: "Deploys Onix (i.e. database, web api, kubernetes agent and web console) with persistent storage."
+# Note: prefix OX refers to Onix, OXKU refers to the Onix Kubernetes Agent
+parameters:
+  - name: OX_PLATFORM_ID
+    value: OCP-01
+    displayName: Platform Identifier
+    description: A unique identifier string for the platform
+    required: true
+  - name: OX_AUTHMODE
+    value: basic
+    displayName: Onix Authentication Method
+    description: >-
+      The method used by the Onix Web API to authenticate requests
+      - i.e. none, basic, oidc
+    required: true
+  - name: OX_DB_ADM_PWD
+    displayName: Onix PostgreSQL Administrator Password
+    description: The PostgreSQL database admin password
+    required: true
+    from: "[a-zA-Z0-9]{8}"
+    generate: expression
+  - name: OX_DB_PWD
+    displayName: Onix Database User Password
+    description: The PostgreSQL database Onix user password
+    required: true
+    from: "[a-zA-Z0-9]{8}"
+    generate: expression
+  - name: OX_WAPI_ADMIN_PWD
+    displayName: Onix Web API Administrator Role Password
+    description: The Onix Web API administrator role password.
+    required: true
+    from: "[a-zA-Z0-9]{8}"
+    generate: expression
+  - name: OX_WAPI_WRITER_PWD
+    displayName: Onix Web API Writer Role Password
+    description: The Onix Web API writer role password.
+    required: true
+    from: "[a-zA-Z0-9]{8}"
+    generate: expression
+  - name: OX_WAPI_READER_PWD
+    displayName: Onix Web API Reader Role Password
+    description: The Onix Web API reader role password.
+    required: true
+    from: "[a-zA-Z0-9]{8}"
+    generate: expression
+  - name: OXKU_LOG_LEVEL
+    value: Info
+    displayName: Log Level
+    description: >-
+      The level of login used by the Onix Agent
+      - i.e. Trace, Debug, Info, Warn, Error, Fatal, Panic
+    required: true
+  - name: OXKU_METRICS
+    value: "false"
+    displayName: Metrics
+    description: >-
+      A flag indicating whether the metrics endpoint for the Onix Agent should be enabled.
+      - i.e. true or false
+    required: false
+  - name: OXKU_CONSUMER
+    value: webhook
+    displayName: Events Consumer
+    description: >-
+      The type of event consumer used by the Onix Kube Agent to receive event information
+      - i.e. webhook or broker
+    required: true
+  - name: OXKU_USERNAME
+    value: admin
+    displayName: Onix Username
+    description: >-
+      The username used by the Onix Kube Agent to connect to the Onix Web API
+    required: true
+  - name: OXKU_WEBHOOK_USERNAME
+    displayName: Onix Kube Webhook User Username
+    description: The user username used by the Onix Kube Agent webhook to authenticate requests.
+    required: true
+    value: 'sentinel'
+  - name: OXKU_WEBHOOK_PASSWORD
+    displayName: Onix Kube Webhook User Password
+    description: The user password used by the Onix Kube Agent webhook to authenticate requests.
+    required: true
+    from: "[a-zA-Z0-9]{8}"
+    generate: expression
+  - name: WC_OX_WAPI_URI
+    value: "http://onixwapi:8080"
+    displayName: Onix Web API URI
+    description: >-
+      The URI for the Onix Web API Service to which the Web Console Connects.
+    required: true
+  - name: WC_OX_WAPI_AUTH_MODE
+    value: "basic"
+    displayName: Onix Web API Authentication Mode
+    description: >-
+      The authentication mode used to connect to the Onix Web API (i.e. none, basic, oidc)
+    required: true
+objects:
+  #####################################################################
+  # Secrets
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: onix-db-user
+    type: Opaque
+    data:
+      user: b25peA==
+    stringData:
+      pwd: "${OX_DB_PWD}"
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: onix-db-admin
+    type: Opaque
+    stringData:
+      pwd: "${OX_DB_ADM_PWD}"
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: onix-wapi-admin-user
+    type: Opaque
+    data:
+      user: YWRtaW4=
+    stringData:
+      pwd: "${OX_WAPI_ADMIN_PWD}"
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: onix-wapi-reader-user
+    type: Opaque
+    data:
+      user: cmVhZGVy
+    stringData:
+      pwd: "${OX_WAPI_READER_PWD}"
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: onix-wapi-writer-user
+    type: Opaque
+    data:
+      user: d3JpdGVy
+    stringData:
+      pwd: "${OX_WAPI_WRITER_PWD}"
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: oxkube-user-secret
+    type: Opaque
+    stringData:
+      username: "${OXKU_WEBHOOK_USERNAME}"
+      password: "${OXKU_WEBHOOK_PASSWORD}"
+
+  #####################################################################
+  # Onix database
+  - apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      name: onixdb
+    spec:
+      replicas: 1
+      progressDeadlineSeconds: 600
+      revisionHistoryLimit: 10
+      selector:
+        deploymentconfig: onixdb
+      strategy:
+        activeDeadlineSeconds: 21600
+        resources: {}
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+          maxUnavailable: 25%
+          timeoutSeconds: 600
+          updatePeriodSeconds: 1
+        type: Rolling
+      template:
+        metadata:
+          labels:
+            app: onix
+            deploymentconfig: onixdb
+        spec:
+          containers:
+            - name: onixdb
+              env:
+                - name: POSTGRESQL_ADMIN_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: onix-db-admin
+                      key: pwd
+              imagePullPolicy: IfNotPresent
+              ports:
+                - containerPort: 5432
+                  protocol: TCP
+              resources: {}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              volumeMounts:
+                - mountPath: /var/lib/pgsql/data
+                  name: onixdb-data
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+          volumes:
+            - name: onixdb-data
+              persistentVolumeClaim:
+                claimName: onixdb
+      triggers:
+        - type: ConfigChange
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - onixdb
+            from:
+              kind: ImageStreamTag
+              name: onixdb:latest
+  - apiVersion: image.openshift.io/v1
+    kind: ImageStream
+    metadata:
+      annotations:
+      labels:
+        app: onix
+      name: onixdb
+    spec:
+      lookupPolicy:
+        local: true
+      tags:
+        - annotations:
+          from:
+            kind: DockerImage
+            name: centos/postgresql-10-centos7
+          importPolicy:
+            scheduled: true
+          name: latest
+          referencePolicy:
+            type: Local
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: onixdb
+    spec:
+      ports:
+        - name: "5432"
+          port: 5432
+          protocol: TCP
+          targetPort: 5432
+      selector:
+        deploymentconfig: onixdb
+      sessionAffinity: None
+      type: ClusterIP
+
+  #####################################################################
+  # Onix WAPI
+  - apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      name: onixwapi
+    spec:
+      progressDeadlineSeconds: 600
+      replicas: 2
+      revisionHistoryLimit: 10
+      selector:
+        deploymentconfig: onixwapi
+      strategy:
+        activeDeadlineSeconds: 21600
+        resources: {}
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+          maxUnavailable: 25%
+          timeoutSeconds: 600
+          updatePeriodSeconds: 1
+        type: Rolling
+      template:
+        metadata:
+          labels:
+            app: onix
+            deploymentconfig: onixwapi
+        spec:
+          containers:
+            - env:
+                - name: DB_HOST
+                  value: onixdb
+                - name: WAPI_AUTH_MODE
+                  value: basic
+                - name: DB_ADMIN_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      key: pwd
+                      name: onix-db-admin
+                - name: DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: user
+                      name: onix-db-user
+                - name: DB_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      key: pwd
+                      name: onix-db-user
+                - name: WAPI_ADMIN_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: user
+                      name: onix-wapi-admin-user
+                - name: WAPI_ADMIN_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      key: pwd
+                      name: onix-wapi-admin-user
+                - name: WAPI_READER_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: user
+                      name: onix-wapi-reader-user
+                - name: WAPI_READER_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      key: pwd
+                      name: onix-wapi-reader-user
+                - name: WAPI_WRITER_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: user
+                      name: onix-wapi-writer-user
+                - name: WAPI_WRITER_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      key: pwd
+                      name: onix-wapi-writer-user
+                - name: MGMT_ENDPOINT_METRICS_ENABLED
+                  value: "true"
+                - name: DS_PREP_STMT_CACHE_SIZE
+                  value: "250"
+                - name: DS_PREP_STMT_CACHE_SQL_LIMIT
+                  value: "2048"
+                - name: DS_CACHE_PREP_STMTS
+                  value: "true"
+                - name: DS_USE_SERVER_PREP_STMTS
+                  value: "true"
+              imagePullPolicy: Always
+              livenessProbe:
+                failureThreshold: 3
+                httpGet:
+                  path: /live
+                  port: 8080
+                  scheme: HTTP
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              name: onixwapi
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+              readinessProbe:
+                failureThreshold: 3
+                httpGet:
+                  path: /ready
+                  port: 8080
+                  scheme: HTTP
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              resources: {}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+      triggers:
+        - type: ConfigChange
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - onixwapi
+            from:
+              kind: ImageStreamTag
+              name: onixwapi-snapshot:latest
+  - apiVersion: image.openshift.io/v1
+    kind: ImageStream
+    metadata:
+      annotations:
+      labels:
+        app: onix
+      name: onixwapi-snapshot
+    spec:
+      lookupPolicy:
+        local: true
+      tags:
+        - annotations:
+          from:
+            kind: DockerImage
+            name: gatblau/onix-snapshot
+          importPolicy:
+            scheduled: true
+          name: latest
+          referencePolicy:
+            type: Local
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: onixwapi
+    spec:
+      ports:
+        - name: "8080"
+          port: 8080
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        deploymentconfig: onixwapi
+      sessionAffinity: None
+      type: ClusterIP
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: onixwapi
+    spec:
+      port:
+        targetPort: "8080"
+      tls:
+        insecureEdgeTerminationPolicy: Redirect
+        termination: edge
+      to:
+        kind: Service
+        name: onixwapi
+        weight: 100
+      wildcardPolicy: None
+
+  #####################################################################
+  # Onix Kubernetes Agent
+  - apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      name: oxkube
+    spec:
+      replicas: 1
+      progressDeadlineSeconds: 600
+      revisionHistoryLimit: 10
+      selector:
+        deploymentconfig: oxkube
+      strategy:
+        activeDeadlineSeconds: 21600
+        resources: {}
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+          maxUnavailable: 25%
+          timeoutSeconds: 600
+          updatePeriodSeconds: 1
+        type: Rolling
+      template:
+        metadata:
+          labels:
+            app: oxkube
+            deploymentconfig: oxkube
+        spec:
+          containers:
+            - name: oxkube
+              env:
+                - name: OXKU_ID
+                  value: "${OX_PLATFORM_ID}"
+                - name: OXKU_LOGINLEVEL
+                  value: "${OXKU_LOG_LEVEL}"
+                - name: OXKU_METRICS
+                  value: "${OXKU_METRICS}"
+                - name: OXKU_ONIX_AUTHMODE
+                  value: "${OX_AUTHMODE}"
+                - name: OXKU_ONIX_URL
+                  value: "http://onixwapi:8080"
+                - name: OXKU_ONIX_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: onix-wapi-admin-user
+                      key: user
+                - name: OXKU_ONIX_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: onix-wapi-admin-user
+                      key: pwd
+                - name: OXKU_CONSUMERS_CONSUMER
+                  value: "${OXKU_CONSUMER}"
+                - name: OXKU_CONSUMERS_WEBHOOK_AUTHMODE
+                  value: "basic"
+                - name: OXKU_CONSUMERS_WEBHOOK_INSECURESKIPVERIFY
+                  value: "true"
+                - name: OXKU_CONSUMERS_WEBHOOK_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: oxkube-user-secret
+                      key: username
+                - name: OXKU_CONSUMERS_WEBHOOK_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: oxkube-user-secret
+                      key: password
+              imagePullPolicy: Always
+              resources: {}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+      triggers:
+        - type: ConfigChange
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - oxkube
+            from:
+              kind: ImageStreamTag
+              name: oxkube-snapshot:latest
+  - apiVersion: image.openshift.io/v1
+    kind: ImageStream
+    metadata:
+      annotations:
+      labels:
+        app: oxkube
+      name: oxkube-snapshot
+    spec:
+      lookupPolicy:
+        local: true
+      tags:
+        - annotations:
+          from:
+            kind: DockerImage
+            name: gatblau/oxkube-snapshot
+          importPolicy:
+            scheduled: true
+          name: latest
+          referencePolicy:
+            type: Local
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: oxkube
+    spec:
+      ports:
+        - name: "8080"
+          port: 8080
+          protocol: TCP
+          targetPort: 8000
+      selector:
+        deploymentconfig: oxkube
+      sessionAffinity: None
+      type: ClusterIP
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: oxkube
+    spec:
+      port:
+        targetPort: "8080"
+      tls:
+        insecureEdgeTerminationPolicy: Redirect
+        termination: edge
+      to:
+        kind: Service
+        name: oxkube
+        weight: 100
+      wildcardPolicy: None
+
+  - apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      name: oxwc
+    spec:
+      replicas: 1
+      progressDeadlineSeconds: 600
+      revisionHistoryLimit: 10
+      selector:
+        deploymentconfig: oxwc
+      strategy:
+        activeDeadlineSeconds: 21600
+        resources: {}
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+          maxUnavailable: 25%
+          timeoutSeconds: 600
+          updatePeriodSeconds: 1
+        type: Rolling
+      template:
+        metadata:
+          labels:
+            app: oxwc
+            deploymentconfig: oxwc
+        spec:
+          containers:
+            - name: oxwc
+              env:
+                - name: WC_OX_WAPI_URI
+                  value: "${WC_OX_WAPI_URI}"
+                - name: OXKU_LOGINLEVEL
+                  value: "${WC_OX_WAPI_AUTH_MODE}"
+              imagePullPolicy: Always
+              resources: {}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+      triggers:
+        - type: ConfigChange
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - oxwc
+            from:
+              kind: ImageStreamTag
+              name: oxwc-snapshot:latest
+  - apiVersion: image.openshift.io/v1
+    kind: ImageStream
+    metadata:
+      annotations:
+      labels:
+        app: oxwc
+      name: oxwc-snapshot
+    spec:
+      lookupPolicy:
+        local: true
+      tags:
+        - annotations:
+          from:
+            kind: DockerImage
+            name: gatblau/oxwc-snapshot
+          importPolicy:
+            scheduled: true
+          name: latest
+          referencePolicy:
+            type: Local
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: oxwc
+    spec:
+      ports:
+        - name: "8080"
+          port: 8080
+          protocol: TCP
+          targetPort: 3000
+      selector:
+        deploymentconfig: oxwc
+      sessionAffinity: None
+      type: ClusterIP
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: oxwc
+    spec:
+      port:
+        targetPort: "8080"
+      tls:
+        insecureEdgeTerminationPolicy: Redirect
+        termination: edge
+      to:
+        kind: Service
+        name: oxwc
+        weight: 100
+      wildcardPolicy: None
+
+  #####################################################################
+  # Persistent volume claims
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      annotations:
+      finalizers:
+        - kubernetes.io/pvc-protection
+      name: onixdb
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: "10Gi"
