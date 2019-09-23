@@ -58,6 +58,12 @@ docker run --name oxku -it -d -p 8000:8000 --link ox \
     -e OXKU_ONIX_PASSWORD=0n1x \
     "gatblau/oxkube-snapshot"
 
+echo create the Onix Web Console
+docker run --name oxwc -it -d -p 3000:3000 --link ox \
+    -e WC_OX_WAPI_URI=http://onix:8080 \
+    -e WC_OX_WAPI_AUTH_MODE=basic \
+    "gatblau/oxwc-snapshot"
+
 echo "please wait for the Web API to become available"
 sleep 10
 
