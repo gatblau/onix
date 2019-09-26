@@ -26,7 +26,7 @@ WORKDIR /app
 COPY . .
 RUN rm -rf ./target && mvn -f pom.xml package && unzip -o ./target/*.jar -d /tmp
 # the final deployment image
-FROM openjdk:8-jdk-alpine
+FROM quay.io/gatblau/openjdk:13-j9-ubi8-min
 MAINTAINER Gatblau <onix@gatblau.org>
 LABEL author="gatblau.org"
 COPY --from=builder /tmp/BOOT-INF/lib /app/lib
