@@ -13,7 +13,7 @@
    to be licensed under the same terms as the rest of the code.
 */
 
-package provider
+package main
 
 import (
 	"github.com/hashicorp/terraform/helper/schema"
@@ -56,7 +56,7 @@ func createOrUpdateModel(data *schema.ResourceData, m interface{}) error {
 }
 
 func deleteModel(data *schema.ResourceData, m interface{}) error {
-	return delete(data, m, modelPayload(data), "model")
+	return delete(m, modelPayload(data), "model")
 }
 
 func modelPayload(data *schema.ResourceData) Payload {
