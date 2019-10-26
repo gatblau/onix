@@ -13,7 +13,7 @@
    to be licensed under the same terms as the rest of the code.
 */
 
-package provider
+package main
 
 import "github.com/hashicorp/terraform/helper/schema"
 
@@ -54,7 +54,7 @@ func createOrUpdateLinkType(data *schema.ResourceData, m interface{}) error {
 }
 
 func deleteLinkType(data *schema.ResourceData, m interface{}) error {
-	return delete(data, m, linkTypePayload(data), "linktype")
+	return delete(m, linkTypePayload(data), "linktype")
 }
 
 func linkTypePayload(data *schema.ResourceData) Payload {
