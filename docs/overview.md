@@ -32,7 +32,7 @@ An explanation of each bundle's components follows.
 The core bundle is the smallest possible configuration of the solution. It is comprised of a Web Console, the transactional Web API and database.
 
 | Service | Description |
-|---|---|---|
+|---|---|
 | __Onix Web Console__ | Users can log in the web console to see and modify configuration information stored in the database.
 | __Onix WAPI__ | The Web API provides RESTful endpoints for performing operations in the Onix Database. |
 | __Onix Database__ | The PostgreSQL database containing the Onix information schemas. |
