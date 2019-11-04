@@ -14,12 +14,10 @@
 #    to be licensed under the same terms as the rest of the code.
 #
 
-# Builds the Onix Web Console image
-
-FROM node:alpine
+# Builds the Onix Web Console image6
+FROM quay.io/gatblau/node:12-ubi8-min
 MAINTAINER Gatblau <onix@gatblau.org>
-WORKDIR ./
-ARG DEPENDENCY=tmp
+WORKDIR /usr/src/wc
 COPY . .
 RUN npm install && npm run build
 EXPOSE 3000
