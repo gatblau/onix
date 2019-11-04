@@ -1,5 +1,7 @@
 # Contributing
 
+<img src="docs/pics/ox.png" width="200" height="200" align="right">
+
 Contributions are **welcome**.
 
 Contributions should be done via Pull Requests on [Github](https://github.com/gatblau/onix).
