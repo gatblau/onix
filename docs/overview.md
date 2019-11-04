@@ -1,5 +1,5 @@
 # Onix Configuration Manager
-<img src="pics/ox.png" width="300" height="300" align="right">
+<img src="pics/ox.png" width="200" height="200" align="right">
 
 ## From CMDB to Configuration Manager
 
