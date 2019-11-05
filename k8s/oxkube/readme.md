@@ -23,19 +23,22 @@ Ox-Kube is an [Onix API Extension](../../docs/extensions.md) API extension for [
 
 | Cfg Vars | Env Vars | Description | Default |
 |---|---|---|---|
-| Id | OXKU_ID | - | - |
-| LogLevel | OXKU_LOGLEVEL | - | - |
-| Metrics | OXKU_METRICS | - | - |
+| Id | OXKU_ID | the oxkube service instance Id for logging identification purposes. | OxKube-01 |
+| LogLevel | OXKU_LOGLEVEL | verbosity of logging (Trace, Debug, Warning, Info, Error, Fatal, Panic) | Trace |
+| Metrics | OXKU_METRICS | enables metrics | true |
 | Consumers.Consumer | OXKU_CONSUMERS_CONSUMER | - | - |
 
 ### Onix Configuration
 
 | Cfg Vars | Env Vars | Description | Default |
 |---|---|---|---|
-| Onix.URL | OXKU_ID | - | - |
-| Onix.AuthMode | OXKU_AUTHMODE | - | - |
-| Onix.Username | OXKU_USERNAME | - | - |
-| Onix.Password | OXKU_PASSWORD | - | - |
+| Onix.URL | OXKU_URL | The URL of the Onix WAPI service to connect to. | http://localhost:8080 |
+| Onix.AuthMode | OXKU_AUTHMODE | the athentication type to use when connecting to the Onix WAPI service (none, basic or oidc) | basic |
+| Onix.Username | OXKU_USERNAME | the user name if basic authentication mode is used. | admin |
+| Onix.Password | OXKU_PASSWORD | the password if basic authentication mode is used. | 0n1x |
+| Onix.ClienId | OXKU_CLIENTID | The Client Id if OpenId Connect authentication mode is used. | - |
+| Onix.ClienSecret | OXKU_CLIENTSECRET | The client secret if OpenId Connect authentication mode is used. | - |
+| Onix.TokenURI | OXKU_TOKENURI | The Token service URI if OpenId Connect authentication mode is used. | - |
 
 ### Web Hook Consumer Configuration
 
