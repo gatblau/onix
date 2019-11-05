@@ -12,25 +12,37 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
-package main
+package src
 
 import (
 	"bytes"
+	"errors"
 )
 
-type LinkRule struct {
-	Key              string `json:"key"`
-	Name             string `json:"name"`
-	Description      string `json:"description"`
-	LinkTypeKey      string `json:"linkTypeKey"`
-	StartItemTypeKey string `json:"startItemTypeKey"`
-	EndItemTypeKey   string `json:"endItemTypeKey"`
+// Result data retrieved by PUT and DELETE WAPI resources
+type Result struct {
+	Changed   bool   `json:"changed"`
+	Error     bool   `json:"error"`
+	Message   string `json:"message"`
+	Operation string `json:"operation"`
+	Ref       string `json:"ref"`
 }
 
-func (linkRule *LinkRule) ToJSON() (*bytes.Reader, error) {
-	return GetJSONBytesReader(linkRule)
+type ResultList struct {
+	Values []Item
 }
 
-func (rule *LinkRule) KeyValue() string {
-	return rule.Key
+func (list *ResultList) ToJSON() (*bytes.Reader, error) {
+	return GetJSONBytesReader(list)
+}
+
+// Check for errors in the result and the passed in error
+func (r *Result) Check(err error) error {
+	if err != nil {
+		return err
+	} else if r.Error {
+		return errors.New(r.Message)
+	} else {
+		return nil
+	}
 }

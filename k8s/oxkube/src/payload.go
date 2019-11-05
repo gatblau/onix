@@ -12,37 +12,13 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
-package main
+package src
 
-import (
-	"bytes"
-	"errors"
-)
+import "bytes"
 
-// Result data retrieved by PUT and DELETE WAPI resources
-type Result struct {
-	Changed   bool   `json:"changed"`
-	Error     bool   `json:"error"`
-	Message   string `json:"message"`
-	Operation string `json:"operation"`
-	Ref       string `json:"ref"`
-}
-
-type ResultList struct {
-	Values []Item
-}
-
-func (list *ResultList) ToJSON() (*bytes.Reader, error) {
-	return GetJSONBytesReader(list)
-}
-
-// Check for errors in the result and the passed in error
-func (r *Result) Check(err error) error {
-	if err != nil {
-		return err
-	} else if r.Error {
-		return errors.New(r.Message)
-	} else {
-		return nil
-	}
+// Interface implemented by all payload objects to enable
+// generic key extraction and conversion to byte Reader
+type Payload interface {
+	KeyValue() string
+	ToJSON() (*bytes.Reader, error)
 }

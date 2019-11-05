@@ -12,25 +12,27 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
-package main
+package src
 
-import "time"
+import (
+	"bytes"
+)
 
-// represent the event sent by the publisher
-type Event struct {
-	// information about the status change
-	Change StatusChange
-	// the k8s object that changed
-	Object interface{}
+type Link struct {
+	Key          string                 `json:"key"`
+	Description  string                 `json:"description"`
+	Type         string                 `json:"type"`
+	Tag          []interface{}          `json:"tag"`
+	Meta         map[string]interface{} `json:"meta"`
+	Attribute    map[string]interface{} `json:"attribute"`
+	StartItemKey string                 `json:"startItemKey"`
+	EndItemKey   string                 `json:"endItemKey"`
 }
 
-// information about the K8S object status change
-type StatusChange struct {
-	key       string    `json:"key"`
-	Name      string    `json:"name"`
-	Type      string    `json:"type"`
-	Namespace string    `json:"namespace"`
-	Kind      string    `json:"kind"`
-	Time      time.Time `json:"time"`
-	Host      string    `json:"host"`
+func (link *Link) ToJSON() (*bytes.Reader, error) {
+	return GetJSONBytesReader(link)
+}
+
+func (link *Link) KeyValue() string {
+	return link.Key
 }

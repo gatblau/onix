@@ -13,7 +13,7 @@
    to be licensed under the same terms as the rest of the code.
 */
 
-package main
+package src
 
 import "strings"
 import "github.com/spf13/viper"

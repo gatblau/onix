@@ -12,23 +12,12 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
-package main
+package src
 
-import (
-	"bytes"
-)
-
-type Data struct {
-	Models    []Model    `json:"models"`
-	ItemTypes []ItemType `json:"itemTypes"`
-	LinkTypes []LinkType `json:"linkTypes"`
-	LinkRules []LinkRule `json:"linkRules"`
-}
-
-func (data *Data) ToJSON() (*bytes.Reader, error) {
-	return GetJSONBytesReader(data)
-}
-
-func (data *Data) KeyValue() string {
-	return ""
+/*
+	oxkube is an Onix CMDB agent which consume change events and updates the CMDB
+*/
+func main() {
+	oxkube := OxKube{}
+	oxkube.start()
 }

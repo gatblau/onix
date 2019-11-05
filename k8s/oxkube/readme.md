@@ -1,13 +1,13 @@
-# Onix Agent for Kubernetes
-
 <img src="../../docs/pics/ox.png" width="200" height="200" align="right">
 
-Ox-Kube is an [Onix CMDB](http://onix.gatblau.org) agent for [Kubernetes](http://kubernetes.io).
+# Onix API Extension for Kubernetes
 
- It consumes messages sent by [Sentinel](http://sentinel.gatblau.org),
- either via a web hook or a message broker consumer, and updates the Onix CMDB when the status of Kubernetes resources change.
+Ox-Kube is an [Onix API Extension](../../docs/extensions.md) API extension for [Kubernetes](http://kubernetes.io).
 
-![OxKube](pics/ox_kube.png)
+ It consumes events sent by [Sentinel](http://sentinel.gatblau.org),
+ either via a webhook or a message broker consumer, and updates the Onix database when the status of Kubernetes resources change.
+
+![OxKube](docs/pics/ox_kube.png)
 
 ## Kubernetes Model
 
@@ -15,7 +15,7 @@ Ox-Kube is an [Onix CMDB](http://onix.gatblau.org) agent for [Kubernetes](http:/
 
 ## Configuration
 
- OxKube is configured via the [config.toml](config.toml) file.
+ OxKube is configured via the [config.toml](src/config.toml) file.
 
  In addition, environment variables can be used to override the values in the configuration file as follows:
 

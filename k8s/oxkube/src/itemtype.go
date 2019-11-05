@@ -12,22 +12,26 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
-package main
+package src
 
-import "fmt"
+import (
+	"bytes"
+)
 
-// get all K8S objects of a specific type in the specified cluster namespace
-func (c *Client) getObjectsInNamespace(cluster string, namespace string, objType K8SOBJ) ([]Item, error) {
-	filters := map[string]string{
-		"type":  objType.String(),
-		"attrs": fmt.Sprintf("cluster,%s|namespace,%s", cluster, namespace),
-	}
-	// get pods in the namespace first
-	podsObj, err := c.getResource("item", "", filters)
+type ItemType struct {
+	Key         string                 `json:"key"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	AttrValid   map[string]interface{} `json:"attrValid"`
+	Filter      map[string]interface{} `json:"filter"`
+	MetaSchema  map[string]interface{} `json:"metaSchema"`
+	Model       string                 `json:"modelKey"`
+}
 
-	if err != nil {
-		return nil, err
-	}
-	// unwraps the response into a list of pod items
-	return podsObj.(*ResultList).Values, nil
+func (itemType *ItemType) ToJSON() (*bytes.Reader, error) {
+	return GetJSONBytesReader(itemType)
+}
+
+func (itemType *ItemType) KeyValue() string {
+	return itemType.Key
 }

@@ -12,27 +12,23 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
-package main
+package src
 
 import (
 	"bytes"
 )
 
-type Link struct {
-	Key          string                 `json:"key"`
-	Description  string                 `json:"description"`
-	Type         string                 `json:"type"`
-	Tag          []interface{}          `json:"tag"`
-	Meta         map[string]interface{} `json:"meta"`
-	Attribute    map[string]interface{} `json:"attribute"`
-	StartItemKey string                 `json:"startItemKey"`
-	EndItemKey   string                 `json:"endItemKey"`
+type Data struct {
+	Models    []Model    `json:"models"`
+	ItemTypes []ItemType `json:"itemTypes"`
+	LinkTypes []LinkType `json:"linkTypes"`
+	LinkRules []LinkRule `json:"linkRules"`
 }
 
-func (link *Link) ToJSON() (*bytes.Reader, error) {
-	return GetJSONBytesReader(link)
+func (data *Data) ToJSON() (*bytes.Reader, error) {
+	return GetJSONBytesReader(data)
 }
 
-func (link *Link) KeyValue() string {
-	return link.Key
+func (data *Data) KeyValue() string {
+	return ""
 }

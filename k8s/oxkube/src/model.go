@@ -12,13 +12,23 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
-package main
+package src
 
-import "bytes"
+import (
+	"bytes"
+)
 
-// Interface implemented by all payload objects to enable
-// generic key extraction and conversion to byte Reader
-type Payload interface {
-	KeyValue() string
-	ToJSON() (*bytes.Reader, error)
+type Model struct {
+	Key         string `json:"key"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Partition   string `json:"partition"`
+}
+
+func (model *Model) ToJSON() (*bytes.Reader, error) {
+	return GetJSONBytesReader(model)
+}
+
+func (model *Model) KeyValue() string {
+	return model.Key
 }
