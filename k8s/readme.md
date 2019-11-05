@@ -1,6 +1,6 @@
-# Kubernetes Bundle
-
 <img src="../docs/pics/ox.png" width="200" height="200" align="right"/>
+
+# Kubernetes Bundle
 
 The Kubernetes bundle integrates Onix with Kubernetes through the following services:
 
