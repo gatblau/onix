@@ -1,4 +1,4 @@
-# the K8S cluster instance Id for logging identification purposes
+# the oxkube service instance Id for logging identification purposes
 Id = "OxKube-01"
 
 # verbosity of logging (Trace, Debug, Warning, Info, Error, Fatal, Panic)
@@ -7,7 +7,7 @@ LogLevel = "Trace"
 # enables metrics
 Metrics = "true"
 
-# CMDB endpoint to update
+# onix wapi endpoint to update
 [Onix]
     URL = "http://localhost:8080"
     AuthMode = "basic"
