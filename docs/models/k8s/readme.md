@@ -18,6 +18,6 @@ The model describe the following relationships between Kubernetes objects:
 
 ![Metamodel](k8s_model.png "Kubernetes meta model")
 
-The metamodel above is used by [OxKube](../../../agents/oxkube/readme.md).
+The metamodel above is used by [OxKube](../../../k8s/oxkube/readme.md).
 
 Upon start, OxKube looks for the model definition in Onix and automatically creates one if it is not found.
