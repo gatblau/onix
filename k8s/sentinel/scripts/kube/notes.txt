@@ -1,0 +1,11 @@
+kubectl On MacOS
+================
+
+after installing kubectl with brew you should run the following commands:
+
+rm /usr/local/bin/kubectl
+brew link --overwrite kubernetes-cli
+
+And also optionally:
+===================
+brew link --overwrite --dry-run kubernetes-cli

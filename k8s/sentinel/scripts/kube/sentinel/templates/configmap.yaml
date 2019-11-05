@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Namespace }}-config
+data:
+  config.toml: |-
+    # Sentinel configuration file
+    # the default relative path to the kube config file for out of cluster configuration
+    # the relative path should start from os.Getenv("HOME") - e.g. ~/.kube/config
+    KubeConfig = ".kube/config"
+    # sets the login level
+    LogLevel = "{{ .Values.loglevel }}"
+    # the platform the sentinel is observing.
+    # update the value below with an identifier for the target platform.
+    Platform = "{{ .Values.platform }}"
+
+    [Publishers]
+        # defines which publisher to use (i.e. webhook, broker, logger)
+        Publisher = "{{ .Values.publisher }}"
+
+        # logger publisher configuration
+        [Publishers.Logger]
+            # whether the logger writes to "stdout" or "file"
+            OutputTo = "{{ .Values.logger.outputto }}"
+            # the path to the log folder, only required if Output = "file"
+            LogFolder = "{{ .Values.logger.logfolder }}"
+
+        # web hook publishers configuration
+        # repeat the block below if you need to add more than one hook
+        [[Publishers.Webhook]]
+            # the uri of the webhook - replace with the
+            URI = "{{ .Values.webhook.uri }}"
+            # authentication mode to use (i.e. none, basic)
+            Authentication = "{{ .Values.webhook.authentication }}"
+            # the optional username for basic authentication
+            Username = "{{ .Values.webhook.username }}"
+            # the optional password for basic authentication
+            Password = "{{ .Values.webhook.password }}"
+
+        # message broker publisher configuration
+        [Publishers.Broker]
+            # The Kafka brokers to connect to, as a comma separated list
+            Brokers = "{{ .Values.broker.brokers }}"
+            # optional certificate file for client authentication
+            Certificate = "{{ .Values.broker.certificate }}"
+            # optional key file for client authentication
+            Key = "{{ .Values.broker.key }}"
+            # optional certificate authority file for TLS client authentication
+            CA = "{{ .Values.broker.ca }}"
+            # optional verify ssl certificates chain
+            Verify = "{{ .Values.broker.verify }}"
+
+    # kubernetes objects to observe
+    [Observe]
+      ClusterRole = "{{ .Values.observe.clusterrole }}"
+      ConfigMap = "{{ .Values.observe.configmap }}"
+      DaemonSet = "{{ .Values.observe.daemonset }}"
+      Deployment = "{{ .Values.observe.deployment }}"
+      Ingress = "{{ .Values.observe.ingress }}"
+      Job = "{{ .Values.observe.job }}"
+      Namespace = "{{ .Values.observe.namespace }}"
+      NetworkPolicy = "{{ .Values.observe.networkpolicy }}"
+      PersistentVolume = "{{ .Values.observe.persistentvolume }}"
+      PersistentVolumeClaim = "{{ .Values.observe.persistentvolumeclaim }}"
+      Pod = "{{ .Values.observe.pod }}"
+      ReplicaSet = "{{ .Values.observe.replicaset }}"
+      ReplicationController = "{{ .Values.observe.replicationcontroller }}"
+      ResourceQuota = "{{ .Values.observe.resourcequota }}"
+      Secret = "{{ .Values.observe.secret }}"
+      Service = "{{ .Values.observe.service }}"
+      ServiceAccount = "{{ .Values.observe.serviceaccount }}"

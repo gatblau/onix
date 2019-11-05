@@ -1,0 +1,28 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: resource-watcher
+rules:
+  - apiGroups: ["*"] # all api groups
+    resources: [
+      "pods",
+      "secrets",
+      "configmaps",
+      "services",
+      "deployments",
+      "namespaces",
+      "persistentvolumes",
+      "persistentvolumeclaims",
+      "replicasets",
+      "serviceaccounts",
+      "clusterroles",
+      "jobs",
+      "ingresses",
+      "daemonsets",
+      "replicationcontrollers",
+      "resourcequotas",
+      "networkpolicies"
+    ]
+    verbs: ["get", "watch", "list"]
+...

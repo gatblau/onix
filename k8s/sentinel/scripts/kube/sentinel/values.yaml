@@ -1,0 +1,62 @@
+# Default values for sentinel.
+# Declare variables to be passed into the templates.
+
+platform: "kube-01"
+
+loglevel: "Info"
+publisher: "logger"
+
+logger:
+  outputto: "stdout"
+  logfolder: "logs"
+
+webhook:
+  uri: "http://localhost:8000"
+  authentication: "basic"
+  username: "admin"
+  password: "0n1x"
+
+broker:
+  brokers: "localhost:9092"
+  certificate: ""
+  key: ""
+  ca: ""
+  verify: "false"
+
+observe:
+  clusterrole: "false"
+  configmap: "false"
+  daemonset: "false"
+  deployment: "false"
+  ingress: "true"
+  job: "false"
+  namespace: "true"
+  networkpolicy: "false"
+  persistentvolume: "false"
+  persistentvolumeclaim: "true"
+  pod: "true"
+  replicaset: "false"
+  replicationcontroller: "true"
+  resourcequota: "true"
+  secret: "false"
+  service: "true"
+  serviceaccount: "false"
+
+serviceAccountName: sentinel
+
+image:
+  repository: gatblau
+  tag: v0.0.3
+  pullPolicy: Always
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
