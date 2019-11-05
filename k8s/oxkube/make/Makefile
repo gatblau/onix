@@ -42,7 +42,7 @@ set-version:
 
 # build the ox-kube docker image
 snapshot-image:
-	docker build -t $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version) .
+	docker build -t $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version) ../src
 	docker tag $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version) $(REPO_NAME)/$(BINARY_NAME)-snapshot:latest
 
 snapshot-push:
