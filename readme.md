@@ -25,12 +25,12 @@ The following topics give more insight into Onix:
 - [Getting started](./docs/getting_started.md)
 - [Database deployment](./docs/db_deploy.md)
 - [Web API](./docs/wapi.md)
+- [API Extensions](./docs/extensions.md)
 - [Role Based Access](./docs/rbac.md)
   - [OpenId Connect](./docs/oidc.md)
 - [Connectors](./connectors/readme.md)
 - [Models](docs/models/readme.md)
 - [Web Console](wc/readme.md)
-- [Agents](agents/readme.md)
 
 ## License Terms
 
