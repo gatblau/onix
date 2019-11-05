@@ -1,0 +1,6 @@
+.idea
+.vagrant
+pkg
+src
+build
+version

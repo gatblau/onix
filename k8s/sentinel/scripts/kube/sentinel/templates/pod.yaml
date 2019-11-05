@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sentinel
+  namespace: {{ .Release.Namespace }}
+spec:
+  serviceAccountName: {{ .Values.serviceAccountName }}
+  containers:
+    - image: {{ .Values.image.repository }}/sentinel:{{ .Values.image.tag }}
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      name: sentinel
+      volumeMounts:
+        - name: config-volume
+          mountPath: /app/config.toml
+          subPath: config.toml
+  restartPolicy: Always
+  volumes:
+    - name: config-volume
+      configMap:
+        name: {{ .Release.Namespace }}-config
+...

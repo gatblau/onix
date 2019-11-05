@@ -1,0 +1,183 @@
+#
+#    Sentinel - Copyright (c) 2019 by www.gatblau.org
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+#    Unless required by applicable law or agreed to in writing, software distributed under
+#    the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+#    either express or implied.
+#    See the License for the specific language governing permissions and limitations under the License.
+#
+#    Contributors to this project, hereby assign copyright in this code to the project,
+#    to be licensed under the same terms as the rest of the code.
+#
+---
+apiVersion: v1
+kind: Template
+metadata:
+  name:  sentinel
+  annotations:
+    description: "Deploys Sentinel event watching for Kubernetes"
+parameters:
+  - name: PLATFORM_ID
+    value: KUBE-01
+    displayName: Platform Identifier
+    description: The unique identifier string for the platform Sentinel is deployed and reporting events on
+    required: true
+  - name: LOG_LEVEL
+    value: Info
+    displayName: Log Level
+    description: >-
+      The level of login used by Sentinel
+      - i.e. Trace, Debug, Info, Warn, Error, Fatal, Panic
+    required: true
+  - name: PUBLISHER
+    value: logger
+    displayName: Publisher
+    description: >-
+      The publisher used by Sentinel to send event information
+      - i.e. logger, webhook, broker
+    required: true
+  - name: WEBHOOK_URI
+    value: http://oxkube-onix.192.168.64.6.nip.io/webhook
+    displayName: Web Hook URI
+    description: >-
+      The URI of the webhook used by Sentinel to publish events
+      - only required if Publisher is set to webhook
+    required: false
+  - name: WEBHOOK_AUTHENTICATION
+    value: basic
+    displayName: Web Hook Authentication Method
+    description: >-
+      The authentication method used by the web hook used by Sentinel to publish events
+      - only required if Publisher is set to web hook
+      - i.e. none, basic
+    required: false
+  - name: WEBHOOK_USER
+    value: "sentinel"
+    displayName: Web Hook Username
+    description: >-
+      The username used for basic authentication of the webhook to which Sentinel publishes events.
+      Required if WEBHOOK_AUTHENTICATION is set to basic.
+    required: false
+  - name: WEBHOOK_PWD
+    value: "change-me"
+    displayName: Web Hook Password
+    description: >-
+      The password used for basic authentication of the webhook to which Sentinel publishes events.
+      Required if WEBHOOK_AUTHENTICATION is set to basic.
+    required: false
+objects:
+  - apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      name: sentinel
+    spec:
+      replicas: 1
+      progressDeadlineSeconds: 600
+      revisionHistoryLimit: 10
+      selector:
+        deploymentconfig: sentinel
+      strategy:
+        activeDeadlineSeconds: 21600
+        resources: {}
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+          maxUnavailable: 25%
+          timeoutSeconds: 600
+          updatePeriodSeconds: 1
+        type: Rolling
+      template:
+        metadata:
+          labels:
+            app: sentinel
+            deploymentconfig: sentinel
+        spec:
+          containers:
+            - name: sentinel
+              env:
+                - name: SL_PLATFORM
+                  value: "${PLATFORM_ID}"
+                - name: SL_LOGINLEVEL
+                  value: "${LOG_LEVEL}"
+                - name: SL_PUBLISHERS_PUBLISHER
+                  value: "${PUBLISHER}"
+                - name: SL_PUBLISHERS_LOGGER_OUTPUTTO
+                  value: stdout
+                - name: SL_PUBLISHERS_WEBHOOK_0_URI
+                  value: "${WEBHOOK_URI}"
+                - name: SL_PUBLISHERS_WEBHOOK_0_INSECURESKIPVERIFY
+                  value: "true"
+                - name: SL_PUBLISHERS_WEBHOOK_0_AUTHENTICATION
+                  value: "${WEBHOOK_AUTHENTICATION}"
+                - name: SL_PUBLISHERS_WEBHOOK_0_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: webhook-secret
+                      key: username
+                - name: SL_PUBLISHERS_WEBHOOK_0_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: webhook-secret
+                      key: password
+                - name: SL_OBSERVE_NAMESPACE
+                  value: 'true'
+                - name: SL_OBSERVE_SERVICE
+                  value: 'true'
+                - name: SL_OBSERVE_PERSISTENTVOLUMECLAIM
+                  value: 'true'
+                - name: SL_OBSERVE_REPLICATIONCONTROLLER
+                  value: 'true'
+                - name: SL_OBSERVE_RESOURCEQUOTA
+                  value: 'true'
+              imagePullPolicy: IfNotPresent
+              resources: {}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          serviceAccountName: sentinel
+          terminationGracePeriodSeconds: 30
+      triggers:
+        - type: ConfigChange
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - sentinel
+            from:
+              kind: ImageStreamTag
+              name: sentinel:latest
+  - apiVersion: image.openshift.io/v1
+    kind: ImageStream
+    metadata:
+      annotations:
+      labels:
+        app: sentinel
+      name: sentinel
+    spec:
+      lookupPolicy:
+        local: true
+      tags:
+        - annotations:
+          from:
+            kind: DockerImage
+            name: quay.io/gatblau/sentinel-snapshot
+          importPolicy:
+            scheduled: true
+          name: latest
+          referencePolicy:
+            type: Local
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: webhook-secret
+    type: Opaque
+    stringData:
+      username: "${WEBHOOK_USER}"
+      password: "${WEBHOOK_PWD}"
+...
