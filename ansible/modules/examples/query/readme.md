@@ -9,7 +9,7 @@ To run the example do the following:
 
 1. Ensure Onix is up and running - Run docker compose with this [docker-compose.yml](../../docker-compose.yml) file.
 2. Ensure Ansible is installed in the machine running the example.
-3. Copy the Python scripts [here](../../../modules) to a location that can be found by Ansible (for instance, within a 
+3. Copy the Python scripts [here](../..) to a location that can be found by Ansible (for instance, within a 
 folder called "library" under the [site.yml](site.yml) file - this is already provided by this project as a symlink).
 4. Open the terminal where the [site.yml](site.yml) file is and type the following:
 

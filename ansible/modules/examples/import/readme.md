@@ -1,6 +1,6 @@
 # Importing Data Example <img src="../../../../../docs/pics/ox.png" width="160" height="160" align="right">
 
-In order to import data into the CMDB, the [ox_import](../../../modules/ox_import.py) module is provided.
+In order to import data into the CMDB, the [ox_import](../../ox_import.py) module is provided.
 
 The module takes a json file containing data to be imported and send them to the Onix web 
 API. 
@@ -13,7 +13,7 @@ To run the example do the following:
 
 1. Ensure Onix is up and running - Run docker compose with this [docker-compose.yml](../../docker-compose.yml) file.
 2. Ensure Ansible is installed in the machine running the example.
-3. Copy the [ox_import](../../../modules/ox_import.py) module to a location that can be found by Ansible (for instance, within a 
+3. Copy the [ox_import](../..py) module to a location that can be found by Ansible (for instance, within a 
 folder called "library" under the [site.yml](site.yml) file).
 4. Open the terminal where the [site.yml](site.yml) file is and type the following:
 

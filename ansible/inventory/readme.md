@@ -1,8 +1,8 @@
-# Inventory Plugin <img src="../../../docs/pics/ox.png" width="160" height="160" align="right">
+# Inventory Plugin <img src="../../docs/pics/ox.png" width="200" height="200" align="right">
 
-The [inventory plugin](./onix.py) allows users to point at a Onix CMDB to retrieve an Ansible inventory. 
+The [inventory plugin](onix.py) allows users to point at a Onix Web API service to retrieve an Ansible inventory.
 
-The plugin behaves in a similar way to the Ansible Tower inventory plugin.
+The plugin behaves in a similar way to the Ansible Tower&copy; inventory plugin.
 
 In order to use the plugin, make sure the following apply:
 
@@ -69,15 +69,15 @@ should display a list of enabled plugings including onix.
 In order for the inventory plugin to be able to retrieve inventory information, the Ansible Inventory meta model has to be imported into Onix.
 The meta model contains all the item types, link types and link rules required to represent the inventory data in the CMDB.
 
-To import the meta model follow the steps shown [here](../../../docs/models/readme.md).
+To import the meta model follow the steps shown [here](../../docs/models/readme.md).
 
 ## Trying it out
 
-In order to try the plugin out, see an example in the [examples folder](./examples/readme.md).
+In order to try the plugin out, see an example in the [examples folder](examples/readme.md).
 
 ### NOTE
 This plugin is based on the Tower plugin by Matthew Jones and Yunfan Zhang as shown [here](https://github.com/ansible/ansible/blob/stable-2.7/lib/ansible/plugins/inventory/tower.py).
 
 Information on how to use the Tower plugin can be found [here](https://docs.ansible.com/ansible/latest/plugins/inventory/tower.html).
 
-([back to index](../../readme.md))
+([back to index](../../connectors/readme.md))
