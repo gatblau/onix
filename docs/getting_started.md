@@ -41,7 +41,7 @@ To install Onix in plain Kubernetes, a [Helm Chart](https://helm.sh/docs/develop
 The easiest way to trying the service is via the Swagger API as describe below.
 
 1. Open the Swagger UI (using the endpoint   `<YourHost>:<YourPort>/swagger-ui.html)` and navigate to the createOrUpdate PUT operation. E.g using docker on localhost, the link would be http://localhost:8080/swagger-ui.html#/web-api/createOrUpdateItemTreeUsingPUT. For OpenShift, replace with `<YourHost>:<YourPort>` with the route.
-2. Paste the payload example found [here](./../connectors/ansible/inventory/examples/inventory.json) in the payload box
+2. Paste the payload example found [here](../ansible/inventory/examples/inventory.json) in the payload box
 3. Execute the request to create the inventory in the CMDB
 4. You should see the response of the web service showing no errors
 

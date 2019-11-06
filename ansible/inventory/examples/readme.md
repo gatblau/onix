@@ -1,4 +1,4 @@
-# Inventory Plugin Example <img src="../../../../docs/pics/ox.png" width="160" height="160" align="right">
+# Inventory Plugin Example <img src="../../../docs/pics/ox.png" width="200" height="200" align="right">
 
 This example shows how to use the inventory plugin to read inventories from the CMDB.
 
@@ -12,7 +12,7 @@ The Onix WAPI is the Web API allowing reading and writing CI information to/from
 For the purpose of this example, it can be installed easily in containerised form.
 Ensure you have [docker compose](https://docs.docker.com/compose/) installed in your machine and understand how to use it.
 
-Run docker compose with this [docker-compose.yml](../../../../docs/install/container/docker-compose.yml) file.
+Run docker compose with this [docker-compose.yml](../../../docs/install/container/docker-compose.yml) file.
 
 Then run the following command from a linux terminal:
 
@@ -25,11 +25,11 @@ $ docker-compose up -d
 In order for the inventory plugin to be able to retrieve inventory information, the Ansible Inventory meta model has to be imported into Onix.
 The meta model contains all the item types, link types and link rules required to represent the inventory data in the CMDB.
 
-To import the meta model follow the steps shown [here](../../../../docs/models/readme.md).
+To import the meta model follow the steps shown [here](../../../docs/models/readme.md).
 
 ### Import the inventory into the CMDB
 
-In order to import Ansible inventory data into the CMDB, Swagger can be used to put an inventory [JSON payload](./inventory.json) 
+In order to import Ansible inventory data into the CMDB, Swagger can be used to put an inventory [JSON payload](inventory.json) 
 on the */data* endpoint of the web service as follows:
 
 1. Open the [Swagger UI](http://localhost:8080/swagger-ui.html#/web-api/createOrUpdateItemTreeUsingPUT)
@@ -49,7 +49,7 @@ To take a tag:
 
 ### Check the inventory configuration values are correct
 
-Finally, make sure the configuration required by the plugin to connect to the CMDB is correct for your setup within the [onix_inventory.yml](./onix_inventory.yml) file.
+Finally, make sure the configuration required by the plugin to connect to the CMDB is correct for your setup within the [onix_inventory.yml](onix_inventory.yml) file.
 
 ### Test the plugin
 
@@ -57,7 +57,7 @@ From this folder, type the following:
 ```bash
 $ ansible-inventory -i onix_inventory.yml --graph
 ```
-**NOTE**: the [onix_inventory.yml](./onix_inventory.yml) contains the configuration required by the plugin to connect to 
+**NOTE**: the [onix_inventory.yml](onix_inventory.yml) contains the configuration required by the plugin to connect to 
 the CMDB.
 
 The output should look like:

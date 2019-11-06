@@ -17,7 +17,7 @@ In order to facilitate this, a set of Ansible modules are provided as follows:
   - [ox_import](#oximport)
   - [ox_query](#oxquery)
 
-For particular examples of how to use these modules see [here](./examples/readme.md).
+For particular examples of how to use these modules see [here](examples/readme.md).
 
 ### State: Present or Absent
 
