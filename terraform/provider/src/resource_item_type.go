@@ -13,20 +13,19 @@
    to be licensed under the same terms as the rest of the code.
 */
 
-package main
+package src
 
 import "github.com/hashicorp/terraform/helper/schema"
 
 /*
-   LINK TYPE RESOURCE
+	ITEM TYPE RESOURCE
 */
-
-func LinkTypeResource() *schema.Resource {
+func ItemTypeResource() *schema.Resource {
 	return &schema.Resource{
-		Create: createOrUpdateLinkType,
-		Read:   readLinkType,
-		Update: createOrUpdateLinkType,
-		Delete: deleteLinkType,
+		Create: createOrUpdateItemType,
+		Read:   readItemType,
+		Update: createOrUpdateItemType,
+		Delete: deleteItemType,
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
@@ -49,20 +48,20 @@ func LinkTypeResource() *schema.Resource {
 	}
 }
 
-func createOrUpdateLinkType(data *schema.ResourceData, m interface{}) error {
-	return put(data, m, linkTypePayload(data), "linktype")
+func createOrUpdateItemType(data *schema.ResourceData, m interface{}) error {
+	return put(data, m, itemTypePayload(data), "itemtype")
 }
 
-func deleteLinkType(data *schema.ResourceData, m interface{}) error {
-	return delete(m, linkTypePayload(data), "linktype")
+func deleteItemType(data *schema.ResourceData, m interface{}) error {
+	return delete(m, itemTypePayload(data), "itemtype")
 }
 
-func linkTypePayload(data *schema.ResourceData) Payload {
+func itemTypePayload(data *schema.ResourceData) Payload {
 	key := data.Get("key").(string)
 	name := data.Get("name").(string)
 	description := data.Get("description").(string)
 	modelKey := data.Get("model_key").(string)
-	return &LinkType{
+	return &ItemType{
 		Key:         key,
 		Name:        name,
 		Description: description,

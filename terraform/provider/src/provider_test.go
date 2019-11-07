@@ -12,33 +12,16 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
+package src
 
-package main
+import (
+	"testing"
+)
 
-import "github.com/hashicorp/terraform/helper/schema"
-
-/*
-	LINK DATA SOURCE
-*/
-
-func LinkDataSource() *schema.Resource {
-	return &schema.Resource{
-		Read: readLink,
-
-		Schema: map[string]*schema.Schema{
-			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-			},
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-		},
+// verify the structure of the provider and all of the resources,
+// and reports an error if it is invalid.
+func TestProvider(t *testing.T) {
+	if err := Provider().InternalValidate(); err != nil {
+		t.Fatalf("err: %s", err)
 	}
-}
-
-func readLink(d *schema.ResourceData, m interface{}) error {
-	return nil
 }

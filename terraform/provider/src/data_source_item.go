@@ -13,23 +13,21 @@
    to be licensed under the same terms as the rest of the code.
 */
 
-package main
+package src
 
 import "github.com/hashicorp/terraform/helper/schema"
 
 /*
-	LINK TYPE DATA SOURCE
+	ITEM DATA SOURCE
 */
-
-func LinkTypeDataSource() *schema.Resource {
+func ItemDataSource() *schema.Resource {
 	return &schema.Resource{
-		Read: readLinkType,
+		Read: readItem,
 
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -39,10 +37,47 @@ func LinkTypeDataSource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"itemtype": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"status": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"meta": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"tag": &schema.Schema{
+				Type:     schema.TypeList,
+				Elem:     schema.TypeString,
+				Optional: true,
+			},
+			"attribute": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"created": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"updated": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"changedby": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
 
-func readLinkType(d *schema.ResourceData, m interface{}) error {
+func readItem(d *schema.ResourceData, m interface{}) error {
 	return nil
 }

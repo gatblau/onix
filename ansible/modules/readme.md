@@ -7,15 +7,22 @@ In order to maintain accurate information in the CMDB it is important that:
 
 In order to facilitate this, a set of Ansible modules are provided as follows:
 
-- [Ansible Modules](#ansible-modules)
-  - [ox_setup](#oxsetup)
-  - [ox_item_type](#oxitemtype)
-  - [ox_link_type](#oxlinktype)
-  - [ox_link_rule](#oxlinkrule)
-  - [ox_item](#oxitem)
-  - [ox_link](#oxlink)
-  - [ox_import](#oximport)
-  - [ox_query](#oxquery)
+- [Ansible Modules <img src="../../../docs/pics/ox.png" width="160" height="160" align="right">](#ansible-modules-img-src%22docspicsoxpng%22-width%22160%22-height%22160%22-align%22right%22)
+    - [State: Present or Absent](#state-present-or-absent)
+    - [Idempotency](#idempotency)
+    - [How to use the Ansible modules](#how-to-use-the-ansible-modules)
+    - [How to install the Ansible modules](#how-to-install-the-ansible-modules)
+      - [In the same location of the playbooks project](#in-the-same-location-of-the-playbooks-project)
+      - [In a shared location](#in-a-shared-location)
+  - [Modules](#modules)
+    - [ox_setup](#oxsetup)
+    - [ox_item_type](#oxitemtype)
+    - [ox_link_type](#oxlinktype)
+    - [ox_link_rule](#oxlinkrule)
+    - [ox_item](#oxitem)
+    - [ox_link](#oxlink)
+    - [ox_import](#oximport)
+    - [ox_query](#oxquery)
 
 For particular examples of how to use these modules see [here](examples/readme.md).
 
@@ -62,41 +69,41 @@ library = /usr/share/ansible/library
 
 ## Modules
 
-<a name="login"></a>
+<a name="ox_setup"></a>
 ### [ox_setup](../modules/ox_setup.py)
 
-The **ox_setup** module is used to setup the location and authentication information to 
-connect to the Onix WAPI.
+The **ox_setup** module is used to setup the location and authentication information to connect to the Onix WAPI service.
 
 It has to be called **before** calling any other modules.
 
 Use it as follows:
+
 ```yaml
 - name: configure access to Onix
   ox_setup:
-    uri: "http://localhost:8080" 
-    username: "admin" 
-    password: "0n1x" 
+    uri: "http://localhost:8080"
+    username: "admin"
+    password: "0n1x"
     auth_mode: "basic"
 ```
+
 **where:**
 
 | name | description | required |
 |---|---|---|
-| **uri** | the URL of the Onix CMDB. | yes |
+| **uri** | the URL of the Onix WAPI service. | yes |
 | **username** | the username for basic authentication | yes |
 | **password** | the password for basic authentication | yes |
 | **auth_mode** | the authentication mode to use (i.e. none, basic, openid) | no (default to none) |
 
-**NOTE:** the module creates two facts meant to be used as input variables on the other modules as follows:
+**NOTE:** this module creates two facts meant to be used as input variables on the other modules as follows:
 
-| name | description |
+| fact name | description |
 |---|---|
-| **ox_uri** | the URI of the Onix WAPI |
-| **ox_token** | the token used to authenticate with the Onix WAPI |
+| **ox_uri** | the URI of the Onix WAPI service. |
+| **ox_token** | the token used to authenticate with the Onix WAPI service. |
 
-
-<a name="item_type"></a>
+<a name="ox_item_type"></a>
 ### [ox_item_type](../modules/ox_item_type.py)
 
 The **ox_item_type** module is used to create/update or delete item types in the CMDB.
@@ -117,7 +124,7 @@ Use it as follows:
 
 | name | description | required |
 |---|---|---|
-| **uri** | the URL of the Onix CMDB. | yes |
+| **uri** | the URL of the Onix WAPI service. | yes |
 | **token** | the access token for the service. | yes |
 | **key** | the natural key for the item type | yes |
 | **name** | a user friendly name for the item type | no |
@@ -127,9 +134,10 @@ Use it as follows:
 <a name="link_type"></a>
 ### [ox_link_type](../modules/ox_link_type.py)
 
-The **ox_link_type** module is used to create/update or delete link types in the CMDB.
+The **ox_link_type** module is used to create/update or delete link types in the database.
 
 Use it as follows:
+
 ```yaml
 - name: Creates the Application Link Type
   ox_link_type:
@@ -139,25 +147,27 @@ Use it as follows:
     name: "Software Application Link."
     description: "Links application services."
 ```
+
 **NOTE**: *ox_uri* and *ox_token* are facts produced by the *ox_setup* module.
 
 **where:**
 
 | name | description | required |
 |---|---|---|
-| **uri** | the URL of the Onix CMDB. | yes |
+| **uri** | the URL of the Onix WAPI service. | yes |
 | **token** | the access token for the service. | yes |
 | **key** | the natural key for the link type | yes |
 | **name** | a user friendly name for the link type | no |
 | **description** | the link type description | no |
 | **state** | *'present'* to create/update the link type; or *'absent'* to delete the link type. | no (default to *present*) |
 
-<a name="link_rule"></a>
+<a name="ox_link_rule"></a>
 ### [ox_link_rule](../modules/ox_link_rule.py)
 
 The **ox_link_rule** module is used to create/update or delete link rules in the CMDB.
 
 Use it as follows:
+
 ```yaml
 - name: Creates the Application Runtime to Host Link Rule
   ox_link_rule:
@@ -171,13 +181,14 @@ Use it as follows:
     description: "Allows linking application runtime items with host items."
 
 ```
+
 **NOTE**: *ox_uri* and *ox_token* are facts produced by the *ox_setup* module.
 
 **where:**
 
 | name | description | required |
 |---|---|---|
-| **uri** | the URL of the Onix CMDB. | yes |
+| **uri** | the URL of the Onix WAPI service. | yes |
 | **token** | the access token for the service. | yes |
 | **key** | the natural key for the link rule | yes |
 | **linkTypeKey** | the natural key for the link type the rule is for | yes |
@@ -188,12 +199,13 @@ Use it as follows:
 | **link** | the link type description | no |
 | **state** | *'present'* to create/update the link type; or *'absent'* to delete the link type. | no (default to *present*) |
 
-<a name="item"></a>
+<a name="ox_item"></a>
 ### [ox_item](../modules/ox_item.py)
 
-The **ox_item** module is used to create/update or delete configuration items in the CMDB.
+The **ox_item** module is used to create/update or delete configuration items in the database.
 
 Use it as follows:
+
 ```yaml
 - name: Creates a configuration for Onix application Data Service
   ox_item:
@@ -213,13 +225,14 @@ Use it as follows:
       WBS: "EU-00023.100002.984"
       PROJECT: "TheOnixProject"
 ```
+
 **NOTE**: *ox_uri* and *ox_token* are facts produced by the *ox_setup* module.
 
 **where:**
 
 | name | description | required |
 |---|---|---|
-| **uri** | the URL of the Onix CMDB. | yes |
+| **uri** | the URL of the Onix WAPI service. | yes |
 | **token** | the access token for the service. | yes |
 | **key** | the natural key for the item | yes |
 | **name** | a user friendly name for the item | no |
@@ -231,12 +244,13 @@ Use it as follows:
 | **attrValid** | a map of key-value pairs for searching | no |
 | **state** | *'present'* to create/update the item type; or *'absent'* to delete the item type. | no (default to *present*) |
 
-<a name="link"></a>
+<a name="ox_link"></a>
 ### [ox_link](../modules/ox_link.py)
 
-The **ox_link** module is used to create/update or delete links between existing configuration items in the CMDB.
+The **ox_link** module is used to create/update or delete links between existing configuration items in the WAPI service.
 
 Use it as follows:
+
 ```yaml
 - name: Creates a link between Spring Boot and Host B
   ox_link:
@@ -256,15 +270,15 @@ Use it as follows:
       runtime: "Spring Boot",
       version: "1.5.10.RELEASE",
     }
-
 ```
+
 **NOTE**: *ox_uri* and *ox_token* are facts produced by the *ox_setup* module.
 
 **where:**
 
 | name | description | required |
 |---|---|---|
-| **uri** | the URL of the Onix CMDB. | yes |
+| **uri** | the URL of the Onix WAPI service. | yes |
 | **token** | the access token for the service. | yes |
 | **key** | the natural key for the link | yes |
 | **name** | a user friendly name for the link | no |
@@ -277,16 +291,17 @@ Use it as follows:
 | **attrValid** | a map of key-value pairs for searching | no |
 | **state** | *'present'* to create/update the item type; or *'absent'* to delete the item type. | no (default to *present*) |
 
-<a name="import"></a>
+<a name="ox_import"></a>
 ### [ox_import](../modules/ox_import.py)
 
 This module imports the configuration data in a json file.
 
-It is convenient when a set of configuration data has to be imported at once, particularly when such data can be 
-templated using for example the [Ansible template](https://docs.ansible.com/ansible/latest/modules/template_module.html) 
-module before posting it to the CMDB.
+It is convenient when a set of configuration data has to be imported at once, particularly when such data can be
+templated using for example the [Ansible template](https://docs.ansible.com/ansible/latest/modules/template_module.html)
+module before posting it to the database.
 
 Use it as follows:
+
 ```yaml
 - name: import configuration
   ox_import:
@@ -294,17 +309,19 @@ Use it as follows:
     token: "{{ ox_token }}"
     src: "path_to_configuration_file.json"
 ```
+
 **NOTE**: *ox_uri* and *ox_token* are facts produced by the *ox_setup* module.
 
 **where:**
 
 | name | description | required |
 |---|---|---|
-| **uri** | the URL of the Onix CMDB. | yes |
+| **uri** | the URL of the Onix database. | yes |
 | **token** | the access token for the service. | yes |
 | **src** | the path (relative or absolute) to a json file containing the configuration data to be imported. | yes |
 
 Example configuration file:
+
 ```json
 {
     "models": [
@@ -344,20 +361,23 @@ Example configuration file:
     }]
 }
 ```
-<a name="query"></a>
+
+<a name="ox_query"></a>
 ### [ox_query](../modules/ox_query.py)
 
 This module retrieves configuration data from the CMDB.
 
 It uses the natural key to retrieve information about one of the following objects:
- - item 
- - link
- - item type
- - link type
- - link rule
- - model
- 
+
+- item
+- link
+- item type
+- link type
+- link rule
+- model
+
 Use it as follows:
+
 ```yaml
 - name: query item data
   ox_query:
@@ -367,13 +387,14 @@ Use it as follows:
     key: "NODE_1"
   register: result
 ```
+
 **NOTE**: *ox_uri* and *ox_token* are facts produced by the *ox_setup* module.
 
 **where:**
 
 | name | description | required |
 |---|---|---|
-| **uri** | the URL of the Onix CMDB. | yes |
+| **uri** | the URL of the Onix WAPI service. | yes |
 | **token** | the access token for the service. | yes |
 | **type** | the type of the object to be queried. Allowed types are "item", "link", "item_type", "link_type", "link_rule" and "model" | yes |
 | **key** | the natural key of the object to query | yes |
@@ -397,4 +418,5 @@ Once the result has been registered, it can be output as follows:
   debug:
     var: result.tag
 ```
+
 ([up](../readme.md))
