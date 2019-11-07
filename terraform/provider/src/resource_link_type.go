@@ -13,22 +13,20 @@
    to be licensed under the same terms as the rest of the code.
 */
 
-package main
+package src
 
-import (
-	"github.com/hashicorp/terraform/helper/schema"
-)
+import "github.com/hashicorp/terraform/helper/schema"
 
 /*
-   MODEL RESOURCE
+   LINK TYPE RESOURCE
 */
 
-func ModelResource() *schema.Resource {
+func LinkTypeResource() *schema.Resource {
 	return &schema.Resource{
-		Create: createOrUpdateModel,
-		Read:   readModel,
-		Update: createOrUpdateModel,
-		Delete: deleteModel,
+		Create: createOrUpdateLinkType,
+		Read:   readLinkType,
+		Update: createOrUpdateLinkType,
+		Delete: deleteLinkType,
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
@@ -43,31 +41,31 @@ func ModelResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"partition": &schema.Schema{
+			"model_key": &schema.Schema{
 				Type:     schema.TypeString,
-				Optional: true,
+				Required: true,
 			},
 		},
 	}
 }
 
-func createOrUpdateModel(data *schema.ResourceData, m interface{}) error {
-	return put(data, m, modelPayload(data), "model")
+func createOrUpdateLinkType(data *schema.ResourceData, m interface{}) error {
+	return put(data, m, linkTypePayload(data), "linktype")
 }
 
-func deleteModel(data *schema.ResourceData, m interface{}) error {
-	return delete(m, modelPayload(data), "model")
+func deleteLinkType(data *schema.ResourceData, m interface{}) error {
+	return delete(m, linkTypePayload(data), "linktype")
 }
 
-func modelPayload(data *schema.ResourceData) Payload {
+func linkTypePayload(data *schema.ResourceData) Payload {
 	key := data.Get("key").(string)
 	name := data.Get("name").(string)
 	description := data.Get("description").(string)
-	partition := data.Get("partition").(string)
-	return &Model{
+	modelKey := data.Get("model_key").(string)
+	return &LinkType{
 		Key:         key,
 		Name:        name,
 		Description: description,
-		Partition:   partition,
+		Model:       modelKey,
 	}
 }

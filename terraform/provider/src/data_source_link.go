@@ -13,27 +13,23 @@
    to be licensed under the same terms as the rest of the code.
 */
 
-package main
+package src
 
 import "github.com/hashicorp/terraform/helper/schema"
 
 /*
-	MODEL DATA SOURCE
+	LINK DATA SOURCE
 */
 
-func ModelDataSource() *schema.Resource {
+func LinkDataSource() *schema.Resource {
 	return &schema.Resource{
-		Read: readModel,
+		Read: readLink,
 
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-			},
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
 			},
 			"description": &schema.Schema{
 				Type:     schema.TypeString,
@@ -43,6 +39,6 @@ func ModelDataSource() *schema.Resource {
 	}
 }
 
-func readModel(d *schema.ResourceData, m interface{}) error {
+func readLink(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
