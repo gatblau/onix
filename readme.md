@@ -41,3 +41,9 @@ Copyright (c) 2018-2019 by [gatblau.org](http://gatblau.org).
 ## Contributor Notice
 
 Contributors to this project, hereby assign copyright in their code to the project, to be licensed under the same terms as the rest of the code.
+
+## Acknowledgements
+
+<a href="https://www.jetbrains.com/?from=onix"><img src="docs/pics/jetbrains.png" width="150" align="right"></img></a>
+
+Many thanks to [JetBrains](https://www.jetbrains.com/?from=onix) for providing an open source license for this project.
