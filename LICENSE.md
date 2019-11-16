@@ -177,7 +177,7 @@
    END OF TERMS AND CONDITIONS
 
 
-   Onix CMDB - Copyright (c) 2018-2019 by www.gatblau.org
+   Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

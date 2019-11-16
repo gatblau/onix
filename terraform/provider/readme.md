@@ -1,6 +1,6 @@
 # Onix Provider <img src="../../docs/pics/ox.png" width="200" height="200" align="right">
 
-The Terraform provider for Onix allows Terraform to manage configuration information in the Onix CMDB as Terraform [resources](https://www.terraform.io/docs/configuration/resources.html) and [data sources](https://www.terraform.io/docs/configuration/data-sources.html).
+The Terraform provider for Onix allows Terraform to manage configuration information in the Onix Config Manager as Terraform [resources](https://www.terraform.io/docs/configuration/resources.html) and [data sources](https://www.terraform.io/docs/configuration/data-sources.html).
 
 <a name="toc"></a>
 ### Table of Contents [(index)](./../readme.md)

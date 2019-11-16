@@ -3,7 +3,7 @@ kind: Template
 metadata:
   name:  onix-ephemeral
   annotations:
-    description: "Deploys the Onix CMDB service with ephemeral storage."
+    description: "Deploys the Onix Config Manager service with ephemeral storage."
 objects:
 - apiVersion: apps.openshift.io/v1
   kind: DeploymentConfig

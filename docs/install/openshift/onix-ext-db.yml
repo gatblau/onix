@@ -3,7 +3,7 @@ kind: Template
 metadata:
   name:  onix-external-db
   annotations:
-    description: "Deploys Onix CMDB connected to an external PostgreSQL server."
+    description: "Deploys Onix Config Manager connected to an external PostgreSQL server."
 parameters:
   - name: DB_EXTERNAL_NAME
     displayName: Database DNS Name

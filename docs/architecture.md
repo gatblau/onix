@@ -23,7 +23,7 @@ The diagram below shows high level use cases for Onix based on different persona
 
 Is concerned with **recording and testing configuration data changes** in a seamless way.
 
-Developers write automation scripts and use connectors to record configuration data changes in the Onix CMDB via its Web API.
+Developers write automation scripts and use connectors to record configuration data changes in the Onix Config Manager via its Web API.
 CMDB change records are tested as part of the automation development life cycle.
 
 ### Security officer [2] [(up)](#toc)

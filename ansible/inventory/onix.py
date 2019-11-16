@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Onix CMDB - Copyright (c) 2018-2019 by www.gatblau.org
+# Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 # Contributors to this project, hereby assign copyright in their code to the
 # project, to be licensed under the same terms as the rest of the code.
 #
-# Inventory Plugin for the Onix CMDB.
+# Inventory Plugin for the Onix Config Manager.
 #
 from __future__ import (absolute_import, division, print_function)
 
@@ -27,10 +27,10 @@ DOCUMENTATION = '''
     name: onix
     plugin_type: inventory
     author: gatblau.org
-    short_description: Ansible dynamic inventory plugin for the Onix CMDB.
+    short_description: Ansible dynamic inventory plugin for the Onix Config Manager.
     version_added: "2.7"
     description:
-        - Reads inventories from Onix CMDB.
+        - Reads inventories from Onix Config Manager.
         - Supports reading configuration from both YAML config file and environment variables.
         - If reading from the YAML file, the file name must end with onix.(yml|yaml) or onix_inventory.(yml|yaml),
           the path in the command would be /path/to/onix_inventory.(yml|yaml). If some arguments in the config file
@@ -125,7 +125,7 @@ inventory_key: the_key_of_targeted_onix_inventory
 # export OX_PASSWORD=YOUR_ONIX_PASSWORD
 # export OX_INVENTORY_KEY=THE_KEY_OF_TARGETED_INVENTORY
 # export OX_INVENTORY_TAG=THE_TAG_OF_TARGETED_INVENTORY
-# Read the inventory specified in OX_INVENTORY_KEY from Onix CMDB, and list them.
+# Read the inventory specified in OX_INVENTORY_KEY from Onix Config Manager, and list them.
 # The inventory path must always be @onix_inventory if you are reading all settings from environment variables.
 # ansible-inventory -i @onix_inventory --list
 '''

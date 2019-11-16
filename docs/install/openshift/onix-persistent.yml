@@ -3,7 +3,7 @@ kind: Template
 metadata:
   name:  onix-persistent
   annotations:
-    description: "Deploys Onix CMDB with persistent storage."
+    description: "Deploys Onix Config Manager with persistent storage."
 parameters:
   - name: OX_DB_ADM_PWD
     displayName: Onix PostgreSQL Administrator Password
