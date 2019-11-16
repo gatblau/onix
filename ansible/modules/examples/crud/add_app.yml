@@ -33,7 +33,7 @@
       WBS: "EU-00023.100002.984"
       PROJECT: "TheOnixProject"
 
-- name: Creates a configuration for Onix CMDB application
+- name: Creates a configuration for Onix Config Manager application
   ox_item:
     uri: "{{ ox_uri }}"
     token: "{{ ox_token }}"

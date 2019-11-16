@@ -15,7 +15,7 @@
 package src
 
 /*
-	oxkube is an Onix CMDB agent which consume change events and updates the CMDB
+	oxkube is an Onix Config Manager agent which consume change events and updates the CMDB
 */
 func main() {
 	oxkube := OxKube{}

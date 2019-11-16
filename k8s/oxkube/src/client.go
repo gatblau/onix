@@ -108,7 +108,7 @@ func (c *Client) setAuthenticationToken() error {
 			c.Log.Tracef("Bearer token acquired.")
 		}
 	case "none":
-		c.Log.Tracef("No authentication is used to connect to the Onix CMDB.")
+		c.Log.Tracef("No authentication is used to connect to the Onix Config Manager.")
 		c.Token = ""
 	default:
 		c.Log.Errorf("Cannot understand authentication mode selected: %s.", c.Config.Onix.AuthMode)
@@ -270,7 +270,7 @@ func (c *Client) deleteResource(resourceName string, resourceKey string) (*Resul
 	return result, err
 }
 
-// issues an http put request to the Onix CMDB passing the specified item
+// issues an http put request to the Onix Config Manager passing the specified item
 // - payload: the payload object
 // - resourceName: the WAPI resource name (e.g. item, itemtype, link, etc.)
 // returns the payload key and a success flag
