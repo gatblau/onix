@@ -1,4 +1,4 @@
-# Onix Configuration Manager
+# Onix Configuration Manager 
 
 Onix is a lightweight configuration manager system  designed to support [Infrastructure as a Code](https://en.wikipedia.org/wiki/Infrastructure_as_code) provisioning to ultimately provide a [single source of thruth](https://en.wikipedia.org/wiki/Single_source_of_truth) across [multi-cloud](https://en.wikipedia.org/wiki/Multicloud) environments.
 <img src="docs/pics/ox.png" width="200" height="200" align="right">
@@ -7,7 +7,7 @@ Onix is a lightweight configuration manager system  designed to support [Infrast
 
 For a **high level overview** of the application and break down of its current and planned components take a look at the [overview](docs/overview.md) section.
 
-For a summary of the main **development themes** and features take a look at this [section](docs/dev_thems.md).
+For a summary of the main **development themes** and features take a look at this [section](docs/dev_themes.md).
 
 ## Contributions & feedback
 
