@@ -5,7 +5,9 @@ Onix is a lightweight configuration manager system  designed to support [Infrast
 
 ## High Level Overview
 
-For a high level overview of the application and break down of its current and planned components take a look at the [overview](docs/overview.md) section.
+For a **high level overview** of the application and break down of its current and planned components take a look at the [overview](docs/overview.md) section.
+
+For a summary of the main **development themes** and features take a look at this [section](docs/dev_thems.md).
 
 ## Contributions & feedback
 
