@@ -13,24 +13,21 @@
    to be licensed under the same terms as the rest of the code.
 */
 
-package src
+package main
 
 import "github.com/hashicorp/terraform/helper/schema"
 
 /*
-	ITEM TYPE RESOURCE
+	ITEM DATA SOURCE
 */
-func ItemTypeResource() *schema.Resource {
+func ItemDataSource() *schema.Resource {
 	return &schema.Resource{
-		Create: createOrUpdateItemType,
-		Read:   readItemType,
-		Update: createOrUpdateItemType,
-		Delete: deleteItemType,
+		Read: readItem,
+
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -40,31 +37,47 @@ func ItemTypeResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"model_key": &schema.Schema{
+			"itemtype": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+			},
+			"status": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"meta": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"tag": &schema.Schema{
+				Type:     schema.TypeList,
+				Elem:     schema.TypeString,
+				Optional: true,
+			},
+			"attribute": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"created": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"updated": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"changedby": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 		},
 	}
 }
 
-func createOrUpdateItemType(data *schema.ResourceData, m interface{}) error {
-	return put(data, m, itemTypePayload(data), "itemtype")
-}
-
-func deleteItemType(data *schema.ResourceData, m interface{}) error {
-	return delete(m, itemTypePayload(data), "itemtype")
-}
-
-func itemTypePayload(data *schema.ResourceData) Payload {
-	key := data.Get("key").(string)
-	name := data.Get("name").(string)
-	description := data.Get("description").(string)
-	modelKey := data.Get("model_key").(string)
-	return &ItemType{
-		Key:         key,
-		Name:        name,
-		Description: description,
-		Model:       modelKey,
-	}
+func readItem(d *schema.ResourceData, m interface{}) error {
+	return nil
 }

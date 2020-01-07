@@ -3,7 +3,7 @@
 The Terraform provider for Onix allows Terraform to manage configuration information in the Onix Config Manager as Terraform [resources](https://www.terraform.io/docs/configuration/resources.html) and [data sources](https://www.terraform.io/docs/configuration/data-sources.html).
 
 <a name="toc"></a>
-### Table of Contents [(index)](./../readme.md)
+### Table of Contents [(index)](../terraform/readme.md)
 
   - [Connection information (up)](#connection-information-up)
   - [Installation (up)](#installation-up)
@@ -97,7 +97,7 @@ Once the plugin is placed in the correct location, the [terraform init](https://
 <a name="resources"></a>
 ## Resources ([up](#toc))
 
-Resources are the most important element in the Terraform language. Each resource block describes one or more infrastructure objects, such as compute instances, higher-level components such as DNS records or in this case, end points in the [Onix Web API](../../docs/wapi.md).
+Resources are the most important element in the Terraform language. Each resource block describes one or more infrastructure objects, such as compute instances, higher-level components such as DNS records or in this case, end points in the [Onix Web API](../docs/wapi.md).
 
 The Onix Provider for Terraform, acts as a Restful client allowing to perform requests to the Onix Web API.
 
@@ -105,7 +105,7 @@ The list of resources offered in this provider is as follows:
 
 | Resource | Description |
 |---|---|
-| [ox_model](./docs/rs_ox_model.md) | Creates, updates or deletes a [modelKey](../../docs/models/readme.md). |
+| [ox_model](./docs/rs_ox_model.md) | Creates, updates or deletes a [modelKey](../docs/models/readme.md). |
 | [ox_item](./docs/rs_ox_item.md) | Creates, updates or deletes a configuration item. |
 | [ox_item_type](./docs/rs_ox_item_type.md) | Creates, updates or deletes a configuration item type. |
 | [ox_link](./docs/rs_ox_link.md) | Creates, updates or deletes a configuration item link. |

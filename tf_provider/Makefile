@@ -25,7 +25,10 @@ BUILD_FOLDER=build
 tf_test:
 	go fmt
 	terraform fmt
-	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; go build -o terraform.d/plugins/darwin_amd64/$(BINARY_NAME) -v
+#	commented line below produces a static binary
+#	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export GOOS=darwin; export GOARCH=amd64; export CGO_ENABLED=0; go build -o terraform.d/plugins/darwin_amd64/$(BINARY_NAME) -v -a -ldflags '-extldflags "-static"'
+	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export CGO_ENABLED=0; export GOOS=darwin; export GOARCH=amd64; go build -o terraform.d/plugins/darwin_amd64/$(BINARY_NAME) -v
+	chmod 755 terraform.d/plugins/darwin_amd64/$(BINARY_NAME)
 	export TF_LOG=DEBUG
 	terraform init
 	terraform apply
