@@ -1,0 +1,18 @@
+# the oxterra service instance Id for logging identification purposes
+Id = "OxTerra-01"
+
+# verbosity of logging (Trace, Debug, Warning, Info, Error, Fatal, Panic)
+LogLevel = "Trace"
+
+# enables metrics
+Metrics = "true"
+
+# onix wapi endpoint to update
+[Onix]
+    URL = "http://localhost:8080"
+    AuthMode = "basic"
+    Username = "admin"
+    Password = "0n1x"
+    ClientId = ""
+	ClientSecret = ""
+	TokenURI = ""
