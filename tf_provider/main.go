@@ -12,33 +12,17 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
+package main
 
-package src
+import (
+	"github.com/hashicorp/terraform/plugin"
+	"github.com/hashicorp/terraform/terraform"
+)
 
-import "github.com/hashicorp/terraform/helper/schema"
-
-/*
-	LINK DATA SOURCE
-*/
-
-func LinkDataSource() *schema.Resource {
-	return &schema.Resource{
-		Read: readLink,
-
-		Schema: map[string]*schema.Schema{
-			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-			},
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
+func main() {
+	plugin.Serve(&plugin.ServeOpts{
+		ProviderFunc: func() terraform.ResourceProvider {
+			return Provider()
 		},
-	}
-}
-
-func readLink(d *schema.ResourceData, m interface{}) error {
-	return nil
+	})
 }

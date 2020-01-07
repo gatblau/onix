@@ -13,18 +13,20 @@
    to be licensed under the same terms as the rest of the code.
 */
 
-package src
+package main
 
 import "github.com/hashicorp/terraform/helper/schema"
 
 /*
-	MODEL DATA SOURCE
+	LINK RULE RESOURCE
 */
 
-func ModelDataSource() *schema.Resource {
+func LinkRuleResource() *schema.Resource {
 	return &schema.Resource{
-		Read: readModel,
-
+		Create: createOrUpdateLinkRule,
+		Read:   readLinkRule,
+		Update: createOrUpdateLinkRule,
+		Delete: deleteLinkRule,
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
@@ -39,10 +41,37 @@ func ModelDataSource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"link_type_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"start_item_type_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"end_item_type_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
 		},
 	}
 }
 
-func readModel(d *schema.ResourceData, m interface{}) error {
-	return nil
+func createOrUpdateLinkRule(data *schema.ResourceData, m interface{}) error {
+	return put(data, m, linkRulePayload(data), "linkrule")
+}
+
+func deleteLinkRule(data *schema.ResourceData, m interface{}) error {
+	return delete(m, linkRulePayload(data), "linkrule")
+}
+
+func linkRulePayload(data *schema.ResourceData) Payload {
+	return &LinkRule{
+		Key:              data.Get("key").(string),
+		Name:             data.Get("name").(string),
+		Description:      data.Get("description").(string),
+		LinkTypeKey:      data.Get("link_type_key").(string),
+		StartItemTypeKey: data.Get("start_item_type_key").(string),
+		EndItemTypeKey:   data.Get("end_item_type_key").(string),
+	}
 }

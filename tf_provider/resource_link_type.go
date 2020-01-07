@@ -13,18 +13,20 @@
    to be licensed under the same terms as the rest of the code.
 */
 
-package src
+package main
 
 import "github.com/hashicorp/terraform/helper/schema"
 
 /*
-	LINK RULE DATA SOURCE
+   LINK TYPE RESOURCE
 */
 
-func LinkRuleDataSource() *schema.Resource {
+func LinkTypeResource() *schema.Resource {
 	return &schema.Resource{
-		Read: readLinkRule,
-
+		Create: createOrUpdateLinkType,
+		Read:   readLinkType,
+		Update: createOrUpdateLinkType,
+		Delete: deleteLinkType,
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
@@ -39,10 +41,31 @@ func LinkRuleDataSource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"model_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
 		},
 	}
 }
 
-func readLinkRule(d *schema.ResourceData, m interface{}) error {
-	return nil
+func createOrUpdateLinkType(data *schema.ResourceData, m interface{}) error {
+	return put(data, m, linkTypePayload(data), "linktype")
+}
+
+func deleteLinkType(data *schema.ResourceData, m interface{}) error {
+	return delete(m, linkTypePayload(data), "linktype")
+}
+
+func linkTypePayload(data *schema.ResourceData) Payload {
+	key := data.Get("key").(string)
+	name := data.Get("name").(string)
+	description := data.Get("description").(string)
+	modelKey := data.Get("model_key").(string)
+	return &LinkType{
+		Key:         key,
+		Name:        name,
+		Description: description,
+		Model:       modelKey,
+	}
 }

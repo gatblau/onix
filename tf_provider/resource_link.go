@@ -13,39 +13,32 @@
    to be licensed under the same terms as the rest of the code.
 */
 
-package src
+package main
 
 import "github.com/hashicorp/terraform/helper/schema"
 
 /*
-	ITEM RESOURCE
+	LINK RESOURCE
 */
-func ItemResource() *schema.Resource {
+
+func LinkResource() *schema.Resource {
 	return &schema.Resource{
-		Create: createOrUpdateItem,
-		Read:   readItem,
-		Update: createOrUpdateItem,
-		Delete: deleteItem,
+		Create: createOrUpdateLink,
+		Read:   readLink,
+		Update: createOrUpdateLink,
+		Delete: deleteLink,
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
 			"description": &schema.Schema{
 				Type:     schema.TypeString,
-				Optional: true,
+				Required: true,
 			},
 			"type": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-			},
-			"status": &schema.Schema{
-				Type:     schema.TypeInt,
-				Optional: true,
 			},
 			"meta": &schema.Schema{
 				Type:     schema.TypeMap,
@@ -60,31 +53,35 @@ func ItemResource() *schema.Resource {
 				Type:     schema.TypeMap,
 				Optional: true,
 			},
-			"partition": &schema.Schema{
+			"start_item_key": &schema.Schema{
 				Type:     schema.TypeString,
-				Optional: true,
+				Required: true,
+			},
+			"end_item_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
 			},
 		},
 	}
 }
 
-func createOrUpdateItem(data *schema.ResourceData, m interface{}) error {
-	return put(data, m, itemPayload(data), "item")
+func createOrUpdateLink(data *schema.ResourceData, m interface{}) error {
+	return put(data, m, linkPayload(data), "link")
 }
 
-func deleteItem(data *schema.ResourceData, m interface{}) error {
-	return delete(m, itemPayload(data), "item")
+func deleteLink(data *schema.ResourceData, m interface{}) error {
+	return delete(m, linkPayload(data), "link")
 }
 
-func itemPayload(data *schema.ResourceData) Payload {
-	return &Item{
-		Key:         data.Get("key").(string),
-		Name:        data.Get("name").(string),
-		Description: data.Get("description").(string),
-		Type:        data.Get("type").(string),
-		Meta:        data.Get("meta").(map[string]interface{}),
-		Attribute:   data.Get("attribute").(map[string]interface{}),
-		Tag:         data.Get("tag").([]interface{}),
-		Partition:   data.Get("partition").(string),
+func linkPayload(data *schema.ResourceData) Payload {
+	return &Link{
+		Key:          data.Get("key").(string),
+		Description:  data.Get("description").(string),
+		Type:         data.Get("type").(string),
+		Meta:         data.Get("meta").(map[string]interface{}),
+		Attribute:    data.Get("attribute").(map[string]interface{}),
+		Tag:          data.Get("tag").([]interface{}),
+		StartItemKey: data.Get("start_item_key").(string),
+		EndItemKey:   data.Get("end_item_key").(string),
 	}
 }
