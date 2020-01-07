@@ -12,13 +12,25 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
-package webclient
+package wapic
 
-import "bytes"
+import (
+	"bytes"
+)
 
-// Interface implemented by all payload objects to enable
-// generic key extraction and conversion to byte Reader
-type Payload interface {
-	KeyValue() string
-	ToJSON() (*bytes.Reader, error)
+type LinkType struct {
+	Key         string                 `json:"key"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Attribute   map[string]interface{} `json:"attribute"`
+	MetaSchema  map[string]interface{} `json:"metaSchema"`
+	Model       string                 `json:"modelKey"`
+}
+
+func (linkType *LinkType) ToJSON() (*bytes.Reader, error) {
+	return getJSONBytesReader(linkType)
+}
+
+func (linkType *LinkType) KeyValue() string {
+	return linkType.Key
 }

@@ -12,23 +12,14 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
-package webclient
+package wapic
 
-import (
-	"bytes"
-)
+import "bytes"
 
-type Data struct {
-	Models    []Model    `json:"models"`
-	ItemTypes []ItemType `json:"itemTypes"`
-	LinkTypes []LinkType `json:"linkTypes"`
-	LinkRules []LinkRule `json:"linkRules"`
+type ItemList struct {
+	Values []Item
 }
 
-func (data *Data) ToJSON() (*bytes.Reader, error) {
-	return getJSONBytesReader(data)
-}
-
-func (data *Data) KeyValue() string {
-	return ""
+func (list *ItemList) ToJSON() (*bytes.Reader, error) {
+	return getJSONBytesReader(list)
 }
