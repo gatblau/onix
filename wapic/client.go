@@ -12,7 +12,7 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
-package webclient
+package wapic
 
 import (
 	"crypto/tls"
@@ -70,7 +70,7 @@ func (c *Client) setAuthenticationToken() error {
 		c.Log.Tracef("No authentication is used to connect to the Onix Config Manager.")
 		c.Token = ""
 	default:
-		c.Log.Errorf("Cannot understand authentication mode selected: %s.", c.Config.Onix.AuthMode)
+		c.Log.Errorf("Cannot understand authentication mode selected: %s.", c.Config.AuthMode)
 	}
 	return err
 }
@@ -84,10 +84,10 @@ func (c *Client) makeRequest(method string, resourceName string, key string, pay
 	// creates the request
 	if len(key) > 0 {
 		// with key
-		req, err = http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Config.Onix.URL, resourceName, key), payload)
+		req, err = http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Config.URL, resourceName, key), payload)
 	} else {
 		// without key
-		req, err = http.NewRequest(method, fmt.Sprintf("%s/%s", c.Config.Onix.URL, resourceName), payload)
+		req, err = http.NewRequest(method, fmt.Sprintf("%s/%s", c.Config.URL, resourceName), payload)
 	}
 	// any errors are returned
 	if err != nil {
@@ -129,8 +129,8 @@ func (c *Client) makeRequest(method string, resourceName string, key string, pay
 	return result, err
 }
 
-// makes a GET HTTP request to the WAPI
-func (c *Client) GetResource(resourceName string, key string, filter map[string]string) (interface{}, error) {
+// issues an GET HTTP request to the WAPI
+func (c *Client) Get(resourceName string, key string, filter map[string]string) (interface{}, error) {
 	var (
 		req *http.Request
 		err error
@@ -206,4 +206,38 @@ func (c *Client) GetResource(resourceName string, key string, filter map[string]
 	}
 	// the model was not found
 	return nil, nil
+}
+
+// issues an http put request to the Onix Config Manager passing the specified item
+// - payload: the payload object
+// - resourceName: the WAPI resource name (e.g. item, itemtype, link, etc.)
+// returns the payload key and a success flag
+func (c *Client) Put(payload Payload, resourceName string) (string, *Result, error) {
+	var (
+		err    error
+		result *Result
+	)
+	// converts the passed-in payload to a JSON bytes reader
+	bytes, err := payload.ToJSON()
+
+	if err != nil {
+		c.Log.Errorf("Failed to marshall %s data: %s.", resourceName, err)
+		return "", nil, err
+	}
+	// makes the http PUT request
+	result, err = c.makeRequest(PUT, resourceName, payload.KeyValue(), bytes)
+	if err != nil {
+		c.Log.Errorf("Failed to PUT %s: %s.", resourceName, err)
+		return "", nil, err
+	}
+	if result.Error {
+		c.Log.Errorf("Failed to PUT %s: %s.", resourceName, result.Message)
+		return "", result, err
+	}
+	if result.Changed {
+		c.Log.Tracef("%s: %s update successful.", resourceName, payload.KeyValue())
+		return payload.KeyValue(), result, err
+	}
+	c.Log.Tracef("%s: %s, Nothing to update.", resourceName, payload.KeyValue())
+	return payload.KeyValue(), result, err
 }

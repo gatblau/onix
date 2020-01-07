@@ -12,23 +12,14 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
-package webclient
+package wapic
 
-import (
-	"bytes"
-)
-
-type Model struct {
-	Key         string `json:"key"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Partition   string `json:"partition"`
-}
-
-func (model *Model) ToJSON() (*bytes.Reader, error) {
-	return getJSONBytesReader(model)
-}
-
-func (model *Model) KeyValue() string {
-	return model.Key
+type Onix struct {
+	URL          string
+	Username     string
+	Password     string
+	ClientId     string
+	ClientSecret string
+	TokeURI      string
+	AuthMode     string
 }

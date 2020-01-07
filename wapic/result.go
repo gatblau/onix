@@ -12,30 +12,28 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
-package webclient
+package wapic
 
 import (
-	"bytes"
+	"errors"
 )
 
-type MAP map[string]interface{}
-
-type Item struct {
-	Key         string        `json:"key"`
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	Status      int           `json:"status"`
-	Type        string        `json:"type"`
-	Tag         []interface{} `json:"tag"`
-	Meta        MAP           `json:"meta"`
-	Attribute   MAP           `json:"attribute"`
-	Partition   string        `json:"partition"`
+// Result data retrieved by PUT and DELETE WAPI resources
+type Result struct {
+	Changed   bool   `json:"changed"`
+	Error     bool   `json:"error"`
+	Message   string `json:"message"`
+	Operation string `json:"operation"`
+	Ref       string `json:"ref"`
 }
 
-func (item *Item) ToJSON() (*bytes.Reader, error) {
-	return getJSONBytesReader(item)
-}
-
-func (item *Item) KeyValue() string {
-	return item.Key
+// Check for errors in the result and the passed in error
+func (r *Result) Check(err error) error {
+	if err != nil {
+		return err
+	} else if r.Error {
+		return errors.New(r.Message)
+	} else {
+		return nil
+	}
 }

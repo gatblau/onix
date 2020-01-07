@@ -12,25 +12,26 @@
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
-package webclient
+package wapic
 
 import (
 	"bytes"
 )
 
-type LinkType struct {
+type ItemType struct {
 	Key         string                 `json:"key"`
 	Name        string                 `json:"name"`
 	Description string                 `json:"description"`
-	Attribute   map[string]interface{} `json:"attribute"`
+	AttrValid   map[string]interface{} `json:"attrValid"`
+	Filter      map[string]interface{} `json:"filter"`
 	MetaSchema  map[string]interface{} `json:"metaSchema"`
 	Model       string                 `json:"modelKey"`
 }
 
-func (linkType *LinkType) ToJSON() (*bytes.Reader, error) {
-	return getJSONBytesReader(linkType)
+func (itemType *ItemType) ToJSON() (*bytes.Reader, error) {
+	return getJSONBytesReader(itemType)
 }
 
-func (linkType *LinkType) KeyValue() string {
-	return linkType.Key
+func (itemType *ItemType) KeyValue() string {
+	return itemType.Key
 }
