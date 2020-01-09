@@ -16,3 +16,11 @@ Metrics = "true"
     ClientId = ""
 	ClientSecret = ""
 	TokenURI = ""
+
+[Service]
+    Path = "state"
+	Port = "80"
+	Username = "admin"
+	Password = "0n1x"
+	Metrics = true
+	InsecureSkipVerify = false

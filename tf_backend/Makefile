@@ -1,5 +1,5 @@
 #
-#    Terraform Backend Service - Onix - Copyright (c) 2018-2020 by www.gatblau.org
+#    Terraform Http Backend - Onix - Copyright (c) 2018 by www.gatblau.org
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -13,9 +13,6 @@
 #    to be licensed under the same terms as the rest of the code.
 #
 
-# the name of the terraform backend for Onix
-BINARY_NAME=tf-backend
-
 # the name of the folder where the packaged binaries will be placed after the build
 BUILD_FOLDER=build
 
@@ -24,3 +21,4 @@ build:
 
 build_linux:
 	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export CGO_ENABLED=0; export GOOS=linux; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
+

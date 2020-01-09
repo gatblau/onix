@@ -1,5 +1,5 @@
 /*
-   Onix Terra - Copyright (c) 2019 by www.gatblau.org
+   Terraform Http Backend - Onix - Copyright (c) 2018 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -43,44 +43,50 @@ func (m *MetaModel) exists() (bool, error) {
 }
 
 func (m *MetaModel) create() *Result {
-	_, result, _ := m.client.Put(m.payload(), "data")
+	_, result, _ := m.client.Put(m.getData(), "data")
 	return result
 }
 
-// gets the terraform metamodel
-func (c *MetaModel) payload() Payload {
+// gets the terraform meta model data
+func (c *MetaModel) getData() Payload {
 	return &Data{
 		Models: []Model{
 			Model{
-				Key:         "TERRA",
+				Key:         "TERRAFORM",
 				Name:        "Terraform Model",
 				Description: "Defines the item and link types that describe Terraform resources.",
 			},
 		},
 		ItemTypes: []ItemType{
 			ItemType{
-				Key:         "K8SCluster",
-				Name:        "Kubernetes Cluster",
-				Description: "An open-source system for automating deployment, scaling, and management of containerized applications.",
-				Model:       "K8SModel",
+				Key:         "TF_STATE",
+				Name:        "Terraform State",
+				Description: "State about a group of managed infrastructure and configuration resources. This state is used by Terraform to map real world resources to your configuration, keep track of metadata, and to improve performance for large infrastructures.",
+				Model:       "TERRAFORM",
+			},
+			ItemType{
+				Key:         "TF_RESOURCE",
+				Name:        "Terraform Resource",
+				Description: "Each resource block describes one or more infrastructure objects, such as virtual networks, compute instances, or higher-level components such as DNS records.",
+				Model:       "TERRAFORM",
 			},
 		},
 		LinkTypes: []LinkType{
 			LinkType{
-				Key:         "K8SLink",
-				Name:        "Kubernetes Resource Link Type",
-				Description: "Links Kubernetes resources.",
-				Model:       "K8SModel",
+				Key:         "TF_STATE_LINK",
+				Name:        "Terraform State Link Type",
+				Description: "Links Terraform resources that are part of a state.",
+				Model:       "TERRAFORM",
 			},
 		},
 		LinkRules: []LinkRule{
 			LinkRule{
-				Key:              fmt.Sprintf("%s->%s", "K8SCluster", "K8SNamespace"),
-				Name:             "K8S Cluster to Namespace Rule",
-				Description:      "A cluster contains one or more namespaces.",
-				LinkTypeKey:      "",
-				StartItemTypeKey: "",
-				EndItemTypeKey:   "",
+				Key:              fmt.Sprintf("%s->%s", "TF_STATE", "TF_RESOURCE"),
+				Name:             "Terraform State to Resource Rule",
+				Description:      "Allow the linking of a Terraform State item to one or more Terraform Resource items using Terraform State Links.",
+				LinkTypeKey:      "TF_STATE_LINK",
+				StartItemTypeKey: "TF_STATE",
+				EndItemTypeKey:   "TF_RESOURCE",
 			},
 		},
 	}
