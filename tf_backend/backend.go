@@ -1,5 +1,5 @@
 /*
-   Terraform Backend for Onix - Copyright (c) 2019 by www.gatblau.org
+   Terraform Http Backend - Onix - Copyright (c) 2018 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -15,8 +15,11 @@
 package main
 
 import (
+	"errors"
 	. "gatblau.org/onix/wapic"
 	log "github.com/sirupsen/logrus"
+	"strconv"
+	"time"
 )
 
 type Backend struct {
@@ -26,7 +29,7 @@ type Backend struct {
 	ready  bool
 }
 
-func (t *Backend) start() error {
+func (b *Backend) start() error {
 	var err error
 
 	// load the configuration file
@@ -35,18 +38,50 @@ func (t *Backend) start() error {
 		return err
 	} else {
 		// sets the configuration
-		t.config = &c
+		b.config = &c
 		// sets the logger
-		t.log = log.WithFields(log.Fields{"Id": c.Id})
+		b.log = log.WithFields(log.Fields{"Id": c.Id})
 	}
 
 	// initialises the Onix REST client
-	t.client, err = New(t.log, t.config.Onix)
+	b.client, err = New(b.log, b.config.Onix)
 	if err != nil {
 		return err
 	}
-	// checks if a meta model for K8S is defined in Onix
-	t.log.Tracef("Checking if the KUBE meta-model is defined in Onix.")
-
+	// checks if a meta model for Terraform is defined in Onix
+	b.log.Tracef("Checking if the TERRAFORM meta-model is defined in Onix.")
+	var (
+		mmodel   *MetaModel = NewModel(b.log, b.client)
+		exist    bool
+		attempts int
+		interval time.Duration = 30 // the interval to wait for reconnection
+	)
+	for {
+		exist, err = mmodel.exists()
+		if err == nil {
+			break
+		}
+		attempts = attempts + 1
+		b.log.Warnf("Can't connect to Onix: %s. "+
+			"Attempt %s, waiting before attempting to connect again.", err, strconv.Itoa(attempts))
+		time.Sleep(interval * time.Second)
+	}
+	// if not...
+	if !exist {
+		// creates a meta model
+		b.log.Tracef("The TERRAFORM meta-model is not yet defined in Onix, proceeding to create it.")
+		result := mmodel.create()
+		if result.Error {
+			b.log.Errorf("Can't create TERRAFORM meta-model: %s", result.Message)
+			return errors.New(result.Message)
+		}
+	} else {
+		b.log.Tracef("TERRAFORM meta-model found in Onix.")
+	}
+	// the backend is ready to receive http connections
+	b.ready = true
+	// start the service listener
+	svc := NewService(*b)
+	svc.Start()
 	return nil
 }

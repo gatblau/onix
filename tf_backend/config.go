@@ -1,5 +1,5 @@
 /*
-   Onix Terra - Copyright (c) 2020 by www.gatblau.org
+   Terraform Http Backend - Onix - Copyright (c) 2018 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -21,10 +21,23 @@ import (
 	"strings"
 )
 
+// the configuration for the http backend service
 type Config struct {
 	LogLevel string
 	Id       string
-	Onix     *Onix
+	Onix     *Onix    // configuration for Onix integration
+	Service  *SvcConf // configuration for the http backend service
+}
+
+// the configuration for the http backend endpoint
+type SvcConf struct {
+	Path               string
+	Port               string
+	AuthMode           string
+	Username           string
+	Password           string
+	Metrics            bool
+	InsecureSkipVerify bool
 }
 
 func NewConfig() (Config, error) {
@@ -42,7 +55,7 @@ func NewConfig() (Config, error) {
 
 	// binds all environment variables to make it container friendly
 	v.AutomaticEnv()
-	v.SetEnvPrefix("OXTE")
+	v.SetEnvPrefix("OXTFB") // short for Onix Terraform Backend
 
 	// replace character to support environment variable format
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
@@ -56,9 +69,18 @@ func NewConfig() (Config, error) {
 	_ = v.BindEnv("Onix.ClientId")
 	_ = v.BindEnv("Onix.ClientSecret")
 	_ = v.BindEnv("Onix.TokenURI")
+	_ = v.BindEnv("Service.Path")
+	_ = v.BindEnv("Service.Port")
+	_ = v.BindEnv("Service.AuthMode")
+	_ = v.BindEnv("Service.Username")
+	_ = v.BindEnv("Service.Password")
+	_ = v.BindEnv("Service.Metrics")
+	_ = v.BindEnv("Service.InsecureSkipVerify")
 
 	// creates a config struct and populate it with values
 	c := new(Config)
+	c.Onix = new(Onix)
+	c.Service = new(SvcConf)
 
 	// general configuration
 	c.Id = v.GetString("Id")
@@ -70,6 +92,13 @@ func NewConfig() (Config, error) {
 	c.Onix.ClientId = v.GetString("Onix.ClientId")
 	c.Onix.ClientSecret = v.GetString("Onix.ClientSecret")
 	c.Onix.TokeURI = v.GetString("Onix.TokenURI")
+	c.Service.AuthMode = v.GetString("Service.AuthMode")
+	c.Service.InsecureSkipVerify = v.GetBool("Service.InsecureSkipVerify")
+	c.Service.Metrics = v.GetBool("Service.Metrics")
+	c.Service.Username = v.GetString("Service.Username")
+	c.Service.Password = v.GetString("Service.Password")
+	c.Service.Port = v.GetString("Service.Port")
+	c.Service.Path = v.GetString("Service.Path")
 
 	return *c, nil
 }
