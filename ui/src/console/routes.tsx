@@ -2,9 +2,10 @@ import * as React from "react";
 import { Route, RouteComponentProps, Switch } from "react-router-dom";
 import { accessibleRouteChangeHandler } from "utils/utils";
 import { Dashboard } from "./Dashboard/Dashboard";
-import { MetaModel } from "./MetaModel/MetaModel";
+
 import { useDocumentTitle } from "utils/useDocumentTitle";
 import { LastLocationProvider, useLastLocation } from "react-router-last-location";
+import MetaModel from "./MetaModel";
 
 let routeFocusTimer: number;
 
@@ -33,7 +34,7 @@ const metaModelRoutes: IAppRoute[] = [
     exact: true,
     label: "MetaModels-1",
     path: "/console/metamodel-1",
-    title: "Graph"
+    title: "MetaModel"
   },
   {
     component: MetaModel,
@@ -102,4 +103,4 @@ const ConsoleRoutes = () => (
 );
 
 // TODO make routes dynamic
-export { ConsoleRoutes, dashboardRoutes,  metaModelRoutes};
+export { ConsoleRoutes, dashboardRoutes, metaModelRoutes };
