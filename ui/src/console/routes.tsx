@@ -2,7 +2,6 @@ import * as React from "react";
 import { Route, RouteComponentProps, Switch } from "react-router-dom";
 import { accessibleRouteChangeHandler } from "utils/utils";
 import { Dashboard } from "./Dashboard/Dashboard";
-
 import { useDocumentTitle } from "utils/useDocumentTitle";
 import { LastLocationProvider, useLastLocation } from "react-router-last-location";
 import MetaModel from "./MetaModel";

@@ -1,0 +1,6 @@
+.terraform
+terraform.d
+terraform.tfstate
+terraform.tfstate.backup
+build
+terraform-provider-ox

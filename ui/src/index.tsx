@@ -4,7 +4,6 @@ import App from "./App";
 import { createStore } from "redux";
 import { Provider } from "react-redux";
 import rootReducer from "./store/rootReducer";
-
 import { REDUCER as MetaModelReducer } from "console/MetaModel/store/metamodelReducer";
 
 if (process.env.NODE_ENV !== "production") {
