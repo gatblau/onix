@@ -1,6 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import App from "./App";
+import { createStore } from "redux";
+import { Provider } from "react-redux";
+import rootReducer from "./store/rootReducer";
+import { REDUCER as MetaModelReducer } from "console/MetaModel/store/metamodelReducer";
 
 if (process.env.NODE_ENV !== "production") {
   // tslint:disable-next-line
@@ -8,8 +12,14 @@ if (process.env.NODE_ENV !== "production") {
   axe(React, ReactDOM, 1000);
 }
 
+const store = createStore(rootReducer);
+
+console.log("!!!!!!!!!!!!", store.getState());
+
 const app = (
-  <App/>
+  <Provider store={store}>
+    <App/>
+  </Provider>
 );
 
 ReactDOM.render(app, document.getElementById("root") as HTMLElement);
