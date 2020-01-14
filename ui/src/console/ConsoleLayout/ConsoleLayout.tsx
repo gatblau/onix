@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Avatar, Brand, Nav, NavExpandable, NavItem, NavItemSeparator, NavList, NavVariants, Page, PageHeader, PageSidebar, SkipToContent } from "@patternfly/react-core";
 import logo from "assets/logo-text_32.png";
 import imgAvatar from 'assets/avatar.svg';
-import ConsoleToolbar from "./ConsoleToolbar";
+import ConsoleToolbar from "./consoleToolbar";
 import * as Routes from "../routes";
 import { NavLink, Redirect } from "react-router-dom";
 
@@ -58,7 +58,8 @@ const ConsoleLayout: React.FunctionComponent<IAppLayout> = ({children}) => {
         <NavItemSeparator/>
         <NavExpandable title="Metamodels" groupId="metamodels" isActive={activeGroup === "metamodels"}>
           {Routes.metaModelRoutes.map((route, idx) => (
-            <NavItem to="#mixed-2"
+            <NavItem key={`${route.label}-${idx}`}
+                     id={`${route.label}-${idx}`}
                      groupId="metamodels"
                      itemId={`metamodels-${idx}`}
                      isActive={activeItem === `metamodels-${idx}`}>
@@ -86,7 +87,6 @@ const ConsoleLayout: React.FunctionComponent<IAppLayout> = ({children}) => {
           onPageResize={onPageResize}
           skipToContent={PageSkipToContent}>
       {children}
-      <Redirect to={"console/dashboard"}/>
     </Page>
   );
 };
