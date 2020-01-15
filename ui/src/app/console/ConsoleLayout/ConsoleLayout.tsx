@@ -1,11 +1,26 @@
 import * as React from "react";
 import { useState } from "react";
-import { Avatar, Brand, Nav, NavExpandable, NavItem, NavItemSeparator, NavList, NavVariants, Page, PageHeader, PageSidebar, SkipToContent } from "@patternfly/react-core";
+import { NavLink } from "react-router-dom";
+import {
+  Avatar,
+  Brand,
+  Nav,
+  NavExpandable,
+  NavItem,
+  NavItemSeparator,
+  NavList,
+  NavVariants,
+  Page,
+  PageHeader,
+  PageSidebar,
+  SkipToContent,
+  Toolbar,
+  ToolbarGroup, ToolbarItem
+} from "@patternfly/react-core";
+
 import logo from "assets/logo-text_32.png";
-import imgAvatar from 'assets/avatar.svg';
-import ConsoleToolbar from "./consoleToolbar";
+import imgAvatar from "assets/avatar.svg";
 import * as Routes from "../routes";
-import { NavLink, Redirect } from "react-router-dom";
 
 interface IAppLayout {
   children: React.ReactNode;
@@ -28,11 +43,21 @@ const ConsoleLayout: React.FunctionComponent<IAppLayout> = ({children}) => {
   const onPageResize = (props: { mobileView: boolean; windowSize: number }) => {
     setIsMobileView(props.mobileView);
   };
+  const ConsoleToolbar =
+
+    <Toolbar>
+      <ToolbarGroup>
+        <ToolbarItem>Item 1</ToolbarItem>
+      </ToolbarGroup>
+      <ToolbarGroup>
+        <ToolbarItem>This is annoying !!!</ToolbarItem>
+      </ToolbarGroup>
+    </Toolbar>;
   const Header = (
     <PageHeader logo={<Brand src={logo} alt="Onix Logo"/>}
                 logoProps={logoProps}
                 toolbar={ConsoleToolbar}
-                avatar={<Avatar src={imgAvatar} alt="TODO User" />}
+                avatar={<Avatar src={imgAvatar} alt="TODO User"/>}
                 isNavOpen={isNavOpen}
                 onNavToggle={isMobileView ? onNavToggleMobile : onNavToggle}
                 showNavToggle/>
@@ -69,17 +94,20 @@ const ConsoleLayout: React.FunctionComponent<IAppLayout> = ({children}) => {
         </NavExpandable>
       </NavList>
     </Nav>);
+
   const Sidebar = (
     <PageSidebar
       theme="dark"
       nav={Navigation}
       isNavOpen={isMobileView ? isNavOpenMobile : isNavOpen}/>
   );
+
   const PageSkipToContent = (
     <SkipToContent href="#primary-app-container">
       Skip to Content
     </SkipToContent>
   );
+
   return (
     <Page mainContainerId="primary-app-container"
           header={Header}
@@ -91,4 +119,4 @@ const ConsoleLayout: React.FunctionComponent<IAppLayout> = ({children}) => {
   );
 };
 
-export { ConsoleLayout };
+export default ConsoleLayout;

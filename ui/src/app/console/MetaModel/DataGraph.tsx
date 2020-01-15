@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Graph } from "react-d3-graph";
 import { useDispatch } from "react-redux";
-import { ACTIONS } from "./store/metamodelReducer";
+import { ACTIONS } from "./data/metamodelReducer";
 
 const DataGraph: React.FunctionComponent<{}> = () => {
   const dispatch = useDispatch();
@@ -34,43 +34,33 @@ const DataGraph: React.FunctionComponent<{}> = () => {
 
   const onClickNode = (nodeId: string) => {
     dispatch({type: ACTIONS.SET_NODE, node: nodeId});
-    window.alert(`Clicked node ${nodeId}`);
   };
 
   const onDoubleClickNode = (nodeId: string) => {
-    window.alert(`Double clicked node ${nodeId}`);
   };
 
   const onRightClickNode = (event: MouseEvent, nodeId: string) => {
-    window.alert(`Right clicked node ${nodeId}`);
   };
 
   const onMouseOverNode = (nodeId: string) => {
-    window.alert(`Mouse over node ${nodeId}`);
   };
 
   const onMouseOutNode = (nodeId: string) => {
-    window.alert(`Mouse out node ${nodeId}`);
   };
 
   const onClickLink = (source: string, target: string) => {
-    window.alert(`Clicked link between ${source} and ${target}`);
   };
 
   const onRightClickLink = (event: MouseEvent, source: string, target: string) => {
-    window.alert(`Right clicked link between ${source} and ${target}`);
   };
 
   const onMouseOverLink = (source: string, target: string) => {
-    window.alert(`Mouse over in link between ${source} and ${target}`);
   };
 
   const onMouseOutLink = (source: string, target: string) => {
-    window.alert(`Mouse out link between ${source} and ${target}`);
   };
 
   const onNodePositionChange = (nodeId: string, x: number, y: number) => {
-    window.alert(`Node ${nodeId} is moved to new position. New position is x= ${x} y= ${y}`);
   };
 
   return (
@@ -79,14 +69,15 @@ const DataGraph: React.FunctionComponent<{}> = () => {
       data={data}
       config={myConfig}
       onClickNode={onClickNode}
+      onDoubleClickNode={onDoubleClickNode}
       onRightClickNode={onRightClickNode}
       onClickGraph={onClickGraph}
       onClickLink={onClickLink}
       onRightClickLink={onRightClickLink}
-      // onMouseOverNode={onMouseOverNode}
-      // onMouseOutNode={onMouseOutNode}
-      // onMouseOverLink={onMouseOverLink}
-      // onMouseOutLink={onMouseOutLink}
+      onMouseOverNode={onMouseOverNode}
+      onMouseOutNode={onMouseOutNode}
+      onMouseOverLink={onMouseOverLink}
+      onMouseOutLink={onMouseOutLink}
       onNodePositionChange={onNodePositionChange}
     />
   );

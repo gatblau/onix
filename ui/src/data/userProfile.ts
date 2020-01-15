@@ -46,5 +46,14 @@ export default class UserProfile {
     newInstance.token = this.token;
 
     return newInstance;
-  }
+  };
+
+  toJson = () => {
+    return {
+      username: this.username,
+      firstName: this.firstName,
+      lastName: this.lastName,
+      token: this.token
+    };
+  };
 }
