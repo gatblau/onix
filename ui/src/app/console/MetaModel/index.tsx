@@ -7,7 +7,7 @@ const MetaModel: React.FunctionComponent<{}> = () => (
   <PageSection>
     <Title size="lg">MetaModel</Title>
     <DataGraph/>
-    <DataTable name="Steve"/>
+    <DataTable/>
   </PageSection>
 );
 

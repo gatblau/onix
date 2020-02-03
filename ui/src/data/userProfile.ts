@@ -6,7 +6,7 @@ export default class UserProfile {
   }
 
   get token(): string {
-    return <string>this._token;
+    return this._token as string;
   }
 
   set token(value: string) {
@@ -37,7 +37,11 @@ export default class UserProfile {
     this._lastName = value;
   }
 
-  clone = () => {
+  isAuthenticate = ():boolean => {
+    return this.token !== null;
+  };
+
+  clone = ():UserProfile => {
     let newInstance = new UserProfile();
 
     newInstance.username = this.username;
@@ -46,5 +50,14 @@ export default class UserProfile {
     newInstance.token = this.token;
 
     return newInstance;
-  }
+  };
+
+  toJson = () => {
+    return {
+      username: this.username,
+      firstName: this.firstName,
+      lastName: this.lastName,
+      token: this.token
+    };
+  };
 }
