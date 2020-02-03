@@ -11,7 +11,7 @@ interface IAppLayout {
   children: React.ReactNode;
 }
 
-const ConsoleLayout: React.FunctionComponent<any> = ({children, dashboardRoutes, metaModelRoutes} ) => {
+const ConsoleLayout: React.FunctionComponent<any> = ({children, dashboardRoutes, metaModelRoutes}) => {
   const logoProps = {
     href: "https://github.com/gatblau/onix",
     target: "_blank"
@@ -72,7 +72,9 @@ const ConsoleLayout: React.FunctionComponent<any> = ({children, dashboardRoutes,
                      groupId="metamodels"
                      itemId={`metamodels-${idx}`}
                      isActive={activeItem === `metamodels-${idx}`}>
-              <NavLink exact to={`${route.path}`}>{route.title}</NavLink>
+              <NavLink exact to={route.link}>
+                {route.title}
+              </NavLink>
             </NavItem>
           ))}
         </NavExpandable>
