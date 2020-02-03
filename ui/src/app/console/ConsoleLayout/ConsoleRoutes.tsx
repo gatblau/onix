@@ -6,10 +6,10 @@ import { LastLocationProvider, useLastLocation } from "react-router-last-locatio
 
 export interface IAppRoute {
   label?: string;
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   component: React.ComponentType<RouteComponentProps<any>> | React.ComponentType<any>;
   exact?: boolean;
   path: string;
+  routeParam?: string;
   title: string;
   isAsync?: boolean;
 }
@@ -47,13 +47,14 @@ const RouteWithTitleUpdates = (
   return <Route render={routeWithTitle}/>;
 };
 
-const ConsoleRoutes = (props) => {
+
+const ConsoleRoutes: React.FunctionComponent<any> = (props) => {
   return (
     <LastLocationProvider>
       <Switch>
-        {props.routes.map(({path, exact, component, title, isAsync}, idx) => (
+        {props.routes.map(({path, id, exact, component, title, isAsync}, idx) => (
           <RouteWithTitleUpdates
-            path={props.baseurl + "/" + path}
+            path={props.baseurl + "/" + path }
             exact={exact}
             component={component}
             key={idx}

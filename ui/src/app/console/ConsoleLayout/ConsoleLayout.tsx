@@ -2,31 +2,16 @@ import * as React from "react";
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
-  Avatar,
-  Brand,
-  Nav,
-  NavExpandable,
-  NavItem,
-  NavItemSeparator,
-  NavList,
-  NavVariants,
-  Page,
-  PageHeader,
-  PageSidebar,
-  SkipToContent,
-  Toolbar,
-  ToolbarGroup, ToolbarItem
+  Avatar, Brand, Nav, NavExpandable, NavItem, NavItemSeparator, NavList, NavVariants, Page, PageHeader, PageSidebar, Toolbar, ToolbarGroup, ToolbarItem
 } from "@patternfly/react-core";
-
 import logo from "assets/logo-text_32.png";
 import imgAvatar from "assets/avatar.svg";
-import * as Routes from "../routes";
 
 interface IAppLayout {
   children: React.ReactNode;
 }
 
-const ConsoleLayout: React.FunctionComponent<IAppLayout> = ({children}) => {
+const ConsoleLayout: React.FunctionComponent<any> = ({children, dashboardRoutes, metaModelRoutes} ) => {
   const logoProps = {
     href: "https://github.com/gatblau/onix",
     target: "_blank"
@@ -44,7 +29,6 @@ const ConsoleLayout: React.FunctionComponent<IAppLayout> = ({children}) => {
     setIsMobileView(props.mobileView);
   };
   const ConsoleToolbar =
-
     <Toolbar>
       <ToolbarGroup>
         <ToolbarItem>Item 1</ToolbarItem>
@@ -75,20 +59,20 @@ const ConsoleLayout: React.FunctionComponent<IAppLayout> = ({children}) => {
   const Navigation = (
     <Nav id="onix-console" onSelect={onSelect} onToggle={onToggle} theme="dark">
       <NavList id="onix-console" variant={NavVariants.default}>
-        {Routes.dashboardRoutes.map((route, idx) => (
+        {dashboardRoutes.map((route, idx) => (
           <NavItem key={`${route.label}-${idx}`} id={`${route.label}-${idx}`}>
             <NavLink exact to={route.path} activeClassName="pf-m-current">{route.title}</NavLink>
           </NavItem>
         ))}
         <NavItemSeparator/>
         <NavExpandable title="Metamodels" groupId="metamodels" isActive={activeGroup === "metamodels"}>
-          {Routes.metaModelRoutes.map((route, idx) => (
+          {metaModelRoutes.map((route, idx) => (
             <NavItem key={`${route.label}-${idx}`}
                      id={`${route.label}-${idx}`}
                      groupId="metamodels"
                      itemId={`metamodels-${idx}`}
                      isActive={activeItem === `metamodels-${idx}`}>
-              <NavLink exact to={route.path}>{route.title}</NavLink>
+              <NavLink exact to={`${route.path}`}>{route.title}</NavLink>
             </NavItem>
           ))}
         </NavExpandable>
@@ -102,18 +86,11 @@ const ConsoleLayout: React.FunctionComponent<IAppLayout> = ({children}) => {
       isNavOpen={isMobileView ? isNavOpenMobile : isNavOpen}/>
   );
 
-  const PageSkipToContent = (
-    <SkipToContent href="#primary-app-container">
-      Skip to Content
-    </SkipToContent>
-  );
-
   return (
     <Page mainContainerId="primary-app-container"
           header={Header}
           sidebar={Sidebar}
-          onPageResize={onPageResize}
-          skipToContent={PageSkipToContent}>
+          onPageResize={onPageResize}>
       {children}
     </Page>
   );

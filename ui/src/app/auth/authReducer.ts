@@ -1,4 +1,5 @@
 import UserProfile from "data/userProfile";
+import axios from "axios";
 
 export const ACTIONS = {
   SET_USER: "SET_USER"

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Graph } from "react-d3-graph";
 import { useDispatch } from "react-redux";
-import { ACTIONS } from "./data/metamodelReducer";
+import { ACTIONS } from "./data/metamodelDatalReducer";
 
 const DataGraph: React.FunctionComponent<{}> = () => {
   const dispatch = useDispatch();
@@ -83,4 +83,4 @@ const DataGraph: React.FunctionComponent<{}> = () => {
   );
 };
 
-export default DataGraph ;
+export default DataGraph;

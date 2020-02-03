@@ -1,8 +1,7 @@
 import * as React from "react";
-import { useState } from "react";
-import { dispatch, useSelector } from "react-redux";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { sortable, SortByDirection, Table, TableBody, TableHeader } from "@patternfly/react-table";
-import { useEffect } from "react";
 import axios from "axios";
 
 const DataTable: React.FunctionComponent<{}> = (props) => {
@@ -22,6 +21,7 @@ const DataTable: React.FunctionComponent<{}> = (props) => {
 
   const onSort = (_event, index, direction) => {
     const sortedRows = state.rows.sort((a, b) => (a[index] < b[index] ? -1 : a[index] > b[index] ? 1 : 0));
+
     setState({
       columns: state.columns,
       sortBy: {
@@ -33,17 +33,15 @@ const DataTable: React.FunctionComponent<{}> = (props) => {
   };
 
   useEffect(() => {
-    axios.get("/" + node + ".json")
-      .then(response => {
-        console.log("====> Got ", response.data);
+    axios.get("/" + node + ".json"
+    ).then(response => {
         setState({
           columns: state.columns,
           sortBy: {},
           rows: response.data.rows
         });
-      })
-      .catch(error => console.error(error));
-
+      }
+    ).catch(error => console.error(error));
   }, [node]);
 
   return (
