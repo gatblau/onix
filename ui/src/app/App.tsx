@@ -19,9 +19,6 @@ const App: React.FunctionComponent = (props) => {
 
     // set up token injection for all http requests
     axios.interceptors.request.use(function (config) {
-
-      console.log("+++++++++++++++++Configuring");
-
       config.headers.Authorization = `Basic ${user.token}`;
       return config;
     }, function (err) {

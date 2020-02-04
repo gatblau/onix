@@ -1,16 +1,16 @@
 import * as React from "react";
+import { useEffect, useState } from "react";
 import { Graph } from "react-d3-graph";
 import { useDispatch } from "react-redux";
 import { ACTIONS } from "./data/metamodelDatalReducer";
+import { useParams } from "react-router";
+import axios from "axios";
 
 const DataGraph: React.FunctionComponent<{}> = () => {
   const dispatch = useDispatch();
 
-// graph payload (with minimalist structure)
-  const data = {
-    nodes: [{id: "Bob", symbolType: "diamond"}, {id: "Carol"}, {id: "Alice"}],
-    links: [{source: "Bob", target: "Carol"}, {source: "Bob", target: "Alice"}]
-  };
+  // graph payload
+  const [data, setData] = useState({nodes: [], links: []});
 
 // the graph configuration, you only need to pass down properties
 // that you want to override, otherwise default ones will be used
@@ -63,23 +63,51 @@ const DataGraph: React.FunctionComponent<{}> = () => {
   const onNodePositionChange = (nodeId: string, x: number, y: number) => {
   };
 
+  const {id} = useParams();
+
+  useEffect(() => {
+    axios.get(`/api/model/${id}/data`
+    ).then(response => {
+        const itemTypes: any[] = [];
+        response.data.itemTypes.forEach((item, idx) => {
+          itemTypes.push({id: item.key});
+        });
+
+        const linkRules: any[] = [];
+        response.data.linkRules.forEach((item, idx) => {
+          const linkRule:string[] = item.key.split("->");
+          linkRules.push({source: linkRule[0], target: linkRule[1]});
+        });
+
+        // @ts-ignore
+        setData({nodes: itemTypes, links: linkRules});
+      }
+    ).catch(error => console.error(error));
+  }, []);
+
+  if (data.nodes.length > 0) {
+    return (
+      <Graph
+        id="metaModel" // id is mandatory, if no id is defined rd3g will throw an error
+        data={data}
+        config={myConfig}
+        onClickNode={onClickNode}
+        onDoubleClickNode={onDoubleClickNode}
+        onRightClickNode={onRightClickNode}
+        onClickGraph={onClickGraph}
+        onClickLink={onClickLink}
+        onRightClickLink={onRightClickLink}
+        onMouseOverNode={onMouseOverNode}
+        onMouseOutNode={onMouseOutNode}
+        onMouseOverLink={onMouseOverLink}
+        onMouseOutLink={onMouseOutLink}
+        onNodePositionChange={onNodePositionChange}
+      />
+    );
+  }
+
   return (
-    <Graph
-      id="graph-id" // id is mandatory, if no id is defined rd3g will throw an error
-      data={data}
-      config={myConfig}
-      onClickNode={onClickNode}
-      onDoubleClickNode={onDoubleClickNode}
-      onRightClickNode={onRightClickNode}
-      onClickGraph={onClickGraph}
-      onClickLink={onClickLink}
-      onRightClickLink={onRightClickLink}
-      onMouseOverNode={onMouseOverNode}
-      onMouseOutNode={onMouseOutNode}
-      onMouseOverLink={onMouseOverLink}
-      onMouseOutLink={onMouseOutLink}
-      onNodePositionChange={onNodePositionChange}
-    />
+    <h1>Loading</h1>
   );
 };
 
