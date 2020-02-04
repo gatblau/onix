@@ -80,14 +80,10 @@ const Login: React.ComponentClass<{}> = withRouter((props) => {
     />
   );
 
-
   if (isLoggedIn) {
     let user = new UserProfile();
     user.token = authToken;
     dispatch({type: ACTIONS.SET_USER, user: user});
-
-    console.log("Hooray++++++++++++++", authToken);
-
     return <Redirect to="/"/>;
   }
 

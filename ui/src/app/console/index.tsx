@@ -1,9 +1,9 @@
 import * as React from "react";
 import { useEffect } from "react";
-import "@patternfly/react-core/dist/styles/base.css";
 import { BrowserRouter as Router, Redirect, Switch, withRouter } from "react-router-dom";
-import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
+import "@patternfly/react-core/dist/styles/base.css";
 
 import ConsoleLayout from "./ConsoleLayout/ConsoleLayout";
 import ConsoleRoutes, { IAppRoute } from "./ConsoleLayout/ConsoleRoutes";
@@ -19,7 +19,8 @@ const Console: React.ComponentClass<{}> = withRouter((props) => {
       component: Dashboard,
       exact: true,
       label: "Dashboard",
-      path: "dashboard",
+      path: "/console/dashboard",
+      link: "/console/dashboard",
       title: "Onix Dashboard"
     }
   ];
@@ -31,7 +32,8 @@ const Console: React.ComponentClass<{}> = withRouter((props) => {
               component: MetaModel,
               exact: true,
               label: item.name,
-              path: `metamodel`,
+              path: `/console/metamodel/:id`,
+              link: `/console/metamodel/${item.key}`,
               title: item.name
             }
           );
