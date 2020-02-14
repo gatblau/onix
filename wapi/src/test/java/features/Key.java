@@ -8,6 +8,7 @@ public class Key {
     public static final String EXCEPTION = "exception";
     public static final String ITEM_ONE_KEY = "item_one_key";
     public static final String ITEM_TWO_KEY = "item_two_key";
+    public static final String ITEM_TYPE_ATTR_ONE_KEY = "item_type_attr_one_key";
     public static final String PAYLOAD = "payload";
     public static final String ITEM_TYPE_URL = "item_type_url";
     public static final String LINK_URL = "link_url";

@@ -24,6 +24,7 @@ import io.swagger.annotations.ApiModelProperty;
 import org.json.simple.JSONObject;
 
 import java.io.Serializable;
+import java.util.List;
 
 @ApiModel(
     description = "Defines the type of a configuration item."
@@ -43,6 +44,12 @@ public class ItemTypeData implements Serializable {
     private String changedBy;
     private String modelKey;
     private boolean root;
+    private boolean notifyChange;
+    private List<String> tag;
+    private boolean encryptMeta;
+    private boolean encryptTxt;
+    private String managedMeta;
+    private String managedTxt;
 
     public ItemTypeData() {
     }
@@ -197,10 +204,24 @@ public class ItemTypeData implements Serializable {
     }
 
     @ApiModelProperty(
-        position = 10,
-        required = false,
-        value = "A read only computed property indicating if the item type is a root node on a tree - i.e. it has links departing from it but no links converging to it.",
-        example = "true"
+            position = 10,
+            required = false,
+            value = "Indicates if change notification events should be raised when items of this type change.",
+            example = "true"
+    )
+    public boolean getNotifyChange() {
+        return notifyChange;
+    }
+
+    public void setNotifyChange(boolean notifyChange) {
+        this.notifyChange = notifyChange;
+    }
+
+    @ApiModelProperty(
+            position = 11,
+            required = false,
+            value = "A read only computed property indicating if the item type is a root node on a tree - i.e. it has links departing from it but no links converging to it.",
+            example = "true"
     )
     public boolean isRoot() {
         return root;
@@ -208,5 +229,81 @@ public class ItemTypeData implements Serializable {
 
     public void setRoot(boolean root) {
         this.root = root;
+    }
+
+    @ApiModelProperty(
+            position = 12,
+            required = false,
+            value = "An array of strings used as tags for filtering search results. " +
+                    "The value of each tag is arbitrary and depends on how searches on the item will be made.",
+            example = "[ 'VM', 'AMD64', 'EUROPE' ]",
+            allowEmptyValue = true
+    )
+    public List<String> getTag() {
+        return tag;
+    }
+
+    public void setTag(List<String> tag) {
+        this.tag = tag;
+    }
+
+    @ApiModelProperty(
+            position = 13,
+            required = false,
+            value = "Indicates whether the Meta field in an Configuration Item should be encrypted in the database.",
+            example = "true",
+            allowEmptyValue = true
+    )
+    public boolean getEncryptMeta() {
+        return encryptMeta;
+    }
+
+    public void setEncryptMeta(boolean encryptMeta) {
+        this.encryptMeta = encryptMeta;
+    }
+
+    @ApiModelProperty(
+            position = 14,
+            required = false,
+            value = "Indicates whether the Txt field in an Configuration Item should be encrypted in the database.",
+            example = "true",
+            allowEmptyValue = true
+    )
+    public boolean getEncryptTxt() {
+        return encryptTxt;
+    }
+
+    public void setEncryptTxt(boolean encryptTxt) {
+        this.encryptTxt = encryptTxt;
+    }
+
+    @ApiModelProperty(
+            position = 15,
+            required = false,
+            value = "Indicates whether the Meta field in an Configuration Item is fully managed by an agent (Y), it is not managed by an agent (N), or it can be partially managed (P - managed by an agent and UI).",
+            example = "true",
+            allowEmptyValue = true
+    )
+    public String getManagedMeta() {
+        return managedMeta;
+    }
+
+    public void setManagedMeta(String managedMeta) {
+        this.managedMeta = managedMeta;
+    }
+
+    @ApiModelProperty(
+            position = 15,
+            required = false,
+            value = "Indicates whether the Txt field in an Configuration Item is fully managed by an agent (Y), it is not managed by an agent (N), or it can be partially managed (P - managed by an agent and UI).",
+            example = "true",
+            allowEmptyValue = true
+    )
+    public String getManagedTxt() {
+        return managedTxt;
+    }
+
+    public void setManagedTxt(String managedTxt) {
+        this.managedTxt = managedTxt;
     }
 }

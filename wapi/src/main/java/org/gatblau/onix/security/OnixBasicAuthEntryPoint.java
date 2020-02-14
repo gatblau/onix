@@ -35,7 +35,7 @@ import java.io.PrintWriter;
 @Component
 public class OnixBasicAuthEntryPoint extends BasicAuthenticationEntryPoint {
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authEx) throws IOException, ServletException {
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authEx) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         // if no authorisation header is passed in
         if (request.getHeader("Authorization") == null) {
@@ -47,7 +47,7 @@ public class OnixBasicAuthEntryPoint extends BasicAuthenticationEntryPoint {
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet()  {
         setRealmName("onix");
         super.afterPropertiesSet();
     }

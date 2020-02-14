@@ -32,6 +32,7 @@ import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.io.InputStream;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
@@ -99,6 +100,17 @@ class Database {
     }
 
     void setString(int parameterIndex, String value) throws SQLException {
+        stmt.setString(parameterIndex, value);
+    }
+
+    void setBinaryStream(int parameterIndex, InputStream value) throws SQLException {
+        stmt.setBinaryStream(parameterIndex, value);
+    }
+
+    void setString(int parameterIndex, String value, String defaultValue) throws SQLException {
+        if (value == null) {
+            value = defaultValue;
+        }
         stmt.setString(parameterIndex, value);
     }
 
