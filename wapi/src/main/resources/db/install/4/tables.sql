@@ -426,6 +426,12 @@ DO
           updated     timestamp(6) with time zone,
           changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           model_id    int                    NOT NULL,
+          notify_change BOOLEAN NOT NULL DEFAULT FALSE,
+          tag          text[] COLLATE pg_catalog."default",
+          encrypt_meta boolean NOT NULL DEFAULT FALSE,
+          encrypt_txt  boolean NOT NULL DEFAULT FALSE,
+          managed_meta CHAR(1) NOT NULL CHECK (managed_meta IN ('Y', 'N', 'P')) DEFAULT 'N', -- is this attribute managed by an agent Y:yes N:no P:partially
+          managed_txt  CHAR(1) NOT NULL CHECK (managed_txt IN ('Y', 'N', 'P')) DEFAULT 'N', -- is this attribute managed by an agent Y:yes N:no P:partially
           CONSTRAINT item_type_id_pk PRIMARY KEY (id),
           CONSTRAINT item_type_key_uc UNIQUE (key),
           CONSTRAINT item_type_name_uc UNIQUE (name),
@@ -468,7 +474,13 @@ DO
           created     timestamp(6) with time zone,
           updated     timestamp(6) with time zone,
           changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-          model_id    int
+          model_id    int,
+          notify_change BOOLEAN NOT NULL,
+          tag          text[] COLLATE pg_catalog."default",
+          encrypt_meta boolean,
+          encrypt_txt  boolean,
+          managed_meta CHAR(1), -- is this attribute managed by an agent Y:yes N:no P:partially
+          managed_txt  CHAR(1)  -- is this attribute managed by an agent Y:yes N:no P:partially
         );
 
         CREATE OR REPLACE FUNCTION change_item_type() RETURNS TRIGGER AS
@@ -499,6 +511,104 @@ DO
       END IF;
 
       ---------------------------------------------------------------------------
+      -- ITEM TYPE ATTRIBUTE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'item_type_attribute')
+      THEN
+        CREATE SEQUENCE item_type_attribute_id_seq
+          INCREMENT 1
+          START 1
+          MINVALUE 1
+          MAXVALUE 9223372036854775807
+          CACHE 1;
+
+        ALTER SEQUENCE item_type_attribute_id_seq
+          OWNER TO onix;
+
+          CREATE TABLE item_type_attribute
+          (
+            id          INTEGER NOT NULL DEFAULT nextval('item_type_attribute_id_seq'::regclass), -- a surrogate key for referential integrity
+            key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default", -- a natural key for managing CRUD operations
+            name        CHARACTER VARYING(200) COLLATE pg_catalog."default", -- the name of the attribute
+            description TEXT COLLATE pg_catalog."default", -- an explanation of the attribute for clients to see
+            type        CHARACTER VARYING(100) NOT NULL, -- is this a number, string, etc?
+            def_value   CHARACTER VARYING(200), -- zero or more default values separated by commas
+            managed     CHAR(1) NOT NULL CHECK (managed IN ('Y', 'N', 'P')) DEFAULT 'N', -- is this attribute managed by an agent Y:yes N:no P:partially
+            required    BIT DEFAULT 0::BIT NOT NULL, -- is this a required attribute?
+            regex       VARCHAR(300), -- tell client how to validate value
+            item_type_id INTEGER NOT NULL, -- the item type this attribute belongs to
+            version     bigint                 NOT NULL DEFAULT 1,
+            created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
+            updated     timestamp(6) with time zone,
+            changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+            CONSTRAINT item_type_attribute_id_fk FOREIGN KEY (item_type_id)
+                REFERENCES item_type (id) MATCH SIMPLE
+                ON UPDATE NO ACTION
+                ON DELETE CASCADE
+          )
+          WITH (OIDS = FALSE) TABLESPACE pg_default;
+
+          CREATE INDEX fki_item_type_attribute_id_fk
+              ON item_type_attribute USING btree (item_type_id)
+              TABLESPACE pg_default;
+
+          ALTER TABLE item_type
+              OWNER to onix;
+      END IF;
+
+      ---------------------------------------------------------------------------
+      -- ITEM TYPE ATTRIBUTE CHANGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'item_type_attribute_change')
+      THEN
+        CREATE TABLE item_type_attribute_change
+        (
+          operation    CHAR(1)                     NOT NULL,
+          changed      timestamp(6) with time zone NOT NULL,
+          id          INTEGER NOT NULL DEFAULT nextval('item_type_attribute_id_seq'::regclass), -- a surrogate key for referential integrity
+          key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default", -- a natural key for managing CRUD operations
+          name        CHARACTER VARYING(200) COLLATE pg_catalog."default", -- the name of the attribute
+          description TEXT COLLATE pg_catalog."default", -- an explanation of the attribute for clients to see
+          type        CHARACTER VARYING(100) NOT NULL, -- is this a number, string, etc?
+          def_value   CHARACTER VARYING(300), -- zero or more default values separated by commas
+          managed     CHAR(1) NOT NULL CHECK (managed IN ('Y', 'N', 'P')) DEFAULT 'N', -- is this attribute managed by an agent Y:yes N:no P:partially
+          required    BIT DEFAULT 0::BIT NOT NULL, -- is this a required attribute?
+          regex       VARCHAR(300), -- tell client how to validate value
+          item_type_id INTEGER NOT NULL, -- the item type this attribute belongs to
+          version     bigint                 NOT NULL DEFAULT 1,
+          created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
+          updated     timestamp(6) with time zone,
+          changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
+        );
+
+        CREATE OR REPLACE FUNCTION change_item_type_attribute() RETURNS TRIGGER AS
+        $item_type_attribute_change$
+        BEGIN
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO item_type_attribute_change SELECT 'D', now(), OLD.*;
+            RETURN OLD;
+          ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO item_type_attribute_change SELECT 'U', now(), NEW.*;
+            RETURN NEW;
+          ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO item_type_attribute_change SELECT 'I', now(), NEW.*;
+            RETURN NEW;
+          END IF;
+          RETURN NULL; -- result is ignored since this is an AFTER trigger
+        END;
+        $item_type_attribute_change$ LANGUAGE plpgsql;
+
+        CREATE TRIGGER item_type_attribute_change
+          AFTER INSERT OR UPDATE OR DELETE
+          ON item_type_attribute
+          FOR EACH ROW
+        EXECUTE PROCEDURE change_item_type_attribute();
+
+        ALTER TABLE item_type_attribute_change
+          OWNER to onix;
+      END IF;
+
+      ---------------------------------------------------------------------------
       -- ITEM
       ---------------------------------------------------------------------------
       IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'item')
@@ -520,6 +630,9 @@ DO
           name         character varying(200) COLLATE pg_catalog."default",
           description  text COLLATE pg_catalog."default",
           meta         jsonb,
+          meta_enc     bytea,
+          txt          text,
+          txt_enc      bytea,
           tag          text[] COLLATE pg_catalog."default",
           attribute    hstore,
           status       smallint                                                     DEFAULT 0,
@@ -582,6 +695,9 @@ DO
           name         CHARACTER VARYING(200) COLLATE pg_catalog."default",
           description  text COLLATE pg_catalog."default",
           meta         jsonb,
+          meta_enc     bytea,
+          txt          text,
+          txt_enc      bytea,
           tag          text[] COLLATE pg_catalog."default",
           attribute    hstore,
           status       SMALLINT,

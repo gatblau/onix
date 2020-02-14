@@ -26,5 +26,6 @@
       }
     },
     "required": [ "productId", "productName", "price" ]
-  }
+  },
+  "managedTxt": "Y"
 }

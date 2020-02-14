@@ -20,17 +20,22 @@ project, to be licensed under the same terms as the rest of the code.
 package org.gatblau.onix;
 
 import org.gatblau.onix.data.*;
+import org.gatblau.onix.security.Crypto;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.postgresql.jdbc.PgArray;
 import org.postgresql.util.PGobject;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -41,6 +46,10 @@ import java.util.*;
 public class Lib implements InitializingBean {
     private DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss Z");
     private JSONParser jsonParser = new JSONParser();
+    private String key = "++uqpjSZ+6PckpoT+9vWthhb3VOdAZZLeBSaS+hh3Pc=";
+
+    @Autowired
+    private Crypto crypto;
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -115,7 +124,10 @@ public class Lib implements InitializingBean {
     }
 
     public List<String> toList(Object value) throws SQLException {
-        if (value instanceof PgArray) {
+        if (value == null) {
+            return new ArrayList<>();
+        }
+        else if (value instanceof PgArray) {
             PgArray pgArray = (PgArray) value;
             String[] array = (String[])pgArray.getArray();
             return Arrays.asList(array);
@@ -145,6 +157,7 @@ public class Lib implements InitializingBean {
         item.setAttribute(toJSON(set.getObject("attribute")));
         item.setChangedBy(set.getString("changed_by"));
         item.setPartition(partitionKey);
+        item.setTxt(set.getString("txt"));
         return item;
     }
 
@@ -181,6 +194,12 @@ public class Lib implements InitializingBean {
         itemType.setModelKey(set.getString("model_key"));
         itemType.setChangedBy(set.getString("changed_by"));
         itemType.setRoot(set.getBoolean("root"));
+        itemType.setNotifyChange(set.getBoolean("notify_change"));
+        itemType.setTag(toList(set.getObject("tag")));
+        itemType.setEncryptMeta(set.getBoolean("encrypt_meta"));
+        itemType.setEncryptTxt(set.getBoolean("encrypt_txt"));
+        itemType.setManagedMeta(set.getString("managed_meta"));
+        itemType.setManagedTxt(set.getString("managed_txt"));
         return itemType;
     }
 
@@ -305,5 +324,43 @@ public class Lib implements InitializingBean {
         priv.setChangedBy(set.getString("changed_by"));
         priv.setCreated(dateFormat.format(set.getDate("created")));
         return priv;
+    }
+
+    public byte[] encryptTxt(String txt) {
+        return crypto.encrypt(txt, crypto.fromString(key));
+    }
+
+    public byte[] decryptTxt(byte[] encryptedTxt) {
+        return crypto.decrypt(encryptedTxt, crypto.fromString(key));
+    }
+
+    public String toString(InputStream inputStream) {
+        String str;
+        try {
+            ByteArrayOutputStream result = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) != -1) {
+                result.write(buffer, 0, length);
+            }
+            str = result.toString(StandardCharsets.UTF_8.name());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return str;
+    }
+
+    public byte[] toByteArray(InputStream inputStream) {
+        try {
+            ByteArrayOutputStream result = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) != -1) {
+                result.write(buffer, 0, length);
+            }
+            return result.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -32,6 +32,9 @@ DO
                   status        smallint,
                   item_type_key character varying,
                   meta          jsonb,
+                  meta_enc      bytea,
+                  txt           text,
+                  txt_enc       bytea,
                   tag           text[],
                   attribute     hstore,
                   version       bigint,
@@ -54,6 +57,9 @@ DO
                  i.status,
                  it.key as item_type_key,
                  i.meta,
+                 i.meta_enc,
+                 i.txt,
+                 i.txt_enc,
                  i.tag,
                  i.attribute,
                  i.version,
@@ -98,7 +104,13 @@ DO
                   updated     timestamp(6) with time zone,
                   changed_by  character varying,
                   model_key   character varying,
-                  root        boolean
+                  root        boolean,
+                  notify_change boolean,
+                  tag         text[],
+                  encrypt_meta boolean,
+                  encrypt_txt boolean,
+                  managed_meta char(1),
+                  managed_txt char(1)
                 )
         LANGUAGE 'plpgsql'
         COST 100
@@ -119,7 +131,13 @@ DO
                  i.updated,
                  i.changed_by,
                  m.key AS model_key,
-                 k.root
+                 k.root,
+                 i.notify_change,
+                 i.tag,
+                 i.encrypt_meta,
+                 i.encrypt_txt,
+                 i.managed_meta,
+                 i.managed_txt
           FROM item_type i
                  INNER JOIN model m ON i.model_id = m.id
                  INNER JOIN privilege pr on m.partition_id = pr.partition_id

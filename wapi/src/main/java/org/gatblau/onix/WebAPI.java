@@ -23,6 +23,7 @@ import io.swagger.annotations.*;
 import org.gatblau.onix.conf.Info;
 import org.gatblau.onix.data.*;
 import org.gatblau.onix.db.DbRepository;
+import org.gatblau.onix.security.Crypto;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -50,6 +51,9 @@ public class WebAPI {
 
     @Autowired
     private org.gatblau.onix.conf.Info info;
+
+    @Autowired
+    Crypto crypto;
 
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
 
@@ -1307,6 +1311,20 @@ public class WebAPI {
     ) {
         Result result = data.deleteData(rootItemKey);
         return ResponseEntity.status(result.getStatus()).body(result);
+    }
+
+    @ApiOperation(
+            value = "Returns a new secret key for configuration data encryption.",
+            notes = "Use this endpoint to generate encryption keys that can be used to encrypt/decrypt configuration data.",
+            response = JSONObject.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful request.", response = JSONObject.class)}
+    )
+    @RequestMapping(value = "/key", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<JSONObject> key() {
+        JSONObject response = new JSONObject();
+        response.put("key", crypto.newKey());
+        return ResponseEntity.ok(response);
     }
 
     /*

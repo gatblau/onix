@@ -355,6 +355,9 @@ DO $$
         name_param character varying,
         description_param text,
         meta_param jsonb,
+        meta_enc_param bytea,
+        txt_param text,
+        txt_enc_param bytea,
         tag_param text[],
         attribute_param hstore,
         status_param smallint,
@@ -436,6 +439,9 @@ DO $$
             name,
             description,
             meta,
+            meta_enc,
+            txt,
+            txt_enc,
             tag,
             attribute,
             status,
@@ -452,6 +458,9 @@ DO $$
             name_param,
             description_param,
             meta_param,
+            meta_enc_param,
+            txt_param,
+            txt_enc_param,
             tag_param,
             attribute_param,
             status_param,
@@ -506,6 +515,9 @@ DO $$
         SET name         = name_param,
             description  = description_param,
             meta         = meta_param,
+            meta_enc     = meta_enc_param,
+            txt          = txt_param,
+            txt_enc      = txt_enc_param,
             tag          = tag_param,
             attribute    = attribute_param,
             status       = status_param,
@@ -524,6 +536,9 @@ DO $$
             status != status_param OR
             item_type_id != item_type_id_value OR
             meta != meta_param OR
+            meta_enc != meta_enc_param OR
+            txt != txt_param OR
+            txt_enc != txt_enc_param OR
             tag != tag_param OR
             avals(attribute) != avals(attribute_param)
           );
@@ -540,7 +555,10 @@ DO $$
         character varying,
         character varying,
         text,
-        jsonb,
+        jsonb, -- meta
+        bytea, -- meta_enc
+        text, -- txt
+        bytea, -- txt_enc
         text[],
         hstore,
         smallint,
@@ -571,6 +589,12 @@ DO $$
         local_version_param bigint,
         model_key_param character varying,
         changed_by_param character varying,
+        notify_change_param boolean,
+        tag_param text[],
+        encrypt_meta_param boolean,
+        encrypt_txt_param boolean,
+        managed_meta_param char(1),
+        managed_txt_param char(1),
         role_key_param character varying[]
       )
       RETURNS TABLE(result char(1))
@@ -636,7 +660,13 @@ DO $$
           created,
           updated,
           changed_by,
-          model_id
+          model_id,
+          notify_change,
+          tag,
+          encrypt_meta,
+          encrypt_txt,
+          managed_meta,
+          managed_txt
         )
         VALUES (
           nextval('item_type_id_seq'),
@@ -650,7 +680,13 @@ DO $$
           current_timestamp,
           null,
           changed_by_param,
-          model_id_value
+          model_id_value,
+          notify_change_param,
+          tag_param,
+          encrypt_meta_param,
+          encrypt_txt_param,
+          managed_meta_param,
+          managed_txt_param
         );
         result := 'I';
       ELSE
@@ -663,7 +699,13 @@ DO $$
             version     = version + 1,
             updated     = current_timestamp,
             changed_by  = changed_by_param,
-            model_id    = model_id_value
+            model_id    = model_id_value,
+            notify_change = notify_change_param,
+            tag         = tag_param,
+            encrypt_meta = encrypt_meta_param,
+            encrypt_txt = encrypt_txt_param,
+            managed_meta = managed_meta_param,
+            managed_txt = managed_txt_param
         WHERE key = key_param
           -- concurrency management - optimistic locking
           AND (local_version_param = current_version OR local_version_param IS NULL)
@@ -673,7 +715,13 @@ DO $$
             avals(attr_valid) != avals(attr_valid_param) OR
             filter != filter_param OR
             meta_schema != meta_schema_param OR
-            model_id != model_id_value
+            model_id != model_id_value OR
+            notify_change != notify_change_param OR
+            tag != tag_param OR
+            encrypt_meta != encrypt_meta_param OR
+            encrypt_txt != encrypt_txt_param OR
+            managed_meta != managed_txt_param OR
+            managed_txt != managed_txt_param
           );
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
         SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
@@ -692,6 +740,12 @@ DO $$
         bigint, -- client version
         character varying, -- meta model key
         character varying, -- changed by
+        boolean, -- notify change
+        text[], -- tag
+        boolean, -- encrypt meta
+        boolean, -- encrypt txt
+        char(1), -- managed meta
+        char(1), -- managed txt
         character varying[] -- role_key_param
       )
       OWNER TO onix;

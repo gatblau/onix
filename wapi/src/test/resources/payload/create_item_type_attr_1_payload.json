@@ -1,0 +1,10 @@
+{
+  "name": "Operating System",
+  "description": "The Operating System type and version.",
+  "type": "list",
+  "def_value": "RHEL 8",
+  "managed": "P",
+  "required": true,
+  "regex": "[RHEL]+",
+  "itemTypeKey": "item_type_1"
+}

@@ -8,6 +8,7 @@
     "price": 12.50,
     "tags": [ "home", "green" ]
   },
+  "txt": "This is a sample configuration text here.",
   "tag": ["cmdb", "host", "rhel"],
   "attribute": {
     "WBS" : "012csl",

@@ -31,6 +31,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.JwtClaimAccessor;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -55,6 +57,8 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public synchronized Result createOrUpdateItem(String key, ItemData item, String[] role) {
+        // gets the type first to check for encryption requirements
+        ItemTypeData itemType = getItemType(item.getType(), role);
         Result result = new Result(String.format("Item:%s", key));
         ResultSet set = null;
         try {
@@ -62,15 +66,33 @@ public class PgSqlRepository implements DbRepository {
             db.setString(1, key); // key_param
             db.setString(2, item.getName()); // name_param
             db.setString(3, item.getDescription()); // description_param
-            db.setString(4, util.toJSONString(item.getMeta())); // meta_param
-            db.setString(5, util.toArrayString(item.getTag())); // tag_param
-            db.setString(6, getAttributeString(item.getAttribute())); // attribute_param
-            db.setInt(7, item.getStatus()); // status_param
-            db.setString(8, item.getType()); // item_type_key_param
-            db.setObject(9, item.getVersion()); // version_param
-            db.setString(10, getUser()); // changed_by_param
-            db.setString(11, item.getPartition()); // partition_key_param
-            db.setArray(12, role); // role_key_param
+            // if is not supposed to encrypt meta
+            if (!itemType.getEncryptMeta()) {
+                db.setString(4, util.toJSONString(item.getMeta())); // meta_param
+                db.setBinaryStream(5, new ByteArrayInputStream(new byte[]{}));
+            } else {
+                // encrypts and populates meta_enc_param
+                db.setString(4, null); // meta_param
+                db.setBinaryStream(5, new ByteArrayInputStream(util.encryptTxt(util.toJSONString(item.getMeta())))); // meta_enc_param
+            }
+            // if is not supposed to encrypt txt
+            if (!itemType.getEncryptTxt()) {
+                // populates txt_param
+                db.setString(6, item.getTxt()); // txt_param
+                db.setBinaryStream(7, new ByteArrayInputStream(new byte[]{}));
+            } else {
+                // encrypts and populates txt_enc_param
+                db.setString(6, null);
+                db.setBinaryStream(7, new ByteArrayInputStream(util.encryptTxt(item.getTxt()))); // txt_enc_param
+            }
+            db.setString(8, util.toArrayString(item.getTag())); // tag_param
+            db.setString(9, getAttributeString(item.getAttribute())); // attribute_param
+            db.setInt(10, item.getStatus()); // status_param
+            db.setString(11, item.getType()); // item_type_key_param
+            db.setObject(12, item.getVersion()); // version_param
+            db.setString(13, getUser()); // changed_by_param
+            db.setString(14, item.getPartition()); // partition_key_param
+            db.setArray(15, role); // role_key_param
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_item"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -92,6 +114,16 @@ public class PgSqlRepository implements DbRepository {
             ResultSet set = db.executeQuerySingleRow();
             if (set != null) {
                 item = util.toItemData(set);
+            }
+            // checks txt for encrypted data
+            byte[] bytes = util.toByteArray(set.getBinaryStream("txt_enc"));
+            if (bytes.length > 0) {
+                item.setTxt(new String(util.decryptTxt(bytes), StandardCharsets.UTF_8));
+            }
+            // checks meta for encrypted data
+            bytes = util.toByteArray(set.getBinaryStream("meta_enc"));
+            if (bytes.length > 0) {
+                item.setMeta(util.toJSON(new String(util.decryptTxt(bytes), StandardCharsets.UTF_8)));
             }
 
             if (includeLinks) {
@@ -121,8 +153,8 @@ public class PgSqlRepository implements DbRepository {
             ex.printStackTrace();
         } finally {
             db.close();
-            return item;
         }
+        return item;
     }
 
     @Override
@@ -442,7 +474,13 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(7, itemType.getVersion()); // version_param
             db.setObject(8, itemType.getModelKey()); // meta model key
             db.setString(9, getUser()); // changed_by_param
-            db.setArray(10, role);
+            db.setObject(10, itemType.getNotifyChange());
+            db.setString(11, util.toArrayString(itemType.getTag())); // tag_param
+            db.setObject(12, itemType.getEncryptMeta());
+            db.setObject(13, itemType.getEncryptTxt());
+            db.setString(14, itemType.getManagedMeta(), "N");
+            db.setString(15, itemType.getManagedTxt(), "N");
+            db.setArray(16, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_item_type"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -626,7 +664,10 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," +
                 "?::character varying," +
                 "?::text," +
-                "?::jsonb," +
+                "?::jsonb," + // meta
+                "?::bytea," + // meta_enc
+                "?::text," + // txt
+                "?::bytea," + // txt_enc
                 "?::text[]," +
                 "?::hstore," +
                 "?::smallint," +
@@ -768,6 +809,12 @@ public class PgSqlRepository implements DbRepository {
                 "?::bigint," + // version
                 "?::character varying," + // meta model key
                 "?::character varying," + // changed_by
+                "?::boolean," + // notify_change
+                "?::text[]," + // tag
+                "?::boolean," + // encrypt_meta
+                "?::boolean," + // encrypt_txt
+                "?::char(1)," + // managed_meta
+                "?::char(1)," + // managed_txt
                 "?::character varying[]" + // role_key_param
                 ")";
     }
@@ -1678,5 +1725,4 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying[]" + // role_key_param
                 ")";
     }
-
 }

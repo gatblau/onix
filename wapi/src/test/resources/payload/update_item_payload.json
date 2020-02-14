@@ -2,6 +2,7 @@
   "name": "Updated Test Item",
   "description": "This is an updated CMDB item for testing purposes.",
   "type": "item_type_1",
+  "txt": "This is a sample configuration text here.",
   "meta": {
     "IP": "192.168.0.1",
     "Vendor": "Supreme Computers",

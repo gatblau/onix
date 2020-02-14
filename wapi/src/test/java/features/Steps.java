@@ -298,6 +298,27 @@ public class Steps extends BaseTest {
         return result;
     }
 
+    private Result putItemTypeAttr(String itemTypeAttrKey, String payloadFilename) {
+        Result result = null;
+        String url = String.format("%sitemtypeattr/{key}", baseUrl);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("key", itemTypeAttrKey);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.PUT, getEntity(util.getFile(payloadFilename)), Result.class, vars);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+            result = response.getBody();
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+            result = new Result();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
+        }
+        return result;
+    }
+
     @Given("^more than one item exist in the database$")
     public void moreThanOneItemExistInTheDatabase() throws Throwable {
         theClearCMDBURLOfTheServiceIsKnown();
@@ -1861,5 +1882,20 @@ public class Steps extends BaseTest {
         if (util.containsKey(EXCEPTION)){
             throw new RuntimeException((Exception)util.get(EXCEPTION));
         }
+    }
+
+    @Given("^the item type attribute URL of the service with key is known$")
+    public void theItemTypeAttributeURLOfTheServiceWithKeyIsKnown() {
+        util.put(ENDPOINT_URI, String.format("%sitemtypeattr/{key}", baseUrl));
+    }
+
+    @Given("^the item type attribute natural key is known$")
+    public void theItemTypeAttributeNaturalKeyIsKnown() {
+        util.put(ITEM_TYPE_ATTR_ONE_KEY, ITEM_TYPE_ATTR_ONE_KEY);
+    }
+
+    @When("^an item type attribute PUT HTTP request with a JSON payload is done$")
+    public void anItemTypeAttributePUTHTTPRequestWithAJSONPayloadIsDone() {
+        putItemTypeAttr(util.get(ITEM_TYPE_ATTR_ONE_KEY), "payload/create_item_type_attr_1_payload.json");
     }
 }
