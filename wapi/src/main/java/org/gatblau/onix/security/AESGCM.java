@@ -18,6 +18,7 @@ project, to be licensed under the same terms as the rest of the code.
 */
 package org.gatblau.onix.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
@@ -29,7 +30,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Base64;
+import java.util.Date;
 
 //
 // Authenticated Symmetric Encryption using Advanced Encryption Standard (AES) and Galois/Counter Mode (GCM) ciphers
@@ -40,6 +44,19 @@ public class AESGCM implements Crypto {
     private static final int AES_KEY_SIZE = 256;
     private static final String ALGORITHM = "AES";
     private static final String CIPHER = "AES/GCM/NoPadding";
+    private static final DateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
+
+    @Value("${wapi.ek.1}")
+    private char[] KEY_1;
+
+    @Value("${wapi.ek.2}")
+    private char[] KEY_2;
+
+    @Value("${wapi.ek.expiry.date}")
+    private String KEY_EXPIRY;
+
+    @Value("${wapi.ek.active}")
+    private int KEY_ACTIVE;
 
     // This size of the IV (in bytes) is normally (keysize / 8).
     // If the default keysize is 256, so the IV must be 32 bytes long.
@@ -72,16 +89,14 @@ public class AESGCM implements Crypto {
         return Base64.getEncoder().encodeToString(keyGenerator.generateKey().getEncoded());
     }
 
-    // get the secret key from an UTF8 encoded string
-    @Override
-    public SecretKey fromString(String encodedKey) {
-        byte[] decodedKey = Base64.getDecoder().decode(encodedKey);
+    private SecretKey fromCharArray(char[] encodedKey) {
+        byte[] decodedKey = Base64.getDecoder().decode(new String(encodedKey).trim());
         return new SecretKeySpec(decodedKey, 0, decodedKey.length, ALGORITHM);
     }
 
     // encrypts a plain text
     @Override
-    public byte[] encrypt(String plaintext, SecretKey key) {
+    public byte[] encrypt(String plaintext) {
         try {
             byte[] textBytes = plaintext.getBytes(StandardCharsets.UTF_8);
 
@@ -91,10 +106,11 @@ public class AESGCM implements Crypto {
 
             Cipher cipher = Cipher.getInstance(CIPHER);
             GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH_BYTES * 8, iv);
-            cipher.init(Cipher.ENCRYPT_MODE, key, parameterSpec);
+            cipher.init(Cipher.ENCRYPT_MODE, getKey(), parameterSpec);
             byte[] encryptedData = cipher.doFinal(textBytes);
 
-            ByteBuffer byteBuffer = ByteBuffer.allocate(iv.length + encryptedData.length);
+            ByteBuffer byteBuffer = ByteBuffer.allocate(4 + iv.length + encryptedData.length);
+            byteBuffer.putInt(getCurrentKey());
             byteBuffer.put(iv);
             byteBuffer.put(encryptedData);
 
@@ -106,9 +122,10 @@ public class AESGCM implements Crypto {
 
     // decrypts a cipher
     @Override
-    public byte[] decrypt(byte[] encryptedData, SecretKey key) {
+    public byte[] decrypt(byte[] encryptedData) {
         try {
             ByteBuffer byteBuffer = ByteBuffer.wrap(encryptedData);
+            int currentKey = byteBuffer.getInt();
 
             byte[] iv = new byte[GCM_IV_LENGTH_BYTES];
             byteBuffer.get(iv);
@@ -118,8 +135,41 @@ public class AESGCM implements Crypto {
 
             Cipher cipher = Cipher.getInstance(CIPHER);
             GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH_BYTES * 8, iv);
-            cipher.init(Cipher.DECRYPT_MODE, key, parameterSpec);
+            cipher.init(Cipher.DECRYPT_MODE, getKey(currentKey), parameterSpec);
             return cipher.doFinal(cipherBytes);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private SecretKey getKey(int currentKey) {
+        switch (currentKey) {
+            case 1:
+                return fromCharArray(KEY_1);
+            case 2:
+                return fromCharArray(KEY_2);
+            default:
+                throw new RuntimeException("Active key invalid. Has to be either A or B.");
+        }
+    }
+
+    // the current key used for encryption
+    private SecretKey getKey() {
+        return getKey(getCurrentKey());
+    }
+
+    // get key 1 or 2 depending on expiry date
+    private int getCurrentKey() {
+        try {
+            Date today = new Date();
+            Date expiry = formatter.parse(KEY_EXPIRY);
+            if (today.after(expiry)) {
+                // return the non-active key
+                return (KEY_ACTIVE == 1) ? 2 : 1;
+            } else {
+                // return active key
+                return KEY_ACTIVE;
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -38,6 +38,10 @@
     {
       "file": "tags.sql",
       "checksum": ""
+    },
+    {
+      "file": "keyman.sql",
+      "checksum": ""
     }
   ],
   "upgrade": [
