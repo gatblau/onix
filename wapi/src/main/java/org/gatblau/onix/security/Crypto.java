@@ -30,12 +30,9 @@ public interface Crypto {
     // returns a new secret key
     String newKey();
 
-    // get the secret key from an UTF8 encoded string
-    SecretKey fromString(String key);
-
     // encrypts a plain text
-    byte[] encrypt(String plaintext, SecretKey key);
+    byte[] encrypt(String plaintext);
 
     // decrypts a cipher
-    byte[] decrypt(byte[] encryptedData, SecretKey key);
+    byte[] decrypt(byte[] encryptedData);
 }

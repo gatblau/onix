@@ -63,6 +63,10 @@ public interface DbRepository {
     Result deleteItemType(String key, String[] role);
 
     /*
+        ITEM TYPE ATTRIBUTES
+    */
+
+    /*
         LINK TYPES
      */
     LinkTypeList getLinkTypes(Map attrMap, ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time, String modelKey, String[] role);

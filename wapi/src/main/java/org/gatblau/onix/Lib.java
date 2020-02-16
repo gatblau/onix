@@ -327,11 +327,11 @@ public class Lib implements InitializingBean {
     }
 
     public byte[] encryptTxt(String txt) {
-        return crypto.encrypt(txt, crypto.fromString(key));
+        return crypto.encrypt(txt);
     }
 
     public byte[] decryptTxt(byte[] encryptedTxt) {
-        return crypto.decrypt(encryptedTxt, crypto.fromString(key));
+        return crypto.decrypt(encryptedTxt);
     }
 
     public String toString(InputStream inputStream) {
