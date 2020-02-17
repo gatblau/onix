@@ -71,9 +71,14 @@ func TestOnixClient_Put(t *testing.T) {
 	checkResult(result, err, msg, t)
 
 	itemType := ItemType{
-		Name:        "Test Item Type",
-		Description: "Test Item Type",
-		Model:       "test_model",
+		Name:         "Test Item Type",
+		Description:  "Test Item Type",
+		Model:        "test_model",
+		EncryptMeta:  false,
+		EncryptTxt:   true,
+		ManagedMeta:  "P",
+		ManagedTxt:   "N",
+		NotifyChange: true,
 	}
 	itemTypeBytes, err := itemType.ToJSON()
 	checkError(err, "create test_item_type failed", t)
@@ -85,6 +90,7 @@ func TestOnixClient_Put(t *testing.T) {
 		Description: "Test Item 1",
 		Status:      1,
 		Type:        "test_item_type",
+		Txt:         "This is a test text configuration.",
 	}
 	item_1_Bytes, err := item_1.ToJSON()
 	checkError(err, "create item_1 failed", t)

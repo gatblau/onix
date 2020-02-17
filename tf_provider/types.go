@@ -20,13 +20,19 @@ import (
 )
 
 type ItemType struct {
-	Key         string                 `json:"key"`
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	AttrValid   map[string]interface{} `json:"attrValid"`
-	Filter      map[string]interface{} `json:"filter"`
-	MetaSchema  map[string]interface{} `json:"metaSchema"`
-	Model       string                 `json:"modelKey"`
+	Key          string                 `json:"key"`
+	Name         string                 `json:"name"`
+	Description  string                 `json:"description"`
+	AttrValid    map[string]interface{} `json:"attrValid"`
+	Filter       map[string]interface{} `json:"filter"`
+	MetaSchema   map[string]interface{} `json:"metaSchema"`
+	Model        string                 `json:"modelKey"`
+	NotifyChange bool                   `json:"notifyChange"`
+	Tag          []interface{}          `json:"tag"`
+	EncryptMeta  bool                   `json:"encryptMeta"`
+	EncryptTxt   bool                   `json:"encryptTxt"`
+	ManagedMeta  string                 `json:"managedMeta"`
+	ManagedTxt   string                 `json:"managedTxt"`
 }
 
 func (itemType *ItemType) ToJSON() (*bytes.Reader, error) {
@@ -45,6 +51,7 @@ type Item struct {
 	Type        string                 `json:"type"`
 	Tag         []interface{}          `json:"tag"`
 	Meta        map[string]interface{} `json:"meta"`
+	Txt         string                 `json:"txt"`
 	Attribute   map[string]interface{} `json:"attribute"`
 	Partition   string                 `json:"partition"`
 }

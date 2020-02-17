@@ -1,3 +1,11 @@
+//terraform {
+//  backend "http" {
+//    address = "http://localhost:8000/foo"
+//    //    lock_address = "http://localhost:8000/foo"
+//    //    unlock_address = "http://localhost:8000/foo"
+//  }
+//}
+
 provider "ox" {
   uri = "http://localhost:8080"
 
@@ -21,10 +29,14 @@ resource "ox_model" "Test_Model" {
 }
 
 resource "ox_item_type" "Test_Item_Type" {
-  key         = "test_item_type"
-  name        = "Test Item Type"
-  description = "Test Item Type Description"
-  model_key   = ox_model.Test_Model.key
+  key           = "test_item_type"
+  name          = "Test Item Type"
+  description   = "Test Item Type Description"
+  model_key     = ox_model.Test_Model.key
+  notify_change = true
+  encrypt_txt   = true
+  managed_meta  = "P"
+  managed_txt   = "N"
 }
 
 resource "ox_link_type" "Test_Link_Type" {
