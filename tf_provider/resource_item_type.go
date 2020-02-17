@@ -15,7 +15,10 @@
 
 package main
 
-import "github.com/hashicorp/terraform/helper/schema"
+import (
+	"github.com/hashicorp/terraform/helper/schema"
+	"log"
+)
 
 /*
 	ITEM TYPE RESOURCE
@@ -44,6 +47,34 @@ func ItemTypeResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"filter": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"meta_schema": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"notify_change": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"encrypt_meta": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"encrypt_txt": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"managed_meta": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"managed_txt": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -57,14 +88,19 @@ func deleteItemType(data *schema.ResourceData, m interface{}) error {
 }
 
 func itemTypePayload(data *schema.ResourceData) Payload {
-	key := data.Get("key").(string)
-	name := data.Get("name").(string)
-	description := data.Get("description").(string)
-	modelKey := data.Get("model_key").(string)
+	log.Printf("managed_meta: '%s'", data.Get("managed_meta"))
+
 	return &ItemType{
-		Key:         key,
-		Name:        name,
-		Description: description,
-		Model:       modelKey,
+		Key:          data.Get("key").(string),
+		Name:         data.Get("name").(string),
+		Description:  data.Get("description").(string),
+		Model:        data.Get("model_key").(string),
+		Filter:       data.Get("filter").(map[string]interface{}),
+		MetaSchema:   data.Get("meta_schema").(map[string]interface{}),
+		NotifyChange: data.Get("notify_change").(bool),
+		EncryptMeta:  data.Get("encrypt_meta").(bool),
+		EncryptTxt:   data.Get("encrypt_txt").(bool),
+		ManagedMeta:  data.Get("managed_meta").(string),
+		ManagedTxt:   data.Get("managed_txt").(string),
 	}
 }

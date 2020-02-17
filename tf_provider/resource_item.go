@@ -51,6 +51,10 @@ func ItemResource() *schema.Resource {
 				Type:     schema.TypeMap,
 				Optional: true,
 			},
+			"txt": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"tag": &schema.Schema{
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
@@ -83,6 +87,7 @@ func itemPayload(data *schema.ResourceData) Payload {
 		Description: data.Get("description").(string),
 		Type:        data.Get("type").(string),
 		Meta:        data.Get("meta").(map[string]interface{}),
+		Txt:         data.Get("txt").(string),
 		Attribute:   data.Get("attribute").(map[string]interface{}),
 		Tag:         data.Get("tag").([]interface{}),
 		Partition:   data.Get("partition").(string),
