@@ -430,8 +430,7 @@ DO
           tag          text[] COLLATE pg_catalog."default",
           encrypt_meta boolean NOT NULL DEFAULT FALSE,
           encrypt_txt  boolean NOT NULL DEFAULT FALSE,
-          managed_meta CHAR(1) NOT NULL CHECK (managed_meta IN ('Y', 'N', 'P')) DEFAULT 'N', -- is this attribute managed by an agent Y:yes N:no P:partially
-          managed_txt  CHAR(1) NOT NULL CHECK (managed_txt IN ('Y', 'N', 'P')) DEFAULT 'N', -- is this attribute managed by an agent Y:yes N:no P:partially
+          managed      CHAR(1) NOT NULL CHECK (managed IN ('Y', 'N', 'P')) DEFAULT 'N', -- is this attribute managed by an agent Y:yes N:no P:partially
           CONSTRAINT item_type_id_pk PRIMARY KEY (id),
           CONSTRAINT item_type_key_uc UNIQUE (key),
           CONSTRAINT item_type_name_uc UNIQUE (name),
@@ -479,8 +478,7 @@ DO
           tag          text[] COLLATE pg_catalog."default",
           encrypt_meta boolean,
           encrypt_txt  boolean,
-          managed_meta CHAR(1), -- is this attribute managed by an agent Y:yes N:no P:partially
-          managed_txt  CHAR(1)  -- is this attribute managed by an agent Y:yes N:no P:partially
+          managed      CHAR(1) -- is this item managed by an agent Y:yes N:no P:partially
         );
 
         CREATE OR REPLACE FUNCTION change_item_type() RETURNS TRIGGER AS

@@ -109,8 +109,7 @@ DO
                   tag         text[],
                   encrypt_meta boolean,
                   encrypt_txt boolean,
-                  managed_meta char(1),
-                  managed_txt char(1)
+                  managed     char(1)
                 )
         LANGUAGE 'plpgsql'
         COST 100
@@ -136,8 +135,7 @@ DO
                  i.tag,
                  i.encrypt_meta,
                  i.encrypt_txt,
-                 i.managed_meta,
-                 i.managed_txt
+                 i.managed
           FROM item_type i
                  INNER JOIN model m ON i.model_id = m.id
                  INNER JOIN privilege pr on m.partition_id = pr.partition_id

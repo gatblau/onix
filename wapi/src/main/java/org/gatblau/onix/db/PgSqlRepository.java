@@ -478,9 +478,8 @@ public class PgSqlRepository implements DbRepository {
             db.setString(11, util.toArrayString(itemType.getTag())); // tag_param
             db.setObject(12, itemType.getEncryptMeta());
             db.setObject(13, itemType.getEncryptTxt());
-            db.setString(14, itemType.getManagedMeta(), "N");
-            db.setString(15, itemType.getManagedTxt(), "N");
-            db.setArray(16, role);
+            db.setString(14, itemType.getManaged(), "N");
+            db.setArray(15, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_item_type"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -813,8 +812,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::text[]," + // tag
                 "?::boolean," + // encrypt_meta
                 "?::boolean," + // encrypt_txt
-                "?::char(1)," + // managed_meta
-                "?::char(1)," + // managed_txt
+                "?::char(1)," + // managed
                 "?::character varying[]" + // role_key_param
                 ")";
     }
@@ -1651,6 +1649,38 @@ public class PgSqlRepository implements DbRepository {
             db.close();
         }
         return items;
+    }
+
+    @Override
+    public EncKeyStatusData getKeyStatus(String[] role) {
+        EncKeyStatusData data = new EncKeyStatusData();
+        try {
+            db.prepare(getGetEncKeyUsageSQL());
+            db.setInt(1, 1);
+            db.setArray(2, role);
+            ResultSet set = db.executeQuerySingleRow();
+            data.setKey1(set.getString("key_count"));
+            set.close();
+            db.prepare(getGetEncKeyUsageSQL());
+            db.setInt(1, 2);
+            db.setArray(2, role);
+            set = db.executeQuerySingleRow();
+            data.setKey2(set.getString("key_count"));
+            set.close();
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to get enc key usage info.", ex);
+        } finally {
+            db.close();
+        }
+        return data;
+    }
+
+    @Override
+    public String getGetEncKeyUsageSQL() {
+        return "SELECT * FROM ox_get_enc_key_usage(" +
+                "?::integer," + // key_no_param
+                "?::character varying[]" + // logged_role_key_param
+                ")";
     }
 
     @Override

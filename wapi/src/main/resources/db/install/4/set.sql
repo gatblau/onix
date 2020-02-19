@@ -593,8 +593,7 @@ DO $$
         tag_param text[],
         encrypt_meta_param boolean,
         encrypt_txt_param boolean,
-        managed_meta_param char(1),
-        managed_txt_param char(1),
+        managed_param char(1),
         role_key_param character varying[]
       )
       RETURNS TABLE(result char(1))
@@ -665,8 +664,7 @@ DO $$
           tag,
           encrypt_meta,
           encrypt_txt,
-          managed_meta,
-          managed_txt
+          managed
         )
         VALUES (
           nextval('item_type_id_seq'),
@@ -685,8 +683,7 @@ DO $$
           tag_param,
           encrypt_meta_param,
           encrypt_txt_param,
-          managed_meta_param,
-          managed_txt_param
+          managed_param
         );
         result := 'I';
       ELSE
@@ -704,8 +701,7 @@ DO $$
             tag         = tag_param,
             encrypt_meta = encrypt_meta_param,
             encrypt_txt = encrypt_txt_param,
-            managed_meta = managed_meta_param,
-            managed_txt = managed_txt_param
+            managed     = managed_param
         WHERE key = key_param
           -- concurrency management - optimistic locking
           AND (local_version_param = current_version OR local_version_param IS NULL)
@@ -720,8 +716,7 @@ DO $$
             tag != tag_param OR
             encrypt_meta != encrypt_meta_param OR
             encrypt_txt != encrypt_txt_param OR
-            managed_meta != managed_txt_param OR
-            managed_txt != managed_txt_param
+            managed != managed_param
           );
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
         SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
@@ -744,8 +739,7 @@ DO $$
         text[], -- tag
         boolean, -- encrypt meta
         boolean, -- encrypt txt
-        char(1), -- managed meta
-        char(1), -- managed txt
+        char(1), -- managed
         character varying[] -- role_key_param
       )
       OWNER TO onix;

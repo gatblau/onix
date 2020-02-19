@@ -20,62 +20,41 @@ BEGIN
      */
 
     /*
-     ox_get_enc_key_usage: gets the number of item meta and txt attributes that are encryoted and whether they
+     ox_get_enc_key_usage: gets the number of items that have encrypted meta and/or txt attributes and whether they
         are using key 1 or key 2 respectively.
         Use this query to understand the state of key rotation at a point in time.
      */
     CREATE OR REPLACE FUNCTION ox_get_enc_key_usage(
+        keyno_param int,
         role_key_param character varying[]
     )
-    RETURNS TABLE
-        (
-            key_no         INT,
-            attribute_name VARCHAR,
-            count          BIGINT
-        )
-        LANGUAGE 'plpgsql'
-        COST 100
-        STABLE
+    RETURNS TABLE(key_count VARCHAR)
+    LANGUAGE 'plpgsql'
+    COST 100
+    STABLE
     AS $BODY$
+        DECLARE key_char VARCHAR;
     BEGIN
-        RETURN QUERY
-            SELECT 1::INT as key, 'meta'::VARCHAR as attribute, count(*)::BIGINT as occurrences
-            FROM item i
-                INNER JOIN partition p on i.partition_id = p.id
-                INNER JOIN privilege pr on p.id = pr.partition_id
-                INNER JOIN role r on pr.role_id = r.id
-            WHERE substring(i.meta_enc from 4 for 1)::VARCHAR = '\001' -- key 1
-              AND pr.can_read = TRUE
-              AND r.key = ANY(role_key_param)
-                UNION
-            SELECT 2::INT as key, 'meta'::VARCHAR as attribute, count(*)::BIGINT as occurrences
-            FROM item i
-                 INNER JOIN partition p on i.partition_id = p.id
-                 INNER JOIN privilege pr on p.id = pr.partition_id
-                 INNER JOIN role r on pr.role_id = r.id
-            WHERE substring(i.meta_enc from 4 for 1)::VARCHAR = '\002' -- key 2
-              AND pr.can_read = TRUE
-              AND r.key = ANY(role_key_param)
-                UNION
-            SELECT 1::INT as key, 'txt'::VARCHAR as attribute, count(*)::BIGINT as occurrences
-            FROM item i
-                 INNER JOIN partition p on i.partition_id = p.id
-                 INNER JOIN privilege pr on p.id = pr.partition_id
-                 INNER JOIN role r on pr.role_id = r.id
-            WHERE substring(i.txt_enc from 4 for 1)::VARCHAR = '\001' -- key 1
-              AND pr.can_read = TRUE
-              AND r.key = ANY(role_key_param)
-                UNION
-            SELECT 2::INT as key, 'txt'::VARCHAR as attribute, count(*)::BIGINT as occurrences
-            FROM item i
-                 INNER JOIN partition p on i.partition_id = p.id
-                 INNER JOIN privilege pr on p.id = pr.partition_id
-                 INNER JOIN role r on pr.role_id = r.id
-            WHERE substring(i.txt_enc from 4 for 1)::VARCHAR = '\002' -- key 2
-                AND pr.can_read = TRUE
-                AND r.key = ANY(role_key_param);
-    END;
+        IF keyno_param = 1 THEN
+            key_char = '\001';
+        ELSIF keyno_param = 2 THEN
+            key_char = '\002';
+        ELSE
+            RAISE 'Invalid key no';
+        END IF;
+        RETURN QUERY SELECT count(*)::VARCHAR as key_count
+         FROM item i
+          INNER JOIN partition p on i.partition_id = p.id
+          INNER JOIN privilege pr on p.id = pr.partition_id
+          INNER JOIN role r on pr.role_id = r.id
+         WHERE (substring(i.meta_enc from 4 for 1)::VARCHAR = key_char OR substring(i.txt_enc from 4 for 1)::VARCHAR = key_char)
+           AND pr.can_read = TRUE
+           AND r.key = ANY(role_key_param);
+    END
     $BODY$;
+
+    ALTER FUNCTION ox_get_enc_key_usage(int, character varying[])
+        OWNER TO onix;
 
     /*
      ox_get_enc_items: gets a list of items that have encrypted meta and/or txt fields using a specific key (i.e. 1 or 2)
@@ -153,5 +132,8 @@ BEGIN
          LIMIT max_items_param;
     END
     $BODY$;
+
+    ALTER FUNCTION ox_get_enc_items(int, int, character varying[])
+        OWNER TO onix;
 END
 $$;
