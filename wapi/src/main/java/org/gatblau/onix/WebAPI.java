@@ -1328,6 +1328,39 @@ public class WebAPI {
     }
 
     /*
+        ENCRYPTION KEYS
+     */
+    @ApiOperation(
+            value = "Invokes the key rotation routine specifying which kwy to rotate (e.g. 1 to 2 or 2 to 1) and how " +
+                    "many items to process at a time.",
+            notes = "Use this endpoint to gradually rotate encryption keys for meta and txt fields.",
+            response = JSONObject.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful request.", response = JSONObject.class)}
+    )
+    @RequestMapping(value = "/enckey/{key_no}/rotate/{max_items}", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<JSONObject> rotateKey(
+            @PathVariable("key_no") int keyNo,
+            @PathVariable("max_items") int maxItems,
+            Authentication authentication) {
+        JSONObject response = new JSONObject();
+        response.put("key", "");
+        return ResponseEntity.ok(response);
+    }
+
+    @ApiOperation(
+            value = "Gets the usage status of encryption keys for item meta and/or txt attributes.",
+            notes = "Use this endpoint to understand the state of use of keys and progress on key rotation.",
+            response = JSONObject.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful request.", response = JSONObject.class)}
+    )
+    @RequestMapping(value = "/enckey/status", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<EncKeyStatusData> getKeyStatus(Authentication authentication) {
+        EncKeyStatusData keyStatus = data.getKeyStatus(getRole(authentication));
+        return ResponseEntity.ok(keyStatus);
+    }
+    /*
         helper methods
      */
     private ZonedDateTime getZonedDateTime(@RequestParam(value = "createdFrom", required = false) String createdFromDate) {

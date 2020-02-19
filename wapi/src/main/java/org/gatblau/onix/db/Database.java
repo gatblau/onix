@@ -108,7 +108,7 @@ class Database {
     }
 
     void setString(int parameterIndex, String value, String defaultValue) throws SQLException {
-        if (value == null) {
+        if (value == null || value.trim().length() == 0) {
             value = defaultValue;
         }
         stmt.setString(parameterIndex, value);

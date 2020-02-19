@@ -48,8 +48,7 @@ public class ItemTypeData implements Serializable {
     private List<String> tag;
     private boolean encryptMeta;
     private boolean encryptTxt;
-    private String managedMeta;
-    private String managedTxt;
+    private String managed;
 
     public ItemTypeData() {
     }
@@ -280,30 +279,15 @@ public class ItemTypeData implements Serializable {
     @ApiModelProperty(
             position = 15,
             required = false,
-            value = "Indicates whether the Meta field in an Configuration Item is fully managed by an agent (Y), it is not managed by an agent (N), or it can be partially managed (P - managed by an agent and UI).",
+            value = "Indicates whether the Configuration Item is fully managed by an agent (Y), it is not managed by an agent (N), or it can be partially managed (P - managed by an agent and UI).",
             example = "true",
             allowEmptyValue = true
     )
-    public String getManagedMeta() {
-        return managedMeta;
+    public String getManaged() {
+        return managed;
     }
 
-    public void setManagedMeta(String managedMeta) {
-        this.managedMeta = managedMeta;
-    }
-
-    @ApiModelProperty(
-            position = 15,
-            required = false,
-            value = "Indicates whether the Txt field in an Configuration Item is fully managed by an agent (Y), it is not managed by an agent (N), or it can be partially managed (P - managed by an agent and UI).",
-            example = "true",
-            allowEmptyValue = true
-    )
-    public String getManagedTxt() {
-        return managedTxt;
-    }
-
-    public void setManagedTxt(String managedTxt) {
-        this.managedTxt = managedTxt;
+    public void setManaged(String managed) {
+        this.managed = managed;
     }
 }

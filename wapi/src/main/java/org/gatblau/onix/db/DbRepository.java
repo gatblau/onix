@@ -196,4 +196,8 @@ public interface DbRepository {
     ItemList getItemChildren(String key, String[] role);
 
     String getGetItemChildrenSQL();
+
+    /* Enc Keys */
+    EncKeyStatusData getKeyStatus(String[] role);
+    String getGetEncKeyUsageSQL();
 }
