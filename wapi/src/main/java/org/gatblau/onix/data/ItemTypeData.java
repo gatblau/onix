@@ -48,7 +48,7 @@ public class ItemTypeData implements Serializable {
     private List<String> tag;
     private boolean encryptMeta;
     private boolean encryptTxt;
-    private String managed;
+    private boolean managed;
 
     public ItemTypeData() {
     }
@@ -283,11 +283,11 @@ public class ItemTypeData implements Serializable {
             example = "true",
             allowEmptyValue = true
     )
-    public String getManaged() {
+    public boolean getManaged() {
         return managed;
     }
 
-    public void setManaged(String managed) {
+    public void setManaged(boolean managed) {
         this.managed = managed;
     }
 }

@@ -298,11 +298,12 @@ public class Steps extends BaseTest {
         return result;
     }
 
-    private Result putItemTypeAttr(String itemTypeAttrKey, String payloadFilename) {
+    private Result putItemTypeAttr(String itemTypeKey, String typeAttrKey, String payloadFilename) {
         Result result = null;
-        String url = String.format("%sitemtypeattr/{key}", baseUrl);
+        String url = String.format("%sitemtype/{item_type_key}/attribute/{type_attr_key}", baseUrl);
         Map<String, Object> vars = new HashMap<>();
-        vars.put("key", itemTypeAttrKey);
+        vars.put("item_type_key", itemTypeKey);
+        vars.put("type_attr_key", typeAttrKey);
         ResponseEntity<Result> response = null;
         try {
             response = client.exchange(url, HttpMethod.PUT, getEntity(util.getFile(payloadFilename)), Result.class, vars);
@@ -1884,18 +1885,18 @@ public class Steps extends BaseTest {
         }
     }
 
-    @Given("^the item type attribute URL of the service with key is known$")
-    public void theItemTypeAttributeURLOfTheServiceWithKeyIsKnown() {
-        util.put(ENDPOINT_URI, String.format("%sitemtypeattr/{key}", baseUrl));
+    @Given("^the type attribute URL of the service with key is known$")
+    public void theTypeAttributeURLOfTheServiceWithKeyIsKnown() {
+        util.put(ENDPOINT_URI, String.format("%sitemtype/{item_type_key}/attribute/{attr_key}", baseUrl));
     }
 
-    @Given("^the item type attribute natural key is known$")
-    public void theItemTypeAttributeNaturalKeyIsKnown() {
+    @Given("^the type attribute natural key is known$")
+    public void theTypeAttributeNaturalKeyIsKnown() {
         util.put(ITEM_TYPE_ATTR_ONE_KEY, ITEM_TYPE_ATTR_ONE_KEY);
     }
 
-    @When("^an item type attribute PUT HTTP request with a JSON payload is done$")
-    public void anItemTypeAttributePUTHTTPRequestWithAJSONPayloadIsDone() {
-        putItemTypeAttr(util.get(ITEM_TYPE_ATTR_ONE_KEY), "payload/create_item_type_attr_1_payload.json");
+    @When("^a PUT HTTP request with a JSON payload is done for an attribute of an item type$")
+    public void aPUTHTTPRequestWithAJSONPayloadIsDoneForAnAttributeOfAnItemType() {
+        putItemTypeAttr("item_type_1", util.get(ITEM_TYPE_ATTR_ONE_KEY), "payload/create_item_type_attr_1_payload.json");
     }
 }

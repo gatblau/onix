@@ -478,7 +478,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(11, util.toArrayString(itemType.getTag())); // tag_param
             db.setObject(12, itemType.getEncryptMeta());
             db.setObject(13, itemType.getEncryptTxt());
-            db.setString(14, itemType.getManaged(), "N");
+            db.setBoolean(14, itemType.getManaged());
             db.setArray(15, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_item_type"));
         } catch (Exception ex) {
@@ -494,6 +494,92 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public Result deleteItemType(String key, String[] role) {
         return delete(getDeleteItemTypeSQL(), "ox_delete_item_type", key, true, role);
+    }
+
+    /*
+        ITEM TYPE ATTRIBUTES
+     */
+    @Override
+    public TypeAttrData getItemTypeAttribute(String itemTypeKey, String typeAttrKey, String[] role) {
+        return null;
+    }
+
+    @Override
+    public TypeAttrList getItemTypeAttributes(String itemTypeKey, String[] role) {
+        return null;
+    }
+
+    @Override
+    public Result createOrUpdateItemTypeAttr(String itemTypeKey, String typeAttrKey, TypeAttrData typeAttr, String[] role) {
+        Result result = new Result(String.format("ItemTypeAttribute:%s:%s", itemTypeKey, typeAttrKey));
+        try {
+            db.prepare(getSetItemTypeAttributeSQL());
+            db.setString(1, typeAttrKey); // key_param
+            db.setString(2, typeAttr.getName()); // name_param
+            db.setString(3, typeAttr.getDescription()); // description_param
+            db.setString(4, typeAttr.getType());
+            db.setString(5, typeAttr.getDefValue());
+            db.setBoolean(6, typeAttr.getManaged());
+            db.setBoolean(7, typeAttr.getRequired());
+            db.setString(8, typeAttr.getRegex());
+            db.setString(9, itemTypeKey); // the item type to link the attr to
+            db.setString(10, null); // no link type key as is linking to the item type
+            db.setObject(11, typeAttr.getVersion()); // version_param
+            db.setString(12, getUser()); // changed_by_param
+            db.setArray(13, role);
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_type_attribute"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            result.setMessage(ex.getMessage());
+            result.setError(true);
+        } finally {
+            db.close();
+        }
+        return result;
+    }
+
+    @Override
+    public String getSetItemTypeAttributeSQL() {
+        return "SELECT ox_set_type_attribute(" +
+                "?::character varying," + // key_param
+                "?::character varying," + // name_param
+                "?::text," + // description_param
+                "?::character varying," + // type_param
+                "?::character varying," + // def_value_param
+                "?::boolean," + // managed_param
+                "?::boolean," + // required_param
+                "?::character varying," + // regex_param
+                "?::character varying," + // item_type_key_param
+                "?::character varying," + // link_type_key_param
+                "?::bigint," + // version
+                "?::character varying," + // changed_by
+                "?::character varying[]" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public TypeAttrData getLinkTypeAttribute(String linkTypeKey, String typeAttrKey, String[] role) {
+        return null;
+    }
+
+    @Override
+    public TypeAttrList getLinkTypeAttributes(String linkTypeKey, String[] role) {
+        return null;
+    }
+
+    @Override
+    public Result createOrUpdateLinkTypeAttr(String linkTypeKey, String typeAttrKey, TypeAttrData json, String[] role) {
+        return null;
+    }
+
+    @Override
+    public Result deleteLinkTypeAttr(String linkTypeKey, String typeAttrKey, String[] role) {
+        return null;
+    }
+
+    @Override
+    public Result deleteItemTypeAttr(String itemTypeKey, String typeAttrKey, String[] role) {
+        return delete(getDeleteItemTypeSQL(), "ox_delete_item_type_attr", typeAttrKey, true, role);
     }
 
     /*
@@ -812,7 +898,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::text[]," + // tag
                 "?::boolean," + // encrypt_meta
                 "?::boolean," + // encrypt_txt
-                "?::char(1)," + // managed
+                "?::boolean," + // managed
                 "?::character varying[]" + // role_key_param
                 ")";
     }
@@ -1403,12 +1489,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deletePartition(String key, String[] role) {
+    public synchronized Result deletePartition(String key, String[] role) {
         return delete(getDeletePartitionSQL(), "ox_delete_partition", key, role);
     }
 
     @Override
-    public Result createOrUpdatePartition(String key, PartitionData part, String[] role) {
+    public synchronized Result createOrUpdatePartition(String key, PartitionData part, String[] role) {
         Result result = new Result(String.format("Partition:%s", key));
         ResultSet set = null;
         try {
@@ -1431,7 +1517,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public PartitionDataList getAllPartitions(String[] role) {
+    public synchronized PartitionDataList getAllPartitions(String[] role) {
         PartitionDataList parts = new PartitionDataList();
         try {
             db.prepare(getGetAllPartitionsSQL());
@@ -1449,7 +1535,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public PartitionData getPartition(String key, String[] role) {
+    public synchronized PartitionData getPartition(String key, String[] role) {
         PartitionData part = null;
         try {
             db.prepare(getGetPartitionSQL());
@@ -1502,12 +1588,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteRole(String key, String[] role) {
+    public synchronized Result deleteRole(String key, String[] role) {
         return delete(getDeleteRoleSQL(), "ox_delete_role", key, role);
     }
 
     @Override
-    public Result createOrUpdateRole(String key, RoleData roleData, String[] role) {
+    public synchronized Result createOrUpdateRole(String key, RoleData roleData, String[] role) {
         Result result = new Result(String.format("Role:%s", key));
         ResultSet set = null;
         try {
@@ -1530,7 +1616,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public RoleData getRole(String key, String[] role) {
+    public synchronized RoleData getRole(String key, String[] role) {
         RoleData roleData = null;
         try {
             db.prepare(getGetRoleSQL());
@@ -1548,7 +1634,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public RoleDataList getAllRoles(String[] role) {
+    public synchronized RoleDataList getAllRoles(String[] role) {
         RoleDataList parts = new RoleDataList();
         try {
             db.prepare(getGetAllRolesSQL());
@@ -1566,7 +1652,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result addPrivilege(String partitionKey, String roleKey, NewPrivilegeData privilege, String[] role) {
+    public synchronized Result addPrivilege(String partitionKey, String roleKey, NewPrivilegeData privilege, String[] role) {
         Result result = new Result(String.format("Privilege:%s:%s", roleKey, partitionKey));
         ResultSet set = null;
         try {
@@ -1590,7 +1676,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result removePrivilege(String partitionKey, String roleKey, String[] role) {
+    public synchronized Result removePrivilege(String partitionKey, String roleKey, String[] role) {
         Result result = new Result(String.format("Remove_Privilege_%s_%s", roleKey, partitionKey));
         try {
             db.prepare(getRemovePrivilegeSQL());
@@ -1612,7 +1698,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public PrivilegeDataList getPrivilegesByRole(String roleKey, String[] loggedRoleKey) {
+    public synchronized PrivilegeDataList getPrivilegesByRole(String roleKey, String[] loggedRoleKey) {
         PrivilegeDataList priv = new PrivilegeDataList();
         try {
             db.prepare(getGetAllPrivilegeByRoleSQL());
@@ -1631,7 +1717,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public ItemList getItemChildren(String key, String[] role) {
+    public synchronized ItemList getItemChildren(String key, String[] role) {
         ItemList items = new ItemList();
         try {
             db.prepare(getGetItemChildrenSQL());
@@ -1652,7 +1738,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public EncKeyStatusData getKeyStatus(String[] role) {
+    public synchronized EncKeyStatusData getKeyStatus(String[] role) {
         EncKeyStatusData data = new EncKeyStatusData();
         try {
             db.prepare(getGetEncKeyUsageSQL());

@@ -593,7 +593,7 @@ DO $$
         tag_param text[],
         encrypt_meta_param boolean,
         encrypt_txt_param boolean,
-        managed_param char(1),
+        managed_param boolean,
         role_key_param character varying[]
       )
       RETURNS TABLE(result char(1))
@@ -739,7 +739,7 @@ DO $$
         text[], -- tag
         boolean, -- encrypt meta
         boolean, -- encrypt txt
-        char(1), -- managed
+        boolean, -- managed
         character varying[] -- role_key_param
       )
       OWNER TO onix;
@@ -1419,6 +1419,175 @@ DO $$
         character varying[]
       )
       OWNER TO onix;
+
+    /*
+      ox_set_type_attribute(...)
+      Inserts a new or updates an existing type attribute.
+      Concurrency Management:
+       - If the item type is found in the database, the function attempts an update of the existing record.
+          In this case, if a null regex is passed as local_version_param, no optimistic locking is performed.
+          If a regex is specified for local_version_param, the update is only performed if and only if the version in the database matches the passed in version.
+       - If the item type is not found in the database, then the local_version_param is ignored and a record with version 1 is inserted.
+     */
+    CREATE OR REPLACE FUNCTION ox_set_type_attribute(
+        key_param character varying,
+        name_param character varying,
+        description_param text,
+        type_param character varying,
+        def_value_param character varying,
+        managed_param boolean,
+        required_param boolean,
+        regex_param character varying,
+        item_type_key_param character varying,
+        link_type_key_param character varying,
+        local_version_param bigint,
+        changed_by_param character varying,
+        role_key_param character varying[]
+    )
+        RETURNS TABLE(result char(1))
+        LANGUAGE 'plpgsql'
+        COST 100
+        VOLATILE
+    AS
+    $BODY$
+    DECLARE
+        result             char(1); -- the result status for the upsert
+        current_version    bigint; -- the version of the row before the update or null if no row
+        rows_affected      integer;
+        model_id_value     integer;
+        partition_id_value bigint;
+        link_type_id_value bigint;
+        item_type_id_value bigint;
+    BEGIN
+        -- gets the model id linked to the item_type
+        IF (item_type_key_param IS NOT NULL) THEN
+            SELECT m.id, it2.id INTO model_id_value, item_type_id_value
+            FROM model m
+                INNER JOIN item_type it2 on m.id = it2.model_id
+            WHERE it2.key = item_type_key_param;
+        ELSIF (link_type_key_param IS NOT NULL) THEN
+            -- the type param could be associated with a link type instead of an item type
+            -- gets the model id linked to the link_type
+            SELECT m.id, lt2.id INTO model_id_value, link_type_id_value
+            FROM model m
+                 INNER JOIN link_type lt2 on m.id = lt2.model_id
+            WHERE lt2.key = link_type_key_param;
+        END IF;
+
+        IF (model_id_value IS NULL) THEN
+            RAISE EXCEPTION 'Missing item and link type in the definition of the attribute.'
+                USING hint = 'Check either an item type or a link type is associated with the type attribute.';
+        END IF;
+
+        -- finds the partition associated with the model
+        -- for the item type that has create rights for the specified role
+        SELECT p.id
+        FROM partition p
+                 INNER JOIN model m on p.id = m.partition_id
+                 INNER JOIN privilege pr on p.id = pr.partition_id
+                 INNER JOIN role r on pr.role_id = r.id
+            AND pr.can_create = TRUE -- has create permission
+            AND r.key = ANY(role_key_param) -- the user role
+            AND m.id = model_id_value -- the model the item type is in
+        LIMIT 1
+        INTO partition_id_value;
+
+        IF (partition_id_value IS NULL) THEN
+            RAISE EXCEPTION 'Role % is not authorised to create Type Attribute %.', role_key_param, key_param
+                USING hint = 'The role needs to be granted CREATE privilege or a new role should be used instead.';
+        END IF;
+
+        -- gets the current type attribute version
+        SELECT version FROM type_attribute WHERE key = key_param INTO current_version;
+
+        IF (current_version IS NULL) THEN
+            INSERT INTO type_attribute (
+                id,
+                key,
+                name,
+                description,
+                type,
+                def_value,
+                managed,
+                required,
+                regex,
+                item_type_id,
+                link_type_id,
+                version,
+                created,
+                updated,
+                changed_by
+            )
+            VALUES (
+                nextval('type_attribute_id_seq'),
+                key_param,
+                name_param,
+                description_param,
+                type_param,
+                def_value_param,
+                managed_param,
+                required_param,
+                regex_param,
+                item_type_id_value,
+                link_type_id_value,
+                1,
+                current_timestamp,
+                null,
+                changed_by_param
+           );
+            result := 'I';
+        ELSE
+            UPDATE type_attribute
+            SET name        = name_param,
+                description = description_param,
+                type = type_param,
+                def_value = def_value_param,
+                managed = managed_param,
+                required = required_param,
+                regex = regex_param,
+                item_type_id = item_type_id_value,
+                link_type_id = link_type_id_value,
+                version     = version + 1,
+                updated     = current_timestamp,
+                changed_by  = changed_by_param,
+                managed     = managed_param
+            WHERE key = key_param
+              -- concurrency management - optimistic locking
+              AND (local_version_param = current_version OR local_version_param IS NULL)
+              AND (
+                    name != name_param OR
+                    description != description_param OR
+                    type != type_param OR
+                    def_value != def_value_param OR
+                    managed != managed_param OR
+                    required != required_param OR
+                    regex != regex_param OR
+                    item_type_id != item_type_id_value OR
+                    link_type_id != link_type_id_value
+                );
+            GET DIAGNOSTICS rows_affected := ROW_COUNT;
+            SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
+        END IF;
+        RETURN QUERY SELECT result;
+    END;
+    $BODY$;
+
+    ALTER FUNCTION ox_set_type_attribute(
+        character varying, -- key_param
+        character varying, -- name_param
+        text, -- description_param
+        character varying, -- type_param
+        character varying, -- def_value_param
+        boolean, -- managed_param
+        boolean, -- required_param
+        character varying, -- regex_param
+        character varying, -- item_type_key_param
+        character varying, -- link_type_key_param
+        bigint, -- local_version_param
+        character varying, -- changed_by_param
+        character varying[] -- role_key_param
+        )
+        OWNER TO onix;
 
   END
   $$;

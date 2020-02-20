@@ -5,5 +5,5 @@
   "notifyChange": true,
   "encryptTxt": false,
   "encryptMeta": true,
-  "managedTxt": "Y"
+  "managed": true
 }

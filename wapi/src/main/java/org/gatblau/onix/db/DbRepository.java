@@ -65,6 +65,20 @@ public interface DbRepository {
     /*
         ITEM TYPE ATTRIBUTES
     */
+    TypeAttrData getItemTypeAttribute(String itemTypeKey, String typeAttrKey, String[] role);
+    TypeAttrList getItemTypeAttributes(String itemTypeKey, String[] role);
+    Result createOrUpdateItemTypeAttr(String itemTypeKey, String typeAttrKey, TypeAttrData json, String[] role);
+    Result deleteItemTypeAttr(String itemTypeKey, String typeAttrKey, String[] role);
+
+    String getSetItemTypeAttributeSQL();
+
+    /*
+        LINK TYPE ATTRIBUTES
+    */
+    TypeAttrData getLinkTypeAttribute(String linkTypeKey, String typeAttrKey, String[] role);
+    TypeAttrList getLinkTypeAttributes(String linkTypeKey, String[] role);
+    Result createOrUpdateLinkTypeAttr(String linkTypeKey, String typeAttrKey, TypeAttrData json, String[] role);
+    Result deleteLinkTypeAttr(String linkTypeKey, String typeAttrKey, String[] role);
 
     /*
         LINK TYPES
