@@ -103,6 +103,10 @@ class Database {
         stmt.setString(parameterIndex, value);
     }
 
+    void setBoolean(int parameterIndex, boolean value) throws SQLException {
+        stmt.setBoolean(parameterIndex, value);
+    }
+
     void setBinaryStream(int parameterIndex, InputStream value) throws SQLException {
         stmt.setBinaryStream(parameterIndex, value);
     }

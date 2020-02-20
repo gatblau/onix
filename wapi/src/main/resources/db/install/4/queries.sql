@@ -262,7 +262,7 @@ CREATE OR REPLACE FUNCTION ox_find_item_types(
     tag text[],
     encrypt_meta boolean,
     encrypt_txt boolean,
-    managed char(1)
+    managed boolean
   )
   LANGUAGE 'plpgsql'
   COST 100

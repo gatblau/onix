@@ -198,7 +198,7 @@ public class Lib implements InitializingBean {
         itemType.setTag(toList(set.getObject("tag")));
         itemType.setEncryptMeta(set.getBoolean("encrypt_meta"));
         itemType.setEncryptTxt(set.getBoolean("encrypt_txt"));
-        itemType.setManaged(set.getString("managed"));
+        itemType.setManaged(set.getBoolean("managed"));
         return itemType;
     }
 
