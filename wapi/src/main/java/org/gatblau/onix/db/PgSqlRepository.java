@@ -506,7 +506,21 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public TypeAttrList getItemTypeAttributes(String itemTypeKey, String[] role) {
-        return null;
+        TypeAttrList itemTypeAttrs = new TypeAttrList();
+        try {
+            db.prepare(getGetItemTypeAttributesSQL());
+            db.setString(1, itemTypeKey);
+            db.setArray(2, role);
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                itemTypeAttrs.getValues().add(util.toTypeAttrData(set));
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            db.close();
+        }
+        return itemTypeAttrs;
     }
 
     @Override
@@ -558,6 +572,22 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public String getDeleteItemTypeAttributeSQL() {
+        return "SELECT ox_delete_type_attribute(" +
+                "?::character varying," +
+                "?::character varying[]" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetItemTypeAttributesSQL() {
+        return "SELECT * FROM ox_get_item_type_attributes(" +
+                "?::character varying," +
+                "?::character varying[]" +
+                ")";
+    }
+
+    @Override
     public TypeAttrData getLinkTypeAttribute(String linkTypeKey, String typeAttrKey, String[] role) {
         return null;
     }
@@ -579,7 +609,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteItemTypeAttr(String itemTypeKey, String typeAttrKey, String[] role) {
-        return delete(getDeleteItemTypeSQL(), "ox_delete_item_type_attr", typeAttrKey, true, role);
+        return delete(getDeleteItemTypeAttributeSQL(), "ox_delete_item_type_attr", typeAttrKey, true, role);
     }
 
     /*

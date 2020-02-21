@@ -71,6 +71,8 @@ public interface DbRepository {
     Result deleteItemTypeAttr(String itemTypeKey, String typeAttrKey, String[] role);
 
     String getSetItemTypeAttributeSQL();
+    String getDeleteItemTypeAttributeSQL();
+    String getGetItemTypeAttributesSQL();
 
     /*
         LINK TYPE ATTRIBUTES
