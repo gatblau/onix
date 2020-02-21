@@ -178,6 +178,25 @@ public class Lib implements InitializingBean {
         return link;
     }
 
+    public TypeAttrData toTypeAttrData(ResultSet set) throws SQLException, ParseException, IOException {
+        Date updated = set.getDate("updated");
+        TypeAttrData typeAttr = new TypeAttrData();
+        typeAttr.setKey(set.getString("key"));
+        typeAttr.setName(set.getString("name"));
+        typeAttr.setDescription(set.getString("description"));
+        typeAttr.setType(set.getString("type"));
+        typeAttr.setDefValue(set.getString("def_value"));
+        typeAttr.setManaged(set.getBoolean("managed"));
+        typeAttr.setRequired(set.getBoolean("required"));
+        typeAttr.setRegex(set.getString("regex"));
+        typeAttr.setCreated(dateFormat.format(set.getDate("created")));
+        typeAttr.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+        typeAttr.setVersion(set.getInt("version"));
+        typeAttr.setChangedBy(set.getString("changed_by"));
+        typeAttr.setManaged(set.getBoolean("managed"));
+        return typeAttr;
+    }
+
     public ItemTypeData toItemTypeData(ResultSet set) throws SQLException, ParseException, IOException {
         Date updated = set.getDate("updated");
 

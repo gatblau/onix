@@ -816,6 +816,54 @@ public class WebAPI {
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
+    @ApiOperation(
+            value = "Deletes a configuration item type.",
+            notes = "")
+    @RequestMapping(
+            path = "/itemtype/{item_type_key}/attribute/{type_attr_key}"
+            , method = RequestMethod.DELETE
+    )
+    public ResponseEntity<Result> deleteItemTypeAttribute(
+            @ApiParam(
+                    name = "item type key",
+                    value = "A string which uniquely identifies the item type (never changes).",
+                    required = true,
+                    example = "item_type_01"
+            )
+            @PathVariable("item_type_key")
+                    String itemTypeKey,
+            @ApiParam(
+                    name = "type attribute key",
+                    value = "A string which uniquely identifies the type attribute associated with the item type (never changes).",
+                    required = true,
+                    example = "item_type_01"
+            )
+            @PathVariable("type_attr_key")
+                    String typeAttrKey,
+            Authentication authentication
+    ) {
+        Result result = data.deleteItemTypeAttr(itemTypeKey, typeAttrKey, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
+    }
+
+    @ApiOperation(
+            value = "Get all the attributes for the specified item type.",
+            notes = "Use this search to retrieve the specification of the attributes for an item based on its item type.")
+    @RequestMapping(
+            path = "/itemtype/{item_type_key}/attribute"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<TypeAttrList> getItemTypeAttrs(
+            @PathVariable("item_type_key") String itemTypeKey,
+            Authentication authentication
+    ) {
+        TypeAttrList itemTypeAttrs = data.getItemTypeAttributes(itemTypeKey, getRole(authentication));
+        if (itemTypeAttrs != null) {
+            return ResponseEntity.ok(itemTypeAttrs);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
 
     /*
         LINKS

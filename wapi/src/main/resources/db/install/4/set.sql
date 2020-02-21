@@ -1542,7 +1542,6 @@ DO $$
                 description = description_param,
                 type = type_param,
                 def_value = def_value_param,
-                managed = managed_param,
                 required = required_param,
                 regex = regex_param,
                 item_type_id = item_type_id_value,

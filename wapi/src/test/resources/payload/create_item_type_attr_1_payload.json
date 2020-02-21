@@ -2,7 +2,7 @@
   "name": "Operating System",
   "description": "The Operating System type and version.",
   "type": "list",
-  "def_value": "RHEL 8",
+  "defValue": "RHEL 8",
   "managed": true,
   "required": true,
   "regex": "[RHEL]+",

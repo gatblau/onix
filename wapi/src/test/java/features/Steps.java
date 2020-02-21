@@ -1899,4 +1899,35 @@ public class Steps extends BaseTest {
     public void aPUTHTTPRequestWithAJSONPayloadIsDoneForAnAttributeOfAnItemType() {
         putItemTypeAttr("item_type_1", util.get(ITEM_TYPE_ATTR_ONE_KEY), "payload/create_item_type_attr_1_payload.json");
     }
+
+    @Given("^the item type attribute does not exist in the database$")
+    public void theItemTypeAttributeDoesNotExistInTheDatabase() {
+        delete(String.format("%sitemtype/%s/attribute/%s", baseUrl, util.get(ITEM_TYPE_ONE_KEY), util.get(ITEM_TYPE_ATTR_ONE_KEY))+"?force=true", "item_type_1");
+    }
+
+    @Given("^the key of the item type is known$")
+    public void theKeyOfTheItemTypeIsKnown() {
+        util.put(ITEM_TYPE_ONE_KEY, ITEM_TYPE_ONE_KEY);
+    }
+
+    @Given("^the key of the type attribute for the item type is known$")
+    public void theKeyOfTheTypeAttributeForTheItemTypeIsKnown() {
+        util.put(ITEM_TYPE_ATTR_ONE_KEY, ITEM_TYPE_ATTR_ONE_KEY);
+    }
+
+    @Given("^there are item type attributes for the item types in the database$")
+    public void thereAreItemTypeAttributesForTheItemTypesInTheDatabase() {
+    }
+
+    @Given("^the item type attribute URL exist$")
+    public void theItemTypeAttributeURLExist() {
+    }
+
+    @When("^a request to GET a list of item type attributes is done$")
+    public void aRequestToGETAListOfItemTypeAttributesIsDone() {
+    }
+
+    @Then("^the response contains more than (\\d+) item type attributes$")
+    public void theResponseContainsMoreThanItemTypeAttributes(int arg0) {
+    }
 }
