@@ -27,6 +27,7 @@ public class ModelData implements Serializable {
     private String key;
     private String name;
     private String description;
+    private boolean managed;
     private String created;
     private String updated;
     private Integer version;
@@ -99,5 +100,13 @@ public class ModelData implements Serializable {
 
     public void setPartition(String partition) {
         this.partition = partition;
+    }
+
+    public boolean isManaged() {
+        return managed;
+    }
+
+    public void setManaged(boolean managed) {
+        this.managed = managed;
     }
 }

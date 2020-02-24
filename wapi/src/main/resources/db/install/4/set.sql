@@ -225,6 +225,7 @@ DO $$
          key_param character varying,
          name_param character varying,
          description_param text,
+         managed_param boolean,
          local_version_param bigint,
          changed_by_param character varying,
          partition_key_param character varying,
@@ -272,6 +273,7 @@ DO $$
            key,
            name,
            description,
+           managed,
            version,
            created,
            updated,
@@ -283,6 +285,7 @@ DO $$
           key_param,
           name_param,
           description_param,
+          managed_param,
           1,
           current_timestamp,
           null,
@@ -313,6 +316,7 @@ DO $$
         UPDATE model
         SET name         = name_param,
             description  = description_param,
+            managed      = managed_param,
             version      = version + 1,
             updated      = current_timestamp,
             changed_by   = changed_by_param
@@ -334,6 +338,7 @@ DO $$
         character varying, -- key
         character varying, -- name
         text, -- description
+        boolean, -- managed
         bigint, -- client version
         character varying, -- changed by
         partition_key_param character varying,

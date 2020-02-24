@@ -865,6 +865,26 @@ public class WebAPI {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
+    @ApiOperation(
+            value = "Get the attribute for the specified item type and attribute key.",
+            notes = "")
+    @RequestMapping(
+            path = "/itemtype/{item_type_key}/attribute/{type_attr_key}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<TypeAttrData> getItemTypeAttr(
+            @PathVariable("item_type_key") String itemTypeKey,
+            @PathVariable("type_attr_key") String typeAttrKey,
+            Authentication authentication
+    ) {
+        TypeAttrData typeAttr = data.getItemTypeAttribute(itemTypeKey, typeAttrKey, getRole(authentication));
+        if (typeAttr != null) {
+            return ResponseEntity.ok(typeAttr);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
     /*
         LINKS
      */

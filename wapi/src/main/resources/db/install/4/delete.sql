@@ -232,9 +232,9 @@ DO
         OWNER TO onix;
 
     /*
-        ox_delete_type_attribute
+        ox_delete_item_type_attribute
        */
-    CREATE OR REPLACE FUNCTION ox_delete_type_attribute(
+    CREATE OR REPLACE FUNCTION ox_delete_item_type_attribute(
         key_param character varying,
         role_key_param character varying[]
     )
@@ -248,44 +248,23 @@ DO
         rows_affected INTEGER;
         isItemType BOOLEAN;
     BEGIN
-        SELECT (count(*) = 1) INTO isItemType
+        DELETE
         FROM type_attribute ta
+            USING model m, partition p, privilege pr, role r, item_type it
         WHERE ta.key = key_param
-        AND ta.item_type_id IS NOT NULL;
-
-        IF isItemType THEN
-            -- use item type in query
-            DELETE
-            FROM type_attribute ta
-                USING model m, partition p, privilege pr, role r, item_type it
-            WHERE ta.key = key_param
-              AND ta.item_type_id = it.id
-              AND it.model_id = m.id
-              AND m.partition_id = p.id
-              AND p.id = pr.partition_id
-              AND pr.role_id = r.id
-              AND pr.can_delete = TRUE
-              AND r.key = ANY(role_key_param);
-        ELSE
-            -- use link type in query
-            DELETE
-            FROM type_attribute ta
-                USING model m, partition p, privilege pr, role r, link_type lt
-            WHERE ta.key = key_param
-              AND ta.link_type_id = lt.id
-              AND lt.model_id = m.id
-              AND m.partition_id = p.id
-              AND p.id = pr.partition_id
-              AND pr.role_id = r.id
-              AND pr.can_delete = TRUE
-              AND r.key = ANY(role_key_param);
-        END IF;
+          AND ta.item_type_id = it.id
+          AND it.model_id = m.id
+          AND m.partition_id = p.id
+          AND p.id = pr.partition_id
+          AND pr.role_id = r.id
+          AND pr.can_delete = TRUE
+          AND r.key = ANY(role_key_param);
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
         RETURN QUERY SELECT ox_get_delete_result(rows_affected);
     END;
     $BODY$;
 
-    ALTER FUNCTION ox_delete_type_attribute(character varying, character varying[])
+    ALTER FUNCTION ox_delete_item_type_attribute(character varying, character varying[])
         OWNER TO onix;
 
       /*
