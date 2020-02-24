@@ -70,8 +70,8 @@ public interface DbRepository {
     Result createOrUpdateItemTypeAttr(String itemTypeKey, String typeAttrKey, TypeAttrData json, String[] role);
     Result deleteItemTypeAttr(String itemTypeKey, String typeAttrKey, String[] role);
 
-    String getGetTypeAttributeSQL();
-    String getSetItemTypeAttributeSQL();
+    String getGetItemTypeAttributeSQL();
+    String getSetTypeAttributeSQL();
     String getDeleteItemTypeAttributeSQL();
     String getGetItemTypeAttributesSQL();
 

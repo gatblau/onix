@@ -503,7 +503,7 @@ public class PgSqlRepository implements DbRepository {
     public TypeAttrData getItemTypeAttribute(String itemTypeKey, String typeAttrKey, String[] role) {
         TypeAttrData attr = null;
         try {
-            db.prepare(getGetTypeAttributeSQL());
+            db.prepare(getGetItemTypeAttributeSQL());
             db.setString(1, itemTypeKey);
             db.setString(2, typeAttrKey);
             db.setArray(3, role);
@@ -542,7 +542,7 @@ public class PgSqlRepository implements DbRepository {
     public Result createOrUpdateItemTypeAttr(String itemTypeKey, String typeAttrKey, TypeAttrData typeAttr, String[] role) {
         Result result = new Result(String.format("ItemTypeAttribute:%s:%s", itemTypeKey, typeAttrKey));
         try {
-            db.prepare(getSetItemTypeAttributeSQL());
+            db.prepare(getSetTypeAttributeSQL());
             db.setString(1, typeAttrKey); // key_param
             db.setString(2, typeAttr.getName()); // name_param
             db.setString(3, typeAttr.getDescription()); // description_param
@@ -568,7 +568,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public String getSetItemTypeAttributeSQL() {
+    public String getSetTypeAttributeSQL() {
         return "SELECT ox_set_type_attribute(" +
                 "?::character varying," + // key_param
                 "?::character varying," + // name_param
@@ -586,7 +586,8 @@ public class PgSqlRepository implements DbRepository {
                 ")";
     }
 
-    public String getGetTypeAttributeSQL() {
+    @Override
+    public String getGetItemTypeAttributeSQL() {
         return "SELECT * FROM ox_item_type_attribute(" +
                 "?::character varying," + // item_type_key_param
                 "?::character varying," + // type_attr_key_param
@@ -622,8 +623,32 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result createOrUpdateLinkTypeAttr(String linkTypeKey, String typeAttrKey, TypeAttrData json, String[] role) {
-        return null;
+    public Result createOrUpdateLinkTypeAttr(String linkTypeKey, String typeAttrKey, TypeAttrData typeAttr, String[] role) {
+        Result result = new Result(String.format("LinkTypeAttribute:%s:%s", linkTypeKey, typeAttrKey));
+        try {
+            db.prepare(getSetTypeAttributeSQL());
+            db.setString(1, typeAttrKey); // key_param
+            db.setString(2, typeAttr.getName()); // name_param
+            db.setString(3, typeAttr.getDescription()); // description_param
+            db.setString(4, typeAttr.getType());
+            db.setString(5, typeAttr.getDefValue());
+            db.setBoolean(6, typeAttr.getManaged());
+            db.setBoolean(7, typeAttr.getRequired());
+            db.setString(8, typeAttr.getRegex());
+            db.setString(9, null); // no item type key as is linking to the link type
+            db.setString(10, linkTypeKey); // the link type to link the attr to
+            db.setObject(11, typeAttr.getVersion()); // version_param
+            db.setString(12, getUser()); // changed_by_param
+            db.setArray(13, role);
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_type_attribute"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            result.setMessage(ex.getMessage());
+            result.setError(true);
+        } finally {
+            db.close();
+        }
+        return result;
     }
 
     @Override
