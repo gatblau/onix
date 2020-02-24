@@ -1917,17 +1917,36 @@ public class Steps extends BaseTest {
 
     @Given("^there are item type attributes for the item types in the database$")
     public void thereAreItemTypeAttributesForTheItemTypesInTheDatabase() {
+        putItemTypeAttr("item_type_1", "item_type_1_attr_1", "payload/create_item_type_attr_1_payload.json");
+        putItemTypeAttr("item_type_1", "item_type_1_attr_2", "payload/create_item_type_attr_1_payload.json");
+        putItemTypeAttr("item_type_1", "item_type_1_attr_3", "payload/create_item_type_attr_1_payload.json");
     }
 
     @Given("^the item type attribute URL exist$")
     public void theItemTypeAttributeURLExist() {
+        util.put(ENDPOINT_URI, String.format("%sitemtype/{item_type_key}/attribute", baseUrl));
     }
 
     @When("^a request to GET a list of item type attributes is done$")
     public void aRequestToGETAListOfItemTypeAttributesIsDone() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("item_type_key", "item_type_1");
+        ResponseEntity<TypeAttrList> result = client.exchange(
+                util.get(ENDPOINT_URI),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                TypeAttrList.class,
+                vars);
+        util.put(RESPONSE, result);
     }
 
     @Then("^the response contains more than (\\d+) item type attributes$")
-    public void theResponseContainsMoreThanItemTypeAttributes(int arg0) {
+    public void theResponseContainsMoreThanItemTypeAttributes(int items) {
+        ResponseEntity<TypeAttrList> results = (ResponseEntity<TypeAttrList>) util.get(RESPONSE);
+        if (results.getBody().getValues().size() <= items) {
+            throw new RuntimeException("Not enough items in result");
+        }
     }
 }

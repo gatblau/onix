@@ -501,7 +501,22 @@ public class PgSqlRepository implements DbRepository {
      */
     @Override
     public TypeAttrData getItemTypeAttribute(String itemTypeKey, String typeAttrKey, String[] role) {
-        return null;
+        TypeAttrData attr = null;
+        try {
+            db.prepare(getGetTypeAttributeSQL());
+            db.setString(1, itemTypeKey);
+            db.setString(2, typeAttrKey);
+            db.setArray(3, role);
+            ResultSet set = db.executeQuerySingleRow();
+            if (set != null) {
+                attr = util.toTypeAttrData(set);
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(String.format("Failed to get item type attribute for item type %s with key '%s': %s", itemTypeKey, typeAttrKey, ex.getMessage()), ex);
+        } finally {
+            db.close();
+        }
+        return attr;
     }
 
     @Override
@@ -571,9 +586,18 @@ public class PgSqlRepository implements DbRepository {
                 ")";
     }
 
+    public String getGetTypeAttributeSQL() {
+        return "SELECT * FROM ox_item_type_attribute(" +
+                "?::character varying," + // item_type_key_param
+                "?::character varying," + // type_attr_key_param
+                "?::character varying[]" + // role_key_param
+                ")";
+
+    }
+
     @Override
     public String getDeleteItemTypeAttributeSQL() {
-        return "SELECT ox_delete_type_attribute(" +
+        return "SELECT ox_delete_item_type_attribute(" +
                 "?::character varying," +
                 "?::character varying[]" + // role_key_param
                 ")";
@@ -609,7 +633,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteItemTypeAttr(String itemTypeKey, String typeAttrKey, String[] role) {
-        return delete(getDeleteItemTypeAttributeSQL(), "ox_delete_item_type_attr", typeAttrKey, true, role);
+        return delete(getDeleteItemTypeAttributeSQL(), "ox_delete_item_type_attribute", typeAttrKey, true, role);
     }
 
     /*
@@ -1237,10 +1261,11 @@ public class PgSqlRepository implements DbRepository {
             db.setString(1, key); // model key
             db.setString(2, model.getName()); // name_param
             db.setString(3, model.getDescription()); // description_param
-            db.setObject(4, model.getVersion()); // version_param
-            db.setString(5, getUser()); // changed_by_param
-            db.setString(6, model.getPartition()); // partition_key_param
-            db.setArray(7, role);
+            db.setBoolean(4, model.isManaged()); // managed_param
+            db.setObject(5, model.getVersion()); // version_param
+            db.setString(6, getUser()); // changed_by_param
+            db.setString(7, model.getPartition()); // partition_key_param
+            db.setArray(8, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_model"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -1294,6 +1319,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," + // key_param
                 "?::character varying," + // name_param
                 "?::text," + // description_param
+                "?::boolean," + // managed_param
                 "?::bigint," + // version_param
                 "?::character varying," + // changed_by
                 "?::character varying," + // partition_key_param

@@ -13,7 +13,7 @@
 #    to be licensed under the same terms as the rest of the code.
 #
 # the builder image
-FROM openjdk:8-jdk-alpine as builder
+FROM openjdk:15-jdk-alpine as builder
 RUN apk add unzip && rm -rf /var/cache/apk/*
 ENV MAVEN_VERSION 3.6.1
 ENV MAVEN_HOME /usr/lib/mvn
