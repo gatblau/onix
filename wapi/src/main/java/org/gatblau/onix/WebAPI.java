@@ -1103,6 +1103,48 @@ public class WebAPI {
     }
 
     /*
+        LINK TYPE ATTRIBUTES
+     */
+    @ApiOperation(
+            value = "Creates a new attribute for a link type.",
+            notes = "")
+    @RequestMapping(
+            path = "/linktype/{link_type_key}/attribute/{link_attr_key}"
+            , method = RequestMethod.PUT)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "No changes where performed to the configuration link type attribute."),
+            @ApiResponse(code = 201, message = "The configuration link type attribute was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+            @ApiResponse(code = 400, message = "Bad request. The request contained the wrong payload. Check the request body is well form, and if so, that the attributes passed in are or the correct type and name. "),
+            @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
+            @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+    )
+    public ResponseEntity<Result> createOrUpdateLinkTypeAttribute(
+            @ApiParam(
+                    name = "link type key",
+                    value = "A string which uniquely identifies the link type for the attribute.",
+                    required = true,
+                    example = "link_type_01"
+            )
+            @PathVariable("link_type_key")
+                    String linkTypeKey,
+            @ApiParam(
+                    name = "type attribute key",
+                    value = "A string which uniquely identifies the attribute for the link type.",
+                    required = true,
+                    example = "link_type_attr_01"
+            )
+            @PathVariable("type_attr_key")
+                    String typeAttrKey,
+            @RequestBody
+                    TypeAttrData typeAttr,
+            Authentication authentication
+    ) {
+        Result result = data.createOrUpdateLinkTypeAttr(linkTypeKey, typeAttrKey, typeAttr, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
+    }
+
+    /*
         LINK RULES
      */
 
