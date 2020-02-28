@@ -279,7 +279,7 @@ public class ItemTypeData implements Serializable {
     @ApiModelProperty(
             position = 15,
             required = false,
-            value = "Indicates whether the Configuration Item is fully managed by an agent (Y), it is not managed by an agent (N), or it can be partially managed (P - managed by an agent and UI).",
+            value = "Indicates whether the Configuration Item is fully managed by an agent.",
             example = "true",
             allowEmptyValue = true
     )

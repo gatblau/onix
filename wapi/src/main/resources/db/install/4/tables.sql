@@ -450,6 +450,10 @@ DO
           ON item_type USING btree (model_id)
           TABLESPACE pg_default;
 
+        CREATE INDEX item_type_tag_ix
+          ON item_type USING gin (tag COLLATE pg_catalog."default")
+          TABLESPACE pg_default;
+
         ALTER TABLE item_type
           OWNER to onix;
 
@@ -636,9 +640,10 @@ DO
           name         character varying(200) COLLATE pg_catalog."default",
           description  text COLLATE pg_catalog."default",
           meta         jsonb,
-          meta_enc     bytea,
+          meta_enc     boolean,
           txt          text,
-          txt_enc      bytea,
+          txt_enc      boolean,
+          enc_key_ix   smallint,
           tag          text[] COLLATE pg_catalog."default",
           attribute    hstore,
           status       smallint                                                     DEFAULT 0,
@@ -701,9 +706,10 @@ DO
           name         CHARACTER VARYING(200) COLLATE pg_catalog."default",
           description  text COLLATE pg_catalog."default",
           meta         jsonb,
-          meta_enc     bytea,
+          meta_enc     boolean,
           txt          text,
-          txt_enc      bytea,
+          txt_enc      boolean,
+          enc_key_ix   smallint,
           tag          text[] COLLATE pg_catalog."default",
           attribute    hstore,
           status       SMALLINT,
@@ -765,6 +771,10 @@ DO
           description TEXT COLLATE pg_catalog."default",
           attr_valid  HSTORE,
           meta_schema jsonb,
+          tag          TEXT[] COLLATE pg_catalog."default",
+          encrypt_meta BOOLEAN NOT NULL DEFAULT FALSE,
+          encrypt_txt  BOOLEAN NOT NULL DEFAULT FALSE,
+          managed      BOOLEAN NOT NULL DEFAULT FALSE, -- is this attribute managed by an agent
           version     bigint                 NOT NULL DEFAULT 1,
           created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
           updated     timestamp(6) with time zone,
@@ -783,6 +793,10 @@ DO
 
         CREATE INDEX fki_link_type_model_id_fk
           ON link_type USING btree (model_id)
+          TABLESPACE pg_default;
+
+        CREATE INDEX link_type_tag_ix
+          ON link_type USING gin (tag COLLATE pg_catalog."default")
           TABLESPACE pg_default;
 
         ALTER TABLE link_type
@@ -805,6 +819,10 @@ DO
           description TEXT COLLATE pg_catalog."default",
           attr_valid  HSTORE,
           meta_schema jsonb,
+          tag         TEXT[],
+          encrypt_meta BOOLEAN,
+          encrypt_txt BOOLEAN,
+          managed     BOOLEAN,
           version     bigint,
           created     timestamp(6) with time zone,
           updated     timestamp(6) with time zone,
@@ -863,10 +881,14 @@ DO
           end_item_id   bigint                                              NOT NULL,
           description   text COLLATE pg_catalog."default",
           meta          jsonb,
+          meta_enc      boolean NOT NULL DEFAULT FALSE,
+          txt           text,
+          txt_enc       boolean NOT NULL DEFAULT FALSE,
+          enc_key_ix    smallint,
           tag           text[] COLLATE pg_catalog."default",
           attribute     hstore,
           version       bigint                                              NOT NULL DEFAULT 1,
-          created       TIMESTAMP(6) WITH TIME ZONE                                  DEFAULT CURRENT_TIMESTAMP(6),
+          created       TIMESTAMP(6) WITH TIME ZONE                         DEFAULT CURRENT_TIMESTAMP(6),
           updated       timestamp(6) WITH TIME ZONE,
           changed_by    CHARACTER VARYING(100)                              NOT NULL COLLATE pg_catalog."default",
           CONSTRAINT link_id_pk PRIMARY KEY (id),
@@ -934,6 +956,10 @@ DO
           end_item_id   bigint,
           description   text COLLATE pg_catalog."default",
           meta          jsonb,
+          meta_enc      boolean,
+          txt           text,
+          txt_enc       boolean,
+          enc_key_ix    smallint,
           tag           text[] COLLATE pg_catalog."default",
           attribute     hstore,
           version       bigint,

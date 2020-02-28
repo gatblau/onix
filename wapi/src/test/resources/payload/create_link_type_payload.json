@@ -3,5 +3,9 @@
   "description": "This link type is for testing purposes only.",
   "modelKey": "meta_model_1",
   "metaSchema": {
-  }
+  },
+  "tag": ["cmdb", "host", "rhel"],
+  "managed": "true",
+  "encryptMeta": "true",
+  "encryptTxt": "false"
 }

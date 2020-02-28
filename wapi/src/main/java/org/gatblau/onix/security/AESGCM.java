@@ -56,7 +56,7 @@ public class AESGCM implements Crypto {
     private String KEY_EXPIRY;
 
     @Value("${wapi.ek.active}")
-    private int KEY_ACTIVE;
+    private short KEY_ACTIVE;
 
     // This size of the IV (in bytes) is normally (keysize / 8).
     // If the default keysize is 256, so the IV must be 32 bytes long.
@@ -109,8 +109,7 @@ public class AESGCM implements Crypto {
             cipher.init(Cipher.ENCRYPT_MODE, getKey(), parameterSpec);
             byte[] encryptedData = cipher.doFinal(textBytes);
 
-            ByteBuffer byteBuffer = ByteBuffer.allocate(4 + iv.length + encryptedData.length);
-            byteBuffer.putInt(getCurrentKey());
+            ByteBuffer byteBuffer = ByteBuffer.allocate(iv.length + encryptedData.length);
             byteBuffer.put(iv);
             byteBuffer.put(encryptedData);
 
@@ -122,10 +121,9 @@ public class AESGCM implements Crypto {
 
     // decrypts a cipher
     @Override
-    public byte[] decrypt(byte[] encryptedData) {
+    public byte[] decrypt(byte[] encryptedData, short keyIx) {
         try {
             ByteBuffer byteBuffer = ByteBuffer.wrap(encryptedData);
-            int currentKey = byteBuffer.getInt();
 
             byte[] iv = new byte[GCM_IV_LENGTH_BYTES];
             byteBuffer.get(iv);
@@ -135,7 +133,7 @@ public class AESGCM implements Crypto {
 
             Cipher cipher = Cipher.getInstance(CIPHER);
             GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH_BYTES * 8, iv);
-            cipher.init(Cipher.DECRYPT_MODE, getKey(currentKey), parameterSpec);
+            cipher.init(Cipher.DECRYPT_MODE, getKey(keyIx), parameterSpec);
             return cipher.doFinal(cipherBytes);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -155,17 +153,18 @@ public class AESGCM implements Crypto {
 
     // the current key used for encryption
     private SecretKey getKey() {
-        return getKey(getCurrentKey());
+        return getKey(getEncryptionKeyIx());
     }
 
-    // get key 1 or 2 depending on expiry date
-    private int getCurrentKey() {
+    // get key no 1 or 2 depending on expiry date
+    @Override
+    public short getEncryptionKeyIx() {
         try {
             Date today = new Date();
             Date expiry = formatter.parse(KEY_EXPIRY);
             if (today.after(expiry)) {
                 // return the non-active key
-                return (KEY_ACTIVE == 1) ? 2 : 1;
+                return (KEY_ACTIVE == 1) ? (short)2 : 1;
             } else {
                 // return active key
                 return KEY_ACTIVE;

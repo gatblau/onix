@@ -1,5 +1,5 @@
 /*
-Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import org.postgresql.jdbc.PgArray;
 import org.postgresql.util.PGobject;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -46,7 +45,6 @@ import java.util.*;
 public class Lib implements InitializingBean {
     private DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss Z");
     private JSONParser jsonParser = new JSONParser();
-    private String key = "++uqpjSZ+6PckpoT+9vWthhb3VOdAZZLeBSaS+hh3Pc=";
 
     @Autowired
     private Crypto crypto;
@@ -70,6 +68,8 @@ public class Lib implements InitializingBean {
             JSONParser parser = new JSONParser();
             StringReader reader = new StringReader((String)value);
             return (JSONObject)parser.parse(reader);
+        } else if (value instanceof byte[]) {
+            return toJSON(new String((byte[])value, StandardCharsets.UTF_8));
         }
         else {
             // the object is not a list, then create an empty JSON object
@@ -152,24 +152,31 @@ public class Lib implements InitializingBean {
         item.setCreated(dateFormat.format(set.getDate("created")));
         item.setUpdated((updated != null) ? dateFormat.format(updated) : null);
         item.setMeta(toJSON(set.getObject("meta")));
+        item.setMetaEnc(set.getBoolean("meta_enc"));
         item.setTag(toList(set.getObject("tag")));
         item.setVersion(set.getInt("version"));
         item.setAttribute(toJSON(set.getObject("attribute")));
         item.setChangedBy(set.getString("changed_by"));
         item.setPartition(partitionKey);
         item.setTxt(set.getString("txt"));
+        item.setTxtEnc(set.getBoolean("txt_enc"));
+        item.setEncKeyIx(set.getShort("enc_key_ix"));
         return item;
     }
 
     public LinkData toLinkData(ResultSet set) throws SQLException, ParseException, IOException {
         Date updated = set.getDate("updated");
         LinkData link = new LinkData();
+        link.setMetaEnc(set.getBoolean("meta_enc"));
+        link.setTxtEnc(set.getBoolean("txt_enc"));
+        link.setEncKeyIx(set.getShort("enc_key_ix"));
         link.setKey(set.getString("key"));
         link.setType(set.getString("link_type_key"));
         link.setDescription(set.getString("description"));
         link.setEndItemKey(set.getString("end_item_key"));
         link.setStartItemKey(set.getString("start_item_key"));
         link.setMeta(toJSON(set.getObject("meta")));
+        link.setTxt(set.getString("txt"));
         link.setTag(toList(set.getObject("tag")));
         link.setAttribute(toJSON(set.getObject("attribute")));
         link.setUpdated((updated != null) ? dateFormat.format(updated) : null);
@@ -253,6 +260,10 @@ public class Lib implements InitializingBean {
         linkType.setVersion(set.getInt("version"));
         linkType.setAttrValid(toJSON(set.getObject("attr_valid")));
         linkType.setMetaSchema(toJSON(set.getObject("meta_schema")));
+        linkType.setTag(toList(set.getObject("tag")));
+        linkType.setEncryptMeta(set.getBoolean("encrypt_meta"));
+        linkType.setEncryptTxt(set.getBoolean("encrypt_txt"));
+        linkType.setManaged(set.getBoolean("managed"));
         linkType.setModelKey(set.getString("model_key"));
         linkType.setChangedBy(set.getString("changed_by"));
         return linkType;
@@ -348,8 +359,8 @@ public class Lib implements InitializingBean {
         return crypto.encrypt(txt);
     }
 
-    public byte[] decryptTxt(byte[] encryptedTxt) {
-        return crypto.decrypt(encryptedTxt);
+    public byte[] decryptTxt(byte[] encryptedTxt, short keyIx) {
+        return crypto.decrypt(encryptedTxt, keyIx);
     }
 
     public String toString(InputStream inputStream) {
@@ -380,5 +391,17 @@ public class Lib implements InitializingBean {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public String wrapJSON(String value) {
+        return  String.format("{\"cipher\": \"%s\"}", value);
+    }
+
+    public String unwrapJSON(JSONObject value) {
+        return value.get("cipher").toString();
+    }
+
+    public Short  getEncKeyIx() {
+        return crypto.getEncryptionKeyIx();
     }
 }

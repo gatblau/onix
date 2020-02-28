@@ -34,5 +34,8 @@ public interface Crypto {
     byte[] encrypt(String plaintext);
 
     // decrypts a cipher
-    byte[] decrypt(byte[] encryptedData);
+    byte[] decrypt(byte[] encryptedData, short keyIx);
+
+    // gets the index of the encryption key to use - 0 = no key, 1 or 2 for the two available keys
+    short getEncryptionKeyIx();
 }

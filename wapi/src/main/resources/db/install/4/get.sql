@@ -32,9 +32,10 @@ DO
                   status        smallint,
                   item_type_key character varying,
                   meta          jsonb,
-                  meta_enc      bytea,
+                  meta_enc      boolean,
                   txt           text,
-                  txt_enc       bytea,
+                  txt_enc       boolean,
+                  enc_key_ix    smallint,
                   tag           text[],
                   attribute     hstore,
                   version       bigint,
@@ -60,6 +61,7 @@ DO
                  i.meta_enc,
                  i.txt,
                  i.txt_enc,
+                 i.enc_key_ix,
                  i.tag,
                  i.attribute,
                  i.version,
@@ -88,29 +90,28 @@ DO
         gets an item_type by its natural key.
         use: select * from item_type('the_item_type_key')
        */
-      CREATE OR REPLACE FUNCTION ox_item_type(key_param character varying,
-                                              role_key_param character varying[])
+      CREATE OR REPLACE FUNCTION ox_item_type(key_param character varying, role_key_param character varying[])
         RETURNS TABLE
-                (
-                  id          integer,
-                  key         character varying,
-                  name        character varying,
-                  description text,
-                  attr_valid  hstore,
-                  filter      jsonb,
-                  meta_schema jsonb,
-                  version     bigint,
-                  created     timestamp(6) with time zone,
-                  updated     timestamp(6) with time zone,
-                  changed_by  character varying,
-                  model_key   character varying,
-                  root        boolean,
-                  notify_change boolean,
-                  tag         text[],
-                  encrypt_meta boolean,
-                  encrypt_txt boolean,
-                  managed     boolean
-                )
+        (
+          id          integer,
+          key         character varying,
+          name        character varying,
+          description text,
+          attr_valid  hstore,
+          filter      jsonb,
+          meta_schema jsonb,
+          version     bigint,
+          created     timestamp(6) with time zone,
+          updated     timestamp(6) with time zone,
+          changed_by  character varying,
+          model_key   character varying,
+          root        boolean,
+          notify_change boolean,
+          tag         text[],
+          encrypt_meta boolean,
+          encrypt_txt boolean,
+          managed     boolean
+        )
         LANGUAGE 'plpgsql'
         COST 100
         STABLE
@@ -167,24 +168,29 @@ DO
         gets a link by its natural key.
         use: select * from link('the_link_key')
        */
-      CREATE OR REPLACE FUNCTION ox_link(key_param character varying,
-                                         role_key_param character varying[])
+      CREATE OR REPLACE FUNCTION ox_link(key_param character varying, role_key_param character varying[])
         RETURNS TABLE
-                (
-                  id             bigint,
-                  "key"          character varying,
-                  link_type_key  character varying,
-                  start_item_key character varying,
-                  end_item_key   character varying,
-                  description    text,
-                  meta           jsonb,
-                  tag            text[],
-                  attribute      hstore,
-                  version        bigint,
-                  created        TIMESTAMP(6) WITH TIME ZONE,
-                  updated        timestamp(6) WITH TIME ZONE,
-                  changed_by     character varying
-                )
+        (
+          id             bigint,
+          "key"          character varying,
+          link_type_key  character varying,
+          start_item_key character varying,
+          end_item_key   character varying,
+          description    text,
+          meta           jsonb,
+          meta_enc       boolean,
+          txt            text,
+          txt_enc        boolean,
+          enc_key_ix     smallint,
+          tag            text[],
+          attribute      hstore,
+          version        bigint,
+          created        TIMESTAMP(6) WITH TIME ZONE,
+          updated        timestamp(6) WITH TIME ZONE,
+          changed_by     character varying,
+          encrypt_txt        boolean,
+          encrypt_meta       boolean
+        )
         LANGUAGE 'plpgsql'
         COST 100
         STABLE
@@ -199,12 +205,18 @@ DO
                  end_item.key   as end_item_key,
                  l.description,
                  l.meta,
+                 l.meta_enc,
+                 l.txt,
+                 l.txt_enc,
+                 l.enc_key_ix,
                  l.tag,
                  l.attribute,
                  l.version,
                  l.created,
                  l.updated,
-                 l.changed_by
+                 l.changed_by,
+                 lt.encrypt_txt,
+                 lt.encrypt_meta
           FROM link l
                  INNER JOIN link_type lt ON l.link_type_id = lt.id
                  INNER JOIN item start_item ON l.start_item_id = start_item.id
@@ -236,6 +248,10 @@ DO
                   description text,
                   attr_valid  hstore,
                   meta_schema jsonb,
+                  tag         text[],
+                  encrypt_meta boolean,
+                  encrypt_txt  boolean,
+                  managed     boolean,
                   version     bigint,
                   created     timestamp(6) with time zone,
                   updated     timestamp(6) with time zone,
@@ -255,6 +271,10 @@ DO
                  lt.description,
                  lt.attr_valid,
                  lt.meta_schema,
+                 lt.tag,
+                 lt.encrypt_meta,
+                 lt.encrypt_txt,
+                 lt.managed,
                  lt.version,
                  lt.created,
                  lt.updated,

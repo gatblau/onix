@@ -38,7 +38,10 @@ public class ItemData implements Serializable {
     private String typeName;
     private Short status;
     private JSONObject meta;
+    private boolean metaEnc;
     private String txt;
+    private boolean txtEnc;
+    private short encKeyIx;
     private JSONObject attribute;
     private List<String> tag;
     private List<LinkData> fromLinks = new ArrayList<>();
@@ -268,5 +271,29 @@ public class ItemData implements Serializable {
 
     public void setTypeName(String typeName) {
         this.typeName = typeName;
+    }
+
+    public boolean isMetaEnc() {
+        return metaEnc;
+    }
+
+    public void setMetaEnc(boolean metaEnc) {
+        this.metaEnc = metaEnc;
+    }
+
+    public boolean isTxtEnc() {
+        return txtEnc;
+    }
+
+    public void setTxtEnc(boolean txtEnc) {
+        this.txtEnc = txtEnc;
+    }
+
+    public short getEncKeyIx() {
+        return encKeyIx;
+    }
+
+    public void setEncKeyIx(short encKeyIx) {
+        this.encKeyIx = encKeyIx;
     }
 }

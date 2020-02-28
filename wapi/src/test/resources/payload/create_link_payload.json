@@ -11,5 +11,6 @@
   "meta": {
     "DeployedBy": "John Wicks",
     "RequestNo": "RN001234"
-  }
+  },
+  "txt": "Hello World!"
 }

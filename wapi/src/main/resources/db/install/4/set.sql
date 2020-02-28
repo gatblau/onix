@@ -360,9 +360,10 @@ DO $$
         name_param character varying,
         description_param text,
         meta_param jsonb,
-        meta_enc_param bytea,
+        meta_enc_param boolean,
         txt_param text,
-        txt_enc_param bytea,
+        txt_enc_param boolean,
+        enc_key_ix_param smallint,
         tag_param text[],
         attribute_param hstore,
         status_param smallint,
@@ -447,6 +448,7 @@ DO $$
             meta_enc,
             txt,
             txt_enc,
+            enc_key_ix,
             tag,
             attribute,
             status,
@@ -466,6 +468,7 @@ DO $$
             meta_enc_param,
             txt_param,
             txt_enc_param,
+            enc_key_ix_param,
             tag_param,
             attribute_param,
             status_param,
@@ -523,6 +526,7 @@ DO $$
             meta_enc     = meta_enc_param,
             txt          = txt_param,
             txt_enc      = txt_enc_param,
+            enc_key_ix   = enc_key_ix_param,
             tag          = tag_param,
             attribute    = attribute_param,
             status       = status_param,
@@ -544,6 +548,7 @@ DO $$
             meta_enc != meta_enc_param OR
             txt != txt_param OR
             txt_enc != txt_enc_param OR
+            enc_key_ix != enc_key_ix_param OR
             tag != tag_param OR
             avals(attribute) != avals(attribute_param)
           );
@@ -561,9 +566,10 @@ DO $$
         character varying,
         text,
         jsonb, -- meta
-        bytea, -- meta_enc
+        boolean, -- meta_enc
         text, -- txt
-        bytea, -- txt_enc
+        boolean, -- txt_enc
+        smallint, -- enc_key_ix
         text[],
         hstore,
         smallint,
@@ -764,6 +770,10 @@ DO $$
         description_param text,
         attr_valid_param hstore, -- keys allowed or required in item attributes
         meta_schema_param jsonb,
+        tag_param text[],
+        encrypt_meta_param boolean,
+        encrypt_txt_param boolean,
+        managed_param boolean,
         local_version_param bigint,
         model_key_param character varying,
         changed_by_param character varying,
@@ -825,6 +835,10 @@ DO $$
            description,
            attr_valid,
            meta_schema,
+           tag,
+           encrypt_meta,
+           encrypt_txt,
+           managed,
            version,
            created,
            updated,
@@ -836,6 +850,10 @@ DO $$
                 description_param,
                 attr_valid_param,
                 meta_schema_param,
+                tag_param,
+                encrypt_meta_param,
+                encrypt_txt_param,
+                managed_param,
                 1,
                 current_timestamp,
                 null,
@@ -848,6 +866,10 @@ DO $$
             description = description_param,
             attr_valid  = attr_valid_param,
             meta_schema = meta_schema_param,
+            tag         = tag_param,
+            encrypt_meta= encrypt_meta_param,
+            encrypt_txt = encrypt_txt_param,
+            managed     = managed_param,
             version     = version + 1,
             updated     = current_timestamp,
             changed_by  = changed_by_param,
@@ -860,6 +882,10 @@ DO $$
             description != description_param OR
             attr_valid != attr_valid_param OR
             meta_schema != meta_schema_param OR
+            tag != tag_param OR
+            encrypt_meta != encrypt_meta_param OR
+            encrypt_txt != encrypt_txt_param OR
+            managed != managed_param OR
             model_id != model_id_value
           );
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
@@ -875,6 +901,10 @@ DO $$
       text, -- description
       hstore, -- attribute validation
       jsonb, -- meta json schema validation
+      text[], -- tag
+      boolean, -- encrypt meta
+      boolean, -- encrypt txt
+      boolean, -- managed
       bigint, -- client version
       character varying, -- meta model key
       character varying, -- changed by
@@ -898,6 +928,10 @@ DO $$
       end_item_key_param character varying,
       description_param text,
       meta_param jsonb,
+      meta_enc_param boolean,
+      txt_param text,
+      txt_enc_param boolean,
+      enc_key_ix_param smallint,
       tag_param text[],
       attribute_param hstore,
       local_version_param bigint,
@@ -999,6 +1033,10 @@ DO $$
           end_item_id,
           description,
           meta,
+          meta_enc,
+          txt,
+          txt_enc,
+          enc_key_ix,
           tag,
           attribute,
           version,
@@ -1014,6 +1052,10 @@ DO $$
           end_item_id_value,
           description_param,
           meta_param,
+          meta_enc_param,
+          txt_param,
+          txt_enc_param,
+          enc_key_ix_param,
           tag_param,
           attribute_param,
           1,
@@ -1060,8 +1102,12 @@ DO $$
         END IF;
 
         UPDATE link
-        SET meta          = meta_param,
-            description   = description_param,
+        SET description   = description_param,
+            meta          = meta_param,
+            meta_enc      = meta_enc_param,
+            txt           = txt_param,
+            txt_enc       = txt_enc_param,
+            enc_key_ix    = enc_key_ix_param,
             tag           = tag_param,
             attribute     = attribute_param,
             link_type_id  = link_type_id_value,
@@ -1075,6 +1121,10 @@ DO $$
           AND (local_version_param = current_version OR local_version_param IS NULL)
           AND (
             meta != meta_param OR
+            meta_enc != meta_enc_param OR
+            txt != txt_param OR
+            txt_enc != txt_enc_param OR
+            enc_key_ix != enc_key_ix_param OR
             description != description_param OR
             tag != tag_param OR
             attribute != attribute_param OR
@@ -1096,6 +1146,10 @@ DO $$
         character varying,
         text,
         jsonb,
+        boolean, -- meta_enc
+        text,
+        boolean, -- txt_enc
+        smallint, -- enc_key
         text[],
         hstore,
         bigint,

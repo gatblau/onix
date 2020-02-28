@@ -24,6 +24,7 @@ import io.swagger.annotations.ApiModelProperty;
 import org.json.simple.JSONObject;
 
 import java.io.Serializable;
+import java.util.List;
 
 @ApiModel(
     description = "Defines the type of a link."
@@ -35,6 +36,10 @@ public class LinkTypeData implements Serializable {
     private String description;
     private JSONObject attrValid;
     private JSONObject metaSchema;
+    private List<String> tag;
+    private boolean encryptMeta;
+    private boolean encryptTxt;
+    private boolean managed;
     private String created;
     private String updated;
     private Integer version;
@@ -186,5 +191,66 @@ public class LinkTypeData implements Serializable {
 
     public void setMetaSchema(JSONObject metaSchema) {
         this.metaSchema = metaSchema;
+    }
+
+    @ApiModelProperty(
+            position = 10,
+            required = false,
+            value = "An array of strings used as tags for filtering search results. " +
+                    "The value of each tag is arbitrary and depends on how searches on the item will be made.",
+            example = "[ 'VM', 'AMD64', 'EUROPE' ]",
+            allowEmptyValue = true
+    )
+    public List<String> getTag() {
+        return tag;
+    }
+
+    public void setTag(List<String> tag) {
+        this.tag = tag;
+    }
+
+    @ApiModelProperty(
+            position = 11,
+            required = false,
+            value = "Indicates whether the Meta field in an Configuration Link should be encrypted in the database.",
+            example = "true",
+            allowEmptyValue = true
+    )
+    public boolean getEncryptMeta() {
+        return encryptMeta;
+    }
+
+    public void setEncryptMeta(boolean encryptMeta) {
+        this.encryptMeta = encryptMeta;
+    }
+
+    @ApiModelProperty(
+            position = 12,
+            required = false,
+            value = "Indicates whether the Txt field in an Configuration Link should be encrypted in the database.",
+            example = "true",
+            allowEmptyValue = true
+    )
+    public boolean getEncryptTxt() {
+        return encryptTxt;
+    }
+
+    public void setEncryptTxt(boolean encryptTxt) {
+        this.encryptTxt = encryptTxt;
+    }
+
+    @ApiModelProperty(
+            position = 15,
+            required = false,
+            value = "Indicates whether the Configuration Link is fully managed by an agent.",
+            example = "true",
+            allowEmptyValue = true
+    )
+    public boolean getManaged() {
+        return managed;
+    }
+
+    public void setManaged(boolean managed) {
+        this.managed = managed;
     }
 }

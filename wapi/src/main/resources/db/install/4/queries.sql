@@ -40,9 +40,10 @@ CREATE OR REPLACE FUNCTION ox_find_items(
     status smallint,
     item_type_key character varying,
     meta jsonb,
-    meta_enc bytea,
+    meta_enc boolean,
     txt text,
-    txt_enc bytea,
+    txt_enc boolean,
+    enc_key_ix smallint,
     tag text[],
     attribute hstore,
     version bigint,
@@ -72,6 +73,7 @@ BEGIN
     i.meta_enc,
     i.txt,
     i.txt_enc,
+    i.enc_key_ix,
     i.tag,
     i.attribute,
     i.version,
@@ -153,12 +155,18 @@ RETURNS TABLE(
     end_item_key character varying,
     description text,
     meta jsonb,
+    meta_enc boolean,
+    txt text,
+    txt_enc boolean,
+    enc_key_ix smallint,
     tag text[],
     attribute hstore,
     version bigint,
     created TIMESTAMP(6) WITH TIME ZONE,
     updated timestamp(6) WITH TIME ZONE,
-    changed_by CHARACTER VARYING
+    changed_by CHARACTER VARYING,
+    encrypt_txt boolean,
+    encrypt_meta boolean
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -173,12 +181,18 @@ BEGIN
     end_item.key AS end_item_key,
     l.description,
     l.meta,
+    l.meta_enc,
+    l.txt,
+    l.txt_enc,
+    l.enc_key_ix,
     l.tag,
     l.attribute,
     l.version,
     l.created,
     l.updated,
-    l.changed_by
+    l.changed_by,
+    lt.encrypt_txt,
+    lt.encrypt_meta
   FROM link l
     INNER JOIN item start_item ON l.start_item_id = start_item.id
     INNER JOIN item end_item ON l.end_item_id = end_item.id
@@ -357,6 +371,10 @@ CREATE OR REPLACE FUNCTION ox_find_link_types(
     description text,
     attr_valid hstore,
     meta_schema jsonb,
+    tag text[],
+    encrypt_meta boolean,
+    encrypt_txt boolean,
+    managed boolean,
     version bigint,
     created timestamp(6) with time zone,
     updated timestamp(6) with time zone,
@@ -375,6 +393,10 @@ BEGIN
      l.description,
      l.attr_valid,
      l.meta_schema,
+     l.tag,
+     l.encrypt_meta,
+     l.encrypt_txt,
+     l.managed,
      l.version,
      l.created,
      l.updated,
