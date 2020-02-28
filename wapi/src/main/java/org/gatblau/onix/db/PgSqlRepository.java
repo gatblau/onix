@@ -23,6 +23,7 @@ import com.jayway.jsonpath.ReadContext;
 import org.gatblau.onix.Lib;
 import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
 import org.postgresql.util.HStoreConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -31,7 +32,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.JwtClaimAccessor;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.time.ZonedDateTime;
@@ -69,30 +70,30 @@ public class PgSqlRepository implements DbRepository {
             // if is not supposed to encrypt meta
             if (!itemType.getEncryptMeta()) {
                 db.setString(4, util.toJSONString(item.getMeta())); // meta_param
-                db.setBinaryStream(5, new ByteArrayInputStream(new byte[]{}));
             } else {
-                // encrypts and populates meta_enc_param
-                db.setString(4, null); // meta_param
-                db.setBinaryStream(5, new ByteArrayInputStream(util.encryptTxt(util.toJSONString(item.getMeta())))); // meta_enc_param
+                // encrypts meta value
+                // encrypts and populates meta_param
+                db.setString(4, util.wrapJSON(Base64.getEncoder().encodeToString(util.encryptTxt(util.toJSONString(item.getMeta()))))); // meta_param
             }
+            db.setBoolean(5, itemType.getEncryptMeta());
             // if is not supposed to encrypt txt
             if (!itemType.getEncryptTxt()) {
                 // populates txt_param
                 db.setString(6, item.getTxt()); // txt_param
-                db.setBinaryStream(7, new ByteArrayInputStream(new byte[]{}));
             } else {
-                // encrypts and populates txt_enc_param
-                db.setString(6, null);
-                db.setBinaryStream(7, new ByteArrayInputStream(util.encryptTxt(item.getTxt()))); // txt_enc_param
+                // encrypts and populates txt_param
+                db.setString(6, Base64.getEncoder().encodeToString(util.encryptTxt(item.getTxt()))); // txt_param
             }
-            db.setString(8, util.toArrayString(item.getTag())); // tag_param
-            db.setString(9, getAttributeString(item.getAttribute())); // attribute_param
-            db.setInt(10, item.getStatus()); // status_param
-            db.setString(11, item.getType()); // item_type_key_param
-            db.setObject(12, item.getVersion()); // version_param
-            db.setString(13, getUser()); // changed_by_param
-            db.setString(14, item.getPartition()); // partition_key_param
-            db.setArray(15, role); // role_key_param
+            db.setBoolean(7, itemType.getEncryptTxt());
+            db.setShort(8, util.getEncKeyIx()); // stores the index of the encryption key to use
+            db.setString(9, util.toArrayString(item.getTag())); // tag_param
+            db.setString(10, getAttributeString(item.getAttribute())); // attribute_param
+            db.setInt(11, item.getStatus()); // status_param
+            db.setString(12, item.getType()); // item_type_key_param
+            db.setObject(13, item.getVersion()); // version_param
+            db.setString(14, getUser()); // changed_by_param
+            db.setString(15, item.getPartition()); // partition_key_param
+            db.setArray(16, role); // role_key_param
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_item"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -116,15 +117,7 @@ public class PgSqlRepository implements DbRepository {
                 item = util.toItemData(set);
             }
             // checks txt for encrypted data
-            byte[] bytes = util.toByteArray(set.getBinaryStream("txt_enc"));
-            if (bytes.length > 0) {
-                item.setTxt(new String(util.decryptTxt(bytes), StandardCharsets.UTF_8));
-            }
-            // checks meta for encrypted data
-            bytes = util.toByteArray(set.getBinaryStream("meta_enc"));
-            if (bytes.length > 0) {
-                item.setMeta(util.toJSON(new String(util.decryptTxt(bytes), StandardCharsets.UTF_8)));
-            }
+            checkItemEncryptedFields(item);
 
             if (includeLinks) {
                 db.prepare(getFindLinksSQL());
@@ -192,7 +185,10 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(11, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                items.getValues().add(util.toItemData(set));
+                ItemData item = util.toItemData(set);
+                // checks txt for encrypted data
+                checkItemEncryptedFields(item);
+                items.getValues().add(item);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -277,6 +273,7 @@ public class PgSqlRepository implements DbRepository {
             ResultSet set = db.executeQuerySingleRow();
             if (set != null) {
                 link = util.toLinkData(set);
+                checkLinkEncryptedFields(link);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -288,6 +285,8 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public synchronized Result createOrUpdateLink(String key, LinkData link, String[] role) {
+        // gets the link type first to check for encryption requirements
+        LinkTypeData linkType = getLinkType(link.getType(), role);
         Result result = new Result(String.format("Link:%s", key));
         try {
             db.prepare(getSetLinkSQL());
@@ -296,12 +295,28 @@ public class PgSqlRepository implements DbRepository {
             db.setString(3, link.getStartItemKey());
             db.setString(4, link.getEndItemKey());
             db.setString(5, link.getDescription());
-            db.setString(6, util.toJSONString(link.getMeta()));
-            db.setString(7, util.toArrayString(link.getTag()));
-            db.setString(8, getAttributeString(link.getAttribute()));
-            db.setObject(9, link.getVersion());
-            db.setString(10, getUser());
-            db.setArray(11, role);
+            // if is not supposed to encrypt meta
+            if (!linkType.getEncryptMeta()) {
+                db.setString(6, util.toJSONString(link.getMeta())); // meta_param
+            } else {
+                // encrypts and populates meta_param
+                db.setString(6, util.wrapJSON(Base64.getEncoder().encodeToString(util.encryptTxt(util.toJSONString(link.getMeta()))))); // meta_param
+            }
+            db.setBoolean(7, linkType.getEncryptMeta());
+            // if is not supposed to encrypt txt
+            if (!linkType.getEncryptTxt()) {
+                db.setString(8, link.getTxt());
+            } else {
+                // encrypts and populates txt_param
+                db.setString(8, Base64.getEncoder().encodeToString(util.encryptTxt(link.getTxt()))); // txt_param
+            }
+            db.setBoolean(9, linkType.getEncryptTxt());
+            db.setShort(10, util.getEncKeyIx()); // stores the index of the encryption key to use
+            db.setString(11, util.toArrayString(link.getTag()));
+            db.setString(12, getAttributeString(link.getAttribute()));
+            db.setObject(13, link.getVersion());
+            db.setString(14, getUser());
+            db.setArray(15, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_link"));
         } catch (Exception ex) {
             result.setError(true);
@@ -348,7 +363,9 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(12, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                links.getValues().add(util.toLinkData(set));
+                LinkData link = util.toLinkData(set);
+                checkLinkEncryptedFields(link);
+                links.getValues().add(link);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -698,10 +715,14 @@ public class PgSqlRepository implements DbRepository {
             db.setString(3, linkType.getDescription()); // description_param
             db.setString(4, getAttributeString(linkType.getAttrValid())); // attribute_param
             db.setString(5, util.toJSONString(linkType.getMetaSchema()));
-            db.setObject(6, linkType.getVersion()); // version_param
-            db.setString(7, linkType.getModelKey()); // model_key_param
-            db.setString(8, getUser()); // changed_by_param
-            db.setArray(9, role);
+            db.setString(6, util.toArrayString(linkType.getTag())); // tag_param
+            db.setBoolean(7, linkType.getEncryptMeta());
+            db.setBoolean(8, linkType.getEncryptTxt());
+            db.setBoolean(9, linkType.getManaged());
+            db.setObject(10, linkType.getVersion()); // version_param
+            db.setString(11, linkType.getModelKey()); // model_key_param
+            db.setString(12, getUser()); // changed_by_param
+            db.setArray(13, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_link_type"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -829,9 +850,10 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," +
                 "?::text," +
                 "?::jsonb," + // meta
-                "?::bytea," + // meta_enc
+                "?::boolean," + // meta_enc
                 "?::text," + // txt
-                "?::bytea," + // txt_enc
+                "?::boolean," + // txt_enc
+                "?::smallint," + // enc_key_ix
                 "?::text[]," +
                 "?::hstore," +
                 "?::smallint," +
@@ -900,6 +922,10 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," + // end_item_key
                 "?::text," + // description
                 "?::jsonb," + // meta
+                "?::boolean," + // meta_enc
+                "?::text," + // txt
+                "?::boolean," + // txt_enc
+                "?::smallint," + // enc_key_ix
                 "?::text[]," + // tag
                 "?::hstore," + // attribute
                 "?::bigint," + // version
@@ -1026,6 +1052,10 @@ public class PgSqlRepository implements DbRepository {
                 "?::text," + // description
                 "?::hstore," + // attr_valid
                 "?::jsonb," + // meta_schema
+                "?::text[]," + // tag
+                "?::boolean," + // encrypt meta
+                "?::boolean," + // encrypt txt
+                "?::boolean," + // managed
                 "?::bigint," + // version
                 "?::character varying," + // model_key
                 "?::character varying," + // changed_by
@@ -1921,5 +1951,23 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," + // key_param
                 "?::character varying[]" + // role_key_param
                 ")";
+    }
+
+    private void checkItemEncryptedFields(ItemData item) throws ParseException, IOException {
+        if (item.isMetaEnc()) {
+            item.setMeta(util.toJSON(util.decryptTxt(Base64.getDecoder().decode(util.unwrapJSON(item.getMeta())), item.getEncKeyIx())));
+        }
+        if (item.isTxtEnc()) {
+            item.setTxt(new String(util.decryptTxt(Base64.getDecoder().decode(item.getTxt()), item.getEncKeyIx()), StandardCharsets.UTF_8));
+        }
+    }
+
+    private void checkLinkEncryptedFields(LinkData link) throws ParseException, IOException {
+        if (link.isTxtEnc()) {
+            link.setTxt(new String(util.decryptTxt(Base64.getDecoder().decode(link.getTxt()), link.getEncKeyIx()), StandardCharsets.UTF_8));
+        }
+        if (link.isMetaEnc()) {
+            link.setMeta(util.toJSON(util.decryptTxt(Base64.getDecoder().decode(util.unwrapJSON(link.getMeta())), link.getEncKeyIx())));
+        }
     }
 }

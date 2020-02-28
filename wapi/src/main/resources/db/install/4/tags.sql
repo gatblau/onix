@@ -181,8 +181,7 @@ DO $$
       ox_get_tree_content(root_item_key_param, label_param): inspects the tag hstores for information
         about a specific tag items and links and retrieve a set of ids and versions for them.
      */
-    CREATE OR REPLACE FUNCTION ox_get_tree_content(root_item_key_param character varying,
-                                                label_param character varying)
+    CREATE OR REPLACE FUNCTION ox_get_tree_content(root_item_key_param character varying, label_param character varying)
       RETURNS TABLE
               (
                 id      text,
@@ -224,7 +223,10 @@ DO $$
                 name          character varying,
                 description   text,
                 meta          jsonb,
+                meta_enc      boolean,
                 txt           text,
+                txt_enc       boolean,
+                enc_key_ix    smallint,
                 tag           text[],
                 attribute     hstore,
                 status        smallint,
@@ -251,7 +253,10 @@ DO $$
                i.name,
                i.description,
                i.meta,
+               i.meta_enc,
                i.txt,
+               i.txt_enc,
+               i.enc_key_ix,
                i.tag,
                i.attribute,
                i.status,
@@ -280,8 +285,7 @@ DO $$
       ox_get_tree_links(root_item_key_param, label_param): gets a list of all the links that are part
         of a tag tree for a specific parent item and a label.
      */
-    CREATE OR REPLACE FUNCTION ox_get_tree_links(root_item_key_param character varying,
-                                              label_param character varying)
+    CREATE OR REPLACE FUNCTION ox_get_tree_links(root_item_key_param character varying, label_param character varying)
       RETURNS TABLE
               (
                 operation      character,
@@ -293,6 +297,10 @@ DO $$
                 end_item_id    bigint,
                 description    text,
                 meta           jsonb,
+                meta_enc       boolean,
+                txt            text,
+                txt_enc        boolean,
+                enc_key_ix     smallint,
                 tag            text[],
                 attribute      hstore,
                 version        bigint,
@@ -311,7 +319,28 @@ DO $$
     $BODY$
     BEGIN
       RETURN QUERY
-        SELECT l.*, lt.key as link_type_key, start_item.key as start_item_key, end_item.key as end_item_key
+        SELECT l.operation,
+            l.changed,
+            l.id,
+            l.key,
+            l.link_type_id,
+            l.start_item_id,
+            l.end_item_id,
+            l.description,
+            l.meta,
+            l.meta_enc,
+            l.txt,
+            l.txt_enc,
+            l.enc_key_ix,
+            l.tag,
+            l.attribute,
+            l.version,
+            l.created,
+            l.updated,
+            l.changed_by,
+            lt.key as link_type_key,
+            start_item.key as start_item_key,
+            end_item.key as end_item_key
         FROM ox_get_tree_content(root_item_key_param, label_param) s
                INNER JOIN link_change l
                           ON l.id = s.id::bigint

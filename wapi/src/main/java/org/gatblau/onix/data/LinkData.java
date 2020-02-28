@@ -1,5 +1,5 @@
 /*
-Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,6 +33,10 @@ public class LinkData implements Serializable {
     private List<String> tag;
     private JSONObject attribute;
     private JSONObject meta;
+    private boolean metaEnc;
+    private String txt;
+    private boolean txtEnc;
+    private short encKeyIx;
     private String startItemKey;
     private String endItemKey;
     private String created;
@@ -137,5 +141,37 @@ public class LinkData implements Serializable {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getTxt() {
+        return txt;
+    }
+
+    public void setTxt(String txt) {
+        this.txt = txt;
+    }
+
+    public boolean isMetaEnc() {
+        return metaEnc;
+    }
+
+    public void setMetaEnc(boolean metaEnc) {
+        this.metaEnc = metaEnc;
+    }
+
+    public boolean isTxtEnc() {
+        return txtEnc;
+    }
+
+    public void setTxtEnc(boolean txtEnc) {
+        this.txtEnc = txtEnc;
+    }
+
+    public short getEncKeyIx() {
+        return encKeyIx;
+    }
+
+    public void setEncKeyIx(short encKeyIx) {
+        this.encKeyIx = encKeyIx;
     }
 }
