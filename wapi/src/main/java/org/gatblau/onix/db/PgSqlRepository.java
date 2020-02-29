@@ -85,7 +85,11 @@ public class PgSqlRepository implements DbRepository {
                 db.setString(6, Base64.getEncoder().encodeToString(util.encryptTxt(item.getTxt()))); // txt_param
             }
             db.setBoolean(7, itemType.getEncryptTxt());
-            db.setShort(8, util.getEncKeyIx()); // stores the index of the encryption key to use
+            if (itemType.getEncryptMeta() || itemType.getEncryptTxt()) {
+                db.setShort(8, util.getEncKeyIx()); // stores the index of the encryption key to use
+            } else {
+                db.setShort(8, (short)0); // no key used, therefore ix = 0
+            }
             db.setString(9, util.toArrayString(item.getTag())); // tag_param
             db.setString(10, getAttributeString(item.getAttribute())); // attribute_param
             db.setInt(11, item.getStatus()); // status_param
@@ -311,7 +315,11 @@ public class PgSqlRepository implements DbRepository {
                 db.setString(8, Base64.getEncoder().encodeToString(util.encryptTxt(link.getTxt()))); // txt_param
             }
             db.setBoolean(9, linkType.getEncryptTxt());
-            db.setShort(10, util.getEncKeyIx()); // stores the index of the encryption key to use
+            if (linkType.getEncryptMeta() || linkType.getEncryptTxt()) {
+                db.setShort(10, util.getEncKeyIx()); // stores the index of the encryption key used, ix=1 or 2
+            } else {
+                db.setShort(10, (short)0); // no key was used, therefore ix = 0
+            }
             db.setString(11, util.toArrayString(link.getTag()));
             db.setString(12, getAttributeString(link.getAttribute()));
             db.setObject(13, link.getVersion());
