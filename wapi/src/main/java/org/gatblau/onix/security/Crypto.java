@@ -20,7 +20,7 @@ package org.gatblau.onix.security;
 
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
+import java.util.Date;
 
 //
 // Interface for symmetric encryption algorithms
@@ -37,5 +37,11 @@ public interface Crypto {
     byte[] decrypt(byte[] encryptedData, short keyIx);
 
     // gets the index of the encryption key to use - 0 = no key, 1 or 2 for the two available keys
-    short getEncryptionKeyIx();
+    short getKeyIx();
+
+    // gets the index of the default key
+    short getDefaultKeyIx();
+
+    // gets the date after which the default key is no longer valid
+    String getDefaultKeyExpiry();
 }

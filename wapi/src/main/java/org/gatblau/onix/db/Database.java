@@ -226,7 +226,7 @@ class Database {
                 log.info(String.format("Executing script '%s'.", script.getKey()));
                 runScriptFromString(adminPwd, script.getValue(), dbName);
             } catch (SQLException e) {
-                throw new RuntimeException(String.format("Failed to apply script '%s'.", script.getKey()), e);
+                throw new RuntimeException(String.format("Failed to apply script '%s': %s", script.getKey(), e.getMessage()), e);
             }
         }
     }
