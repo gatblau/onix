@@ -1483,6 +1483,9 @@ public class WebAPI {
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
+    /*
+        ENCRYPTION KEYS
+     */
     @ApiOperation(
             value = "Returns a new secret key for configuration data encryption.",
             notes = "Use this endpoint to generate encryption keys that can be used to encrypt/decrypt configuration data.",
@@ -1490,31 +1493,10 @@ public class WebAPI {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successful request.", response = JSONObject.class)}
     )
-    @RequestMapping(value = "/key", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(value = "/enckey/generate", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<JSONObject> key() {
         JSONObject response = new JSONObject();
         response.put("key", crypto.newKey());
-        return ResponseEntity.ok(response);
-    }
-
-    /*
-        ENCRYPTION KEYS
-     */
-    @ApiOperation(
-            value = "Invokes the key rotation routine specifying which kwy to rotate (e.g. 1 to 2 or 2 to 1) and how " +
-                    "many items to process at a time.",
-            notes = "Use this endpoint to gradually rotate encryption keys for meta and txt fields.",
-            response = JSONObject.class)
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Successful request.", response = JSONObject.class)}
-    )
-    @RequestMapping(value = "/enckey/{key_no}/rotate/{max_items}", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity<JSONObject> rotateKey(
-            @PathVariable("key_no") int keyNo,
-            @PathVariable("max_items") int maxItems,
-            Authentication authentication) {
-        JSONObject response = new JSONObject();
-        response.put("key", "");
         return ResponseEntity.ok(response);
     }
 
@@ -1530,6 +1512,41 @@ public class WebAPI {
         EncKeyStatusData keyStatus = data.getKeyStatus(getRole(authentication));
         return ResponseEntity.ok(keyStatus);
     }
+
+    @ApiOperation(
+            value = "Invokes the key rotation routine specifying how many items to process at a time.",
+            notes = "Use this endpoint to gradually rotate encryption keys for meta and txt fields. " +
+                    "This function only works if the default key expiry date is in the past. " +
+                    "The rotation is always from the default key to the secondary key. " +
+                    "To understand the status of key usage invoke the \"/enckey/status\" endpoint.",
+            response = JSONObject.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful request.", response = JSONObject.class)}
+    )
+    @RequestMapping(value = "/enckey/rotate/item/{limit}", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ResultList> rotateItemKey(
+            @PathVariable("limit") int limit,
+            Authentication authentication) {
+        return ResponseEntity.ok(data.rotateItemKeys(limit, getRole(authentication)));
+    }
+
+    @ApiOperation(
+            value = "Invokes the key rotation routine specifying how many links to process at a time.",
+            notes = "Use this endpoint to gradually rotate encryption keys for meta and txt fields. " +
+                    "This function only works if the default key expiry date is in the past. " +
+                    "The rotation is always from the default key to the secondary key. " +
+                    "To understand the status of key usage invoke the \"/enckey/status\" endpoint.",
+            response = JSONObject.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful request.", response = JSONObject.class)}
+    )
+    @RequestMapping(value = "/enckey/rotate/link/{limit}", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<ResultList> rotateLinkKey(
+            @PathVariable("limit") int limit,
+            Authentication authentication) {
+        return ResponseEntity.ok(data.rotateLinkKeys(limit, getRole(authentication)));
+    }
+
     /*
         helper methods
      */

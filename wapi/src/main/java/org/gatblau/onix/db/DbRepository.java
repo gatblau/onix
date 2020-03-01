@@ -216,5 +216,7 @@ public interface DbRepository {
 
     /* Enc Keys */
     EncKeyStatusData getKeyStatus(String[] role);
+    ResultList rotateItemKeys(Integer maxItems, String[] role);
+    ResultList rotateLinkKeys(Integer maxLinks, String[] role);
     String getGetEncKeyUsageSQL();
 }

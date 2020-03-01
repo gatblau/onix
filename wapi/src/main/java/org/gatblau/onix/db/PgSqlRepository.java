@@ -1896,6 +1896,48 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public ResultList rotateItemKeys(Integer maxItems, String[] role) {
+        ResultList results = new ResultList();
+        // reads a bunch of items that are using the default key
+        ItemList items = findItems(null, null, null, null, null, null, null, null, null, util.getAlternateKeyIx(), maxItems, role);
+        // if the current key is the same as the default or no items were found using the default key
+        if (items.getValues().size() == 0) {
+            // no need to rotate the keys
+            Result result = new Result();
+            result.setRef("Link:Item:Rotate");
+            result.setMessage("No rotation is required.");
+            results.add(result);
+            return results;
+        }
+        for (ItemData item : items.getValues()) {
+            // updates them with the new key
+            results.add(createOrUpdateItem(item.getKey(), item, role));
+        }
+        return results;
+    }
+
+    @Override
+    public ResultList rotateLinkKeys(Integer maxLinks, String[] role) {
+        ResultList results = new ResultList();
+        // reads a bunch of links that are using the default key
+        LinkList links = findLinks(null, null, null, null, null, null, null, null, null, util.getAlternateKeyIx(), maxLinks, role);
+        // if the current key is the same as the default or no links were found using the default key
+        if (links.getValues().size() == 0) {
+            // no need to rotate the keys
+            Result result = new Result();
+            result.setRef("Link:Key:Rotate");
+            result.setMessage("No rotation is required.");
+            results.add(result);
+            return results;
+        }
+        for (LinkData link : links.getValues()) {
+            // updates them with the new key
+            results.add(createOrUpdateLink(link.getKey(), link, role));
+        }
+        return results;
+    }
+
+    @Override
     public String getGetEncKeyUsageSQL() {
         return "SELECT * FROM ox_get_enc_key_usage(" +
                 "?::smallint," + // enc_key_ix_param
