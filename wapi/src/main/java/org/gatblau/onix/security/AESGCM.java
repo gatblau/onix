@@ -55,8 +55,8 @@ public class AESGCM implements Crypto {
     @Value("${wapi.ek.expiry.date}")
     private String KEY_EXPIRY;
 
-    @Value("${wapi.ek.active}")
-    private short KEY_ACTIVE;
+    @Value("${wapi.ek.default}")
+    private short KEY_DEFAULT;
 
     // This size of the IV (in bytes) is normally (keysize / 8).
     // If the default keysize is 256, so the IV must be 32 bytes long.
@@ -153,24 +153,34 @@ public class AESGCM implements Crypto {
 
     // the current key used for encryption
     private SecretKey getKey() {
-        return getKey(getEncryptionKeyIx());
+        return getKey(getKeyIx());
     }
 
     // get key no 1 or 2 depending on expiry date
     @Override
-    public short getEncryptionKeyIx() {
+    public short getKeyIx() {
         try {
             Date today = new Date();
             Date expiry = formatter.parse(KEY_EXPIRY);
             if (today.after(expiry)) {
                 // return the non-active key
-                return (KEY_ACTIVE == 1) ? (short)2 : 1;
+                return (KEY_DEFAULT == 1) ? (short)2 : 1;
             } else {
                 // return active key
-                return KEY_ACTIVE;
+                return KEY_DEFAULT;
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public short getDefaultKeyIx() {
+        return KEY_DEFAULT;
+    }
+
+    @Override
+    public String getDefaultKeyExpiry() {
+        return KEY_EXPIRY;
     }
 }

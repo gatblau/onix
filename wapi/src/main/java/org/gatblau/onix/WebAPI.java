@@ -289,6 +289,14 @@ public class WebAPI {
             @RequestParam(value = "attrs", required = false)
             String attrs,
             @ApiParam(
+                name = "keyIX",
+                value = "The index of the key used to encrypt data in the items. Values can be 0: no key, 1 or 2 for key 1 or 2 respectively.",
+                required = false,
+                example = "1"
+            )
+            @RequestParam(value = "keyIX", required = false)
+            Short encKeyIx,
+            @ApiParam(
                 name = "top",
                 value = "The maximum number of items to retrieve.",
                 required = false,
@@ -322,6 +330,7 @@ public class WebAPI {
                 status,
                 modelKey,
                 attributes,
+                encKeyIx,
                 top,
                 getRole(authentication)
         );
@@ -963,6 +972,13 @@ public class WebAPI {
             , @RequestParam(value = "createdTo", required = false) String createdToDate
             , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
             , @RequestParam(value = "updatedTo", required = false) String updatedToDate
+            , @ApiParam(
+                name = "keyIX",
+                value = "The index of the key used to encrypt data in the links. Values can be 0: no key, 1 or 2 for key 1 or 2 respectively.",
+                required = false,
+                example = "1"
+            )
+              @RequestParam(value = "keyIX", required = false) Short encKeyIx
             , @RequestParam(value = "model", required = false) String modelKey
             , @RequestParam(value = "top", required = false, defaultValue = "100") Integer top
             , Authentication authentication
@@ -982,6 +998,7 @@ public class WebAPI {
             getDate(updatedFromDate),
             getDate(updatedToDate),
             modelKey,
+            encKeyIx,
             top,
             getRole(authentication)
         );

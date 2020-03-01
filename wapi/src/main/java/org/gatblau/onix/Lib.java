@@ -401,7 +401,15 @@ public class Lib implements InitializingBean {
         return value.get("cipher").toString();
     }
 
-    public Short  getEncKeyIx() {
-        return crypto.getEncryptionKeyIx();
+    public Short getEncKeyIx() {
+        return crypto.getKeyIx();
+    }
+
+    public short getDefaultEncKeyIx() {
+        return crypto.getDefaultKeyIx();
+    }
+
+    public String getDefaultEncKeyExpiry() {
+        return crypto.getDefaultKeyExpiry();
     }
 }

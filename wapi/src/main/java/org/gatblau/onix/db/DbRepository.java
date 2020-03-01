@@ -36,7 +36,7 @@ public interface DbRepository {
     Result createOrUpdateItem(String key, ItemData json, String[] role);
     ItemData getItem(String key, boolean includeLinks, String[] role);
     Result deleteItem(String key, String[] role);
-    ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, String modelKey, Map<String, String> attributes, Integer top, String[] role);
+    ItemList findItems(String itemTypeKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, Short status, String modelKey, Map<String, String> attributes, Short encKeyIx, Integer top, String[] role);
     JSONObject getItemMeta(String key, String filter, String[] role);
     Result deleteAllItems(String[] role);
 
@@ -46,7 +46,7 @@ public interface DbRepository {
     LinkData getLink(String key, String[] role);
     Result createOrUpdateLink(String key, LinkData link, String[] role);
     Result deleteLink(String key, String[] role);
-    LinkList findLinks(String linkTypeKey, String startItemKey, String endItemKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey, Integer top, String[] role);
+    LinkList findLinks(String linkTypeKey, String startItemKey, String endItemKey, List<String> tagList, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey, Short encKeyIx, Integer top, String[] role);
 
     /*
        MISC

@@ -170,6 +170,7 @@ public class PgSqlRepository implements DbRepository {
             Short status,
             String modelKey,
             Map<String, String> attributes,
+            Short encKeyIx,
             Integer top,
             String[] role
     ) {
@@ -185,8 +186,9 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(7, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
             db.setObject(8, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
             db.setString(9, modelKey);
-            db.setObject(10, (top == null) ? 20 : top);
-            db.setArray(11, role);
+            db.setObject(10, (encKeyIx != null) ? encKeyIx : null);
+            db.setObject(11, (top == null) ? 20 : top);
+            db.setArray(12, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 ItemData item = util.toItemData(set);
@@ -351,6 +353,7 @@ public class PgSqlRepository implements DbRepository {
             ZonedDateTime updatedFrom,
             ZonedDateTime updatedTo,
             String modelKey,
+            Short encKeyIx,
             Integer top,
             String[] role
     ) {
@@ -367,8 +370,9 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(8, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
             db.setObject(9, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
             db.setString(10, modelKey);
-            db.setObject(11, (top == null) ? 20 : top);
-            db.setArray(12, role);
+            db.setObject(11, (encKeyIx != null) ? encKeyIx : null);
+            db.setObject(12, (top == null) ? 20 : top);
+            db.setArray(13, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 LinkData link = util.toLinkData(set);
@@ -885,6 +889,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::timestamp with time zone," + // updated_from
                 "?::timestamp with time zone," + // updated_to
                 "?::character varying," + // model_key
+                "?::smallint," + // enc key IX
                 "?::integer," + // max_items
                 "?::character varying[]" + // role_key_param
                 ")";
@@ -955,6 +960,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::timestamp with time zone," + // date_updated_from_param
                 "?::timestamp with time zone," + // date_updated_to_param
                 "?::character varying," + // model_key_param
+                "?::smallint," + // enc_key_ix_param
                 "?::integer," + // max_items
                 "?::character varying[]" + // role_key_param
                 ")";
@@ -1302,7 +1308,7 @@ public class PgSqlRepository implements DbRepository {
                     // if the process of deploying a brand new db failed, then remove the database
                     db.deleteDb();
                 }
-                throw new RuntimeException(ex);
+                throw new RuntimeException(ex.getMessage(), ex);
             }
             ready.put("status", "ready");
             ready.put("appVersion", v.app);
@@ -1861,17 +1867,26 @@ public class PgSqlRepository implements DbRepository {
         EncKeyStatusData data = new EncKeyStatusData();
         try {
             db.prepare(getGetEncKeyUsageSQL());
-            db.setInt(1, 1);
+            db.setShort(1, (short)0);
             db.setArray(2, role);
             ResultSet set = db.executeQuerySingleRow();
-            data.setKey1(set.getString("key_count"));
+            data.setNoKeyCount(set.getLong("ox_get_enc_key_usage"));
             set.close();
             db.prepare(getGetEncKeyUsageSQL());
-            db.setInt(1, 2);
+            db.setShort(1, (short)1);
             db.setArray(2, role);
             set = db.executeQuerySingleRow();
-            data.setKey2(set.getString("key_count"));
+            data.setKey1Count(set.getLong("ox_get_enc_key_usage"));
             set.close();
+            db.prepare(getGetEncKeyUsageSQL());
+            db.setShort(1, (short)2);
+            db.setArray(2, role);
+            set = db.executeQuerySingleRow();
+            data.setKey2Count(set.getLong("ox_get_enc_key_usage"));
+            set.close();
+            data.setActiveKey(util.getEncKeyIx());
+            data.setDefaultKey(util.getDefaultEncKeyIx());
+            data.setDefaultKeyExpiry(util.getDefaultEncKeyExpiry());
         } catch (Exception ex) {
             throw new RuntimeException("Failed to get enc key usage info.", ex);
         } finally {
@@ -1883,7 +1898,7 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public String getGetEncKeyUsageSQL() {
         return "SELECT * FROM ox_get_enc_key_usage(" +
-                "?::integer," + // key_no_param
+                "?::smallint," + // enc_key_ix_param
                 "?::character varying[]" + // logged_role_key_param
                 ")";
     }

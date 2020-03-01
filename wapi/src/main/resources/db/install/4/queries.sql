@@ -29,6 +29,7 @@ CREATE OR REPLACE FUNCTION ox_find_items(
     date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
     date_updated_to_param timestamp(6) with time zone, -- none (null) or updated to date
     model_key_param character varying, -- the meta model key the item is for
+    enc_key_ix_param smallint, -- the encryption key index
     max_items integer, -- the maximum number of items to return
     role_key_param character varying[]
   )
@@ -93,6 +94,8 @@ BEGIN
       (it.key = item_type_key_param OR item_type_key_param IS NULL)
   -- by status
   AND (i.status = status_param OR status_param IS NULL)
+  -- by encryption key index
+  AND (i.enc_key_ix = enc_key_ix_param OR enc_key_ix_param IS NULL)
   -- by tags
   AND (i.tag @> tag_param OR tag_param IS NULL)
   -- by attributes (hstore)
@@ -125,6 +128,7 @@ ALTER FUNCTION ox_find_items(
     timestamp(6) with time zone, -- updated from
     timestamp(6) with time zone, -- updated to
     character varying, -- model key
+    smallint, -- enc key index
     integer, -- max_items
     character varying[] -- role_key_param
   )
@@ -144,6 +148,7 @@ CREATE OR REPLACE FUNCTION ox_find_links(
   date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
   date_updated_to_param timestamp(6) with time zone, -- none (null) or updated to date
   model_key_param character varying, -- the meta model key the link is for
+  enc_key_ix_param smallint, -- the index of the encryotion key used
   max_items integer, -- the maximum number of items to return
   role_key_param character varying[]
 )
@@ -224,6 +229,8 @@ BEGIN
         (date_updated_from_param <= l.updated AND date_updated_to_param IS NULL))
     -- by model
    AND (m.key = model_key_param OR model_key_param IS NULL)
+   -- by encryption key
+   AND (l.enc_key_ix = enc_key_ix_param OR enc_key_ix_param IS NULL)
    AND pr.can_read = TRUE
    AND r.key = ANY(role_key_param)
    LIMIT max_items;
@@ -241,6 +248,7 @@ ALTER FUNCTION ox_find_links(
   timestamp(6) with time zone, -- updated from
   timestamp(6) with time zone, -- updated to,
   character varying, -- model key
+  smallint, -- enc_key_ix_param
   integer, -- max_items
   character varying[] -- role_key_param
 )
