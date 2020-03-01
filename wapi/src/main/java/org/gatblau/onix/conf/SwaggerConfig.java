@@ -70,7 +70,7 @@ public class SwaggerConfig extends WebMvcConfigurationSupport {
     private ApiInfo apiInfo() {
         ApiInfo apiInfo = new ApiInfo(
             "Onix Web API",
-            "RESTful Web API for the ONIX CMDB.",
+            "RESTful Web API for the ONIX Configuration Manager.",
             info.toString(),
             "",
             "gatblau.org",

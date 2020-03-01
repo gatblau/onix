@@ -409,6 +409,10 @@ public class Lib implements InitializingBean {
         return crypto.getDefaultKeyIx();
     }
 
+    public short getAlternateKeyIx() {
+       return (getDefaultEncKeyIx() == 1 ? (short)2 : 1);
+    }
+
     public String getDefaultEncKeyExpiry() {
         return crypto.getDefaultKeyExpiry();
     }
