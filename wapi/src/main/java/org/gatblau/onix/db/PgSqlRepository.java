@@ -400,22 +400,26 @@ public class PgSqlRepository implements DbRepository {
     }
 
     private synchronized Result delete(String sql, String resultColName, String key, String[] role){
-        return delete(sql, resultColName, key, false, role);
+        return delete(sql, resultColName, key, null, role);
     }
 
-    private synchronized Result delete(String sql, String resultColName, String key, boolean isType) {
-        return delete(sql, resultColName, key, isType, null);
-    }
-
-    private synchronized Result delete(String sql, String resultColName, String key, boolean isType, String[] role) {
-        Result result = new Result(String.format("Delete(%s)", key));
+    private synchronized Result delete(String sql, String resultColName, String key1, String key2, String[] role) {
+        Result result = new Result();
+        if (key1 != null && key2 != null) {
+            result = new Result(String.format("Delete(%s:%s)", key1, key2));
+        } else if (key1 != null && key2 == null) {
+            result = new Result(String.format("Delete(%s)", key1));
+        }
         try {
             db.prepare(sql);
-            if (key != null) {
-                int paramIx = 1;
-                db.setString(paramIx, key);
-                paramIx++;
-                if (role != null) db.setArray(paramIx, role);
+            if (key1 != null) {
+                db.setString(1, key1);
+                if (key2 != null) {
+                    db.setString(2, key2);
+                    db.setArray(3, role);
+                } else {
+                    db.setArray(2, role);
+                }
             } else {
                 db.setArray(1, role);
             }
@@ -522,7 +526,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteItemType(String key, String[] role) {
-        return delete(getDeleteItemTypeSQL(), "ox_delete_item_type", key, true, role);
+        return delete(getDeleteItemTypeSQL(), "ox_delete_item_type", key, null, role);
     }
 
     /*
@@ -626,9 +630,36 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public String getGetLinkTypeAttributeSQL() {
+        return "SELECT * FROM ox_link_type_attribute(" +
+                "?::character varying," + // link_type_key_param
+                "?::character varying," + // type_attr_key_param
+                "?::character varying[]" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetLinkTypeAttributesSQL() {
+        return "SELECT * FROM ox_get_link_type_attributes(" +
+                "?::character varying," + // link_type_key_param
+                "?::character varying[]" + // role_key_param
+                ")";
+    }
+
+    @Override
     public String getDeleteItemTypeAttributeSQL() {
         return "SELECT ox_delete_item_type_attribute(" +
-                "?::character varying," +
+                "?::character varying," + // item_type_key_param
+                "?::character varying," + // type_attr_key_param
+                "?::character varying[]" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public String getDeleteLinkTypeAttributeSQL() {
+        return "SELECT ox_delete_link_type_attribute(" +
+                "?::character varying," + // link_type_key_param
+                "?::character varying," + // type_attr_key_param
                 "?::character varying[]" + // role_key_param
                 ")";
     }
@@ -643,12 +674,41 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public TypeAttrData getLinkTypeAttribute(String linkTypeKey, String typeAttrKey, String[] role) {
-        return null;
+        TypeAttrData attr = null;
+        try {
+            db.prepare(getGetLinkTypeAttributeSQL());
+            db.setString(1, linkTypeKey);
+            db.setString(2, typeAttrKey);
+            db.setArray(3, role);
+            ResultSet set = db.executeQuerySingleRow();
+            if (set != null) {
+                attr = util.toTypeAttrData(set);
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(String.format("Failed to get link type attribute for item type %s with key '%s': %s", linkTypeKey, typeAttrKey, ex.getMessage()), ex);
+        } finally {
+            db.close();
+        }
+        return attr;
     }
 
     @Override
     public TypeAttrList getLinkTypeAttributes(String linkTypeKey, String[] role) {
-        return null;
+        TypeAttrList itemTypeAttrs = new TypeAttrList();
+        try {
+            db.prepare(getGetLinkTypeAttributesSQL());
+            db.setString(1, linkTypeKey);
+            db.setArray(2, role);
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                itemTypeAttrs.getValues().add(util.toTypeAttrData(set));
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            db.close();
+        }
+        return itemTypeAttrs;
     }
 
     @Override
@@ -682,12 +742,12 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteLinkTypeAttr(String linkTypeKey, String typeAttrKey, String[] role) {
-        return null;
+        return delete(getDeleteLinkTypeAttributeSQL(), "ox_delete_link_type_attribute", linkTypeKey, typeAttrKey, role);
     }
 
     @Override
     public Result deleteItemTypeAttr(String itemTypeKey, String typeAttrKey, String[] role) {
-        return delete(getDeleteItemTypeAttributeSQL(), "ox_delete_item_type_attribute", typeAttrKey, true, role);
+        return delete(getDeleteItemTypeAttributeSQL(), "ox_delete_item_type_attribute", itemTypeKey, typeAttrKey, role);
     }
 
     /*
@@ -748,7 +808,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result deleteLinkType(String key, String[] role) {
-        return delete(getDeleteLinkTypeSQL(), "ox_delete_link_type", key, true, role);
+        return delete(getDeleteLinkTypeSQL(), "ox_delete_link_type", key, null, role);
     }
 
     @Override
@@ -1319,7 +1379,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public synchronized Result deleteModel(String key, String[] role) {
-        return delete(getDeleteModelSQL(), "ox_delete_model", key, true, role);
+        return delete(getDeleteModelSQL(), "ox_delete_model", key, null, role);
     }
 
     @Override

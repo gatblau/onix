@@ -81,7 +81,6 @@ public class Util {
                 result.append(line).append("\n");
             }
             scanner.close();
-
         } catch (IOException e) {
             e.printStackTrace();
         }

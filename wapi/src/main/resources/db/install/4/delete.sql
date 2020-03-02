@@ -233,9 +233,10 @@ DO
 
     /*
         ox_delete_item_type_attribute
-       */
+    */
     CREATE OR REPLACE FUNCTION ox_delete_item_type_attribute(
-        key_param character varying,
+        item_type_key_param character varying,
+        type_attr_key_param character varying,
         role_key_param character varying[]
     )
         RETURNS TABLE(result char(1))
@@ -246,12 +247,12 @@ DO
     $BODY$
     DECLARE
         rows_affected INTEGER;
-        isItemType BOOLEAN;
     BEGIN
         DELETE
         FROM type_attribute ta
             USING model m, partition p, privilege pr, role r, item_type it
-        WHERE ta.key = key_param
+        WHERE ta.key = type_attr_key_param
+          AND it.key = item_type_key_param
           AND ta.item_type_id = it.id
           AND it.model_id = m.id
           AND m.partition_id = p.id
@@ -264,7 +265,44 @@ DO
     END;
     $BODY$;
 
-    ALTER FUNCTION ox_delete_item_type_attribute(character varying, character varying[])
+    ALTER FUNCTION ox_delete_item_type_attribute(character varying, character varying, character varying[])
+        OWNER TO onix;
+
+    /*
+        ox_delete_link_type_attribute
+    */
+    CREATE OR REPLACE FUNCTION ox_delete_link_type_attribute(
+        link_type_key_param character varying,
+        type_attr_key_param character varying,
+        role_key_param character varying[]
+    )
+        RETURNS TABLE(result char(1))
+        LANGUAGE 'plpgsql'
+        COST 100
+        VOLATILE
+    AS
+    $BODY$
+    DECLARE
+        rows_affected INTEGER;
+    BEGIN
+        DELETE
+        FROM type_attribute ta
+            USING model m, partition p, privilege pr, role r, link_type lt
+        WHERE ta.key = type_attr_key_param
+          AND lt.key = link_type_key_param
+          AND ta.link_type_id = lt.id
+          AND lt.model_id = m.id
+          AND m.partition_id = p.id
+          AND p.id = pr.partition_id
+          AND pr.role_id = r.id
+          AND pr.can_delete = TRUE
+          AND r.key = ANY(role_key_param);
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+        RETURN QUERY SELECT ox_get_delete_result(rows_affected);
+    END;
+    $BODY$;
+
+    ALTER FUNCTION ox_delete_link_type_attribute(character varying, character varying, character varying[])
         OWNER TO onix;
 
       /*

@@ -9,8 +9,7 @@ Feature: Create Type Attribute for an Item Type
     Given the item type attribute does not exist in the database
     Given a model exists in the database
     Given an item type exists in the database
-    Given the type attribute URL of the service with key is known
-    Given the type attribute natural key is known
+    Given the item type attribute natural key is known
     When a PUT HTTP request with a JSON payload is done for an attribute of an item type
     Then the response code is 201
     Then the response has body
