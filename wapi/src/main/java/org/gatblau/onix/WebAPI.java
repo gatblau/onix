@@ -1143,21 +1143,73 @@ public class WebAPI {
                     required = true,
                     example = "link_type_01"
             )
-            @PathVariable("link_type_key")
-                    String linkTypeKey,
+            @PathVariable("link_type_key") String linkTypeKey,
             @ApiParam(
                     name = "type attribute key",
                     value = "A string which uniquely identifies the attribute for the link type.",
                     required = true,
                     example = "link_type_attr_01"
             )
-            @PathVariable("type_attr_key")
-                    String typeAttrKey,
-            @RequestBody
-                    TypeAttrData typeAttr,
+            @PathVariable("link_attr_key") String typeAttrKey,
+            @RequestBody TypeAttrData typeAttr,
             Authentication authentication
     ) {
         Result result = data.createOrUpdateLinkTypeAttr(linkTypeKey, typeAttrKey, typeAttr, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
+    }
+
+    @ApiOperation(
+            value = "Get the attribute for the specified link type and attribute key.",
+            notes = "")
+    @RequestMapping(
+            path = "/linktype/{link_type_key}/attribute/{type_attr_key}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<TypeAttrData> getLinkTypeAttr(
+            @PathVariable("link_type_key") String linkTypeKey,
+            @PathVariable("type_attr_key") String typeAttrKey,
+            Authentication authentication
+    ) {
+        TypeAttrData typeAttr = data.getLinkTypeAttribute(linkTypeKey, typeAttrKey, getRole(authentication));
+        if (typeAttr != null) {
+            return ResponseEntity.ok(typeAttr);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @ApiOperation(
+            value = "Get all the attributes for the specified item type.",
+            notes = "Use this search to retrieve the specification of the attributes for an item based on its item type.")
+    @RequestMapping(
+            path = "/linktype/{link_type_key}/attribute"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<TypeAttrList> getLinkTypeAttrs(
+            @PathVariable("link_type_key") String linkTypeKey,
+            Authentication authentication
+    ) {
+        TypeAttrList linkTypeAttrs = data.getLinkTypeAttributes(linkTypeKey, getRole(authentication));
+        if (linkTypeAttrs != null) {
+            return ResponseEntity.ok(linkTypeAttrs);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @ApiOperation(
+            value = "Deletes an item link type attribute.",
+            notes = "")
+    @RequestMapping(
+            path = "/linktype/{link_type_key}/attribute/{type_attr_key}"
+            , method = RequestMethod.DELETE
+    )
+    public ResponseEntity<Result> deleteLinkTypeAttribute(
+            @PathVariable("link_type_key") String linkTypeKey,
+            @PathVariable("type_attr_key") String typeAttrKey,
+            Authentication authentication
+    ) {
+        Result result = data.deleteLinkTypeAttr(linkTypeKey, typeAttrKey, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 

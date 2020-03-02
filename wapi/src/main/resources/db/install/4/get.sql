@@ -352,6 +352,64 @@ DO
           OWNER TO onix;
 
       /*
+        ox_link_type_attribute: get a type attribute based on the specified key.
+      */
+      CREATE OR REPLACE FUNCTION ox_link_type_attribute(
+          link_type_key_param character varying,
+          type_key_param character varying,
+          role_key_param character varying[]
+      )
+          RETURNS TABLE(
+                           id          integer,
+                           key         character varying,
+                           name        character varying,
+                           description text,
+                           type        character varying,
+                           def_value   character varying,
+                           managed     boolean,
+                           required    boolean,
+                           regex       varchar,
+                           version     bigint,
+                           created     timestamp(6) with time zone,
+                           updated     timestamp(6) with time zone,
+                           changed_by  character varying
+                       )
+          LANGUAGE 'plpgsql'
+          COST 100
+          STABLE
+      AS $BODY$
+      BEGIN
+          RETURN QUERY
+              SELECT ta.id,
+                     ta.key,
+                     ta.name,
+                     ta.description,
+                     ta.type,
+                     ta.def_value,
+                     ta.managed,
+                     ta.required,
+                     ta.regex,
+                     ta.version,
+                     ta.created,
+                     ta.updated,
+                     ta.changed_by
+              FROM type_attribute ta
+                       INNER JOIN link_type lt ON ta.link_type_id = lt.id
+                       INNER JOIN model m ON lt.model_id = m.id
+                       INNER JOIN partition p ON m.partition_id = p.id
+                       INNER JOIN privilege pr on p.id = pr.partition_id
+                       INNER JOIN role r on pr.role_id = r.id
+              WHERE lt.key = link_type_key_param
+                AND ta.key = type_key_param
+                AND pr.can_read = TRUE
+                AND r.key = ANY(role_key_param);
+      END;
+      $BODY$;
+
+      ALTER FUNCTION ox_link_type_attribute(character varying, character varying, character varying[])
+          OWNER TO onix;
+
+      /*
         gets a Link_rule by its natural key.
         use: select * from ox_link_rule('the_link_rule_key')
        */

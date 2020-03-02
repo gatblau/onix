@@ -1119,5 +1119,61 @@ $BODY$;
 ALTER FUNCTION ox_get_item_type_attributes(character varying, character varying[])
     OWNER TO onix;
 
+/*
+    ox_get_link_type_attributes: get all attributes for the specified link type.
+ */
+CREATE OR REPLACE FUNCTION ox_get_link_type_attributes(
+    link_type_key_param character varying,
+    role_key_param character varying[]
+)
+    RETURNS TABLE(
+                     id          integer,
+                     key         character varying,
+                     name        character varying,
+                     description text,
+                     type        character varying,
+                     def_value   character varying,
+                     managed     boolean,
+                     required    boolean,
+                     regex       varchar,
+                     version     bigint,
+                     created     timestamp(6) with time zone,
+                     updated     timestamp(6) with time zone,
+                     changed_by  character varying
+                 )
+    LANGUAGE 'plpgsql'
+    COST 100
+    STABLE
+AS $BODY$
+BEGIN
+    RETURN QUERY
+        SELECT ta.id,
+               ta.key,
+               ta.name,
+               ta.description,
+               ta.type,
+               ta.def_value,
+               ta.managed,
+               ta.required,
+               ta.regex,
+               ta.version,
+               ta.created,
+               ta.updated,
+               ta.changed_by
+        FROM type_attribute ta
+                 INNER JOIN link_type lt ON ta.link_type_id = lt.id
+                 INNER JOIN model m ON lt.model_id = m.id
+                 INNER JOIN partition p ON m.partition_id = p.id
+                 INNER JOIN privilege pr on p.id = pr.partition_id
+                 INNER JOIN role r on pr.role_id = r.id
+        WHERE lt.key = link_type_key_param
+          AND pr.can_read = TRUE
+          AND r.key = ANY(role_key_param);
+END;
+$BODY$;
+
+ALTER FUNCTION ox_get_link_type_attributes(character varying, character varying[])
+    OWNER TO onix;
+
 END
 $$;

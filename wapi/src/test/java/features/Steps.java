@@ -300,10 +300,32 @@ public class Steps extends BaseTest {
 
     private Result putItemTypeAttr(String itemTypeKey, String typeAttrKey, String payloadFilename) {
         Result result = null;
-        String url = String.format("%sitemtype/{item_type_key}/attribute/{type_attr_key}", baseUrl);
+        String url = String.format("%sitemtype/{item_type_key}/attribute/{attr_key}", baseUrl);
         Map<String, Object> vars = new HashMap<>();
         vars.put("item_type_key", itemTypeKey);
-        vars.put("type_attr_key", typeAttrKey);
+        vars.put("attr_key", typeAttrKey);
+        ResponseEntity<Result> response = null;
+        try {
+            response = client.exchange(url, HttpMethod.PUT, getEntity(util.getFile(payloadFilename)), Result.class, vars);
+            util.put(RESPONSE, response);
+            util.remove(EXCEPTION);
+            result = response.getBody();
+        }
+        catch (Exception ex) {
+            util.put(EXCEPTION, ex);
+            result = new Result();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
+        }
+        return result;
+    }
+
+    private Result putLinkTypeAttr(String linkTypeKey, String typeAttrKey, String payloadFilename) {
+        Result result = null;
+        String url = String.format("%slinktype/{link_type_key}/attribute/{attr_key}", baseUrl);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("link_type_key", linkTypeKey);
+        vars.put("attr_key", typeAttrKey);
         ResponseEntity<Result> response = null;
         try {
             response = client.exchange(url, HttpMethod.PUT, getEntity(util.getFile(payloadFilename)), Result.class, vars);
@@ -1885,13 +1907,8 @@ public class Steps extends BaseTest {
         }
     }
 
-    @Given("^the type attribute URL of the service with key is known$")
-    public void theTypeAttributeURLOfTheServiceWithKeyIsKnown() {
-        util.put(ENDPOINT_URI, String.format("%sitemtype/{item_type_key}/attribute/{attr_key}", baseUrl));
-    }
-
-    @Given("^the type attribute natural key is known$")
-    public void theTypeAttributeNaturalKeyIsKnown() {
+    @Given("^the item type attribute natural key is known$")
+    public void theItemTypeAttributeNaturalKeyIsKnown() {
         util.put(ITEM_TYPE_ATTR_ONE_KEY, ITEM_TYPE_ATTR_ONE_KEY);
     }
 
@@ -1902,7 +1919,10 @@ public class Steps extends BaseTest {
 
     @Given("^the item type attribute does not exist in the database$")
     public void theItemTypeAttributeDoesNotExistInTheDatabase() {
-        delete(String.format("%sitemtype/%s/attribute/%s", baseUrl, util.get(ITEM_TYPE_ONE_KEY), util.get(ITEM_TYPE_ATTR_ONE_KEY))+"?force=true", "item_type_1");
+        Result r = delete(String.format("%sitemtype/%s/attribute/%s", baseUrl, util.get(ITEM_TYPE_ONE_KEY), util.get(ITEM_TYPE_ATTR_ONE_KEY))+"?force=true", "item_type_1");
+        if (r.isError()) {
+            throw new RuntimeException(r.getMessage());
+        }
     }
 
     @Given("^the key of the item type is known$")
@@ -1932,7 +1952,7 @@ public class Steps extends BaseTest {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
         Map<String, Object> vars = new HashMap<>();
-        vars.put("item_type_key", "item_type_1");
+        vars.put("item_type_key", ITEM_TYPE_ONE_KEY);
         ResponseEntity<TypeAttrList> result = client.exchange(
                 util.get(ENDPOINT_URI),
                 HttpMethod.GET,
@@ -1948,5 +1968,74 @@ public class Steps extends BaseTest {
         if (results.getBody().getValues().size() <= items) {
             throw new RuntimeException("Not enough items in result");
         }
+    }
+
+    @Given("^the key of the link type is known$")
+    public void theKeyOfTheLinkTypeIsKnown() {
+        util.put(LINK_TYPE_ONE_KEY, LINK_TYPE_ONE_KEY);
+    }
+
+    @Given("^the key of the type attribute for the link type is known$")
+    public void theKeyOfTheTypeAttributeForTheLinkTypeIsKnown() {
+        util.put(LINK_TYPE_ATTR_ONE_KEY, LINK_TYPE_ATTR_ONE_KEY);
+    }
+
+    @Given("^the link type attribute does not exist in the database$")
+    public void theLinkTypeAttributeDoesNotExistInTheDatabase() {
+        Result r = delete(String.format("%slinktype/%s/attribute/%s", baseUrl, util.get(LINK_TYPE_ONE_KEY), util.get(LINK_TYPE_ATTR_ONE_KEY))+"?force=true", "link_type_1");
+        if (r.isError()){
+            throw new RuntimeException(r.getMessage());
+        }
+    }
+
+    @Given("^an link type exists in the database$")
+    public void anLinkTypeExistsInTheDatabase() {
+        putLinkType(util.get(LINK_TYPE_ONE_KEY),"payload/create_link_type_1_payload.json");
+    }
+
+    @When("^a PUT HTTP request with a JSON payload is done for an attribute of a link type$")
+    public void aPUTHTTPRequestWithAJSONPayloadIsDoneForAnAttributeOfALinkType() {
+        putLinkTypeAttr(util.get(LINK_TYPE_ONE_KEY), util.get(LINK_TYPE_ATTR_ONE_KEY), "payload/create_link_type_attr_1_payload.json");
+    }
+
+    @Given("^the link type attribute natural key is known$")
+    public void theLinkTypeAttributeNaturalKeyIsKnown() {
+        util.put(LINK_TYPE_ATTR_ONE_KEY, LINK_TYPE_ATTR_ONE_KEY);
+    }
+
+    @Given("^there are link types in the database$")
+    public void thereAreLinkTypesInTheDatabase() {
+        for (int i = 0; i < 2; i++) {
+            putItemType(
+                String.format("link_type_%s", i+1) ,
+                String.format("payload/create_link_type_%s_payload.json", i+1)
+            );
+        }
+    }
+
+    @Given("^there are link type attributes for the link types in the database$")
+    public void thereAreLinkTypeAttributesForTheLinkTypesInTheDatabase() {
+        putLinkTypeAttr(LINK_TYPE_ONE_KEY, "link_type_1_attr_1", "payload/create_link_type_attr_1_payload.json");
+        putLinkTypeAttr(LINK_TYPE_ONE_KEY, "link_type_1_attr_2", "payload/create_link_type_attr_2_payload.json");
+    }
+
+    @Given("^the link type attribute URL exist$")
+    public void theLinkTypeAttributeURLExist() {
+        util.put(ENDPOINT_URI, String.format("%slinktype/{link_type_key}/attribute", baseUrl));
+    }
+
+    @When("^a request to GET a list of link type attributes is done$")
+    public void aRequestToGETAListOfLinkTypeAttributesIsDone() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("link_type_key", "link_type_1");
+        ResponseEntity<TypeAttrList> result = client.exchange(
+                util.get(ENDPOINT_URI),
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                TypeAttrList.class,
+                vars);
+        util.put(RESPONSE, result);
     }
 }

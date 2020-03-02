@@ -71,9 +71,9 @@ public interface DbRepository {
     Result deleteItemTypeAttr(String itemTypeKey, String typeAttrKey, String[] role);
 
     String getGetItemTypeAttributeSQL();
+    String getGetItemTypeAttributesSQL();
     String getSetTypeAttributeSQL();
     String getDeleteItemTypeAttributeSQL();
-    String getGetItemTypeAttributesSQL();
 
     /*
         LINK TYPE ATTRIBUTES
@@ -82,6 +82,10 @@ public interface DbRepository {
     TypeAttrList getLinkTypeAttributes(String linkTypeKey, String[] role);
     Result createOrUpdateLinkTypeAttr(String linkTypeKey, String typeAttrKey, TypeAttrData json, String[] role);
     Result deleteLinkTypeAttr(String linkTypeKey, String typeAttrKey, String[] role);
+
+    String getGetLinkTypeAttributeSQL();
+    String getGetLinkTypeAttributesSQL();
+    String getDeleteLinkTypeAttributeSQL();
 
     /*
         LINK TYPES
@@ -133,8 +137,6 @@ public interface DbRepository {
     String getSetLinkRuleSQL();
     String getFindLinkRulesSQL();
 
-    String getFindChildItemsSQL();
-
     String getCreateTagSQL();
     String getDeleteTagSQL();
     String getUpdateTagSQL();
@@ -145,6 +147,7 @@ public interface DbRepository {
 
     String getDeleteItemTreeSQL();
 
+    String getFindChildItemsSQL();
     String getTableCountSQL();
 
     /* Tag */

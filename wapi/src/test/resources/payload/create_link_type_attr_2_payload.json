@@ -1,0 +1,10 @@
+{
+  "name": "Runtime",
+  "description": "The runtime type and version.",
+  "type": "string",
+  "defValue": "RHEL 8",
+  "managed": true,
+  "required": true,
+  "regex": "[Java]+",
+  "linkTypeKey": "link_type_1"
+}
