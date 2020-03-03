@@ -75,7 +75,7 @@ DO
           owner       CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
         );
 
-        CREATE OR REPLACE FUNCTION change_partition() RETURNS TRIGGER AS
+        CREATE OR REPLACE FUNCTION ox_change_partition() RETURNS TRIGGER AS
         $partition_change$
         BEGIN
           IF (TG_OP = 'DELETE') THEN
@@ -96,7 +96,7 @@ DO
           AFTER INSERT OR UPDATE OR DELETE
           ON partition
           FOR EACH ROW
-        EXECUTE PROCEDURE change_partition();
+        EXECUTE PROCEDURE ox_change_partition();
 
         ALTER TABLE partition_change
           OWNER to onix;
@@ -170,7 +170,7 @@ DO
           owner       CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
         );
 
-        CREATE OR REPLACE FUNCTION change_role() RETURNS TRIGGER AS
+        CREATE OR REPLACE FUNCTION ox_change_role() RETURNS TRIGGER AS
         $role_change$
         BEGIN
           IF (TG_OP = 'DELETE') THEN
@@ -191,7 +191,7 @@ DO
           AFTER INSERT OR UPDATE OR DELETE
           ON role
           FOR EACH ROW
-        EXECUTE PROCEDURE change_role();
+        EXECUTE PROCEDURE ox_change_role();
 
         ALTER TABLE role_change
           OWNER to onix;
@@ -265,7 +265,7 @@ DO
           changed_by   CHARACTER VARYING(100)
         );
 
-        CREATE OR REPLACE FUNCTION change_privilege() RETURNS TRIGGER AS
+        CREATE OR REPLACE FUNCTION ox_change_privilege() RETURNS TRIGGER AS
         $privilege_change$
         BEGIN
           IF (TG_OP = 'DELETE') THEN
@@ -286,7 +286,7 @@ DO
           AFTER INSERT OR UPDATE OR DELETE
           ON privilege
           FOR EACH ROW
-        EXECUTE PROCEDURE change_privilege();
+        EXECUTE PROCEDURE ox_change_privilege();
 
         ALTER TABLE privilege_change
           OWNER to onix;
@@ -372,7 +372,7 @@ DO
           partition_id bigint default 0
         );
 
-        CREATE OR REPLACE FUNCTION change_model() RETURNS TRIGGER AS
+        CREATE OR REPLACE FUNCTION ox_change_model() RETURNS TRIGGER AS
         $model_change$
         BEGIN
           IF (TG_OP = 'DELETE') THEN
@@ -393,7 +393,7 @@ DO
           AFTER INSERT OR UPDATE OR DELETE
           ON model
           FOR EACH ROW
-        EXECUTE PROCEDURE change_model();
+        EXECUTE PROCEDURE ox_change_model();
 
         ALTER TABLE model_change
           OWNER to onix;
@@ -487,7 +487,7 @@ DO
           managed      boolean -- is this item managed by an agent Y:yes N:no P:partially
         );
 
-        CREATE OR REPLACE FUNCTION change_item_type() RETURNS TRIGGER AS
+        CREATE OR REPLACE FUNCTION ox_change_item_type() RETURNS TRIGGER AS
         $item_type_change$
         BEGIN
           IF (TG_OP = 'DELETE') THEN
@@ -508,7 +508,7 @@ DO
           AFTER INSERT OR UPDATE OR DELETE
           ON item_type
           FOR EACH ROW
-        EXECUTE PROCEDURE change_item_type();
+        EXECUTE PROCEDURE ox_change_item_type();
 
         ALTER TABLE item_type_change
           OWNER to onix;
@@ -591,7 +591,7 @@ DO
           changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
         );
 
-        CREATE OR REPLACE FUNCTION change_type_attribute() RETURNS TRIGGER AS
+        CREATE OR REPLACE FUNCTION ox_change_type_attribute() RETURNS TRIGGER AS
         $type_attribute_change$
         BEGIN
           IF (TG_OP = 'DELETE') THEN
@@ -612,7 +612,7 @@ DO
           AFTER INSERT OR UPDATE OR DELETE
           ON type_attribute
           FOR EACH ROW
-        EXECUTE PROCEDURE change_type_attribute();
+        EXECUTE PROCEDURE ox_change_type_attribute();
 
         ALTER TABLE type_attribute_change
           OWNER to onix;
@@ -721,7 +721,7 @@ DO
           partition_id bigint
         );
 
-        CREATE OR REPLACE FUNCTION change_item() RETURNS TRIGGER AS
+        CREATE OR REPLACE FUNCTION ox_change_item() RETURNS TRIGGER AS
         $item_change$
         BEGIN
           IF (TG_OP = 'DELETE') THEN
@@ -742,7 +742,7 @@ DO
           AFTER INSERT OR UPDATE OR DELETE
           ON item
           FOR EACH ROW
-        EXECUTE PROCEDURE change_item();
+        EXECUTE PROCEDURE ox_change_item();
 
         ALTER TABLE item_change
           OWNER to onix;
@@ -830,7 +830,7 @@ DO
           model_id    int
         );
 
-        CREATE OR REPLACE FUNCTION change_link_type() RETURNS TRIGGER AS
+        CREATE OR REPLACE FUNCTION ox_change_link_type() RETURNS TRIGGER AS
         $link_type_change$
         BEGIN
           IF (TG_OP = 'DELETE') THEN
@@ -851,7 +851,7 @@ DO
           AFTER INSERT OR UPDATE OR DELETE
           ON link_type
           FOR EACH ROW
-        EXECUTE PROCEDURE change_link_type();
+        EXECUTE PROCEDURE ox_change_link_type();
 
         ALTER TABLE link_type_change
           OWNER to onix;
@@ -968,7 +968,7 @@ DO
           changed_by    CHARACTER VARYING(100)      NOT NULL COLLATE pg_catalog."default"
         );
 
-        CREATE OR REPLACE FUNCTION change_link() RETURNS TRIGGER AS
+        CREATE OR REPLACE FUNCTION ox_change_link() RETURNS TRIGGER AS
         $link_change$
         BEGIN
           IF (TG_OP = 'DELETE') THEN
@@ -989,7 +989,7 @@ DO
           AFTER INSERT OR UPDATE OR DELETE
           ON link
           FOR EACH ROW
-        EXECUTE PROCEDURE change_link();
+        EXECUTE PROCEDURE ox_change_link();
 
         ALTER TABLE link_change
           OWNER to onix;
@@ -1085,7 +1085,7 @@ DO
           changed_by         CHARACTER VARYING(100)
         );
 
-        CREATE OR REPLACE FUNCTION change_link_rule() RETURNS TRIGGER AS
+        CREATE OR REPLACE FUNCTION ox_change_link_rule() RETURNS TRIGGER AS
         $link_rule_change$
         BEGIN
           IF (TG_OP = 'DELETE') THEN
@@ -1107,7 +1107,7 @@ DO
           AFTER INSERT OR UPDATE OR DELETE
           ON link_rule
           FOR EACH ROW
-        EXECUTE PROCEDURE change_link_rule();
+        EXECUTE PROCEDURE ox_change_link_rule();
 
         ALTER TABLE link_rule_change
           OWNER to onix;
@@ -1184,7 +1184,7 @@ DO
           changed_by    CHARACTER VARYING(100)
         );
 
-        CREATE OR REPLACE FUNCTION change_tag() RETURNS TRIGGER AS
+        CREATE OR REPLACE FUNCTION ox_change_tag() RETURNS TRIGGER AS
         $tag_change$
         BEGIN
           IF (TG_OP = 'DELETE') THEN
@@ -1206,7 +1206,7 @@ DO
           AFTER INSERT OR UPDATE OR DELETE
           ON tag
           FOR EACH ROW
-        EXECUTE PROCEDURE change_tag();
+        EXECUTE PROCEDURE ox_change_tag();
 
         ALTER TABLE tag_change
           OWNER to onix;
