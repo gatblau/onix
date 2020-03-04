@@ -258,7 +258,6 @@ OWNER TO onix;
   ox_find_item_types: find item types that comply with the passed-in query parameters
  */
 CREATE OR REPLACE FUNCTION ox_find_item_types(
-    attr_valid_param hstore, -- zero (null) or more key->regex pair attributes
     date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
     date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
@@ -271,7 +270,6 @@ CREATE OR REPLACE FUNCTION ox_find_item_types(
     key character varying,
     name character varying,
     description text,
-    attr_valid hstore,
     filter jsonb,
     meta_schema jsonb,
     version bigint,
@@ -296,7 +294,6 @@ BEGIN
      i.key,
      i.name,
      i.description,
-     i.attr_valid,
      i.filter,
      i.meta_schema,
      i.version,
@@ -330,10 +327,8 @@ BEGIN
   ) AS k
   ON  k.id = i.id
   WHERE
-  -- by attributes (hstore)
-     (i.attr_valid @> attr_valid_param OR attr_valid_param IS NULL)
   -- by created date range
-  AND ((date_created_from_param <= i.created AND date_created_to_param > i.created) OR
+     ((date_created_from_param <= i.created AND date_created_to_param > i.created) OR
       (date_created_from_param IS NULL AND date_created_to_param IS NULL) OR
       (date_created_from_param IS NULL AND date_created_to_param > i.created) OR
       (date_created_from_param <= i.created AND date_created_to_param IS NULL))
@@ -350,7 +345,6 @@ END
 $BODY$;
 
 ALTER FUNCTION ox_find_item_types(
-  hstore,
   timestamp(6) with time zone, -- created from
   timestamp(6) with time zone, -- created to
   timestamp(6) with time zone, -- updated from
@@ -364,7 +358,6 @@ OWNER TO onix;
   ox_find_link_types: find link types that comply with the passed-in query parameters
  */
 CREATE OR REPLACE FUNCTION ox_find_link_types(
-    attr_valid_param hstore, -- zero (null) or more key->regex pair attributes
     date_created_from_param timestamp(6) with time zone, -- none (null) or created from date
     date_created_to_param timestamp(6) with time zone, -- none (null) or created to date
     date_updated_from_param timestamp(6) with time zone, -- none (null) or updated from date
@@ -377,7 +370,6 @@ CREATE OR REPLACE FUNCTION ox_find_link_types(
     key character varying,
     name character varying,
     description text,
-    attr_valid hstore,
     meta_schema jsonb,
     tag text[],
     encrypt_meta boolean,
@@ -399,7 +391,6 @@ BEGIN
      l.key,
      l.name,
      l.description,
-     l.attr_valid,
      l.meta_schema,
      l.tag,
      l.encrypt_meta,
@@ -416,10 +407,8 @@ BEGIN
   INNER JOIN privilege pr on p.id = pr.partition_id
   INNER JOIN role r on pr.role_id = r.id
   WHERE
-  -- by attributes (hstore)
-      (l.attr_valid @> attr_valid_param OR attr_valid_param IS NULL)
   -- by created date range
-  AND ((date_created_from_param <= l.created AND date_created_to_param > l.created) OR
+     ((date_created_from_param <= l.created AND date_created_to_param > l.created) OR
       (date_created_from_param IS NULL AND date_created_to_param IS NULL) OR
       (date_created_from_param IS NULL AND date_created_to_param > l.created) OR
       (date_created_from_param <= l.created AND date_created_to_param IS NULL))
@@ -436,7 +425,6 @@ END
 $BODY$;
 
 ALTER FUNCTION ox_find_link_types(
-  hstore,
   timestamp(6) with time zone, -- created from
   timestamp(6) with time zone, -- created to
   timestamp(6) with time zone, -- updated from
@@ -825,7 +813,6 @@ CREATE OR REPLACE FUNCTION ox_get_model_item_types(
     key character varying,
     name character varying,
     description text,
-    attr_valid hstore,
     filter jsonb,
     meta_schema jsonb,
     version bigint,
@@ -845,7 +832,6 @@ BEGIN
            it.key,
            it.name,
            it.description,
-           it.attr_valid,
            it.filter,
            it.meta_schema,
            it.version,
@@ -894,7 +880,6 @@ CREATE OR REPLACE FUNCTION ox_get_model_link_types(
      key character varying,
      name character varying,
      description text,
-     attr_valid hstore,
      meta_schema jsonb,
      version bigint,
      created timestamp(6) with time zone,
@@ -913,7 +898,6 @@ BEGIN
       lt.key,
       lt.name,
       lt.description,
-      lt.attr_valid,
       lt.meta_schema,
       lt.version,
       lt.created,

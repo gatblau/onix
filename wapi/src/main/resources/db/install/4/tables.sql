@@ -420,7 +420,6 @@ DO
           key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
           description TEXT COLLATE pg_catalog."default",
-          attr_valid  HSTORE,
           filter      jsonb,
           meta_schema jsonb,
           version     bigint                 NOT NULL DEFAULT 1,
@@ -472,7 +471,6 @@ DO
           key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
           description TEXT COLLATE pg_catalog."default",
-          attr_valid  HSTORE,
           filter      jsonb,
           meta_schema jsonb,
           version     bigint,
@@ -511,110 +509,6 @@ DO
         EXECUTE PROCEDURE ox_change_item_type();
 
         ALTER TABLE item_type_change
-          OWNER to onix;
-      END IF;
-
-      ---------------------------------------------------------------------------
-      -- TYPE ATTRIBUTE
-      ---------------------------------------------------------------------------
-      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'type_attribute')
-      THEN
-        CREATE SEQUENCE type_attribute_id_seq
-          INCREMENT 1
-          START 1
-          MINVALUE 1
-          MAXVALUE 9223372036854775807
-          CACHE 1;
-
-        ALTER SEQUENCE type_attribute_id_seq
-          OWNER TO onix;
-
-      CREATE TABLE type_attribute
-      (
-        id          INTEGER NOT NULL DEFAULT nextval('type_attribute_id_seq'::regclass), -- a surrogate key for referential integrity
-        key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default", -- a natural key for managing CRUD operations
-        name        CHARACTER VARYING(200) COLLATE pg_catalog."default", -- the name of the attribute
-        description TEXT COLLATE pg_catalog."default", -- an explanation of the attribute for clients to see
-        type        CHARACTER VARYING(100) NOT NULL, -- is this a number, string, etc?
-        def_value   CHARACTER VARYING(200), -- zero or more default values separated by commas
-        managed     BOOLEAN, -- is this attribute managed by an agent Y:yes N:no P:partially
-        required    BOOLEAN NOT NULL DEFAULT FALSE, -- is this a required attribute?
-        regex       VARCHAR(300), -- tell client how to validate value
-        item_type_id INTEGER NULL, -- the item type this attribute belongs to
-        link_type_id INTEGER NULL, -- the link type this attribute belongs to
-        version     bigint                 NOT NULL DEFAULT 1,
-        created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
-        updated     timestamp(6) with time zone,
-        changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-        CONSTRAINT item_type_attribute_id_fk FOREIGN KEY (item_type_id)
-            REFERENCES item_type (id) MATCH SIMPLE
-            ON UPDATE NO ACTION
-            ON DELETE CASCADE
-      )
-      WITH (OIDS = FALSE) TABLESPACE pg_default;
-
-      CREATE INDEX fki_type_attribute_item_type_id_fk
-          ON type_attribute USING btree (item_type_id)
-          TABLESPACE pg_default;
-
-      CREATE INDEX fki_type_attribute_link_type_id_fk
-          ON type_attribute USING btree (link_type_id)
-          TABLESPACE pg_default;
-
-      ALTER TABLE type_attribute
-          OWNER to onix;
-      END IF;
-
-      ---------------------------------------------------------------------------
-      -- TYPE ATTRIBUTE CHANGE
-      ---------------------------------------------------------------------------
-      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'type_attribute_change')
-      THEN
-        CREATE TABLE type_attribute_change
-        (
-          operation   CHAR(1)                     NOT NULL,
-          changed     timestamp(6) with time zone NOT NULL,
-          id          INTEGER NOT NULL, -- a surrogate key for referential integrity
-          key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default", -- a natural key for managing CRUD operations
-          name        CHARACTER VARYING(200) COLLATE pg_catalog."default", -- the name of the attribute
-          description TEXT COLLATE pg_catalog."default", -- an explanation of the attribute for clients to see
-          type        CHARACTER VARYING(100) NOT NULL, -- is this a number, string, etc?
-          def_value   CHARACTER VARYING(300), -- zero or more default values separated by commas
-          managed     BOOLEAN, -- is this attribute managed by an agent
-          required    BOOLEAN NOT NULL DEFAULT FALSE, -- is this a required attribute?
-          regex       VARCHAR(300), -- tell client how to validate value
-          item_type_id INTEGER NULL, -- the item type this attribute belongs to
-          link_type_id INTEGER NULL, -- the link type this attribute belongs to
-          version     bigint                 NOT NULL DEFAULT 1,
-          created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
-          updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
-        );
-
-        CREATE OR REPLACE FUNCTION ox_change_type_attribute() RETURNS TRIGGER AS
-        $type_attribute_change$
-        BEGIN
-          IF (TG_OP = 'DELETE') THEN
-            INSERT INTO type_attribute_change SELECT 'D', now(), OLD.*;
-            RETURN OLD;
-          ELSIF (TG_OP = 'UPDATE') THEN
-            INSERT INTO type_attribute_change SELECT 'U', now(), NEW.*;
-            RETURN NEW;
-          ELSIF (TG_OP = 'INSERT') THEN
-            INSERT INTO type_attribute_change SELECT 'I', now(), NEW.*;
-            RETURN NEW;
-          END IF;
-          RETURN NULL; -- result is ignored since this is an AFTER trigger
-        END;
-        $type_attribute_change$ LANGUAGE plpgsql;
-
-        CREATE TRIGGER type_attribute_change
-          AFTER INSERT OR UPDATE OR DELETE
-          ON type_attribute
-          FOR EACH ROW
-        EXECUTE PROCEDURE ox_change_type_attribute();
-
-        ALTER TABLE type_attribute_change
           OWNER to onix;
       END IF;
 
@@ -769,7 +663,6 @@ DO
           key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
           description TEXT COLLATE pg_catalog."default",
-          attr_valid  HSTORE,
           meta_schema jsonb,
           tag          TEXT[] COLLATE pg_catalog."default",
           encrypt_meta BOOLEAN NOT NULL DEFAULT FALSE,
@@ -817,7 +710,6 @@ DO
           key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
           description TEXT COLLATE pg_catalog."default",
-          attr_valid  HSTORE,
           meta_schema jsonb,
           tag         TEXT[],
           encrypt_meta BOOLEAN,
@@ -1209,6 +1101,114 @@ DO
         EXECUTE PROCEDURE ox_change_tag();
 
         ALTER TABLE tag_change
+          OWNER to onix;
+      END IF;
+
+      ---------------------------------------------------------------------------
+      -- TYPE ATTRIBUTE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'type_attribute')
+      THEN
+        CREATE SEQUENCE type_attribute_id_seq
+          INCREMENT 1
+          START 1
+          MINVALUE 1
+          MAXVALUE 9223372036854775807
+          CACHE 1;
+
+        ALTER SEQUENCE type_attribute_id_seq
+          OWNER TO onix;
+
+      CREATE TABLE type_attribute
+      (
+        id          INTEGER NOT NULL DEFAULT nextval('type_attribute_id_seq'::regclass), -- a surrogate key for referential integrity
+        key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default", -- a natural key for managing CRUD operations
+        name        CHARACTER VARYING(200) COLLATE pg_catalog."default", -- the name of the attribute
+        description TEXT COLLATE pg_catalog."default", -- an explanation of the attribute for clients to see
+        type        CHARACTER VARYING(100) NOT NULL, -- is this a number, string, etc?
+        def_value   CHARACTER VARYING(200), -- zero or more default values separated by commas
+        managed     BOOLEAN, -- is this attribute managed by an agent Y:yes N:no P:partially
+        required    BOOLEAN NOT NULL DEFAULT FALSE, -- is this a required attribute?
+        regex       VARCHAR(300), -- tell client how to validate value
+        item_type_id INTEGER NULL, -- the item type this attribute belongs to
+        link_type_id INTEGER NULL, -- the link type this attribute belongs to
+        version     bigint                 NOT NULL DEFAULT 1,
+        created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
+        updated     timestamp(6) with time zone,
+        changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+        CONSTRAINT item_type_attribute_id_fk FOREIGN KEY (item_type_id)
+            REFERENCES item_type (id) MATCH SIMPLE
+            ON UPDATE NO ACTION
+            ON DELETE CASCADE,
+        CONSTRAINT link_type_attribute_id_fk FOREIGN KEY (link_type_id)
+            REFERENCES link_type (id) MATCH SIMPLE
+            ON UPDATE NO ACTION
+            ON DELETE CASCADE
+      )
+      WITH (OIDS = FALSE) TABLESPACE pg_default;
+
+      CREATE INDEX fki_type_attribute_item_type_id_fk
+          ON type_attribute USING btree (item_type_id)
+          TABLESPACE pg_default;
+
+      CREATE INDEX fki_type_attribute_link_type_id_fk
+          ON type_attribute USING btree (link_type_id)
+          TABLESPACE pg_default;
+
+      ALTER TABLE type_attribute
+          OWNER to onix;
+      END IF;
+
+      ---------------------------------------------------------------------------
+      -- TYPE ATTRIBUTE CHANGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'type_attribute_change')
+      THEN
+        CREATE TABLE type_attribute_change
+        (
+          operation   CHAR(1)                     NOT NULL,
+          changed     timestamp(6) with time zone NOT NULL,
+          id          INTEGER NOT NULL, -- a surrogate key for referential integrity
+          key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default", -- a natural key for managing CRUD operations
+          name        CHARACTER VARYING(200) COLLATE pg_catalog."default", -- the name of the attribute
+          description TEXT COLLATE pg_catalog."default", -- an explanation of the attribute for clients to see
+          type        CHARACTER VARYING(100) NOT NULL, -- is this a number, string, etc?
+          def_value   CHARACTER VARYING(300), -- zero or more default values separated by commas
+          managed     BOOLEAN, -- is this attribute managed by an agent
+          required    BOOLEAN NOT NULL DEFAULT FALSE, -- is this a required attribute?
+          regex       VARCHAR(300), -- tell client how to validate value
+          item_type_id INTEGER NULL, -- the item type this attribute belongs to
+          link_type_id INTEGER NULL, -- the link type this attribute belongs to
+          version     bigint                 NOT NULL DEFAULT 1,
+          created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
+          updated     timestamp(6) with time zone,
+          changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
+        );
+
+        CREATE OR REPLACE FUNCTION ox_change_type_attribute() RETURNS TRIGGER AS
+        $type_attribute_change$
+        BEGIN
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO type_attribute_change SELECT 'D', now(), OLD.*;
+            RETURN OLD;
+          ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO type_attribute_change SELECT 'U', now(), NEW.*;
+            RETURN NEW;
+          ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO type_attribute_change SELECT 'I', now(), NEW.*;
+            RETURN NEW;
+          END IF;
+          RETURN NULL; -- result is ignored since this is an AFTER trigger
+        END;
+        $type_attribute_change$ LANGUAGE plpgsql;
+
+        CREATE TRIGGER type_attribute_change
+          AFTER INSERT OR UPDATE OR DELETE
+          ON type_attribute
+          FOR EACH ROW
+        EXECUTE PROCEDURE ox_change_type_attribute();
+
+        ALTER TABLE type_attribute_change
           OWNER to onix;
       END IF;
 

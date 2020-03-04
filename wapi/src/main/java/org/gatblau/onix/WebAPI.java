@@ -754,25 +754,14 @@ public class WebAPI {
             , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<ItemTypeList> getItemTypes(
-            @RequestParam(value = "attribute", required = false) String attribute
-            , @RequestParam(value = "createdFrom", required = false) String createdFromDate
+              @RequestParam(value = "createdFrom", required = false) String createdFromDate
             , @RequestParam(value = "createdTo", required = false) String createdToDate
             , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
             , @RequestParam(value = "updatedTo", required = false) String updatedToDate
             , @RequestParam(value = "model", required = false) String modelKey
             , Authentication authentication
     ) {
-        Map attrMap = null;
-        if (attribute != null) {
-            attrMap = new HashMap<String, String>();
-            String[] items = attribute.split("[|]"); // separate tags using pipes in the query string
-            for (String item : items) {
-                String[] parts = item.split("->");
-                attrMap.put(parts[0], parts[1]);
-            }
-        }
         ItemTypeList itemTypes = data.getItemTypes(
-            attrMap,
             getDate(createdFromDate),
             getDate(createdToDate),
             getDate(updatedFromDate),
@@ -1091,25 +1080,14 @@ public class WebAPI {
             , produces = {"application/json", "application/x-yaml"}
     )
     public ResponseEntity<LinkTypeList> getLinkTypes(
-            @RequestParam(value = "attribute", required = false) String attribute
-            , @RequestParam(value = "createdFrom", required = false) String createdFromDate
+              @RequestParam(value = "createdFrom", required = false) String createdFromDate
             , @RequestParam(value = "createdTo", required = false) String createdToDate
             , @RequestParam(value = "updatedFrom", required = false) String updatedFromDate
             , @RequestParam(value = "updatedTo", required = false) String updatedToDate
             , @RequestParam(value = "model", required = false) String modelKey
             , Authentication authentication
     ) {
-        Map attrMap = null;
-        if (attribute != null) {
-            attrMap = new HashMap<String, String>();
-            String[] items = attribute.split("[|]"); // separate tags using pipes in the query string
-            for (String item : items) {
-                String[] parts = item.split("->");
-                attrMap.put(parts[0], parts[1]);
-            }
-        }
         LinkTypeList linkTypes = data.getLinkTypes(
-                attrMap,
                 getDate(createdFromDate),
                 getDate(createdToDate),
                 getDate(updatedFromDate),

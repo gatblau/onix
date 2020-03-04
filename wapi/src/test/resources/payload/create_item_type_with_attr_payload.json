@@ -1,11 +1,7 @@
 {
-  "name": "Item Type with Attribute Validation",
+  "name": "COMPANY",
   "description": "This item type is for testing purposes only.",
   "modelKey": "meta_model_1",
-  "attrValid" : {
-    "WBS": "required",
-    "COMPANY": "allowed"
-  },
   "filter" : {
   },
   "metaSchema": {

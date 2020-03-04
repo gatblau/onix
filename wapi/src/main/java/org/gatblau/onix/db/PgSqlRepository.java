@@ -463,7 +463,6 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public synchronized ItemTypeList getItemTypes(
-            Map attribute,
             ZonedDateTime createdFrom,
             ZonedDateTime createdTo,
             ZonedDateTime updatedFrom,
@@ -474,13 +473,12 @@ public class PgSqlRepository implements DbRepository {
         ItemTypeList itemTypes = new ItemTypeList();
         try {
             db.prepare(getFindItemTypesSQL());
-            db.setString(1, util.toHStoreString(attribute)); // attribute_param
-            db.setObject(2, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
-            db.setObject(3, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
-            db.setObject(4, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
-            db.setObject(5, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
-            db.setString(6, modelKey);
-            db.setArray(7, role);
+            db.setObject(1, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
+            db.setObject(2, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
+            db.setObject(3, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
+            db.setObject(4, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
+            db.setString(5, modelKey);
+            db.setArray(6, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 itemTypes.getValues().add(util.toItemTypeData(set));
@@ -501,18 +499,17 @@ public class PgSqlRepository implements DbRepository {
             db.setString(1, key); // key_param
             db.setString(2, itemType.getName()); // name_param
             db.setString(3, itemType.getDescription()); // description_param
-            db.setString(4, getAttributeString(itemType.getAttrValid())); // attribute_param
-            db.setString(5, util.toJSONString(itemType.getFilter()));
-            db.setString(6, util.toJSONString(itemType.getMetaSchema()));
-            db.setObject(7, itemType.getVersion()); // version_param
-            db.setObject(8, itemType.getModelKey()); // meta model key
-            db.setString(9, getUser()); // changed_by_param
-            db.setObject(10, itemType.getNotifyChange());
-            db.setString(11, util.toArrayString(itemType.getTag())); // tag_param
-            db.setObject(12, itemType.getEncryptMeta());
-            db.setObject(13, itemType.getEncryptTxt());
-            db.setBoolean(14, itemType.getManaged());
-            db.setArray(15, role);
+            db.setString(4, util.toJSONString(itemType.getFilter()));
+            db.setString(5, util.toJSONString(itemType.getMetaSchema()));
+            db.setObject(6, itemType.getVersion()); // version_param
+            db.setObject(7, itemType.getModelKey()); // meta model key
+            db.setString(8, getUser()); // changed_by_param
+            db.setObject(9, itemType.getNotifyChange());
+            db.setString(10, util.toArrayString(itemType.getTag())); // tag_param
+            db.setObject(11, itemType.getEncryptMeta());
+            db.setObject(12, itemType.getEncryptTxt());
+            db.setBoolean(13, itemType.getManaged());
+            db.setArray(14, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_item_type"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -754,17 +751,16 @@ public class PgSqlRepository implements DbRepository {
         LINK TYPES
      */
     @Override
-    public synchronized LinkTypeList getLinkTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey, String[] role) {
+    public synchronized LinkTypeList getLinkTypes(ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelKey, String[] role) {
         LinkTypeList linkTypes = new LinkTypeList();
         try {
             db.prepare(getFindLinkTypesSQL());
-            db.setString(1, util.toHStoreString(attribute)); // attribute_param
-            db.setObject(2, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
-            db.setObject(3, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
-            db.setObject(4, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
-            db.setObject(5, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
-            db.setObject(6, modelKey);
-            db.setArray(7, role);
+            db.setObject(1, (createdFrom != null) ? java.sql.Date.valueOf(createdFrom.toLocalDate()) : null);
+            db.setObject(2, (createdTo != null) ? java.sql.Date.valueOf(createdTo.toLocalDate()) : null);
+            db.setObject(3, (updatedFrom != null) ? java.sql.Date.valueOf(updatedFrom.toLocalDate()) : null);
+            db.setObject(4, (updatedTo != null) ? java.sql.Date.valueOf(updatedTo.toLocalDate()) : null);
+            db.setObject(5, modelKey);
+            db.setArray(6, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
                 linkTypes.getValues().add(util.toLinkTypeData(set));
@@ -785,16 +781,15 @@ public class PgSqlRepository implements DbRepository {
             db.setString(1, key); // key_param
             db.setString(2, linkType.getName()); // name_param
             db.setString(3, linkType.getDescription()); // description_param
-            db.setString(4, getAttributeString(linkType.getAttrValid())); // attribute_param
-            db.setString(5, util.toJSONString(linkType.getMetaSchema()));
-            db.setString(6, util.toArrayString(linkType.getTag())); // tag_param
-            db.setBoolean(7, linkType.getEncryptMeta());
-            db.setBoolean(8, linkType.getEncryptTxt());
-            db.setBoolean(9, linkType.getManaged());
-            db.setObject(10, linkType.getVersion()); // version_param
-            db.setString(11, linkType.getModelKey()); // model_key_param
-            db.setString(12, getUser()); // changed_by_param
-            db.setArray(13, role);
+            db.setString(4, util.toJSONString(linkType.getMetaSchema()));
+            db.setString(5, util.toArrayString(linkType.getTag())); // tag_param
+            db.setBoolean(6, linkType.getEncryptMeta());
+            db.setBoolean(7, linkType.getEncryptTxt());
+            db.setBoolean(8, linkType.getManaged());
+            db.setObject(9, linkType.getVersion()); // version_param
+            db.setString(10, linkType.getModelKey()); // model_key_param
+            db.setString(11, getUser()); // changed_by_param
+            db.setArray(12, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_link_type"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -1051,7 +1046,6 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public String getFindItemTypesSQL() {
         return "SELECT * FROM ox_find_item_types(" +
-                "?::hstore," + // attr_valid
                 "?::timestamp(6) with time zone," + // date created from
                 "?::timestamp(6) with time zone," + // date created to
                 "?::timestamp(6) with time zone," + // date updates from
@@ -1067,7 +1061,6 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," + // key
                 "?::character varying," + // name
                 "?::text," + // description
-                "?::hstore," + // attr_valid
                 "?::jsonb," + // filter
                 "?::jsonb," + // meta_schema
                 "?::bigint," + // version
@@ -1108,7 +1101,6 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public String getFindLinkTypesSQL() {
         return "SELECT * FROM ox_find_link_types(" +
-                "?::hstore," + // attr_valid
                 "?::timestamp(6) with time zone," + // date created from
                 "?::timestamp(6) with time zone," + // date created to
                 "?::timestamp(6) with time zone," + // date updates from
@@ -1124,7 +1116,6 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," + // key
                 "?::character varying," + // name
                 "?::text," + // description
-                "?::hstore," + // attr_valid
                 "?::jsonb," + // meta_schema
                 "?::text[]," + // tag
                 "?::boolean," + // encrypt meta

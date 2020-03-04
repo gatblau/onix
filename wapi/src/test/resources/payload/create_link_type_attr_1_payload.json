@@ -1,10 +1,10 @@
 {
-  "name": "Operating System",
-  "description": "The Operating System type and version.",
+  "name": "COMPANY",
+  "description": "The company name",
   "type": "list",
-  "defValue": "RHEL 8",
+  "defValue": "ACME Inc",
   "managed": true,
-  "required": true,
-  "regex": "[RHEL]+",
+  "required": false,
+  "regex": "",
   "linkTypeKey": "link_type_1"
 }

@@ -11,7 +11,8 @@
   },
   "tag": ["cmdb", "host", "centos"],
   "attribute": {
-    "COMPANY" : "ACME"
+    "COMPANY" : "ACME",
+    "WBS": "AA-0001"
   },
   "status": 2
 }

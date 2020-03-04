@@ -236,6 +236,8 @@ public class Steps extends BaseTest {
     public void theConfigurationItemsToBeLinkedExistInTheDatabase() throws Throwable {
         putModel("meta_model_1", "payload/create_model_1_payload.json");
         putItemType("item_type_1", "payload/create_item_type_1_payload.json");
+        putItemTypeAttr("item_type_1", "item_type_1_COMPANY", "payload/create_item_type_attr_1_payload.json");
+        putItemTypeAttr("item_type_1", "item_type_1_WBS", "payload/create_item_type_attr_2_payload.json");
         putItem(ITEM_ONE_KEY, "payload/create_item_2_payload.json");
         putItem(ITEM_TWO_KEY, "payload/create_item_payload.json");
     }
@@ -348,6 +350,8 @@ public class Steps extends BaseTest {
         aClearCMDBRequestToTheServiceIsDone();
         putModel("meta_model_1", "payload/create_model_1_payload.json");
         putItemType("item_type_1", "payload/create_item_type_1_payload.json");
+        putItemTypeAttr("item_type_1", "item_type_1_COMPANY", "payload/create_item_type_attr_1_payload.json");
+        putItemTypeAttr("item_type_1", "item_type_1_WBS", "payload/create_item_type_attr_2_payload.json");
         putItem("item_one", "payload/update_item_payload.json");
         putItem("item_two", "payload/update_item_payload.json");
         putItem("item_three", "payload/update_item_payload.json");
@@ -640,6 +644,8 @@ public class Steps extends BaseTest {
     public void theLinkTypeExistsInTheDatabase() {
         theLinkTypeNaturalKeyIsKnown();
         putLinkType(util.get(CONGIG_LINK_TYPE_KEY), "payload/create_link_type_payload.json");
+        putLinkTypeAttr(LINK_TYPE_ONE_KEY, "link_type_1_attr_1", "payload/create_link_type_attr_1_payload.json");
+        putLinkTypeAttr(LINK_TYPE_ONE_KEY, "link_type_1_attr_2", "payload/create_link_type_attr_2_payload.json");
     }
 
     @When("^a DELETE HTTP request with a link type key is done$")
@@ -1227,6 +1233,8 @@ public class Steps extends BaseTest {
         if (result.isError()){
             throw new RuntimeException(result.getMessage());
         }
+        putItemTypeAttr("item_type_with_filter", "item_type_with_filter_COMPANY", "payload/create_link_type_attr_1_payload.json");
+        putItemTypeAttr("item_type_with_filter", "item_type_with_filter_WBS", "payload/create_link_type_attr_2_payload.json");
     }
 
     @Given("^the item with metadata exists in the database$")
@@ -1435,6 +1443,8 @@ public class Steps extends BaseTest {
     @Given("^an item type exists in the database$")
     public void anItemTypeExistsInTheDatabase() {
         putItemType("item_type_1","payload/create_item_type_1_payload.json");
+        putItemTypeAttr("item_type_1", "item_type_1_COMPANY", "payload/create_link_type_attr_1_payload.json");
+        putItemTypeAttr("item_type_1", "item_type_1_WBS", "payload/create_link_type_attr_2_payload.json");
     }
 
     @Given("^there are not any item types associated with the model$")

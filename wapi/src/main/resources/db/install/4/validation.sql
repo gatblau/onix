@@ -101,65 +101,61 @@ DO $$
       by its item type definition.
      */
     CREATE OR REPLACE FUNCTION ox_check_item_attr(item_type_key character varying, attributes hstore)
-      RETURNS VOID
-      LANGUAGE 'plpgsql'
-      COST 100
-      STABLE
+        RETURNS VOID
+        LANGUAGE 'plpgsql'
+        COST 100
+        STABLE
     AS
     $BODY$
     DECLARE
-      validation_rules hstore;
-      rule             record;
+        found boolean;
+        rule record;
     BEGIN
-      -- gets the validation rules for an item attributes
-      SELECT attr_valid INTO validation_rules
-      FROM item_type
-      WHERE key = item_type_key;
-
-      IF NOT FOUND THEN
-        RAISE EXCEPTION 'Invalid item type key ''%''.', item_type_key
-          USING hint = 'Check an item type with such key has been defined.';
-      END IF;
-
-      -- if validation is defined at the item_type then
-      -- validate the item attribute field
-      IF NOT (validation_rules IS NULL) THEN
-        -- loop through the validation rules key-regex pairs
-        -- to validate 'required' key compliance in the passed-in attributes
+        -- check for 'required' attributes (mandatory values)
+        -- by looping through the item type attributes and checking if the hstore contain them
         FOR rule IN
-          SELECT (each(validation_rules)).*
-          LOOP
-            IF (rule.value = 'required') THEN
-              IF NOT (attributes ? rule.key) THEN
-                RAISE EXCEPTION 'Item of type ''%'' requires attribute ''%''.', item_type_key, rule.key
-                  USING hint =
-                      'Where required attributes are specified in the item type, a request to insert or update an item of that type must also specify the regex of the required attribute(s).';
-              END IF;
-            END IF;
-          END LOOP;
+            SELECT ta.*
+            FROM type_attribute ta
+            INNER JOIN item_type it on ta.item_type_id = it.id
+            WHERE it.key = item_type_key
+            LOOP
+                IF (rule.required) THEN
+                    IF NOT (attributes ? rule.name) THEN
+                        RAISE EXCEPTION 'Item of type ''%'' requires attribute ''%''.', item_type_key, rule.name
+                            USING hint = 'The referred attribute is declared as required in the item type definition but has not been provided.';
+                    END IF;
+                END IF;
+            END LOOP;
 
-        -- loop through the passed-in item attribute hstore key-regex pairs
-        -- to validate 'allowed' key compliance in the passed-in attributes
+        -- check for 'allowed' attributes (defined in the item type)
+        -- by looping through the hstore values and checking they are defined in the item type definition
         FOR rule IN
-          SELECT (each(attributes)).*
-          LOOP
-            IF NOT (validation_rules ? rule.key) THEN
-              RAISE EXCEPTION 'Attribute ''%'' is not allowed!', rule.key
-                USING hint = 'Revise the item attributes removing the attribute not allowed.';
-            END IF;
-          END LOOP;
-      END IF;
+            SELECT (each(attributes)).*
+            LOOP
+                -- check if the attribute in the hstore is defined as an item type attribute
+                SELECT (count(*) = 1) INTO found
+                FROM type_attribute ta
+                INNER JOIN item_type it
+                    ON ta.item_type_id = it.id
+                WHERE it.key = item_type_key
+                    AND ta.name = rule.key;
+
+                IF NOT found THEN
+                    RAISE EXCEPTION 'Attribute ''%'' is not allowed for item type ''%''!', rule.key, item_type_key
+                        USING hint = 'Revise the item attributes removing the attribute not allowed; or add a new item type attribute.';
+                END IF;
+            END LOOP;
     END;
     $BODY$;
 
     ALTER FUNCTION ox_check_item_attr(character varying, hstore)
-      OWNER TO onix;
+        OWNER TO onix;
 
     /*
       Validates that a link attribute store contains the keys required or allowed
       by its link type definition.
      */
-    CREATE OR REPLACE FUNCTION ox_ox_check_link_attr(link_type_key character varying, attributes hstore)
+    CREATE OR REPLACE FUNCTION ox_check_link_attr(link_type_key character varying, attributes hstore)
       RETURNS VOID
       LANGUAGE 'plpgsql'
       COST 100
@@ -167,83 +163,48 @@ DO $$
     AS
     $BODY$
     DECLARE
-      validation_rules hstore;
-      rule             record;
+      found boolean;
+      rule  record;
     BEGIN
-      -- gets the validation rules for a link attributes
-      SELECT attr_valid INTO validation_rules
-      FROM link_type
-      WHERE key = link_type_key;
-
-      IF NOT FOUND THEN
-        RAISE EXCEPTION 'Invalid link type key ''%''.', link_type_key
-          USING hint = 'Check a link type with such a key has been defined.';
-      END IF;
-
-      -- if validation is defined at the item_type then
-      -- validate the item attribute field
-      IF NOT (validation_rules IS NULL) THEN
-        -- loop through the validation rules key-regex pairs
-        -- to validate 'required' key compliance in the passed-in attributes
+        -- check for 'required' attributes (mandatory values)
+        -- by looping through the link type attributes and checking if the hstore contain them
         FOR rule IN
-          SELECT (each(validation_rules)).*
+            SELECT ta.*
+            FROM type_attribute ta
+            INNER JOIN link_type lt
+                ON ta.item_type_id = lt.id
+            WHERE lt.key = link_type_key
           LOOP
-            IF (rule.value = 'required') THEN
-              IF NOT (attributes ? rule.key) THEN
-                RAISE EXCEPTION 'Attribute ''%'' is required and was not provided.', rule.key
-                  USING hint =
-                      'Where required attributes are specified in the link type, a request to insert or update a link of that type must also specify the regex of the required attribute(s).';
+            IF (rule.required) THEN
+              IF NOT (attributes ? rule.name) THEN
+                RAISE EXCEPTION 'Attribute ''%'' is required and was not provided.', rule.name
+                  USING hint = 'The referred attribute is declared as required in the link type definition but has not been provided.';
               END IF;
             END IF;
           END LOOP;
 
-        -- loop through the passed-in item attribute hstore key-regex pairs
-        -- to validate 'allowed' key compliance in the passed-in attributes
+        -- check for 'allowed' attributes (defined in the link type)
+        -- by looping through the hstore values and checking they are defined in the link type definition
         FOR rule IN
           SELECT (each(attributes)).*
           LOOP
-            IF NOT (validation_rules ? rule.key) THEN
-              RAISE EXCEPTION 'Attribute ''%'' is not allowed!', rule.key
-                USING hint = 'Revise the item attributes removing the attribute not allowed.';
+            -- check if the attribute in the hstore is defined as an item type attribute
+            SELECT (count(*) = 1) INTO found
+            FROM type_attribute ta
+            INNER JOIN link_type lt
+                ON ta.link_type_id = lt.id
+            WHERE lt.key = link_type_key
+                AND ta.name = rule.key;
+
+            IF NOT found THEN
+                RAISE EXCEPTION 'Attribute ''%'' is not allowed for link type ''%''!', rule.key, link_type_key
+                USING hint = 'Revise the link attributes removing the attribute that is not allowed; or add a new the link type attribute.';
             END IF;
           END LOOP;
-      END IF;
     END;
     $BODY$;
 
-    ALTER FUNCTION ox_ox_check_link_attr(character varying, hstore)
-      OWNER TO onix;
-
-    /*
-      checks that the specified hstore contains only 'required' or 'allowed' values
-     */
-    CREATE OR REPLACE FUNCTION ox_check_attr_valid(attributes hstore)
-      RETURNS VOID
-      LANGUAGE 'plpgsql'
-      COST 100
-      STABLE
-    AS
-    $BODY$
-    DECLARE
-      rule record;
-    BEGIN
-      -- if the attributes hstore is defined
-      IF NOT (attributes IS NULL) THEN
-        -- loop through the validation rules key-regex pairs
-        -- to determine if there are values other than 'required' or 'allowed'
-        FOR rule IN
-          SELECT (each(attributes)).*
-          LOOP
-            IF NOT ((rule.value = 'required') OR (rule.value = 'allowed')) THEN
-              RAISE EXCEPTION 'Attribute ''%'' has an invalid regex: ''%''.', rule.key, rule.value
-                USING hint = 'Attribute values can only be either ''required'' or ''allowed''';
-            END IF;
-          END LOOP;
-      END IF;
-    END;
-    $BODY$;
-
-    ALTER FUNCTION ox_check_attr_valid(hstore)
+    ALTER FUNCTION ox_check_link_attr(character varying, hstore)
       OWNER TO onix;
 
     /*

@@ -594,7 +594,6 @@ DO $$
         key_param character varying,
         name_param character varying,
         description_param text,
-        attr_valid_param hstore, -- keys allowed or required in item attributes
         filter_param jsonb,
         meta_schema_param jsonb,
         local_version_param bigint,
@@ -651,9 +650,6 @@ DO $$
           USING hint = 'The role needs to be granted CREATE privilege or a new role should be used instead.';
       END IF;
 
-      -- checks that the attribute store parameter contain the correct values
-      PERFORM ox_check_attr_valid(attr_valid_param);
-
       -- gets the current item type version
       SELECT version FROM item_type WHERE key = key_param INTO current_version;
 
@@ -663,7 +659,6 @@ DO $$
           key,
           name,
           description,
-          attr_valid,
           filter,
           meta_schema,
           version,
@@ -682,7 +677,6 @@ DO $$
           key_param,
           name_param,
           description_param,
-          attr_valid_param,
           filter_param,
           meta_schema_param,
           1,
@@ -701,7 +695,6 @@ DO $$
         UPDATE item_type
         SET name        = name_param,
             description = description_param,
-            attr_valid  = attr_valid_param,
             filter      = filter_param,
             meta_schema = meta_schema_param,
             version     = version + 1,
@@ -719,7 +712,6 @@ DO $$
           AND (
             name != name_param OR
             description != description_param OR
-            avals(attr_valid) != avals(attr_valid_param) OR
             filter != filter_param OR
             meta_schema != meta_schema_param OR
             model_id != model_id_value OR
@@ -740,7 +732,6 @@ DO $$
         character varying, -- key
         character varying, -- name
         text, -- description
-        hstore, -- attribute validation
         jsonb, -- meta query filter
         jsonb, -- meta json schema
         bigint, -- client version
@@ -768,7 +759,6 @@ DO $$
         key_param character varying,
         name_param character varying,
         description_param text,
-        attr_valid_param hstore, -- keys allowed or required in item attributes
         meta_schema_param jsonb,
         tag_param text[],
         encrypt_meta_param boolean,
@@ -821,9 +811,6 @@ DO $$
           USING hint = 'The role needs to be granted CREATE privilege or a new role should be used instead.';
       END IF;
 
-      -- checks that the attribute store parameter contain the correct values
-      PERFORM ox_check_attr_valid(attr_valid_param);
-
       -- gets the link type current version
       SELECT version FROM link_type WHERE key = key_param INTO current_version;
 
@@ -833,7 +820,6 @@ DO $$
            key,
            name,
            description,
-           attr_valid,
            meta_schema,
            tag,
            encrypt_meta,
@@ -848,7 +834,6 @@ DO $$
                 key_param,
                 name_param,
                 description_param,
-                attr_valid_param,
                 meta_schema_param,
                 tag_param,
                 encrypt_meta_param,
@@ -864,7 +849,6 @@ DO $$
         UPDATE link_type
         SET name        = name_param,
             description = description_param,
-            attr_valid  = attr_valid_param,
             meta_schema = meta_schema_param,
             tag         = tag_param,
             encrypt_meta= encrypt_meta_param,
@@ -880,7 +864,6 @@ DO $$
           AND (
             name != name_param OR
             description != description_param OR
-            attr_valid != attr_valid_param OR
             meta_schema != meta_schema_param OR
             tag != tag_param OR
             encrypt_meta != encrypt_meta_param OR
@@ -899,7 +882,6 @@ DO $$
       character varying, -- key
       character varying, -- name
       text, -- description
-      hstore, -- attribute validation
       jsonb, -- meta json schema validation
       text[], -- tag
       boolean, -- encrypt meta
@@ -992,7 +974,7 @@ DO $$
       PERFORM ox_check_link(link_type_key_param, start_item_type_key_value, end_item_type_key_value);
 
       -- checks that the attributes passed in comply with the validation in the link_type
-      PERFORM ox_ox_check_link_attr(link_type_key_param, attribute_param);
+      PERFORM ox_check_link_attr(link_type_key_param, attribute_param);
 
       -- checks that the meta field complies with the json schema defined by the item type
       IF (meta_param IS NOT NULL) THEN
