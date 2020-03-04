@@ -1,10 +1,10 @@
 {
-  "name": "Runtime",
-  "description": "The runtime type and version.",
+  "name": "WBS",
+  "description": "WBS code.",
   "type": "string",
-  "defValue": "RHEL 8",
+  "defValue": "AA-0001",
   "managed": true,
   "required": true,
-  "regex": "[Java]+",
+  "regex": "[AA]+",
   "linkTypeKey": "link_type_1"
 }

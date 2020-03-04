@@ -1,8 +1,8 @@
 {
-  "name": "COMPANY",
-  "description": "The company name.",
+  "name": "WBS",
+  "description": "The WBS code.",
   "type": "list",
-  "defValue": "Acme Inc.",
+  "defValue": "AA-0001",
   "managed": true,
   "required": true,
   "regex": "",

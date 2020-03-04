@@ -58,7 +58,7 @@ public interface DbRepository {
     */
     ItemTypeData getItemType(String key, String[] role);
     Result deleteItemTypes(String[] role);
-    ItemTypeList getItemTypes(Map attribute, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelType, String[] role);
+    ItemTypeList getItemTypes(ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String modelType, String[] role);
     Result createOrUpdateItemType(String key, ItemTypeData json, String[] role);
     Result deleteItemType(String key, String[] role);
 
@@ -90,7 +90,7 @@ public interface DbRepository {
     /*
         LINK TYPES
      */
-    LinkTypeList getLinkTypes(Map attrMap, ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time, String modelKey, String[] role);
+    LinkTypeList getLinkTypes(ZonedDateTime date, ZonedDateTime zonedDateTime, ZonedDateTime dateTime, ZonedDateTime time, String modelKey, String[] role);
     Result createOrUpdateLinkType(String key, LinkTypeData json, String[] role);
     Result deleteLinkType(String key, String[] role);
     Result deleteLinkTypes(String[] role);
