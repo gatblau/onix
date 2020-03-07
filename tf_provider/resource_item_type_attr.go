@@ -1,5 +1,5 @@
 /*
-   Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+   Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -20,18 +20,19 @@ import (
 )
 
 /*
-	ITEM RESOURCE
+	ITEM TYPE RESOURCE
 */
-func ItemResource() *schema.Resource {
+func ItemTypeAttributeResource() *schema.Resource {
 	return &schema.Resource{
-		Create: createOrUpdateItem,
-		Read:   readItem,
-		Update: createOrUpdateItem,
-		Delete: deleteItem,
+		Create: createOrUpdateItemTypeAttribute,
+		Read:   nil,
+		Update: createOrUpdateItemTypeAttribute,
+		Delete: deleteItemTypeAttribute,
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -39,34 +40,33 @@ func ItemResource() *schema.Resource {
 			},
 			"description": &schema.Schema{
 				Type:     schema.TypeString,
-				Optional: true,
+				Required: true,
 			},
 			"type": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"status": &schema.Schema{
-				Type:     schema.TypeInt,
+			"def_value": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"managed": &schema.Schema{
+				Type:     schema.TypeBool,
 				Optional: true,
 			},
-			"meta": &schema.Schema{
-				Type:     schema.TypeMap,
+			"required": &schema.Schema{
+				Type:     schema.TypeBool,
 				Optional: true,
 			},
-			"txt": &schema.Schema{
+			"regex": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"tag": &schema.Schema{
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+			"item_type_key": &schema.Schema{
+				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"attribute": &schema.Schema{
-				Type:     schema.TypeMap,
-				Optional: true,
-			},
-			"partition": &schema.Schema{
+			"link_type_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
@@ -74,24 +74,24 @@ func ItemResource() *schema.Resource {
 	}
 }
 
-func createOrUpdateItem(data *schema.ResourceData, m interface{}) error {
-	return put(data, m, itemPayload(data), "%s/item/%s", "key", "")
+func createOrUpdateItemTypeAttribute(data *schema.ResourceData, m interface{}) error {
+	return put(data, m, itemTypeAttributePayload(data), "%s/itemtype/%s/attribute/%s", "item_type_key", "key")
 }
 
-func deleteItem(data *schema.ResourceData, m interface{}) error {
-	return delete(m, itemPayload(data), "%s/item/%s", "key", "")
+func deleteItemTypeAttribute(data *schema.ResourceData, m interface{}) error {
+	return delete(m, itemTypeAttributePayload(data), "%s/itemtype/%s/attribute/%s", "item_type_key", "key")
 }
 
-func itemPayload(data *schema.ResourceData) Payload {
-	return &Item{
+func itemTypeAttributePayload(data *schema.ResourceData) Payload {
+	return &ItemTypeAttribute{
 		Key:         data.Get("key").(string),
 		Name:        data.Get("name").(string),
 		Description: data.Get("description").(string),
 		Type:        data.Get("type").(string),
-		Meta:        data.Get("meta").(map[string]interface{}),
-		Txt:         data.Get("txt").(string),
-		Attribute:   data.Get("attribute").(map[string]interface{}),
-		Tag:         data.Get("tag").([]interface{}),
-		Partition:   data.Get("partition").(string),
+		DefValue:    data.Get("def_value").(string),
+		Managed:     data.Get("managed").(bool),
+		Required:    data.Get("managed").(bool),
+		Regex:       data.Get("regex").(string),
+		ItemTypeKey: data.Get("item_type_key").(string),
 	}
 }

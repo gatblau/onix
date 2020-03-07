@@ -17,6 +17,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -42,7 +43,7 @@ type Config struct {
 // Interface implemented by all payload objects to enable
 // generic key extraction and conversion to byte Reader
 type Payload interface {
-	KeyValue() string
+	Get(key string) string
 	ToJSON() (*bytes.Reader, error)
 }
 
@@ -51,9 +52,17 @@ type Payload interface {
 // - m: the Terraform provider metadata
 // - payload: the payload object
 // - resourceName: the WAPI resource name (e.g. item, itemtype, link, etc.)
-func put(data *schema.ResourceData, m interface{}, payload Payload, resourceName string) error {
+func put(data *schema.ResourceData, m interface{}, payload Payload, url string, key1 string, key2 string) error {
 	// get the Config instance from the meta object passed-in
 	cfg := m.(Config)
+
+	if len(key2) == 0 {
+		// assume one url parameter
+		url = fmt.Sprintf(url, cfg.Client.BaseURL, payload.Get(key1))
+	} else {
+		// assume two url parameters
+		url = fmt.Sprintf(url, cfg.Client.BaseURL, payload.Get(key1), payload.Get(key2))
+	}
 
 	// converts the passed-in payload to a bytes Reader
 	bytes, err := payload.ToJSON()
@@ -64,7 +73,7 @@ func put(data *schema.ResourceData, m interface{}, payload Payload, resourceName
 	}
 
 	// make an http put request to the service
-	result, err := cfg.Client.Put(resourceName, payload.KeyValue(), bytes)
+	result, err := cfg.Client.Put(url, bytes)
 
 	// any errors are returned
 	if e := check(result, err); e != nil {
@@ -72,18 +81,26 @@ func put(data *schema.ResourceData, m interface{}, payload Payload, resourceName
 	}
 
 	// sets the id in the resource data
-	data.SetId(payload.KeyValue())
+	data.SetId(payload.Get("key"))
 
 	// return no error
 	return nil
 }
 
-func delete(m interface{}, payload Payload, resourceName string) error {
+func delete(m interface{}, payload Payload, url string, key1 string, key2 string) error {
 	// get the Config instance from the meta object passed-in
 	cfg := m.(Config)
 
+	if len(key2) == 0 {
+		// assume one url parameter
+		url = fmt.Sprintf(url, cfg.Client.BaseURL, payload.Get(key1))
+	} else {
+		// assume two url parameters
+		url = fmt.Sprintf(url, cfg.Client.BaseURL, payload.Get(key1), payload.Get(key2))
+	}
+
 	// make an http put request to the service
-	result, err := cfg.Client.Delete(resourceName, payload.KeyValue())
+	result, err := cfg.Client.Delete(url)
 
 	// any errors are returned
 	if e := check(result, err); e != nil {
@@ -91,4 +108,9 @@ func delete(m interface{}, payload Payload, resourceName string) error {
 	}
 
 	return nil
+}
+
+func url(format string, payload Payload, m interface{}) string {
+	cfg := m.(Config)
+	return fmt.Sprintf("%s/itemtype/%s", cfg.Client.BaseURL, payload.Get("key"))
 }

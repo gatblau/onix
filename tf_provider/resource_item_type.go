@@ -17,7 +17,6 @@ package main
 
 import (
 	"github.com/hashicorp/terraform/helper/schema"
-	"log"
 )
 
 /*
@@ -43,10 +42,6 @@ func ItemTypeResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"model_key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
 			"filter": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
@@ -55,8 +50,17 @@ func ItemTypeResource() *schema.Resource {
 				Type:     schema.TypeMap,
 				Optional: true,
 			},
+			"model_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
 			"notify_change": &schema.Schema{
 				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"tag": &schema.Schema{
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
 			},
 			"encrypt_meta": &schema.Schema{
@@ -67,12 +71,8 @@ func ItemTypeResource() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
-			"managed_meta": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"managed_txt": &schema.Schema{
-				Type:     schema.TypeString,
+			"managed": &schema.Schema{
+				Type:     schema.TypeBool,
 				Optional: true,
 			},
 		},
@@ -80,16 +80,14 @@ func ItemTypeResource() *schema.Resource {
 }
 
 func createOrUpdateItemType(data *schema.ResourceData, m interface{}) error {
-	return put(data, m, itemTypePayload(data), "itemtype")
+	return put(data, m, itemTypePayload(data), "%s/itemtype/%s", "key", "")
 }
 
 func deleteItemType(data *schema.ResourceData, m interface{}) error {
-	return delete(m, itemTypePayload(data), "itemtype")
+	return delete(m, itemTypePayload(data), "%s/itemtype/%s", "key", "")
 }
 
 func itemTypePayload(data *schema.ResourceData) Payload {
-	log.Printf("managed_meta: '%s'", data.Get("managed_meta"))
-
 	return &ItemType{
 		Key:          data.Get("key").(string),
 		Name:         data.Get("name").(string),
@@ -100,7 +98,7 @@ func itemTypePayload(data *schema.ResourceData) Payload {
 		NotifyChange: data.Get("notify_change").(bool),
 		EncryptMeta:  data.Get("encrypt_meta").(bool),
 		EncryptTxt:   data.Get("encrypt_txt").(bool),
-		ManagedMeta:  data.Get("managed_meta").(string),
-		ManagedTxt:   data.Get("managed_txt").(string),
+		Managed:      data.Get("managed").(bool),
+		Tag:          data.Get("tag").([]interface{}),
 	}
 }

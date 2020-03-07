@@ -15,7 +15,9 @@
 
 package main
 
-import "github.com/hashicorp/terraform/helper/schema"
+import (
+	"github.com/hashicorp/terraform/helper/schema"
+)
 
 /*
 	LINK RESOURCE
@@ -66,11 +68,11 @@ func LinkResource() *schema.Resource {
 }
 
 func createOrUpdateLink(data *schema.ResourceData, m interface{}) error {
-	return put(data, m, linkPayload(data), "link")
+	return put(data, m, linkPayload(data), "%s/link/%s", "key", "")
 }
 
 func deleteLink(data *schema.ResourceData, m interface{}) error {
-	return delete(m, linkPayload(data), "link")
+	return delete(m, linkPayload(data), "%s/link/%s", "key", "")
 }
 
 func linkPayload(data *schema.ResourceData) Payload {
