@@ -58,11 +58,11 @@ func LinkRuleResource() *schema.Resource {
 }
 
 func createOrUpdateLinkRule(data *schema.ResourceData, m interface{}) error {
-	return put(data, m, linkRulePayload(data), "linkrule")
+	return put(data, m, linkRulePayload(data), "%s/linkrule/%s", "key", "")
 }
 
 func deleteLinkRule(data *schema.ResourceData, m interface{}) error {
-	return delete(m, linkRulePayload(data), "linkrule")
+	return delete(m, linkRulePayload(data), "%s/linkrule/%s", "key", "")
 }
 
 func linkRulePayload(data *schema.ResourceData) Payload {

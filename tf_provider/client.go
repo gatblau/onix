@@ -119,9 +119,9 @@ func (o *Client) getBearerToken(tokenURI string, clientId string, secret string,
 }
 
 // Make a generic HTTP request
-func (o *Client) MakeRequest(method string, resourceName string, key string, payload io.Reader) (*Result, error) {
+func (o *Client) MakeRequest(method string, url string, payload io.Reader) (*Result, error) {
 	// creates the request
-	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", o.BaseURL, resourceName, key), payload)
+	req, err := http.NewRequest(method, url, payload)
 
 	// any errors are returned
 	if err != nil {
@@ -159,13 +159,13 @@ func (o *Client) MakeRequest(method string, resourceName string, key string, pay
 }
 
 // Make a PUT HTTP request to the WAPI
-func (o *Client) Put(resourceName string, key string, payload io.Reader) (*Result, error) {
-	return o.MakeRequest(PUT, resourceName, key, payload)
+func (o *Client) Put(url string, payload io.Reader) (*Result, error) {
+	return o.MakeRequest(PUT, url, payload)
 }
 
 // Make a DELETE HTTP request to the WAPI
-func (o *Client) Delete(resourceName string, key string) (*Result, error) {
-	return o.MakeRequest(DELETE, resourceName, key, nil)
+func (o *Client) Delete(url string) (*Result, error) {
+	return o.MakeRequest(DELETE, url, nil)
 }
 
 // Make a GET HTTP request to the WAPI

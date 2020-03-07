@@ -1,5 +1,5 @@
 /*
-   Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+   Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -17,13 +17,14 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"strings"
 )
 
 type ItemType struct {
 	Key          string                 `json:"key"`
 	Name         string                 `json:"name"`
 	Description  string                 `json:"description"`
-	AttrValid    map[string]interface{} `json:"attrValid"`
 	Filter       map[string]interface{} `json:"filter"`
 	MetaSchema   map[string]interface{} `json:"metaSchema"`
 	Model        string                 `json:"modelKey"`
@@ -31,16 +32,53 @@ type ItemType struct {
 	Tag          []interface{}          `json:"tag"`
 	EncryptMeta  bool                   `json:"encryptMeta"`
 	EncryptTxt   bool                   `json:"encryptTxt"`
-	ManagedMeta  string                 `json:"managedMeta"`
-	ManagedTxt   string                 `json:"managedTxt"`
+	Managed      bool                   `json:"managed"`
 }
 
 func (itemType *ItemType) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(itemType)
 }
 
-func (itemType *ItemType) KeyValue() string {
-	return itemType.Key
+func (itemType *ItemType) Get(key string) string {
+	switch strings.ToLower(key) {
+	case "key":
+		{
+			return itemType.Key
+		}
+	default:
+		panic(fmt.Sprintf("key %s not supported", key))
+	}
+}
+
+type ItemTypeAttribute struct {
+	Key         string `json:"key"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Type        string `json:"type"`
+	DefValue    string `json:"defValue"`
+	Managed     bool   `json:"managed"`
+	Required    bool   `json:"required"`
+	Regex       string `json:"regex"`
+	ItemTypeKey string `json:"itemTypeKey"`
+}
+
+func (typeAttr *ItemTypeAttribute) ToJSON() (*bytes.Reader, error) {
+	return getJSONBytesReader(typeAttr)
+}
+
+func (typeAttr *ItemTypeAttribute) Get(key string) string {
+	switch strings.ToLower(key) {
+	case "key":
+		{
+			return typeAttr.Key
+		}
+	case "item_type_key":
+		{
+			return typeAttr.ItemTypeKey
+		}
+	default:
+		panic(fmt.Sprintf("key %s not supported", key))
+	}
 }
 
 type Item struct {
@@ -60,8 +98,15 @@ func (item *Item) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(item)
 }
 
-func (item *Item) KeyValue() string {
-	return item.Key
+func (item *Item) Get(key string) string {
+	switch strings.ToLower(key) {
+	case "key":
+		{
+			return item.Key
+		}
+	default:
+		panic(fmt.Sprintf("key %s not supported", key))
+	}
 }
 
 type Link struct {
@@ -79,8 +124,15 @@ func (link *Link) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(link)
 }
 
-func (link *Link) KeyValue() string {
-	return link.Key
+func (link *Link) Get(key string) string {
+	switch strings.ToLower(key) {
+	case "key":
+		{
+			return link.Key
+		}
+	default:
+		panic(fmt.Sprintf("key %s not supported", key))
+	}
 }
 
 type LinkType struct {
@@ -90,14 +142,25 @@ type LinkType struct {
 	Attribute   map[string]interface{} `json:"attribute"`
 	MetaSchema  map[string]interface{} `json:"metaSchema"`
 	Model       string                 `json:"modelKey"`
+	Tag         []interface{}          `json:"tag"`
+	EncryptMeta bool                   `json:"encryptMeta"`
+	EncryptTxt  bool                   `json:"encryptTxt"`
+	Managed     bool                   `json:"managed"`
 }
 
 func (linkType *LinkType) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(linkType)
 }
 
-func (linkType *LinkType) KeyValue() string {
-	return linkType.Key
+func (linkType *LinkType) Get(key string) string {
+	switch strings.ToLower(key) {
+	case "key":
+		{
+			return linkType.Key
+		}
+	default:
+		panic(fmt.Sprintf("key %s not supported", key))
+	}
 }
 
 type LinkRule struct {
@@ -113,8 +176,15 @@ func (linkRule *LinkRule) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(linkRule)
 }
 
-func (rule *LinkRule) KeyValue() string {
-	return rule.Key
+func (rule *LinkRule) Get(key string) string {
+	switch strings.ToLower(key) {
+	case "key":
+		{
+			return rule.Key
+		}
+	default:
+		panic(fmt.Sprintf("key %s not supported", key))
+	}
 }
 
 type Model struct {
@@ -122,14 +192,22 @@ type Model struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Partition   string `json:"partition"`
+	Managed     bool   `json:"managed"`
 }
 
 func (model *Model) ToJSON() (*bytes.Reader, error) {
 	return getJSONBytesReader(model)
 }
 
-func (model *Model) KeyValue() string {
-	return model.Key
+func (model *Model) Get(key string) string {
+	switch strings.ToLower(key) {
+	case "key":
+		{
+			return model.Key
+		}
+	default:
+		panic(fmt.Sprintf("key %s not supported", key))
+	}
 }
 
 func getJSONBytesReader(data interface{}) (*bytes.Reader, error) {

@@ -52,11 +52,11 @@ func ModelResource() *schema.Resource {
 }
 
 func createOrUpdateModel(data *schema.ResourceData, m interface{}) error {
-	return put(data, m, modelPayload(data), "model")
+	return put(data, m, modelPayload(data), "%s/model/%s", "key", "")
 }
 
 func deleteModel(data *schema.ResourceData, m interface{}) error {
-	return delete(m, modelPayload(data), "model")
+	return delete(m, modelPayload(data), "%s/model/%s", "key", "")
 }
 
 func modelPayload(data *schema.ResourceData) Payload {

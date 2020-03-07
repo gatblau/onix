@@ -15,7 +15,9 @@
 
 package main
 
-import "github.com/hashicorp/terraform/helper/schema"
+import (
+	"github.com/hashicorp/terraform/helper/schema"
+)
 
 /*
    LINK TYPE RESOURCE
@@ -41,20 +43,41 @@ func LinkTypeResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"meta_schema": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
 			"model_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+			},
+			"tag": &schema.Schema{
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+			},
+			"encrypt_meta": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"encrypt_txt": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"managed": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
 			},
 		},
 	}
 }
 
 func createOrUpdateLinkType(data *schema.ResourceData, m interface{}) error {
-	return put(data, m, linkTypePayload(data), "linktype")
+	return put(data, m, linkTypePayload(data), "%s/linktype/%s", "key", "")
 }
 
 func deleteLinkType(data *schema.ResourceData, m interface{}) error {
-	return delete(m, linkTypePayload(data), "linktype")
+	return delete(m, linkTypePayload(data), "%s/linktype/%s", "key", "")
 }
 
 func linkTypePayload(data *schema.ResourceData) Payload {
@@ -67,5 +90,10 @@ func linkTypePayload(data *schema.ResourceData) Payload {
 		Name:        name,
 		Description: description,
 		Model:       modelKey,
+		MetaSchema:  data.Get("meta_schema").(map[string]interface{}),
+		EncryptMeta: data.Get("encrypt_meta").(bool),
+		EncryptTxt:  data.Get("encrypt_txt").(bool),
+		Managed:     data.Get("managed").(bool),
+		Tag:         data.Get("tag").([]interface{}),
 	}
 }
