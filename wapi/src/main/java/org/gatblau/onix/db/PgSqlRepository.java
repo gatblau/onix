@@ -155,7 +155,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteItem(String key, String[] role) {
+    public synchronized Result deleteItem(String key, String[] role) {
         return delete(getDeleteItemSQL(), "ox_delete_item", key, role);
     }
 
@@ -457,7 +457,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteItemTypes(String[] role) {
+    public synchronized Result deleteItemTypes(String[] role) {
         return delete(getDeleteItemTypes(), "ox_delete_item_types", null, role);
     }
 
@@ -522,7 +522,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteItemType(String key, String[] role) {
+    public synchronized Result deleteItemType(String key, String[] role) {
         return delete(getDeleteItemTypeSQL(), "ox_delete_item_type", key, null, role);
     }
 
@@ -530,7 +530,7 @@ public class PgSqlRepository implements DbRepository {
         ITEM TYPE ATTRIBUTES
      */
     @Override
-    public TypeAttrData getItemTypeAttribute(String itemTypeKey, String typeAttrKey, String[] role) {
+    public synchronized TypeAttrData getItemTypeAttribute(String itemTypeKey, String typeAttrKey, String[] role) {
         TypeAttrData attr = null;
         try {
             db.prepare(getGetItemTypeAttributeSQL());
@@ -550,7 +550,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public TypeAttrList getItemTypeAttributes(String itemTypeKey, String[] role) {
+    public synchronized TypeAttrList getItemTypeAttributes(String itemTypeKey, String[] role) {
         TypeAttrList itemTypeAttrs = new TypeAttrList();
         try {
             db.prepare(getGetItemTypeAttributesSQL());
@@ -569,7 +569,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result createOrUpdateItemTypeAttr(String itemTypeKey, String typeAttrKey, TypeAttrData typeAttr, String[] role) {
+    public synchronized Result createOrUpdateItemTypeAttr(String itemTypeKey, String typeAttrKey, TypeAttrData typeAttr, String[] role) {
         Result result = new Result(String.format("ItemTypeAttribute:%s:%s", itemTypeKey, typeAttrKey));
         try {
             db.prepare(getSetTypeAttributeSQL());
@@ -670,7 +670,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public TypeAttrData getLinkTypeAttribute(String linkTypeKey, String typeAttrKey, String[] role) {
+    public synchronized TypeAttrData getLinkTypeAttribute(String linkTypeKey, String typeAttrKey, String[] role) {
         TypeAttrData attr = null;
         try {
             db.prepare(getGetLinkTypeAttributeSQL());
@@ -690,7 +690,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public TypeAttrList getLinkTypeAttributes(String linkTypeKey, String[] role) {
+    public synchronized TypeAttrList getLinkTypeAttributes(String linkTypeKey, String[] role) {
         TypeAttrList itemTypeAttrs = new TypeAttrList();
         try {
             db.prepare(getGetLinkTypeAttributesSQL());
@@ -709,7 +709,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result createOrUpdateLinkTypeAttr(String linkTypeKey, String typeAttrKey, TypeAttrData typeAttr, String[] role) {
+    public synchronized Result createOrUpdateLinkTypeAttr(String linkTypeKey, String typeAttrKey, TypeAttrData typeAttr, String[] role) {
         Result result = new Result(String.format("LinkTypeAttribute:%s:%s", linkTypeKey, typeAttrKey));
         try {
             db.prepare(getSetTypeAttributeSQL());
@@ -738,12 +738,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteLinkTypeAttr(String linkTypeKey, String typeAttrKey, String[] role) {
+    public synchronized Result deleteLinkTypeAttr(String linkTypeKey, String typeAttrKey, String[] role) {
         return delete(getDeleteLinkTypeAttributeSQL(), "ox_delete_link_type_attribute", linkTypeKey, typeAttrKey, role);
     }
 
     @Override
-    public Result deleteItemTypeAttr(String itemTypeKey, String typeAttrKey, String[] role) {
+    public synchronized Result deleteItemTypeAttr(String itemTypeKey, String typeAttrKey, String[] role) {
         return delete(getDeleteItemTypeAttributeSQL(), "ox_delete_item_type_attribute", itemTypeKey, typeAttrKey, role);
     }
 
@@ -802,12 +802,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteLinkType(String key, String[] role) {
+    public synchronized Result deleteLinkType(String key, String[] role) {
         return delete(getDeleteLinkTypeSQL(), "ox_delete_link_type", key, null, role);
     }
 
     @Override
-    public Result deleteLinkTypes(String[] role) {
+    public synchronized Result deleteLinkTypes(String[] role) {
         return delete(getDeleteLinkTypes(), "ox_delete_link_types", null, role);
     }
 
@@ -893,12 +893,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result deleteLinkRule(String key, String[] role) {
+    public synchronized Result deleteLinkRule(String key, String[] role) {
         return delete(getDeleteLinkRuleSQL(), "ox_delete_link_rule", key, role);
     }
 
     @Override
-    public Result deleteLinkRules(String[] role) {
+    public synchronized Result deleteLinkRules(String[] role) {
         return delete(getDeleteLinkRulesSQL(), "ox_delete_link_rules",null, role);
     }
 
@@ -1947,7 +1947,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public ResultList rotateItemKeys(Integer maxItems, String[] role) {
+    public synchronized ResultList rotateItemKeys(Integer maxItems, String[] role) {
         ResultList results = new ResultList();
         // reads a bunch of items that are using the default key
         ItemList items = findItems(null, null, null, null, null, null, null, null, null, util.getAlternateKeyIx(), maxItems, role);
@@ -1968,7 +1968,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public ResultList rotateLinkKeys(Integer maxLinks, String[] role) {
+    public synchronized ResultList rotateLinkKeys(Integer maxLinks, String[] role) {
         ResultList results = new ResultList();
         // reads a bunch of links that are using the default key
         LinkList links = findLinks(null, null, null, null, null, null, null, null, null, util.getAlternateKeyIx(), maxLinks, role);
