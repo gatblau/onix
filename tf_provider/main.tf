@@ -26,6 +26,7 @@ resource "ox_model" "Test_Model" {
   key         = "test_model"
   name        = "Test Model"
   description = "Test Model Description"
+  managed     = false
 }
 
 resource "ox_item_type" "Test_Item_Type" {
@@ -66,12 +67,14 @@ resource "ox_item_type_attr" "Test_Item_Type_Attr_2" {
 }
 
 resource "ox_link_type" "Test_Link_Type" {
-  key         = "test_link_type"
-  name        = "Test Link Type"
-  description = "Test Link Type Description"
-  model_key   = ox_model.Test_Model.key
-
-  depends_on = [ox_item_type_attr.Test_Item_Type_Attr_2]
+  key          = "test_link_type"
+  name         = "Test Link Type"
+  description  = "Test Link Type Description"
+  model_key    = ox_model.Test_Model.key
+  encrypt_meta = false
+  encrypt_txt  = false
+  managed      = false
+  depends_on   = [ox_item_type_attr.Test_Item_Type_Attr_2]
 }
 
 resource "ox_link_type_attr" "Test_Link_Type_Attr_1" {

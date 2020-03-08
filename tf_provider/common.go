@@ -17,6 +17,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -88,6 +89,10 @@ func put(data *schema.ResourceData, m interface{}, payload Payload, url string, 
 	return nil
 }
 
+func put2(data *schema.ResourceData, payload *bytes.Reader) error {
+	return nil
+}
+
 func delete(m interface{}, payload Payload, url string, key1 string, key2 string) error {
 	// get the Config instance from the meta object passed-in
 	cfg := m.(Config)
@@ -111,7 +116,7 @@ func delete(m interface{}, payload Payload, url string, key1 string, key2 string
 	return nil
 }
 
-func url(format string, payload Payload, m interface{}) string {
-	cfg := m.(Config)
-	return fmt.Sprintf("%s/itemtype/%s", cfg.Client.BaseURL, payload.Get("key"))
+func GetJSONBytesReader(data interface{}) (*bytes.Reader, error) {
+	jsonBytes, err := json.Marshal(data)
+	return bytes.NewReader(jsonBytes), err
 }

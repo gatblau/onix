@@ -170,37 +170,10 @@ func (o *Client) Delete(url string) (*Result, error) {
 }
 
 // Make a GET HTTP request to the WAPI
-func (o *Client) Get(resourceName string, key string) (interface{}, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s/%s", o.BaseURL, resourceName, key), nil)
+func (o *Client) Get(url string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", o.Token)
 	resp, err := http.DefaultClient.Do(req)
-	defer func() {
-		if ferr := resp.Body.Close(); ferr != nil {
-			err = ferr
-		}
-	}()
-	switch {
-	case resourceName == "item":
-		result := new(Item)
-		err = json.NewDecoder(resp.Body).Decode(result)
-		return *result, err
-	case resourceName == "itemtype":
-		result := new(ItemType)
-		err = json.NewDecoder(resp.Body).Decode(result)
-		return *result, err
-	case resourceName == "link":
-		result := new(Link)
-		err = json.NewDecoder(resp.Body).Decode(result)
-		return *result, err
-	case resourceName == "linktype":
-		result := new(LinkType)
-		err = json.NewDecoder(resp.Body).Decode(result)
-		return *result, err
-	case resourceName == "model":
-		result := new(Model)
-		err = json.NewDecoder(resp.Body).Decode(result)
-		return *result, err
-	}
-	return nil, nil
+	return resp, err
 }

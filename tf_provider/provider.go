@@ -33,8 +33,9 @@ func Provider() *schema.Provider {
 				Required: true,
 			},
 			"pwd": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:      schema.TypeString,
+				Required:  true,
+				Sensitive: true,
 			},
 			"auth_mode": {
 				Type:     schema.TypeString,
@@ -47,9 +48,10 @@ func Provider() *schema.Provider {
 				Default:  "",
 			},
 			"secret": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
+				Type:      schema.TypeString,
+				Optional:  true,
+				Default:   "",
+				Sensitive: true,
 			},
 			"token_uri": {
 				Type:     schema.TypeString,
@@ -67,14 +69,15 @@ func Provider() *schema.Provider {
 			"ox_item":           ItemResource(),
 			"ox_link":           LinkResource(),
 		},
-		// data sources are not implemented yet!
 		DataSourcesMap: map[string]*schema.Resource{
-			"ox_item_type_data": ItemTypeDataSource(),
-			"ox_item_data":      ItemDataSource(),
-			"ox_link_type_data": ItemTypeDataSource(),
-			"ox_link_data":      LinkDataSource(),
-			"ox_link_rule_data": LinkRuleDataSource(),
-			"ox_model_data":     ModelDataSource(),
+			"ox_model_data":          ModelDataSource(),
+			"ox_item_type_data":      ItemTypeDataSource(),
+			"ox_item_type_attr_data": ItemTypeAttributeDataSource(),
+			"ox_link_type_data":      ItemTypeDataSource(),
+			"ox_link_type_attr_data": LinkTypeAttributeDataSource(),
+			"ox_link_rule_data":      LinkRuleDataSource(),
+			"ox_item_data":           ItemDataSource(),
+			"ox_link_data":           LinkDataSource(),
 		},
 		ConfigureFunc: configureProvider,
 	}
