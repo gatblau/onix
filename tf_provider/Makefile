@@ -14,7 +14,7 @@
 #
 
 # the name of the terraform provider for Onix
-BINARY_NAME=terraform-provider-ox
+BINARY_NAME=terraform-provider-ox_v1.0.0
 
 # the name of the folder where the packaged binaries will be placed after the build
 BUILD_FOLDER=build
