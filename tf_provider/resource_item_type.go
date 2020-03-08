@@ -1,5 +1,6 @@
 /*
-   Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+   Onix Config Manager - Terraform Provider
+   Copyright (c) 2018-2019 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -101,4 +102,30 @@ func itemTypePayload(data *schema.ResourceData) Payload {
 		Managed:      data.Get("managed").(bool),
 		Tag:          data.Get("tag").([]interface{}),
 	}
+}
+
+func ItemTypeDataSource() *schema.Resource {
+	return &schema.Resource{
+		Read: readItemType,
+
+		Schema: map[string]*schema.Schema{
+			"key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+		},
+	}
+}
+
+func readItemType(d *schema.ResourceData, m interface{}) error {
+	return nil
 }

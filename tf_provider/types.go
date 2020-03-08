@@ -1,5 +1,6 @@
 /*
-   Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
+   Onix Config Manager - Terraform Provider
+   Copyright (c) 2018-2020 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -157,6 +158,37 @@ func (linkType *LinkType) Get(key string) string {
 	case "key":
 		{
 			return linkType.Key
+		}
+	default:
+		panic(fmt.Sprintf("key %s not supported", key))
+	}
+}
+
+type LinkTypeAttribute struct {
+	Key         string `json:"key"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Type        string `json:"type"`
+	DefValue    string `json:"defValue"`
+	Managed     bool   `json:"managed"`
+	Required    bool   `json:"required"`
+	Regex       string `json:"regex"`
+	LinkTypeKey string `json:"linkTypeKey"`
+}
+
+func (typeAttr *LinkTypeAttribute) ToJSON() (*bytes.Reader, error) {
+	return getJSONBytesReader(typeAttr)
+}
+
+func (typeAttr *LinkTypeAttribute) Get(key string) string {
+	switch strings.ToLower(key) {
+	case "key":
+		{
+			return typeAttr.Key
+		}
+	case "link_type_key":
+		{
+			return typeAttr.LinkTypeKey
 		}
 	default:
 		panic(fmt.Sprintf("key %s not supported", key))

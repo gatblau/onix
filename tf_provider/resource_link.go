@@ -1,5 +1,6 @@
 /*
-   Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+   Onix Config Manager - Terraform Provider
+   Copyright (c) 2018-2019 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -86,4 +87,26 @@ func linkPayload(data *schema.ResourceData) Payload {
 		StartItemKey: data.Get("start_item_key").(string),
 		EndItemKey:   data.Get("end_item_key").(string),
 	}
+}
+
+func LinkDataSource() *schema.Resource {
+	return &schema.Resource{
+		Read: readLink,
+
+		Schema: map[string]*schema.Schema{
+			"key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+		},
+	}
+}
+
+func readLink(d *schema.ResourceData, m interface{}) error {
+	return nil
 }

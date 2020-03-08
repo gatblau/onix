@@ -1,5 +1,6 @@
 /*
-   Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+   Onix Config Manager - Terraform Provider
+   Copyright (c) 2018-2020 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -94,4 +95,66 @@ func itemPayload(data *schema.ResourceData) Payload {
 		Tag:         data.Get("tag").([]interface{}),
 		Partition:   data.Get("partition").(string),
 	}
+}
+
+func ItemDataSource() *schema.Resource {
+	return &schema.Resource{
+		Read: readItem,
+
+		Schema: map[string]*schema.Schema{
+			"key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"itemtype": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"status": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"meta": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"tag": &schema.Schema{
+				Type:     schema.TypeList,
+				Elem:     schema.TypeString,
+				Optional: true,
+			},
+			"attribute": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"created": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"updated": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"changedby": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+		},
+	}
+}
+
+func readItem(d *schema.ResourceData, m interface{}) error {
+	return nil
 }
