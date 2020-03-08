@@ -1,6 +1,6 @@
 /*
    Onix Config Manager - Terraform Provider
-   Copyright (c) 2018-2019 by www.gatblau.org
+   Copyright (c) 2018-2020 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -21,15 +21,14 @@ import (
 )
 
 /*
-   LINK TYPE RESOURCE
+	LINK TYPE ATTRIBUTE RESOURCE
 */
-
-func LinkTypeResource() *schema.Resource {
+func LinkTypeAttributeResource() *schema.Resource {
 	return &schema.Resource{
-		Create: createOrUpdateLinkType,
-		Read:   readLinkType,
-		Update: createOrUpdateLinkType,
-		Delete: deleteLinkType,
+		Create: createOrUpdateLinkTypeAttribute,
+		Read:   readLinkTypeAttr,
+		Update: createOrUpdateLinkTypeAttribute,
+		Delete: deleteLinkTypeAttribute,
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
@@ -44,64 +43,59 @@ func LinkTypeResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"meta_schema": &schema.Schema{
-				Type:     schema.TypeMap,
-				Optional: true,
-			},
-			"model_key": &schema.Schema{
+			"type": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"tag": &schema.Schema{
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Optional: true,
-			},
-			"encrypt_meta": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
-			"encrypt_txt": &schema.Schema{
-				Type:     schema.TypeBool,
+			"def_value": &schema.Schema{
+				Type:     schema.TypeString,
 				Optional: true,
 			},
 			"managed": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+			"required": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"regex": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"link_type_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
 		},
 	}
 }
 
-func createOrUpdateLinkType(data *schema.ResourceData, m interface{}) error {
-	return put(data, m, linkTypePayload(data), "%s/linktype/%s", "key", "")
+func createOrUpdateLinkTypeAttribute(data *schema.ResourceData, m interface{}) error {
+	return put(data, m, linkTypeAttributePayload(data), "%s/linktype/%s/attribute/%s", "link_type_key", "key")
 }
 
-func deleteLinkType(data *schema.ResourceData, m interface{}) error {
-	return delete(m, linkTypePayload(data), "%s/linktype/%s", "key", "")
+func deleteLinkTypeAttribute(data *schema.ResourceData, m interface{}) error {
+	return delete(m, linkTypeAttributePayload(data), "%s/linktype/%s/attribute/%s", "link_type_key", "key")
 }
 
-func linkTypePayload(data *schema.ResourceData) Payload {
-	key := data.Get("key").(string)
-	name := data.Get("name").(string)
-	description := data.Get("description").(string)
-	modelKey := data.Get("model_key").(string)
-	return &LinkType{
-		Key:         key,
-		Name:        name,
-		Description: description,
-		Model:       modelKey,
-		MetaSchema:  data.Get("meta_schema").(map[string]interface{}),
-		EncryptMeta: data.Get("encrypt_meta").(bool),
-		EncryptTxt:  data.Get("encrypt_txt").(bool),
+func linkTypeAttributePayload(data *schema.ResourceData) Payload {
+	return &LinkTypeAttribute{
+		Key:         data.Get("key").(string),
+		Name:        data.Get("name").(string),
+		Description: data.Get("description").(string),
+		Type:        data.Get("type").(string),
+		DefValue:    data.Get("def_value").(string),
 		Managed:     data.Get("managed").(bool),
-		Tag:         data.Get("tag").([]interface{}),
+		Required:    data.Get("managed").(bool),
+		Regex:       data.Get("regex").(string),
+		LinkTypeKey: data.Get("link_type_key").(string),
 	}
 }
 
-func LinkTypeDataSource() *schema.Resource {
+func LinkTypeAttributeDataSource() *schema.Resource {
 	return &schema.Resource{
-		Read: readLinkType,
+		Read: readItemType,
 
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
@@ -121,6 +115,6 @@ func LinkTypeDataSource() *schema.Resource {
 	}
 }
 
-func readLinkType(d *schema.ResourceData, m interface{}) error {
+func readLinkTypeAttr(d *schema.ResourceData, m interface{}) error {
 	return nil
 }

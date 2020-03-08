@@ -1,5 +1,6 @@
 /*
-   Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
+   Onix Config Manager - Terraform Provider
+   Copyright (c) 2018-2020 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -25,7 +26,7 @@ import (
 func ItemTypeAttributeResource() *schema.Resource {
 	return &schema.Resource{
 		Create: createOrUpdateItemTypeAttribute,
-		Read:   nil,
+		Read:   readItemTypeAttr,
 		Update: createOrUpdateItemTypeAttribute,
 		Delete: deleteItemTypeAttribute,
 		Schema: map[string]*schema.Schema{
@@ -48,7 +49,7 @@ func ItemTypeAttributeResource() *schema.Resource {
 			},
 			"def_value": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 			"managed": &schema.Schema{
 				Type:     schema.TypeBool,
@@ -63,10 +64,6 @@ func ItemTypeAttributeResource() *schema.Resource {
 				Optional: true,
 			},
 			"item_type_key": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"link_type_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
@@ -94,4 +91,30 @@ func itemTypeAttributePayload(data *schema.ResourceData) Payload {
 		Regex:       data.Get("regex").(string),
 		ItemTypeKey: data.Get("item_type_key").(string),
 	}
+}
+
+func ItemTypeAttributeDataSource() *schema.Resource {
+	return &schema.Resource{
+		Read: readItemType,
+
+		Schema: map[string]*schema.Schema{
+			"key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+		},
+	}
+}
+
+func readItemTypeAttr(d *schema.ResourceData, m interface{}) error {
+	return nil
 }

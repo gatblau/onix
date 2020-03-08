@@ -1,5 +1,6 @@
 /*
-   Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+   Onix Config Manager - Terraform Provider
+   Copyright (c) 2018-2020 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -57,21 +58,23 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"ox_model":     ModelResource(),
-			"ox_item_type": ItemTypeResource(),
-			"ox_link_type": LinkTypeResource(),
-			"ox_link_rule": LinkRuleResource(),
-			"ox_item":      ItemResource(),
-			"ox_link":      LinkResource(),
+			"ox_model":          ModelResource(),
+			"ox_item_type":      ItemTypeResource(),
+			"ox_item_type_attr": ItemTypeAttributeResource(),
+			"ox_link_type":      LinkTypeResource(),
+			"ox_link_type_attr": LinkTypeAttributeResource(),
+			"ox_link_rule":      LinkRuleResource(),
+			"ox_item":           ItemResource(),
+			"ox_link":           LinkResource(),
 		},
 		// data sources are not implemented yet!
 		DataSourcesMap: map[string]*schema.Resource{
-			//"ox_item_type_data": ItemTypeDataSource(),
-			//"ox_item_data":      ItemDataSource(),
-			//"ox_link_type_data": ItemTypeDataSource(),db.execute()
-			//"ox_link_data":      LinkDataSource(),
-			//"ox_link_rule_data": LinkRuleDataSource(),
-			//"ox_model_data":     ModelDataSource(),
+			"ox_item_type_data": ItemTypeDataSource(),
+			"ox_item_data":      ItemDataSource(),
+			"ox_link_type_data": ItemTypeDataSource(),
+			"ox_link_data":      LinkDataSource(),
+			"ox_link_rule_data": LinkRuleDataSource(),
+			"ox_model_data":     ModelDataSource(),
 		},
 		ConfigureFunc: configureProvider,
 	}

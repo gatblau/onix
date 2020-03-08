@@ -1,5 +1,6 @@
 /*
-   Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+   Onix Config Manager - Terraform Provider
+   Copyright (c) 2018-2019 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -74,4 +75,30 @@ func linkRulePayload(data *schema.ResourceData) Payload {
 		StartItemTypeKey: data.Get("start_item_type_key").(string),
 		EndItemTypeKey:   data.Get("end_item_type_key").(string),
 	}
+}
+
+func LinkRuleDataSource() *schema.Resource {
+	return &schema.Resource{
+		Read: readLinkRule,
+
+		Schema: map[string]*schema.Schema{
+			"key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+		},
+	}
+}
+
+func readLinkRule(d *schema.ResourceData, m interface{}) error {
+	return nil
 }
