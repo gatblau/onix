@@ -4,3 +4,4 @@ terraform.tfstate
 terraform.tfstate.backup
 build
 terraform-provider-ox
+terraform
