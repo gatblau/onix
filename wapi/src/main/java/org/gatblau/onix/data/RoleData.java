@@ -29,6 +29,7 @@ public class RoleData {
     private String updated;
     private Integer version;
     private String changedBy;
+    private Integer level;
 
     public RoleData(){
     }
@@ -87,6 +88,14 @@ public class RoleData {
 
     public void setChangedBy(String changedBy) {
         this.changedBy = changedBy;
+    }
+
+    public Integer getLevel() {
+        return level;
+    }
+
+    public void setLevel(Integer level) {
+        this.level = level;
     }
 }
 

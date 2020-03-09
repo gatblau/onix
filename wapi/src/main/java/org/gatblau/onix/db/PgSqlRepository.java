@@ -1742,6 +1742,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," + // key_param
                 "?::character varying," + // name_param
                 "?::text," + // description_param
+                "?::integer," + //role_level_param
                 "?::bigint," + // version_param
                 "?::character varying," + // changed_by
                 "?::character varying[]" + // role_key_param
@@ -1777,9 +1778,10 @@ public class PgSqlRepository implements DbRepository {
             db.setString(1, key); // key_param
             db.setString(2, roleData.getName()); // name_param
             db.setString(3, roleData.getDescription()); // description_param
-            db.setObject(4, roleData.getVersion()); // version_param
-            db.setString(5, getUser()); // changed_by_param
-            db.setArray(6, role); // role_key_param
+            db.setInt(4, roleData.getLevel() == null ? 0 : roleData.getLevel()); // role_level_param
+            db.setObject(5, roleData.getVersion()); // version_param
+            db.setString(6, getUser()); // changed_by_param
+            db.setArray(7, role); // role_key_param
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_role"));
         } catch (Exception ex) {
             ex.printStackTrace();

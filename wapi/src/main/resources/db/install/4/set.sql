@@ -141,6 +141,7 @@ DO $$
       key_param character varying,
       name_param character varying,
       description_param text,
+      role_level_param integer,
       local_version_param bigint,
       changed_by_param character varying,
       role_key_param character varying[]
@@ -172,7 +173,8 @@ DO $$
           created,
           updated,
           changed_by,
-          owner
+          owner,
+          level
         )
         VALUES (
            nextval('role_id_seq'),
@@ -183,7 +185,8 @@ DO $$
            current_timestamp,
            null,
            changed_by_param,
-           role_key_param
+           role_key_param,
+           role_level_param
         );
         result := 'I';
       ELSE
@@ -198,7 +201,8 @@ DO $$
           AND (local_version_param = current_version OR local_version_param IS NULL)
           AND (
               name != name_param OR
-              description != description_param
+              description != description_param OR
+              level != role_level_param
           );
         GET DIAGNOSTICS rows_affected := ROW_COUNT;
         SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
@@ -211,9 +215,10 @@ DO $$
         character varying, -- key
         character varying, -- name
         text, -- description
+        integer, -- role level
         bigint, -- client version
         character varying, -- changed by
-        role_key_param character varying[]
+        character varying[] -- role keys
       )
       OWNER TO onix;
 
