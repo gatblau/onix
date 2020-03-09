@@ -1,4 +1,4 @@
-# Onix Terraform Provider  <img src="../docs/pics/ox.png" width="200" height="200" align="right">
+# Onix Terraform Provider  <img src="../../docs/pics/ox.png" width="200" height="200" align="right">
 
 This Terraform provider is the default command line interface for managing configuration information in Onix.
 

@@ -1,4 +1,4 @@
-# Resource Index
+# Resource Index <img src="../../docs/pics/ox.png" width="200" height="200" align="right">
 
 - [ox_model](ox_model.md) - models
 - [ox_item_type](ox_item_type.md) - item types
