@@ -1,4 +1,4 @@
-# ox_item Resource <img src="../../docs/pics/ox.png" width="200" height="200" align="right">
+# ox_item Resource <img src="../../../docs/pics/ox.png" width="200" height="200" align="right">
 
 Creates, updates or destroys a configuration item.
 
