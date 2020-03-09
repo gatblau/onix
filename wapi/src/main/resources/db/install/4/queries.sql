@@ -1159,5 +1159,70 @@ $BODY$;
 ALTER FUNCTION ox_get_link_type_attributes(character varying, character varying[])
     OWNER TO onix;
 
+/*
+  ox_items: return all items that a role(s) can see
+ */
+CREATE OR REPLACE FUNCTION ox_items(
+    role_key_param character varying[]
+)
+    RETURNS TABLE(
+         id bigint,
+         key character varying,
+         name character varying,
+         description text,
+         status smallint,
+         item_type_key character varying,
+         meta jsonb,
+         meta_enc boolean,
+         txt text,
+         txt_enc boolean,
+         enc_key_ix smallint,
+         tag text[],
+         attribute hstore,
+         version bigint,
+         created timestamp(6) with time zone,
+         updated timestamp(6) with time zone,
+         changed_by character varying,
+         model_key character varying,
+         partition_key character varying
+     )
+    LANGUAGE 'plpgsql'
+    COST 100
+    STABLE
+AS $BODY$
+BEGIN
+    RETURN QUERY SELECT
+         i.id,
+         i.key,
+         i.name,
+         i.description,
+         i.status,
+         it.key as item_type_key,
+         i.meta,
+         i.meta_enc,
+         i.txt,
+         i.txt_enc,
+         i.enc_key_ix,
+         i.tag,
+         i.attribute,
+         i.version,
+         i.created,
+         i.updated,
+         i.changed_by,
+         m.key as model_key,
+         p.key as partition_key
+     FROM item i
+      INNER JOIN item_type it ON i.item_type_id = it.id
+      INNER JOIN model m ON m.id = it.model_id
+      INNER JOIN partition p on i.partition_id = p.id
+      INNER JOIN privilege pr on p.id = pr.partition_id
+      INNER JOIN role r on pr.role_id = r.id
+     WHERE pr.can_read = TRUE
+       AND r.key = ANY(role_key_param);
+END
+$BODY$;
+
+ALTER FUNCTION ox_items(character varying[]) OWNER TO onix;
+
 END
 $$;
