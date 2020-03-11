@@ -19,8 +19,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // Check for errors in the result and the passed in error
@@ -40,80 +38,6 @@ type Config struct {
 	User   string
 	Pwd    string
 	Client Client
-}
-
-// Interface implemented by all payload objects to enable
-// generic key extraction and conversion to byte Reader
-type Payload interface {
-	Get(key string) string
-	ToJSON() (*bytes.Reader, error)
-}
-
-// Executes an HTTP PUT request to the Onix WAPI passing the following parameters:
-// - data: a Terraform *schema.ResourceData
-// - m: the Terraform provider metadata
-// - payload: the payload object
-// - resourceName: the WAPI resource name (e.g. item, itemtype, link, etc.)
-func put(data *schema.ResourceData, m interface{}, payload Payload, url string, key1 string, key2 string) error {
-	// get the Config instance from the meta object passed-in
-	cfg := m.(Config)
-
-	if len(key2) == 0 {
-		// assume one url parameter
-		url = fmt.Sprintf(url, cfg.Client.BaseURL, payload.Get(key1))
-	} else {
-		// assume two url parameters
-		url = fmt.Sprintf(url, cfg.Client.BaseURL, payload.Get(key1), payload.Get(key2))
-	}
-
-	// converts the passed-in payload to a bytes Reader
-	bytes, err := payload.ToJSON()
-
-	// any errors are returned immediately
-	if err != nil {
-		return err
-	}
-
-	// make an http put request to the service
-	result, err := cfg.Client.Put(url, bytes)
-
-	// any errors are returned
-	if e := check(result, err); e != nil {
-		return e
-	}
-
-	// sets the id in the resource data
-	data.SetId(payload.Get("key"))
-
-	// return no error
-	return nil
-}
-
-func put2(data *schema.ResourceData, payload *bytes.Reader) error {
-	return nil
-}
-
-func delete(m interface{}, payload Payload, url string, key1 string, key2 string) error {
-	// get the Config instance from the meta object passed-in
-	cfg := m.(Config)
-
-	if len(key2) == 0 {
-		// assume one url parameter
-		url = fmt.Sprintf(url, cfg.Client.BaseURL, payload.Get(key1))
-	} else {
-		// assume two url parameters
-		url = fmt.Sprintf(url, cfg.Client.BaseURL, payload.Get(key1), payload.Get(key2))
-	}
-
-	// make an http put request to the service
-	result, err := cfg.Client.Delete(url)
-
-	// any errors are returned
-	if e := check(result, err); e != nil {
-		return e
-	}
-
-	return nil
 }
 
 func GetJSONBytesReader(data interface{}) (*bytes.Reader, error) {
