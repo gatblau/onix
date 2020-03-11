@@ -1,6 +1,6 @@
 /*
    Onix Config Manager - Terraform Provider
-   Copyright (c) 2018-2019 by www.gatblau.org
+   Copyright (c) 2018-2020 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -171,7 +171,7 @@ func (o *Client) Delete(url string) (*Result, error) {
 
 // Make a GET HTTP request to the WAPI
 func (o *Client) Get(url string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(GET, url, nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", o.Token)
 	resp, err := http.DefaultClient.Do(req)

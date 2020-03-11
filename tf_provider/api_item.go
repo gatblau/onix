@@ -39,6 +39,7 @@ type Item struct {
 	Version     int64                  `json:"version"`
 	Created     string                 `json:"created"`
 	Updated     string                 `json:"updated"`
+	EncKeyIx    int64                  `json:"encKeyIx"`
 }
 
 // create a new Item from a terraform resource
