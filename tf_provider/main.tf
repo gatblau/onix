@@ -22,11 +22,39 @@ provider "ox" {
   //  token_uri = "uri-of-the-token-endpoint-at-authorisation-server"
 }
 
+resource "ox_partition" "Test_Partition" {
+  key         = "TEST"
+  name        = "Test Partition"
+  description = "A logical partition for testing."
+}
+
+resource "ox_role" "Test_Role" {
+  key         = "ADMIN"
+  name        = "System Administrator"
+  description = "Can read and write configuration data and models."
+  level       = 2
+
+  depends_on = [ox_partition.Test_Partition]
+}
+
+resource "ox_privilege" "Test_Privilege" {
+  key        = "ADMIN-TEST"
+  role       = ox_role.Test_Role.key
+  partition  = ox_partition.Test_Partition.key
+  can_create = true
+  can_read   = true
+  can_delete = true
+
+  depends_on = [ox_role.Test_Role]
+}
+
 resource "ox_model" "Test_Model" {
   key         = "test_model"
   name        = "Test Model"
   description = "Test Model Description"
   managed     = false
+
+  depends_on = [ox_privilege.Test_Privilege]
 }
 
 resource "ox_item_type" "Test_Item_Type" {
@@ -118,11 +146,11 @@ resource "ox_item" "Item_1" {
   meta = {
     "OS" = "RHEL7.3"
   }
-
   attribute = {
     "RAM" : "3",
     "CPU" : "1"
   }
+  partition = ox_partition.Test_Partition.key
 
   // adds explicit dependency so that link rule is created first!
   depends_on = [ox_link_rule.Item_To_Item_Rule]
@@ -136,11 +164,11 @@ resource "ox_item" "Item_2" {
   meta = {
     "VM" = true
   }
-
   attribute = {
     "RAM" : "3",
     "CPU" : "1"
   }
+  partition = ox_partition.Test_Partition.key
 
   // adds explicit dependency so that link rule is created first!
   depends_on = [ox_link_rule.Item_To_Item_Rule]

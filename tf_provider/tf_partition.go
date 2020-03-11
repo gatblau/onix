@@ -20,13 +20,33 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-// terraform resource for an Onix Model
-func ModelResource() *schema.Resource {
+func PartitionResource() *schema.Resource {
 	return &schema.Resource{
-		Create: createModel,
-		Read:   readModel,
-		Update: updateModel,
-		Delete: deleteModel,
+		Create: createPartition,
+		Read:   readPartition,
+		Update: updatePartition,
+		Delete: deletePartition,
+		Schema: map[string]*schema.Schema{
+			"key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+		},
+	}
+}
+
+func PartitionDataSource() *schema.Resource {
+	return &schema.Resource{
+		Read: readPartition,
+
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
@@ -40,72 +60,62 @@ func ModelResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"partition": &schema.Schema{
+			"owner": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"created": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"managed": &schema.Schema{
-				Type:     schema.TypeBool,
+			"updated": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"changedby": &schema.Schema{
+				Type:     schema.TypeString,
 				Optional: true,
 			},
 		},
 	}
 }
 
-// terraform data source for an Onix Model
-func ModelDataSource() *schema.Resource {
-	return &schema.Resource{
-		Read: readModel,
+func createPartition(data *schema.ResourceData, meta interface{}) error {
+	// read the resource data into a Partition
+	partition := newPartition(data)
 
-		Schema: map[string]*schema.Schema{
-			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-			},
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-		},
-	}
-}
+	// put the Partition to the Web API
+	err := partition.put(meta)
 
-func createModel(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Model
-	model := newModel(data)
-
-	// put the Model to the Web API
-	err := model.put(meta)
-
-	// set Model Id key
-	data.SetId(model.Key)
+	// set Item Id key
+	data.SetId(partition.Key)
 
 	return err
 }
 
-func readModel(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Model
-	model := newModel(data)
+func readPartition(data *schema.ResourceData, meta interface{}) error {
+	// read the resource data into a Partition
+	partition := newPartition(data)
 
 	// get the resource
-	model, err := model.get(meta)
+	partition, err := partition.get(meta)
 
 	return err
 }
 
-func updateModel(data *schema.ResourceData, meta interface{}) error {
-	return createModel(data, meta)
+func updatePartition(data *schema.ResourceData, meta interface{}) error {
+	// same as create - Web PI is idempotent
+	return createPartition(data, meta)
 }
 
-func deleteModel(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into an Model
-	model := newModel(data)
+func deletePartition(data *schema.ResourceData, meta interface{}) error {
+	// read the resource data into a Partition
+	partition := newPartition(data)
 
-	// delete the model
-	return model.delete(meta)
+	// delete the partition
+	return partition.delete(meta)
 }

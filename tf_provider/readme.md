@@ -1,4 +1,4 @@
-# Onix Provider <img src="../docs/pics/ox.png" width="200" height="200" align="right">
+# Onix Terraform Provider <img src="../docs/pics/ox.png" width="200" height="200" align="right">
 
 The provider documentation can be found [here](docs/index.md).
 

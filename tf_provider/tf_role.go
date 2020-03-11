@@ -20,43 +20,12 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-// terraform resource for an Onix Model
-func ModelResource() *schema.Resource {
+func RoleResource() *schema.Resource {
 	return &schema.Resource{
-		Create: createModel,
-		Read:   readModel,
-		Update: updateModel,
-		Delete: deleteModel,
-		Schema: map[string]*schema.Schema{
-			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"partition": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"managed": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
-		},
-	}
-}
-
-// terraform data source for an Onix Model
-func ModelDataSource() *schema.Resource {
-	return &schema.Resource{
-		Read: readModel,
-
+		Create: createRole,
+		Read:   readRole,
+		Update: updateRole,
+		Delete: deleteRole,
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
@@ -69,43 +38,93 @@ func ModelDataSource() *schema.Resource {
 			},
 			"description": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+			},
+			"level": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
 			},
 		},
 	}
 }
 
-func createModel(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Model
-	model := newModel(data)
+func RoleDataSource() *schema.Resource {
+	return &schema.Resource{
+		Read: readRole,
 
-	// put the Model to the Web API
-	err := model.put(meta)
+		Schema: map[string]*schema.Schema{
+			"key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"owner": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"level": &schema.Schema{
+				Type:     schema.TypeInt,
+				Required: true,
+			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"created": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"updated": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"changedby": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+		},
+	}
+}
 
-	// set Model Id key
-	data.SetId(model.Key)
+func createRole(data *schema.ResourceData, meta interface{}) error {
+	// read the resource data into a Role
+	role := newRole(data)
+
+	// put the Role to the Web API
+	err := role.put(meta)
+
+	// set Role Id key
+	data.SetId(role.Key)
 
 	return err
 }
 
-func readModel(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Model
-	model := newModel(data)
+func readRole(data *schema.ResourceData, meta interface{}) error {
+	// read the resource data into a Role
+	role := newRole(data)
 
 	// get the resource
-	model, err := model.get(meta)
+	role, err := role.get(meta)
 
 	return err
 }
 
-func updateModel(data *schema.ResourceData, meta interface{}) error {
-	return createModel(data, meta)
+func updateRole(data *schema.ResourceData, meta interface{}) error {
+	// same as create - Web PI is idempotent
+	return createRole(data, meta)
 }
 
-func deleteModel(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into an Model
-	model := newModel(data)
+func deleteRole(data *schema.ResourceData, meta interface{}) error {
+	// read the resource data into a Role
+	role := newRole(data)
 
-	// delete the model
-	return model.delete(meta)
+	// delete the role
+	return role.delete(meta)
 }
