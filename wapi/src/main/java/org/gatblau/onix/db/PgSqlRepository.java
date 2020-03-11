@@ -1830,23 +1830,31 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result addPrivilege(String partitionKey, String roleKey, NewPrivilegeData privilege, String[] role) {
-        Result result = new Result(String.format("Privilege:%s:%s", roleKey, partitionKey));
+    public synchronized Result createOrUpdatePrivilege(String key, PrivilegeData privilege, String[] role) {
         ResultSet set = null;
+        Result result = new Result(String.format("Privilege:%s", key));
         try {
-            db.prepare(getAddPrivilegeSQL());
-            db.setString(1, partitionKey); // partition_key_param
-            db.setString(2, roleKey); // role_key_param
-            db.setObject(3, privilege.isCanCreate()); // can_create_param
-            db.setObject(4, privilege.isCanRead()); // can_read_param
-            db.setObject(5, privilege.isCanDelete()); // can_delete_param
-            db.setString(6, getUser()); // changed_by_param
-            db.setArray(7, role); // role_key_param
-            result.setOperation(db.executeQueryAndRetrieveStatus("ox_add_privilege"));
+            if (privilege.getPartitionKey() == null) {
+                throw new RuntimeException("Client has not provided Partition Key.");
+            }
+            if (privilege.getRoleKey() == null) {
+                throw new RuntimeException("Client has not provided Role Key.");
+            }
+            db.prepare(getSetPrivilegeSQL());
+            db.setString(1, key);
+            db.setString(2, privilege.getPartitionKey()); // partition_key_param
+            db.setString(3, privilege.getRoleKey()); // role_key_param
+            db.setObject(4, privilege.isCanCreate()); // can_create_param
+            db.setObject(5, privilege.isCanRead()); // can_read_param
+            db.setObject(6, privilege.isCanDelete()); // can_delete_param
+            db.setObject(7, privilege.getVersion()); // version_param
+            db.setString(8, getUser()); // changed_by_param
+            db.setArray(9, role); // role_key_param
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_privilege"));
         } catch (Exception ex) {
             ex.printStackTrace();
             result.setError(true);
-            result.setMessage(String.format("Failed to add privilege with role '%s' and partition '%s': %s.", roleKey, partitionKey, ex.getMessage()));
+            result.setMessage(String.format("Failed to upsert privilege with key '%s': %s.", key, ex.getMessage()));
         } finally {
             db.close();
         }
@@ -1854,13 +1862,12 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result removePrivilege(String partitionKey, String roleKey, String[] role) {
-        Result result = new Result(String.format("Remove_Privilege_%s_%s", roleKey, partitionKey));
+    public synchronized Result removePrivilege(String key, String[] role) {
+        Result result = new Result(String.format("Remove_Privilege_%s", key));
         try {
-            db.prepare(getRemovePrivilegeSQL());
-            db.setString(1, partitionKey);
-            db.setString(2, roleKey);
-            db.setArray(3, role);
+            db.prepare(getDeletePrivilegeSQL());
+            db.setString(1, key);
+            db.setArray(2, role);
             result.setOperation((db.execute()) ? "D" : "N");
             if (result.getOperation().equals("D")) {
                 result.setChanged(true);
@@ -1873,6 +1880,27 @@ public class PgSqlRepository implements DbRepository {
             db.close();
         }
         return result;
+    }
+
+    @Override
+    public synchronized PrivilegeData getPrivilege(String key, String[] role) {
+        PrivilegeData privilege = null;
+        Result result = new Result(String.format("Get_Privilege_%s", key));
+        try {
+            db.prepare(getGetPrivilegeSQL());
+            db.setString(1, key);
+            db.setArray(2, role);
+            ResultSet set = db.executeQuerySingleRow();
+            privilege = util.toPrivilegeData(set);
+            db.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
+        } finally {
+            db.close();
+        }
+        return privilege;
     }
 
     @Override
@@ -1999,13 +2027,15 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public String getAddPrivilegeSQL() {
-        return "SELECT ox_add_privilege(" +
+    public String getSetPrivilegeSQL() {
+        return "SELECT ox_set_privilege(" +
+                "?::character varying," + // key
                 "?::character varying," + // role_key_param
                 "?::character varying," + // privilege_key_param
                 "?::boolean," + // can_create_param
                 "?::boolean," + // can_read_param
                 "?::boolean," + // can_delete_param
+                "?::bigint," + // version_param
                 "?::character varying," + // changed_by_param
                 "?::character varying[]" + // logged_role_key_param
                 ")";
@@ -2020,10 +2050,9 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public String getRemovePrivilegeSQL() {
-        return "SELECT ox_remove_privilege(" +
-                "?::character varying," + // role_key_param
-                "?::character varying," + // privilege_key_param
+    public String getDeletePrivilegeSQL() {
+        return "SELECT ox_delete_privilege(" +
+                "?::character varying," + // key_param
                 "?::character varying[]" + // logged_role_key_param
                 ")";
     }
@@ -2068,6 +2097,14 @@ public class PgSqlRepository implements DbRepository {
         return "SELECT * FROM ox_partition(" +
                 "?::character varying," + // key_param
                 "?::character varying[]" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetPrivilegeSQL() {
+        return "SELECT * FROM ox_privilege(" +
+                "?::character varying," + // key_param
+                "?::character varying[]" + // user_role_key_param
                 ")";
     }
 

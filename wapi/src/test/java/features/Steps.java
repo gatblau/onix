@@ -1343,11 +1343,9 @@ public class Steps extends BaseTest {
     }
 
     private ResponseEntity<Result> putPrivilege(String roleKey, String partitionKey, String payload) {
-        String url = String.format("%s/privilege/{role_key}/{partition_key}", baseUrl);
+        String url = String.format("%s/privilege/{key}", baseUrl);
         Map<String, Object> vars = new HashMap<>();
-//        vars.put("payload", payload);
-        vars.put("role_key", roleKey);
-        vars.put("partition_key", partitionKey);
+        vars.put("key", String.format("%s-%s", roleKey, partitionKey));
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
         ResponseEntity<Result> response = client.exchange(url, HttpMethod.PUT, getEntity(util.getFile(payload)), Result.class, vars);
@@ -1880,12 +1878,11 @@ public class Steps extends BaseTest {
         Result result;
         ResponseEntity<Result> response = null;
         response = client.exchange(
-                String.format("%s/privilege/{role_key}/{partition_key}", baseUrl),
+                String.format("%s/privilege/{key}", baseUrl),
                 HttpMethod.DELETE,
                 null,
                 Result.class,
-                ROLE_ONE_KEY,
-                PARTITION_ONE_KEY);
+                String.format("%s-%s", ROLE_ONE_KEY, PARTITION_ONE_KEY));
         util.put(RESPONSE, response);
         util.remove(EXCEPTION);
         result = response.getBody();

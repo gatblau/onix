@@ -598,10 +598,10 @@ public class WebAPI {
         PRIVILEGES
      */
     @ApiOperation(
-        value = "Add a privilege to an existing role.",
+        value = "Creates a new or updates an existing privilege granting a role access to a partition.",
         notes = "")
     @RequestMapping(
-        path = "/privilege/{role_key}/{partition_key}"
+        path = "/privilege/{key}"
         , method = RequestMethod.PUT)
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "No changes where performed to the configuration privilege."),
@@ -611,15 +611,13 @@ public class WebAPI {
         @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
     )
     public ResponseEntity<Result> addPrivilege(
-        @PathVariable("partition_key")
-        String partitionKey,
-        @PathVariable("role_key")
-        String roleKey,
+        @PathVariable("key")
+        String key,
         @RequestBody
-        NewPrivilegeData privilege,
+        PrivilegeData privilege,
         Authentication authentication
     ) {
-        Result result = data.addPrivilege(partitionKey, roleKey, privilege, getRole(authentication));
+        Result result = data.createOrUpdatePrivilege(key, privilege, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -639,20 +637,37 @@ public class WebAPI {
     }
 
     @ApiOperation(
+            value = "Get the privilege for the specified partition and role.",
+            notes = "")
+    @RequestMapping(
+            path = "/privilege/{key}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<PrivilegeData> getPrivilege(
+            @PathVariable("key") String key,
+            Authentication authentication
+    ) {
+        PrivilegeData privilege = data.getPrivilege(key, getRole(authentication));
+        if (privilege != null) {
+            return ResponseEntity.ok(privilege);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @ApiOperation(
             value = "Deletes a privilege.",
             notes = "")
     @RequestMapping(
-            path = "/privilege/{role_key}/{partition_key}"
+            path = "/privilege/{key}"
             , method = RequestMethod.DELETE
     )
     public ResponseEntity<Result> deletePrivilege(
-        @PathVariable("partition_key")
-        String partitionKey,
-        @PathVariable("role_key")
-        String roleKey,
+        @PathVariable("key")
+        String key,
         Authentication authentication
     ) {
-        Result result = data.removePrivilege(partitionKey, roleKey, getRole(authentication));
+        Result result = data.removePrivilege(key, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 

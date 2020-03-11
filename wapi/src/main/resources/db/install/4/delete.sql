@@ -509,5 +509,71 @@ DO
       )
       OWNER TO onix;
 
+    /*
+     ox_delete_privilege()
+    */
+    CREATE OR REPLACE FUNCTION ox_delete_privilege(
+        key_param character varying,
+        logged_role_key_param character varying[]
+    )
+        RETURNS TABLE(result char(1))
+        LANGUAGE 'plpgsql'
+        COST 100
+        VOLATILE
+    AS
+    $BODY$
+    DECLARE
+        role_id_value      bigint;
+        partition_id_value bigint;
+        role_owner         character varying;
+        partition_owner    character varying;
+        logged_role_level  integer;
+    BEGIN
+        -- finds the level of the logged role
+        SELECT r.level
+        FROM role r
+        WHERE r.key = ANY(logged_role_key_param)
+        ORDER BY r.level DESC
+        LIMIT 1
+        INTO logged_role_level;
+
+        -- finds the owner of the role to add the privilege to
+        SELECT r.owner, r.id
+        FROM privilege p
+            INNER JOIN role r ON r.id = p.role_id
+        WHERE p.key = key_param
+            INTO role_owner, role_id_value;
+
+        -- fins the owner of the partition to add the privilege to
+        SELECT p.owner, p.id
+        FROM privilege pr
+            INNER JOIN partition p ON p.id = pr.partition_id
+        WHERE pr.key = key_param
+            INTO partition_owner, partition_id_value;
+
+        IF (logged_role_level = 0) THEN
+            -- logged role cannot mess with privileges
+            RAISE EXCEPTION 'Role level %: "%" is not authorised to remove privilege.', logged_role_level, logged_role_key_param;
+        ELSEIF (logged_role_level = 1) THEN
+            IF NOT(role_owner = ANY(logged_role_key_param) AND partition_owner = ANY(logged_role_key_param)) THEN
+                -- logged role can only remove privileges if it owns both the role and partition, so cannot do it in this case
+                RAISE EXCEPTION 'Role level %: "%" is not authorised to remove privilege because it does not own privilege or role to add the privilege to. Role owner is "%" and Partition owner is "%".', logged_role_level, logged_role_key_param, role_owner, partition_owner;
+            END IF;
+        END IF;
+
+        -- logged role is either level 1 owning role and partition or level 2
+        DELETE FROM privilege p
+        WHERE p.partition_id = partition_id_value
+          AND p.role_id = role_id_value;
+
+        RETURN QUERY SELECT 'D'::char(1);
+    END;
+    $BODY$;
+
+    ALTER FUNCTION ox_delete_privilege(
+        character varying,
+        character varying[]
+        )
+        OWNER TO onix;
     END
     $$;

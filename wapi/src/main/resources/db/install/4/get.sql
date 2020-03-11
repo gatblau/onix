@@ -719,6 +719,7 @@ DO
                                                            logged_role_key_param character varying[])
         RETURNS TABLE
                 (
+                  key      character varying,
                   role_key      character varying,
                   partition_key character varying,
                   can_create    boolean,
@@ -743,7 +744,8 @@ DO
           INTO role_level;
 
         RETURN QUERY
-          SELECT r.key as role_key,
+          SELECT pr.key,
+                 r.key as role_key,
                  p.key as partition_key,
                  pr.can_create,
                  pr.can_read,
@@ -760,5 +762,59 @@ DO
 
       ALTER FUNCTION ox_get_privileges_by_role(character varying, character varying[])
         OWNER TO onix;
+
+      /*
+        ox_privilege(key_param, user_role_param): gets the privilege specified by the partition and role.
+        use: select * ox_privilege(key_param, user_role_param)
+       */
+      CREATE OR REPLACE FUNCTION ox_privilege(
+            key_param character varying,
+            user_role_param character varying[]
+        )
+          RETURNS TABLE
+          (
+              key           character varying,
+              role_key      character varying,
+              partition_key character varying,
+              can_create    boolean,
+              can_read      boolean,
+              can_delete    boolean,
+              changed_by    character varying,
+              created       timestamp(6) with time zone
+          )
+          LANGUAGE 'plpgsql'
+          COST 100
+          STABLE
+      AS
+      $BODY$
+      DECLARE
+          role_level integer;
+      BEGIN
+          SELECT r.level
+          FROM role r
+          WHERE r.key = ANY (user_role_param)
+          ORDER BY r.level DESC
+          LIMIT 1
+          INTO role_level;
+
+          RETURN QUERY
+              SELECT pr.key,
+                     r.key as role_key,
+                     p.key as partition_key,
+                     pr.can_create,
+                     pr.can_read,
+                     pr.can_delete,
+                     pr.changed_by,
+                     pr.created
+              FROM privilege pr
+                       INNER JOIN partition p ON p.id = pr.partition_id
+                       INNER JOIN role r ON pr.role_id = r.id
+              WHERE pr.key = key_param
+                AND ((r.owner = p.owner AND r.owner = ANY (user_role_param) AND role_level = 1) OR (role_level = 2));
+      END;
+      $BODY$;
+
+      ALTER FUNCTION ox_privilege(character varying, character varying[])
+          OWNER TO onix;
     END
     $$;
