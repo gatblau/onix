@@ -1312,14 +1312,16 @@ DO $$
       OWNER TO onix;
 
     /*
-      ox_add_privilege()
+      ox_set_privilege()
     */
-    CREATE OR REPLACE FUNCTION ox_add_privilege(
+    CREATE OR REPLACE FUNCTION ox_set_privilege(
+      key_param character varying,
       partition_key_param character varying,
       role_key_param character varying,
       can_create_param boolean,
       can_read_param boolean,
       can_delete_param boolean,
+      local_version_param bigint,
       changed_by_param character varying,
       logged_role_key_param character varying[]
     )
@@ -1330,11 +1332,14 @@ DO $$
     AS
     $BODY$
     DECLARE
+      result             char(1); -- the result status for the upsert
       role_id_value      bigint;
       partition_id_value bigint;
+      current_version    bigint;
       role_owner         character varying;
       partition_owner    character varying;
       logged_role_level  integer;
+      rows_affected      integer;
     BEGIN
       -- finds the level of the logged role
       SELECT r.level
@@ -1350,7 +1355,7 @@ DO $$
       WHERE r.key = role_key_param
         INTO role_owner, role_id_value;
 
-      -- fins the owner of the partition to add the privilege to
+      -- finds the owner of the partition to add the privilege to
       SELECT p.owner, p.id
       FROM partition p
       WHERE p.key = partition_key_param
@@ -1358,113 +1363,82 @@ DO $$
 
       IF (logged_role_level = 0) THEN
         -- logged role cannot mess with privileges
-        RAISE EXCEPTION 'Role level %: "%" is not authorised to remove privilege.', logged_role_level, logged_role_key_param;
+        RAISE EXCEPTION 'Role level %: "%" is not authorised to set privilege.', logged_role_level, logged_role_key_param;
       ELSEIF (logged_role_level = 1) THEN
         IF NOT(role_owner = ANY(logged_role_key_param) AND partition_owner = ANY(logged_role_key_param)) THEN
           -- logged role can only add privileges if it owns both the role and partition, so cannot do it in this case
-          RAISE EXCEPTION 'Role level %: "%" is not authorised to remove privilege because it does not own privilege or role to add the privilege to. Role owner is "%" and Partition owner is "%".', logged_role_level, logged_role_key_param, role_owner, partition_owner;
+          RAISE EXCEPTION 'Role level %: "%" is not authorised to set privilege because it does not own privilege or role to add the privilege to. Role owner is "%" and Partition owner is "%".', logged_role_level, logged_role_key_param, role_owner, partition_owner;
         END IF;
       END IF;
 
-      -- logged role is either level 1 owning role and partition or level 2
-      INSERT INTO privilege(
-        partition_id,
-        role_id,
-        can_create,
-        can_read,
-        can_delete,
-        changed_by
-      )
-      VALUES(
-        partition_id_value,
-        role_id_value,
-        can_create_param,
-        can_read_param,
-        can_delete_param,
-        changed_by_param
-      );
-      RETURN QUERY SELECT 'I'::char(1);
-    END;
-    $BODY$;
+      -- get the privilege current version
+      SELECT version FROM privilege WHERE key = key_param INTO current_version;
 
-    ALTER FUNCTION ox_add_privilege(
-       character varying,
-       character varying,
-       boolean,
-       boolean,
-       boolean,
-       character varying,
-       character varying[]
-    )
-    OWNER TO onix;
-
-
-    /*
-      ox_remove_privilege()
-    */
-    CREATE OR REPLACE FUNCTION ox_remove_privilege(
-      partition_key_param character varying,
-      role_key_param character varying,
-      logged_role_key_param character varying[]
-    )
-      RETURNS TABLE(result char(1))
-      LANGUAGE 'plpgsql'
-      COST 100
-      VOLATILE
-    AS
-    $BODY$
-    DECLARE
-      role_id_value      bigint;
-      partition_id_value bigint;
-      role_owner         character varying;
-      partition_owner    character varying;
-      logged_role_level  integer;
-    BEGIN
-      -- finds the level of the logged role
-      SELECT r.level
-      FROM role r
-      WHERE r.key = ANY(logged_role_key_param)
-      ORDER BY r.level DESC
-      LIMIT 1
-        INTO logged_role_level;
-
-      -- finds the owner of the role to add the privilege to
-      SELECT r.owner, r.id
-      FROM role r
-      WHERE r.key = role_key_param
-        INTO role_owner, role_id_value;
-
-      -- fins the owner of the partition to add the privilege to
-      SELECT p.owner, p.id
-      FROM partition p
-      WHERE p.key = partition_key_param
-        INTO partition_owner, partition_id_value;
-
-      IF (logged_role_level = 0) THEN
-        -- logged role cannot mess with privileges
-        RAISE EXCEPTION 'Role level %: "%" is not authorised to remove privilege.', logged_role_level, logged_role_key_param;
-      ELSEIF (logged_role_level = 1) THEN
-        IF NOT(role_owner = ANY(logged_role_key_param) AND partition_owner = ANY(logged_role_key_param)) THEN
-          -- logged role can only remove privileges if it owns both the role and partition, so cannot do it in this case
-          RAISE EXCEPTION 'Role level %: "%" is not authorised to remove privilege because it does not own privilege or role to add the privilege to. Role owner is "%" and Partition owner is "%".', logged_role_level, logged_role_key_param, role_owner, partition_owner;
-        END IF;
+      -- if no version is found then go for an insert
+      IF (current_version IS NULL) THEN
+          -- logged role is either level 1 owning role and partition or level 2
+          INSERT INTO privilege(
+            key,
+            partition_id,
+            role_id,
+            can_create,
+            can_read,
+            can_delete,
+            version,
+            created,
+            updated,
+            changed_by
+          )
+          VALUES(
+            key_param,
+            partition_id_value,
+            role_id_value,
+            can_create_param,
+            can_read_param,
+            can_delete_param,
+            1,
+            current_timestamp,
+            null,
+            changed_by_param
+          );
+          result := 'I';
+      ELSE
+          UPDATE privilege
+          SET can_create   = can_create_param,
+              can_read     = can_read_param,
+              can_delete   = can_delete_param,
+              version      = version + 1,
+              updated      = current_timestamp,
+              changed_by   = changed_by_param
+          WHERE key = key_param
+            -- concurrency management - optimistic locking
+            AND (local_version_param = current_version OR local_version_param IS NULL)
+            AND (
+                  can_create != can_create_param OR
+                  can_read != can_read_param OR
+                  can_delete != can_delete_param OR
+                  role_id != role_id_value OR
+                  partition_id != partition_id_value
+              );
+          GET DIAGNOSTICS rows_affected := ROW_COUNT;
+          SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
       END IF;
-
-      -- logged role is either level 1 owning role and partition or level 2
-      DELETE FROM privilege p
-        WHERE p.partition_id = partition_id_value
-        AND p.role_id = role_id_value;
-
-      RETURN QUERY SELECT 'D'::char(1);
+      RETURN QUERY SELECT result;
     END;
     $BODY$;
 
-    ALTER FUNCTION ox_remove_privilege(
+    ALTER FUNCTION ox_set_privilege(
         character varying,
+        character varying,
+        character varying,
+        boolean,
+        boolean,
+        boolean,
+        bigint,
         character varying,
         character varying[]
-      )
-      OWNER TO onix;
+    )
+    OWNER TO onix;
 
     /*
       ox_set_type_attribute(...)

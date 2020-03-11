@@ -204,12 +204,14 @@ public interface DbRepository {
     RoleDataList getAllRoles(String[] role);
 
     /* Privileges */
-    String getAddPrivilegeSQL();
-    String getRemovePrivilegeSQL();
+    String getSetPrivilegeSQL();
+    String getDeletePrivilegeSQL();
     String getGetAllPrivilegeByRoleSQL();
+    String getGetPrivilegeSQL();
 
-    Result addPrivilege(String partitionKey, String roleKey, NewPrivilegeData privilege, String[] role);
-    Result removePrivilege(String partitionKey, String roleKey, String[] role);
+    Result createOrUpdatePrivilege(String key, PrivilegeData privilege, String[] role);
+    Result removePrivilege(String ey, String[] role);
+    PrivilegeData getPrivilege(String key, String[] role);
 
     PrivilegeDataList getPrivilegesByRole(String roleKey, String[] loggedRoleKey);
 

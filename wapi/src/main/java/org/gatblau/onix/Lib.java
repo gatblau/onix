@@ -342,14 +342,18 @@ public class Lib implements InitializingBean {
     }
 
     public PrivilegeData toPrivilegeData(ResultSet set) throws SQLException {
-        PrivilegeData priv = new PrivilegeData();
-        priv.setRoleKey(set.getString("role_key"));
-        priv.setPartitionKey(set.getString("partition_key"));
-        priv.setCanCreate(set.getBoolean("can_create"));
-        priv.setCanRead(set.getBoolean("can_read"));
-        priv.setCanDelete(set.getBoolean("can_delete"));
-        priv.setChangedBy(set.getString("changed_by"));
-        priv.setCreated(dateFormat.format(set.getDate("created")));
+        PrivilegeData priv = null;
+        if (set != null) {
+            priv = new PrivilegeData();
+            priv.setKey(set.getString("key"));
+            priv.setRoleKey(set.getString("role_key"));
+            priv.setPartitionKey(set.getString("partition_key"));
+            priv.setCanCreate(set.getBoolean("can_create"));
+            priv.setCanRead(set.getBoolean("can_read"));
+            priv.setCanDelete(set.getBoolean("can_delete"));
+            priv.setChangedBy(set.getString("changed_by"));
+            priv.setCreated(dateFormat.format(set.getDate("created")));
+        }
         return priv;
     }
 

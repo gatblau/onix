@@ -1,10 +1,10 @@
-Feature: Add privilege to Role
+Feature: Create privilege
   As an Admin user
-  I want to add privileges to a role
-  So that the user associated with the role can perform
-    read, write and delete operations on resources.
+  I want to create a privilege
+  So that the user associated with a specific role can perform
+    CRUD operations on resources in a specific partition.
 
-  Scenario: Add privilege to role
+  Scenario: Create privilege
     Given the partition exists in the database
     Given the role exists in the database
     Given the privilege does not exist in the database

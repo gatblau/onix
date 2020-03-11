@@ -103,8 +103,7 @@ DO
       END IF;
 
       INSERT INTO partition(id, key, name, description, version, changed_by)
-      VALUES (0, 'REF', 'Default Reference Partition', 'Default partition for reference data.', 1,
-              'onix');
+      VALUES (0, 'REF', 'Default Reference Partition', 'Default partition for reference data.', 1, 'onix');
       INSERT INTO partition(id, key, name, description, version, changed_by)
       VALUES (1, 'INS', 'Default Instance Partition', 'Default partition for instance data.', 1, 'onix');
 
@@ -221,12 +220,15 @@ DO
         CREATE TABLE privilege
         (
           id           bigint                 NOT NULL DEFAULT nextval('privilege_id_seq'::regclass),
+          key          CHARACTER VARYING(100) NOT NULL,
           role_id      bigint,
           partition_id bigint,
           can_create   boolean,
           can_read     boolean,
           can_delete   boolean,
-          created      timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
+          version      bigint,
+          created      timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
+          updated      timestamp(6) with time zone,
           changed_by   CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           CONSTRAINT privilege_id_pk PRIMARY KEY (id, role_id, partition_id),
           CONSTRAINT privilege_role_id_fk FOREIGN KEY (role_id)
@@ -256,12 +258,15 @@ DO
           operation    CHAR(1)   NOT NULL,
           changed      TIMESTAMP NOT NULL,
           id           INTEGER   NOT NULL,
+          key          CHARACTER VARYING(100),
           role_id      bigint,
           partition_id bigint,
           can_create   boolean,
           can_read     boolean,
           can_delete   boolean,
+          version      bigint,
           created      timestamp(6) with time zone,
+          updated      timestamp(6) with time zone,
           changed_by   CHARACTER VARYING(100)
         );
 
@@ -292,19 +297,18 @@ DO
           OWNER to onix;
       END IF;
 
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, changed_by)
-      VALUES (1, 1, 0, true, true, true, 'onix'); -- admin privilege on part 0
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, changed_by)
-      VALUES (2, 1, 1, true, true, true, 'onix'); -- admin privilege on part 1
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, changed_by)
-      VALUES (3, 2, 0, false, true, false, 'onix'); -- reader privilege on part 0
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, changed_by)
-      VALUES (4, 2, 1, false, true, false, 'onix'); -- reader privilege on part 1
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, changed_by)
-      VALUES (5, 3, 0, false, true, false, 'onix'); -- writer privilege on part 0
-      INSERT INTO privilege(id, role_id, partition_id, can_create, can_read, can_delete, changed_by)
-      VALUES (6, 3, 1, true, true, true, 'onix');
-      -- syswriter privilege on part 1
+      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by)
+      VALUES (1, 'ADMIN-REF', 1, 0, true, true, true, 'onix'); -- admin privilege on part 0
+      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by)
+      VALUES (2, 'ADMIN-INS', 1, 1, true, true, true, 'onix'); -- admin privilege on part 1
+      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by)
+      VALUES (3, 'READER-REF', 2, 0, false, true, false, 'onix'); -- reader privilege on part 0
+      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by)
+      VALUES (4, 'READER-INS', 2, 1, false, true, false, 'onix'); -- reader privilege on part 1
+      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by)
+      VALUES (5, 'WRITER-REF', 3, 0, false, true, false, 'onix'); -- writer privilege on part 0
+      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by)
+      VALUES (6, 'WRITER-INS', 3, 1, true, true, true, 'onix');
 
       ---------------------------------------------------------------------------
       -- MODEL

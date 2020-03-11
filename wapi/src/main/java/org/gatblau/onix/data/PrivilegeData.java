@@ -1,5 +1,5 @@
 /*
-Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,15 +24,26 @@ import java.io.Serializable;
 public class PrivilegeData implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    private String key;
     private String roleKey;
     private String partitionKey;
     private boolean canCreate;
     private boolean canRead;
     private boolean canDelete;
     private String created;
+    private String update;
+    private Integer version;
     private String changedBy;
 
     public PrivilegeData(){
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
     }
 
     public String getRoleKey() {
@@ -89,5 +100,21 @@ public class PrivilegeData implements Serializable {
 
     public void setChangedBy(String changedBy) {
         this.changedBy = changedBy;
+    }
+
+    public String getUpdate() {
+        return update;
+    }
+
+    public void setUpdate(String update) {
+        this.update = update;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 }
