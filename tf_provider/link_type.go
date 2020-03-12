@@ -17,6 +17,7 @@
 package main
 
 import (
+	. "github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -116,11 +117,14 @@ func LinkTypeDataSource() *schema.Resource {
 }
 
 func createLinkType(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Link Type
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the tf data into an Item
 	linkType := newLinkType(data)
 
 	// put the Link Type to the Web API
-	err := linkType.put(meta)
+	err := err(c.PutLinkType(linkType))
 
 	// set Link Type Id key
 	data.SetId(linkType.Key)
@@ -129,11 +133,19 @@ func createLinkType(data *schema.ResourceData, meta interface{}) error {
 }
 
 func readLinkType(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a link type
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the tf data into an Item
 	linkType := newLinkType(data)
 
-	// get the resource
-	linkType, err := linkType.get(meta)
+	// get the restful resource
+	linkType, err := c.GetLinkType(linkType)
+
+	// populate the tf resource data
+	if err == nil {
+		populateLinkType(data, linkType)
+	}
 
 	return err
 }
@@ -143,9 +155,40 @@ func updateLinkType(data *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteLinkType(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into an Link Type
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the resource data into an Item
 	linkType := newLinkType(data)
 
-	// delete the link Type
-	return linkType.delete(meta)
+	// delete the linkType
+	return err(c.DeleteLinkType(linkType))
+}
+
+func newLinkType(data *schema.ResourceData) *LinkType {
+	return &LinkType{
+		Key:         data.Get("key").(string),
+		Name:        data.Get("name").(string),
+		Description: data.Get("description").(string),
+		Model:       data.Get("model_key").(string),
+		MetaSchema:  data.Get("meta_schema").(map[string]interface{}),
+		EncryptMeta: data.Get("encrypt_meta").(bool),
+		EncryptTxt:  data.Get("encrypt_txt").(bool),
+		Managed:     data.Get("managed").(bool),
+		Tag:         data.Get("tag").([]interface{}),
+	}
+}
+
+// populate the LinkType with the data in the terraform resource
+func populateLinkType(data *schema.ResourceData, linkType *LinkType) {
+	data.SetId(linkType.Id)
+	data.Set("key", linkType.Key)
+	data.Set("name", linkType.Name)
+	data.Set("description", linkType.Description)
+	data.Set("meta_schema", linkType.MetaSchema)
+	data.Set("model", linkType.Model)
+	data.Set("encrypt_txt", linkType.EncryptTxt)
+	data.Set("encrypt_meta", linkType.EncryptMeta)
+	data.Set("tag", linkType.Tag)
+	data.Set("managed", linkType.Managed)
 }

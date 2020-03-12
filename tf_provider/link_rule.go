@@ -17,12 +17,9 @@
 package main
 
 import (
+	. "github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform/helper/schema"
 )
-
-/*
-	LINK RULE RESOURCE
-*/
 
 func LinkRuleResource() *schema.Resource {
 	return &schema.Resource{
@@ -82,24 +79,35 @@ func LinkRuleDataSource() *schema.Resource {
 }
 
 func createLinkRule(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Link Rule
-	linkRule := newLinkRule(data)
+	// get the Ox client
+	c := meta.(Config).Client
 
-	// put the Link Type to the Web API
-	err := linkRule.put(meta)
+	// read the tf data into a Link Rule
+	rule := newLinkRule(data)
 
-	// set Link Type Id key
-	data.SetId(linkRule.Key)
+	// put the Item to the Web API
+	err := err(c.PutLinkRule(rule))
+
+	// set Link Rule Id key
+	data.SetId(rule.Key)
 
 	return err
 }
 
 func readLinkRule(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a link rule
-	linkRule := newLinkRule(data)
+	// get the Ox client
+	c := meta.(Config).Client
 
-	// get the resource
-	linkRule, err := linkRule.get(meta)
+	// read the tf data into a Link Rule
+	rule := newLinkRule(data)
+
+	// get the restful resource
+	rule, err := c.GetLinkRule(rule)
+
+	// populate the tf resource data
+	if err == nil {
+		populateLinkRule(data, rule)
+	}
 
 	return err
 }
@@ -109,9 +117,33 @@ func updateLinkRule(data *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteLinkRule(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into an Link Type
-	linkRule := newLinkRule(data)
+	// get the Ox client
+	c := meta.(Config).Client
 
-	// delete the link Type
-	return linkRule.delete(meta)
+	// read the resource data into an Item
+	rule := newLinkRule(data)
+
+	// delete the item
+	return err(c.DeleteLinkRule(rule))
+}
+
+func newLinkRule(data *schema.ResourceData) *LinkRule {
+	return &LinkRule{
+		Key:              data.Get("key").(string),
+		Name:             data.Get("name").(string),
+		Description:      data.Get("description").(string),
+		LinkTypeKey:      data.Get("link_type_key").(string),
+		StartItemTypeKey: data.Get("start_item_type_key").(string),
+		EndItemTypeKey:   data.Get("end_item_type_key").(string),
+	}
+}
+
+// populate the Link Rule with the data in the terraform resource
+func populateLinkRule(data *schema.ResourceData, linkRule *LinkRule) {
+	data.SetId(linkRule.Id)
+	data.Set("key", linkRule.Key)
+	data.Set("description", linkRule.Description)
+	data.Set("link_type_key", linkRule.LinkTypeKey)
+	data.Set("start_item_type_key", linkRule.StartItemTypeKey)
+	data.Set("end_item_type_key", linkRule.EndItemTypeKey)
 }

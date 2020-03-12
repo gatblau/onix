@@ -17,6 +17,7 @@
 package main
 
 import (
+	. "github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -94,11 +95,14 @@ func RoleDataSource() *schema.Resource {
 }
 
 func createRole(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Role
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the tf data into an Role
 	role := newRole(data)
 
 	// put the Role to the Web API
-	err := role.put(meta)
+	err := err(c.PutRole(role))
 
 	// set Role Id key
 	data.SetId(role.Key)
@@ -107,11 +111,19 @@ func createRole(data *schema.ResourceData, meta interface{}) error {
 }
 
 func readRole(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Role
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the tf data into an Item
 	role := newRole(data)
 
-	// get the resource
-	role, err := role.get(meta)
+	// get the restful resource
+	role, err := c.GetRole(role)
+
+	// populate the tf resource data
+	if err == nil {
+		populateRole(data, role)
+	}
 
 	return err
 }
@@ -122,9 +134,31 @@ func updateRole(data *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteRole(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Role
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the resource data into a role
 	role := newRole(data)
 
 	// delete the role
-	return role.delete(meta)
+	return err(c.DeleteRole(role))
+}
+
+// create a new Role from a terraform resource
+func newRole(data *schema.ResourceData) *Role {
+	return &Role{
+		Key:         data.Get("key").(string),
+		Name:        data.Get("name").(string),
+		Description: data.Get("description").(string),
+		Level:       data.Get("level").(int),
+	}
+}
+
+// populate the Role with the data in the terraform resource
+func populateRole(data *schema.ResourceData, role *Role) {
+	data.SetId(role.Id)
+	data.Set("key", role.Key)
+	data.Set("name", role.Name)
+	data.Set("description", role.Description)
+	data.Set("level", role.Level)
 }

@@ -17,6 +17,7 @@
 package main
 
 import (
+	. "github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -76,11 +77,14 @@ func ModelDataSource() *schema.Resource {
 }
 
 func createModel(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Model
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the tf data into a Model
 	model := newModel(data)
 
 	// put the Model to the Web API
-	err := model.put(meta)
+	err := err(c.PutModel(model))
 
 	// set Model Id key
 	data.SetId(model.Key)
@@ -89,11 +93,19 @@ func createModel(data *schema.ResourceData, meta interface{}) error {
 }
 
 func readModel(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Model
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the tf data into a Model
 	model := newModel(data)
 
-	// get the resource
-	model, err := model.get(meta)
+	// get the restful resource
+	model, err := c.GetModel(model)
+
+	// populate the tf resource data
+	if err == nil {
+		populateModel(data, model)
+	}
 
 	return err
 }
@@ -103,9 +115,36 @@ func updateModel(data *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteModel(data *schema.ResourceData, meta interface{}) error {
+	// get the Ox client
+	c := meta.(Config).Client
+
 	// read the resource data into an Model
 	model := newModel(data)
 
 	// delete the model
-	return model.delete(meta)
+	return err(c.DeleteModel(model))
+}
+
+// create a new Model from a terraform resource
+func newModel(data *schema.ResourceData) *Model {
+	return &Model{
+		Key:         data.Get("key").(string),
+		Name:        data.Get("name").(string),
+		Description: data.Get("description").(string),
+		Partition:   data.Get("partition").(string),
+		Managed:     data.Get("managed").(bool),
+	}
+}
+
+// populate the Model with the data in the terraform resource
+func populateModel(data *schema.ResourceData, model *Model) {
+	data.SetId(model.Id)
+	data.Set("key", model.Key)
+	data.Set("name", model.Name)
+	data.Set("description", model.Description)
+	data.Set("partition", model.Partition)
+	data.Set("managed", model.Managed)
+	data.Set("version", model.Version)
+	data.Set("created", model.Created)
+	data.Set("updated", model.Updated)
 }
