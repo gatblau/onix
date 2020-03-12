@@ -1271,34 +1271,46 @@ public class PgSqlRepository implements DbRepository {
     public synchronized ResultList createOrUpdateData(GraphData payload, String[] role) {
         ResultList results = new ResultList();
         List<ModelData> models = payload.getModels();
-        for (ModelData model : models) {
-            Result result = createOrUpdateModel(model.getKey(), model, role);
-            results.add(result);
+        if (models != null) {
+            for (ModelData model : models) {
+                Result result = createOrUpdateModel(model.getKey(), model, role);
+                results.add(result);
+            }
         }
         List<ItemTypeData> itemTypes = payload.getItemTypes();
-        for (ItemTypeData itemType : itemTypes) {
-            Result result = createOrUpdateItemType(itemType.getKey(), itemType, role);
-            results.add(result);
+        if (itemTypes != null) {
+            for (ItemTypeData itemType : itemTypes) {
+                Result result = createOrUpdateItemType(itemType.getKey(), itemType, role);
+                results.add(result);
+            }
         }
         List<LinkTypeData> linkTypes = payload.getLinkTypes();
-        for (LinkTypeData linkType : linkTypes) {
-            Result result = createOrUpdateLinkType(linkType.getKey(), linkType, role);
-            results.add(result);
+        if (linkTypes != null) {
+            for (LinkTypeData linkType : linkTypes) {
+                Result result = createOrUpdateLinkType(linkType.getKey(), linkType, role);
+                results.add(result);
+            }
         }
         List<LinkRuleData> linkRules = payload.getLinkRules();
-        for (LinkRuleData linkRule : linkRules) {
-            Result result = createOrUpdateLinkRule(linkRule.getKey(), linkRule, role);
-            results.add(result);
+        if (linkRules != null) {
+            for (LinkRuleData linkRule : linkRules) {
+                Result result = createOrUpdateLinkRule(linkRule.getKey(), linkRule, role);
+                results.add(result);
+            }
         }
         List<ItemData> items = payload.getItems();
-        for (ItemData item : items) {
-            Result result = createOrUpdateItem(item.getKey(), item, role);
-            results.add(result);
+        if (items != null) {
+            for (ItemData item : items) {
+                Result result = createOrUpdateItem(item.getKey(), item, role);
+                results.add(result);
+            }
         }
         List<LinkData> links = payload.getLinks();
-        for (LinkData link : links) {
-            Result result = createOrUpdateLink(link.getKey(), link, role);
-            results.add(result);
+        if (links != null) {
+            for (LinkData link : links) {
+                Result result = createOrUpdateLink(link.getKey(), link, role);
+                results.add(result);
+            }
         }
         return results;
     }
