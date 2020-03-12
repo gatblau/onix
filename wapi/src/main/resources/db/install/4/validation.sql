@@ -76,7 +76,8 @@ DO $$
       -- if there were not rows affected
       IF NOT updated THEN
         -- if the local version is the same as the record version
-        IF (local_version = current_version OR local_version IS NULL) THEN
+        -- or no version is passed (NULL) or a zero value is passed (less than 1)
+        IF (local_version = current_version OR local_version IS NULL OR local_version = 0) THEN
           -- no update was required as required record was the same as stored record
           result := 'N';
         ELSE
