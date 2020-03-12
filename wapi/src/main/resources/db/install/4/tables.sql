@@ -297,18 +297,18 @@ DO
           OWNER to onix;
       END IF;
 
-      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by)
-      VALUES (1, 'ADMIN-REF', 1, 0, true, true, true, 'onix'); -- admin privilege on part 0
-      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by)
-      VALUES (2, 'ADMIN-INS', 1, 1, true, true, true, 'onix'); -- admin privilege on part 1
-      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by)
-      VALUES (3, 'READER-REF', 2, 0, false, true, false, 'onix'); -- reader privilege on part 0
-      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by)
-      VALUES (4, 'READER-INS', 2, 1, false, true, false, 'onix'); -- reader privilege on part 1
-      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by)
-      VALUES (5, 'WRITER-REF', 3, 0, false, true, false, 'onix'); -- writer privilege on part 0
-      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by)
-      VALUES (6, 'WRITER-INS', 3, 1, true, true, true, 'onix');
+      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by, version)
+      VALUES (1, 'ADMIN-REF', 1, 0, true, true, true, 'onix', 1); -- admin privilege on part 0
+      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by, version)
+      VALUES (2, 'ADMIN-INS', 1, 1, true, true, true, 'onix', 1); -- admin privilege on part 1
+      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by, version)
+      VALUES (3, 'READER-REF', 2, 0, false, true, false, 'onix', 1); -- reader privilege on part 0
+      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by, version)
+      VALUES (4, 'READER-INS', 2, 1, false, true, false, 'onix', 1); -- reader privilege on part 1
+      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by, version)
+      VALUES (5, 'WRITER-REF', 3, 0, false, true, false, 'onix', 1); -- writer privilege on part 0
+      INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by, version)
+      VALUES (6, 'WRITER-INS', 3, 1, true, true, true, 'onix', 1);
 
       ---------------------------------------------------------------------------
       -- MODEL
