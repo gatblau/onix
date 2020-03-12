@@ -397,6 +397,7 @@ DO
         rows_affected INTEGER;
       BEGIN
         DELETE FROM tag;
+        PERFORM ox_delete_models(role_key_param);
         PERFORM ox_delete_link_types(role_key_param);
         PERFORM ox_delete_item_types(role_key_param);
         PERFORM ox_delete_link_rules(role_key_param);
@@ -409,7 +410,38 @@ DO
       ALTER FUNCTION ox_clear_all(character varying[])
         OWNER TO onix;
 
-      /*
+    /*
+        ox_delete_models: deletes all models
+       */
+    CREATE OR REPLACE FUNCTION ox_delete_models(
+        role_key_param character varying[]
+    )
+        RETURNS TABLE(result char(1))
+        LANGUAGE 'plpgsql'
+        COST 100
+        VOLATILE
+    AS
+    $BODY$
+    DECLARE
+        rows_affected INTEGER;
+    BEGIN
+        DELETE FROM model m
+            USING partition p, privilege pr, role r
+        WHERE m.partition_id = p.id
+          AND pr.partition_id = p.id
+          AND pr.can_delete = TRUE
+          AND pr.role_id = r.id
+          AND r.key = ANY(role_key_param);
+
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+        RETURN QUERY SELECT ox_get_delete_result(rows_affected);
+    END
+    $BODY$;
+
+    ALTER FUNCTION ox_delete_models(character varying[])
+        OWNER TO onix;
+
+    /*
         ox_delete_item_types: deletes all item types
        */
       CREATE OR REPLACE FUNCTION ox_delete_item_types(
