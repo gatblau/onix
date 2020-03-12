@@ -17,6 +17,7 @@
 package main
 
 import (
+	. "github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -90,11 +91,14 @@ func ItemTypeAttributeDataSource() *schema.Resource {
 }
 
 func createItemTypeAttribute(data *schema.ResourceData, meta interface{}) error {
+	// get the Ox client
+	c := meta.(Config).Client
+
 	// read the resource data into an Item Type Attribute
 	itemTypeAttr := newItemTypeAttr(data)
 
-	// put the Item Type Attribute to the Web API
-	err := itemTypeAttr.put(meta)
+	// put the Item Type Attr to the Web API
+	err := err(c.PutItemTypeAttr(itemTypeAttr))
 
 	// set Item Type Attribute Id key
 	data.SetId(itemTypeAttr.Key)
@@ -103,11 +107,19 @@ func createItemTypeAttribute(data *schema.ResourceData, meta interface{}) error 
 }
 
 func readItemTypeAttr(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into an Item
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the tf data into an Item Type Attr
 	itemTypeAttr := newItemTypeAttr(data)
 
-	// get the resource
-	itemTypeAttr, err := itemTypeAttr.get(meta)
+	// get the restful resource
+	itemTypeAttr, err := c.GetItemTypeAttr(itemTypeAttr)
+
+	// populate the tf resource data
+	if err == nil {
+		populateItemTypeAttr(data, itemTypeAttr)
+	}
 
 	return err
 }
@@ -117,9 +129,39 @@ func updateItemTypeAttribute(data *schema.ResourceData, meta interface{}) error 
 }
 
 func deleteItemTypeAttribute(data *schema.ResourceData, meta interface{}) error {
+	// get the Ox client
+	c := meta.(Config).Client
+
 	// read the resource data into an Item Type Attribute
 	itemTypeAttr := newItemTypeAttr(data)
 
 	// delete the itemTypeAttr
-	return itemTypeAttr.delete(meta)
+	return err(c.DeleteItemTypeAttr(itemTypeAttr))
+}
+
+func newItemTypeAttr(data *schema.ResourceData) *ItemTypeAttribute {
+	return &ItemTypeAttribute{
+		Key:         data.Get("key").(string),
+		Name:        data.Get("name").(string),
+		Description: data.Get("description").(string),
+		Type:        data.Get("type").(string),
+		DefValue:    data.Get("def_value").(string),
+		Managed:     data.Get("managed").(bool),
+		Required:    data.Get("managed").(bool),
+		Regex:       data.Get("regex").(string),
+		ItemTypeKey: data.Get("item_type_key").(string),
+	}
+}
+
+// populate the Item Type Attribute with the data in the terraform resource
+func populateItemTypeAttr(data *schema.ResourceData, typeAttr *ItemTypeAttribute) {
+	data.SetId(typeAttr.Id)
+	data.Set("key", typeAttr.Key)
+	data.Set("description", typeAttr.Description)
+	data.Set("type", typeAttr.Type)
+	data.Set("def_value", typeAttr.DefValue)
+	data.Set("managed", typeAttr.Managed)
+	data.Set("required", typeAttr.Required)
+	data.Set("regex", typeAttr.Regex)
+	data.Set("item_type_key", typeAttr.ItemTypeKey)
 }

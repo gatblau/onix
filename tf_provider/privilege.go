@@ -17,6 +17,7 @@
 package main
 
 import (
+	. "github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -105,11 +106,14 @@ func PrivilegeDataSource() *schema.Resource {
 }
 
 func createPrivilege(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Privilege
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the tf data into an Privilege
 	privilege := newPrivilege(data)
 
 	// put the Privilege to the Web API
-	err := privilege.put(meta)
+	err := err(c.PutPrivilege(privilege))
 
 	// set Privilege Id key
 	data.SetId(privilege.Key)
@@ -118,11 +122,19 @@ func createPrivilege(data *schema.ResourceData, meta interface{}) error {
 }
 
 func readPrivilege(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Privilege
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the tf data into an Privilege
 	privilege := newPrivilege(data)
 
-	// get the resource
-	privilege, err := privilege.get(meta)
+	// get the restful resource
+	privilege, err := c.GetPrivilege(privilege)
+
+	// populate the tf resource data
+	if err == nil {
+		populatePrivilege(data, privilege)
+	}
 
 	return err
 }
@@ -133,9 +145,35 @@ func updatePrivilege(data *schema.ResourceData, meta interface{}) error {
 }
 
 func deletePrivilege(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Privilege
-	partition := newPrivilege(data)
+	// get the Ox client
+	c := meta.(Config).Client
 
-	// delete the partition
-	return partition.delete(meta)
+	// read the resource data into a privilege
+	privilege := newPrivilege(data)
+
+	// delete the privilege
+	return err(c.DeletePrivilege(privilege))
+}
+
+// create a new Privilege from a terraform resource
+func newPrivilege(data *schema.ResourceData) *Privilege {
+	return &Privilege{
+		Key:       data.Get("key").(string),
+		Role:      data.Get("role").(string),
+		Partition: data.Get("partition").(string),
+		Create:    data.Get("can_create").(bool),
+		Read:      data.Get("can_read").(bool),
+		Delete:    data.Get("can_delete").(bool),
+	}
+}
+
+// populate the Privilege with the data in the terraform resource
+func populatePrivilege(data *schema.ResourceData, privilege *Privilege) {
+	data.SetId(privilege.Id)
+	data.Set("key", privilege.Key)
+	data.Set("role", privilege.Role)
+	data.Set("partition", privilege.Partition)
+	data.Set("can_create", privilege.Create)
+	data.Set("can_read", privilege.Read)
+	data.Set("can_delete", privilege.Delete)
 }

@@ -17,12 +17,10 @@
 package main
 
 import (
+	. "github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-/*
-	ITEM TYPE RESOURCE
-*/
 func ItemTypeResource() *schema.Resource {
 	return &schema.Resource{
 		Create: createItemType,
@@ -102,23 +100,35 @@ func ItemTypeDataSource() *schema.Resource {
 }
 
 func createItemType(data *schema.ResourceData, meta interface{}) error {
+	// get the Ox client
+	c := meta.(Config).Client
+
 	// read the resource data into an Item
 	itemType := newItemType(data)
 
 	// put the Item Type to the Web API
-	err := itemType.put(meta)
+	err := err(c.PutItemType(itemType))
 
 	// set Item Type Id key
 	data.SetId(itemType.Key)
+
 	return err
 }
 
 func readItemType(data *schema.ResourceData, meta interface{}) error {
+	// get the Ox client
+	c := meta.(Config).Client
+
 	// read the resource data into an Item
 	itemType := newItemType(data)
 
 	// get the resource
-	itemType, err := itemType.get(meta)
+	itemType, err := c.GetItemType(itemType)
+
+	// populate the tf resource data
+	if err == nil {
+		populateItemType(data, itemType)
+	}
 
 	return err
 }
@@ -128,9 +138,48 @@ func updateItemType(data *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteItemType(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into an Item
-	item := newItem(data)
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the resource data into an Item Type
+	itemType := newItemType(data)
 
 	// delete the item
-	return item.delete(meta)
+	return err(c.DeleteItemType(itemType))
+}
+
+// create a new Item from a terraform resource
+func newItemType(data *schema.ResourceData) *ItemType {
+	return &ItemType{
+		Key:          data.Get("key").(string),
+		Name:         data.Get("name").(string),
+		Description:  data.Get("description").(string),
+		Model:        data.Get("model_key").(string),
+		Filter:       data.Get("filter").(map[string]interface{}),
+		MetaSchema:   data.Get("meta_schema").(map[string]interface{}),
+		NotifyChange: data.Get("notify_change").(bool),
+		EncryptMeta:  data.Get("encrypt_meta").(bool),
+		EncryptTxt:   data.Get("encrypt_txt").(bool),
+		Managed:      data.Get("managed").(bool),
+		Tag:          data.Get("tag").([]interface{}),
+	}
+}
+
+// populate the Item with the data in the terraform resource
+func populateItemType(data *schema.ResourceData, itemType *ItemType) {
+	data.SetId(itemType.Id)
+	data.Set("key", itemType.Key)
+	data.Set("name", itemType.Name)
+	data.Set("description", itemType.Description)
+	data.Set("filter", itemType.Filter)
+	data.Set("meta_schema", itemType.MetaSchema)
+	data.Set("notify_change", itemType.NotifyChange)
+	data.Set("tag", itemType.Tag)
+	data.Set("encrypt_meta", itemType.EncryptMeta)
+	data.Set("encrypt_txt", itemType.EncryptTxt)
+	data.Set("managed", itemType.Managed)
+	data.Set("model", itemType.Model)
+	data.Set("version", itemType.Version)
+	data.Set("created", itemType.Created)
+	data.Set("updated", itemType.Updated)
 }

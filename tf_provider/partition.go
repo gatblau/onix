@@ -17,6 +17,7 @@
 package main
 
 import (
+	. "github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -85,24 +86,35 @@ func PartitionDataSource() *schema.Resource {
 }
 
 func createPartition(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Partition
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the tf data into a Partition
 	partition := newPartition(data)
 
 	// put the Partition to the Web API
-	err := partition.put(meta)
+	err := err(c.PutPartition(partition))
 
-	// set Item Id key
+	// set Partition Id key
 	data.SetId(partition.Key)
 
 	return err
 }
 
 func readPartition(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into a Partition
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the tf data into an Partition
 	partition := newPartition(data)
 
-	// get the resource
-	partition, err := partition.get(meta)
+	// get the restful resource
+	partition, err := c.GetPartition(partition)
+
+	// populate the tf resource data
+	if err == nil {
+		populatePartition(data, partition)
+	}
 
 	return err
 }
@@ -113,9 +125,30 @@ func updatePartition(data *schema.ResourceData, meta interface{}) error {
 }
 
 func deletePartition(data *schema.ResourceData, meta interface{}) error {
+	// get the Ox client
+	c := meta.(Config).Client
+
 	// read the resource data into a Partition
 	partition := newPartition(data)
 
 	// delete the partition
-	return partition.delete(meta)
+	return err(c.DeletePartition(partition))
+}
+
+// create a new Partition from a terraform resource
+func newPartition(data *schema.ResourceData) *Partition {
+	return &Partition{
+		Key:         data.Get("key").(string),
+		Name:        data.Get("name").(string),
+		Description: data.Get("description").(string),
+	}
+}
+
+// populate the Partition with the data in the terraform resource
+func populatePartition(data *schema.ResourceData, partition *Partition) {
+	data.SetId(partition.Id)
+	data.Set("key", partition.Key)
+	data.Set("name", partition.Name)
+	data.Set("description", partition.Description)
+	data.Set("owner", partition.Owner)
 }

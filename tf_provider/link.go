@@ -17,6 +17,7 @@
 package main
 
 import (
+	. "github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -108,11 +109,14 @@ func LinkDataSource() *schema.Resource {
 }
 
 func createLink(data *schema.ResourceData, meta interface{}) error {
+	// get the Ox client
+	c := meta.(Config).Client
+
 	// read the resource data into a Link
 	link := newLink(data)
 
-	// put the Link to the Web API
-	err := link.put(meta)
+	// put the link to the Web API
+	err := err(c.PutLink(link))
 
 	// set Link Id key
 	data.SetId(link.Key)
@@ -121,11 +125,19 @@ func createLink(data *schema.ResourceData, meta interface{}) error {
 }
 
 func readLink(data *schema.ResourceData, meta interface{}) error {
+	// get the Ox client
+	c := meta.(Config).Client
+
 	// read the resource data into a link
 	link := newLink(data)
 
-	// get the resource
-	link, err := link.get(meta)
+	// get the restful resource
+	link, err := c.GetLink(link)
+
+	// populate the tf resource data
+	if err == nil {
+		populateLink(data, link)
+	}
 
 	return err
 }
@@ -135,9 +147,38 @@ func updateLink(data *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteLink(data *schema.ResourceData, meta interface{}) error {
+	// get the Ox client
+	c := meta.(Config).Client
+
 	// read the resource data into an Link
 	link := newLink(data)
 
 	// delete the link
-	return link.delete(meta)
+	return err(c.DeleteLink(link))
+}
+
+func newLink(data *schema.ResourceData) *Link {
+	return &Link{
+		Key:          data.Get("key").(string),
+		Description:  data.Get("description").(string),
+		Type:         data.Get("type").(string),
+		Meta:         data.Get("meta").(map[string]interface{}),
+		Attribute:    data.Get("attribute").(map[string]interface{}),
+		Tag:          data.Get("tag").([]interface{}),
+		StartItemKey: data.Get("start_item_key").(string),
+		EndItemKey:   data.Get("end_item_key").(string),
+	}
+}
+
+// populate the Link with the data in the terraform resource
+func populateLink(data *schema.ResourceData, link *Link) {
+	data.SetId(link.Id)
+	data.Set("key", link.Key)
+	data.Set("description", link.Description)
+	data.Set("type", link.Type)
+	data.Set("meta", link.Meta)
+	data.Set("tag", link.Tag)
+	data.Set("attribute", link.Attribute)
+	data.Set("start_item_key", link.StartItemKey)
+	data.Set("end_item_key", link.EndItemKey)
 }

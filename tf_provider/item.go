@@ -17,12 +17,10 @@
 package main
 
 import (
+	. "github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-/*
-	ITEM RESOURCE
-*/
 func ItemResource() *schema.Resource {
 	return &schema.Resource{
 		Create: createItem,
@@ -138,23 +136,35 @@ func ItemDataSource() *schema.Resource {
 }
 
 func createItem(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into an Item
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the tf data into an Item
 	item := newItem(data)
 
 	// put the Item to the Web API
-	err := item.put(meta)
+	err := err(c.PutItem(item))
 
 	// set Item Id key
 	data.SetId(item.Key)
+
 	return err
 }
 
 func readItem(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into an Item
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the tf data into an Item
 	item := newItem(data)
 
-	// get the resource
-	item, err := item.get(meta)
+	// get the restful resource
+	item, err := c.GetItem(item)
+
+	// populate the tf resource data
+	if err == nil {
+		populateItem(data, item)
+	}
 
 	return err
 }
@@ -165,9 +175,42 @@ func updateItem(data *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteItem(data *schema.ResourceData, meta interface{}) error {
+	// get the Ox client
+	c := meta.(Config).Client
+
 	// read the resource data into an Item
 	item := newItem(data)
 
 	// delete the item
-	return item.delete(meta)
+	return err(c.DeleteItem(item))
+}
+
+// create a new Item from a terraform resource
+func newItem(data *schema.ResourceData) *Item {
+	return &Item{
+		Key:         data.Get("key").(string),
+		Name:        data.Get("name").(string),
+		Description: data.Get("description").(string),
+		Type:        data.Get("type").(string),
+		Meta:        data.Get("meta").(map[string]interface{}),
+		Txt:         data.Get("txt").(string),
+		Attribute:   data.Get("attribute").(map[string]interface{}),
+		Tag:         data.Get("tag").([]interface{}),
+		Partition:   data.Get("partition").(string),
+	}
+}
+
+// populate the Item with the data in the terraform resource
+func populateItem(data *schema.ResourceData, item *Item) {
+	data.SetId(item.Id)
+	data.Set("key", item.Key)
+	data.Set("name", item.Name)
+	data.Set("description", item.Description)
+	data.Set("attribute", item.Attribute)
+	data.Set("txt", item.Txt)
+	data.Set("meta", item.Meta)
+	data.Set("partition", item.Partition)
+	data.Set("status", item.Status)
+	data.Set("tag", item.Tag)
+	data.Set("type", item.Type)
 }

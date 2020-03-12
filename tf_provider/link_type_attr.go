@@ -17,6 +17,7 @@
 package main
 
 import (
+	. "github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -90,11 +91,14 @@ func LinkTypeAttributeDataSource() *schema.Resource {
 }
 
 func createLinkTypeAttribute(data *schema.ResourceData, meta interface{}) error {
+	// get the Ox client
+	c := meta.(Config).Client
+
 	// read the resource data into an Link Type Attribute
 	linkTypeAttr := newLinkTypeAttr(data)
 
-	// put the Link Type Attribute to the Web API
-	err := linkTypeAttr.put(meta)
+	// put the Link Type Attr to the Web API
+	err := err(c.PutLinkTypeAttr(linkTypeAttr))
 
 	// set Link Type Attribute Id key
 	data.SetId(linkTypeAttr.Key)
@@ -103,11 +107,19 @@ func createLinkTypeAttribute(data *schema.ResourceData, meta interface{}) error 
 }
 
 func readLinkTypeAttr(data *schema.ResourceData, meta interface{}) error {
-	// read the resource data into an Link Type Attribute
+	// get the Ox client
+	c := meta.(Config).Client
+
+	// read the tf data into an Link Type Attr
 	linkTypeAttr := newLinkTypeAttr(data)
 
-	// get the resource
-	linkTypeAttr, err := linkTypeAttr.get(meta)
+	// get the restful resource
+	linkTypeAttr, err := c.GetLinkTypeAttr(linkTypeAttr)
+
+	// populate the tf resource data
+	if err == nil {
+		populateLinkTypeAttr(data, linkTypeAttr)
+	}
 
 	return err
 }
@@ -117,9 +129,39 @@ func updateLinkTypeAttribute(data *schema.ResourceData, meta interface{}) error 
 }
 
 func deleteLinkTypeAttribute(data *schema.ResourceData, meta interface{}) error {
+	// get the Ox client
+	c := meta.(Config).Client
+
 	// read the resource data into an Link Type Attribute
 	linkTypeAttr := newLinkTypeAttr(data)
 
-	// delete the Link Type Attr
-	return linkTypeAttr.delete(meta)
+	// delete the linkTypeAttr
+	return err(c.DeleteLinkTypeAttr(linkTypeAttr))
+}
+
+func newLinkTypeAttr(data *schema.ResourceData) *LinkTypeAttribute {
+	return &LinkTypeAttribute{
+		Key:         data.Get("key").(string),
+		Name:        data.Get("name").(string),
+		Description: data.Get("description").(string),
+		Type:        data.Get("type").(string),
+		DefValue:    data.Get("def_value").(string),
+		Managed:     data.Get("managed").(bool),
+		Required:    data.Get("managed").(bool),
+		Regex:       data.Get("regex").(string),
+		LinkTypeKey: data.Get("link_type_key").(string),
+	}
+}
+
+// populate the Link Type Attribute with the data in the terraform resource
+func populateLinkTypeAttr(data *schema.ResourceData, typeAttr *LinkTypeAttribute) {
+	data.SetId(typeAttr.Id)
+	data.Set("key", typeAttr.Key)
+	data.Set("description", typeAttr.Description)
+	data.Set("type", typeAttr.Type)
+	data.Set("def_value", typeAttr.DefValue)
+	data.Set("managed", typeAttr.Managed)
+	data.Set("required", typeAttr.Required)
+	data.Set("regex", typeAttr.Regex)
+	data.Set("link_type_key", typeAttr.LinkTypeKey)
 }
