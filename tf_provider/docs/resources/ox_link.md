@@ -38,14 +38,15 @@ resource "ox_link" "Link_1" {
 
 ## Argument Reference
 
-* `key` - (Required) The link natural key (string).
-* `description` - (Required) The link description (string).
-* `type` - (Required) The link type natural key (string).
-* `meta` - (Optional) The item free JSON field.
-* `txt` - (Optional) The item free text field.
-* `tag` - (Optional) The item list of tags for searching (list of string).
-* `attribute` - (Optional) The item key/value dictionary.
+The following arguments can be passed to a configuration item:
 
-<!-- ## Attribute Reference
-
-* `attribute_name` - List attributes that this resource exports. -->
+| Name | Use | Type |  Description |
+|---|---|---|---|
+| `key` | required | string | *The natural key that uniquely identifies the link.* |
+| `description`| required | string | *A meaningful description for the link.* |
+| `type` | required | string | *The natural key that uniquely identifies the [type of link](ox_link_type.md).* |
+| `meta` | optional | json | *Stores any information in JSON format. It can be automatically encrypted if required.* |
+| `txt` | optional | text | *Stores any information in text format. It can be automatically encrypted if required.* |
+| `attribute` | optional | map of strings | *Stores zero or more key-value pairs that are defined in the item type.* |
+| `tag` | optional | array of string | *Stores zero or more tags that can be used to classify or search for the item.* |
+| `version` | optional | integer | *The version number of the item. If specified, optimistic locking is enabled: if the specified version is different than the stored version, no changes are made and a locking situation is assumed.* |

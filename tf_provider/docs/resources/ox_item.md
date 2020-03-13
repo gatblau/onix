@@ -58,11 +58,11 @@ The following arguments can be passed to a configuration item:
 | `key` | required | string | *The natural key that uniquely identifies the item.* |
 | `name`| required | string | *The display name for the item.* |
 | `description`| required | string | *A meaningful description for the item.* |
-| `type` | required | string | *The natural key that uniquely identifies the type of item.* |
+| `type` | required | string | *The natural key that uniquely identifies the [type of item](ox_item_type.md).* |
 | `status` | optional | integer | *A number which describes the status the item is in. The default value is 0.* |
 | `meta` | optional | json | *Stores any information in JSON format. It can be automatically encrypted if required.* |
 | `txt` | optional | text | *Stores any information in text format. It can be automatically encrypted if required.* |
 | `attribute` | optional | map of strings | *Stores zero or more key-value pairs that are defined in the item type.* |
 | `tag` | optional | array of string | *Stores zero or more tags that can be used to classify or search for the item.* |
 | `partition` | optional | string | *The natural key that identifies the logical partition the item is in. If no value is specified, the item is placed in the default instance partition (INS).* |
-
+| `version` | optional | *The version number of the item. If specified, optimistic locking is enabled: if the specified version is different than the stored version, no changes are made and a locking situation is assumed.* |
