@@ -1,4 +1,4 @@
-# ox_item Data Source
+# ox_item Data Source  <img src="../../../docs/pics/ox.png" width="200" height="200" align="right">
 
 Allow configuration item data to be fetched for use elsewhere in Terraform configuration. 
 
