@@ -70,19 +70,14 @@ func ItemTypeAttributeResource() *schema.Resource {
 
 func ItemTypeAttributeDataSource() *schema.Resource {
 	return &schema.Resource{
-		Read: readItemType,
+		Read: readItemTypeAttr,
 
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"description": &schema.Schema{
+			"item_type_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -111,7 +106,10 @@ func readItemTypeAttr(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the tf data into an Item Type Attr
-	itemTypeAttr := newItemTypeAttr(data)
+	itemTypeAttr := &ItemTypeAttribute{
+		Key:         data.Get("key").(string),
+		ItemTypeKey: data.Get("item_type_key").(string),
+	}
 
 	// get the restful resource
 	itemTypeAttr, err := c.GetItemTypeAttr(itemTypeAttr)

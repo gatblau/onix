@@ -77,40 +77,6 @@ func LinkTypeDataSource() *schema.Resource {
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
-			},
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"meta_schema": &schema.Schema{
-				Type:     schema.TypeMap,
-				Optional: true,
-			},
-			"model_key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"tag": &schema.Schema{
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Optional: true,
-			},
-			"encrypt_meta": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
-			"encrypt_txt": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
-			"managed": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
 			},
 		},
 	}
@@ -137,7 +103,7 @@ func readLinkType(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the tf data into an Item
-	linkType := newLinkType(data)
+	linkType := &LinkType{Key: data.Get("key").(string)}
 
 	// get the restful resource
 	linkType, err := c.GetLinkType(linkType)

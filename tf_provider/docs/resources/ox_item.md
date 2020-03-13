@@ -2,6 +2,18 @@
 
 Creates, updates or destroys a configuration item.
 
+A configuration item is a piece of data, of a particular type, which can be linked to other items of the same or different type. They carry versions and all their changes are recorded in the change history forming the basis of a configuration audit.
+
+Items must be uniquely identified using its natural key so that they can be distinguished from all other configuration items.
+
+Configuration Items can store data in either plain text, JSON or key/value pair(s) format.
+
+JSON data can be validated using a JSON schema defined in the item type.
+
+Equally, key/value pairs are validated through the attributes defined by the item type.
+
+When storing sensitive information, a configuration item's text and JSON data can be automatically encrypted (at rest). The item type defines whether or not to encrypt text and/or JSON data.
+
 ## Example Usage
 
 ```hcl
@@ -39,17 +51,18 @@ resource "ox_item" "Item_1" {
 
 ## Argument Reference
 
-* `key` - (Required) The item natural key (string).
-* `name` - (Required) The item name (string).
-* `description` - (Required) The item description (string).
-* `type` - (Required) The item type natural key (string).
-* `status` - (Optional) The item status (number).
-* `meta` - (Optional) The item free JSON field.
-* `txt` - (Optional) The item free text field.
-* `tag` - (Optional) The item list of tags for searching (list of string).
-* `attribute` - (Optional) The item key/value dictionary.
-* `partition` - (Optional) The item logical partition (string).
+The following arguments can be passed to a configuration item:
 
-<!-- ## Attribute Reference
+| Name | Use | Type |  Description |
+|---|---|---|---|
+| `key` | required | string | *The item natural key that uniquely identifies the item.* |
+| `name`| required | string | *The display name for the item.* |
+| `description`| required | string | *A meaningful description for the item.* |
+| `type` | required | string | *The natural key that uniquely identifies the type of item.* |
+| `status` | optional | integer | *A number which describes the status the item is in. The default value is 0.* |
+| `meta` | optional | json | *Stores any information in JSON format. It can be automatically encrypted if required.* |
+| `txt` | optional | text | *Stores any information in text format. It can be automatically encrypted if required.* |
+| `attribute` | optional | map of strings | *Stores zero or more key-value pairs that are defined in the item type.* |
+| `tag` | optional | array of string | *Stores zero or more tags that can be used to classify or search for the item.* |
+| `partition` | optional | string | *The natural key that identifies the logical partition the item is in. If no value is specified, the item is placed in the default instance partition (INS).* |
 
-* `attribute_name` - List attributes that this resource exports. -->

@@ -82,55 +82,6 @@ func ItemDataSource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"type": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"status": &schema.Schema{
-				Type:     schema.TypeInt,
-				Optional: true,
-			},
-			"meta": &schema.Schema{
-				Type:     schema.TypeMap,
-				Optional: true,
-			},
-			"tag": &schema.Schema{
-				Type:     schema.TypeList,
-				Elem:     schema.TypeString,
-				Optional: true,
-			},
-			"attribute": &schema.Schema{
-				Type:     schema.TypeMap,
-				Optional: true,
-			},
-			"version": &schema.Schema{
-				Type:     schema.TypeInt,
-				Optional: true,
-			},
-			"created": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"updated": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"changedby": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"enc_key_ix": &schema.Schema{
-				Type:     schema.TypeInt,
-				Optional: true,
-			},
 		},
 	}
 }
@@ -156,7 +107,7 @@ func readItem(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the tf data into an Item
-	item := newItem(data)
+	item := &Item{Key: data.Get("key").(string)}
 
 	// get the restful resource
 	item, err := c.GetItem(item)

@@ -91,7 +91,7 @@ resource "ox_item_type_attr" "Test_Item_Type_Attr_2" {
   def_value     = "1"
   managed       = false
 
-  depends_on = [ox_item_type.Test_Item_Type]
+  depends_on = [ox_item_type_attr.Test_Item_Type_Attr_1]
 }
 
 resource "ox_link_type" "Test_Link_Type" {
@@ -187,4 +187,46 @@ resource "ox_link" "Link_1" {
   }
 
   depends_on = [ox_link_type.Test_Link_Type]
+}
+
+data "ox_model_data" "test_model_data" {
+  key = ox_model.Test_Model.key
+}
+
+data "ox_item_type_data" "test_item_type_data" {
+  key = ox_item_type.Test_Item_Type.key
+}
+
+data "ox_link_type_data" "test_item_type_data" {
+  key = ox_link_type.Test_Link_Type.key
+}
+
+data "ox_item_data" "item_1_data" {
+  key = ox_item.Item_1.key
+}
+
+data "ox_item_data" "item_2_data" {
+  key = ox_item.Item_2.key
+}
+
+data "ox_item_type_attr_data" "Test_Item_Type_Attr_1_data" {
+  key           = ox_item_type_attr.Test_Item_Type_Attr_1.key
+  item_type_key = ox_item_type.Test_Item_Type.key
+}
+
+data "ox_link_type_attr_data" "Test_Link_Type_Attr_1_data" {
+  key           = ox_link_type_attr.Test_Link_Type_Attr_1.key
+  link_type_key = ox_link_type.Test_Link_Type.key
+}
+
+data "ox_link_rule_data" "Item_To_Item_Rule_Data" {
+  key = ox_link_rule.Item_To_Item_Rule.key
+}
+
+data "ox_item_data" "Item_1_Data" {
+  key = ox_item.Item_1.key
+}
+
+data "ox_link_data" "Link_1_Data" {
+  key = ox_link.Link_1.key
 }

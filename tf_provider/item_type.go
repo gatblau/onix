@@ -87,14 +87,6 @@ func ItemTypeDataSource() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
 		},
 	}
 }
@@ -120,7 +112,7 @@ func readItemType(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the resource data into an Item
-	itemType := newItemType(data)
+	itemType := &ItemType{Key: data.Get("key").(string)}
 
 	// get the resource
 	itemType, err := c.GetItemType(itemType)
