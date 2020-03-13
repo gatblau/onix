@@ -73,36 +73,6 @@ func LinkDataSource() *schema.Resource {
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
-			},
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"type": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"meta": &schema.Schema{
-				Type:     schema.TypeMap,
-				Optional: true,
-			},
-			"tag": &schema.Schema{
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Optional: true,
-			},
-			"attribute": &schema.Schema{
-				Type:     schema.TypeMap,
-				Optional: true,
-			},
-			"start_item_key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"end_item_key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
 			},
 		},
 	}
@@ -129,7 +99,7 @@ func readLink(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the resource data into a link
-	link := newLink(data)
+	link := &Link{Key: data.Get("key").(string)}
 
 	// get the restful resource
 	link, err := c.GetLink(link)

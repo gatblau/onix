@@ -70,19 +70,14 @@ func LinkTypeAttributeResource() *schema.Resource {
 
 func LinkTypeAttributeDataSource() *schema.Resource {
 	return &schema.Resource{
-		Read: readItemType,
+		Read: readLinkTypeAttr,
 
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"description": &schema.Schema{
+			"link_type_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -111,7 +106,10 @@ func readLinkTypeAttr(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the tf data into an Link Type Attr
-	linkTypeAttr := newLinkTypeAttr(data)
+	linkTypeAttr := &LinkTypeAttribute{
+		Key:         data.Get("key").(string),
+		LinkTypeKey: data.Get("link_type_key").(string),
+	}
 
 	// get the restful resource
 	linkTypeAttr, err := c.GetLinkTypeAttr(linkTypeAttr)

@@ -66,14 +66,6 @@ func LinkRuleDataSource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
 		},
 	}
 }
@@ -99,7 +91,7 @@ func readLinkRule(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the tf data into a Link Rule
-	rule := newLinkRule(data)
+	rule := &LinkRule{Key: data.Get("key").(string)}
 
 	// get the restful resource
 	rule, err := c.GetLinkRule(rule)

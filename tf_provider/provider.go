@@ -86,7 +86,7 @@ func Provider() *schema.Provider {
 			"ox_model_data":          ModelDataSource(),
 			"ox_item_type_data":      ItemTypeDataSource(),
 			"ox_item_type_attr_data": ItemTypeAttributeDataSource(),
-			"ox_link_type_data":      ItemTypeDataSource(),
+			"ox_link_type_data":      LinkTypeDataSource(),
 			"ox_link_type_attr_data": LinkTypeAttributeDataSource(),
 			"ox_link_rule_data":      LinkRuleDataSource(),
 			"ox_partition_data":      PartitionDataSource(),

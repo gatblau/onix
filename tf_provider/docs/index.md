@@ -73,3 +73,10 @@ Connection information can be provided by specifying the following attributes of
   
 __NOTE__: The __auth_mode__ attribute must match the value used by the Onix Web API. For example, if the Onix Web API is set to use __auth_mode=oidc__ then the terraform provider must be set to use the same __auth_mode__, otherwise the authentication will fail.
 
+## Resources
+
+A list of available resources can be found [here](resources/index.md).
+
+## Data Sources
+
+A list of available datasources can be found [here](datasources/index.md).
