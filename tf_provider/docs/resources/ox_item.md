@@ -55,7 +55,7 @@ The following arguments can be passed to a configuration item:
 
 | Name | Use | Type |  Description |
 |---|---|---|---|
-| `key` | required | string | *The item natural key that uniquely identifies the item.* |
+| `key` | required | string | *The natural key that uniquely identifies the item.* |
 | `name`| required | string | *The display name for the item.* |
 | `description`| required | string | *A meaningful description for the item.* |
 | `type` | required | string | *The natural key that uniquely identifies the type of item.* |
