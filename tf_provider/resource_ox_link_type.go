@@ -69,19 +69,6 @@ func LinkTypeResource() *schema.Resource {
 	}
 }
 
-func LinkTypeDataSource() *schema.Resource {
-	return &schema.Resource{
-		Read: readLinkType,
-
-		Schema: map[string]*schema.Schema{
-			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-		},
-	}
-}
-
 func createLinkType(data *schema.ResourceData, meta interface{}) error {
 	// get the Ox client
 	c := meta.(Config).Client
@@ -91,29 +78,14 @@ func createLinkType(data *schema.ResourceData, meta interface{}) error {
 
 	// put the Link Type to the Web API
 	err := err(c.PutLinkType(linkType))
+	if err != nil {
+		return err
+	}
 
 	// set Link Type Id key
 	data.SetId(linkType.Key)
 
-	return err
-}
-
-func readLinkType(data *schema.ResourceData, meta interface{}) error {
-	// get the Ox client
-	c := meta.(Config).Client
-
-	// read the tf data into an Item
-	linkType := &LinkType{Key: data.Get("key").(string)}
-
-	// get the restful resource
-	linkType, err := c.GetLinkType(linkType)
-
-	// populate the tf resource data
-	if err == nil {
-		populateLinkType(data, linkType)
-	}
-
-	return err
+	return readLinkType(data, meta)
 }
 
 func updateLinkType(data *schema.ResourceData, meta interface{}) error {

@@ -49,19 +49,6 @@ func RoleResource() *schema.Resource {
 	}
 }
 
-func RoleDataSource() *schema.Resource {
-	return &schema.Resource{
-		Read: readRole,
-
-		Schema: map[string]*schema.Schema{
-			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-		},
-	}
-}
-
 func createRole(data *schema.ResourceData, meta interface{}) error {
 	// get the Ox client
 	c := meta.(Config).Client
@@ -71,29 +58,14 @@ func createRole(data *schema.ResourceData, meta interface{}) error {
 
 	// put the Role to the Web API
 	err := err(c.PutRole(role))
+	if err != nil {
+		return err
+	}
 
 	// set Role Id key
 	data.SetId(role.Key)
 
-	return err
-}
-
-func readRole(data *schema.ResourceData, meta interface{}) error {
-	// get the Ox client
-	c := meta.(Config).Client
-
-	// read the tf data into an Item
-	role := &Role{Key: data.Get("key").(string)}
-
-	// get the restful resource
-	role, err := c.GetRole(role)
-
-	// populate the tf resource data
-	if err == nil {
-		populateRole(data, role)
-	}
-
-	return err
+	return readRole(data, meta)
 }
 
 func updateRole(data *schema.ResourceData, meta interface{}) error {

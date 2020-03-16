@@ -56,19 +56,6 @@ func PrivilegeResource() *schema.Resource {
 	}
 }
 
-func PrivilegeDataSource() *schema.Resource {
-	return &schema.Resource{
-		Read: readPrivilege,
-
-		Schema: map[string]*schema.Schema{
-			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-		},
-	}
-}
-
 func createPrivilege(data *schema.ResourceData, meta interface{}) error {
 	// get the Ox client
 	c := meta.(Config).Client
@@ -78,29 +65,14 @@ func createPrivilege(data *schema.ResourceData, meta interface{}) error {
 
 	// put the Privilege to the Web API
 	err := err(c.PutPrivilege(privilege))
+	if err != nil {
+		return err
+	}
 
 	// set Privilege Id key
 	data.SetId(privilege.Key)
 
-	return err
-}
-
-func readPrivilege(data *schema.ResourceData, meta interface{}) error {
-	// get the Ox client
-	c := meta.(Config).Client
-
-	// read the tf data into an Privilege
-	privilege := &Privilege{Key: data.Get("key").(string)}
-
-	// get the restful resource
-	privilege, err := c.GetPrivilege(privilege)
-
-	// populate the tf resource data
-	if err == nil {
-		populatePrivilege(data, privilege)
-	}
-
-	return err
+	return readPrivilege(data, meta)
 }
 
 func updatePrivilege(data *schema.ResourceData, meta interface{}) error {
