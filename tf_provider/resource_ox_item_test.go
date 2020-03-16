@@ -26,22 +26,22 @@ import (
 // all the constants for the item test
 const (
 	ItemResourceName    = "ox_item.ox_item_1"
-	ItemRsKey           = "ox_item_1"
+	ItemRsKey           = "test_acc_ox_item_1"
 	ItemRsName          = "ox item"
 	ItemRsDesc          = "ox_item Description"
 	ItemRsMeta          = `{ "OS" = "RHEL7.3" }`
 	ItemRsAttr          = `{ "RAM" : "3", "CPU" : "1" }`
 	ItemRsPartition     = "INS"
-	ItemRsModelKey      = "model_ox_item"
+	ItemRsModelKey      = "test_acc_model_ox_item"
 	ItemRsModelName     = "Model - ox_item"
 	ItemRsModelDesc     = "Model for testing ox_item."
-	ItemRsTypeKey       = "item_type_ox_item"
+	ItemRsTypeKey       = "test_acc_item_type_ox_item"
 	ItemRsTypeName      = "Item Type - ox_item"
 	ItemRsTypeDesc      = "Item Type for testing ox_item."
-	ItemRsTypeAttr1Key  = "item_type_attr_cpu_ox_item"
+	ItemRsTypeAttr1Key  = "test_acc_item_type_attr_cpu_ox_item"
 	ItemRsTypeAttr1Name = "CPU"
 	ItemRsTypeAttr1Desc = "CPU attr for testing ox_item."
-	ItemRsTypeAttr2Key  = "item_type_attr_ram_ox_item"
+	ItemRsTypeAttr2Key  = "test_acc_item_type_attr_ram_ox_item"
 	ItemRsTypeAttr2Name = "RAM"
 	ItemRsTypeAttr2Desc = "RAM attr for testing ox_item."
 )
