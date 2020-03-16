@@ -1,5 +1,6 @@
 /*
-   Onix Config Manager - Terraform Provider - Copyright (c) 2018-2019 by www.gatblau.org
+   Onix Config Manager - Terraform Provider
+   Copyright (c) 2018-2020 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -15,13 +16,56 @@
 package main
 
 import (
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"os"
 	"testing"
 )
+
+var testAccProviders map[string]terraform.ResourceProvider
+var testAccProvider *schema.Provider
+
+func init() {
+	testAccProviders = map[string]terraform.ResourceProvider{
+		"ox": testProvider(),
+	}
+}
+
+// returns a provider for testing purposes
+func testProvider() terraform.ResourceProvider {
+	testProvider := newProvider(true)
+	testProvider.Configure(testProviderCfg())
+	return testProvider
+}
 
 // verify the structure of the provider and all of the resources,
 // and reports an error if it is invalid.
 func TestProvider(t *testing.T) {
-	if err := Provider().InternalValidate(); err != nil {
+	if err := testProvider().(*schema.Provider).InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
+}
+
+// get the configuration of the test provider
+// requires environment variables or defaults to preset values
+func testProviderCfg() *terraform.ResourceConfig {
+	uri := getVar("TF_PROVIDER_OX_URI", "http://localhost:8080")
+	user := getVar("TF_PROVIDER_OX_USER", "admin")
+	pwd := getVar("TF_PROVIDER_OX_PWD", "0n1x")
+	return &terraform.ResourceConfig{
+		Config: map[string]interface{}{
+			"uri":  uri,
+			"user": user,
+			"pwd":  pwd,
+		},
+	}
+}
+
+// gets a configuration variable from the environment or applies a default value
+func getVar(name string, defValue string) string {
+	v := os.Getenv(name)
+	if len(v) == 0 {
+		return defValue
+	}
+	return v
 }

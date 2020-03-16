@@ -18,7 +18,7 @@ package main
 
 import (
 	. "github.com/gatblau/oxc"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func ItemResource() *schema.Resource {
@@ -69,6 +69,10 @@ func ItemResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -95,11 +99,14 @@ func createItem(data *schema.ResourceData, meta interface{}) error {
 
 	// put the Item to the Web API
 	err := err(c.PutItem(item))
+	if err != nil {
+		return err
+	}
 
 	// set Item Id key
 	data.SetId(item.Key)
 
-	return err
+	return readItem(data, meta)
 }
 
 func readItem(data *schema.ResourceData, meta interface{}) error {
@@ -133,7 +140,11 @@ func deleteItem(data *schema.ResourceData, meta interface{}) error {
 	item := newItem(data)
 
 	// delete the item
-	return err(c.DeleteItem(item))
+	err := err(c.DeleteItem(item))
+
+	data.SetId("")
+
+	return err
 }
 
 // create a new Item from a terraform resource
@@ -148,12 +159,13 @@ func newItem(data *schema.ResourceData) *Item {
 		Attribute:   data.Get("attribute").(map[string]interface{}),
 		Tag:         data.Get("tag").([]interface{}),
 		Partition:   data.Get("partition").(string),
+		Version:     int64(data.Get("version").(int)),
 	}
 }
 
 // populate the Item with the data in the terraform resource
 func populateItem(data *schema.ResourceData, item *Item) {
-	data.SetId(item.Id)
+	data.SetId(item.Key)
 	data.Set("key", item.Key)
 	data.Set("name", item.Name)
 	data.Set("description", item.Description)
@@ -164,4 +176,5 @@ func populateItem(data *schema.ResourceData, item *Item) {
 	data.Set("status", item.Status)
 	data.Set("tag", item.Tag)
 	data.Set("type", item.Type)
+	//data.Set("version", item.Version)
 }

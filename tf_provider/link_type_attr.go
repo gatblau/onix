@@ -18,7 +18,7 @@ package main
 
 import (
 	. "github.com/gatblau/oxc"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func LinkTypeAttributeResource() *schema.Resource {
