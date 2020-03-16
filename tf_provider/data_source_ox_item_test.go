@@ -19,29 +19,28 @@ import (
 	"fmt"
 	"github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"strconv"
 	"testing"
 )
 
 const (
 	ItemDataSourceName  = "data.ox_item.ox_item_1_data"
-	ItemDsKey           = "ox_item_1_data"
+	ItemDsKey           = "test_acc_ox_item_1_data"
 	ItemDsName          = "ox item 1 data"
 	ItemDsDesc          = "ox_item_1_data Description"
 	ItemDsText          = `free text for ox_item_1_data`
 	ItemDsPartition     = "INS"
 	ItemDsStatus        = 3
-	ItemDsModelKey      = "model_ox_item_data"
+	ItemDsModelKey      = "test_acc_model_ox_item_data"
 	ItemDsModelName     = "Model - ox_item_data"
 	ItemDsModelDesc     = "Model for testing ox_item_data."
-	ItemDsTypeKey       = "item_type_ox_item_data"
+	ItemDsTypeKey       = "test_acc_item_type_ox_item_data"
 	ItemDsTypeName      = "Item Type - ox_item_data"
 	ItemDsTypeDesc      = "Item Type for testing ox_item_data."
-	ItemDsTypeAttr1Key  = "item_type_attr_cpu_ox_item_data"
+	ItemDsTypeAttr1Key  = "test_acc_item_type_attr_cpu_ox_item_data"
 	ItemDsTypeAttr1Name = "CPU"
 	ItemDsTypeAttr1Desc = "CPU attr for testing ox_item_data."
-	ItemDsTypeAttr2Key  = "item_type_attr_ram_ox_item_data"
+	ItemDsTypeAttr2Key  = "test_acc_item_type_attr_ram_ox_item_data"
 	ItemDsTypeAttr2Name = "RAM"
 	ItemDsTypeAttr2Desc = "RAM attr for testing ox_item_data."
 )
@@ -51,6 +50,19 @@ var (
 	ItemDsMeta = make(map[string]interface{})
 	ItemDsAttr = make(map[string]interface{})
 )
+
+func init() {
+	// defines a sweeper to clean up dangling test resources
+	resource.AddTestSweepers("ItemDataSource", &resource.Sweeper{
+		Name: "ItemDataSource",
+		F: func(region string) error {
+			_, err := cfg.Client.DeleteItem(&oxc.Item{Key: ItemDsKey})
+			_, err = cfg.Client.DeleteItemType(&oxc.ItemType{Key: ItemDsTypeKey})
+			_, err = cfg.Client.DeleteModel(&oxc.Model{Key: ItemDsModelKey})
+			return err
+		},
+	})
+}
 
 func TestItemDataSource(t *testing.T) {
 	resourceName := ItemDataSourceName
@@ -156,15 +168,5 @@ func prepareItemDataSourceTest(t *testing.T) {
 		})
 	if err != nil {
 		t.Error(err)
-	}
-}
-
-// remove supporting database entities
-func cleanUpItemDs(resourceName string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		_, err := cfg.Client.DeleteItem(&oxc.Item{Key: ItemDsKey})
-		_, err = cfg.Client.DeleteItemType(&oxc.ItemType{Key: ItemDsTypeKey})
-		_, err = cfg.Client.DeleteModel(&oxc.Model{Key: ItemDsModelKey})
-		return err
 	}
 }
