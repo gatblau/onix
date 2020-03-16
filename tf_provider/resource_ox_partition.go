@@ -44,19 +44,6 @@ func PartitionResource() *schema.Resource {
 	}
 }
 
-func PartitionDataSource() *schema.Resource {
-	return &schema.Resource{
-		Read: readPartition,
-
-		Schema: map[string]*schema.Schema{
-			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-		},
-	}
-}
-
 func createPartition(data *schema.ResourceData, meta interface{}) error {
 	// get the Ox client
 	c := meta.(Config).Client
@@ -66,29 +53,14 @@ func createPartition(data *schema.ResourceData, meta interface{}) error {
 
 	// put the Partition to the Web API
 	err := err(c.PutPartition(partition))
+	if err != nil {
+		return err
+	}
 
 	// set Partition Id key
 	data.SetId(partition.Key)
 
-	return err
-}
-
-func readPartition(data *schema.ResourceData, meta interface{}) error {
-	// get the Ox client
-	c := meta.(Config).Client
-
-	// read the tf data into an Partition
-	partition := &Partition{Key: data.Get("key").(string)}
-
-	// get the restful resource
-	partition, err := c.GetPartition(partition)
-
-	// populate the tf resource data
-	if err == nil {
-		populatePartition(data, partition)
-	}
-
-	return err
+	return readPartition(data, meta)
 }
 
 func updatePartition(data *schema.ResourceData, meta interface{}) error {

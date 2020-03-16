@@ -21,12 +21,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-func ItemTypeAttributeResource() *schema.Resource {
+func LinkTypeAttributeResource() *schema.Resource {
 	return &schema.Resource{
-		Create: createItemTypeAttribute,
-		Read:   readItemTypeAttr,
-		Update: updateItemTypeAttribute,
-		Delete: deleteItemTypeAttribute,
+		Create: createLinkTypeAttribute,
+		Read:   readLinkTypeAttr,
+		Update: updateLinkTypeAttribute,
+		Delete: deleteLinkTypeAttribute,
 		Schema: map[string]*schema.Schema{
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
@@ -60,24 +60,7 @@ func ItemTypeAttributeResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"item_type_key": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-		},
-	}
-}
-
-func ItemTypeAttributeDataSource() *schema.Resource {
-	return &schema.Resource{
-		Read: readItemTypeAttr,
-
-		Schema: map[string]*schema.Schema{
-			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"item_type_key": &schema.Schema{
+			"link_type_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -85,60 +68,42 @@ func ItemTypeAttributeDataSource() *schema.Resource {
 	}
 }
 
-func createItemTypeAttribute(data *schema.ResourceData, meta interface{}) error {
+func createLinkTypeAttribute(data *schema.ResourceData, meta interface{}) error {
 	// get the Ox client
 	c := meta.(Config).Client
 
-	// read the resource data into an Item Type Attribute
-	itemTypeAttr := newItemTypeAttr(data)
+	// read the resource data into an Link Type Attribute
+	linkTypeAttr := newLinkTypeAttr(data)
 
-	// put the Item Type Attr to the Web API
-	err := err(c.PutItemTypeAttr(itemTypeAttr))
-
-	// set Item Type Attribute Id key
-	data.SetId(itemTypeAttr.Key)
-
-	return err
-}
-
-func readItemTypeAttr(data *schema.ResourceData, meta interface{}) error {
-	// get the Ox client
-	c := meta.(Config).Client
-
-	// read the tf data into an Item Type Attr
-	itemTypeAttr := &ItemTypeAttribute{
-		Key:         data.Get("key").(string),
-		ItemTypeKey: data.Get("item_type_key").(string),
+	// put the Link Type Attr to the Web API
+	err := err(c.PutLinkTypeAttr(linkTypeAttr))
+	if err != nil {
+		return err
 	}
 
-	// get the restful resource
-	itemTypeAttr, err := c.GetItemTypeAttr(itemTypeAttr)
+	// set Link Type Attribute Id key
+	data.SetId(linkTypeAttr.Key)
 
-	// populate the tf resource data
-	if err == nil {
-		populateItemTypeAttr(data, itemTypeAttr)
-	}
-
-	return err
+	return readLinkTypeAttr(data, meta)
 }
 
-func updateItemTypeAttribute(data *schema.ResourceData, meta interface{}) error {
-	return createItemTypeAttribute(data, meta)
+func updateLinkTypeAttribute(data *schema.ResourceData, meta interface{}) error {
+	return createLinkTypeAttribute(data, meta)
 }
 
-func deleteItemTypeAttribute(data *schema.ResourceData, meta interface{}) error {
+func deleteLinkTypeAttribute(data *schema.ResourceData, meta interface{}) error {
 	// get the Ox client
 	c := meta.(Config).Client
 
-	// read the resource data into an Item Type Attribute
-	itemTypeAttr := newItemTypeAttr(data)
+	// read the resource data into an Link Type Attribute
+	linkTypeAttr := newLinkTypeAttr(data)
 
-	// delete the itemTypeAttr
-	return err(c.DeleteItemTypeAttr(itemTypeAttr))
+	// delete the linkTypeAttr
+	return err(c.DeleteLinkTypeAttr(linkTypeAttr))
 }
 
-func newItemTypeAttr(data *schema.ResourceData) *ItemTypeAttribute {
-	return &ItemTypeAttribute{
+func newLinkTypeAttr(data *schema.ResourceData) *LinkTypeAttribute {
+	return &LinkTypeAttribute{
 		Key:         data.Get("key").(string),
 		Name:        data.Get("name").(string),
 		Description: data.Get("description").(string),
@@ -147,12 +112,12 @@ func newItemTypeAttr(data *schema.ResourceData) *ItemTypeAttribute {
 		Managed:     data.Get("managed").(bool),
 		Required:    data.Get("managed").(bool),
 		Regex:       data.Get("regex").(string),
-		ItemTypeKey: data.Get("item_type_key").(string),
+		LinkTypeKey: data.Get("link_type_key").(string),
 	}
 }
 
-// populate the Item Type Attribute with the data in the terraform resource
-func populateItemTypeAttr(data *schema.ResourceData, typeAttr *ItemTypeAttribute) {
+// populate the Link Type Attribute with the data in the terraform resource
+func populateLinkTypeAttr(data *schema.ResourceData, typeAttr *LinkTypeAttribute) {
 	data.SetId(typeAttr.Id)
 	data.Set("key", typeAttr.Key)
 	data.Set("description", typeAttr.Description)
@@ -161,5 +126,5 @@ func populateItemTypeAttr(data *schema.ResourceData, typeAttr *ItemTypeAttribute
 	data.Set("managed", typeAttr.Managed)
 	data.Set("required", typeAttr.Required)
 	data.Set("regex", typeAttr.Regex)
-	data.Set("item_type_key", typeAttr.ItemTypeKey)
+	data.Set("link_type_key", typeAttr.LinkTypeKey)
 }

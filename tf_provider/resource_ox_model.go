@@ -53,20 +53,6 @@ func ModelResource() *schema.Resource {
 	}
 }
 
-// terraform data source for an Onix Model
-func ModelDataSource() *schema.Resource {
-	return &schema.Resource{
-		Read: readModel,
-
-		Schema: map[string]*schema.Schema{
-			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-		},
-	}
-}
-
 func createModel(data *schema.ResourceData, meta interface{}) error {
 	// get the Ox client
 	c := meta.(Config).Client
@@ -76,29 +62,14 @@ func createModel(data *schema.ResourceData, meta interface{}) error {
 
 	// put the Model to the Web API
 	err := err(c.PutModel(model))
+	if err != nil {
+		return err
+	}
 
 	// set Model Id key
 	data.SetId(model.Key)
 
-	return err
-}
-
-func readModel(data *schema.ResourceData, meta interface{}) error {
-	// get the Ox client
-	c := meta.(Config).Client
-
-	// read the tf data into a Model
-	model := &Model{Key: data.Get("key").(string)}
-
-	// get the restful resource
-	model, err := c.GetModel(model)
-
-	// populate the tf resource data
-	if err == nil {
-		populateModel(data, model)
-	}
-
-	return err
+	return readModel(data, meta)
 }
 
 func updateModel(data *schema.ResourceData, meta interface{}) error {

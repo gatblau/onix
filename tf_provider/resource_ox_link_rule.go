@@ -57,19 +57,6 @@ func LinkRuleResource() *schema.Resource {
 	}
 }
 
-func LinkRuleDataSource() *schema.Resource {
-	return &schema.Resource{
-		Read: readLinkRule,
-
-		Schema: map[string]*schema.Schema{
-			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-		},
-	}
-}
-
 func createLinkRule(data *schema.ResourceData, meta interface{}) error {
 	// get the Ox client
 	c := meta.(Config).Client
@@ -79,29 +66,14 @@ func createLinkRule(data *schema.ResourceData, meta interface{}) error {
 
 	// put the Item to the Web API
 	err := err(c.PutLinkRule(rule))
+	if err != nil {
+		return err
+	}
 
 	// set Link Rule Id key
 	data.SetId(rule.Key)
 
-	return err
-}
-
-func readLinkRule(data *schema.ResourceData, meta interface{}) error {
-	// get the Ox client
-	c := meta.(Config).Client
-
-	// read the tf data into a Link Rule
-	rule := &LinkRule{Key: data.Get("key").(string)}
-
-	// get the restful resource
-	rule, err := c.GetLinkRule(rule)
-
-	// populate the tf resource data
-	if err == nil {
-		populateLinkRule(data, rule)
-	}
-
-	return err
+	return readLinkRule(data, meta)
 }
 
 func updateLinkRule(data *schema.ResourceData, meta interface{}) error {

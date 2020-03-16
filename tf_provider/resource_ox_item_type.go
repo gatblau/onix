@@ -77,20 +77,6 @@ func ItemTypeResource() *schema.Resource {
 	}
 }
 
-func ItemTypeDataSource() *schema.Resource {
-	return &schema.Resource{
-		Read: readItemType,
-
-		Schema: map[string]*schema.Schema{
-			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-			},
-		},
-	}
-}
-
 func createItemType(data *schema.ResourceData, meta interface{}) error {
 	// get the Ox client
 	c := meta.(Config).Client
@@ -100,29 +86,14 @@ func createItemType(data *schema.ResourceData, meta interface{}) error {
 
 	// put the Item Type to the Web API
 	err := err(c.PutItemType(itemType))
+	if err != nil {
+		return err
+	}
 
 	// set Item Type Id key
 	data.SetId(itemType.Key)
 
-	return err
-}
-
-func readItemType(data *schema.ResourceData, meta interface{}) error {
-	// get the Ox client
-	c := meta.(Config).Client
-
-	// read the resource data into an Item
-	itemType := &ItemType{Key: data.Get("key").(string)}
-
-	// get the resource
-	itemType, err := c.GetItemType(itemType)
-
-	// populate the tf resource data
-	if err == nil {
-		populateItemType(data, itemType)
-	}
-
-	return err
+	return readItemType(data, meta)
 }
 
 func updateItemType(data *schema.ResourceData, meta interface{}) error {
