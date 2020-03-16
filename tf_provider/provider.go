@@ -21,23 +21,97 @@ import (
 	"github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"log"
+	"os"
 )
+
+// the provider configuration
+var cfg Config
 
 // Configuration information for the Terraform provider
 type Config struct {
-	URI    string
-	User   string
-	Pwd    string
-	Client oxc.Client
-	Token  string
+	URI       string
+	User      string
+	Pwd       string
+	Client    oxc.Client
+	Token     string
+	TokenURI  string
+	ClientId  string
+	AppSecret string
+	AuthMode  string
 }
 
-func (cfg *Config) empty() bool {
+// determined if the configuration has been loaded
+func (cfg *Config) loaded() bool {
 	return len(cfg.URI) == 0
 }
 
-// return a provider
+// load the provider configuration from environment first
+// then from terraform resource data
+// NOTE: prefer loading credentials from environment variables
+func (cfg *Config) load(data *schema.ResourceData) error {
+	uri := os.Getenv("TF_PROVIDER_OX_URI")
+	if len(uri) == 0 {
+		cfg.URI = data.Get("uri").(string)
+		log.Printf("WARNING: Loading URI from resource data. Consider setting the TF_PROVIDER_OX_URI env var instead.")
+	}
+	user := os.Getenv("TF_PROVIDER_OX_USER")
+	if len(user) == 0 {
+		cfg.User = data.Get("user").(string)
+	}
+	pwd := os.Getenv("TF_PROVIDER_OX_PWD")
+	if len(pwd) == 0 {
+		cfg.Pwd = data.Get("pwd").(string)
+	}
+	authMode := os.Getenv("TF_PROVIDER_OX_AUTH_MODE")
+	if len(authMode) == 0 {
+		cfg.AuthMode = data.Get("auth_mode").(string)
+	}
+	tokenURI := os.Getenv("TF_PROVIDER_OX_TOKEN_URI")
+	if len(tokenURI) == 0 {
+		cfg.TokenURI = data.Get("token_uri").(string)
+	}
+	clientId := os.Getenv("TF_PROVIDER_OX_CLIENT_ID")
+	if len(clientId) == 0 {
+		cfg.ClientId = data.Get("client_id").(string)
+	}
+	clientSecret := os.Getenv("TF_PROVIDER_OX_CLIENT_SECRET")
+	if len(clientSecret) == 0 {
+		val := data.Get("app_secret")
+		if val != nil {
+			cfg.AppSecret = val.(string)
+		}
+	}
+
+	cfg.Client = oxc.Client{BaseURL: cfg.URI}
+
+	switch cfg.AuthMode {
+	case "none":
+		// ensure no token value is specified
+		cfg.Client.SetAuthToken("")
+
+	case "basic":
+		// sets a basic authentication token
+		cfg.Client.SetAuthToken(cfg.Client.NewBasicToken(cfg.User, cfg.Pwd))
+
+	case "oidc":
+		// sets an OAuth Bearer token
+		bearerToken, err := cfg.Client.GetBearerToken(tokenURI, clientId, clientSecret, user, pwd)
+		if err != nil {
+			return err
+		}
+		cfg.Client.SetAuthToken(bearerToken)
+
+	default:
+		// can't recognise the auth_mode provided
+		return errors.New(fmt.Sprintf("auth_mode = '%s' is not valid value. Use either 'none', 'basic' or 'oidc'.", authMode))
+	}
+	return nil
+}
+
+// return a provider for production use
 func provider() terraform.ResourceProvider {
+	// pass in isTest = false
 	return newProvider(false)
 }
 
@@ -114,45 +188,10 @@ func newProvider(isTest bool) terraform.ResourceProvider {
 }
 
 func configureProvider(data *schema.ResourceData) (interface{}, error) {
-	if cfg.empty() {
-		uri := data.Get("uri").(string)
-		user := data.Get("user").(string)
-		pwd := data.Get("pwd").(string)
-		authMode := data.Get("auth_mode").(string)
-		tokenURI := data.Get("token_uri").(string)
-		clientId := data.Get("client_id").(string)
-		secret := data.Get("secret").(string)
-
-		cfg = Config{
-			URI:    uri,
-			User:   user,
-			Pwd:    pwd,
-			Client: oxc.Client{BaseURL: uri},
-		}
-
-		switch authMode {
-		case "none":
-			// ensure no token value is specified
-			cfg.Client.SetAuthToken("")
-
-		case "basic":
-			// sets a basic authentication token
-			cfg.Client.SetAuthToken(cfg.Client.NewBasicToken(user, pwd))
-
-		case "oidc":
-			// sets an OAuth Bearer token
-			bearerToken, err := cfg.Client.GetBearerToken(tokenURI, clientId, secret, user, pwd)
-			if err != nil {
-				return "", err
-			}
-			cfg.Client.SetAuthToken(bearerToken)
-
-		default:
-			// can't recognise the auth_mode provided
-			return "", errors.New(fmt.Sprintf("auth_mode = '%s' is not valid value. Use either 'none', 'basic' or 'oidc'.", authMode))
-		}
+	// load the configuration only once
+	if cfg.loaded() {
+		cfg.load(data)
 	}
-
 	return cfg, nil
 }
 
@@ -162,5 +201,3 @@ func err(result *oxc.Result, e error) error {
 	}
 	return e
 }
-
-var cfg Config

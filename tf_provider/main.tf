@@ -18,7 +18,7 @@ provider "ox" {
   //  use OpenId authentication
   //  auth_mode = "oidc"
   //  client_id = "application-client-id-here"
-  //  secret    = "application-secret-here"
+  //  app_secret = "application-secret-here"
   //  token_uri = "uri-of-the-token-endpoint-at-authorisation-server"
 }
 
