@@ -50,36 +50,42 @@ func (cfg *Config) loaded() bool {
 // then from terraform resource data
 // NOTE: prefer loading credentials from environment variables
 func (cfg *Config) load(data *schema.ResourceData) error {
-	uri := os.Getenv("TF_PROVIDER_OX_URI")
-	if len(uri) == 0 {
+	cfg.URI = os.Getenv("TF_PROVIDER_OX_URI")
+	if len(cfg.URI) == 0 {
 		cfg.URI = data.Get("uri").(string)
-		log.Printf("WARNING: Loading URI from resource data. Consider setting the TF_PROVIDER_OX_URI env var instead.")
+		log.Printf("WARNING: Loading 'uri' from resource data. Consider setting the TF_PROVIDER_OX_URI environment variable instead.")
 	}
-	user := os.Getenv("TF_PROVIDER_OX_USER")
-	if len(user) == 0 {
+	cfg.User = os.Getenv("TF_PROVIDER_OX_USER")
+	if len(cfg.User) == 0 {
 		cfg.User = data.Get("user").(string)
+		log.Printf("WARNING: Loading 'user' from resource data. Consider setting the TF_PROVIDER_OX_USER environment variable instead.")
 	}
-	pwd := os.Getenv("TF_PROVIDER_OX_PWD")
-	if len(pwd) == 0 {
+	cfg.Pwd = os.Getenv("TF_PROVIDER_OX_PWD")
+	if len(cfg.Pwd) == 0 {
 		cfg.Pwd = data.Get("pwd").(string)
+		log.Printf("WARNING: Loading 'pwd' from resource data. Consider setting the TF_PROVIDER_OX_PWD environment variable instead.")
 	}
-	authMode := os.Getenv("TF_PROVIDER_OX_AUTH_MODE")
-	if len(authMode) == 0 {
+	cfg.AuthMode = os.Getenv("TF_PROVIDER_OX_AUTH_MODE")
+	if len(cfg.AuthMode) == 0 {
 		cfg.AuthMode = data.Get("auth_mode").(string)
+		log.Printf("WARNING: Loading 'auth_mode' from resource data. Consider setting the TF_PROVIDER_OX_AUTH_MODE environment variable instead.")
 	}
-	tokenURI := os.Getenv("TF_PROVIDER_OX_TOKEN_URI")
-	if len(tokenURI) == 0 {
+	cfg.TokenURI = os.Getenv("TF_PROVIDER_OX_TOKEN_URI")
+	if len(cfg.TokenURI) == 0 {
 		cfg.TokenURI = data.Get("token_uri").(string)
+		log.Printf("WARNING: Loading 'token_uri' from resource data. Consider setting the TF_PROVIDER_OX_TOKEN_URI environment variable instead.")
 	}
-	clientId := os.Getenv("TF_PROVIDER_OX_CLIENT_ID")
-	if len(clientId) == 0 {
+	cfg.ClientId = os.Getenv("TF_PROVIDER_OX_CLIENT_ID")
+	if len(cfg.ClientId) == 0 {
 		cfg.ClientId = data.Get("client_id").(string)
+		log.Printf("WARNING: Loading 'client_secret' from resource data. Consider setting the TF_PROVIDER_OX_CLIENT_ID environment variable instead.")
 	}
-	clientSecret := os.Getenv("TF_PROVIDER_OX_CLIENT_SECRET")
-	if len(clientSecret) == 0 {
+	cfg.AppSecret = os.Getenv("TF_PROVIDER_OX_APP_SECRET")
+	if len(cfg.AppSecret) == 0 {
 		val := data.Get("app_secret")
 		if val != nil {
 			cfg.AppSecret = val.(string)
+			log.Printf("WARNING: Loading 'app_secret' from resource data. Consider setting the TF_PROVIDER_OX_APP_SECRET environment variable instead.")
 		}
 	}
 
@@ -96,7 +102,7 @@ func (cfg *Config) load(data *schema.ResourceData) error {
 
 	case "oidc":
 		// sets an OAuth Bearer token
-		bearerToken, err := cfg.Client.GetBearerToken(tokenURI, clientId, clientSecret, user, pwd)
+		bearerToken, err := cfg.Client.GetBearerToken(cfg.TokenURI, cfg.ClientId, cfg.AppSecret, cfg.User, cfg.Pwd)
 		if err != nil {
 			return err
 		}
@@ -104,7 +110,7 @@ func (cfg *Config) load(data *schema.ResourceData) error {
 
 	default:
 		// can't recognise the auth_mode provided
-		return errors.New(fmt.Sprintf("auth_mode = '%s' is not valid value. Use either 'none', 'basic' or 'oidc'.", authMode))
+		return errors.New(fmt.Sprintf("auth_mode = '%s' is not valid value. Use either 'none', 'basic' or 'oidc'.", cfg.AuthMode))
 	}
 	return nil
 }
