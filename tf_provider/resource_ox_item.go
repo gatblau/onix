@@ -77,19 +77,6 @@ func ItemResource() *schema.Resource {
 	}
 }
 
-func ItemDataSource() *schema.Resource {
-	return &schema.Resource{
-		Read: readItem,
-
-		Schema: map[string]*schema.Schema{
-			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-		},
-	}
-}
-
 func createItem(data *schema.ResourceData, meta interface{}) error {
 	// get the Ox client
 	c := meta.(Config).Client
@@ -107,24 +94,6 @@ func createItem(data *schema.ResourceData, meta interface{}) error {
 	data.SetId(item.Key)
 
 	return readItem(data, meta)
-}
-
-func readItem(data *schema.ResourceData, meta interface{}) error {
-	// get the Ox client
-	c := meta.(Config).Client
-
-	// read the tf data into an Item
-	item := &Item{Key: data.Get("key").(string)}
-
-	// get the restful resource
-	item, err := c.GetItem(item)
-
-	// populate the tf resource data
-	if err == nil {
-		populateItem(data, item)
-	}
-
-	return err
 }
 
 func updateItem(data *schema.ResourceData, meta interface{}) error {

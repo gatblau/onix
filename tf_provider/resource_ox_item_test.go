@@ -25,31 +25,31 @@ import (
 
 // all the constants for the item test
 const (
-	ItemResourceName  = "ox_item.ox_item_1"
-	ItemKey           = "ox_item_1"
-	ItemName          = "ox item"
-	ItemDesc          = "ox_item Description"
-	ItemMeta          = `{ "OS" = "RHEL7.3" }`
-	ItemAttr          = `{ "RAM" : "3", "CPU" : "1" }`
-	ItemPartition     = "INS"
-	ItemModelKey      = "model_ox_item"
-	ItemModelName     = "Model - ox_item"
-	ItemModelDesc     = "Model for testing ox_item."
-	ItemTypeKey       = "item_type_ox_item"
-	ItemTypeName      = "Item Type - ox_item"
-	ItemTypeDesc      = "Item Type for testing ox_item."
-	ItemTypeAttr1Key  = "item_type_attr_cpu_ox_item"
-	ItemTypeAttr1Name = "CPU"
-	ItemTypeAttr1Desc = "CPU attr for testing ox_item."
-	ItemTypeAttr2Key  = "item_type_attr_ram_ox_item"
-	ItemTypeAttr2Name = "RAM"
-	ItemTypeAttr2Desc = "RAM attr for testing ox_item."
+	ItemResourceName    = "ox_item.ox_item_1"
+	ItemRsKey           = "ox_item_1"
+	ItemRsName          = "ox item"
+	ItemRsDesc          = "ox_item Description"
+	ItemRsMeta          = `{ "OS" = "RHEL7.3" }`
+	ItemRsAttr          = `{ "RAM" : "3", "CPU" : "1" }`
+	ItemRsPartition     = "INS"
+	ItemRsModelKey      = "model_ox_item"
+	ItemRsModelName     = "Model - ox_item"
+	ItemRsModelDesc     = "Model for testing ox_item."
+	ItemRsTypeKey       = "item_type_ox_item"
+	ItemRsTypeName      = "Item Type - ox_item"
+	ItemRsTypeDesc      = "Item Type for testing ox_item."
+	ItemRsTypeAttr1Key  = "item_type_attr_cpu_ox_item"
+	ItemRsTypeAttr1Name = "CPU"
+	ItemRsTypeAttr1Desc = "CPU attr for testing ox_item."
+	ItemRsTypeAttr2Key  = "item_type_attr_ram_ox_item"
+	ItemRsTypeAttr2Name = "RAM"
+	ItemRsTypeAttr2Desc = "RAM attr for testing ox_item."
 )
 
-func TestItem(t *testing.T) {
+func TestItemResource(t *testing.T) {
 	resourceName := ItemResourceName
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:  func() { prepareItemTest(t) },
+		PreCheck:  func() { prepareItemResourceTest(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			//create
@@ -57,28 +57,28 @@ func TestItem(t *testing.T) {
 				Config: oxItemResource(),
 				Check: resource.ComposeTestCheckFunc(
 					// check item resource attributes in Terraform state
-					resource.TestCheckResourceAttr(resourceName, "key", ItemKey),
-					resource.TestCheckResourceAttr(resourceName, "name", ItemName),
-					resource.TestCheckResourceAttr(resourceName, "description", ItemDesc),
-					resource.TestCheckResourceAttr(resourceName, "type", ItemTypeKey),
+					resource.TestCheckResourceAttr(resourceName, "key", ItemRsKey),
+					resource.TestCheckResourceAttr(resourceName, "name", ItemRsName),
+					resource.TestCheckResourceAttr(resourceName, "description", ItemRsDesc),
+					resource.TestCheckResourceAttr(resourceName, "type", ItemRsTypeKey),
 
 					// check for side effects in Onix database
-					checkItemCreated(ItemResourceName),
+					checkItemResourceCreated(ItemResourceName),
 				),
 			},
 		},
-		CheckDestroy: checkItemDestroyed,
+		CheckDestroy: checkItemResourceDestroyed,
 	})
 }
 
 // create supporting database entities
-func prepareItemTest(t *testing.T) {
+func prepareItemResourceTest(t *testing.T) {
 	// need a model first
 	_, err := cfg.Client.PutModel(
 		&oxc.Model{
-			Key:         ItemModelKey,
-			Name:        ItemModelName,
-			Description: ItemModelDesc,
+			Key:         ItemRsModelKey,
+			Name:        ItemRsModelName,
+			Description: ItemRsModelDesc,
 		})
 	if err != nil {
 		t.Error(err)
@@ -87,10 +87,10 @@ func prepareItemTest(t *testing.T) {
 	// an item type in the model
 	_, err = cfg.Client.PutItemType(
 		&oxc.ItemType{
-			Key:         ItemTypeKey,
-			Name:        ItemTypeName,
-			Description: ItemTypeDesc,
-			Model:       ItemModelKey,
+			Key:         ItemRsTypeKey,
+			Name:        ItemRsTypeName,
+			Description: ItemRsTypeDesc,
+			Model:       ItemRsModelKey,
 		})
 	if err != nil {
 		t.Error(err)
@@ -99,10 +99,10 @@ func prepareItemTest(t *testing.T) {
 	// and two attributes for the item type
 	_, err = cfg.Client.PutItemTypeAttr(
 		&oxc.ItemTypeAttribute{
-			Key:         ItemTypeAttr1Key,
-			Name:        ItemTypeAttr1Name,
-			Description: ItemTypeAttr1Desc,
-			ItemTypeKey: ItemTypeKey,
+			Key:         ItemRsTypeAttr1Key,
+			Name:        ItemRsTypeAttr1Name,
+			Description: ItemRsTypeAttr1Desc,
+			ItemTypeKey: ItemRsTypeKey,
 		})
 	if err != nil {
 		t.Error(err)
@@ -110,10 +110,10 @@ func prepareItemTest(t *testing.T) {
 
 	_, err = cfg.Client.PutItemTypeAttr(
 		&oxc.ItemTypeAttribute{
-			Key:         ItemTypeAttr2Key,
-			Name:        ItemTypeAttr2Name,
-			Description: ItemTypeAttr2Desc,
-			ItemTypeKey: ItemTypeKey,
+			Key:         ItemRsTypeAttr2Key,
+			Name:        ItemRsTypeAttr2Name,
+			Description: ItemRsTypeAttr2Desc,
+			ItemTypeKey: ItemRsTypeKey,
 		})
 	if err != nil {
 		t.Error(err)
@@ -121,7 +121,7 @@ func prepareItemTest(t *testing.T) {
 }
 
 // check the item has been created in the database
-func checkItemCreated(resourceName string) resource.TestCheckFunc {
+func checkItemResourceCreated(resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// retrieve the resource by name from state
 		rs, ok := s.RootModule().Resources[resourceName]
@@ -155,20 +155,20 @@ func checkItemCreated(resourceName string) resource.TestCheckFunc {
 }
 
 // check the item has been destroyed destroyed in the database
-func checkItemDestroyed(s *terraform.State) error {
-	item, err := cfg.Client.GetItem(&oxc.Item{Key: ItemKey})
+func checkItemResourceDestroyed(s *terraform.State) error {
+	item, err := cfg.Client.GetItem(&oxc.Item{Key: ItemRsKey})
 	// should get an error as item should not exist anymore
 	if err == nil || len(item.Key) > 0 {
-		return fmt.Errorf("Item %s still exists", ItemKey)
+		return fmt.Errorf("Item %s still exists", ItemRsKey)
 	}
 	// clean up the database after the test
-	return cleanUpItem()
+	return cleanUpItemRs()
 }
 
 // remove supporting database entities
-func cleanUpItem() error {
-	_, err := cfg.Client.DeleteItemType(&oxc.ItemType{Key: ItemTypeKey})
-	_, err = cfg.Client.DeleteModel(&oxc.Model{Key: ItemModelKey})
+func cleanUpItemRs() error {
+	_, err := cfg.Client.DeleteItemType(&oxc.ItemType{Key: ItemRsTypeKey})
+	_, err = cfg.Client.DeleteModel(&oxc.Model{Key: ItemRsModelKey})
 	return err
 }
 
@@ -190,5 +190,5 @@ func oxItemResource() string {
   meta        = %s
   attribute   = %s
   partition   = "%s"
-}`, ItemKey, ItemName, ItemDesc, ItemTypeKey, ItemMeta, ItemAttr, ItemPartition)
+}`, ItemRsKey, ItemRsName, ItemRsDesc, ItemRsTypeKey, ItemRsMeta, ItemRsAttr, ItemRsPartition)
 }
