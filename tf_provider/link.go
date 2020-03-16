@@ -18,7 +18,7 @@ package main
 
 import (
 	. "github.com/gatblau/oxc"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func LinkResource() *schema.Resource {
@@ -60,6 +60,10 @@ func LinkResource() *schema.Resource {
 			"end_item_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
 			},
 		},
 	}

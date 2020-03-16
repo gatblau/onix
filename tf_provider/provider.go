@@ -19,7 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gatblau/oxc"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 // Configuration information for the Terraform provider
@@ -31,20 +32,33 @@ type Config struct {
 	Token  string
 }
 
-func Provider() *schema.Provider {
+func (cfg *Config) empty() bool {
+	return len(cfg.URI) == 0
+}
+
+// return a provider
+func provider() terraform.ResourceProvider {
+	return newProvider(false)
+}
+
+// create a provider instance
+func newProvider(isTest bool) terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"uri": {
 				Type:     schema.TypeString,
-				Required: true,
+				Required: !isTest,
+				Optional: isTest,
 			},
 			"user": {
 				Type:     schema.TypeString,
-				Required: true,
+				Required: !isTest,
+				Optional: isTest,
 			},
 			"pwd": {
 				Type:      schema.TypeString,
-				Required:  true,
+				Required:  !isTest,
+				Optional:  isTest,
 				Sensitive: true,
 			},
 			"auth_mode": {
@@ -99,42 +113,44 @@ func Provider() *schema.Provider {
 	}
 }
 
-func configureProvider(d *schema.ResourceData) (interface{}, error) {
-	uri := d.Get("uri").(string)
-	user := d.Get("user").(string)
-	pwd := d.Get("pwd").(string)
-	authMode := d.Get("auth_mode").(string)
-	tokenURI := d.Get("token_uri").(string)
-	clientId := d.Get("client_id").(string)
-	secret := d.Get("secret").(string)
+func configureProvider(data *schema.ResourceData) (interface{}, error) {
+	if cfg.empty() {
+		uri := data.Get("uri").(string)
+		user := data.Get("user").(string)
+		pwd := data.Get("pwd").(string)
+		authMode := data.Get("auth_mode").(string)
+		tokenURI := data.Get("token_uri").(string)
+		clientId := data.Get("client_id").(string)
+		secret := data.Get("secret").(string)
 
-	cfg := Config{
-		URI:    uri,
-		User:   user,
-		Pwd:    pwd,
-		Client: oxc.Client{BaseURL: uri},
-	}
-
-	switch authMode {
-	case "none":
-		// ensure no token value is specified
-		cfg.Client.SetAuthToken("")
-
-	case "basic":
-		// sets a basic authentication token
-		cfg.Client.SetAuthToken(cfg.Client.NewBasicToken(user, pwd))
-
-	case "oidc":
-		// sets an OAuth Bearer token
-		bearerToken, err := cfg.Client.GetBearerToken(tokenURI, clientId, secret, user, pwd)
-		if err != nil {
-			return "", err
+		cfg = Config{
+			URI:    uri,
+			User:   user,
+			Pwd:    pwd,
+			Client: oxc.Client{BaseURL: uri},
 		}
-		cfg.Client.SetAuthToken(bearerToken)
 
-	default:
-		// can't recognise the auth_mode provided
-		return "", errors.New(fmt.Sprintf("auth_mode = '%s' is not valid value. Use either 'none', 'basic' or 'oidc'.", authMode))
+		switch authMode {
+		case "none":
+			// ensure no token value is specified
+			cfg.Client.SetAuthToken("")
+
+		case "basic":
+			// sets a basic authentication token
+			cfg.Client.SetAuthToken(cfg.Client.NewBasicToken(user, pwd))
+
+		case "oidc":
+			// sets an OAuth Bearer token
+			bearerToken, err := cfg.Client.GetBearerToken(tokenURI, clientId, secret, user, pwd)
+			if err != nil {
+				return "", err
+			}
+			cfg.Client.SetAuthToken(bearerToken)
+
+		default:
+			// can't recognise the auth_mode provided
+			return "", errors.New(fmt.Sprintf("auth_mode = '%s' is not valid value. Use either 'none', 'basic' or 'oidc'.", authMode))
+		}
 	}
 
 	return cfg, nil
@@ -146,3 +162,5 @@ func err(result *oxc.Result, e error) error {
 	}
 	return e
 }
+
+var cfg Config
