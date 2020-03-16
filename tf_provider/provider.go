@@ -43,7 +43,7 @@ type Config struct {
 
 // determined if the configuration has been loaded
 func (cfg *Config) loaded() bool {
-	return len(cfg.URI) == 0
+	return len(cfg.URI) > 0
 }
 
 // load the provider configuration from environment first
@@ -188,8 +188,7 @@ func newProvider(isTest bool) terraform.ResourceProvider {
 }
 
 func configureProvider(data *schema.ResourceData) (interface{}, error) {
-	// load the configuration only once
-	if cfg.loaded() {
+	if !cfg.loaded() {
 		cfg.load(data)
 	}
 	return cfg, nil
