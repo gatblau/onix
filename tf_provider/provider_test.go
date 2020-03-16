@@ -48,6 +48,7 @@ func TestProvider(t *testing.T) {
 
 // get the configuration of the test provider
 // requires environment variables or defaults to preset values
+// NOTE: only Basic Authentication is currently implemented for testing purposes
 func testProviderCfg() *terraform.ResourceConfig {
 	uri := getVar("TF_PROVIDER_OX_URI", "http://localhost:8080")
 	user := getVar("TF_PROVIDER_OX_USER", "admin")
