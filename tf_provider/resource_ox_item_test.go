@@ -156,9 +156,9 @@ func checkItemResourceCreated(resourceName string) resource.TestCheckFunc {
 
 // check the item has been destroyed destroyed in the database
 func checkItemResourceDestroyed(s *terraform.State) error {
-	item, err := cfg.Client.GetItem(&oxc.Item{Key: ItemRsKey})
+	item, _ := cfg.Client.GetItem(&oxc.Item{Key: ItemRsKey})
 	// should get an error as item should not exist anymore
-	if err == nil || len(item.Key) > 0 {
+	if item != nil {
 		return fmt.Errorf("Item %s still exists", ItemRsKey)
 	}
 	// clean up the database after the test
