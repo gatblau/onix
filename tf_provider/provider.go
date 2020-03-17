@@ -55,37 +55,51 @@ func (cfg *Config) load(data *schema.ResourceData) error {
 		cfg.URI = data.Get("uri").(string)
 		log.Printf("WARNING: Loading 'uri' from resource data. Consider setting the TF_PROVIDER_OX_URI environment variable instead.")
 	}
-	cfg.User = os.Getenv("TF_PROVIDER_OX_USER")
-	if len(cfg.User) == 0 {
-		cfg.User = data.Get("user").(string)
-		log.Printf("WARNING: Loading 'user' from resource data. Consider setting the TF_PROVIDER_OX_USER environment variable instead.")
-	}
-	cfg.Pwd = os.Getenv("TF_PROVIDER_OX_PWD")
-	if len(cfg.Pwd) == 0 {
-		cfg.Pwd = data.Get("pwd").(string)
-		log.Printf("WARNING: Loading 'pwd' from resource data. Consider setting the TF_PROVIDER_OX_PWD environment variable instead.")
-	}
 	cfg.AuthMode = os.Getenv("TF_PROVIDER_OX_AUTH_MODE")
 	if len(cfg.AuthMode) == 0 {
 		cfg.AuthMode = data.Get("auth_mode").(string)
-		log.Printf("WARNING: Loading 'auth_mode' from resource data. Consider setting the TF_PROVIDER_OX_AUTH_MODE environment variable instead.")
 	}
-	cfg.TokenURI = os.Getenv("TF_PROVIDER_OX_TOKEN_URI")
-	if len(cfg.TokenURI) == 0 {
-		cfg.TokenURI = data.Get("token_uri").(string)
-		log.Printf("WARNING: Loading 'token_uri' from resource data. Consider setting the TF_PROVIDER_OX_TOKEN_URI environment variable instead.")
+	// if basic authentication selected
+	if cfg.AuthMode == "basic" {
+		cfg.User = os.Getenv("TF_PROVIDER_OX_USER")
+		if len(cfg.User) == 0 {
+			cfg.User = data.Get("user").(string)
+			log.Printf("WARNING: Loading 'user' from resource data. Consider setting the TF_PROVIDER_OX_USER environment variable instead.")
+		}
+		cfg.Pwd = os.Getenv("TF_PROVIDER_OX_PWD")
+		if len(cfg.Pwd) == 0 {
+			cfg.Pwd = data.Get("pwd").(string)
+			log.Printf("WARNING: Loading 'pwd' from resource data. Consider setting the TF_PROVIDER_OX_PWD environment variable instead.")
+		}
 	}
-	cfg.ClientId = os.Getenv("TF_PROVIDER_OX_CLIENT_ID")
-	if len(cfg.ClientId) == 0 {
-		cfg.ClientId = data.Get("client_id").(string)
-		log.Printf("WARNING: Loading 'client_secret' from resource data. Consider setting the TF_PROVIDER_OX_CLIENT_ID environment variable instead.")
-	}
-	cfg.AppSecret = os.Getenv("TF_PROVIDER_OX_APP_SECRET")
-	if len(cfg.AppSecret) == 0 {
-		val := data.Get("app_secret")
-		if val != nil {
-			cfg.AppSecret = val.(string)
-			log.Printf("WARNING: Loading 'app_secret' from resource data. Consider setting the TF_PROVIDER_OX_APP_SECRET environment variable instead.")
+	// if open id connect selected
+	if cfg.AuthMode == "oidc" {
+		cfg.TokenURI = os.Getenv("TF_PROVIDER_OX_TOKEN_URI")
+		if len(cfg.TokenURI) == 0 {
+			cfg.TokenURI = data.Get("token_uri").(string)
+			log.Printf("WARNING: Loading 'token_uri' from resource data. Consider setting the TF_PROVIDER_OX_TOKEN_URI environment variable instead.")
+		} else {
+			return errors.New("TF_PROVIDER_OX_TOKEN_URI is required if TF_PROVIDER_OX_AUTH_MODE=oidc")
+		}
+		cfg.ClientId = os.Getenv("TF_PROVIDER_OX_CLIENT_ID")
+		if len(cfg.ClientId) == 0 {
+			val := data.Get("client_id")
+			if val != nil {
+				cfg.ClientId = val.(string)
+				log.Printf("WARNING: Loading 'client_secret' from resource data. Consider setting the TF_PROVIDER_OX_CLIENT_ID environment variable instead.")
+			} else {
+				return errors.New("TF_PROVIDER_OX_CLIENT_ID is required if TF_PROVIDER_OX_AUTH_MODE=oidc")
+			}
+		}
+		cfg.AppSecret = os.Getenv("TF_PROVIDER_OX_APP_SECRET")
+		if len(cfg.AppSecret) == 0 {
+			val := data.Get("app_secret")
+			if val != nil {
+				cfg.AppSecret = val.(string)
+				log.Printf("WARNING: Loading 'app_secret' from resource data. Consider setting the TF_PROVIDER_OX_APP_SECRET environment variable instead.")
+			} else {
+				return errors.New("TF_PROVIDER_OX_APP_SECRET is required if TF_PROVIDER_OX_AUTH_MODE=oidc")
+			}
 		}
 	}
 
