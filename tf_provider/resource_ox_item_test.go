@@ -137,16 +137,16 @@ func checkItemResourceCreated(resourceName string) resource.TestCheckFunc {
 		}
 
 		// compares the state with the database values
-		if err := checkItemAttr(rs, "name", item.Name); err != nil {
+		if err := checkEntityAttr(rs, "name", item.Name); err != nil {
 			return err
 		}
-		if err := checkItemAttr(rs, "description", item.Description); err != nil {
+		if err := checkEntityAttr(rs, "description", item.Description); err != nil {
 			return err
 		}
-		if err := checkItemAttr(rs, "partition", item.Partition); err != nil {
+		if err := checkEntityAttr(rs, "partition", item.Partition); err != nil {
 			return err
 		}
-		if err := checkItemAttr(rs, "type", item.Type); err != nil {
+		if err := checkEntityAttr(rs, "type", item.Type); err != nil {
 			return err
 		}
 
@@ -170,14 +170,6 @@ func cleanUpItemRs() error {
 	_, err := cfg.Client.DeleteItemType(&oxc.ItemType{Key: ItemRsTypeKey})
 	_, err = cfg.Client.DeleteModel(&oxc.Model{Key: ItemRsModelKey})
 	return err
-}
-
-// check the attribute in TF state matches the one in the database
-func checkItemAttr(rs *terraform.ResourceState, attrName string, targetValue string) error {
-	if rs.Primary.Attributes[attrName] != targetValue {
-		return fmt.Errorf("Attribute '%s' expected value %s, but found %s", attrName, rs.Primary.Attributes[attrName], targetValue)
-	}
-	return nil
 }
 
 func oxItemResource() string {

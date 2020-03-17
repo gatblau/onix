@@ -31,6 +31,51 @@ func ItemTypeDataSource() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"filter": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"meta_schema": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"model_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"notify_change": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"tag": &schema.Schema{
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+			},
+			"encrypt_meta": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"encrypt_txt": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"managed": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -40,7 +85,7 @@ func readItemType(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the resource data into an Item
-	itemType := &ItemType{Key: data.Id()}
+	itemType := &ItemType{Key: data.Get("key").(string)}
 
 	// get the resource
 	itemType, err := c.GetItemType(itemType)
