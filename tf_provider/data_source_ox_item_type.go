@@ -40,7 +40,7 @@ func readItemType(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the resource data into an Item
-	itemType := &ItemType{Key: data.Get("key").(string)}
+	itemType := &ItemType{Key: data.Id()}
 
 	// get the resource
 	itemType, err := c.GetItemType(itemType)

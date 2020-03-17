@@ -90,7 +90,7 @@ func newPartition(data *schema.ResourceData) *Partition {
 
 // populate the Partition with the data in the terraform resource
 func populatePartition(data *schema.ResourceData, partition *Partition) {
-	data.SetId(partition.Id)
+	data.SetId(partition.Key)
 	data.Set("key", partition.Key)
 	data.Set("name", partition.Name)
 	data.Set("description", partition.Description)

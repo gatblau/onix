@@ -39,7 +39,7 @@ func readPrivilege(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the tf data into an Privilege
-	privilege := &Privilege{Key: data.Get("key").(string)}
+	privilege := &Privilege{Key: data.Id()}
 
 	// get the restful resource
 	privilege, err := c.GetPrivilege(privilege)

@@ -73,6 +73,10 @@ func ItemResource() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+			"enc_key_ix": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -129,6 +133,8 @@ func newItem(data *schema.ResourceData) *Item {
 		Tag:         data.Get("tag").([]interface{}),
 		Partition:   data.Get("partition").(string),
 		Version:     int64(data.Get("version").(int)),
+		EncKeyIx:    int64(data.Get("enc_key_ix").(int)),
+		Status:      data.Get("status").(int),
 	}
 }
 
@@ -138,12 +144,12 @@ func populateItem(data *schema.ResourceData, item *Item) {
 	data.Set("key", item.Key)
 	data.Set("name", item.Name)
 	data.Set("description", item.Description)
-	data.Set("attribute", item.Attribute)
-	data.Set("txt", item.Txt)
+	data.Set("type", item.Type)
 	data.Set("meta", item.Meta)
+	data.Set("txt", item.Txt)
+	data.Set("attribute", item.Attribute)
+	data.Set("tag", item.Tag)
 	data.Set("partition", item.Partition)
 	data.Set("status", item.Status)
-	data.Set("tag", item.Tag)
-	data.Set("type", item.Type)
-	//data.Set("version", item.Version)
+	data.Set("encKeyIx", item.EncKeyIx)
 }

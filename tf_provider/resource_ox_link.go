@@ -118,7 +118,7 @@ func newLink(data *schema.ResourceData) *Link {
 
 // populate the Link with the data in the terraform resource
 func populateLink(data *schema.ResourceData, link *Link) {
-	data.SetId(link.Id)
+	data.SetId(link.Key)
 	data.Set("key", link.Key)
 	data.Set("description", link.Description)
 	data.Set("type", link.Type)

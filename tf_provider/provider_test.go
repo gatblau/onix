@@ -16,6 +16,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"os"
@@ -69,4 +70,12 @@ func getVar(name string, defValue string) string {
 		return defValue
 	}
 	return v
+}
+
+// check the attribute in TF state matches the one in the database
+func checkEntityAttr(rs *terraform.ResourceState, attrName string, targetValue string) error {
+	if rs.Primary.Attributes[attrName] != targetValue {
+		return fmt.Errorf("Attribute '%s' expected value %s, but found %s", attrName, rs.Primary.Attributes[attrName], targetValue)
+	}
+	return nil
 }

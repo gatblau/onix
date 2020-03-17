@@ -119,7 +119,7 @@ func newLinkType(data *schema.ResourceData) *LinkType {
 
 // populate the LinkType with the data in the terraform resource
 func populateLinkType(data *schema.ResourceData, linkType *LinkType) {
-	data.SetId(linkType.Id)
+	data.SetId(linkType.Key)
 	data.Set("key", linkType.Key)
 	data.Set("name", linkType.Name)
 	data.Set("description", linkType.Description)

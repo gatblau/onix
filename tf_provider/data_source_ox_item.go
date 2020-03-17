@@ -76,7 +76,7 @@ func readItem(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the tf data into an Item
-	item := &Item{Key: data.Get("key").(string)}
+	item := &Item{Key: data.Id()}
 
 	// get the restful resource
 	item, err := c.GetItem(item)

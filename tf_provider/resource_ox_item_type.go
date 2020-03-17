@@ -130,7 +130,7 @@ func newItemType(data *schema.ResourceData) *ItemType {
 
 // populate the Item with the data in the terraform resource
 func populateItemType(data *schema.ResourceData, itemType *ItemType) {
-	data.SetId(itemType.Id)
+	data.SetId(itemType.Key)
 	data.Set("key", itemType.Key)
 	data.Set("name", itemType.Name)
 	data.Set("description", itemType.Description)
