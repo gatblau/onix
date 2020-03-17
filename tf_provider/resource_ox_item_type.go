@@ -73,6 +73,10 @@ func ItemTypeResource() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -125,6 +129,7 @@ func newItemType(data *schema.ResourceData) *ItemType {
 		EncryptTxt:   data.Get("encrypt_txt").(bool),
 		Managed:      data.Get("managed").(bool),
 		Tag:          data.Get("tag").([]interface{}),
+		Version:      int64(data.Get("version").(int)),
 	}
 }
 
@@ -142,7 +147,4 @@ func populateItemType(data *schema.ResourceData, itemType *ItemType) {
 	data.Set("encrypt_txt", itemType.EncryptTxt)
 	data.Set("managed", itemType.Managed)
 	data.Set("model", itemType.Model)
-	data.Set("version", itemType.Version)
-	data.Set("created", itemType.Created)
-	data.Set("updated", itemType.Updated)
 }
