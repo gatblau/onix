@@ -6,3 +6,4 @@ build
 terraform-provider-ox
 terraform
 crash.log
+vendor

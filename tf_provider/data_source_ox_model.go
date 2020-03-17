@@ -56,7 +56,7 @@ func readModel(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the tf data into a Model
-	model := &Model{Key: data.Id()}
+	model := &Model{Key: data.Get("key").(string)}
 
 	// get the restful resource
 	model, err := c.GetModel(model)
