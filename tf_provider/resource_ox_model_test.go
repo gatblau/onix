@@ -61,9 +61,9 @@ func prepareModelResourceTest(t *testing.T) {
 
 // check the model has been destroyed destroyed in the database
 func checkModelResourceDestroyed(s *terraform.State) error {
-	model, err := cfg.Client.GetModel(&oxc.Model{Key: ModelRsKey})
+	model, _ := cfg.Client.GetModel(&oxc.Model{Key: ModelRsKey})
 	// should get an error as model should not exist anymore
-	if err == nil || len(model.Key) > 0 {
+	if model != nil {
 		return fmt.Errorf("Model %s still exists", ModelRsKey)
 	}
 	// clean up the database after the test
