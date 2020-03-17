@@ -105,7 +105,7 @@ func newPrivilege(data *schema.ResourceData) *Privilege {
 
 // populate the Privilege with the data in the terraform resource
 func populatePrivilege(data *schema.ResourceData, privilege *Privilege) {
-	data.SetId(privilege.Id)
+	data.SetId(privilege.Key)
 	data.Set("key", privilege.Key)
 	data.Set("role", privilege.Role)
 	data.Set("partition", privilege.Partition)

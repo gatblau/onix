@@ -49,6 +49,10 @@ func ModelResource() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -84,7 +88,11 @@ func deleteModel(data *schema.ResourceData, meta interface{}) error {
 	model := newModel(data)
 
 	// delete the model
-	return err(c.DeleteModel(model))
+	err := err(c.DeleteModel(model))
+
+	data.SetId("")
+
+	return err
 }
 
 // create a new Model from a terraform resource
@@ -95,18 +103,16 @@ func newModel(data *schema.ResourceData) *Model {
 		Description: data.Get("description").(string),
 		Partition:   data.Get("partition").(string),
 		Managed:     data.Get("managed").(bool),
+		Version:     int64(data.Get("version").(int)),
 	}
 }
 
 // populate the Model with the data in the terraform resource
 func populateModel(data *schema.ResourceData, model *Model) {
-	data.SetId(model.Id)
+	data.SetId(model.Key)
 	data.Set("key", model.Key)
 	data.Set("name", model.Name)
 	data.Set("description", model.Description)
 	data.Set("partition", model.Partition)
 	data.Set("managed", model.Managed)
-	data.Set("version", model.Version)
-	data.Set("created", model.Created)
-	data.Set("updated", model.Updated)
 }

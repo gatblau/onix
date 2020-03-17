@@ -39,7 +39,7 @@ func readLinkType(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the tf data into an Item
-	linkType := &LinkType{Key: data.Get("key").(string)}
+	linkType := &LinkType{Key: data.Id()}
 
 	// get the restful resource
 	linkType, err := c.GetLinkType(linkType)

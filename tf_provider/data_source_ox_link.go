@@ -39,7 +39,7 @@ func readLink(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the resource data into a link
-	link := &Link{Key: data.Get("key").(string)}
+	link := &Link{Key: data.Id()}
 
 	// get the restful resource
 	link, err := c.GetLink(link)

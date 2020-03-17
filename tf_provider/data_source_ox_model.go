@@ -31,6 +31,22 @@ func ModelDataSource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"partition": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"managed": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -40,7 +56,7 @@ func readModel(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the tf data into a Model
-	model := &Model{Key: data.Get("key").(string)}
+	model := &Model{Key: data.Id()}
 
 	// get the restful resource
 	model, err := c.GetModel(model)

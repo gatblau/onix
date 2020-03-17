@@ -118,7 +118,7 @@ func newLinkTypeAttr(data *schema.ResourceData) *LinkTypeAttribute {
 
 // populate the Link Type Attribute with the data in the terraform resource
 func populateLinkTypeAttr(data *schema.ResourceData, typeAttr *LinkTypeAttribute) {
-	data.SetId(typeAttr.Id)
+	data.SetId(typeAttr.Key)
 	data.Set("key", typeAttr.Key)
 	data.Set("description", typeAttr.Description)
 	data.Set("type", typeAttr.Type)

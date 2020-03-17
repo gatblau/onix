@@ -104,7 +104,7 @@ func newLinkRule(data *schema.ResourceData) *LinkRule {
 
 // populate the Link Rule with the data in the terraform resource
 func populateLinkRule(data *schema.ResourceData, linkRule *LinkRule) {
-	data.SetId(linkRule.Id)
+	data.SetId(linkRule.Key)
 	data.Set("key", linkRule.Key)
 	data.Set("description", linkRule.Description)
 	data.Set("link_type_key", linkRule.LinkTypeKey)

@@ -118,7 +118,7 @@ func newItemTypeAttr(data *schema.ResourceData) *ItemTypeAttribute {
 
 // populate the Item Type Attribute with the data in the terraform resource
 func populateItemTypeAttr(data *schema.ResourceData, typeAttr *ItemTypeAttribute) {
-	data.SetId(typeAttr.Id)
+	data.SetId(typeAttr.Key)
 	data.Set("key", typeAttr.Key)
 	data.Set("description", typeAttr.Description)
 	data.Set("type", typeAttr.Type)

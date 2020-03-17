@@ -96,7 +96,7 @@ func newRole(data *schema.ResourceData) *Role {
 
 // populate the Role with the data in the terraform resource
 func populateRole(data *schema.ResourceData, role *Role) {
-	data.SetId(role.Id)
+	data.SetId(role.Key)
 	data.Set("key", role.Key)
 	data.Set("name", role.Name)
 	data.Set("description", role.Description)

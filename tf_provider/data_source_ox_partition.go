@@ -39,7 +39,7 @@ func readPartition(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the tf data into an Partition
-	partition := &Partition{Key: data.Get("key").(string)}
+	partition := &Partition{Key: data.Id()}
 
 	// get the restful resource
 	partition, err := c.GetPartition(partition)

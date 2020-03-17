@@ -39,7 +39,7 @@ func readRole(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the tf data into an Item
-	role := &Role{Key: data.Get("key").(string)}
+	role := &Role{Key: data.Id()}
 
 	// get the restful resource
 	role, err := c.GetRole(role)
