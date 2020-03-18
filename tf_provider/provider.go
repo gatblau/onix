@@ -215,8 +215,8 @@ func configureProvider(data *schema.ResourceData) (interface{}, error) {
 }
 
 func err(result *oxc.Result, e error) error {
-	if result.Error {
-		return errors.New(result.Message)
+	if result != nil && result.Error {
+		return errors.New(fmt.Sprintf("business logic error: %s", result.Message))
 	}
 	return e
 }
