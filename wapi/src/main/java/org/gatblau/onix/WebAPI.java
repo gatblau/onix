@@ -1209,6 +1209,24 @@ public class WebAPI {
     /*
         LINK RULES
      */
+    @ApiOperation(
+            value = "Get a link rule based on the specified key.",
+            notes = "")
+    @RequestMapping(
+            path = "/linkrule/{key}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<LinkRuleData> getLinkRule(
+            @PathVariable("key") String key,
+            Authentication authentication
+    ) {
+        LinkRuleData linkRule = data.getLinkRule(key, getRole(authentication));
+        if (linkRule != null) {
+            return ResponseEntity.ok(linkRule);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
 
     @ApiOperation(
             value = "Deletes all non-system specific item link types.",

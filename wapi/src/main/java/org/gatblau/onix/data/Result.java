@@ -115,7 +115,8 @@ public class Result implements Serializable {
 
     public int getStatus() {
         if (isError()) {
-            return HttpStatus.INTERNAL_SERVER_ERROR.value();
+            // if there is a business logic error returns 400
+            return HttpStatus.BAD_REQUEST.value();
         } else {
             if (isChanged()) {
                 if (getOperation().equals("I")){

@@ -136,94 +136,104 @@ public class Lib implements InitializingBean {
     }
 
     public ItemData toItemData(ResultSet set) throws SQLException, ParseException, IOException {
-        Date updated = set.getDate("updated");
-        String partitionKey = null;
-        try {
-            set.findColumn("partition_key");
-            partitionKey = set.getString("partition_key");
-        } catch (SQLException e){
+        ItemData item = null;
+        if (set != null) {
+            Date updated = set.getDate("updated");
+            String partitionKey = null;
+            try {
+                set.findColumn("partition_key");
+                partitionKey = set.getString("partition_key");
+            } catch (SQLException e) { }
+            item = new ItemData();
+            item.setKey(set.getString("key"));
+            item.setName(set.getString("name"));
+            item.setDescription(set.getString("description"));
+            item.setStatus(set.getShort("status"));
+            item.setType(set.getString("item_type_key"));
+            item.setCreated(dateFormat.format(set.getDate("created")));
+            item.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+            item.setMeta(toJSON(set.getObject("meta")));
+            item.setMetaEnc(set.getBoolean("meta_enc"));
+            item.setTag(toList(set.getObject("tag")));
+            item.setVersion(set.getInt("version"));
+            item.setAttribute(toJSON(set.getObject("attribute")));
+            item.setChangedBy(set.getString("changed_by"));
+            item.setPartition(partitionKey);
+            item.setTxt(set.getString("txt"));
+            item.setTxtEnc(set.getBoolean("txt_enc"));
+            item.setEncKeyIx(set.getShort("enc_key_ix"));
         }
-        ItemData item = new ItemData();
-        item.setKey(set.getString("key"));
-        item.setName(set.getString("name"));
-        item.setDescription(set.getString("description"));
-        item.setStatus(set.getShort("status"));
-        item.setType(set.getString("item_type_key"));
-        item.setCreated(dateFormat.format(set.getDate("created")));
-        item.setUpdated((updated != null) ? dateFormat.format(updated) : null);
-        item.setMeta(toJSON(set.getObject("meta")));
-        item.setMetaEnc(set.getBoolean("meta_enc"));
-        item.setTag(toList(set.getObject("tag")));
-        item.setVersion(set.getInt("version"));
-        item.setAttribute(toJSON(set.getObject("attribute")));
-        item.setChangedBy(set.getString("changed_by"));
-        item.setPartition(partitionKey);
-        item.setTxt(set.getString("txt"));
-        item.setTxtEnc(set.getBoolean("txt_enc"));
-        item.setEncKeyIx(set.getShort("enc_key_ix"));
         return item;
     }
 
     public LinkData toLinkData(ResultSet set) throws SQLException, ParseException, IOException {
-        Date updated = set.getDate("updated");
-        LinkData link = new LinkData();
-        link.setMetaEnc(set.getBoolean("meta_enc"));
-        link.setTxtEnc(set.getBoolean("txt_enc"));
-        link.setEncKeyIx(set.getShort("enc_key_ix"));
-        link.setKey(set.getString("key"));
-        link.setType(set.getString("link_type_key"));
-        link.setDescription(set.getString("description"));
-        link.setEndItemKey(set.getString("end_item_key"));
-        link.setStartItemKey(set.getString("start_item_key"));
-        link.setMeta(toJSON(set.getObject("meta")));
-        link.setTxt(set.getString("txt"));
-        link.setTag(toList(set.getObject("tag")));
-        link.setAttribute(toJSON(set.getObject("attribute")));
-        link.setUpdated((updated != null) ? dateFormat.format(updated) : null);
-        link.setVersion(set.getInt("version"));
-        link.setChangedBy(set.getString("changed_by"));
+        LinkData link = null;
+        if (set != null) {
+            Date updated = set.getDate("updated");
+            link = new LinkData();
+            link.setMetaEnc(set.getBoolean("meta_enc"));
+            link.setTxtEnc(set.getBoolean("txt_enc"));
+            link.setEncKeyIx(set.getShort("enc_key_ix"));
+            link.setKey(set.getString("key"));
+            link.setType(set.getString("link_type_key"));
+            link.setDescription(set.getString("description"));
+            link.setEndItemKey(set.getString("end_item_key"));
+            link.setStartItemKey(set.getString("start_item_key"));
+            link.setMeta(toJSON(set.getObject("meta")));
+            link.setTxt(set.getString("txt"));
+            link.setTag(toList(set.getObject("tag")));
+            link.setAttribute(toJSON(set.getObject("attribute")));
+            link.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+            link.setVersion(set.getInt("version"));
+            link.setChangedBy(set.getString("changed_by"));
+        }
         return link;
     }
 
     public TypeAttrData toTypeAttrData(ResultSet set) throws SQLException, ParseException, IOException {
-        Date updated = set.getDate("updated");
-        TypeAttrData typeAttr = new TypeAttrData();
-        typeAttr.setKey(set.getString("key"));
-        typeAttr.setName(set.getString("name"));
-        typeAttr.setDescription(set.getString("description"));
-        typeAttr.setType(set.getString("type"));
-        typeAttr.setDefValue(set.getString("def_value"));
-        typeAttr.setManaged(set.getBoolean("managed"));
-        typeAttr.setRequired(set.getBoolean("required"));
-        typeAttr.setRegex(set.getString("regex"));
-        typeAttr.setCreated(dateFormat.format(set.getDate("created")));
-        typeAttr.setUpdated((updated != null) ? dateFormat.format(updated) : null);
-        typeAttr.setVersion(set.getInt("version"));
-        typeAttr.setChangedBy(set.getString("changed_by"));
-        typeAttr.setManaged(set.getBoolean("managed"));
+        TypeAttrData typeAttr = null;
+        if (set != null) {
+            Date updated = set.getDate("updated");
+            typeAttr = new TypeAttrData();
+            typeAttr.setKey(set.getString("key"));
+            typeAttr.setName(set.getString("name"));
+            typeAttr.setDescription(set.getString("description"));
+            typeAttr.setType(set.getString("type"));
+            typeAttr.setDefValue(set.getString("def_value"));
+            typeAttr.setManaged(set.getBoolean("managed"));
+            typeAttr.setRequired(set.getBoolean("required"));
+            typeAttr.setRegex(set.getString("regex"));
+            typeAttr.setCreated(dateFormat.format(set.getDate("created")));
+            typeAttr.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+            typeAttr.setVersion(set.getInt("version"));
+            typeAttr.setChangedBy(set.getString("changed_by"));
+            typeAttr.setManaged(set.getBoolean("managed"));
+        }
         return typeAttr;
     }
 
     public ItemTypeData toItemTypeData(ResultSet set) throws SQLException, ParseException, IOException {
-        Date updated = set.getDate("updated");
-
-        ItemTypeData itemType = new ItemTypeData();
-        itemType.setKey(set.getString("key"));
-        itemType.setName(set.getString("name"));
-        itemType.setDescription(set.getString("description"));
-        itemType.setCreated(dateFormat.format(set.getDate("created")));
-        itemType.setUpdated((updated != null) ? dateFormat.format(updated) : null);
-        itemType.setVersion(set.getInt("version"));
-        itemType.setFilter(toJSON(set.getObject("filter")));
-        itemType.setMetaSchema(toJSON(set.getObject("meta_schema")));
-        itemType.setModelKey(set.getString("model_key"));
-        itemType.setChangedBy(set.getString("changed_by"));
-        itemType.setRoot(set.getBoolean("root"));
-        itemType.setNotifyChange(set.getBoolean("notify_change"));
-        itemType.setTag(toList(set.getObject("tag")));
-        itemType.setEncryptMeta(set.getBoolean("encrypt_meta"));
-        itemType.setEncryptTxt(set.getBoolean("encrypt_txt"));
-        itemType.setManaged(set.getBoolean("managed"));
+        ItemTypeData itemType = null;
+        if (set != null) {
+            Date updated = set.getDate("updated");
+            itemType = new ItemTypeData();
+            itemType.setKey(set.getString("key"));
+            itemType.setName(set.getString("name"));
+            itemType.setDescription(set.getString("description"));
+            itemType.setCreated(dateFormat.format(set.getDate("created")));
+            itemType.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+            itemType.setVersion(set.getInt("version"));
+            itemType.setFilter(toJSON(set.getObject("filter")));
+            itemType.setMetaSchema(toJSON(set.getObject("meta_schema")));
+            itemType.setModelKey(set.getString("model_key"));
+            itemType.setChangedBy(set.getString("changed_by"));
+            itemType.setRoot(set.getBoolean("root"));
+            itemType.setNotifyChange(set.getBoolean("notify_change"));
+            itemType.setTag(toList(set.getObject("tag")));
+            itemType.setEncryptMeta(set.getBoolean("encrypt_meta"));
+            itemType.setEncryptTxt(set.getBoolean("encrypt_txt"));
+            itemType.setManaged(set.getBoolean("managed"));
+        }
         return itemType;
     }
 
@@ -248,22 +258,24 @@ public class Lib implements InitializingBean {
     }
 
     public LinkTypeData toLinkTypeData(ResultSet set) throws SQLException, ParseException, IOException {
-        Date updated = set.getDate("updated");
-
-        LinkTypeData linkType = new LinkTypeData();
-        linkType.setKey(set.getString("key"));
-        linkType.setName(set.getString("name"));
-        linkType.setDescription(set.getString("description"));
-        linkType.setCreated(dateFormat.format(set.getDate("created")));
-        linkType.setUpdated((updated != null) ? dateFormat.format(updated) : null);
-        linkType.setVersion(set.getInt("version"));
-        linkType.setMetaSchema(toJSON(set.getObject("meta_schema")));
-        linkType.setTag(toList(set.getObject("tag")));
-        linkType.setEncryptMeta(set.getBoolean("encrypt_meta"));
-        linkType.setEncryptTxt(set.getBoolean("encrypt_txt"));
-        linkType.setManaged(set.getBoolean("managed"));
-        linkType.setModelKey(set.getString("model_key"));
-        linkType.setChangedBy(set.getString("changed_by"));
+        LinkTypeData linkType = null;
+        if (set != null) {
+            Date updated = set.getDate("updated");
+            linkType = new LinkTypeData();
+            linkType.setKey(set.getString("key"));
+            linkType.setName(set.getString("name"));
+            linkType.setDescription(set.getString("description"));
+            linkType.setCreated(dateFormat.format(set.getDate("created")));
+            linkType.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+            linkType.setVersion(set.getInt("version"));
+            linkType.setMetaSchema(toJSON(set.getObject("meta_schema")));
+            linkType.setTag(toList(set.getObject("tag")));
+            linkType.setEncryptMeta(set.getBoolean("encrypt_meta"));
+            linkType.setEncryptTxt(set.getBoolean("encrypt_txt"));
+            linkType.setManaged(set.getBoolean("managed"));
+            linkType.setModelKey(set.getString("model_key"));
+            linkType.setChangedBy(set.getString("changed_by"));
+        }
         return linkType;
     }
 
@@ -310,34 +322,39 @@ public class Lib implements InitializingBean {
         model.setUpdated((updated != null) ? dateFormat.format(updated) : null);
         model.setVersion(set.getInt("version"));
         model.setChangedBy(set.getString("changed_by"));
+        model.setManaged(set.getBoolean("managed"));
         return model;
     }
 
     public PartitionData toPartitionData(ResultSet set) throws SQLException {
-        Date updated = set.getDate("updated");
-
-        PartitionData part = new PartitionData();
-        part.setKey(set.getString("key"));
-        part.setName(set.getString("name"));
-        part.setDescription(set.getString("description"));
-        part.setCreated(dateFormat.format(set.getDate("created")));
-        part.setUpdated((updated != null) ? dateFormat.format(updated) : null);
-        part.setVersion(set.getInt("version"));
-        part.setChangedBy(set.getString("changed_by"));
+        PartitionData part = null;
+        if (set != null) {
+            Date updated = set.getDate("updated");
+            part = new PartitionData();
+            part.setKey(set.getString("key"));
+            part.setName(set.getString("name"));
+            part.setDescription(set.getString("description"));
+            part.setCreated(dateFormat.format(set.getDate("created")));
+            part.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+            part.setVersion(set.getInt("version"));
+            part.setChangedBy(set.getString("changed_by"));
+        }
         return part;
     }
 
     public RoleData toRoleData(ResultSet set) throws SQLException {
-        Date updated = set.getDate("updated");
-
-        RoleData role = new RoleData();
-        role.setKey(set.getString("key"));
-        role.setName(set.getString("name"));
-        role.setDescription(set.getString("description"));
-        role.setCreated(dateFormat.format(set.getDate("created")));
-        role.setUpdated((updated != null) ? dateFormat.format(updated) : null);
-        role.setVersion(set.getInt("version"));
-        role.setChangedBy(set.getString("changed_by"));
+        RoleData role = null;
+        if (set != null) {
+            Date updated = set.getDate("updated");
+            role = new RoleData();
+            role.setKey(set.getString("key"));
+            role.setName(set.getString("name"));
+            role.setDescription(set.getString("description"));
+            role.setCreated(dateFormat.format(set.getDate("created")));
+            role.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+            role.setVersion(set.getInt("version"));
+            role.setChangedBy(set.getString("changed_by"));
+        }
         return role;
     }
 

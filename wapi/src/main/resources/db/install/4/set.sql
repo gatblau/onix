@@ -111,7 +111,7 @@ DO $$
             changed_by   = changed_by_param
         WHERE key = key_param
           -- concurrency management - optimistic locking
-          AND (local_version_param = current_version OR local_version_param IS NULL)
+          AND (local_version_param = current_version OR local_version_param IS NULL OR local_version_param = 0)
           AND (
               name != name_param OR
               description != description_param
@@ -198,7 +198,7 @@ DO $$
             changed_by   = changed_by_param
         WHERE key = key_param
           -- concurrency management - optimistic locking
-          AND (local_version_param = current_version OR local_version_param IS NULL)
+          AND (local_version_param = current_version OR local_version_param IS NULL OR local_version_param = 0)
           AND (
               name != name_param OR
               description != description_param OR
@@ -327,7 +327,7 @@ DO $$
             changed_by   = changed_by_param
         WHERE key = key_param
           -- concurrency management - optimistic locking
-          AND (local_version_param = current_version OR local_version_param IS NULL)
+          AND (local_version_param = current_version OR local_version_param IS NULL OR local_version_param = 0)
           AND (
             name != name_param OR
             description != description_param
@@ -542,7 +542,7 @@ DO $$
         WHERE key = key_param
           -- the database record has not been modified by someone else
           -- if a null regex is passed as local version then it does not perform optimistic locking
-          AND (local_version_param = current_version OR local_version_param IS NULL)
+          AND (local_version_param = current_version OR local_version_param IS NULL OR local_version_param = 0)
           AND (
           -- the fields to be updated have not changed
             name != name_param OR
@@ -713,7 +713,7 @@ DO $$
             managed     = managed_param
         WHERE key = key_param
           -- concurrency management - optimistic locking
-          AND (local_version_param = current_version OR local_version_param IS NULL)
+          AND (local_version_param = current_version OR local_version_param IS NULL OR local_version_param = 0)
           AND (
             name != name_param OR
             description != description_param OR
@@ -865,7 +865,7 @@ DO $$
             model_id    = model_id_value
         WHERE key = key_param
           -- concurrency management - optimistic locking
-          AND (local_version_param = current_version OR local_version_param IS NULL)
+          AND (local_version_param = current_version OR local_version_param IS NULL OR local_version_param = 0)
           AND (
             name != name_param OR
             description != description_param OR
@@ -1105,7 +1105,7 @@ DO $$
             changed_by    = changed_by_param
         WHERE key = key_param
           -- concurrency management - optimistic locking
-          AND (local_version_param = current_version OR local_version_param IS NULL)
+          AND (local_version_param = current_version OR local_version_param IS NULL OR local_version_param = 0)
           AND (
             meta != meta_param OR
             meta_enc != meta_enc_param OR
@@ -1283,7 +1283,7 @@ DO $$
             changed_by         = changed_by_param
         WHERE key = key_param
           -- concurrency management - optimistic locking (disabled if local_version_param is null)
-          AND (local_version_param = current_version OR local_version_param IS NULL)
+          AND (local_version_param = current_version OR local_version_param IS NULL OR local_version_param = 0)
           AND (
             name != name_param OR
             description != description_param OR
@@ -1412,7 +1412,7 @@ DO $$
               changed_by   = changed_by_param
           WHERE key = key_param
             -- concurrency management - optimistic locking
-            AND (local_version_param = current_version OR local_version_param IS NULL)
+            AND (local_version_param = current_version OR local_version_param IS NULL OR local_version_param = 0)
             AND (
                   can_create != can_create_param OR
                   can_read != can_read_param OR
@@ -1572,7 +1572,7 @@ DO $$
                 managed     = managed_param
             WHERE key = key_param
               -- concurrency management - optimistic locking
-              AND (local_version_param = current_version OR local_version_param IS NULL)
+              AND (local_version_param = current_version OR local_version_param IS NULL OR local_version_param = 0)
               AND (
                     name != name_param OR
                     description != description_param OR

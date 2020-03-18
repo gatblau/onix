@@ -409,7 +409,7 @@ DO
         gets a Link_rule by its natural key.
         use: select * from ox_link_rule('the_link_rule_key')
        */
-      CREATE OR REPLACE FUNCTION ox_link_rule(key_param character varying)
+      CREATE OR REPLACE FUNCTION ox_link_rule(key_param character varying, role_key_param character varying[])
         RETURNS TABLE
                 (
                   id                  bigint,
@@ -431,29 +431,32 @@ DO
       $BODY$
       BEGIN
         RETURN QUERY
-          SELECT r.id,
-                 r.key,
-                 r.name,
-                 r.description,
-                 lt.key              AS link_type_key,
+          SELECT l.id,
+                 l.key,
+                 l.name,
+                 l.description,
+                 link_type.key       AS link_type_key,
                  start_item_type.key AS start_item_key,
                  end_item_type.key   AS end_item_type_key,
-                 r.version,
-                 r.created,
-                 r.updated,
-                 r.changed_by
-          FROM link_rule r
-                 INNER JOIN item_type start_item_type
-                            ON r.start_item_type_id = start_item_type.id
-                 INNER JOIN item_type end_item_type
-                            ON r.end_item_type_id = end_item_type.id
-                 INNER JOIN link_type lt
-                            ON r.link_type_id = lt.id
-          WHERE r.key = key_param;
+                 l.version,
+                 l.created,
+                 l.updated,
+                 l.changed_by
+          FROM link_rule l
+                   INNER JOIN link_type link_type ON link_type.id = l.link_type_id
+                   INNER JOIN item_type start_item_type ON start_item_type.id = l.start_item_type_id
+                   INNER JOIN item_type end_item_type ON end_item_type.id = l.end_item_type_id
+                   INNER JOIN model m ON link_type.model_id = m.id
+                   INNER JOIN partition p ON m.partition_id = p.id
+                   INNER JOIN privilege pr ON p.id = pr.partition_id
+                   INNER JOIN role r ON pr.role_id = r.id
+          WHERE l.key = key_param
+          AND pr.can_read = TRUE
+          AND r.key = ANY(role_key_param);
       END;
       $BODY$;
 
-      ALTER FUNCTION ox_link_rule(character varying)
+      ALTER FUNCTION ox_link_rule(character varying, character varying[])
         OWNER TO onix;
 
       /*
