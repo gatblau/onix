@@ -61,6 +61,11 @@ public class PgSqlRepository implements DbRepository {
         // gets the type first to check for encryption requirements
         ItemTypeData itemType = getItemType(item.getType(), role);
         Result result = new Result(String.format("Item:%s", key));
+        if (itemType == null) {
+            result.setError(true);
+            result.setMessage(String.format("Item Type %s does not exist when trying to create item %s.", item.getType(), key));
+            return result;
+        }
         ResultSet set = null;
         try {
             db.prepare(getSetItemSQL());
@@ -119,30 +124,30 @@ public class PgSqlRepository implements DbRepository {
             ResultSet set = db.executeQuerySingleRow();
             if (set != null) {
                 item = util.toItemData(set);
-            }
-            // checks txt for encrypted data
-            checkItemEncryptedFields(item);
+                // checks txt for encrypted data
+                checkItemEncryptedFields(item);
 
-            if (includeLinks) {
-                db.prepare(getFindLinksSQL());
-                db.setString(1, item.getKey()); // start_item
-                db.setObjectRange(2, 11, null);
-                db.setArray(12, role);
-                set = db.executeQuery();
-                if (set != null) {
-                    while (set.next()) {
-                        item.getToLinks().add(util.toLinkData(set));
+                if (includeLinks) {
+                    db.prepare(getFindLinksSQL());
+                    db.setString(1, item.getKey()); // start_item
+                    db.setObjectRange(2, 11, null);
+                    db.setArray(12, role);
+                    set = db.executeQuery();
+                    if (set != null) {
+                        while (set.next()) {
+                            item.getToLinks().add(util.toLinkData(set));
+                        }
                     }
-                }
-                db.prepare(getFindLinksSQL());
-                db.setString(1, null); // start_item
-                db.setString(2, item.getKey()); // end_item
-                db.setObjectRange(3, 11, null);
-                db.setArray(12, role);
-                set = db.executeQuery();
-                if (set != null) {
-                    while (set.next()) {
-                        item.getFromLinks().add(util.toLinkData(set));
+                    db.prepare(getFindLinksSQL());
+                    db.setString(1, null); // start_item
+                    db.setString(2, item.getKey()); // end_item
+                    db.setObjectRange(3, 11, null);
+                    db.setArray(12, role);
+                    set = db.executeQuery();
+                    if (set != null) {
+                        while (set.next()) {
+                            item.getFromLinks().add(util.toLinkData(set));
+                        }
                     }
                 }
             }
@@ -834,6 +839,27 @@ public class PgSqlRepository implements DbRepository {
         LINK RULES
      */
     @Override
+    public synchronized LinkRuleData getLinkRule(String linkRuleKey, String[] role){
+        LinkRuleData linkRule = null;
+        Result result = new Result(String.format("Get_Link_Rule_%s", linkRuleKey));
+        try {
+            db.prepare(getGetLinkRuleSQL());
+            db.setString(1, linkRuleKey);
+            db.setArray(2, role);
+            ResultSet set = db.executeQuerySingleRow();
+            linkRule = util.toLinkRuleData(set);
+            db.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
+        } finally {
+            db.close();
+        }
+        return linkRule;
+    }
+
+    @Override
     public synchronized LinkRuleList getLinkRules(
             String linkType,
             String startItemType,
@@ -976,6 +1002,14 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public String getGetLinkSQL() {
         return "SELECT * FROM ox_link(" +
+                "?::character varying," +
+                "?::character varying[]" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetLinkRuleSQL() {
+        return "SELECT * FROM ox_link_rule(" +
                 "?::character varying," +
                 "?::character varying[]" + // role_key_param
                 ")";

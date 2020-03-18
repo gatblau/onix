@@ -99,6 +99,7 @@ public interface DbRepository {
     /*
         LINK RULES
     */
+    LinkRuleData getLinkRule(String linkRuleKey, String[] role);
     LinkRuleList getLinkRules(String linkTypeKey, String startItemType, String endItemType, ZonedDateTime createdFrom, ZonedDateTime createdTo, ZonedDateTime updatedFrom, ZonedDateTime updatedTo, String[] role);
     Result createOrUpdateLinkRule(String key, LinkRuleData linkRule, String[] role);
     Result deleteLinkRule(String key, String[] role);
@@ -166,6 +167,7 @@ public interface DbRepository {
     String getGetModelItemTypesSQL();
     String getGetModelLinkTypesSQL();
     String getGetModelLinkRulesSQL();
+    String getGetLinkRuleSQL();
 
     /* Readiness probe */
     JSONObject checkReady();
