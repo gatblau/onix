@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"strconv"
 	"testing"
 )
 
@@ -62,6 +63,11 @@ func TestItemTypeDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", ItemTypeDsKey),
 					resource.TestCheckResourceAttr(resourceName, "name", ItemTypeDsName),
 					resource.TestCheckResourceAttr(resourceName, "description", ItemTypeDsDesc),
+					resource.TestCheckResourceAttr(resourceName, "model_key", ItemTypeDsModelKey),
+					resource.TestCheckResourceAttr(resourceName, "notify_change", strconv.FormatBool(ItemTypeDsNotifyChange)),
+					resource.TestCheckResourceAttr(resourceName, "encrypt_meta", strconv.FormatBool(ItemTypeDsEncryptMeta)),
+					resource.TestCheckResourceAttr(resourceName, "encrypt_txt", strconv.FormatBool(ItemTypeDsEncryptTxt)),
+					resource.TestCheckResourceAttr(resourceName, "managed", strconv.FormatBool(ItemTypeDsManaged)),
 				),
 			},
 		},
@@ -78,7 +84,7 @@ func oxItemTypeDataSource() string {
 // create supporting database entities
 func prepareItemTypeDataSourceTest(t *testing.T) {
 	// need a model first
-	_, err := cfg.Client.PutModel(
+	result, err := cfg.Client.PutModel(
 		&oxc.Model{
 			Key:         ItemTypeDsModelKey,
 			Name:        ItemTypeDsModelName,
@@ -87,16 +93,24 @@ func prepareItemTypeDataSourceTest(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	if result.Error {
+		t.Error(result.Message)
+	}
 
 	// an item type in the model
-	_, err = cfg.Client.PutItemType(
+	result, err = cfg.Client.PutItemType(
 		&oxc.ItemType{
-			Key:         ItemTypeDsKey,
-			Name:        ItemTypeDsName,
-			Description: ItemTypeDsDesc,
-			Model:       ItemTypeDsModelKey,
+			Key:          ItemTypeDsKey,
+			Name:         ItemTypeDsName,
+			Description:  ItemTypeDsDesc,
+			Model:        ItemTypeDsModelKey,
+			NotifyChange: ItemTypeDsNotifyChange,
+			Managed:      ItemTypeDsManaged,
 		})
 	if err != nil {
 		t.Error(err)
+	}
+	if result.Error {
+		t.Error(result.Message)
 	}
 }

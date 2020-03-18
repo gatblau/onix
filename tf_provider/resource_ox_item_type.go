@@ -146,5 +146,5 @@ func populateItemType(data *schema.ResourceData, itemType *ItemType) {
 	data.Set("encrypt_meta", itemType.EncryptMeta)
 	data.Set("encrypt_txt", itemType.EncryptTxt)
 	data.Set("managed", itemType.Managed)
-	data.Set("model", itemType.Model)
+	data.Set("model_key", itemType.Model)
 }

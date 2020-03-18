@@ -124,7 +124,7 @@ func populateLinkType(data *schema.ResourceData, linkType *LinkType) {
 	data.Set("name", linkType.Name)
 	data.Set("description", linkType.Description)
 	data.Set("meta_schema", linkType.MetaSchema)
-	data.Set("model", linkType.Model)
+	data.Set("model_key", linkType.Model)
 	data.Set("encrypt_txt", linkType.EncryptTxt)
 	data.Set("encrypt_meta", linkType.EncryptMeta)
 	data.Set("tag", linkType.Tag)

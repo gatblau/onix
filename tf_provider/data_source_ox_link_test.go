@@ -49,7 +49,7 @@ const (
 	LinkDsTypeAttr1Key  = "test_acc_link_type_attr_cpu_ox_link_data"
 	LinkDsTypeAttr1Name = "CPU"
 	LinkDsTypeAttr1Desc = "CPU attr for testing ox_link."
-	LinkDsTypeAttr2Key  = "test_acc_link_type_attr_ram_ox_link"
+	LinkDsTypeAttr2Key  = "test_acc_link_type_attr_ram_ox_link_data"
 	LinkDsTypeAttr2Name = "RAM"
 	LinkDsTypeAttr2Desc = "RAM attr for testing ox_link."
 )
