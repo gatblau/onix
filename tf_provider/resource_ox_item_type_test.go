@@ -71,7 +71,7 @@ func TestItemTypeResource(t *testing.T) {
 // create supporting database entities
 func prepareItemTypeResourceTest(t *testing.T) {
 	// need a model first
-	_, err := cfg.Client.PutModel(
+	result, err := cfg.Client.PutModel(
 		&oxc.Model{
 			Key:         ItemTypeRsModelKey,
 			Name:        ItemTypeRsModelName,
@@ -80,21 +80,8 @@ func prepareItemTypeResourceTest(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
-	// an item type in the model
-	_, err = cfg.Client.PutItemType(
-		&oxc.ItemType{
-			Key:          ItemTypeRsKey,
-			Name:         ItemTypeRsName,
-			Description:  ItemTypeRsDesc,
-			Model:        ItemTypeRsModelKey,
-			NotifyChange: ItemTypeRsNotifyChange,
-			EncryptMeta:  ItemTypeRsEncryptMeta,
-			EncryptTxt:   ItemTypeRsEncryptTxt,
-			Managed:      ItemTypeRsManaged,
-		})
-	if err != nil {
-		t.Error(err)
+	if result.Error {
+		t.Error(result.Message)
 	}
 }
 
