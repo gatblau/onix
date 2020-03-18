@@ -59,7 +59,12 @@ func init() {
 	resource.AddTestSweepers("LinkDataSource", &resource.Sweeper{
 		Name: "LinkDataSource",
 		F: func(region string) error {
-			return nil
+			_, err := cfg.Client.DeleteItem(&oxc.Item{Key: LinkDsItem1Key})
+			_, err = cfg.Client.DeleteItem(&oxc.Item{Key: LinkDsItem2Key})
+			_, err = cfg.Client.DeleteLinkType(&oxc.LinkType{Key: LinkDsLinkTypeKey})
+			_, err = cfg.Client.DeleteItemType(&oxc.ItemType{Key: LinkDsItemTypeKey})
+			_, err = cfg.Client.DeleteModel(&oxc.Model{Key: LinkDsModelKey})
+			return err
 		},
 	})
 }
