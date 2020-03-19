@@ -505,7 +505,46 @@ DO
       ALTER FUNCTION ox_delete_link_types(character varying[])
         OWNER TO onix;
 
-      /*
+    /*
+        ox_delete_link_rule: deletes the specified link rule
+       */
+    CREATE OR REPLACE FUNCTION ox_delete_link_rule(
+        key_param character varying,
+        role_key_param character varying[]
+    )
+        RETURNS TABLE(result char(1))
+        LANGUAGE 'plpgsql'
+        COST 100
+        VOLATILE
+    AS
+    $BODY$
+    DECLARE
+        rows_affected INTEGER;
+    BEGIN
+        DELETE
+        FROM link_rule lr
+            USING link_type lt, model m, partition p, privilege pr, role r
+        WHERE lr.link_type_id = lt.id
+          AND lt.model_id = m.id
+          AND m.partition_id = p.id
+          AND pr.partition_id = p.id
+          AND r.id = pr.role_id
+          AND pr.can_delete = TRUE
+          AND lr.key = key_param
+          AND r.key = ANY(role_key_param);
+
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+        RETURN QUERY SELECT ox_get_delete_result(rows_affected);
+    END
+    $BODY$;
+
+    ALTER FUNCTION ox_delete_link_rule(
+        character varying, -- key_param
+        character varying[] -- role_key_param
+        )
+        OWNER TO onix;
+
+    /*
         ox_delete_link_rules: deletes all link rules
        */
       CREATE OR REPLACE FUNCTION ox_delete_link_rules(

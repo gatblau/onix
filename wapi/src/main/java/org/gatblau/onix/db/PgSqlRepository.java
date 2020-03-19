@@ -1172,7 +1172,10 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public String getDeleteLinkRuleSQL() {
-        return "SELECT ox_delete_link_rule(?::character varying[])";
+        return "SELECT ox_delete_link_rule(" +
+                "?::character varying," + // key
+                "?::character varying[]" + // role_key_param
+                ")";
     }
 
     @Override
