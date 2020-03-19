@@ -280,49 +280,55 @@ public class Lib implements InitializingBean {
     }
 
     public LinkRuleData toLinkRuleData(ResultSet set) throws SQLException {
-        Date updated = set.getDate("updated");
-
-        LinkRuleData linkRule = new LinkRuleData();
-        linkRule.setKey(set.getString("key"));
-        linkRule.setName(set.getString("name"));
-        linkRule.setDescription(set.getString("description"));
-        linkRule.setLinkTypeKey(set.getString("link_type_key"));
-        linkRule.setStartItemTypeKey(set.getString("start_item_type_key"));
-        linkRule.setEndItemTypeKey(set.getString("end_item_type_key"));
-        linkRule.setCreated(dateFormat.format(set.getDate("created")));
-        linkRule.setUpdated((updated != null) ? dateFormat.format(updated) : null);
-        linkRule.setVersion(set.getInt("version"));
-        linkRule.setChangedBy(set.getString("changed_by"));
+        LinkRuleData linkRule = null;
+        if (set != null) {
+            linkRule = new LinkRuleData();
+            Date updated = set.getDate("updated");
+            linkRule.setKey(set.getString("key"));
+            linkRule.setName(set.getString("name"));
+            linkRule.setDescription(set.getString("description"));
+            linkRule.setLinkTypeKey(set.getString("link_type_key"));
+            linkRule.setStartItemTypeKey(set.getString("start_item_type_key"));
+            linkRule.setEndItemTypeKey(set.getString("end_item_type_key"));
+            linkRule.setCreated(dateFormat.format(set.getDate("created")));
+            linkRule.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+            linkRule.setVersion(set.getInt("version"));
+            linkRule.setChangedBy(set.getString("changed_by"));
+        }
         return linkRule;
     }
 
     public TagData toTagData(ResultSet set) throws SQLException {
-        Date updated = set.getDate("updated");
-
-        TagData tag = new TagData();
-        tag.setLabel(set.getString("label"));
-        tag.setName(set.getString("name"));
-        tag.setDescription(set.getString("description"));
-        tag.setRootItemKey(set.getString("root_item_key"));
-        tag.setCreated(dateFormat.format(set.getDate("created")));
-        tag.setUpdated((updated != null) ? dateFormat.format(updated) : null);
-        tag.setVersion(set.getInt("version"));
-        tag.setChangedBy(set.getString("changed_by"));
+        TagData tag = null;
+        if (set != null) {
+            Date updated = set.getDate("updated");
+            tag = new TagData();
+            tag.setLabel(set.getString("label"));
+            tag.setName(set.getString("name"));
+            tag.setDescription(set.getString("description"));
+            tag.setRootItemKey(set.getString("root_item_key"));
+            tag.setCreated(dateFormat.format(set.getDate("created")));
+            tag.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+            tag.setVersion(set.getInt("version"));
+            tag.setChangedBy(set.getString("changed_by"));
+        }
         return tag;
     }
 
     public ModelData toModelData(ResultSet set) throws SQLException {
-        Date updated = set.getDate("updated");
-
-        ModelData model = new ModelData();
-        model.setKey(set.getString("key"));
-        model.setName(set.getString("name"));
-        model.setDescription(set.getString("description"));
-        model.setCreated(dateFormat.format(set.getDate("created")));
-        model.setUpdated((updated != null) ? dateFormat.format(updated) : null);
-        model.setVersion(set.getInt("version"));
-        model.setChangedBy(set.getString("changed_by"));
-        model.setManaged(set.getBoolean("managed"));
+        ModelData model = null;
+        if (set != null) {
+            Date updated = set.getDate("updated");
+            model = new ModelData();
+            model.setKey(set.getString("key"));
+            model.setName(set.getString("name"));
+            model.setDescription(set.getString("description"));
+            model.setCreated(dateFormat.format(set.getDate("created")));
+            model.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+            model.setVersion(set.getInt("version"));
+            model.setChangedBy(set.getString("changed_by"));
+            model.setManaged(set.getBoolean("managed"));
+        }
         return model;
     }
 
