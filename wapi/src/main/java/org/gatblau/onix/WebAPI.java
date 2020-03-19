@@ -1296,6 +1296,21 @@ public class WebAPI {
         return ResponseEntity.ok(linkRules);
     }
 
+    @ApiOperation(
+            value = "Deletes a link rule for a specified key.",
+            notes = "")
+    @RequestMapping(
+            path = "/linkrule/{key}"
+            , method = RequestMethod.DELETE
+    )
+    public ResponseEntity<Result> deleteLinkRule(
+            @PathVariable("key") String key,
+            Authentication authentication
+    ) {
+        Result result = data.deleteLinkRule(key, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
+    }
+
     /*
         MODEL
      */
