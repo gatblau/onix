@@ -31,7 +31,6 @@ func LinkRuleResource() *schema.Resource {
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -52,6 +51,10 @@ func LinkRuleResource() *schema.Resource {
 			"end_item_type_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
 			},
 		},
 	}
