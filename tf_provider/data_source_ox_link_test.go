@@ -32,8 +32,6 @@ const (
 	LinkDsItem2Desc     = "test_acc_ox_link_1_item_2_data description"
 	LinkDsKey           = "test_acc_ox_link_1_data"
 	LinkDsDesc          = "ox_link_data Description"
-	LinkDsMeta          = `{ "OS" = "RHEL7.3" }`
-	LinkDsAttr          = `{ "RAM" : "3", "CPU" : "1" }`
 	LinkDsLinkRuleKey   = "test_acc_item_type_ox_link_data-test_acc_item_type_ox_link_data"
 	LinkDsLinkRuleName  = "test_acc_item_type_ox_link_data->test_acc_item_type_ox_link_data"
 	LinkDsLinkRuleDesc  = "test_acc_item_type_ox_link_data->test_acc_item_type_ox_link_data description"
@@ -52,6 +50,12 @@ const (
 	LinkDsTypeAttr2Key  = "test_acc_link_type_attr_ram_ox_link_data"
 	LinkDsTypeAttr2Name = "RAM"
 	LinkDsTypeAttr2Desc = "RAM attr for testing ox_link."
+)
+
+var (
+	LinkDsTag  = []interface{}{"VM", "DC1", "IRELAND"}
+	LinkDsMeta = make(map[string]interface{})
+	LinkDsAttr = make(map[string]interface{})
 )
 
 func init() {
@@ -85,6 +89,12 @@ func TestLinkDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "type", LinkDsLinkTypeKey),
 					resource.TestCheckResourceAttr(resourceName, "start_item_key", LinkDsItem1Key),
 					resource.TestCheckResourceAttr(resourceName, "end_item_key", LinkDsItem2Key),
+					resource.TestCheckResourceAttrSet(resourceName, "attribute.CPU"), // LinkDsTypeAttr1Name
+					resource.TestCheckResourceAttrSet(resourceName, "attribute.RAM"), // LinkDsTypeAttr2Name
+					resource.TestCheckResourceAttrSet(resourceName, "tag.0"),
+					resource.TestCheckResourceAttrSet(resourceName, "tag.1"),
+					resource.TestCheckResourceAttrSet(resourceName, "tag.2"),
+					resource.TestCheckResourceAttrSet(resourceName, "meta.%"),
 				),
 			},
 		},
@@ -221,6 +231,10 @@ func prepareLinkDataSourceTest(t *testing.T) {
 	}
 
 	// create the link between the two items
+	LinkDsMeta["OS"] = "RHEL 8"
+	LinkDsAttr["RAM"] = 3
+	LinkDsAttr["CPU"] = 2
+
 	result, err = cfg.Client.PutLink(
 		&oxc.Link{
 			Key:          LinkDsKey,
@@ -228,6 +242,9 @@ func prepareLinkDataSourceTest(t *testing.T) {
 			Type:         LinkDsLinkTypeKey,
 			StartItemKey: LinkDsItem1Key,
 			EndItemKey:   LinkDsItem2Key,
+			Attribute:    LinkDsAttr,
+			Meta:         LinkDsMeta,
+			Tag:          LinkDsTag,
 		})
 	if err != nil {
 		t.Error(err)
