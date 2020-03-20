@@ -132,6 +132,5 @@ func populateLinkType(data *schema.ResourceData, linkType *LinkType) {
 	data.Set("managed", linkType.Managed)
 	data.Set("created", linkType.Created)
 	data.Set("updated", linkType.Updated)
-	// TODO: enable below after upgrading client
-	// data.Set("changed_by", linkType.ChangedBy)
+	data.Set("changed_by", linkType.ChangedBy)
 }

@@ -130,6 +130,5 @@ func populateLinkTypeAttr(data *schema.ResourceData, typeAttr *LinkTypeAttribute
 	data.Set("link_type_key", typeAttr.LinkTypeKey)
 	data.Set("created", typeAttr.Created)
 	data.Set("updated", typeAttr.Updated)
-	// TODO: enable below after upgrading client
-	// data.Set("changed_by", typeAttr.ChangedBy)
+	data.Set("changed_by", typeAttr.ChangedBy)
 }

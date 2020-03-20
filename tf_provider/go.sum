@@ -43,6 +43,8 @@ github.com/gatblau/oxc v0.0.0-20200317232317-1ca74b80a54b h1:6vZw5Aep18KHx0zsvmK
 github.com/gatblau/oxc v0.0.0-20200317232317-1ca74b80a54b/go.mod h1:REr2vXppftlx4puDo99M3VQIyBd2JY9/d5kbEs1l93g=
 github.com/gatblau/oxc v0.0.0-20200318005701-0be0dd2291e0 h1:jbv3B+JvO9RwTSymuMTnoKHkd5dzw3BkTBaI7QZFYLk=
 github.com/gatblau/oxc v0.0.0-20200318005701-0be0dd2291e0/go.mod h1:REr2vXppftlx4puDo99M3VQIyBd2JY9/d5kbEs1l93g=
+github.com/gatblau/oxc v0.0.0-20200320023057-214dbc93d8f4 h1:Bl8VxKhUG4pwzshhimbcu/inK1h0KsfvUArdV4rWMho=
+github.com/gatblau/oxc v0.0.0-20200320023057-214dbc93d8f4/go.mod h1:REr2vXppftlx4puDo99M3VQIyBd2JY9/d5kbEs1l93g=
 github.com/go-test/deep v1.0.3 h1:ZrJSEWsXzPOxaZnFteGEfooLba+ju3FYIbOrS+rQd68=
 github.com/go-test/deep v1.0.3/go.mod h1:wGDj63lr65AM2AQyKZd/NYHGb0R+1RLqB8NKt3aSFNA=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b h1:VKtxabqXZkF25pY9ekfRL6a582T4P37/31XEstQ5p58=

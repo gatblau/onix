@@ -130,6 +130,5 @@ func populateItemTypeAttr(data *schema.ResourceData, typeAttr *ItemTypeAttribute
 	data.Set("item_type_key", typeAttr.ItemTypeKey)
 	data.Set("created", typeAttr.Created)
 	data.Set("updated", typeAttr.Updated)
-	// TODO: enable below after upgrading client
-	// data.Set("changed_by", typeAttr.ChangedBy)
+	data.Set("changed_by", typeAttr.ChangedBy)
 }

@@ -149,6 +149,5 @@ func populateItemType(data *schema.ResourceData, itemType *ItemType) {
 	data.Set("model_key", itemType.Model)
 	data.Set("created", itemType.Created)
 	data.Set("updated", itemType.Updated)
-	// TODO: enable below after upgrading client
-	// data.Set("changed_by", itemType.ChangedBy)
+	data.Set("changed_by", itemType.ChangedBy)
 }

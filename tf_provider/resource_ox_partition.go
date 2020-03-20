@@ -98,6 +98,5 @@ func populatePartition(data *schema.ResourceData, partition *Partition) {
 	data.Set("owner", partition.Owner)
 	data.Set("created", partition.Created)
 	data.Set("updated", partition.Updated)
-	// TODO: enable below after upgrading client
-	// data.Set("changed_by", partition.ChangedBy)
+	data.Set("changed_by", partition.ChangedBy)
 }
