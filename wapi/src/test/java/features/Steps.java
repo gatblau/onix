@@ -642,8 +642,7 @@ public class Steps extends BaseTest {
 
     @Given("^the link type exists in the database$")
     public void theLinkTypeExistsInTheDatabase() {
-        theLinkTypeNaturalKeyIsKnown();
-        putLinkType(util.get(CONGIG_LINK_TYPE_KEY), "payload/create_link_type_payload.json");
+        putLinkType(LINK_TYPE_ONE_KEY, "payload/create_link_type_payload.json");
         putLinkTypeAttr(LINK_TYPE_ONE_KEY, "link_type_1_attr_1", "payload/create_link_type_attr_1_payload.json");
         putLinkTypeAttr(LINK_TYPE_ONE_KEY, "link_type_1_attr_2", "payload/create_link_type_attr_2_payload.json");
     }
