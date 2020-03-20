@@ -132,9 +132,9 @@ func newItem(data *schema.ResourceData) *Item {
 		Attribute:   data.Get("attribute").(map[string]interface{}),
 		Tag:         data.Get("tag").([]interface{}),
 		Partition:   data.Get("partition").(string),
-		Version:     int64(data.Get("version").(int)),
 		EncKeyIx:    int64(data.Get("enc_key_ix").(int)),
 		Status:      data.Get("status").(int),
+		Version:     getVersion(data),
 	}
 }
 
@@ -152,4 +152,8 @@ func populateItem(data *schema.ResourceData, item *Item) {
 	data.Set("partition", item.Partition)
 	data.Set("status", item.Status)
 	data.Set("encKeyIx", item.EncKeyIx)
+	data.Set("created", item.Created)
+	data.Set("updated", item.Updated)
+	// TODO: enable below after upgrading client
+	// data.Set("changed_by", linkRule.ChangedBy)
 }

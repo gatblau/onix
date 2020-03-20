@@ -113,6 +113,7 @@ func newItemTypeAttr(data *schema.ResourceData) *ItemTypeAttribute {
 		Required:    data.Get("managed").(bool),
 		Regex:       data.Get("regex").(string),
 		ItemTypeKey: data.Get("item_type_key").(string),
+		Version:     getVersion(data),
 	}
 }
 
@@ -127,4 +128,8 @@ func populateItemTypeAttr(data *schema.ResourceData, typeAttr *ItemTypeAttribute
 	data.Set("required", typeAttr.Required)
 	data.Set("regex", typeAttr.Regex)
 	data.Set("item_type_key", typeAttr.ItemTypeKey)
+	data.Set("created", typeAttr.Created)
+	data.Set("updated", typeAttr.Updated)
+	// TODO: enable below after upgrading client
+	// data.Set("changed_by", typeAttr.ChangedBy)
 }

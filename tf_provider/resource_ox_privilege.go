@@ -100,6 +100,7 @@ func newPrivilege(data *schema.ResourceData) *Privilege {
 		Create:    data.Get("can_create").(bool),
 		Read:      data.Get("can_read").(bool),
 		Delete:    data.Get("can_delete").(bool),
+		Version:   getVersion(data),
 	}
 }
 
@@ -112,4 +113,8 @@ func populatePrivilege(data *schema.ResourceData, privilege *Privilege) {
 	data.Set("can_create", privilege.Create)
 	data.Set("can_read", privilege.Read)
 	data.Set("can_delete", privilege.Delete)
+	data.Set("created", privilege.Created)
+	data.Set("updated", privilege.Updated)
+	// TODO: enable below after upgrading client
+	// data.Set("changed_by", privilege.ChangedBy)
 }

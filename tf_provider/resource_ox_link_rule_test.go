@@ -26,12 +26,9 @@ import (
 // all the constants for the link test
 const (
 	LinkRuleResourceName   = "ox_link_rule.ox_link_rule_1"
-	LinkRuleRsKey          = "test_acc_ox_link_1_rule"
-	LinkRuleRsName         = "test_acc_ox_link_1_rule Name"
-	LinkRuleRsDesc         = "test_acc_ox_link_1_rule Description"
-	LinkRuleRsLinkRuleKey  = "test_acc_item_type_ox_link_rule-test_acc_item_type_ox_link_rule"
-	LinkRuleRsLinkRuleName = "test_acc_item_type_ox_link_rule->test_acc_item_type_ox_link_rule"
-	LinkRuleRsLinkRuleDesc = "test_acc_item_type_ox_link_rule->test_acc_item_type_ox_link_rule description"
+	LinkRuleRsKey          = "test_acc_item_type_ox_link_rule-test_acc_item_type_ox_link_rule"
+	LinkRuleRsName         = "test_acc_item_type_ox_link_rule->test_acc_item_type_ox_link_rule"
+	LinkRuleRsDesc         = "test_acc_item_type_ox_link_rule->test_acc_item_type_ox_link_rule description"
 	LinkRuleRsModelKey     = "test_acc_model_ox_link_rule"
 	LinkRuleRsModelName    = "test_acc_model_ox_link_rule Name"
 	LinkRuleRsModelDesc    = "test_acc_model_ox_link_rule Description"
@@ -55,6 +52,7 @@ func TestLinkRuleResource(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					// check item resource attributes in Terraform state
 					resource.TestCheckResourceAttr(resourceName, "key", LinkRuleRsKey),
+					resource.TestCheckResourceAttr(resourceName, "name", LinkRuleRsName),
 					resource.TestCheckResourceAttr(resourceName, "description", LinkRuleRsDesc),
 					resource.TestCheckResourceAttr(resourceName, "link_type_key", LinkRuleRsLinkTypeKey),
 					resource.TestCheckResourceAttr(resourceName, "start_item_type_key", LinkRuleRsItemTypeKey),
@@ -118,9 +116,9 @@ func prepareLinkRuleResourceTest(t *testing.T) {
 	// a link rule to allow to connect two item types
 	result, err = cfg.Client.PutLinkRule(
 		&oxc.LinkRule{
-			Key:              LinkRuleRsLinkRuleKey,
-			Name:             LinkRuleRsLinkRuleName,
-			Description:      LinkRuleRsLinkRuleDesc,
+			Key:              LinkRuleRsKey,
+			Name:             LinkRuleRsName,
+			Description:      LinkRuleRsDesc,
 			StartItemTypeKey: LinkRuleRsItemTypeKey,
 			EndItemTypeKey:   LinkRuleRsItemTypeKey,
 			LinkTypeKey:      LinkRuleRsLinkTypeKey,

@@ -113,6 +113,7 @@ func newLinkTypeAttr(data *schema.ResourceData) *LinkTypeAttribute {
 		Required:    data.Get("managed").(bool),
 		Regex:       data.Get("regex").(string),
 		LinkTypeKey: data.Get("link_type_key").(string),
+		Version:     getVersion(data),
 	}
 }
 
@@ -127,4 +128,8 @@ func populateLinkTypeAttr(data *schema.ResourceData, typeAttr *LinkTypeAttribute
 	data.Set("required", typeAttr.Required)
 	data.Set("regex", typeAttr.Regex)
 	data.Set("link_type_key", typeAttr.LinkTypeKey)
+	data.Set("created", typeAttr.Created)
+	data.Set("updated", typeAttr.Updated)
+	// TODO: enable below after upgrading client
+	// data.Set("changed_by", typeAttr.ChangedBy)
 }

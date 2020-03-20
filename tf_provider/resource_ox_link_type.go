@@ -114,6 +114,7 @@ func newLinkType(data *schema.ResourceData) *LinkType {
 		EncryptTxt:  data.Get("encrypt_txt").(bool),
 		Managed:     data.Get("managed").(bool),
 		Tag:         data.Get("tag").([]interface{}),
+		Version:     getVersion(data),
 	}
 }
 
@@ -129,4 +130,8 @@ func populateLinkType(data *schema.ResourceData, linkType *LinkType) {
 	data.Set("encrypt_meta", linkType.EncryptMeta)
 	data.Set("tag", linkType.Tag)
 	data.Set("managed", linkType.Managed)
+	data.Set("created", linkType.Created)
+	data.Set("updated", linkType.Updated)
+	// TODO: enable below after upgrading client
+	// data.Set("changed_by", linkType.ChangedBy)
 }

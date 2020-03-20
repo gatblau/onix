@@ -63,6 +63,18 @@ func LinkDataSource() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+			"created": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"updated": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"changed_by": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 		},
 	}
 }

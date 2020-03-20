@@ -103,7 +103,7 @@ func newModel(data *schema.ResourceData) *Model {
 		Description: data.Get("description").(string),
 		Partition:   data.Get("partition").(string),
 		Managed:     data.Get("managed").(bool),
-		Version:     int64(data.Get("version").(int)),
+		Version:     getVersion(data),
 	}
 }
 
@@ -115,4 +115,8 @@ func populateModel(data *schema.ResourceData, model *Model) {
 	data.Set("description", model.Description)
 	data.Set("partition", model.Partition)
 	data.Set("managed", model.Managed)
+	data.Set("created", model.Created)
+	data.Set("updated", model.Updated)
+	// TODO: enable below after upgrading client
+	// data.Set("changed_by", model.ChangedBy)
 }
