@@ -4,8 +4,8 @@ Feature: Create a new Link Type
   So that link instances can be associated to the link type
 
   Scenario: Create a new Link Type
-    Given a model exists in the database
     Given the link type does not exist in the database
+    Given a model exists in the database
     Given the link type URL of the service with key is known
     Given the link type natural key is known
     When a link type PUT HTTP request with a JSON payload is done
