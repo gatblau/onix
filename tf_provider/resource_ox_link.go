@@ -130,6 +130,5 @@ func populateLink(data *schema.ResourceData, link *Link) {
 	data.Set("end_item_key", link.EndItemKey)
 	data.Set("created", link.Created)
 	data.Set("updated", link.Updated)
-	// TODO: enable below after upgrading client
-	// data.Set("changed_by", link.ChangedBy)
+	data.Set("changed_by", link.ChangedBy)
 }

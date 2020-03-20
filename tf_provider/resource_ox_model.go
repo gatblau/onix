@@ -117,6 +117,5 @@ func populateModel(data *schema.ResourceData, model *Model) {
 	data.Set("managed", model.Managed)
 	data.Set("created", model.Created)
 	data.Set("updated", model.Updated)
-	// TODO: enable below after upgrading client
-	// data.Set("changed_by", model.ChangedBy)
+	data.Set("changed_by", model.ChangedBy)
 }

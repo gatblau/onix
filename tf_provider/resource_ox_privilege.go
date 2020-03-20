@@ -115,6 +115,5 @@ func populatePrivilege(data *schema.ResourceData, privilege *Privilege) {
 	data.Set("can_delete", privilege.Delete)
 	data.Set("created", privilege.Created)
 	data.Set("updated", privilege.Updated)
-	// TODO: enable below after upgrading client
-	// data.Set("changed_by", privilege.ChangedBy)
+	data.Set("changed_by", privilege.ChangedBy)
 }

@@ -121,6 +121,5 @@ func populateLinkRule(data *schema.ResourceData, linkRule *LinkRule) {
 	data.Set("updated", linkRule.Updated)
 	data.Set("created", linkRule.Created)
 	data.Set("updated", linkRule.Updated)
-	// TODO: enable below after upgrading client
-	// data.Set("changed_by", linkRule.ChangedBy)
+	data.Set("changed_by", linkRule.ChangedBy)
 }

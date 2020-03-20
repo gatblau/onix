@@ -154,6 +154,5 @@ func populateItem(data *schema.ResourceData, item *Item) {
 	data.Set("encKeyIx", item.EncKeyIx)
 	data.Set("created", item.Created)
 	data.Set("updated", item.Updated)
-	// TODO: enable below after upgrading client
-	// data.Set("changed_by", linkRule.ChangedBy)
+	data.Set("changed_by", item.ChangedBy)
 }
