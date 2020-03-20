@@ -129,7 +129,7 @@ func newItemType(data *schema.ResourceData) *ItemType {
 		EncryptTxt:   data.Get("encrypt_txt").(bool),
 		Managed:      data.Get("managed").(bool),
 		Tag:          data.Get("tag").([]interface{}),
-		Version:      int64(data.Get("version").(int)),
+		Version:      getVersion(data),
 	}
 }
 
@@ -147,4 +147,8 @@ func populateItemType(data *schema.ResourceData, itemType *ItemType) {
 	data.Set("encrypt_txt", itemType.EncryptTxt)
 	data.Set("managed", itemType.Managed)
 	data.Set("model_key", itemType.Model)
+	data.Set("created", itemType.Created)
+	data.Set("updated", itemType.Updated)
+	// TODO: enable below after upgrading client
+	// data.Set("changed_by", itemType.ChangedBy)
 }

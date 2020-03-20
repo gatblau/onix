@@ -113,6 +113,7 @@ func newLink(data *schema.ResourceData) *Link {
 		Tag:          data.Get("tag").([]interface{}),
 		StartItemKey: data.Get("start_item_key").(string),
 		EndItemKey:   data.Get("end_item_key").(string),
+		Version:      getVersion(data),
 	}
 }
 
@@ -127,4 +128,8 @@ func populateLink(data *schema.ResourceData, link *Link) {
 	data.Set("attribute", link.Attribute)
 	data.Set("start_item_key", link.StartItemKey)
 	data.Set("end_item_key", link.EndItemKey)
+	data.Set("created", link.Created)
+	data.Set("updated", link.Updated)
+	// TODO: enable below after upgrading client
+	// data.Set("changed_by", link.ChangedBy)
 }

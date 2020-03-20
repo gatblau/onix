@@ -94,6 +94,7 @@ func deleteLinkRule(data *schema.ResourceData, meta interface{}) error {
 	return err(c.DeleteLinkRule(rule))
 }
 
+// create a link rule from a terraform resource
 func newLinkRule(data *schema.ResourceData) *LinkRule {
 	return &LinkRule{
 		Key:              data.Get("key").(string),
@@ -102,15 +103,24 @@ func newLinkRule(data *schema.ResourceData) *LinkRule {
 		LinkTypeKey:      data.Get("link_type_key").(string),
 		StartItemTypeKey: data.Get("start_item_type_key").(string),
 		EndItemTypeKey:   data.Get("end_item_type_key").(string),
+		Version:          getVersion(data),
 	}
 }
 
-// populate the Link Rule with the data in the terraform resource
+// populate the terraform resource data with from the Link Rule
 func populateLinkRule(data *schema.ResourceData, linkRule *LinkRule) {
 	data.SetId(linkRule.Key)
 	data.Set("key", linkRule.Key)
+	data.Set("name", linkRule.Name)
 	data.Set("description", linkRule.Description)
 	data.Set("link_type_key", linkRule.LinkTypeKey)
 	data.Set("start_item_type_key", linkRule.StartItemTypeKey)
 	data.Set("end_item_type_key", linkRule.EndItemTypeKey)
+	data.Set("end_item_type_key", linkRule.EndItemTypeKey)
+	data.Set("created", linkRule.Created)
+	data.Set("updated", linkRule.Updated)
+	data.Set("created", linkRule.Created)
+	data.Set("updated", linkRule.Updated)
+	// TODO: enable below after upgrading client
+	// data.Set("changed_by", linkRule.ChangedBy)
 }

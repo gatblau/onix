@@ -220,3 +220,12 @@ func err(result *oxc.Result, e error) error {
 	}
 	return e
 }
+
+// read the version from the resource data and returns a 0 if the value is nil
+func getVersion(data *schema.ResourceData) int64 {
+	i := data.Get("version")
+	if i != nil {
+		return int64(i.(int))
+	}
+	return 0
+}

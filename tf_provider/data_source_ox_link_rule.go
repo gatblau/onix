@@ -30,6 +30,42 @@ func LinkRuleDataSource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"link_type_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"start_item_type_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"end_item_type_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"created": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"updated": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"changed_by": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 		},
 	}
 }

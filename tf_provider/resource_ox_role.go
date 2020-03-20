@@ -91,6 +91,7 @@ func newRole(data *schema.ResourceData) *Role {
 		Name:        data.Get("name").(string),
 		Description: data.Get("description").(string),
 		Level:       data.Get("level").(int),
+		Version:     getVersion(data),
 	}
 }
 
@@ -101,4 +102,8 @@ func populateRole(data *schema.ResourceData, role *Role) {
 	data.Set("name", role.Name)
 	data.Set("description", role.Description)
 	data.Set("level", role.Level)
+	data.Set("created", role.Created)
+	data.Set("updated", role.Updated)
+	// TODO: enable below after upgrading client
+	// data.Set("changed_by", role.ChangedBy)
 }
