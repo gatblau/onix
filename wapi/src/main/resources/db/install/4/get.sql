@@ -302,6 +302,7 @@ DO
                key         character varying,
                name        character varying,
                description text,
+               item_type_key character varying,
                type        character varying,
                def_value   character varying,
                managed     boolean,
@@ -322,6 +323,7 @@ DO
                      ta.key,
                      ta.name,
                      ta.description,
+                     it.key as item_type_key,
                      ta.type,
                      ta.def_value,
                      ta.managed,
@@ -332,11 +334,11 @@ DO
                      ta.updated,
                      ta.changed_by
               FROM type_attribute ta
-                       INNER JOIN item_type it ON ta.item_type_id = it.id
-                       INNER JOIN model m ON it.model_id = m.id
-                       INNER JOIN partition p ON m.partition_id = p.id
-                       INNER JOIN privilege pr on p.id = pr.partition_id
-                       INNER JOIN role r on pr.role_id = r.id
+                   INNER JOIN item_type it ON ta.item_type_id = it.id
+                   INNER JOIN model m ON it.model_id = m.id
+                   INNER JOIN partition p ON m.partition_id = p.id
+                   INNER JOIN privilege pr on p.id = pr.partition_id
+                   INNER JOIN role r on pr.role_id = r.id
               WHERE it.key = item_type_key_param
                 AND ta.key = type_key_param
                 AND pr.can_read = TRUE
@@ -344,7 +346,11 @@ DO
       END;
       $BODY$;
 
-      ALTER FUNCTION ox_item_type_attribute(character varying, character varying, character varying[])
+      ALTER FUNCTION ox_item_type_attribute(
+          character varying,
+          character varying,
+          character varying[]
+        )
           OWNER TO onix;
 
       /*
@@ -360,6 +366,7 @@ DO
                            key         character varying,
                            name        character varying,
                            description text,
+                           link_type_key character varying,
                            type        character varying,
                            def_value   character varying,
                            managed     boolean,
@@ -380,6 +387,7 @@ DO
                      ta.key,
                      ta.name,
                      ta.description,
+                     lt.key as link_type_key,
                      ta.type,
                      ta.def_value,
                      ta.managed,

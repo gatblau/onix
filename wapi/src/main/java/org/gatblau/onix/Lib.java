@@ -198,6 +198,14 @@ public class Lib implements InitializingBean {
             typeAttr.setKey(set.getString("key"));
             typeAttr.setName(set.getString("name"));
             typeAttr.setDescription(set.getString("description"));
+            try {
+                typeAttr.setItemTypeKey(set.getString("item_type_key"));
+            } catch (Exception e) {
+            }
+            try {
+                typeAttr.setLinkTypeKey(set.getString("link_type_key"));
+            } catch (Exception e) {
+            }
             typeAttr.setType(set.getString("type"));
             typeAttr.setDefValue(set.getString("def_value"));
             typeAttr.setManaged(set.getBoolean("managed"));
