@@ -36,19 +36,19 @@ func ItemTypeAttributeDataSource() *schema.Resource {
 			},
 			"version": &schema.Schema{
 				Type:     schema.TypeInt,
-				Optional: true,
+				Computed: true,
 			},
 			"created": &schema.Schema{
 				Type:     schema.TypeInt,
-				Optional: true,
+				Computed: true,
 			},
 			"updated": &schema.Schema{
 				Type:     schema.TypeInt,
-				Optional: true,
+				Computed: true,
 			},
 			"changed_by": &schema.Schema{
 				Type:     schema.TypeInt,
-				Optional: true,
+				Computed: true,
 			},
 		},
 	}

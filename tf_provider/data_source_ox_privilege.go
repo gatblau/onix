@@ -30,21 +30,41 @@ func PrivilegeDataSource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"role": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"partition": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"can_create": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"can_read": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"can_delete": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
 			"version": &schema.Schema{
 				Type:     schema.TypeInt,
-				Optional: true,
+				Computed: true,
 			},
 			"created": &schema.Schema{
 				Type:     schema.TypeInt,
-				Optional: true,
+				Computed: true,
 			},
 			"updated": &schema.Schema{
 				Type:     schema.TypeInt,
-				Optional: true,
+				Computed: true,
 			},
 			"changed_by": &schema.Schema{
 				Type:     schema.TypeInt,
-				Optional: true,
+				Computed: true,
 			},
 		},
 	}
@@ -55,7 +75,7 @@ func readPrivilege(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the tf data into an Privilege
-	privilege := &Privilege{Key: data.Id()}
+	privilege := &Privilege{Key: data.Get("key").(string)}
 
 	// get the restful resource
 	privilege, err := c.GetPrivilege(privilege)

@@ -30,21 +30,33 @@ func RoleDataSource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"version": &schema.Schema{
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"level": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
+			},
+			"version": &schema.Schema{
+				Type:     schema.TypeInt,
+				Computed: true,
 			},
 			"created": &schema.Schema{
 				Type:     schema.TypeInt,
-				Optional: true,
+				Computed: true,
 			},
 			"updated": &schema.Schema{
 				Type:     schema.TypeInt,
-				Optional: true,
+				Computed: true,
 			},
 			"changed_by": &schema.Schema{
 				Type:     schema.TypeInt,
-				Optional: true,
+				Computed: true,
 			},
 		},
 	}
@@ -55,7 +67,7 @@ func readRole(data *schema.ResourceData, meta interface{}) error {
 	c := meta.(Config).Client
 
 	// read the tf data into an Item
-	role := &Role{Key: data.Id()}
+	role := &Role{Key: data.Get("key").(string)}
 
 	// get the restful resource
 	role, err := c.GetRole(role)
