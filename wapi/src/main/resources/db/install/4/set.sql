@@ -393,6 +393,7 @@ DO $$
       is_meta_valid              boolean;
       partition_id_value         bigint;
       current_partition_id_value bigint;
+      current_partition_key      character varying; -- the key of the item partition if the item exists (update case)
     BEGIN
       -- if a partition is not specified
       IF (partition_key_param IS NULL OR partition_key_param = '') THEN
@@ -486,6 +487,18 @@ DO $$
         );
         result := 'I';
       ELSE
+        -- check the role specified partition is the same as the item partition
+        SELECT p.key
+        FROM item i
+        INNER JOIN partition p ON i.partition_id = p.id
+        WHERE i.key = key_param
+        INTO current_partition_key;
+
+        IF (current_partition_key != partition_key_param) THEN
+            RAISE EXCEPTION 'Item % exist within Partition % but a different partition % has been specified.', key_param, current_partition_key, partition_key_param
+                USING hint = 'The item partition cannot be changed, consider posting changes under the current partition.';
+        END IF;
+
         -- checks the role has privilege on the current partition
         SELECT i.partition_id
         FROM partition p
