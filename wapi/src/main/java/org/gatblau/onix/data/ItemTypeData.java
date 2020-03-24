@@ -110,21 +110,6 @@ public class ItemTypeData implements Serializable {
     }
 
     @ApiModelProperty(
-        position = 4,
-        required = false,
-        value = "A key/value pair dictionary used to define constraints for attribute values in items of this type." +
-                "The possible options for validation are: a) required: mandatory, b) allowed: not mandatory c) left empty if no validation is required.",
-        example = "{ WBS:required, COMPANY: allowed }"
-    )
-    public JSONObject getAttrValid() {
-        return attrValid;
-    }
-
-    public void setAttrValid(JSONObject attrValid) {
-        this.attrValid = attrValid;
-    }
-
-    @ApiModelProperty(
         position = 5,
         required = false,
         value = "The date and time on which the link type was created.",
