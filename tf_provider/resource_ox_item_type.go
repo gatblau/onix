@@ -77,6 +77,18 @@ func ItemTypeResource() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+			"created": &schema.Schema{
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
+			"updated": &schema.Schema{
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
+			"changed_by": &schema.Schema{
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 		},
 	}
 }
