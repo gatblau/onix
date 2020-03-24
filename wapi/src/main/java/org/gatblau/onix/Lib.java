@@ -365,6 +365,7 @@ public class Lib implements InitializingBean {
             role.setName(set.getString("name"));
             role.setDescription(set.getString("description"));
             role.setCreated(dateFormat.format(set.getDate("created")));
+            role.setLevel(set.getInt("level"));
             role.setUpdated((updated != null) ? dateFormat.format(updated) : null);
             role.setVersion(set.getInt("version"));
             role.setChangedBy(set.getString("changed_by"));
