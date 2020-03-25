@@ -48,6 +48,12 @@ The following arguments can be passed to a configuration item:
 | `model_key` | *required* | string | *The natural key uniquely identofying the model this item type is part of.* |
 | `filter`| optional | JSON | *Defines one or more filters, namely [JSON Path](https://goessner.net/articles/JsonPath/) expressions that allow the Web API to extract parts of the JSON metadata stored in a configuration item. The format of the filter is described in the notes section below.* |
 | `meta_schema` | optional | JSON | *The [JSON Schema](https://json-schema.org/) used to validate the JSON metadata stored in a configuration item's meta attribute.* |
+| `notify_change` | optional | boolean | *Determines whether notification events should be sent by the Web API when items of this type are created, updated or deleted. The default value is false.* |
+| `tag` | optional | string array | *A list of tags used for searching and clasifying the item type.* |
+| `encrypt_meta` | optional | boolean | *A flag indicating wether the meta attribute of the configuration item of this type should have encryption of data at rest.* |
+| `encrypt_txt` | optional | boolean | *A flag indicating wether the txt attribute of the configuration item of this type should have encryption of data at rest.* |
+| `managed` | optional | boolean | *A flag indicating wether the item type is managed by a third party process. The default value is false, indicating the type can be updated by the user interface or Terraform provider clients.* |
+| `version` | optional | integer | *The version number of the item type for [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) purposes. If specified, the entity can be written provided that the specified version number matches the one in the database. If no specified, optimistic locking is disabled.* |
 
 ## Key dependencies
 
@@ -57,9 +63,9 @@ An item type belongs in a model and therefore, a model should exist first and be
 
 ## Related entities
 
-- [ox_model](ox_model.md)
-- [ox_link_rule](ox_link_rule.md)
-- [ox_item](ox_item.md)
+- ox_item_type **belongs in** [ox_model](ox_model.md)
+- [ox_link_rule](ox_link_rule.md) **link is allowed to connect with items of** ox_item_type
+- [ox_item](ox_item.md) **is of** ox_item_type
 
 ## Notes
 

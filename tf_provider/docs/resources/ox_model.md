@@ -27,17 +27,21 @@ The following arguments can be passed to a configuration item:
 
 | Name | Use | Type |  Description |
 |---|---|---|---|
-| `key` | required | string | *The natural key that uniquely identifies the model.* |
-| `name`| required | string | *The display name for the model.* |
-| `description`| required | string | *A meaningful description for the model.* |
+| `key` | *required* | string | *The natural key that uniquely identifies the model.* |
+| `name`| *required* | string | *The display name for the model.* |
+| `description`| *required* | string | *A meaningful description for the model.* |
 | `partition`| optional | string | *The logical access partition the model is in. If not specified, the default reference partition (REF) is used.* |
 | `managed` | optional | boolean | *A flag that informs whether the model is managed by an external application process. The default value is FALSE.* |
+| `version` | optional | integer | *The version number of the model for [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) purposes. If specified, the entity can be written provided that the specified version number matches the one in the database. If no specified, optimistic locking is disabled.* |
 
 ## Key dependencies
 
 Before creating a model, a logical partition has to exist. Logical partitions are used to control access to the data based on roles. Where no partition is selected when creating a model, the model is automatically placed in the default reference partition - REF.
 
-## Related entities
+![Model](../pics/model.png)
 
-- [ox_item_type](ox_item_type.md)
-- [ox_link_type](ox_link_type.md)
+## Related resources
+
+- ox_model **is in** [ox_partition](ox_partition.md)
+- [ox_item_type](ox_item_type.md) **belongs in** ox_model
+- [ox_link_type](ox_link_type.md) **belongs in** ox_model
