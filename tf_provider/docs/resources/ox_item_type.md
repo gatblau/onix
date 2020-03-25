@@ -42,18 +42,102 @@ The following arguments can be passed to a configuration item:
 
 | Name | Use | Type |  Description |
 |---|---|---|---|
-| `key` | required | string | *The natural key that uniquely identifies the item type.* |
-| `name`| required | string | *The display name for the item type.* |
-| `description`| required | string | *A meaningful description for the item type.* |
-| `filter`| optional | JSON | *Defines one or more filters, namely [JSON Path](https://goessner.net/articles/JsonPath/) expressions that allow the Web API to extract parts of the JSON metadata stored in a configuration item.* |
-| `meta_schema` | optional | JSON | *The [JSON Schema](https://json-schema.org/) used to validate the JSON metadata stored in a configuration item.* |
-| `model_key` | required | string | *The natural key uniquely identofying the model this item type is part of.* |
+| `key` | *required* | string | *The natural key that uniquely identifies the item type.* |
+| `name`| *required* | string | *The display name for the item type.* |
+| `description`| *required* | string | *A meaningful description for the item type.* |
+| `model_key` | *required* | string | *The natural key uniquely identofying the model this item type is part of.* |
+| `filter`| optional | JSON | *Defines one or more filters, namely [JSON Path](https://goessner.net/articles/JsonPath/) expressions that allow the Web API to extract parts of the JSON metadata stored in a configuration item. The format of the filter is described in the notes section below.* |
+| `meta_schema` | optional | JSON | *The [JSON Schema](https://json-schema.org/) used to validate the JSON metadata stored in a configuration item's meta attribute.* |
 
 ## Key dependencies
 
+An item type belongs in a model and therefore, a model should exist first and be specified by the *model_key* attribute.
 
+![Item Type](../pics/item_type.png)
 
 ## Related entities
 
-- [ox_link_type](ox_link_type.md)
+- [ox_model](ox_model.md)
 - [ox_link_rule](ox_link_rule.md)
+- [ox_item](ox_item.md)
+
+## Notes
+
+### Filter format
+
+To ilustrate the use of filters, the following example shows how three filters are associated with the JSON metadata of an item of a specific type. 
+
+The filter attribute of the item type is:
+
+```hcl
+filter = {
+    "filters": [
+      {
+        "authors": [
+          {"authors_of_all_books": "$.store.book[*].author"},
+          {"all_authors": "$..author"}
+        ]
+      },
+      {
+        "store": [
+          {"all_books_and_bikes": "$.store.*"},
+          {"all_prices": "$.store..price"}
+        ]
+      },
+      {
+        "books": [
+          {"not_expensive": "$..book[?(@.price <= $['expensive'])]"},
+          {"last_two": "$..book[-2:]"},
+          {"cheaper_than_ten": "$.store.book[?(@.price < 10)]"},
+          {"book_count": "$..book.length()"}
+        ]
+      }
+    ]
+  }
+```
+
+Each filter can have one or more [json paths](https://goessner.net/articles/JsonPath/) defined. Where more than one path is defined per filter, the Web API runs an extraction for each path and builds a map result object.
+
+For example, when querying the endpoint **/item/item_01/meta/books** the API will search on the JSON metadata of the configuration item ***item_01*** for paths matching:
+
+- "*not_expensive*" and
+- "*last_two*" and
+- "*cheaper_than_ten*" and
+- "*book_count*"
+
+Additionally, the following queries are also available on ***item_01***:
+
+- **/item/item_01/meta/authors**
+- **/item/item_01/meta/store**
+  
+### Meta Schema Format
+
+[JSON Schema](https://json-schema.org/draft/2019-09/json-schema-validation.html) is a specification for defining the structure of JSON data.
+
+The following example shows how to set the meta_schema attribute of an item type:
+
+```hcl
+meta_schema = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://example.com/product.schema.json",
+    "title": "Product",
+    "description": "A product from Acme's catalog",
+    "type": "object",
+    "properties": {
+      "productId": {
+        "description": "The unique identifier for a product",
+        "type": "integer"
+      },
+      "productName": {
+        "description": "Name of the product",
+        "type": "string"
+      },
+      "price": {
+        "description": "The price of the product",
+        "type": "number",
+        "exclusiveMinimum": 0
+      }
+    },
+    "required": [ "productId", "productName", "price" ]
+  }
+  ```
