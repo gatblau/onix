@@ -6,6 +6,8 @@ An item type defines the characteristics of a configuration item, such as the at
 
 An item type has to be defined before an item can be created.
 
+Item types can have zero or more [item type attributes](ox_item_type_attribute.md) that define the attributes that the item of this type can have.
+
 ## Example usage
 
 In the example below, three item types are created to represent VPCs, Virtual Servers and a Storage Volumes:
@@ -66,6 +68,7 @@ An item type belongs in a model and therefore, a model should exist first and be
 - ox_item_type **belongs in** [ox_model](ox_model.md)
 - [ox_link_rule](ox_link_rule.md) **link is allowed to connect with items of** ox_item_type
 - [ox_item](ox_item.md) **is of** ox_item_type
+- ox_item_type **has** [ox_item_type_attribute](ox_item_type_attribute.md)(s)
 
 ## Notes
 
