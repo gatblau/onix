@@ -18,7 +18,7 @@ When storing sensitive information, a configuration item's text and JSON data ca
 
 ```hcl
 resource "ox_item" "Item_1" {
-  key         = "item_1"
+  key         = "ITEM_1"
   name        = "Item 1"
   description = "Item 1 Description"
   type        = "item_type_1"
@@ -66,3 +66,16 @@ The following arguments can be passed to a configuration item:
 | `tag` | optional | array of string | *Stores zero or more tags that can be used to classify or search for the item.* |
 | `partition` | optional | string | *The natural key that identifies the logical partition the item is in. If no value is specified, the item is placed in the default instance partition (INS).* |
 | `version` | optional | *The version number of the item. If specified, optimistic locking is enabled: if the specified version is different than the stored version, no changes are made and a locking situation is assumed.* |
+
+## Key dependencies
+
+An item requires an [Item Type](ox_item_type.md) and [Partition](ox_partition.md) definitions.
+If no [Partition](ox_partition.md) is specified, the Item is placed in the default instance partition (INS) by default. 
+
+![Item](../pics/item.png)
+
+## Related entities
+
+- Item **is in** [Partition](ox_partition.md)
+- Item **is of** [Item Type](ox_item_type.md)
+- [Link](ox_link.md) **connects** Items

@@ -73,22 +73,6 @@ func ItemResource() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
-			"enc_key_ix": &schema.Schema{
-				Type:     schema.TypeInt,
-				Optional: true,
-			},
-			"created": &schema.Schema{
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
-			"updated": &schema.Schema{
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
-			"changed_by": &schema.Schema{
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
 		},
 	}
 }
@@ -144,7 +128,6 @@ func newItem(data *schema.ResourceData) *Item {
 		Attribute:   data.Get("attribute").(map[string]interface{}),
 		Tag:         data.Get("tag").([]interface{}),
 		Partition:   data.Get("partition").(string),
-		EncKeyIx:    int64(data.Get("enc_key_ix").(int)),
 		Status:      data.Get("status").(int),
 		Version:     getVersion(data),
 	}

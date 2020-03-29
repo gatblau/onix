@@ -2,30 +2,19 @@
 
 Creates, updates or destroys a link between two configuration items.
 
+A link, connects two existing configuration items. A link has a direction (i.e. from item and to item) and can carry information in a similar way as an item (i.e. meta, txt, tag, attribute)
+
 ## Example Usage
 
 ```hcl
 resource "ox_link" "Link_1" {
-  key            = "link_1"
-  description    = "link 1 description"
-  type           = "Test_Link_Type"
-  start_item_key = "Item_1"
-  end_item_key   = "Item_2"
+  key            = "vpc01_vm01_link"
+  description    = "VM01 is in VPC01"
+  type           = "AWS_EC2_LINK"
+  start_item_key = "VPC01"
+  end_item_key   = "VM01"
   meta = {
-     "hostvars": {
-       "ansible_become": "yes",
-       "openshift_master_overwrite_named_certificates": "True",
-       "openshift_node_kubelet_args": {
-         "image-gc-high-threshold": [
-           "90"
-         ],
-         "image-gc-low-threshold": [
-           "80"
-         ]
-       },
-       "openshift_prometheus_pvc_size": "10Gi",
-       "openshift_metrics_cassandra_pvc_storage_class_name": "glusterfs-storage-block",
-       "openshift_image_tag": "v3.9.30"
+     ... a json object goes here ...
   }
   txt = "Free format text here."
   attribute = {
@@ -50,3 +39,14 @@ The following arguments can be passed to a configuration item:
 | `attribute` | optional | map of strings | *Stores zero or more key-value pairs that are defined in the item type.* |
 | `tag` | optional | array of string | *Stores zero or more tags that can be used to classify or search for the item.* |
 | `version` | optional | integer | *The version number of the item. If specified, optimistic locking is enabled: if the specified version is different than the stored version, no changes are made and a locking situation is assumed.* |
+
+## Key dependencies
+
+Before creating a link, a link type must exists. Additionally, two items must also exists so that they can be connected by the link.
+
+![Link](../pics/link.png)
+
+## Related resources
+
+- Link **connects** [Item](ox_item.md)(s)
+- Link **is of type** [Link Type](ox_link_type.md)

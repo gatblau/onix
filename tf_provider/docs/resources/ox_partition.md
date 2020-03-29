@@ -12,7 +12,7 @@ A partition has no dependencies with any other Onix entity.
 
 ```hcl
 resource "ox_partition" "Logistics_Department_Partition" {
-  key         = "Logistics_Department_Partition"
+  key         = "LOGISTICS_DEPT_PARTITION"
   name        = "Logistics Department Partition"
   description = "Partition for resources used by the logistic department."
   managed     = false
@@ -38,6 +38,6 @@ A logical partition has no other dependencies.
 
 ## Related resources
 
-- [ox_model](ox_model.md) **is in** ox_partition
-- [ox_item](ox_item.md) **is in** ox_partition
-- [ox_privilege](ox_privilege.md) **allows to create, read or delete data in a** ox_partition
+- [Model](ox_model.md) **is in** Partition
+- [Item](ox_item.md) **is in** Partition
+- [Privilege](ox_privilege.md) **allows to create, read or delete data in a** Partition

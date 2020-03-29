@@ -42,6 +42,6 @@ Before creating a model, a logical partition has to exist. Logical partitions ar
 
 ## Related resources
 
-- ox_model **is in** [ox_partition](ox_partition.md)
-- [ox_item_type](ox_item_type.md) **belongs in** ox_model
-- [ox_link_type](ox_link_type.md) **belongs in** ox_model
+- Model **is in** [Partition](ox_partition.md)
+- [Item Type](ox_item_type.md) **belongs in** Model
+- [Link Type](ox_link_type.md) **belongs in** Model
