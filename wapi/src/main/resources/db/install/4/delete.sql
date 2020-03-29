@@ -635,7 +635,8 @@ DO
         -- logged role is either level 1 owning role and partition or level 2
         DELETE FROM privilege p
         WHERE p.partition_id = partition_id_value
-          AND p.role_id = role_id_value;
+          AND p.role_id = role_id_value
+          AND p.key = key_param;
 
         RETURN QUERY SELECT 'D'::char(1);
     END;
