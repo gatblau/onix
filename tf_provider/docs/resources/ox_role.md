@@ -10,7 +10,7 @@ When a user logs in the Onix Web API, a role is assigned to the user session aft
 
 ```hcl
 resource "ox_role" "Logistics_Admin_Role" {
-  key         = "LOGISTICS_ADMIN"
+  key         = "LOGISTICS_ADMIN_ROLE"
   name        = "Logistics Department Administrator"
   description = "Role held by an Administrator of the Logistics Department."
   level       = 1
@@ -37,4 +37,4 @@ A role has no other dependencies.
 
 ## Related resources
 
-- ox_role **has** [ox_privilege](ox_privilege.md)
+- Role **has** [Privilege](ox_privilege.md)

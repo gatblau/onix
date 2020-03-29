@@ -30,7 +30,7 @@ const (
 	PrivilegeDsPartition    = "INS"
 	PrivilegeDsCanCreate    = true
 	PrivilegeDsCanRead      = true
-	PrivilegeDsCanDelete    = false
+	PrivilegeDsCanDelete    = true
 )
 
 func init() {
@@ -77,7 +77,7 @@ func oxPrivilegeDataSource() string {
 // create supporting database entities
 func preparePrivilegeDataSourceTest(t *testing.T) {
 	// use the default partition INS and default role ADMIN
-	_, err := cfg.Client.PutPrivilege(
+	result, err := cfg.Client.PutPrivilege(
 		&oxc.Privilege{
 			Key:       PrivilegeDsKey,
 			Role:      PrivilegeDsRole,
@@ -88,5 +88,8 @@ func preparePrivilegeDataSourceTest(t *testing.T) {
 		})
 	if err != nil {
 		t.Error(err)
+	}
+	if result.Error {
+		t.Error(result.Message)
 	}
 }

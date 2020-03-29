@@ -27,7 +27,7 @@ import (
 // all the constants for the item test
 const (
 	PrivilegeResourceName = "ox_privilege.ox_privilege_1"
-	PrivilegeRsKey        = " "
+	PrivilegeRsKey        = "test_acc_ox_privilege_1"
 	PrivilegeRsRole       = "ADMIN"
 	PrivilegeRsPartition  = "INS"
 	PrivilegeRsCanCreate  = true
