@@ -64,7 +64,7 @@ An item type belongs in a model and therefore, a model should exist first and be
 This resource uses the following Web API endpoint: 
 
 ```bash
-/itemtype/{link_type_key}/attribute/{attribute_key}
+/itemtype/{item_type_key}/attribute/{attribute_key}
 ```
 
 The table below shows what methods are mapped to what operations in the terraform resource:
