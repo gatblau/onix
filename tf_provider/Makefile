@@ -1,5 +1,5 @@
 #
-#    Onix Config Manager - Terraform Provider - Copyright (c) 2018-2019 by www.gatblau.org
+#    Onix Config Manager - Terraform Provider - Copyright (c) 2018-2020 by www.gatblau.org
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -19,10 +19,19 @@ BINARY_NAME=terraform-provider-ox_v1.0.0
 # the name of the folder where the packaged binaries will be placed after the build
 BUILD_FOLDER=build
 
+# run the terraform provider test harness (acceptance tests - require the Onix Web API)
+test:
+    # starts Onix in containers (requires Docker)
+	sh ox_up.sh
+	# enables acceptance tests and executes them
+	export TF_ACC=true; go test -v
+	# removes the Onix containers
+	sh ox_down.sh
+
 # compile, install and initialise the terraform provider for onix
 # in a local folder and execute the contents of the main.tf file (terraform apply)
 # use this function to test changes to the terraform provider (integration test)
-tf_test:
+install:
 	go fmt
 	terraform fmt
 #	commented line below produces a static binary
@@ -31,12 +40,6 @@ tf_test:
 	chmod 755 terraform.d/plugins/darwin_amd64/$(BINARY_NAME)
 	export TF_LOG=DEBUG
 	terraform init
-	terraform apply
-
-# run the terraform provider test harness (unit tests in go only)
-test:
-	go fmt
-	go test -v
 
 # build the terraform provider in the current platform
 build:
