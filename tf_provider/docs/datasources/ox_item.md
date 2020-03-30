@@ -1,14 +1,14 @@
 # ox_item Data Source  <img src="../../../docs/pics/ox.png" width="200" height="200" align="right">
 
-Allow configuration item data to be fetched for use elsewhere in Terraform configuration. 
+Allow configuration item data to be fetched for use elsewhere in Terraform configuration.
 
-Use of the *ox_item* data source allows a Terraform configuration to make use of information defined in Onix.
+More information about configuration items can be found in the [Item Resource](../resources/ox_item.md) section.
 
 ## Example Usage
 
 ```hcl
-data "ox_item" "item_1_data" {
-  key = "item_1_key"
+data "ox_item" "aws_instance_abc_001_data" {
+  key = "AWS_INSTANCE_ABC_001"
 }
 ```
 
@@ -26,8 +26,6 @@ The data source exports the following attributes:
 
 | Name | Type |  Description |
 |---|---|---|
-| `id` | string | *The surrogate key that uniquely identifies the item.* |
-| `key` | string | *The natural key that uniquely identifies the item.* |
 | `name`| string | *The display name for the item.* |
 | `description`| string | *A meaningful description for the item.* |
 | `type` | string | *The natural key that uniquely identifies the type of item.* |
@@ -41,3 +39,4 @@ The data source exports the following attributes:
 | `version` | integer | *The version number for the item. Every time a change is made to an item, the version number is automatically incremented. The version number is used to enable optimistic concurrency locking.* |
 | `created` | date & time | *The date and time the item was created for the first time.* |
 | `updated` | date & time | *The date and time the item was last updated.* |
+| `changed_by` | string | *The user and role that last modified the item.* |

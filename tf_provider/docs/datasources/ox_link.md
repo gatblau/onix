@@ -2,11 +2,13 @@
 
 Allow configuration item link data to be fetched for use elsewhere in Terraform configuration.
 
+More information about configuration items can be found in the [Link Resource](../resources/ox_link.md) section.
+
 ## Example Usage
 
 ```hcl
-data "ox_link" "link_1_data" {
-  key = "link_1_key"
+data "ox_link" "vpc01_vm01_link_data" {
+  key = "vpc01_vm01_link"
 }
 ```
 
@@ -24,8 +26,6 @@ The data source exports the following attributes:
 
 | Name | Type |  Description |
 |---|---|---|
-| `id` | string | *The surrogate key that uniquely identifies the link.* |
-| `key` | string | *The natural key that uniquely identifies the link.* |
 | `description`| string | *A meaningful description for the link.* |
 | `type` | string | *The natural key that uniquely identifies the type of link.* |
 | `meta` | json | *Stores any information in JSON format. It can be automatically encrypted if required.* |
@@ -35,3 +35,4 @@ The data source exports the following attributes:
 | `version` | integer | *The version number for the link. Every time a change is made to a link, its version number is automatically incremented. The version number is used to enable optimistic concurrency locking.* |
 | `created` | date & time | *The date and time the link was first created.* |
 | `updated` | date & time | *The date and time the link was last updated.* |
+| `changed_by` | string | *The user and role that last modified the item.* |
