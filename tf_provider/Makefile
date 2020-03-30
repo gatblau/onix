@@ -21,7 +21,7 @@ BUILD_FOLDER=build
 
 # run the terraform provider test harness (acceptance tests - require the Onix Web API)
 test:
-    # starts Onix in containers (requires Docker)
+	# starts Onix in containers (requires Docker)
 	sh ox_up.sh
 	# enables acceptance tests and executes them
 	export TF_ACC=true; go test -v

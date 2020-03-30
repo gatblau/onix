@@ -65,7 +65,7 @@ The following arguments can be passed to a configuration item:
 | `attribute` | optional | map of strings | *Stores zero or more key-value pairs that are defined in the item type.* |
 | `tag` | optional | array of string | *Stores zero or more tags that can be used to classify or search for the item.* |
 | `partition` | optional | string | *The natural key that identifies the logical partition the item is in. If no value is specified, the item is placed in the default instance partition (INS).* |
-| `version` | optional | *The version number of the item. If specified, optimistic locking is enabled: if the specified version is different than the stored version, no changes are made and a locking situation is assumed.* |
+| `version` | optional | integer | *The version number of the item. If specified, optimistic locking is enabled: if the specified version is different than the stored version, no changes are made and a locking situation is assumed.* |
 
 ## Key dependencies
 
