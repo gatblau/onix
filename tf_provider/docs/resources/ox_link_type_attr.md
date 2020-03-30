@@ -48,3 +48,20 @@ An item type belongs in a model and therefore, a model should exist first and be
 ## Related entities
 
 - [Link Type](ox_link_type.md) **has** Link Type Attribute(s)
+
+## Web API endpoints
+
+This resource uses the following Web API endpoint: 
+
+```bash
+/linktype/{link_type_key}/attribute/{attribute_key}
+```
+
+The table below shows what methods are mapped to what operations in the terraform resource:
+
+| **Method** | **Operation** |
+|:---:|:---:|
+| PUT | Create |
+| GET | Read |
+| PUT | Update |
+| DELETE | Delete  |

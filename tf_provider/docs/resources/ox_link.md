@@ -50,3 +50,20 @@ Before creating a link, a link type must exists. Additionally, two items must al
 
 - Link **connects** [Item](ox_item.md)(s)
 - Link **is of type** [Link Type](ox_link_type.md)
+
+## Web API endpoints
+
+This resource uses the following Web API endpoint: 
+
+```bash
+/link/{link_key}
+```
+
+The table below shows what methods are mapped to what operations in the terraform resource:
+
+| **Method** | **Operation** |
+|:---:|:---:|
+| PUT | Create |
+| GET | Read |
+| PUT | Update |
+| DELETE | Delete  |

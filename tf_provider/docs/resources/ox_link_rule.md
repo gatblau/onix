@@ -53,3 +53,20 @@ A link rule requires a [link type](ox_link_type.md), and one or two [item types]
 
 - Link Rule **allows links between items of** [Item Type](ox_item_type.md)
 - Link Rule **is for** [Link Type](ox_item_type.md)
+
+## Web API endpoints
+
+This resource uses the following Web API endpoint: 
+
+```bash
+/linkrule/{link_rule_key}
+```
+
+The table below shows what methods are mapped to what operations in the terraform resource:
+
+| **Method** | **Operation** |
+|:---:|:---:|
+| PUT | Create |
+| GET | Read |
+| PUT | Update |
+| DELETE | Delete  |

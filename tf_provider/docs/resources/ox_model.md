@@ -45,3 +45,20 @@ Before creating a model, a logical partition has to exist. Logical partitions ar
 - Model **is in** [Partition](ox_partition.md)
 - [Item Type](ox_item_type.md) **belongs in** Model
 - [Link Type](ox_link_type.md) **belongs in** Model
+
+## Web API endpoints
+
+This resource uses the following Web API endpoint: 
+
+```bash
+/model/{model_key}
+```
+
+The table below shows what methods are mapped to what operations in the terraform resource:
+
+| **Method** | **Operation** |
+|:---:|:---:|
+| PUT | Create |
+| GET | Read |
+| PUT | Update |
+| DELETE | Delete  |

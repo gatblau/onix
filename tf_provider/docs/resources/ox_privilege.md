@@ -62,3 +62,20 @@ A privilege requires a [role](ox_role.md) and a [partition](ox_partition.md) to 
 
 - Privilege **allows to create, read or delete data in** [Partition](ox_partition.md)
 - [Role](ox_role.md) **has** Privilege
+
+## Web API endpoints
+
+This resource uses the following Web API endpoint: 
+
+```bash
+/privilege/{privilege_key}
+```
+
+The table below shows what methods are mapped to what operations in the terraform resource:
+
+| **Method** | **Operation** |
+|:---:|:---:|
+| PUT | Create |
+| GET | Read |
+| PUT | Update |
+| DELETE | Delete  |

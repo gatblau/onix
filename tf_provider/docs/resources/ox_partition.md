@@ -41,3 +41,20 @@ A logical partition has no other dependencies.
 - [Model](ox_model.md) **is in** Partition
 - [Item](ox_item.md) **is in** Partition
 - [Privilege](ox_privilege.md) **allows to create, read or delete data in a** Partition
+
+## Web API endpoints
+
+This resource uses the following Web API endpoint: 
+
+```bash
+/partition/{partition_key}
+```
+
+The table below shows what methods are mapped to what operations in the terraform resource:
+
+| **Method** | **Operation** |
+|:---:|:---:|
+| PUT | Create |
+| GET | Read |
+| PUT | Update |
+| DELETE | Delete  |

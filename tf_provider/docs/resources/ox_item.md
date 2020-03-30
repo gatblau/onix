@@ -79,3 +79,14 @@ If no [Partition](ox_partition.md) is specified, the Item is placed in the defau
 - Item **is in** [Partition](ox_partition.md)
 - Item **is of** [Item Type](ox_item_type.md)
 - [Link](ox_link.md) **connects** Items
+
+## Web API endpoints
+
+This resource uses the following Web API endpoints:
+
+| Operation | Method | Endpoint |
+|---|---|---|
+| Create | PUT | `/item/{key}` |
+| Read | GET | `/item/{key}` |
+| Update | PUT | `/item/{key}` |
+| Delete | DELETE | `/item/{key}` |
