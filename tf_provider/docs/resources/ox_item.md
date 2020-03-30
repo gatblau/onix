@@ -18,10 +18,10 @@ When storing sensitive information, a configuration item's text and JSON data ca
 
 ```hcl
 resource "ox_item" "Item_1" {
-  key         = "ITEM_1"
-  name        = "Item 1"
-  description = "Item 1 Description"
-  type        = "item_type_1"
+  key         = "AWS_INSTANCE_ABC_001"
+  name        = "AWS Instace - ABC-001"
+  description = "AWS Instace - ABC-001 Description"
+  type        = "AWS_INSTANCE"
   meta = {
      "hostvars": {
        "ansible_become": "yes",
@@ -45,7 +45,7 @@ resource "ox_item" "Item_1" {
   }
   tag = [ "tag1", "tag2", "tag3"]
   status = 3
-  partition = "PARTITION_B"
+  partition = "LOGISTICS_DEPT_PARTITION"
 }
 ```
 
