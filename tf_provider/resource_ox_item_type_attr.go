@@ -44,6 +44,10 @@ func ItemTypeAttributeResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"item_type_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
 			"def_value": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -57,10 +61,6 @@ func ItemTypeAttributeResource() *schema.Resource {
 				Optional: true,
 			},
 			"regex": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"item_type_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
