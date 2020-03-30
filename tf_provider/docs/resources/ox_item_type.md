@@ -70,11 +70,28 @@ An item type belongs in a model and therefore, a model should exist first and be
 - [Item](ox_item.md) **is of** Item Type
 - Item Type **has** [Item Type Attribute](ox_item_type_attribute.md)(s)
 
+## Web API endpoints
+
+This resource uses the following Web API endpoint: 
+
+```bash
+/itemtype/{item_type_key}
+```
+
+The table below shows what methods are mapped to what operations in the terraform resource:
+
+| **Method** | **Operation** |
+|:---:|:---:|
+| PUT | Create |
+| GET | Read |
+| PUT | Update |
+| DELETE | Delete  |
+
 ## Notes
 
 ### Filter format
 
-To ilustrate the use of filters, the following example shows how three filters are associated with the JSON metadata of an item of a specific type. 
+To illustrate the use of filters, the following example shows how three filters are associated with the JSON metadata of an item of a specific type. 
 
 The filter attribute of the item type is:
 

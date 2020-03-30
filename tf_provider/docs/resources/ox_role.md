@@ -38,3 +38,20 @@ A role has no other dependencies.
 ## Related resources
 
 - Role **has** [Privilege](ox_privilege.md)
+
+## Web API endpoints
+
+This resource uses the following Web API endpoint: 
+
+```bash
+/role/{role_key}
+```
+
+The table below shows what methods are mapped to what operations in the terraform resource:
+
+| **Method** | **Operation** |
+|:---:|:---:|
+| PUT | Create |
+| GET | Read |
+| PUT | Update |
+| DELETE | Delete  |
