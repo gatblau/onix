@@ -82,11 +82,18 @@ If no [Partition](ox_partition.md) is specified, the Item is placed in the defau
 
 ## Web API endpoints
 
-This resource uses the following Web API endpoints:
+This resource uses the following Web API endpoint: 
 
-| Operation | Method | Endpoint |
-|---|---|---|
-| Create | PUT | `/item/{key}` |
-| Read | GET | `/item/{key}` |
-| Update | PUT | `/item/{key}` |
-| Delete | DELETE | `/item/{key}` |
+```bash
+/item/{item_key}
+```
+
+The table below shows what methods are mapped to what operations in the terraform resource:
+
+| **Method** | **Operation** |
+|:---:|:---:|
+| PUT | Create |
+| GET | Read |
+| PUT | Update |
+| DELETE | Delete  |
+
