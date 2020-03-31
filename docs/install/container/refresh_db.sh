@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-#    Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+#    Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -17,16 +17,18 @@
 # usage:  sh refresh.sh
 #
 # removes the container
-docker rm -f onixdb
+docker rm -f oxdb
 
 # re-creates the container
-docker run --name onixdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "centos/postgresql-10-centos7"
+docker run --name oxdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=onix "centos/postgresql-12-centos7"
 
 # wait for the container to initialise
 sleep 5
 
 # shows the logs
-docker logs onixdb
+docker logs oxdb
 
 # re-deploys the database
 curl localhost:8080/ready
+echo
+
