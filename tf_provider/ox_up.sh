@@ -33,6 +33,22 @@ echo try and delete existing Onix containers
 docker rm -f oxdb
 docker rm -f ox
 
+echo "checking port 8080 is available for the Onix Web API process"
+lsof -i:8080 | grep LISTEN
+RESULT=$?
+if [ $RESULT -eq 0 ]; then
+  echo port 8080 is in use, cannot continue: ensure there is no process using 8080/tcp port
+  exit 1
+fi
+
+echo "checking port 5432 is available for the Onix database process"
+lsof -i:5432 | grep LISTEN
+RESULT=$?
+if [ $RESULT -eq 0 ]; then
+  echo port 5432 is in use, cannot continue: ensure there is no process using 5432/tcp port
+  exit 1
+fi
+
 echo creates the Onix database
 docker run --name oxdb -it -d -p 5432:5432 \
     -e POSTGRESQL_ADMIN_PASSWORD=onix \
