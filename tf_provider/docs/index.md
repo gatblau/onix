@@ -29,7 +29,7 @@ The following table shows the provider configuration attributes:
 
 ## Example Usage
 
-__*Basic Authentication Example*__
+### Basic Authentication Example (configuration in terraform file)
 
 In order to authenticate using [Basic Access Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication), there is no need to specify the __auth_mode__ attribute. Only _user_ and _pwd_ are required:
 
@@ -43,7 +43,7 @@ provider "ox" {
 }
 ```
 
-### Using Environment Variables
+### Basic Authentication Example (configuration in environment variables)
 
 As a good practice, it is recommended that any credentials are not sepcified in the terraform file, but instead, they are provided via environment variables.
 
@@ -66,7 +66,7 @@ $ TF_PROVIDER_OX_URI=http://localhost:8080 \
   terraform apply
 ```
 
-__*OpenId / OAuth 2.0 Authentication Example*__
+### OpenId / OAuth 2.0 Authentication Example
 
 If [OpenId Connect / OAuth 2.0](https://openid.net/connect/) is selected as the authentication method, then in addition to the _user_ and _pwd_ attributes, _client_id_ and _secret_ and _token_uri_ are also required:
 
@@ -83,8 +83,7 @@ provider "ox" {
 }
 ```
 
-__*No Authentication Example*__
-
+### No Authentication Example
 
 ```hcl-terraform
 # No Authentication
