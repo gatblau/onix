@@ -21,7 +21,8 @@ import (
 	"github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"log"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"os"
 )
 
@@ -50,26 +51,34 @@ func (cfg *Config) loaded() bool {
 // then from terraform resource data
 // NOTE: prefer loading credentials from environment variables
 func (cfg *Config) load(data *schema.ResourceData) error {
+	// set time format to UNIX Time as it is faster and smaller than most timestamps
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
 	cfg.URI = os.Getenv("TF_PROVIDER_OX_URI")
 	if len(cfg.URI) == 0 {
 		cfg.URI = data.Get("uri").(string)
-		log.Printf("WARNING: Loading 'uri' from resource data. Consider setting the TF_PROVIDER_OX_URI environment variable instead.")
+		log.Warn().Msg("Loading 'uri' from resource data. Consider setting the TF_PROVIDER_OX_URI environment variable instead.")
 	}
 	cfg.AuthMode = os.Getenv("TF_PROVIDER_OX_AUTH_MODE")
 	if len(cfg.AuthMode) == 0 {
 		cfg.AuthMode = data.Get("auth_mode").(string)
+	}
+	// if the auth mode is not set then it defaults to basic authentication
+	if len(cfg.AuthMode) == 0 {
+		log.Info().Msg("auth_mode not found, defaulting to basic authentication")
+		cfg.AuthMode = "basic"
 	}
 	// if basic authentication selected
 	if cfg.AuthMode == "basic" {
 		cfg.User = os.Getenv("TF_PROVIDER_OX_USER")
 		if len(cfg.User) == 0 {
 			cfg.User = data.Get("user").(string)
-			log.Printf("WARNING: Loading 'user' from resource data. Consider setting the TF_PROVIDER_OX_USER environment variable instead.")
+			log.Warn().Msg("Loading 'user' from resource data. Consider setting the TF_PROVIDER_OX_USER environment variable instead.")
 		}
 		cfg.Pwd = os.Getenv("TF_PROVIDER_OX_PWD")
 		if len(cfg.Pwd) == 0 {
 			cfg.Pwd = data.Get("pwd").(string)
-			log.Printf("WARNING: Loading 'pwd' from resource data. Consider setting the TF_PROVIDER_OX_PWD environment variable instead.")
+			log.Warn().Msg("Loading 'pwd' from resource data. Consider setting the TF_PROVIDER_OX_PWD environment variable instead.")
 		}
 	}
 	// if open id connect selected
@@ -77,7 +86,7 @@ func (cfg *Config) load(data *schema.ResourceData) error {
 		cfg.TokenURI = os.Getenv("TF_PROVIDER_OX_TOKEN_URI")
 		if len(cfg.TokenURI) == 0 {
 			cfg.TokenURI = data.Get("token_uri").(string)
-			log.Printf("WARNING: Loading 'token_uri' from resource data. Consider setting the TF_PROVIDER_OX_TOKEN_URI environment variable instead.")
+			log.Warn().Msg("Loading 'token_uri' from resource data. Consider setting the TF_PROVIDER_OX_TOKEN_URI environment variable instead.")
 		} else {
 			return errors.New("TF_PROVIDER_OX_TOKEN_URI is required if TF_PROVIDER_OX_AUTH_MODE=oidc")
 		}
@@ -86,7 +95,7 @@ func (cfg *Config) load(data *schema.ResourceData) error {
 			val := data.Get("client_id")
 			if val != nil {
 				cfg.ClientId = val.(string)
-				log.Printf("WARNING: Loading 'client_secret' from resource data. Consider setting the TF_PROVIDER_OX_CLIENT_ID environment variable instead.")
+				log.Warn().Msg("Loading 'client_secret' from resource data. Consider setting the TF_PROVIDER_OX_CLIENT_ID environment variable instead.")
 			} else {
 				return errors.New("TF_PROVIDER_OX_CLIENT_ID is required if TF_PROVIDER_OX_AUTH_MODE=oidc")
 			}
@@ -96,7 +105,7 @@ func (cfg *Config) load(data *schema.ResourceData) error {
 			val := data.Get("app_secret")
 			if val != nil {
 				cfg.AppSecret = val.(string)
-				log.Printf("WARNING: Loading 'app_secret' from resource data. Consider setting the TF_PROVIDER_OX_APP_SECRET environment variable instead.")
+				log.Warn().Msg("Loading 'app_secret' from resource data. Consider setting the TF_PROVIDER_OX_APP_SECRET environment variable instead.")
 			} else {
 				return errors.New("TF_PROVIDER_OX_APP_SECRET is required if TF_PROVIDER_OX_AUTH_MODE=oidc")
 			}
