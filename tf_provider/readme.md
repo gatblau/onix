@@ -33,5 +33,3 @@ $ make test
 ## Installing the provider
 
 For information on how to install this provider see [here](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins).
-
-

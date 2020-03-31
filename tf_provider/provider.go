@@ -90,9 +90,9 @@ func (cfg *Config) load(data *schema.ResourceData) error {
 		} else {
 			return errors.New("TF_PROVIDER_OX_TOKEN_URI is required if TF_PROVIDER_OX_AUTH_MODE=oidc")
 		}
-		cfg.ClientId = os.Getenv("TF_PROVIDER_OX_CLIENT_ID")
+		cfg.ClientId = os.Getenv("TF_PROVIDER_OX_APP_CLIENT_ID")
 		if len(cfg.ClientId) == 0 {
-			val := data.Get("client_id")
+			val := data.Get("app_client_id")
 			if val != nil {
 				cfg.ClientId = val.(string)
 				log.Warn().Msg("Loading 'client_secret' from resource data. Consider setting the TF_PROVIDER_OX_CLIENT_ID environment variable instead.")
