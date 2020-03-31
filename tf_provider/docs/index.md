@@ -8,7 +8,7 @@ For example:
 - Creating, updating or destroying items and links.
 - Retrieving configuration information using Data Sources.
 
-## Provider Configuration
+## Provider Configuration Argument Reference
 
 The provider can be configured via attributes in the provider section of the Terraform file or via environment variables.
 
@@ -19,13 +19,14 @@ The following table shows the provider configuration attributes:
 | provider<br>attribute | environment<br>variable | use | description | example |
 |---|---|---|---|---|
 | `uri` | `TF_PROVIDER_OX_URI` | *required* | *The URI of Onix Web API where the provider will connect.* | `http://localhost:8080` |
-| `auth_mode` | `TF_PROVIDER_OX_AUTH_MODE` | optional | *The method of authentication used when calling the Web API.<br>Possible values are `none`, `basic` or `oidc`.* | `basic` |
-| `user` | `TF_PROVIDER_OX_USER` | *required*<br>(if `basic`) | *The username for basic authentication purposes.* | `admin`, `reader` or `writer` |
-| `pwd` | `TF_PROVIDER_OX_PWD` | *required*<br>(if `basic`) | *The password for basic authentication purposes.* | `pwd0012asx!` |
-| `token_uri` | `TF_PROVIDER_OX_TOKEN_URI` | *required*<br>(if `oidc`) | *The URI of the OpenId Connect token server endpoint.* | `https://token-server.com/oauth2/default/v1/token` |
-| `app_client_id` | `TF_PROVIDER_OX_APP_CLIENT_ID` | *required*<br>(if `oidc`) | *The unique identifier for the client application to be protected.* | `character string of lenght determined by implementation` |
-| `app_secret` | `TF_PROVIDER_OX_APP_SECRET` | *required*<br>(if `oidc`) | *The client secret used to authenticate with the authorisation server.* | `character string of lenght determined by implementation` |
+| `auth_mode` | `TF_PROVIDER_OX_AUTH_MODE` | optional | *Defines the method used by the provider to authenticate with the Onix Web API. If not specified, it defaults to __basic__ (basic authentication). Other possible value as __none__ or __oidc__ (OpenId Connect).* | `basic` |
+| `user` | `TF_PROVIDER_OX_USER` | *required*<br>(if `basic`) | *A unique sequence of characters used to identify a user of the Onix Web API.* | `admin`, `reader` or `writer` |
+| `pwd` | `TF_PROVIDER_OX_PWD` | *required*<br>(if `basic`) | *A secret word supplied by the user in order to gain access to the Onix Web API.* | `pwd0012asx!` |
+| `token_uri` | `TF_PROVIDER_OX_TOKEN_URI` | *required*<br>(if `oidc`) | *The OAuth 2.0 server endpoint where the ox provider exchanges the user credentials, client ID and client secret, for an access token. It is only required if _auth_mode_ is set to _oidc_.* | `https://token-server.com/oauth2/default/v1/token` |
+| `app_client_id` | `TF_PROVIDER_OX_APP_CLIENT_ID` | *required*<br>(if `oidc`) | *The public identifier for the Onix Web API defined by the OAUth 2.0 server. It is only required if _auth_mode_ is set to _oidc_.* | `character string of lenght determined by implementation` |
+| `app_secret` | `TF_PROVIDER_OX_APP_SECRET` | *required*<br>(if `oidc`) | *A secret known only to the application and the authorisation server. It is only required if _auth_mode_ is set to _oidc_.* | `character string of lenght determined by implementation` |
 
+__NOTE__: The __auth_mode__ attribute must match the value used by the Onix Web API. For example, if the Onix Web API is set to use __auth_mode=oidc__ then the terraform provider must be set to use the same __auth_mode__, otherwise the authentication will fail.
 
 ## Example Usage
 
@@ -45,7 +46,7 @@ provider "ox" {
 
 ### Basic Authentication Example (configuration in environment variables)
 
-As a good practice, it is recommended that any credentials are not sepcified in the terraform file, but instead, they are provided via environment variables.
+As a good practice, it is recommended that any credentials are not specified in the terraform file, but instead, they are provided via environment variables.
 
 For example:
 
@@ -97,27 +98,10 @@ provider "ox" {
 
 __Note__: user & pwd attributes need to be specified but its value is not used if _auth_mode_ is set to _none_.
 
-
-## Argument Reference
-
-Connection information can be provided by specifying the following attributes of the ox provider as follows:
-
-| Attribute | Description | Example |
-|---|---|---|
-| `uri`| The URI of the Onix Web API | http://localhost:8080 |
-| `auth_mode` | Defines the method used by the provider to authenticate with the Onix Web API. If not specified, it defaults to __basic__ (basic authentication). Other possible value as __none__ or __oidc__ (OpenId Connect). | basic |
-| `client_id` | The public identifier for the Onix Web API defined by the OAUth 2.0 server. It is only required if _auth_mode_ is set to _oidc_. | 2Idlxf0ryAGOd3gaj938 |
-| `secret` | A secret known only to the application and the authorisation server. It is only required if _auth_mode_ is set to _oidc_. | Hl5_V_lbhLQHol47f5is6YErs7pHKP3OP3oEf7H3 |
-| `token_uri` | The OAuth 2.0 server endpoint where the ox provider exchanges the user credentials, client ID and client secret, for an access token. It is only required if _auth_mode_ is set to _oidc_. | https://dev-1234.okta.com/oauth2/default/v1/token |
- | `user` | A unique sequence of characters used to identify a user of the Onix Web API. A typical value could be the user email address defined in the OAuth Server. | user@email.com |
- | `pwd` | A secret word supplied by the user in order to gain access to the Onix Web API. | 0n1x_440d4f6f |
-  
-__NOTE__: The __auth_mode__ attribute must match the value used by the Onix Web API. For example, if the Onix Web API is set to use __auth_mode=oidc__ then the terraform provider must be set to use the same __auth_mode__, otherwise the authentication will fail.
-
-## Resources
+## Terraform Resources
 
 A list of available resources can be found [here](resources/index.md).
 
-## Data Sources
+## Terraform Data Sources
 
 A list of available data sources can be found [here](datasources/index.md).
