@@ -78,6 +78,7 @@ func (state *TfState) loadState(client *Client, key string) error {
 		state.Serial = intValue
 	}
 	state.Outputs = item.Meta
+	// TODO: load resources here
 	return nil
 }
 
