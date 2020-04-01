@@ -15,7 +15,7 @@
 # the builder image
 FROM openjdk:15-jdk-alpine as builder
 RUN apk add unzip && rm -rf /var/cache/apk/*
-ENV MAVEN_VERSION 3.6.1
+ENV MAVEN_VERSION 3.6.3
 ENV MAVEN_HOME /usr/lib/mvn
 ENV PATH $MAVEN_HOME/bin:$PATH
 RUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz && \
