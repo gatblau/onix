@@ -16,9 +16,10 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	. "github.com/gatblau/oxc"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 type Backend struct {
@@ -42,8 +43,30 @@ func (backend *Backend) start() error {
 	// initialises the Onix REST client
 	backend.client = &Client{BaseURL: backend.config.Ox.URL}
 
+	cfg := backend.config.Ox
+	switch cfg.AuthMode {
+	case "none":
+		// ensure no token value is specified
+		backend.client.SetAuthToken("")
+
+	case "basic":
+		// sets a basic authentication token
+		backend.client.SetAuthToken(backend.client.NewBasicToken(cfg.Username, cfg.Password))
+
+	case "oidc":
+		// sets an OAuth Bearer token
+		bearerToken, err := backend.client.GetBearerToken(cfg.TokenURI, cfg.ClientId, cfg.ClientSecret, cfg.Username, cfg.Password)
+		if err != nil {
+			return err
+		}
+		backend.client.SetAuthToken(bearerToken)
+
+	default:
+		// can't recognise the auth_mode provided
+		return errors.New(fmt.Sprintf("auth_mode = '%s' is not valid value. Use either 'none', 'basic' or 'oidc'.", cfg.AuthMode))
+	}
+
 	// checks if a meta model for Terraform is defined in Onix
-	log.Trace().Msg("Checking if the TERRAFORM meta-model is defined in Onix.")
 	model := NewTerraModel(backend.client)
 	err = model.create()
 	if err != nil {
