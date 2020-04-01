@@ -106,13 +106,13 @@ func NewConfig() (*Config, error) {
 	c.Ox.ClientId = v.GetString("Onix.ClientId")
 	c.Ox.ClientSecret = v.GetString("Onix.AppSecret")
 	c.Ox.TokenURI = v.GetString("Onix.TokenURI")
-	c.Ox.AuthMode = v.GetString("TerraService.AuthMode")
-	c.Terra.InsecureSkipVerify = v.GetBool("TerraService.InsecureSkipVerify")
-	c.Terra.Metrics = v.GetBool("TerraService.Metrics")
-	c.Terra.Username = v.GetString("TerraService.Username")
-	c.Terra.Password = v.GetString("TerraService.Password")
-	c.Terra.Port = v.GetString("TerraService.Port")
-	c.Terra.Path = v.GetString("TerraService.Path")
+	c.Terra.AuthMode = v.GetString("Service.AuthMode")
+	c.Terra.InsecureSkipVerify = v.GetBool("Service.InsecureSkipVerify")
+	c.Terra.Metrics = v.GetBool("Service.Metrics")
+	c.Terra.Username = v.GetString("Service.Username")
+	c.Terra.Password = v.GetString("Service.Password")
+	c.Terra.Port = v.GetString("Service.Port")
+	c.Terra.Path = v.GetString("Service.Path")
 
 	return c, nil
 }

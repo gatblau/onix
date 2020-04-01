@@ -17,12 +17,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	. "github.com/gatblau/oxc"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -47,6 +49,7 @@ func NewTerraService(backend Backend) *TerraService {
 // launch the http backend on a TCP port
 func (s *TerraService) Start() {
 	mux := mux.NewRouter()
+	mux.Use(loggingMiddleware)
 
 	// registers web handlers
 	log.Trace().Msg("registering web root / and liveliness probe /live handlers")
@@ -96,14 +99,31 @@ func (s *TerraService) Start() {
 	}
 }
 
-func (c *TerraService) rootHandler(w http.ResponseWriter, r *http.Request) {
+func (s *TerraService) rootHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	defer r.Body.Close()
 	switch r.Method {
 	case "GET":
-		_, _ = io.WriteString(w, fmt.Sprintf("Retrieving state for %s", vars["key"]))
+		state := TfState{Version: 1}
+		err := state.loadState(s.ox, vars["key"])
+		if err != nil {
+			log.Error().Msg(err.Error())
+		}
+		io.WriteString(w, state.toJSONString())
+		log.Info().Msg(state.toJSONString())
+
 	case "POST":
+		state, err := s.readRequestBody(r)
+		if err != nil {
+			log.Err(err)
+			return
+		}
+		err = state.save(s.ox, vars["key"])
+		if err != nil {
+			log.Error().Msg(err.Error())
+		}
+
 	case "PUT":
 	case "DELETE":
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -128,4 +148,29 @@ func (s *TerraService) readyHandler(w http.ResponseWriter, r *http.Request) {
 func (s *TerraService) liveHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("OK"))
+}
+
+// unmarshal the http request into a TfState structure
+func (s *TerraService) readRequestBody(r *http.Request) (*TfState, error) {
+	var state TfState
+	// read the request body into a byte array
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	// unmarshal the byte array into a TfState object
+	err = json.Unmarshal(bytes, &state)
+	if err != nil {
+		return nil, err
+	}
+	// return the terraform state
+	return &state, nil
+}
+
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+		// Call the next handler, which can be another middleware in the chain, or the final handler.
+		next.ServeHTTP(w, r)
+	})
 }

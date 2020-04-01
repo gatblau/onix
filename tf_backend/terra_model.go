@@ -21,12 +21,20 @@ import (
 	. "github.com/gatblau/oxc"
 	"github.com/rs/zerolog/log"
 	"strconv"
+	"strings"
 	"time"
 )
 
 type TerraModel struct {
 	client *Client
 }
+
+const (
+	TfModelType    = "TERRA"
+	TfStateType    = "TF_STATE"
+	TfResourceType = "TF_RESOURCE"
+	TfLinkType     = "TF_STATE_LINK"
+)
 
 // creates a new instance of the Terraform model
 func NewTerraModel(client *Client) *TerraModel {
@@ -37,11 +45,19 @@ func NewTerraModel(client *Client) *TerraModel {
 
 // checks the Terra model is defined in Onix
 func (m *TerraModel) exists() (bool, error) {
-	model, err := m.client.GetModel(&Model{Key: "TERRAFORM"})
+	model, err := m.client.GetModel(&Model{Key: "TERRA"})
+	// if we have an error
 	if err != nil {
-		return false, err
+		// if the error contains 404 not found
+		if strings.Contains(err.Error(), "404") {
+			// return false and no error
+			return false, nil
+		} else {
+			// there was a problem, the service might not be there
+			return false, err
+		}
 	}
-	return model != nil, nil
+	return model != nil, err
 }
 
 // create the Terra model in Onix
@@ -91,31 +107,100 @@ func (m *TerraModel) getModelData() *GraphData {
 	return &GraphData{
 		Models: []Model{
 			Model{
-				Key:         "TERRA",
+				Key:         TfModelType,
 				Name:        "Terraform Model",
 				Description: "Defines the item and link types that describe Terraform resources.",
+				Managed:     true,
 			},
 		},
 		ItemTypes: []ItemType{
 			ItemType{
-				Key:         "TF_STATE",
+				Key:         TfStateType,
 				Name:        "Terraform State",
 				Description: "State about a group of managed infrastructure and configuration resources. This state is used by Terraform to map real world resources to your configuration, keep track of metadata, and to improve performance for large infrastructures.",
-				Model:       "TERRAFORM",
+				Model:       "TERRA",
+				Managed:     true,
 			},
 			ItemType{
-				Key:         "TF_RESOURCE",
+				Key:         TfResourceType,
 				Name:        "Terraform Resource",
 				Description: "Each resource block describes one or more infrastructure objects, such as virtual networks, compute instances, or higher-level components such as DNS records.",
-				Model:       "TERRAFORM",
+				Model:       TfModelType,
+				Managed:     true,
+			},
+		},
+		ItemTypeAttributes: []ItemTypeAttribute{
+			ItemTypeAttribute{
+				Key:         "TF_STATE_ATTR_VERSION",
+				Name:        "version",
+				Description: "The version number.",
+				Type:        "integer",
+				ItemTypeKey: TfStateType,
+				Required:    true,
+				Managed:     true,
+			},
+			ItemTypeAttribute{
+				Key:         "TF_STATE_ATTR_TF_VERSION",
+				Name:        "terraform_version",
+				Description: "The terraform version number.",
+				Type:        "string",
+				ItemTypeKey: TfStateType,
+				Required:    true,
+				Managed:     true,
+			},
+			ItemTypeAttribute{
+				Key:         "TF_STATE_ATTR_SERIAL",
+				Name:        "serial",
+				Description: "The serial number.",
+				Type:        "integer",
+				ItemTypeKey: TfStateType,
+				Required:    true,
+				Managed:     true,
+			},
+			ItemTypeAttribute{
+				Key:         "TF_STATE_ATTR_LINEAGE",
+				Name:        "lineage",
+				Description: "The lineage.",
+				Type:        "integer",
+				ItemTypeKey: TfStateType,
+				Required:    true,
+				Managed:     true,
+			},
+			ItemTypeAttribute{
+				Key:         "TF_ITEM_ATTR_MODE",
+				Name:        "mode",
+				Description: "Whether the resource is a data source or a managed resource.",
+				Type:        "string",
+				ItemTypeKey: TfResourceType,
+				Required:    true,
+				Managed:     true,
+			},
+			ItemTypeAttribute{
+				Key:         "TF_ITEM_ATTR_TYPE",
+				Name:        "type",
+				Description: "The resource type.",
+				Type:        "string",
+				ItemTypeKey: TfResourceType,
+				Required:    true,
+				Managed:     true,
+			},
+			ItemTypeAttribute{
+				Key:         "TF_ITEM_ATTR_PROVIDER",
+				Name:        "provider",
+				Description: "The provider used to manage this resource.",
+				Type:        "string",
+				ItemTypeKey: TfResourceType,
+				Required:    true,
+				Managed:     true,
 			},
 		},
 		LinkTypes: []LinkType{
 			LinkType{
-				Key:         "TF_STATE_LINK",
+				Key:         TfLinkType,
 				Name:        "Terraform State Link Type",
 				Description: "Links Terraform resources that are part of a state.",
-				Model:       "TERRAFORM",
+				Model:       TfModelType,
+				Managed:     true,
 			},
 		},
 		LinkRules: []LinkRule{
@@ -124,8 +209,8 @@ func (m *TerraModel) getModelData() *GraphData {
 				Name:             "Terraform State to Resource Rule",
 				Description:      "Allow the linking of a Terraform State item to one or more Terraform Resource items using Terraform State Links.",
 				LinkTypeKey:      "TF_STATE_LINK",
-				StartItemTypeKey: "TF_STATE",
-				EndItemTypeKey:   "TF_RESOURCE",
+				StartItemTypeKey: TfStateType,
+				EndItemTypeKey:   TfResourceType,
 			},
 		},
 	}
