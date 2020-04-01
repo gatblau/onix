@@ -1959,20 +1959,28 @@ public class Steps extends BaseTest {
         headers.add("Content-Type", "application/json");
         Map<String, Object> vars = new HashMap<>();
         vars.put("item_type_key", ITEM_TYPE_ONE_KEY);
-        ResponseEntity<TypeAttrList> result = client.exchange(
+        ResponseEntity<ItemTypeAttrList> result = client.exchange(
                 util.get(ENDPOINT_URI),
                 HttpMethod.GET,
                 new HttpEntity<>(null, headers),
-                TypeAttrList.class,
+                ItemTypeAttrList.class,
                 vars);
         util.put(RESPONSE, result);
     }
 
     @Then("^the response contains more than (\\d+) item type attributes$")
     public void theResponseContainsMoreThanItemTypeAttributes(int items) {
-        ResponseEntity<TypeAttrList> results = (ResponseEntity<TypeAttrList>) util.get(RESPONSE);
+        ResponseEntity<ItemTypeAttrList> results = (ResponseEntity<ItemTypeAttrList>) util.get(RESPONSE);
         if (results.getBody().getValues().size() <= items) {
-            throw new RuntimeException("Not enough items in result");
+            throw new RuntimeException("Not enough item type attributes in result");
+        }
+    }
+
+    @Then("^the response contains more than (\\d+) link type attributes$")
+    public void theResponseContainsMoreThanLinkTypeAttributes(int links) {
+        ResponseEntity<LinkTypeAttrList> results = (ResponseEntity<LinkTypeAttrList>) util.get(RESPONSE);
+        if (results.getBody().getValues().size() <= links) {
+            throw new RuntimeException("Not enough link type attributes in result");
         }
     }
 
@@ -2036,11 +2044,11 @@ public class Steps extends BaseTest {
         headers.add("Content-Type", "application/json");
         Map<String, Object> vars = new HashMap<>();
         vars.put("link_type_key", "link_type_1");
-        ResponseEntity<TypeAttrList> result = client.exchange(
+        ResponseEntity<LinkTypeAttrList> result = client.exchange(
                 util.get(ENDPOINT_URI),
                 HttpMethod.GET,
                 new HttpEntity<>(null, headers),
-                TypeAttrList.class,
+                LinkTypeAttrList.class,
                 vars);
         util.put(RESPONSE, result);
     }

@@ -8,7 +8,7 @@ import java.io.Serializable;
 @ApiModel(
     description = "Defines an attribute of a configuration item type."
 )
-public class TypeAttrData implements Serializable {
+public class LinkTypeAttrData implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String key;
@@ -19,7 +19,6 @@ public class TypeAttrData implements Serializable {
     private Boolean managed;
     private Boolean required;
     private String regex;
-    private String itemTypeKey;
     private String linkTypeKey;
     private String created;
     private String updated;
@@ -94,14 +93,6 @@ public class TypeAttrData implements Serializable {
 
     public void setRegex(String regex) {
         this.regex = regex;
-    }
-
-    public String getItemTypeKey() {
-        return itemTypeKey;
-    }
-
-    public void setItemTypeKey(String itemTypeKey) {
-        this.itemTypeKey = itemTypeKey;
     }
 
     public String getCreated() {
