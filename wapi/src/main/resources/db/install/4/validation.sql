@@ -173,12 +173,12 @@ DO $$
             SELECT ta.*
             FROM type_attribute ta
             INNER JOIN link_type lt
-                ON ta.item_type_id = lt.id
+                ON ta.link_type_id = lt.id
             WHERE lt.key = link_type_key
           LOOP
             IF (rule.required) THEN
               IF NOT (attributes ? rule.name) THEN
-                RAISE EXCEPTION 'Attribute ''%'' is required and was not provided.', rule.name
+                RAISE EXCEPTION 'Link Type ''%s'' requires attribute ''%'' which was not provided.', link_type_key, rule.name
                   USING hint = 'The referred attribute is declared as required in the link type definition but has not been provided.';
               END IF;
             END IF;
