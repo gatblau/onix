@@ -1,5 +1,5 @@
 # the oxterra service instance Id for logging identification purposes
-Id = "OxTerra-01"
+Id = "OxTerra"
 
 # verbosity of logging (Trace, Debug, Warning, Info, Error, Fatal, Panic)
 LogLevel = "Trace"

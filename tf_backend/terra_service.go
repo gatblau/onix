@@ -1,5 +1,6 @@
 /*
-   Terraform Http Backend - Onix - Copyright (c) 2018 by www.gatblau.org
+   Onix Config Manager - OxTerra - Terraform Http Backend for Onix
+   Copyright (c) 2018-2020 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -17,10 +18,10 @@ package main
 import (
 	"context"
 	"fmt"
-	. "gatblau.org/onix/wapic"
+	. "github.com/gatblau/oxc"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
 	"os"
@@ -28,39 +29,37 @@ import (
 	"time"
 )
 
-type Service struct {
-	log   *logrus.Entry
+type TerraService struct {
 	ready bool
-	ox    *Client  // client to connect to Onix WAPI
-	conf  *SvcConf // configuration for the http service enpoint
+	ox    *Client    // client to connect to Onix WAPI
+	conf  *TerraConf // configuration for the http service endpoint
 }
 
 // creates a new http backend service
-func NewService(backend Backend) *Service {
-	svc := new(Service)
-	svc.conf = backend.config.Service
-	svc.log = backend.log
+func NewTerraService(backend Backend) *TerraService {
+	svc := new(TerraService)
+	svc.conf = backend.config.Terra
 	svc.ox = backend.client
 	svc.ready = backend.ready
 	return svc
 }
 
 // launch the http backend on a TCP port
-func (s *Service) Start() {
+func (s *TerraService) Start() {
 	mux := mux.NewRouter()
 
 	// registers web handlers
-	s.log.Tracef("Registering web root / and liveliness probe /live handlers")
+	log.Trace().Msg("registering web root / and liveliness probe /live handlers")
 	pattern := fmt.Sprintf("/%s/{key}", s.conf.Path)
 	mux.HandleFunc(pattern, s.rootHandler)
 	mux.HandleFunc("/live", s.liveHandler)
 
-	s.log.Tracef("Registering readiness probe handler /ready")
+	log.Trace().Msg("registering readiness probe handler /ready")
 	mux.HandleFunc("/ready", s.readyHandler)
 
 	if s.conf.Metrics {
 		// prometheus metrics
-		s.log.Tracef("Metrics is enabled, registering handler for endpoint /metrics.")
+		log.Trace().Msg("metrics is enabled, registering handler for endpoint /metrics.")
 		mux.Handle("/metrics", promhttp.Handler())
 	}
 
@@ -69,9 +68,9 @@ func (s *Service) Start() {
 
 	// runs the server asynchronously
 	go func() {
-		s.log.Println(fmt.Sprintf("Terraform Http Backend listening on :%s", s.conf.Port))
+		log.Trace().Msgf("terra listening on :%s", s.conf.Port)
 		if err := server.ListenAndServe(); err != nil {
-			s.log.Fatal(err)
+			log.Fatal().Err(err)
 		}
 	}()
 
@@ -92,12 +91,12 @@ func (s *Service) Start() {
 
 	// on error shutdown
 	if err := server.Shutdown(ctx); err != nil {
-		s.log.Fatal(err)
-		s.log.Println("Shutting down Terraform Http Backend service.")
+		log.Info().Msg("shutting down Terra")
+		log.Fatal().Err(err)
 	}
 }
 
-func (c *Service) rootHandler(w http.ResponseWriter, r *http.Request) {
+func (c *TerraService) rootHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	defer r.Body.Close()
@@ -112,13 +111,13 @@ func (c *Service) rootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Service) readyHandler(w http.ResponseWriter, r *http.Request) {
+func (s *TerraService) readyHandler(w http.ResponseWriter, r *http.Request) {
 	if !s.ready {
-		s.log.Warnf("Terraform HTTP Backend service is not ready")
+		log.Warn().Msg("Terraform HTTP Backend service is not ready")
 		w.WriteHeader(http.StatusInternalServerError)
 		_, err := w.Write([]byte("Terraform HTTP Backend service is not ready"))
 		if err != nil {
-			s.log.Error(err)
+			log.Error().Err(err)
 		}
 	} else {
 		w.WriteHeader(http.StatusOK)
@@ -126,7 +125,7 @@ func (s *Service) readyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Service) liveHandler(w http.ResponseWriter, r *http.Request) {
+func (s *TerraService) liveHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("OK"))
 }
