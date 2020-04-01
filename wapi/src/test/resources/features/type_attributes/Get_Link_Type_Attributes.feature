@@ -12,5 +12,5 @@ Feature: Find Link Types
     Given the link type attribute URL exist
     When a request to GET a list of link type attributes is done
     Then the response has body
-    Then the response contains more than 1 item type attributes
+    Then the response contains more than 1 link type attributes
     Then the response code is 200

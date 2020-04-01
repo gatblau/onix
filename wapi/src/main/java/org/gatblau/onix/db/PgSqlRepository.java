@@ -535,8 +535,8 @@ public class PgSqlRepository implements DbRepository {
         ITEM TYPE ATTRIBUTES
      */
     @Override
-    public synchronized TypeAttrData getItemTypeAttribute(String itemTypeKey, String typeAttrKey, String[] role) {
-        TypeAttrData attr = null;
+    public synchronized ItemTypeAttrData getItemTypeAttribute(String itemTypeKey, String typeAttrKey, String[] role) {
+        ItemTypeAttrData attr = null;
         try {
             db.prepare(getGetItemTypeAttributeSQL());
             db.setString(1, itemTypeKey);
@@ -544,7 +544,7 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(3, role);
             ResultSet set = db.executeQuerySingleRow();
             if (set != null) {
-                attr = util.toTypeAttrData(set);
+                attr = util.toItemTypeAttrData(set);
             }
         } catch (Exception ex) {
             throw new RuntimeException(String.format("Failed to get item type attribute for item type %s with key '%s': %s", itemTypeKey, typeAttrKey, ex.getMessage()), ex);
@@ -555,15 +555,15 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized TypeAttrList getItemTypeAttributes(String itemTypeKey, String[] role) {
-        TypeAttrList itemTypeAttrs = new TypeAttrList();
+    public synchronized ItemTypeAttrList getItemTypeAttributes(String itemTypeKey, String[] role) {
+        ItemTypeAttrList itemTypeAttrs = new ItemTypeAttrList();
         try {
             db.prepare(getGetItemTypeAttributesSQL());
             db.setString(1, itemTypeKey);
             db.setArray(2, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                itemTypeAttrs.getValues().add(util.toTypeAttrData(set));
+                itemTypeAttrs.getValues().add(util.toItemTypeAttrData(set));
             }
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -574,7 +574,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result createOrUpdateItemTypeAttr(String itemTypeKey, String typeAttrKey, TypeAttrData typeAttr, String[] role) {
+    public synchronized Result createOrUpdateItemTypeAttr(String itemTypeKey, String typeAttrKey, ItemTypeAttrData typeAttr, String[] role) {
         Result result = new Result(String.format("ItemTypeAttribute:%s:%s", itemTypeKey, typeAttrKey));
         try {
             db.prepare(getSetTypeAttributeSQL());
@@ -675,8 +675,8 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized TypeAttrData getLinkTypeAttribute(String linkTypeKey, String typeAttrKey, String[] role) {
-        TypeAttrData attr = null;
+    public synchronized LinkTypeAttrData getLinkTypeAttribute(String linkTypeKey, String typeAttrKey, String[] role) {
+        LinkTypeAttrData attr = null;
         try {
             db.prepare(getGetLinkTypeAttributeSQL());
             db.setString(1, linkTypeKey);
@@ -684,7 +684,7 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(3, role);
             ResultSet set = db.executeQuerySingleRow();
             if (set != null) {
-                attr = util.toTypeAttrData(set);
+                attr = util.toLinkTypeAttrData(set);
             }
         } catch (Exception ex) {
             throw new RuntimeException(String.format("Failed to get link type attribute for item type %s with key '%s': %s", linkTypeKey, typeAttrKey, ex.getMessage()), ex);
@@ -695,15 +695,15 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized TypeAttrList getLinkTypeAttributes(String linkTypeKey, String[] role) {
-        TypeAttrList itemTypeAttrs = new TypeAttrList();
+    public synchronized LinkTypeAttrList getLinkTypeAttributes(String linkTypeKey, String[] role) {
+        LinkTypeAttrList itemTypeAttrs = new LinkTypeAttrList();
         try {
             db.prepare(getGetLinkTypeAttributesSQL());
             db.setString(1, linkTypeKey);
             db.setArray(2, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                itemTypeAttrs.getValues().add(util.toTypeAttrData(set));
+                itemTypeAttrs.getValues().add(util.toLinkTypeAttrData(set));
             }
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -714,7 +714,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public synchronized Result createOrUpdateLinkTypeAttr(String linkTypeKey, String typeAttrKey, TypeAttrData typeAttr, String[] role) {
+    public synchronized Result createOrUpdateLinkTypeAttr(String linkTypeKey, String typeAttrKey, LinkTypeAttrData typeAttr, String[] role) {
         Result result = new Result(String.format("LinkTypeAttribute:%s:%s", linkTypeKey, typeAttrKey));
         try {
             db.prepare(getSetTypeAttributeSQL());
@@ -1321,10 +1321,24 @@ public class PgSqlRepository implements DbRepository {
                 results.add(result);
             }
         }
+        List<ItemTypeAttrData> itemTypeAttrs = payload.getItemTypeAttributes();
+        if (itemTypeAttrs != null) {
+            for (ItemTypeAttrData typeAttr : itemTypeAttrs) {
+                Result result = createOrUpdateItemTypeAttr(typeAttr.getItemTypeKey(), typeAttr.getKey(), typeAttr, role);
+                results.add(result);
+            }
+        }
         List<LinkTypeData> linkTypes = payload.getLinkTypes();
         if (linkTypes != null) {
             for (LinkTypeData linkType : linkTypes) {
                 Result result = createOrUpdateLinkType(linkType.getKey(), linkType, role);
+                results.add(result);
+            }
+        }
+        List<LinkTypeAttrData> linkTypeAttrs = payload.getLinkTypeAttributes();
+        if (linkTypeAttrs != null) {
+            for (LinkTypeAttrData typeAttr : linkTypeAttrs) {
+                Result result = createOrUpdateLinkTypeAttr(typeAttr.getLinkTypeKey(), typeAttr.getKey(), typeAttr, role);
                 results.add(result);
             }
         }

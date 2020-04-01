@@ -822,7 +822,7 @@ public class WebAPI {
             @PathVariable("type_attr_key")
                     String typeAttrKey,
             @RequestBody
-                    TypeAttrData typeAttr,
+                    ItemTypeAttrData typeAttr,
             Authentication authentication
     ) {
         Result result = data.createOrUpdateItemTypeAttr(itemTypeKey, typeAttrKey, typeAttr, getRole(authentication));
@@ -867,11 +867,11 @@ public class WebAPI {
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<TypeAttrList> getItemTypeAttrs(
+    public ResponseEntity<ItemTypeAttrList> getItemTypeAttrs(
             @PathVariable("item_type_key") String itemTypeKey,
             Authentication authentication
     ) {
-        TypeAttrList itemTypeAttrs = data.getItemTypeAttributes(itemTypeKey, getRole(authentication));
+        ItemTypeAttrList itemTypeAttrs = data.getItemTypeAttributes(itemTypeKey, getRole(authentication));
         if (itemTypeAttrs != null) {
             return ResponseEntity.ok(itemTypeAttrs);
         }
@@ -886,12 +886,12 @@ public class WebAPI {
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<TypeAttrData> getItemTypeAttr(
+    public ResponseEntity<ItemTypeAttrData> getItemTypeAttr(
             @PathVariable("item_type_key") String itemTypeKey,
             @PathVariable("type_attr_key") String typeAttrKey,
             Authentication authentication
     ) {
-        TypeAttrData typeAttr = data.getItemTypeAttribute(itemTypeKey, typeAttrKey, getRole(authentication));
+        ItemTypeAttrData typeAttr = data.getItemTypeAttribute(itemTypeKey, typeAttrKey, getRole(authentication));
         if (typeAttr != null) {
             return ResponseEntity.ok(typeAttr);
         }
@@ -1144,7 +1144,7 @@ public class WebAPI {
                     example = "link_type_attr_01"
             )
             @PathVariable("link_attr_key") String typeAttrKey,
-            @RequestBody TypeAttrData typeAttr,
+            @RequestBody LinkTypeAttrData typeAttr,
             Authentication authentication
     ) {
         Result result = data.createOrUpdateLinkTypeAttr(linkTypeKey, typeAttrKey, typeAttr, getRole(authentication));
@@ -1159,12 +1159,12 @@ public class WebAPI {
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<TypeAttrData> getLinkTypeAttr(
+    public ResponseEntity<LinkTypeAttrData> getLinkTypeAttr(
             @PathVariable("link_type_key") String linkTypeKey,
             @PathVariable("type_attr_key") String typeAttrKey,
             Authentication authentication
     ) {
-        TypeAttrData typeAttr = data.getLinkTypeAttribute(linkTypeKey, typeAttrKey, getRole(authentication));
+        LinkTypeAttrData typeAttr = data.getLinkTypeAttribute(linkTypeKey, typeAttrKey, getRole(authentication));
         if (typeAttr != null) {
             return ResponseEntity.ok(typeAttr);
         }
@@ -1179,11 +1179,11 @@ public class WebAPI {
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<TypeAttrList> getLinkTypeAttrs(
+    public ResponseEntity<LinkTypeAttrList> getLinkTypeAttrs(
             @PathVariable("link_type_key") String linkTypeKey,
             Authentication authentication
     ) {
-        TypeAttrList linkTypeAttrs = data.getLinkTypeAttributes(linkTypeKey, getRole(authentication));
+        LinkTypeAttrList linkTypeAttrs = data.getLinkTypeAttributes(linkTypeKey, getRole(authentication));
         if (linkTypeAttrs != null) {
             return ResponseEntity.ok(linkTypeAttrs);
         }

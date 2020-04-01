@@ -65,9 +65,9 @@ public interface DbRepository {
     /*
         ITEM TYPE ATTRIBUTES
     */
-    TypeAttrData getItemTypeAttribute(String itemTypeKey, String typeAttrKey, String[] role);
-    TypeAttrList getItemTypeAttributes(String itemTypeKey, String[] role);
-    Result createOrUpdateItemTypeAttr(String itemTypeKey, String typeAttrKey, TypeAttrData json, String[] role);
+    ItemTypeAttrData getItemTypeAttribute(String itemTypeKey, String typeAttrKey, String[] role);
+    ItemTypeAttrList getItemTypeAttributes(String itemTypeKey, String[] role);
+    Result createOrUpdateItemTypeAttr(String itemTypeKey, String typeAttrKey, ItemTypeAttrData json, String[] role);
     Result deleteItemTypeAttr(String itemTypeKey, String typeAttrKey, String[] role);
 
     String getGetItemTypeAttributeSQL();
@@ -78,9 +78,9 @@ public interface DbRepository {
     /*
         LINK TYPE ATTRIBUTES
     */
-    TypeAttrData getLinkTypeAttribute(String linkTypeKey, String typeAttrKey, String[] role);
-    TypeAttrList getLinkTypeAttributes(String linkTypeKey, String[] role);
-    Result createOrUpdateLinkTypeAttr(String linkTypeKey, String typeAttrKey, TypeAttrData json, String[] role);
+    LinkTypeAttrData getLinkTypeAttribute(String linkTypeKey, String typeAttrKey, String[] role);
+    LinkTypeAttrList getLinkTypeAttributes(String linkTypeKey, String[] role);
+    Result createOrUpdateLinkTypeAttr(String linkTypeKey, String typeAttrKey, LinkTypeAttrData json, String[] role);
     Result deleteLinkTypeAttr(String linkTypeKey, String typeAttrKey, String[] role);
 
     String getGetLinkTypeAttributeSQL();

@@ -30,6 +30,8 @@ public class GraphData implements Serializable {
     private List<LinkData> links = new ArrayList<>();
     private List<ModelData> models = new ArrayList<>();
     private List<LinkRuleData> linkRules = new ArrayList<>();
+    private List<ItemTypeAttrData> itemTypeAttributes = new ArrayList<>();
+    private List<LinkTypeAttrData> linkTypeAttributes = new ArrayList<>();
 
     public GraphData() {
     }
@@ -80,5 +82,21 @@ public class GraphData implements Serializable {
 
     public void setLinkRules(List<LinkRuleData> linkRules) {
         this.linkRules = linkRules;
+    }
+
+    public List<ItemTypeAttrData> getItemTypeAttributes() {
+        return itemTypeAttributes;
+    }
+
+    public void setItemTypeAttributes(List<ItemTypeAttrData> itemTypeAttributes) {
+        this.itemTypeAttributes = itemTypeAttributes;
+    }
+
+    public List<LinkTypeAttrData> getLinkTypeAttributes() {
+        return linkTypeAttributes;
+    }
+
+    public void setLinkTypeAttributes(List<LinkTypeAttrData> linkTypeAttributes) {
+        this.linkTypeAttributes = linkTypeAttributes;
     }
 }

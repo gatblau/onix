@@ -21,11 +21,11 @@ package org.gatblau.onix.data;
 
 import java.util.List;
 
-public class TypeAttrList extends Wrapper<TypeAttrData> {
-    public TypeAttrList() {
+public class ItemTypeAttrList extends Wrapper<ItemTypeAttrData> {
+    public ItemTypeAttrList() {
     }
 
-    public TypeAttrList(List<TypeAttrData> typeAttrs){
+    public ItemTypeAttrList(List<ItemTypeAttrData> typeAttrs){
         super(typeAttrs);
     }
 }

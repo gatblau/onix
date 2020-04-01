@@ -190,22 +190,38 @@ public class Lib implements InitializingBean {
         return link;
     }
 
-    public TypeAttrData toTypeAttrData(ResultSet set) throws SQLException, ParseException, IOException {
-        TypeAttrData typeAttr = null;
+    public ItemTypeAttrData toItemTypeAttrData(ResultSet set) throws SQLException, ParseException, IOException {
+        ItemTypeAttrData typeAttr = null;
         if (set != null) {
             Date updated = set.getDate("updated");
-            typeAttr = new TypeAttrData();
+            typeAttr = new ItemTypeAttrData();
             typeAttr.setKey(set.getString("key"));
             typeAttr.setName(set.getString("name"));
             typeAttr.setDescription(set.getString("description"));
-            try {
-                typeAttr.setItemTypeKey(set.getString("item_type_key"));
-            } catch (Exception e) {
-            }
-            try {
-                typeAttr.setLinkTypeKey(set.getString("link_type_key"));
-            } catch (Exception e) {
-            }
+            typeAttr.setItemTypeKey(set.getString("item_type_key"));
+            typeAttr.setType(set.getString("type"));
+            typeAttr.setDefValue(set.getString("def_value"));
+            typeAttr.setManaged(set.getBoolean("managed"));
+            typeAttr.setRequired(set.getBoolean("required"));
+            typeAttr.setRegex(set.getString("regex"));
+            typeAttr.setCreated(dateFormat.format(set.getDate("created")));
+            typeAttr.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+            typeAttr.setVersion(set.getInt("version"));
+            typeAttr.setChangedBy(set.getString("changed_by"));
+            typeAttr.setManaged(set.getBoolean("managed"));
+        }
+        return typeAttr;
+    }
+
+    public LinkTypeAttrData toLinkTypeAttrData(ResultSet set) throws SQLException, ParseException, IOException {
+        LinkTypeAttrData typeAttr = null;
+        if (set != null) {
+            Date updated = set.getDate("updated");
+            typeAttr = new LinkTypeAttrData();
+            typeAttr.setKey(set.getString("key"));
+            typeAttr.setName(set.getString("name"));
+            typeAttr.setDescription(set.getString("description"));
+            typeAttr.setLinkTypeKey(set.getString("link_type_key"));
             typeAttr.setType(set.getString("type"));
             typeAttr.setDefValue(set.getString("def_value"));
             typeAttr.setManaged(set.getBoolean("managed"));
