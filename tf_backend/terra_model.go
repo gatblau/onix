@@ -1,5 +1,6 @@
 /*
-   Terraform Http Backend - Onix - Copyright (c) 2018 by www.gatblau.org
+   Onix Config Manager - OxTerra - Terraform Http Backend for Onix
+   Copyright (c) 2018-2020 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -15,44 +16,82 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	. "gatblau.org/onix/wapic"
-	log "github.com/sirupsen/logrus"
+	. "github.com/gatblau/oxc"
+	"github.com/rs/zerolog/log"
+	"strconv"
+	"time"
 )
 
-type MetaModel struct {
+type TerraModel struct {
 	client *Client
-	log    *log.Entry
 }
 
 // creates a new instance of the Terraform model
-func NewModel(log *log.Entry, client *Client) *MetaModel {
-	model := new(MetaModel)
-	model.log = log
+func NewTerraModel(client *Client) *TerraModel {
+	model := new(TerraModel)
 	model.client = client
 	return model
 }
 
-// checks the terraform model is defined in Onix
-func (m *MetaModel) exists() (bool, error) {
-	model, err := m.client.Get("model", "TERRAFORM", nil)
+// checks the Terra model is defined in Onix
+func (m *TerraModel) exists() (bool, error) {
+	model, err := m.client.GetModel(&Model{Key: "TERRAFORM"})
 	if err != nil {
 		return false, err
 	}
 	return model != nil, nil
 }
 
-func (m *MetaModel) create() *Result {
-	_, result, _ := m.client.Put(m.getData(), "data")
-	return result
+// create the Terra model in Onix
+func (m *TerraModel) create() error {
+	var (
+		exist    bool
+		attempts int
+		interval time.Duration = 30 // the interval to wait for reconnection
+		err      error
+	)
+	// tries and connects to Onix using retry if the service is not there
+	for {
+		// check if the model exists
+		exist, err = m.exists()
+		if err == nil {
+			// could connect to the Web API therefore breaks the retry loop
+			break
+		}
+		// could not connect so increment the retry count
+		attempts = attempts + 1
+		// issue a warning to the console output
+		log.Warn().Msgf("Can't connect to Onix: %s. Attempt %s, waiting before attempting to connect again.", err, strconv.Itoa(attempts))
+		// wait of a second before retrying
+		time.Sleep(interval * time.Second)
+	}
+	// if the model is not defined in Onix
+	if !exist {
+		// create the model
+		log.Trace().Msg("The TERRA model is not yet defined in Onix, proceeding to create it.")
+		result, err := m.client.PutData(m.getModelData())
+		if err != nil {
+			log.Error().Msgf("Can't create TERRA model: %s", err)
+			return err
+		}
+		if result.Error {
+			log.Error().Msgf("Can't create TERRA meta-model: %s", result.Message)
+			return errors.New(result.Message)
+		}
+	} else {
+		log.Trace().Msg("TERRA model found in Onix.")
+	}
+	return nil
 }
 
-// gets the terraform meta model data
-func (c *MetaModel) getData() Payload {
-	return &Data{
+// gets the Terra's meta model data
+func (m *TerraModel) getModelData() *GraphData {
+	return &GraphData{
 		Models: []Model{
 			Model{
-				Key:         "TERRAFORM",
+				Key:         "TERRA",
 				Name:        "Terraform Model",
 				Description: "Defines the item and link types that describe Terraform resources.",
 			},

@@ -1,5 +1,6 @@
 /*
-   Terraform Http Backend - Onix - Copyright (c) 2018 by www.gatblau.org
+   Onix Config Manager - OxTerra - Terraform Http Backend for Onix
+   Copyright (c) 2018-2020 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -15,8 +16,7 @@
 package main
 
 import (
-	. "gatblau.org/onix/wapic"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"strings"
 )
@@ -25,12 +25,12 @@ import (
 type Config struct {
 	LogLevel string
 	Id       string
-	Onix     *Onix    // configuration for Onix integration
-	Service  *SvcConf // configuration for the http backend service
+	Ox       *OnixConf  // configuration for the Onix client
+	Terra    *TerraConf // configuration for Terra, the http backend service for Onix
 }
 
-// the configuration for the http backend endpoint
-type SvcConf struct {
+// configuration for Terra
+type TerraConf struct {
 	Path               string
 	Port               string
 	AuthMode           string
@@ -40,22 +40,36 @@ type SvcConf struct {
 	InsecureSkipVerify bool
 }
 
-func NewConfig() (Config, error) {
-	log.Infof("Loading configuration.")
+// config for Onix client
+type OnixConf struct {
+	URL          string
+	AuthMode     string
+	Username     string
+	Password     string
+	ClientId     string
+	ClientSecret string
+	TokenURI     string
+}
+
+func NewConfig() (*Config, error) {
+	log.Info().Msg("Loading configuration.")
+
+	// use viper to load configuration data
 	v := viper.New()
-	// loads the configuration file
 	v.SetConfigName("config")
 	v.SetConfigType("toml")
 	v.AddConfigPath(".")
-	err := v.ReadInConfig() // find and read the config file
-	if err != nil {         // handle errors reading the config file
-		log.Errorf("Fatal error config file: %s \n", err)
-		return Config{}, err
+
+	// reads the configuration file
+	err := v.ReadInConfig()
+	if err != nil { // handle errors reading the config file
+		log.Error().Msgf("Fatal error config file: %s \n", err)
+		return nil, err
 	}
 
 	// binds all environment variables to make it container friendly
 	v.AutomaticEnv()
-	v.SetEnvPrefix("OXTFB") // short for Onix Terraform Backend
+	v.SetEnvPrefix("OX_TERRA") // prefixes all env vars
 
 	// replace character to support environment variable format
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
@@ -67,38 +81,38 @@ func NewConfig() (Config, error) {
 	_ = v.BindEnv("Onix.Username")
 	_ = v.BindEnv("Onix.Password")
 	_ = v.BindEnv("Onix.ClientId")
-	_ = v.BindEnv("Onix.ClientSecret")
+	_ = v.BindEnv("Onix.AppSecret")
 	_ = v.BindEnv("Onix.TokenURI")
-	_ = v.BindEnv("Service.Path")
-	_ = v.BindEnv("Service.Port")
-	_ = v.BindEnv("Service.AuthMode")
-	_ = v.BindEnv("Service.Username")
-	_ = v.BindEnv("Service.Password")
-	_ = v.BindEnv("Service.Metrics")
-	_ = v.BindEnv("Service.InsecureSkipVerify")
+	_ = v.BindEnv("TerraService.Path")
+	_ = v.BindEnv("TerraService.Port")
+	_ = v.BindEnv("TerraService.AuthMode")
+	_ = v.BindEnv("TerraService.Username")
+	_ = v.BindEnv("TerraService.Password")
+	_ = v.BindEnv("TerraService.Metrics")
+	_ = v.BindEnv("TerraService.InsecureSkipVerify")
 
 	// creates a config struct and populate it with values
 	c := new(Config)
-	c.Onix = new(Onix)
-	c.Service = new(SvcConf)
+	c.Ox = new(OnixConf)
+	c.Terra = new(TerraConf)
 
 	// general configuration
 	c.Id = v.GetString("Id")
 	c.LogLevel = v.GetString("LogLevel")
-	c.Onix.URL = v.GetString("Onix.URL")
-	c.Onix.AuthMode = v.GetString("Onix.AuthMode")
-	c.Onix.Username = v.GetString("Onix.Username")
-	c.Onix.Password = v.GetString("Onix.Password")
-	c.Onix.ClientId = v.GetString("Onix.ClientId")
-	c.Onix.ClientSecret = v.GetString("Onix.ClientSecret")
-	c.Onix.TokeURI = v.GetString("Onix.TokenURI")
-	c.Service.AuthMode = v.GetString("Service.AuthMode")
-	c.Service.InsecureSkipVerify = v.GetBool("Service.InsecureSkipVerify")
-	c.Service.Metrics = v.GetBool("Service.Metrics")
-	c.Service.Username = v.GetString("Service.Username")
-	c.Service.Password = v.GetString("Service.Password")
-	c.Service.Port = v.GetString("Service.Port")
-	c.Service.Path = v.GetString("Service.Path")
+	c.Ox.URL = v.GetString("Onix.URL")
+	c.Ox.AuthMode = v.GetString("Onix.AuthMode")
+	c.Ox.Username = v.GetString("Onix.Username")
+	c.Ox.Password = v.GetString("Onix.Password")
+	c.Ox.ClientId = v.GetString("Onix.ClientId")
+	c.Ox.ClientSecret = v.GetString("Onix.AppSecret")
+	c.Ox.TokenURI = v.GetString("Onix.TokenURI")
+	c.Ox.AuthMode = v.GetString("TerraService.AuthMode")
+	c.Terra.InsecureSkipVerify = v.GetBool("TerraService.InsecureSkipVerify")
+	c.Terra.Metrics = v.GetBool("TerraService.Metrics")
+	c.Terra.Username = v.GetString("TerraService.Username")
+	c.Terra.Password = v.GetString("TerraService.Password")
+	c.Terra.Port = v.GetString("TerraService.Port")
+	c.Terra.Path = v.GetString("TerraService.Path")
 
-	return *c, nil
+	return c, nil
 }
