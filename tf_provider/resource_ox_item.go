@@ -68,6 +68,7 @@ func ItemResource() *schema.Resource {
 			"partition": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
+				Default:  "INS",
 			},
 			"version": &schema.Schema{
 				Type:     schema.TypeInt,

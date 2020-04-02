@@ -44,6 +44,7 @@ func ModelResource() *schema.Resource {
 			"partition": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
+				Default:  "REF",
 			},
 			"managed": &schema.Schema{
 				Type:     schema.TypeBool,
