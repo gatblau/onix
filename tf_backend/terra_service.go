@@ -28,6 +28,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 )
 
@@ -108,7 +109,10 @@ func (s *TerraService) rootHandler(w http.ResponseWriter, r *http.Request) {
 		state := TfState{Version: 1}
 		err := state.loadState(s.ox, vars["key"])
 		if err != nil {
-			log.Error().Msg(err.Error())
+			if !strings.Contains(err.Error(), "404") {
+				// only logs the error if it is anything other than 404 (Not Found)
+				log.Error().Msg(err.Error())
+			}
 		}
 		io.WriteString(w, state.toJSONString())
 		log.Info().Msg(state.toJSONString())

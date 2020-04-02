@@ -167,6 +167,15 @@ func (m *TerraModel) getModelData() *GraphData {
 				Managed:     true,
 			},
 			ItemTypeAttribute{
+				Key:         "TF_ITEM_ATTR_NAME",
+				Name:        "name",
+				Description: "The name of the resource.",
+				Type:        "string",
+				ItemTypeKey: TfResourceType,
+				Required:    true,
+				Managed:     true,
+			},
+			ItemTypeAttribute{
 				Key:         "TF_ITEM_ATTR_MODE",
 				Name:        "mode",
 				Description: "Whether the resource is a data source or a managed resource.",
