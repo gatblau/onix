@@ -25,23 +25,31 @@ import (
 
 // the Terraform state object
 type TfState struct {
-	Version          int         `json:"version"`
-	TerraformVersion string      `json:"terraform_version"`
-	Serial           int         `json:"serial"`
-	Lineage          string      `json:"lineage"`
-	Outputs          interface{} `json:"outputs"`
-	Resources        []struct {
-		Mode      string `json:"mode"`
-		Type      string `json:"type"`
-		Name      string `json:"name"`
-		Provider  string `json:"provider"`
-		Instances []struct {
-			SchemaVersion int         `json:"schema_version"`
-			Attributes    interface{} `json:"attributes"`
-			Private       string      `json:"private"`
-			Dependencies  []string    `json:"dependencies"`
-		} `json:"instances"`
-	} `json:"resources"`
+	Version          int                    `json:"version"`
+	TerraformVersion string                 `json:"terraform_version"`
+	Serial           int                    `json:"serial"`
+	Lineage          string                 `json:"lineage"`
+	Outputs          map[string]interface{} `json:"outputs"`
+	Resources        []TfResource           `json:"resources"`
+}
+
+type TfResource struct {
+	Mode      string       `json:"mode"`
+	Type      string       `json:"type"`
+	Name      string       `json:"name"`
+	Provider  string       `json:"provider"`
+	Instances []TfInstance `json:"instances"`
+}
+
+type TfInstance struct {
+	SchemaVersion int                    `json:"schema_version"`
+	Attributes    map[string]interface{} `json:"attributes"`
+	Private       string                 `json:"private"`
+	Dependencies  []string               `json:"dependencies"`
+}
+
+type TfInstances struct {
+	Instances []TfInstance `json:"instances"`
 }
 
 // persist the state in Onix
@@ -59,7 +67,9 @@ func (state *TfState) save(client *Client, key string) error {
 
 // retrieve the terraform state
 func (state *TfState) loadState(client *Client, key string) error {
-	item, err := client.GetItem(&Item{Key: state.stateKey(key)})
+	keyItem := &Item{Key: state.stateKey(key)}
+	// load the state
+	item, err := client.GetItem(keyItem)
 	if err != nil || item == nil {
 		return err
 	}
@@ -78,7 +88,18 @@ func (state *TfState) loadState(client *Client, key string) error {
 		state.Serial = intValue
 	}
 	state.Outputs = item.Meta
-	// TODO: load resources here
+	// load the resources associated to the state
+	list, err := client.GetItemChildren(keyItem)
+	for _, item := range list.Values {
+		resx := TfResource{
+			Mode:      item.Attribute["mode"].(string),
+			Type:      item.Attribute["type"].(string),
+			Name:      item.Attribute["name"].(string),
+			Provider:  item.Attribute["provider"].(string),
+			Instances: state.instance(item.Meta),
+		}
+		state.Resources = append(state.Resources, resx)
+	}
 	return nil
 }
 
@@ -89,15 +110,13 @@ func (state *TfState) saveStateItem(client *Client, key string) error {
 	attrs["terraform_version"] = state.TerraformVersion
 	attrs["serial"] = state.Serial
 	attrs["lineage"] = state.Lineage
-	meta := map[string]interface{}{}
-	meta["outputs"] = state.Outputs
 	result, err := client.PutItem(&Item{
 		Key:         state.stateKey(key),
-		Name:        fmt.Sprintf("STATE -> %s", key),
+		Name:        fmt.Sprintf("STATE -> %s"),
 		Description: "",
 		Type:        TfStateType,
 		Attribute:   attrs,
-		Meta:        meta,
+		Meta:        state.Outputs,
 		Tag:         []interface{}{"terraform", "state"},
 	})
 	return state.check(err, result)
@@ -107,6 +126,7 @@ func (state *TfState) saveStateItem(client *Client, key string) error {
 func (state *TfState) saveResources(client *Client, key string) error {
 	for i := 0; i < len(state.Resources); i++ {
 		attrs := map[string]interface{}{}
+		attrs["name"] = state.Resources[i].Name
 		attrs["mode"] = state.Resources[i].Mode
 		attrs["type"] = state.Resources[i].Type
 		attrs["provider"] = state.Resources[i].Provider
@@ -159,4 +179,18 @@ func (state *TfState) toJSONString() string {
 
 func (state *TfState) stateKey(key string) string {
 	return fmt.Sprintf("TF_STATE_%s", key)
+}
+
+func (state *TfState) instance(meta map[string]interface{}) []TfInstance {
+	metaBytes, err := json.Marshal(meta)
+	if err != nil {
+		return nil
+	}
+	// metaStr := string(metaBytes)
+	var instances TfInstances
+	err = json.Unmarshal(metaBytes, &instances)
+	if err != nil {
+		return nil
+	}
+	return instances.Instances
 }
