@@ -19,6 +19,7 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.*;
 import org.gatblau.onix.conf.Info;
 import org.gatblau.onix.data.*;
@@ -33,14 +34,14 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Api("ONIX CMDB Web API")
 @RestController
@@ -55,6 +56,7 @@ public class WebAPI {
     @Autowired
     Crypto crypto;
 
+    private ObjectMapper mapper = new ObjectMapper();
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
 
     @ApiOperation(
@@ -119,11 +121,13 @@ public class WebAPI {
             consumes = {"application/json"},
             produces = {"application/json"})
     @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "No changes where performed to the configuration item."),
-        @ApiResponse(code = 201, message = "The configuration item was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
-        @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
-        @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
-        @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+            @ApiResponse(code = 200, message = "No changes where performed to the configuration item."),
+            @ApiResponse(code = 201, message = "The configuration item was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+            @ApiResponse(code = 400, message = "The request payload is malformed."),
+            @ApiResponse(code = 401, message = "The request was unauthorised. The requester does not have the privilege to execute the request. "),
+            @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 422, message = "The request failed MD5 checksum validation, only enabled if the Content-MD5 header is added to the request.. "),
+            @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
     )
     public ResponseEntity<Result> createOrUpdateItem(
             @ApiParam(
@@ -133,10 +137,16 @@ public class WebAPI {
                     example = "item_01_abc"
             )
             @PathVariable("key") String key,
-            @RequestBody ItemData payload,
-            Authentication authentication
+            @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+            HttpServletRequest request, // required to check on http headers
+            Authentication authentication // required to authenticate user
         ) {
-        Result result = data.createOrUpdateItem(key, payload, getRole(authentication));
+        // check the request integrity and de-serialise the payload
+        Tuple<ResponseEntity<Result>, ItemData> req = prepareRequest(request, payloadStr, ItemData.class);
+        // if the data integrity check or de-serialisation fails, returns
+        if (req.response != null) { return req.response; }
+        // now ready to process the request
+        Result result = data.createOrUpdateItem(key, req.payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -454,8 +464,10 @@ public class WebAPI {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "No changes where performed to the configuration item type."),
             @ApiResponse(code = 201, message = "The configuration item type was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+            @ApiResponse(code = 400, message = "The request payload is malformed."),
             @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
             @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 422, message = "The request failed MD5 checksum validation, only enabled if the Content-MD5 header is added to the request.. "),
             @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
     )
     public ResponseEntity<Result> createOrUpdatePartition(
@@ -465,13 +477,17 @@ public class WebAPI {
                     required = true,
                     example = "part_01"
             )
-            @PathVariable("key")
-            String key,
-            @RequestBody
-            PartitionData partition,
-            Authentication authentication
+            @PathVariable("key") String key,
+            @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+            HttpServletRequest request, // required to check on http headers
+            Authentication authentication // required to authenticate user
     ) {
-        Result result = data.createOrUpdatePartition(key, partition, getRole(authentication));
+        // check the request integrity and de-serialise the payload
+        Tuple<ResponseEntity<Result>, PartitionData> req = prepareRequest(request, payloadStr, PartitionData.class);
+        // if the data integrity check or de-serialisation fails, returns
+        if (req.response != null) { return req.response; }
+        // now ready to process the request
+        Result result = data.createOrUpdatePartition(key, req.payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -541,8 +557,10 @@ public class WebAPI {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "No changes where performed to the configuration item type."),
             @ApiResponse(code = 201, message = "The configuration item type was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+            @ApiResponse(code = 400, message = "The request payload is malformed."),
             @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
             @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 422, message = "The request failed MD5 checksum validation, only enabled if the Content-MD5 header is added to the request.. "),
             @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
     )
     public ResponseEntity<Result> createOrUpdateRole(
@@ -552,13 +570,17 @@ public class WebAPI {
                 required = true,
                 example = "role_01"
             )
-            @PathVariable("key")
-            String key,
-            @RequestBody
-            RoleData role,
-            Authentication authentication
+            @PathVariable("key") String key,
+            @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+            HttpServletRequest request, // required to check on http headers
+            Authentication authentication // required to authenticate user
     ) {
-        Result result = data.createOrUpdateRole(key, role, getRole(authentication));
+        // check the request integrity and de-serialise the payload
+        Tuple<ResponseEntity<Result>, RoleData> req = prepareRequest(request, payloadStr, RoleData.class);
+        // if the data integrity check or de-serialisation fails, returns
+        if (req.response != null) { return req.response; }
+        // now ready to process the request
+        Result result = data.createOrUpdateRole(key, req.payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -604,20 +626,26 @@ public class WebAPI {
         path = "/privilege/{key}"
         , method = RequestMethod.PUT)
     @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "No changes where performed to the configuration privilege."),
-        @ApiResponse(code = 201, message = "The configuration privilege was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
-        @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the right to execute the request. "),
-        @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
-        @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+            @ApiResponse(code = 200, message = "No changes where performed to the configuration privilege."),
+            @ApiResponse(code = 201, message = "The configuration privilege was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+            @ApiResponse(code = 400, message = "The request payload is malformed."),
+            @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the right to execute the request. "),
+            @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 422, message = "The request failed MD5 checksum validation, only enabled if the Content-MD5 header is added to the request.. "),
+            @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
     )
     public ResponseEntity<Result> addPrivilege(
-        @PathVariable("key")
-        String key,
-        @RequestBody
-        PrivilegeData privilege,
-        Authentication authentication
+        @PathVariable("key") String key,
+        @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+        HttpServletRequest request, // required to check on http headers
+        Authentication authentication // required to authenticate user
     ) {
-        Result result = data.createOrUpdatePrivilege(key, privilege, getRole(authentication));
+        // check the request integrity and de-serialise the payload
+        Tuple<ResponseEntity<Result>, PrivilegeData> req = prepareRequest(request, payloadStr, PrivilegeData.class);
+        // if the data integrity check or de-serialisation fails, returns
+        if (req.response != null) { return req.response; }
+        // now ready to process the request
+        Result result = data.createOrUpdatePrivilege(key, req.payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -717,11 +745,13 @@ public class WebAPI {
         path = "/itemtype/{key}"
         , method = RequestMethod.PUT)
     @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "No changes where performed to the configuration item type."),
-        @ApiResponse(code = 201, message = "The configuration item type was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
-        @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
-        @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
-        @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+            @ApiResponse(code = 200, message = "No changes where performed to the configuration item type."),
+            @ApiResponse(code = 201, message = "The configuration item type was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+            @ApiResponse(code = 400, message = "The request payload is malformed."),
+            @ApiResponse(code = 401, message = "The request was unauthorised. The requester does not have the privilege to execute the request. "),
+            @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 422, message = "The request failed MD5 checksum validation, only enabled if the Content-MD5 header is added to the request.. "),
+            @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
     )
     public ResponseEntity<Result> createOrUpdateItemType(
         @ApiParam(
@@ -730,13 +760,17 @@ public class WebAPI {
             required = true,
             example = "item_type_01"
         )
-        @PathVariable("key")
-        String key,
-        @RequestBody
-        ItemTypeData itemType,
-        Authentication authentication
+        @PathVariable("key") String key,
+        @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+        HttpServletRequest request, // required to check on http headers
+        Authentication authentication // required to authenticate user
     ) {
-        Result result = data.createOrUpdateItemType(key, itemType, getRole(authentication));
+        // check the request integrity and de-serialise the payload
+        Tuple<ResponseEntity<Result>, ItemTypeData> req = prepareRequest(request, payloadStr, ItemTypeData.class);
+        // if the data integrity check or de-serialisation fails, returns
+        if (req.response != null) { return req.response; }
+        // now ready to process the request
+        Result result = data.createOrUpdateItemType(key, req.payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -909,20 +943,26 @@ public class WebAPI {
         consumes = {"application/json"},
         produces = {"application/json"})
     @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "No changes where performed to the link."),
-        @ApiResponse(code = 201, message = "The configuration link was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
-        @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
-        @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
-        @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+            @ApiResponse(code = 200, message = "No changes where performed to the link."),
+            @ApiResponse(code = 201, message = "The configuration link was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+            @ApiResponse(code = 400, message = "The request payload is malformed."),
+            @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
+            @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 422, message = "The request failed MD5 checksum validation, only enabled if the Content-MD5 header is added to the request.. "),
+            @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
     )
     public ResponseEntity<Result> createOrUpdateLink(
-            @PathVariable("key")
-            String key,
-            @RequestBody
-            LinkData link,
-            Authentication authentication
+            @PathVariable("key") String key,
+            @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+            HttpServletRequest request, // required to check on http headers
+            Authentication authentication // required to authenticate user
     ) {
-        Result result = data.createOrUpdateLink(key, link, getRole(authentication));
+        // check the request integrity and de-serialise the payload
+        Tuple<ResponseEntity<Result>, LinkData> req = prepareRequest(request, payloadStr, LinkData.class);
+        // if the data integrity check or de-serialisation fails, returns
+        if (req.response != null) { return req.response; }
+        // now ready to process the request
+        Result result = data.createOrUpdateLink(key, req.payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -1049,20 +1089,26 @@ public class WebAPI {
         path = "/linktype/{key}"
         , method = RequestMethod.PUT)
     @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "No changes where performed to the link type."),
-        @ApiResponse(code = 201, message = "The configuration link type was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
-        @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
-        @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
-        @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+            @ApiResponse(code = 200, message = "No changes where performed to the link type."),
+            @ApiResponse(code = 201, message = "The configuration link type was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+            @ApiResponse(code = 400, message = "The request payload is malformed."),
+            @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
+            @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 422, message = "The request failed MD5 checksum validation, only enabled if the Content-MD5 header is added to the request.. "),
+            @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
     )
     public ResponseEntity<Result> createOrUpdateLinkType(
-        @PathVariable("key")
-        String key,
-        @RequestBody
-        LinkTypeData linkType,
-        Authentication authentication
+        @PathVariable("key") String key,
+        @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+        HttpServletRequest request, // required to check on http headers
+        Authentication authentication // required to authenticate user
     ) {
-        Result result = data.createOrUpdateLinkType(key, linkType, getRole(authentication));
+        // check the request integrity and de-serialise the payload
+        Tuple<ResponseEntity<Result>, LinkTypeData> req = prepareRequest(request, payloadStr, LinkTypeData.class);
+        // if the data integrity check or de-serialisation fails, returns
+        if (req.response != null) { return req.response; }
+        // now ready to process the request
+        Result result = data.createOrUpdateLinkType(key, req.payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -1249,20 +1295,26 @@ public class WebAPI {
         path = "/linkrule/{key}"
         , method = RequestMethod.PUT)
     @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "No changes where performed to the link rule."),
-        @ApiResponse(code = 201, message = "The configuration link rule was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
-        @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
-        @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
-        @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+            @ApiResponse(code = 200, message = "No changes where performed to the link rule."),
+            @ApiResponse(code = 201, message = "The configuration link rule was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+            @ApiResponse(code = 400, message = "The request payload is malformed."),
+            @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
+            @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 422, message = "The request failed MD5 checksum validation, only enabled if the Content-MD5 header is added to the request.. "),
+            @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
     )
     public ResponseEntity<Result> createOrUpdateLinkRule(
-        @PathVariable("key")
-        String key,
-        @RequestBody
-        LinkRuleData linkRule,
-        Authentication authentication
+        @PathVariable("key") String key,
+        @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+        HttpServletRequest request, // required to check on http headers
+        Authentication authentication // required to authenticate user
     ) {
-        Result result = data.createOrUpdateLinkRule(key, linkRule, getRole(authentication));
+        // check the request integrity and de-serialise the payload
+        Tuple<ResponseEntity<Result>, LinkRuleData> req = prepareRequest(request, payloadStr, LinkRuleData.class);
+        // if the data integrity check or de-serialisation fails, returns
+        if (req.response != null) { return req.response; }
+        // now ready to process the request
+        Result result = data.createOrUpdateLinkRule(key, req.payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -1337,11 +1389,13 @@ public class WebAPI {
         path = "/model/{key}"
         , method = RequestMethod.PUT)
     @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "No changes where performed to the model."),
-        @ApiResponse(code = 201, message = "The configuration model was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
-        @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
-        @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
-        @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+            @ApiResponse(code = 200, message = "No changes where performed to the model."),
+            @ApiResponse(code = 201, message = "The configuration model was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+            @ApiResponse(code = 400, message = "The request payload is malformed."),
+            @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the privilege to execute the request. "),
+            @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 422, message = "The request failed MD5 checksum validation, only enabled if the Content-MD5 header is added to the request.. "),
+            @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
     )
     public ResponseEntity<Result> createOrUpdateModel(
         @ApiParam(
@@ -1351,10 +1405,17 @@ public class WebAPI {
             example = "model_01_abc"
         )
         @PathVariable("key") String key,
-        @RequestBody ModelData model,
-        Authentication authentication
+        @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+        HttpServletRequest request, // required to check on http headers
+        Authentication authentication // required to authenticate user
+
     ) {
-        Result result = data.createOrUpdateModel(key, model, getRole(authentication));
+        // check the request integrity and de-serialise the payload
+        Tuple<ResponseEntity<Result>, ModelData> req = prepareRequest(request, payloadStr, ModelData.class);
+        // if the data integrity check or de-serialisation fails, returns
+        if (req.response != null) { return req.response; }
+        // now ready to process the request
+        Result result = data.createOrUpdateModel(key, req.payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -1661,5 +1722,71 @@ public class WebAPI {
             ix++;
         }
         return roles;
+    }
+
+    private <T> Tuple<ResponseEntity<Result>, T> prepareRequest(HttpServletRequest request, String payloadStr, Class<T> valueType) {
+        // if the payload checksum does not match the one provided in the header
+        if (!payloadIntegrityOk(request, payloadStr)) {
+            // cannot process the request
+            return new Tuple(ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(null), null);
+        }
+        T payload = null;
+        try {
+            // tries to de-serialise payload
+            payload = mapper.readValue(payloadStr, valueType);
+        } catch (Exception ex) {
+            // cannot de-serialise the payload so assume a bad http request
+            Result result = new Result();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
+            return new Tuple(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result), null);
+        }
+        return new Tuple(null, payload);
+    }
+
+    private boolean payloadIntegrityOk(HttpServletRequest request, String httpBody) {
+        Boolean valid = false;
+        String requestSum = request.getHeader("Content-MD5");
+        if (requestSum != null) {
+            // if there is a checksum in the request, checks it matches the payload's
+            try {
+                // gets the payload checksum
+                String payloadSum = getMD5Hash(httpBody);
+                // valid if the request and the actual sums match
+                valid = payloadSum.equals(requestSum);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        } else {
+            // if there is not a checksum in the request, assumes valid
+            valid = true;
+        }
+        return valid;
+    }
+
+    private String getMD5Hash(String objStr) {
+        String sum = null;
+        try {
+            // gets the MD5 hashing algorithm
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            // creates an MD5 hash of the passed-in string
+            byte[] hash = md.digest(objStr.getBytes(StandardCharsets.UTF_8));
+            // Base64 encode the hash
+            byte[] encoded = Base64.getEncoder().encode(hash);
+            // converts the byte[] to UTF8 string
+            sum = new String(encoded, StandardCharsets.UTF_8);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return sum;
+    }
+
+    class Tuple<X, Y> {
+        public final X response;
+        public final Y payload;
+        public Tuple(X response, Y payload) {
+            this.response = response;
+            this.payload = payload;
+        }
     }
 }

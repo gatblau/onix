@@ -1329,6 +1329,16 @@ public class Steps extends BaseTest {
         return client.exchange(url, HttpMethod.PUT, getEntity(util.getFile(payload)), Result.class, vars);
     }
 
+    private ResponseEntity<Result> putRole(String key, String payload) {
+        String url = String.format("%s/role/{key}", baseUrl);
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("key", key);
+        vars.put("payload", payload);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json");
+        return client.exchange(url, HttpMethod.PUT, getEntity(util.getFile(payload)), Result.class, vars);
+    }
+
     private ResponseEntity<Result> putResource(String resource, String key, String payload) {
         String url = String.format("%s/%s/{key}", baseUrl, resource);
         Map<String, Object> vars = new HashMap<>();
@@ -1791,9 +1801,9 @@ public class Steps extends BaseTest {
         delete(String.format("%srole/{key}", baseUrl), "ROLE_01");
         delete(String.format("%srole/{key}", baseUrl), "ROLE_02");
         delete(String.format("%srole/{key}", baseUrl), "ROLE_03");
-        putPartition("ROLE_01", "payload/create_role_1_payload.json");
-        putPartition("ROLE_02", "payload/create_role_2_payload.json");
-        putPartition("ROLE_03", "payload/create_role_3_payload.json");
+        putRole("ROLE_01", "payload/create_role_1_payload.json");
+        putRole("ROLE_02", "payload/create_role_2_payload.json");
+        putRole("ROLE_03", "payload/create_role_3_payload.json");
     }
 
     @Given("^the role URL of the service with no query parameters exist$")
