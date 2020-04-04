@@ -1,0 +1,741 @@
+{
+  "version": 4,
+  "terraform_version": "0.12.21",
+  "serial": 25,
+  "lineage": "5633f70d-1445-fc3e-083e-651fd46f62fb",
+  "outputs": {},
+  "resources": [
+    {
+      "mode": "data",
+      "type": "ox_item",
+      "name": "Item_1_Data",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "attribute": {
+              "CPU": "1",
+              "RAM": "3"
+            },
+            "changed_by": null,
+            "created": null,
+            "description": "Item 1 Description",
+            "id": "item_1",
+            "key": "item_1",
+            "meta": {
+              "OS": "RHEL7.3"
+            },
+            "name": "Item 1",
+            "partition": "TEST",
+            "status": 0,
+            "tag": [],
+            "txt": "",
+            "type": "test_item_type",
+            "updated": null,
+            "version": null
+          }
+        }
+      ]
+    },
+    {
+      "mode": "data",
+      "type": "ox_item",
+      "name": "item_1_data",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "attribute": {
+              "CPU": "1",
+              "RAM": "3"
+            },
+            "changed_by": null,
+            "created": null,
+            "description": "Item 1 Description",
+            "id": "item_1",
+            "key": "item_1",
+            "meta": {
+              "OS": "RHEL7.3"
+            },
+            "name": "Item 1",
+            "partition": "TEST",
+            "status": 0,
+            "tag": [],
+            "txt": "",
+            "type": "test_item_type",
+            "updated": null,
+            "version": null
+          }
+        }
+      ]
+    },
+    {
+      "mode": "data",
+      "type": "ox_item",
+      "name": "item_2_data",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "attribute": {
+              "CPU": "1",
+              "RAM": "3"
+            },
+            "changed_by": null,
+            "created": null,
+            "description": "Item 2 Description",
+            "id": "item_2",
+            "key": "item_2",
+            "meta": {
+              "VM": "true"
+            },
+            "name": "Item 2",
+            "partition": "TEST",
+            "status": 0,
+            "tag": [],
+            "txt": "",
+            "type": "test_item_type",
+            "updated": null,
+            "version": null
+          }
+        }
+      ]
+    },
+    {
+      "mode": "data",
+      "type": "ox_item_type",
+      "name": "test_item_type_data",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "changed_by": null,
+            "created": null,
+            "description": "Test Item Type Description",
+            "encrypt_meta": false,
+            "encrypt_txt": true,
+            "filter": {},
+            "id": "test_item_type",
+            "key": "test_item_type",
+            "managed": true,
+            "meta_schema": {},
+            "model_key": "test_model",
+            "name": "Test Item Type",
+            "notify_change": true,
+            "tag": [],
+            "updated": null,
+            "version": null
+          }
+        }
+      ]
+    },
+    {
+      "mode": "data",
+      "type": "ox_item_type_attr",
+      "name": "Test_Item_Type_Attr_1_data",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "changed_by": null,
+            "created": null,
+            "id": "test_item_type_attr_1",
+            "item_type_key": "test_item_type",
+            "key": "test_item_type_attr_1",
+            "updated": null,
+            "version": null
+          }
+        }
+      ]
+    },
+    {
+      "mode": "data",
+      "type": "ox_link",
+      "name": "Link_1_Data",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "attribute": {
+              "CATEGORY": "Social",
+              "TEAM": "Blue"
+            },
+            "changed_by": null,
+            "created": null,
+            "description": "link 1 description",
+            "end_item_key": "item_2",
+            "id": "link_1",
+            "key": "link_1",
+            "meta": {},
+            "start_item_key": "item_1",
+            "tag": [],
+            "type": "test_link_type",
+            "updated": null,
+            "version": null
+          }
+        }
+      ]
+    },
+    {
+      "mode": "data",
+      "type": "ox_link_rule",
+      "name": "Item_To_Item_Rule_Data",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "changed_by": null,
+            "created": null,
+            "description": "Allow linking two items of type Test Item Type",
+            "end_item_type_key": "test_item_type",
+            "id": "Test_Item_Type-\u003eTest_Item_Type",
+            "key": "Test_Item_Type-\u003eTest_Item_Type",
+            "link_type_key": "test_link_type",
+            "name": "Test Item Type to Test Item Type rule",
+            "start_item_type_key": "test_item_type",
+            "updated": null,
+            "version": null
+          }
+        }
+      ]
+    },
+    {
+      "mode": "data",
+      "type": "ox_link_type",
+      "name": "test_item_type_data",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "changed_by": null,
+            "created": null,
+            "description": "Test Link Type Description",
+            "encrypt_meta": false,
+            "encrypt_txt": false,
+            "id": "test_link_type",
+            "key": "test_link_type",
+            "managed": false,
+            "meta_schema": {},
+            "model_key": "test_model",
+            "name": "Test Link Type",
+            "tag": [],
+            "updated": null,
+            "version": null
+          }
+        }
+      ]
+    },
+    {
+      "mode": "data",
+      "type": "ox_link_type_attr",
+      "name": "Test_Link_Type_Attr_1_data",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "changed_by": null,
+            "created": null,
+            "id": "test_link_type_attr_1",
+            "key": "test_link_type_attr_1",
+            "link_type_key": "test_link_type",
+            "updated": null,
+            "version": null
+          }
+        }
+      ]
+    },
+    {
+      "mode": "data",
+      "type": "ox_model",
+      "name": "test_model_data",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "changed_by": null,
+            "created": null,
+            "description": "Test Model Description",
+            "id": "test_model",
+            "key": "test_model",
+            "managed": false,
+            "name": "Test Model",
+            "partition": "REF",
+            "updated": null,
+            "version": null
+          }
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "ox_item",
+      "name": "Item_1",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "attribute": {
+              "CPU": "1",
+              "RAM": "3"
+            },
+            "description": "Item 1 Description",
+            "id": "item_1",
+            "key": "item_1",
+            "meta": {
+              "OS": "RHEL7.3"
+            },
+            "name": "Item 1",
+            "partition": "TEST",
+            "status": 0,
+            "tag": null,
+            "txt": "",
+            "type": "test_item_type",
+            "version": null
+          },
+          "private": "bnVsbA==",
+          "dependencies": [
+            "ox_item_type.Test_Item_Type",
+            "ox_item_type_attr.Test_Item_Type_Attr_1",
+            "ox_item_type_attr.Test_Item_Type_Attr_2",
+            "ox_link_rule.Item_To_Item_Rule",
+            "ox_link_type.Test_Link_Type",
+            "ox_link_type_attr.Test_Link_Type_Attr_1",
+            "ox_link_type_attr.Test_Link_Type_Attr_2",
+            "ox_model.Test_Model",
+            "ox_partition.Test_Partition",
+            "ox_privilege.Test_Privilege",
+            "ox_role.Test_Role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "ox_item",
+      "name": "Item_2",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "attribute": {
+              "CPU": "1",
+              "RAM": "3"
+            },
+            "description": "Item 2 Description",
+            "id": "item_2",
+            "key": "item_2",
+            "meta": {
+              "VM": "true"
+            },
+            "name": "Item 2",
+            "partition": "TEST",
+            "status": 0,
+            "tag": null,
+            "txt": "",
+            "type": "test_item_type",
+            "version": null
+          },
+          "private": "bnVsbA==",
+          "dependencies": [
+            "ox_item_type.Test_Item_Type",
+            "ox_item_type_attr.Test_Item_Type_Attr_1",
+            "ox_item_type_attr.Test_Item_Type_Attr_2",
+            "ox_link_rule.Item_To_Item_Rule",
+            "ox_link_type.Test_Link_Type",
+            "ox_link_type_attr.Test_Link_Type_Attr_1",
+            "ox_link_type_attr.Test_Link_Type_Attr_2",
+            "ox_model.Test_Model",
+            "ox_partition.Test_Partition",
+            "ox_privilege.Test_Privilege",
+            "ox_role.Test_Role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "ox_item_type",
+      "name": "Test_Item_Type",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "description": "Test Item Type Description",
+            "encrypt_meta": false,
+            "encrypt_txt": true,
+            "filter": null,
+            "id": "test_item_type",
+            "key": "test_item_type",
+            "managed": true,
+            "meta_schema": null,
+            "model_key": "test_model",
+            "name": "Test Item Type",
+            "notify_change": true,
+            "tag": null,
+            "version": null
+          },
+          "private": "bnVsbA==",
+          "dependencies": [
+            "ox_model.Test_Model",
+            "ox_partition.Test_Partition",
+            "ox_privilege.Test_Privilege",
+            "ox_role.Test_Role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "ox_item_type_attr",
+      "name": "Test_Item_Type_Attr_1",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "def_value": "2",
+            "description": "GB of RAM",
+            "id": "test_item_type_attr_1",
+            "item_type_key": "test_item_type",
+            "key": "test_item_type_attr_1",
+            "managed": false,
+            "name": "RAM",
+            "regex": "",
+            "required": false,
+            "type": "integer",
+            "version": null
+          },
+          "private": "bnVsbA==",
+          "dependencies": [
+            "ox_item_type.Test_Item_Type",
+            "ox_model.Test_Model",
+            "ox_partition.Test_Partition",
+            "ox_privilege.Test_Privilege",
+            "ox_role.Test_Role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "ox_item_type_attr",
+      "name": "Test_Item_Type_Attr_2",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "def_value": "1",
+            "description": "No of CPU",
+            "id": "test_item_type_attr_2",
+            "item_type_key": "test_item_type",
+            "key": "test_item_type_attr_2",
+            "managed": false,
+            "name": "CPU",
+            "regex": "",
+            "required": false,
+            "type": "integer",
+            "version": null
+          },
+          "private": "bnVsbA==",
+          "dependencies": [
+            "ox_item_type.Test_Item_Type",
+            "ox_item_type_attr.Test_Item_Type_Attr_1",
+            "ox_model.Test_Model",
+            "ox_partition.Test_Partition",
+            "ox_privilege.Test_Privilege",
+            "ox_role.Test_Role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "ox_link",
+      "name": "Link_1",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "attribute": {
+              "CATEGORY": "Social",
+              "TEAM": "Blue"
+            },
+            "description": "link 1 description",
+            "end_item_key": "item_2",
+            "id": "link_1",
+            "key": "link_1",
+            "meta": null,
+            "start_item_key": "item_1",
+            "tag": null,
+            "type": "test_link_type",
+            "version": null
+          },
+          "private": "bnVsbA==",
+          "dependencies": [
+            "ox_item.Item_1",
+            "ox_item.Item_2",
+            "ox_item_type.Test_Item_Type",
+            "ox_item_type_attr.Test_Item_Type_Attr_1",
+            "ox_item_type_attr.Test_Item_Type_Attr_2",
+            "ox_link_rule.Item_To_Item_Rule",
+            "ox_link_type.Test_Link_Type",
+            "ox_link_type_attr.Test_Link_Type_Attr_1",
+            "ox_link_type_attr.Test_Link_Type_Attr_2",
+            "ox_model.Test_Model",
+            "ox_partition.Test_Partition",
+            "ox_privilege.Test_Privilege",
+            "ox_role.Test_Role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "ox_link_rule",
+      "name": "Item_To_Item_Rule",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "description": "Allow linking two items of type Test Item Type",
+            "end_item_type_key": "test_item_type",
+            "id": "Test_Item_Type-\u003eTest_Item_Type",
+            "key": "Test_Item_Type-\u003eTest_Item_Type",
+            "link_type_key": "test_link_type",
+            "name": "Test Item Type to Test Item Type rule",
+            "start_item_type_key": "test_item_type",
+            "version": null
+          },
+          "private": "bnVsbA==",
+          "dependencies": [
+            "ox_item_type.Test_Item_Type",
+            "ox_item_type_attr.Test_Item_Type_Attr_1",
+            "ox_item_type_attr.Test_Item_Type_Attr_2",
+            "ox_link_type.Test_Link_Type",
+            "ox_link_type_attr.Test_Link_Type_Attr_1",
+            "ox_link_type_attr.Test_Link_Type_Attr_2",
+            "ox_model.Test_Model",
+            "ox_partition.Test_Partition",
+            "ox_privilege.Test_Privilege",
+            "ox_role.Test_Role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "ox_link_type",
+      "name": "Test_Link_Type",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "description": "Test Link Type Description",
+            "encrypt_meta": false,
+            "encrypt_txt": false,
+            "id": "test_link_type",
+            "key": "test_link_type",
+            "managed": false,
+            "meta_schema": null,
+            "model_key": "test_model",
+            "name": "Test Link Type",
+            "tag": null,
+            "version": null
+          },
+          "private": "bnVsbA==",
+          "dependencies": [
+            "ox_item_type.Test_Item_Type",
+            "ox_item_type_attr.Test_Item_Type_Attr_1",
+            "ox_item_type_attr.Test_Item_Type_Attr_2",
+            "ox_model.Test_Model",
+            "ox_partition.Test_Partition",
+            "ox_privilege.Test_Privilege",
+            "ox_role.Test_Role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "ox_link_type_attr",
+      "name": "Test_Link_Type_Attr_1",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "def_value": "A-Team",
+            "description": "Team Name",
+            "id": "test_link_type_attr_1",
+            "key": "test_link_type_attr_1",
+            "link_type_key": "test_link_type",
+            "managed": false,
+            "name": "TEAM",
+            "regex": "",
+            "required": false,
+            "type": "string",
+            "version": null
+          },
+          "private": "bnVsbA==",
+          "dependencies": [
+            "ox_item_type.Test_Item_Type",
+            "ox_item_type_attr.Test_Item_Type_Attr_1",
+            "ox_item_type_attr.Test_Item_Type_Attr_2",
+            "ox_link_type.Test_Link_Type",
+            "ox_model.Test_Model",
+            "ox_partition.Test_Partition",
+            "ox_privilege.Test_Privilege",
+            "ox_role.Test_Role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "ox_link_type_attr",
+      "name": "Test_Link_Type_Attr_2",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "def_value": "",
+            "description": "Name of Category",
+            "id": "test_link_type_attr_2",
+            "key": "test_link_type_attr_2",
+            "link_type_key": "test_link_type",
+            "managed": false,
+            "name": "CATEGORY",
+            "regex": "",
+            "required": false,
+            "type": "string",
+            "version": null
+          },
+          "private": "bnVsbA==",
+          "dependencies": [
+            "ox_item_type.Test_Item_Type",
+            "ox_item_type_attr.Test_Item_Type_Attr_1",
+            "ox_item_type_attr.Test_Item_Type_Attr_2",
+            "ox_link_type.Test_Link_Type",
+            "ox_link_type_attr.Test_Link_Type_Attr_1",
+            "ox_model.Test_Model",
+            "ox_partition.Test_Partition",
+            "ox_privilege.Test_Privilege",
+            "ox_role.Test_Role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "ox_model",
+      "name": "Test_Model",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "description": "Test Model Description",
+            "id": "test_model",
+            "key": "test_model",
+            "managed": false,
+            "name": "Test Model",
+            "partition": "REF",
+            "version": null
+          },
+          "private": "bnVsbA==",
+          "dependencies": [
+            "ox_partition.Test_Partition",
+            "ox_privilege.Test_Privilege",
+            "ox_role.Test_Role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "ox_partition",
+      "name": "Test_Partition",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "description": "A logical partition for testing.",
+            "id": "TEST",
+            "key": "TEST",
+            "name": "Test Partition",
+            "version": null
+          },
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "ox_privilege",
+      "name": "Test_Privilege",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "can_create": true,
+            "can_delete": true,
+            "can_read": true,
+            "id": "ADMIN-TEST",
+            "key": "ADMIN-TEST",
+            "partition": "TEST",
+            "role": "ADMIN",
+            "version": null
+          },
+          "private": "bnVsbA==",
+          "dependencies": [
+            "ox_partition.Test_Partition",
+            "ox_role.Test_Role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "ox_role",
+      "name": "Test_Role",
+      "provider": "provider.ox",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "description": "Can read and write configuration data and models.",
+            "id": "ADMIN",
+            "key": "ADMIN",
+            "level": 2,
+            "name": "System Administrator",
+            "version": null
+          },
+          "private": "bnVsbA==",
+          "dependencies": [
+            "ox_partition.Test_Partition"
+          ]
+        }
+      ]
+    }
+  ]
+}
