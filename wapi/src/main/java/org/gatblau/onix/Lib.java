@@ -364,6 +364,7 @@ public class Lib implements InitializingBean {
             part.setKey(set.getString("key"));
             part.setName(set.getString("name"));
             part.setDescription(set.getString("description"));
+            part.setOwner(set.getString("owner"));
             part.setCreated(dateFormat.format(set.getDate("created")));
             part.setUpdated((updated != null) ? dateFormat.format(updated) : null);
             part.setVersion(set.getInt("version"));
@@ -382,6 +383,7 @@ public class Lib implements InitializingBean {
             role.setDescription(set.getString("description"));
             role.setCreated(dateFormat.format(set.getDate("created")));
             role.setLevel(set.getInt("level"));
+            role.setOwner(set.getString("owner"));
             role.setUpdated((updated != null) ? dateFormat.format(updated) : null);
             role.setVersion(set.getInt("version"));
             role.setChangedBy(set.getString("changed_by"));
