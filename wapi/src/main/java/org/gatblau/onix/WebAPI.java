@@ -1727,8 +1727,12 @@ public class WebAPI {
     private <T> Tuple<ResponseEntity<Result>, T> prepareRequest(HttpServletRequest request, String payloadStr, Class<T> valueType) {
         // if the payload checksum does not match the one provided in the header
         if (!payloadIntegrityOk(request, payloadStr)) {
-            // cannot process the request
-            return new Tuple(ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(null), null);
+            // does not attempt to process the request as the integrity checksum does not match
+            // assume http body integrity has been compromised
+            Result result = new Result();
+            result.setError(true);
+            result.setMessage("HTTP body has failed MD5 checksum validation: the checksum sent by the client does not match the one calculated by the server.");
+            return new Tuple(ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(result), null);
         }
         T payload = null;
         try {
