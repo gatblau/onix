@@ -1583,10 +1583,43 @@ public class WebAPI {
             , method = RequestMethod.PUT
             , produces = {"application/json", "application/x-yaml"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "The request was received and processed."),
+            @ApiResponse(code = 400, message = "The request payload is malformed."),
+            @ApiResponse(code = 401, message = "The request was unauthorised. The requester does not have the privilege to execute the request. "),
+            @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 422, message = "The request failed MD5 checksum validation, only enabled if the Content-MD5 header is added to the request.. "),
+            @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+    )
     public ResponseEntity<ResultList> createOrUpdateData(
-            @RequestBody GraphData graphData,
-            Authentication authentication) {
-        ResultList results = data.createOrUpdateData(graphData, getRole(authentication));
+            @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+            HttpServletRequest request, // required to check on http headers
+            Authentication authentication // required to authenticate user
+        ) {
+        ResultList resultList = new ResultList();
+        // if the payload checksum does not match the one provided in the header
+        if (!payloadIntegrityOk(request, payloadStr)) {
+            // does not attempt to process the request as the integrity checksum does not match
+            // assume http body integrity has been compromised
+            Result result = new Result();
+            result.setError(true);
+            result.setMessage("HTTP body has failed MD5 checksum validation: the checksum sent by the client does not match the one calculated by the server.");
+            resultList.add(result);
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(resultList);
+        }
+        GraphData payload = null;
+        try {
+            // tries to de-serialise payload
+            payload = mapper.readValue(payloadStr, GraphData.class);
+        } catch (Exception ex) {
+            // cannot de-serialise the payload so assume a bad http request
+            Result result = new Result();
+            result.setError(true);
+            result.setMessage(String.format("Issue reading the request body, revise the content that is being sent to the server: %s ", ex.getMessage()));
+            resultList.add(result);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resultList);
+        }
+        ResultList results = data.createOrUpdateData(payload, getRole(authentication));
         return ResponseEntity.ok(results);
     }
 
