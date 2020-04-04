@@ -27,6 +27,7 @@ public class PartitionData implements Serializable {
     private String key;
     private String name;
     private String description;
+    private String owner;
     private String created;
     private String updated;
     private Integer version;
@@ -89,5 +90,13 @@ public class PartitionData implements Serializable {
 
     public void setChangedBy(String changedBy) {
         this.changedBy = changedBy;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 }

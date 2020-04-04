@@ -30,6 +30,7 @@ public class RoleData {
     private Integer version;
     private String changedBy;
     private Integer level;
+    private String owner;
 
     public RoleData(){
     }
@@ -96,6 +97,14 @@ public class RoleData {
 
     public void setLevel(Integer level) {
         this.level = level;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 }
 
