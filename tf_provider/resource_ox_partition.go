@@ -40,6 +40,10 @@ func PartitionResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"owner": &schema.Schema{
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"version": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,

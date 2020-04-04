@@ -29,6 +29,7 @@ const (
 	PartitionRsKey        = "test_acc_ox_partition_1"
 	PartitionRsName       = "ox_partition name"
 	PartitionRsDesc       = "ox_partition description"
+	PartitionRsOwner      = "{ADMIN}"
 )
 
 func TestPartitionResource(t *testing.T) {
@@ -45,6 +46,7 @@ func TestPartitionResource(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", PartitionRsKey),
 					resource.TestCheckResourceAttr(resourceName, "name", PartitionRsName),
 					resource.TestCheckResourceAttr(resourceName, "description", PartitionRsDesc),
+					// resource.TestCheckResourceAttr(resourceName, "owner", PartitionRsOwner),
 
 					// check for side effects in Onix database
 					checkPartitionResourceCreated(PartitionResourceName),
