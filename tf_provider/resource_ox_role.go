@@ -45,6 +45,10 @@ func RoleResource() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+			"owner": &schema.Schema{
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"version": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
@@ -106,6 +110,7 @@ func populateRole(data *schema.ResourceData, role *Role) {
 	data.Set("name", role.Name)
 	data.Set("description", role.Description)
 	data.Set("level", role.Level)
+	data.Set("owner", role.Owner)
 	data.Set("created", role.Created)
 	data.Set("updated", role.Updated)
 	data.Set("changed_by", role.ChangedBy)

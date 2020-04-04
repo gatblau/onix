@@ -31,6 +31,7 @@ const (
 	RoleRsName       = "ox_role name"
 	RoleRsDesc       = "ox_role description"
 	RoleRsLevel      = 1
+	RoleRsOwner      = "{ADMIN}"
 )
 
 func TestRoleResource(t *testing.T) {
@@ -48,6 +49,7 @@ func TestRoleResource(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", RoleRsName),
 					resource.TestCheckResourceAttr(resourceName, "description", RoleRsDesc),
 					resource.TestCheckResourceAttr(resourceName, "level", strconv.Itoa(RoleRsLevel)),
+					resource.TestCheckResourceAttr(resourceName, "owner", RoleRsOwner),
 
 					// check for side effects in Onix database
 					checkRoleResourceCreated(RoleResourceName),
