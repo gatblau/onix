@@ -31,7 +31,7 @@ public class PrivilegeData implements Serializable {
     private boolean canRead;
     private boolean canDelete;
     private String created;
-    private String update;
+    private String updated;
     private Integer version;
     private String changedBy;
 
@@ -102,12 +102,12 @@ public class PrivilegeData implements Serializable {
         this.changedBy = changedBy;
     }
 
-    public String getUpdate() {
-        return update;
+    public String getUpdated() {
+        return updated;
     }
 
-    public void setUpdate(String update) {
-        this.update = update;
+    public void setUpdated(String updated) {
+        this.updated = updated;
     }
 
     public Integer getVersion() {
