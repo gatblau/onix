@@ -16,18 +16,16 @@
 # multi-stage docker build: compile -> package
 #
 # compile stage: build Terra
-ARG BINARY_NAME=terra
-
 FROM golang as builder
 WORKDIR /app
 COPY . .
-RUN go get . && CGO_ENABLED=0 GOOS=linux go build -o $BINARY_NAME .
+RUN go get . && CGO_ENABLED=0 GOOS=linux go build -o terra .
 
 # package stage: copy the binary into the deployment image
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 MAINTAINER gatblau <onix@gatblau.org>
 LABEL author="gatblau.org"
 WORKDIR /app
-COPY --from=builder /app/$BINARY_NAME /app/config.toml ./
+COPY --from=builder /app/terra /app/config.toml ./
 USER 20
-CMD ["./$BINARY_NAME"]
+CMD ["./terra"]

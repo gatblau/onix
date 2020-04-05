@@ -1,29 +1,33 @@
 # Terra - Terraform HTTP Backend for Onix
 
-A "backend" in Terraform stores and retrieves state and determines how an operation such as apply is executed. It is an abstraction enables non-local file state storage, remote execution, etc.
+A "backend" in Terraform stores (and retrieves) state and determines how an operation such as apply should be executed. It is an abstraction which enables non-local state storage, remote execution, etc.
 
-By default, Terraform uses the "local" backend, which is the normal behavior of Terraform. The "local" backend stores execution state in a file next to where the Terraform file is.
+By default, the normal behavior of Terraform is to use the "local" backend; which stores execution state in a file next to where the Terraform file is.
 
-OxTerra is an HTTP web service that implements a [Terraform HTTP Backend](https://www.terraform.io/docs/backends/types/http.html).
+Terra is an implementation of a [Terraform HTTP Backend](https://www.terraform.io/docs/backends/types/http.html).
 Terraform stores the state using a simple REST client that communicates with Terra.
 State is fetched via GET, updated via POST, and purged with DELETE.
 
 ## Benefits of storing state in Onix
 
 - When working in a team, OxTerra can protect state with locks to prevent corruption.
-- All state revisions are kept in Onix history.
-- Sensitive information is kept off disk. State is retrieved from backends on demand and only stored in memory.
-- Encryption of data at rest: state can be optionally encrypted in Onix for additional confidentiality.
-- State can be easily retrieved by other automation systems using the Onix Web API.
+- All state revisions are kept in Onix history (all changes in Onix are kept in change tables).
+- Sensitive information is kept off disk. Terraform retrieves state from the backend on demand and only stores in memory.
+- Encryption of data at rest. State can be optionally encrypted in Onix for additional confidentiality.
+- State is readily available to automation / configuration management systems using via Onix Web API.
 - Single view of all Terraform resources across the infrastructure.
 
 ## Architecture
 
-Terra exposes HTTP endpoints for Terraform to perform CRUD state operations. In addition, it connects to Onix the [Onix Web API Client](https://github.com/gatblau/oxc).
+Terra exposes HTTP endpoints for Terraform to perform CRUD state operations. In addition, it connects to Onix using the [Onix Web API Client](https://github.com/gatblau/oxc).
 
-In order to store state in Onix, Terra puts every terraform resource in a separate configuration item following the model shown [here](docs/readme.md).
+In order to store state in Onix, Terra puts every terraform resource in a separate configuration item following the model shown in the picture below.
+
+![Terra](docs/terra.png)
 
 ### Terra Repositories
+
+Container images are available from the following snapshot and release repositories:
 
 | Type | Repo |
 |---|---|
@@ -32,7 +36,7 @@ In order to store state in Onix, Terra puts every terraform resource in a separa
 
 ### Onix Connection Configuration
 
-The connection with Onix Web API can be configured via variables in the Onix section of the [config.toml](config.toml) file or environment variables as follows:
+The connection to the Onix Web API can be configured via variables in the Onix section of the [config.toml](config.toml) file or environment variables as follows:
 
 | var | env | description | example |
 |---|---|---|---|
@@ -46,16 +50,16 @@ The connection with Onix Web API can be configured via variables in the Onix sec
 
 ### Terra Settings
 
-Terra ccan be configured via variables in the Service section of the [config.toml](config.toml) file or environment variables as follows:
+Terra can be configured via variables in the Service section of the [config.toml](config.toml) file or environment variables as follows:
 
 | var | env | description | example |
 |---|---|---|---|
 | Service.Path | OX_TERRA_SERVICE_PATH | The root path of the service. | `state` |
 | Service.Port | OX_TERRA_SERVICE_PORT | The HTTP port of the service. | `80` |
-| Service.Username | OX_TERRA_SERVICE_PATH | The username to authe ticate with the backend. | `admin` |
-| Service.Password | OX_TERRA_SERVICE_PATH | The password to authenticate with the backend. | `T3rra` |
-| Service.Metrics | OX_TERRA_SERVICE_PATH | Whether the Prometheus metrics endpoint is enabled. | `true` |
-| Service.InsecureSkipVerify | OX_TERRA_SERVICE_PATH | Whether to skip verification of TLS certificate. | `false` |
+| Service.Username | OX_TERRA_SERVICE_USERNAME | The username to authe ticate with the backend. | `admin` |
+| Service.Password | OX_TERRA_SERVICE_PASSWORD | The password to authenticate with the backend. | `T3rra` |
+| Service.Metrics | OX_TERRA_SERVICE_METRICS | Whether the Prometheus metrics endpoint is enabled. | `true` |
+| Service.InsecureSkipVerify | OX_TERRA_SERVICE_INSECURESKIPVERIFY | Whether to skip verification of TLS certificate. | `false` |
 
 ## Using Terra
 
@@ -72,3 +76,6 @@ terraform {
 ```
 
 More HTTP Backend configuration information can be found in the [online documentation](https://www.terraform.io/docs/backends/types/http.html#configuration-variables).
+
+## Launching Terra
+
