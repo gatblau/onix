@@ -1,5 +1,6 @@
 #
-#    Terraform Http Backend - Onix - Copyright (c) 2018 by www.gatblau.org
+#    Onix Config Manager - OxTerra - Terraform Http Backend for Onix
+#   Copyright (c) 2018-2020 by www.gatblau.org
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -16,9 +17,35 @@
 # the name of the folder where the packaged binaries will be placed after the build
 BUILD_FOLDER=build
 
+# the name of the container registry repository
+REPO_NAME=gatblau
+
+# the name of the terra binary file
+BINARY_NAME=oxterra
+
+# the name of the go command to use to build the binary
+GO_CMD = go
+
+# the version of the application
+APP_VER = v0.0.4
+
+# get old images that are left without a name from new image builds (i.e. dangling images)
+DANGLING_IMS = $(shell docker images -f dangling=true -q)
+
+# produce a new version tag
+set-version:
+	sh version.sh $(APP_VER)
+
+# build the terra binary in the current platform
 build:
-	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export CGO_ENABLED=0; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
+	$(GO_CMD) fmt
+	export GOROOT=/usr/local/go; export GOPATH=$HOME/go; $(GO_CMD) build -o $(BINARY_NAME) -v
 
-build_linux:
-	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export CGO_ENABLED=0; export GOOS=linux; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
+# build the terra docker image
+snapshot-image:
+	docker build -t $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version) .
+	docker tag $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version) $(REPO_NAME)/$(BINARY_NAME)-snapshot:latest
 
+snapshot-push:
+	docker push $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version)
+	docker push $(REPO_NAME)/$(BINARY_NAME)-snapshot:latest
