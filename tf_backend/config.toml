@@ -14,7 +14,7 @@ Metrics = "true"
     Username = "admin"
     Password = "0n1x"
     ClientId = ""
-	ClientSecret = ""
+	AppSecret = ""
 	TokenURI = ""
 
 [Service]
