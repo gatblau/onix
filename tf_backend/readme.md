@@ -63,14 +63,15 @@ Terra can be configured via variables in the Service section of the [config.toml
 
 ## Using Terra
 
-To use Terra as a backend simply specify the backend section in the terraform file as follows:
+To use Terra as a backend simply specify the backend section in the terraform file.
+Assuming Terra is listening on localhost:8081, then:
 
 ```hcl-terraform
 terraform {
   backend "http" {
-    address = "http://terra.api.com/state/foo"
-    lock_address = "http://terra.api.com/state/foo"
-    unlock_address = "http://terra.api.com/state/foo"
+    address = "http://localhost:8081/state/foo"
+    lock_address = "http://localhost:8081/state/foo"
+    unlock_address = "http://localhost:8081/state/foo"
   }
 }
 ```
