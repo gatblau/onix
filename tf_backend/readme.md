@@ -79,3 +79,12 @@ More HTTP Backend configuration information can be found in the [online document
 
 ## Launching Terra
 
+To launch Terra run the [terra_up.sh](terra_up.sh) script as follows:
+
+```bash
+# to start Terra...
+$ sh terra_up.sh
+
+# to remove the containers
+$ sh terra_down.sh
+```

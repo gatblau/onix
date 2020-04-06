@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-#    Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
+#    Onix Config Manager - OxTerra - Terraform Http Backend for Onix
+#    Copyright (c) 2018-2020 by www.gatblau.org
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -14,7 +15,7 @@
 #    to be licensed under the same terms as the rest of the code.
 #
 #  Usage: sh ox_down.sh
-#  Removes the Onix Web API and its backing PosgreSQL database containers
+#  Description: deletes Terra, Onix Web API and PostgreSQL containers
 #
 echo try and delete existing Onix containers
 docker rm -f oxterra

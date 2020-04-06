@@ -30,7 +30,10 @@ GO_CMD = go
 APP_VER = v0.0.4
 
 # get old images that are left without a name from new image builds (i.e. dangling images)
-DANGLING_IMS = $(shell docker images -f dangling=true -q)
+DANGLING_IMGS = $(shell docker images -f dangling=true -q)
+
+# get terra images
+TERRA_IMGS = $(shell docker images -a | grep oxterra)
 
 # produce a new version tag
 set-version:
@@ -49,3 +52,11 @@ snapshot-image:
 snapshot-push:
 	docker push $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version)
 	docker push $(REPO_NAME)/$(BINARY_NAME)-snapshot:latest
+
+# deletes dangling
+clean:
+	docker rmi $(DANGLING_IMGS)
+
+# delete any images in the local cache
+delete-images:
+	docker rmi $(TERRA_IMGS)

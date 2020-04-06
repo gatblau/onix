@@ -68,13 +68,19 @@ func (s *TerraService) Start() {
 	}
 
 	// creates an http server listening on the specified TCP port
-	server := &http.Server{Addr: fmt.Sprintf(":%s", s.conf.Port), Handler: mux}
+	server := &http.Server{
+		Addr:         fmt.Sprintf(":%s", s.conf.Port),
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+		IdleTimeout:  time.Second * 60,
+		Handler:      mux,
+	}
 
 	// runs the server asynchronously
 	go func() {
 		log.Trace().Msgf("terra listening on :%s", s.conf.Port)
 		if err := server.ListenAndServe(); err != nil {
-			log.Fatal().Err(err)
+			log.Err(err).Msg("Failed to start server.")
 		}
 	}()
 
