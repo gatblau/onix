@@ -19,7 +19,7 @@ Metrics = "true"
 
 [Service]
     Path = "state"
-	Port = "80"
+	Port = "8080"
 	Username = "admin"
 	Password = "0n1x"
 	Metrics = true
