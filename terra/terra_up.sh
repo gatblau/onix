@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-#    Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
+#    Onix Config Manager - OxTerra - Terraform Http Backend for Onix
+#    Copyright (c) 2018-2020 by www.gatblau.org
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -13,8 +14,11 @@
 #    Contributors to this project, hereby assign copyright in this code to the project,
 #    to be licensed under the same terms as the rest of the code.
 #
-#  Usage: sh ox_up.sh
-#  Launches Onix Web API and its backing PosgreSQL database in containers using Docker
+#  Usage: sh terra_up.sh
+#  Description: launches 3 containers using Docker in the local manchine:
+#   - Terra (on TCP port 8081 and connects to the Onix Web API)
+#   - Onix Web API (on TCP port 8080 connects to the bacing database)
+#   - PosgreSQL database (on TCP port 5432)
 #
 
 echo check docker is installed
@@ -35,10 +39,10 @@ docker rm -f oxdb
 docker rm -f ox
 
 echo "checking port 80 is available for the Terra"
-lsof -i:80 | grep LISTEN
+lsof -i:8081 | grep LISTEN
 RESULT=$?
 if [ $RESULT -eq 0 ]; then
-  echo port 80 is in use, cannot continue: ensure there is no process using 80/tcp port
+  echo port 8081 is in use, cannot continue: ensure there is no process using 8081/tcp port
   exit 1
 fi
 
@@ -72,16 +76,6 @@ docker run --name ox -it -d -p 8080:8080 --link oxdb \
     -e WAPI_ADMIN_PWD=0n1x \
     "gatblau/onix-snapshot"
 
-echo creates Terra container
-docker run --name oxterra -it -d -p 80:80 \
-    -e OX_TERRA_SERVICE_PATH=state \
-    -e OX_TERRA_ONIX_AUTHMODE=basic \
-    -e OX_TERRA_ONIX_USERNAME=admin \
-    -e OX_TERRA_ONIX_PASSWORD=0n1x \
-    -e OX_TERRA_SERVICE_INSECURESKIPVERIFY=false \
-    -e OX_TERRA_SERVICE_METRICS=false \
-    "gatblau/oxterra-snapshot"
-
 echo "please wait for the Web API to become available"
 until $(curl --output /dev/null --silent --head --fail http://localhost:8080); do
     printf '.'
@@ -90,6 +84,16 @@ done
 
 echo "deploying database schemas"
 curl localhost:8080/ready
-
-echo 
+echo
 echo "Web API ready to use @ localhost:8080"
+
+echo creates Terra container
+docker run --name oxterra -it -d -p 8081:8080 --link ox \
+    -e OX_TERRA_SERVICE_PATH=state \
+    -e OX_TERRA_ONIX_URL=http://ox:8080 \
+    -e OX_TERRA_ONIX_AUTHMODE=basic \
+    -e OX_TERRA_ONIX_USERNAME=admin \
+    -e OX_TERRA_ONIX_PASSWORD=0n1x \
+    -e OX_TERRA_SERVICE_INSECURESKIPVERIFY=false \
+    -e OX_TERRA_SERVICE_METRICS=false \
+    "gatblau/oxterra-snapshot"
