@@ -25,6 +25,7 @@ The following table shows the provider configuration attributes:
 | `token_uri` | `TF_PROVIDER_OX_TOKEN_URI` | *required*<br>(if `oidc`) | *The OAuth 2.0 server endpoint where the ox provider exchanges the user credentials, client ID and client secret, for an access token. It is only required if _auth_mode_ is set to _oidc_.* | `https://token-server.com/oauth2/default/v1/token` |
 | `app_client_id` | `TF_PROVIDER_OX_APP_CLIENT_ID` | *required*<br>(if `oidc`) | *The public identifier for the Onix Web API defined by the OAUth 2.0 server. It is only required if _auth_mode_ is set to _oidc_.* | `character string of lenght determined by implementation` |
 | `app_secret` | `TF_PROVIDER_OX_APP_SECRET` | *required*<br>(if `oidc`) | *A secret known only to the application and the authorisation server. It is only required if _auth_mode_ is set to _oidc_.* | `character string of lenght determined by implementation` |
+| `insecure_skip_verify` | `TF_PROVIDER_OX_INSECURE_SKIP_VERIFY` | optional | *A flag indicating whether the calls to the Web API should skip TLS certificate verification.* | defaults to true |
 
 __NOTE__: The __auth_mode__ attribute must match the value used by the Onix Web API. For example, if the Onix Web API is set to use __auth_mode=oidc__ then the terraform provider must be set to use the same __auth_mode__, otherwise the authentication will fail.
 
@@ -41,6 +42,7 @@ provider "ox" {
   auth_mode = "basic" # default value if no specified
   user      = "user-name-here"
   pwd       = "user-password-here"
+  insecure_skip_verify  = true # by-passes TLS cert verification 
 }
 ```
 
@@ -74,13 +76,14 @@ If [OpenId Connect / OAuth 2.0](https://openid.net/connect/) is selected as the 
 ```hcl-terraform
 # OpenId Authentication
 provider "ox" {
-  uri           = "http://localhost:8080"
-  auth_mode     = "oidc"
-  user          = "user-name-here"
-  pwd           = "user-password-here"
-  app_client_id = "application-client-id-here"
-  app_secret    = "application-secret-here"
-  token_uri     = "uri-of-the-token-endpoint-at-authorisation-server"
+  uri                   = "http://localhost:8080"
+  auth_mode             = "oidc"
+  user                  = "user-name-here"
+  pwd                   = "user-password-here"
+  app_client_id         = "application-client-id-here"
+  app_secret            = "application-secret-here"
+  token_uri             = "uri-of-the-token-endpoint-at-authorisation-server"
+  insecure_skip_verify  = false
 }
 ```
 
@@ -89,10 +92,11 @@ provider "ox" {
 ```hcl-terraform
 # No Authentication
 provider "ox" {
-  uri       = "http://localhost:8080"
-  auth_mode = "none"
-  user      = ""
-  pwd       = ""
+  uri                   = "http://localhost:8080"
+  auth_mode             = "none"
+  user                  = ""
+  pwd                   = ""
+  insecure_skip_verify  = true
 }
 ```
 

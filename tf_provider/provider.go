@@ -24,6 +24,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os"
+	"strconv"
 )
 
 // the provider configuration
@@ -31,15 +32,16 @@ var cfg Config
 
 // Configuration information for the Terraform provider
 type Config struct {
-	URI       string
-	User      string
-	Pwd       string
-	Client    oxc.Client
-	Token     string
-	TokenURI  string
-	ClientId  string
-	AppSecret string
-	AuthMode  string
+	URI                string
+	User               string
+	Pwd                string
+	Client             *oxc.Client
+	Token              string
+	TokenURI           string
+	ClientId           string
+	AppSecret          string
+	AuthMode           string
+	InsecureSkipVerify bool
 }
 
 // determined if the configuration has been loaded
@@ -54,11 +56,24 @@ func (cfg *Config) load(data *schema.ResourceData) error {
 	// set time format to UNIX Time as it is faster and smaller than most timestamps
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
+	// gets the web API URI
 	cfg.URI = os.Getenv("TF_PROVIDER_OX_URI")
 	if len(cfg.URI) == 0 {
 		cfg.URI = data.Get("uri").(string)
 		log.Warn().Msg("Loading 'uri' from resource data. Consider setting the TF_PROVIDER_OX_URI environment variable instead.")
 	}
+	// gets the flag to skip TLS cert verification
+	skipVerify := os.Getenv("TF_PROVIDER_INSECURE_SKIP_VERIFY")
+	if len(skipVerify) > 0 {
+		skip, err := strconv.ParseBool(skipVerify)
+		if err != nil {
+			log.Warn().Msgf("failed to parse boolean '%s' from TF_PROVIDER_INSECURE_SKIP_VERIFY. Ignoring.", skipVerify)
+		}
+		cfg.InsecureSkipVerify = skip
+	} else {
+		cfg.InsecureSkipVerify = data.Get("insecure_skip_verify").(bool)
+	}
+	// gets the authentication mode to use
 	cfg.AuthMode = os.Getenv("TF_PROVIDER_OX_AUTH_MODE")
 	if len(cfg.AuthMode) == 0 {
 		cfg.AuthMode = data.Get("auth_mode").(string)
@@ -112,29 +127,28 @@ func (cfg *Config) load(data *schema.ResourceData) error {
 		}
 	}
 
-	cfg.Client = oxc.Client{BaseURL: cfg.URI}
-
-	switch cfg.AuthMode {
-	case "none":
-		// ensure no token value is specified
-		cfg.Client.SetAuthToken("")
-
-	case "basic":
-		// sets a basic authentication token
-		cfg.Client.SetAuthToken(cfg.Client.NewBasicToken(cfg.User, cfg.Pwd))
-
-	case "oidc":
-		// sets an OAuth Bearer token
-		bearerToken, err := cfg.Client.GetBearerToken(cfg.TokenURI, cfg.ClientId, cfg.AppSecret, cfg.User, cfg.Pwd)
-		if err != nil {
-			return err
-		}
-		cfg.Client.SetAuthToken(bearerToken)
-
-	default:
-		// can't recognise the auth_mode provided
-		return errors.New(fmt.Sprintf("auth_mode = '%s' is not valid value. Use either 'none', 'basic' or 'oidc'.", cfg.AuthMode))
+	// build the web api client configuration
+	conf := &oxc.ClientConf{
+		BaseURI:            cfg.URI,
+		InsecureSkipVerify: cfg.InsecureSkipVerify,
+		Username:           cfg.User,
+		Password:           cfg.Pwd,
+		TokenURI:           cfg.TokenURI,
+		ClientId:           cfg.ClientId,
+		AppSecret:          cfg.AppSecret,
 	}
+	// set the authentication mode
+	conf.SetAuthMode(cfg.AuthMode)
+
+	// gets a new client instance
+	client, err := oxc.NewClient(conf)
+	if err != nil {
+		return err
+	}
+
+	// assigns the client to the config object
+	cfg.Client = client
+
 	return nil
 }
 
@@ -184,6 +198,11 @@ func newProvider(isTest bool) terraform.ResourceProvider {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "",
+			},
+			"insecure_skip_verify": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
