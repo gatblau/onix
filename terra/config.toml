@@ -1,5 +1,5 @@
 # the oxterra service instance Id for logging identification purposes
-Id = "OxTerra"
+Id = "Terra"
 
 # verbosity of logging (Trace, Debug, Warning, Info, Error, Fatal, Panic)
 LogLevel = "Trace"
@@ -7,20 +7,20 @@ LogLevel = "Trace"
 # enables metrics
 Metrics = "true"
 
-# onix wapi endpoint to update
-[Onix]
-    URL = "http://localhost:8080"
-    AuthMode = "basic"
-    Username = "admin"
-    Password = "0n1x"
-    ClientId = ""
-	AppSecret = ""
-	TokenURI = ""
+# configuration for Terra Http Backend
+AuthMode    = "basic"
+Path        = "state"
+Port        = "8081"
+Username    = "admin"
+Password    = "0n1x"
 
-[Service]
-    Path = "state"
-	Port = "8080"
-	Username = "admin"
-	Password = "0n1x"
-	Metrics = true
-	InsecureSkipVerify = false
+# configuration for the Onix Web API integration
+[Onix]
+    URL         = "http://localhost:8080"
+    AuthMode    = "basic"
+    Username    = "admin"
+    Password    = "0n1x"
+    ClientId    = ""
+	AppSecret   = ""
+	TokenURI    = ""
+	InsecureSkipVerify = true

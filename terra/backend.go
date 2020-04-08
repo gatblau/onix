@@ -16,10 +16,9 @@
 package main
 
 import (
-	"errors"
-	"fmt"
 	. "github.com/gatblau/oxc"
 	"github.com/rs/zerolog"
+	"strings"
 )
 
 type Backend struct {
@@ -30,41 +29,25 @@ type Backend struct {
 
 // start the backend process
 func (backend *Backend) start() error {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	var err error
 
 	// load the configuration file
-	if c, err := NewConfig(); err == nil {
-		backend.config = c
+	if cfg, err := NewConfig(); err == nil {
+		backend.config = cfg
 	} else {
 		return err
 	}
 
-	// initialises the Onix REST client
-	backend.client = &Client{BaseURL: backend.config.Ox.URL}
+	// initialises the logger
+	backend.setLogger(backend.config.LogLevel)
 
-	cfg := backend.config.Ox
-	switch cfg.AuthMode {
-	case "none":
-		// ensure no token value is specified
-		backend.client.SetAuthToken("")
-
-	case "basic":
-		// sets a basic authentication token
-		backend.client.SetAuthToken(backend.client.NewBasicToken(cfg.Username, cfg.Password))
-
-	case "oidc":
-		// sets an OAuth Bearer token
-		bearerToken, err := backend.client.GetBearerToken(cfg.TokenURI, cfg.ClientId, cfg.ClientSecret, cfg.Username, cfg.Password)
-		if err != nil {
-			return err
-		}
-		backend.client.SetAuthToken(bearerToken)
-
-	default:
-		// can't recognise the auth_mode provided
-		return errors.New(fmt.Sprintf("auth_mode = '%s' is not valid value. Use either 'none', 'basic' or 'oidc'.", cfg.AuthMode))
+	client, err := NewClient(backend.config.Ox)
+	if err != nil {
+		return err
 	}
+
+	// initialises the Onix REST client
+	backend.client = client
 
 	// checks if a meta model for Terraform is defined in Onix
 	model := NewTerraModel(backend.client)
@@ -80,4 +63,20 @@ func (backend *Backend) start() error {
 	svc := NewTerraService(*backend)
 	svc.Start()
 	return nil
+}
+
+func (backend *Backend) setLogger(logLevel string) {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	switch strings.ToLower(logLevel) {
+	case "info":
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case "debug":
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case "error":
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	case "fatal":
+		zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	case "trace":
+		zerolog.SetGlobalLevel(zerolog.TraceLevel)
+	}
 }
