@@ -70,9 +70,11 @@ Assuming Terra is listening on localhost:8081, then:
 ```hcl-terraform
 terraform {
   backend "http" {
-    address = "http://localhost:8081/state/foo"
-    lock_address = "http://localhost:8081/state/foo"
-    unlock_address = "http://localhost:8081/state/foo"
+    address         = "http://localhost:8081/state/foo"
+    lock_address    = "http://localhost:8081/state/foo"
+    unlock_address  = "http://localhost:8081/state/foo"
+    username        = "admin"
+    password        = "0n1x"
   }
 }
 ```
