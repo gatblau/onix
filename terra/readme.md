@@ -34,32 +34,33 @@ Container images are available from the following snapshot and release repositor
 | snapshot | docker.io/gatblau/oxterra-snapshot |
 | release | docker.io/gatblau/oxterra |
 
-### Onix Connection Configuration
-
-The connection to the Onix Web API can be configured via variables in the Onix section of the [config.toml](config.toml) file or environment variables as follows:
-
-| var | env | description | example |
-|---|---|---|---|
-| Onix.URL | OX_TERRA_ONIX_URL | The URI of the Web API | `http://localhost:8080` |
-| Onix.AuthMode | OX_TERRA_ONIX_AUTHMODE | How Terra authenticates with Onix (either `none`, `basic` or `oidc`). | `basic` |
-| Onix.Username | OX_TERRA_ONIX_USERNAME | The username used to authenticate with Onix if `basic` AuthMode is selected. | `admin` |
-| Onix.Password | OX_TERRA_ONIX_PASSWORD | The password used to authenticate with Onix if `basic` AuthMode is selected. | `0n1x` |
-| Onix.ClientId | OX_TERRA_ONIX_CLIENTID | The client identifier used to authenticate with Onix if `oidc` AuthMode is selected. | long character string |
-| Onix.AppSecret | OX_TERRA_ONIX_APPSECRET | The application secret used to authenticate with Onix if `oidc` AuthMode is selected. | long character string |
-| Onix.TokenURI | OX_TERRA_ONIX_TOKENURI | The url of the OpenId token server endpoint. | `https://token-server.com/oauth2/default/v1/token)` |
-
 ### Terra Settings
 
 Terra can be configured via variables in the Service section of the [config.toml](config.toml) file or environment variables as follows:
 
 | var | env | description | example |
 |---|---|---|---|
-| Service.Path | OX_TERRA_SERVICE_PATH | The root path of the service. | `state` |
-| Service.Port | OX_TERRA_SERVICE_PORT | The HTTP port of the service. | `80` |
-| Service.Username | OX_TERRA_SERVICE_USERNAME | The username to authe ticate with the backend. | `admin` |
-| Service.Password | OX_TERRA_SERVICE_PASSWORD | The password to authenticate with the backend. | `T3rra` |
-| Service.Metrics | OX_TERRA_SERVICE_METRICS | Whether the Prometheus metrics endpoint is enabled. | `true` |
-| Service.InsecureSkipVerify | OX_TERRA_SERVICE_INSECURESKIPVERIFY | Whether to skip verification of TLS certificate. | `false` |
+| AuthMode | OXT_AUTHMODE | How Terraform authenticates with Terra (either `none` or `basic`). | `basic` |
+| Path | OXT_PATH | The root path of the service. | `state` |
+| Port | OXT_PORT | The HTTP port of the service. | `80` |
+| Username | OXT_USERNAME | The username to authenticate with the backend. | `admin` |
+| Password | OXT_PASSWORD | The password to authenticate with the backend. | `T3rra` |
+| Metrics | OXT_METRICS | Whether the Prometheus metrics endpoint is enabled. | `true` |
+
+### Onix Connection Configuration
+
+The connection to the Onix Web API can be configured via variables in the Onix section of the [config.toml](config.toml) file or environment variables as follows:
+
+| var | env | description | example |
+|---|---|---|---|
+| Onix.URL | OXT_ONIX_URL | The URI of the Web API | `http://localhost:8080` |
+| Onix.AuthMode | OXT_ONIX_AUTHMODE | How Terra authenticates with Onix (either `none`, `basic` or `oidc`). | `basic` |
+| Onix.Username | OXT_ONIX_USERNAME | The username used to authenticate with Onix if `basic` AuthMode is selected. | `admin` |
+| Onix.Password | OXT_ONIX_PASSWORD | The password used to authenticate with Onix if `basic` AuthMode is selected. | `0n1x` |
+| Onix.ClientId | OXT_ONIX_CLIENTID | The client identifier used to authenticate with Onix if `oidc` AuthMode is selected. | long character string |
+| Onix.AppSecret | OXT_ONIX_APPSECRET | The application secret used to authenticate with Onix if `oidc` AuthMode is selected. | long character string |
+| Onix.TokenURI | OXT_ONIX_TOKENURI | The url of the OpenId token server endpoint. | `https://token-server.com/oauth2/default/v1/token)` |
+| Onix.InsecureSkipVerify | OXT_ONIX_INSECURESKIPVERIFY | Whether to skip verification of TLS certificate. | `false` |
 
 ## Using Terra
 

@@ -17,6 +17,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	. "github.com/gatblau/oxc"
@@ -34,14 +35,14 @@ import (
 
 type TerraService struct {
 	ready bool
-	ox    *Client    // client to connect to Onix WAPI
-	conf  *TerraConf // configuration for the http service endpoint
+	ox    *Client // client to connect to Onix WAPI
+	conf  *Config
 }
 
 // creates a new http backend service
 func NewTerraService(backend Backend) *TerraService {
 	svc := new(TerraService)
-	svc.conf = backend.config.Terra
+	svc.conf = backend.config
 	svc.ox = backend.client
 	svc.ready = backend.ready
 	return svc
@@ -108,36 +109,55 @@ func (s *TerraService) Start() {
 
 func (s *TerraService) rootHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-
 	defer r.Body.Close()
+
+	// continues only if the request is authenticated
+	if !s.authenticate(w, r) {
+		return
+	}
+
 	switch r.Method {
 	case "GET":
-		state := TfState{Version: 1}
-		err := state.loadState(s.ox, vars["key"])
-		if err != nil {
-			if !strings.Contains(err.Error(), "404") {
-				// only logs the error if it is anything other than 404 (Not Found)
+		{
+			// constructs a default terraform state object
+			state := TfState{Version: 1}
+			// attempts to load the state from Onix
+			err := state.loadState(s.ox, vars["key"])
+			if err != nil {
+				if !strings.Contains(err.Error(), "404") {
+					// only logs the error if it is anything other than 404 (Not Found)
+					log.Error().Msg(err.Error())
+				}
+			}
+			// writes the state to the response
+			io.WriteString(w, state.toJSONString())
+		}
+
+	case "POST":
+		{
+			// reads the request body
+			state, err := s.readRequestBody(r)
+			if err != nil {
+				log.Err(err).Msg("failed to read request payload")
+				return
+			}
+			// persists the state in Onix
+			err = state.save(s.ox, vars["key"])
+			if err != nil {
 				log.Error().Msg(err.Error())
 			}
 		}
-		io.WriteString(w, state.toJSONString())
-		log.Info().Msg(state.toJSONString())
-
-	case "POST":
-		state, err := s.readRequestBody(r)
-		if err != nil {
-			log.Err(err)
-			return
-		}
-		err = state.save(s.ox, vars["key"])
-		if err != nil {
-			log.Error().Msg(err.Error())
-		}
 
 	case "PUT":
+		{
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			_, _ = w.Write([]byte("405 - Method Not Allowed"))
+		}
 	case "DELETE":
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		_, _ = w.Write([]byte("405 - Method Not Allowed"))
+		{
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			_, _ = w.Write([]byte("405 - Method Not Allowed"))
+		}
 	}
 }
 
@@ -179,8 +199,38 @@ func (s *TerraService) readRequestBody(r *http.Request) (*TfState, error) {
 
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+		log.Trace().Msgf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (s *TerraService) authenticate(w http.ResponseWriter, r *http.Request) bool {
+	// if there is a username and password
+	if len(s.conf.AuthMode) > 0 && strings.ToLower(s.conf.AuthMode) == "basic" {
+		if r.Header.Get("Authorization") == "" {
+			// if no authorisation header is passed, then it prompts a client browser to authenticate
+			w.Header().Set("WWW-Authenticate", `Basic realm="oxterra"`)
+			w.WriteHeader(http.StatusUnauthorized)
+			log.Trace().Msg("Unauthorised request.")
+			return false
+		} else {
+			// authenticate the request
+			requiredToken := s.newBasicToken(s.conf.Username, s.conf.Password)
+			providedToken := r.Header.Get("Authorization")
+			// if the authentication fails
+			if !strings.Contains(providedToken, requiredToken) {
+				// returns an unauthorised request
+				w.WriteHeader(http.StatusForbidden)
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// creates a new Basic Authentication Token
+func (s *TerraService) newBasicToken(user string, pwd string) string {
+	return fmt.Sprintf("Basic %s",
+		base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
 }

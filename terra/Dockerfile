@@ -29,4 +29,4 @@ WORKDIR /app
 COPY --from=builder /app/terra /app/config.toml ./
 USER 20
 CMD ["./terra"]
-EXPOSE 8080/tcp
+EXPOSE 8081/tcp

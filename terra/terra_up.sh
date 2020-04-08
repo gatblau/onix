@@ -38,7 +38,7 @@ docker rm -f oxterra
 docker rm -f oxdb
 docker rm -f ox
 
-echo "checking port 80 is available for the Terra"
+echo "checking port 8081 is available for the Terra"
 lsof -i:8081 | grep LISTEN
 RESULT=$?
 if [ $RESULT -eq 0 ]; then
@@ -88,7 +88,7 @@ echo
 echo "Web API ready to use @ localhost:8080"
 
 echo creates Terra container
-docker run --name oxterra -it -d -p 8081:8080 --link ox \
+docker run --name oxterra -it -d -p 8081:8081 --link ox \
     -e OX_TERRA_SERVICE_PATH=state \
     -e OX_TERRA_ONIX_URL=http://ox:8080 \
     -e OX_TERRA_ONIX_AUTHMODE=basic \

@@ -16,6 +16,7 @@
 package main
 
 import (
+	"github.com/gatblau/oxc"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"strings"
@@ -25,30 +26,13 @@ import (
 type Config struct {
 	LogLevel string
 	Id       string
-	Ox       *OnixConf  // configuration for the Onix client
-	Terra    *TerraConf // configuration for Terra, the http backend service for Onix
-}
-
-// configuration for Terra
-type TerraConf struct {
-	Path               string
-	Port               string
-	AuthMode           string
-	Username           string
-	Password           string
-	Metrics            bool
-	InsecureSkipVerify bool
-}
-
-// config for Onix client
-type OnixConf struct {
-	URL          string
-	AuthMode     string
-	Username     string
-	Password     string
-	ClientId     string
-	ClientSecret string
-	TokenURI     string
+	AuthMode string
+	Path     string
+	Port     string
+	Username string
+	Password string
+	Metrics  bool
+	Ox       *oxc.ClientConf // configuration for the Onix client
 }
 
 func NewConfig() (*Config, error) {
@@ -69,13 +53,19 @@ func NewConfig() (*Config, error) {
 
 	// binds all environment variables to make it container friendly
 	v.AutomaticEnv()
-	v.SetEnvPrefix("OX_TERRA") // prefixes all env vars
+	v.SetEnvPrefix("OXT") // prefixes all env vars
 
 	// replace character to support environment variable format
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	_ = v.BindEnv("Id")
 	_ = v.BindEnv("LogLevel")
+	_ = v.BindEnv("Path")
+	_ = v.BindEnv("Port")
+	_ = v.BindEnv("AuthMode")
+	_ = v.BindEnv("Username")
+	_ = v.BindEnv("Password")
+	_ = v.BindEnv("Metrics")
 	_ = v.BindEnv("Onix.URL")
 	_ = v.BindEnv("Onix.AuthMode")
 	_ = v.BindEnv("Onix.Username")
@@ -83,36 +73,30 @@ func NewConfig() (*Config, error) {
 	_ = v.BindEnv("Onix.ClientId")
 	_ = v.BindEnv("Onix.AppSecret")
 	_ = v.BindEnv("Onix.TokenURI")
-	_ = v.BindEnv("TerraService.Path")
-	_ = v.BindEnv("TerraService.Port")
-	_ = v.BindEnv("TerraService.AuthMode")
-	_ = v.BindEnv("TerraService.Username")
-	_ = v.BindEnv("TerraService.Password")
-	_ = v.BindEnv("TerraService.Metrics")
-	_ = v.BindEnv("TerraService.InsecureSkipVerify")
+	_ = v.BindEnv("Onix.InsecureSkipVerify")
 
 	// creates a config struct and populate it with values
 	c := new(Config)
-	c.Ox = new(OnixConf)
-	c.Terra = new(TerraConf)
+	c.Ox = new(oxc.ClientConf)
 
 	// general configuration
 	c.Id = v.GetString("Id")
 	c.LogLevel = v.GetString("LogLevel")
-	c.Ox.URL = v.GetString("Onix.URL")
-	c.Ox.AuthMode = v.GetString("Onix.AuthMode")
+	c.AuthMode = v.GetString("AuthMode")
+	c.Metrics = v.GetBool("Metrics")
+	c.Username = v.GetString("Username")
+	c.Password = v.GetString("Password")
+	c.Port = v.GetString("Port")
+	c.Path = v.GetString("Path")
+
+	c.Ox.BaseURI = v.GetString("Onix.URL")
 	c.Ox.Username = v.GetString("Onix.Username")
 	c.Ox.Password = v.GetString("Onix.Password")
 	c.Ox.ClientId = v.GetString("Onix.ClientId")
-	c.Ox.ClientSecret = v.GetString("Onix.AppSecret")
+	c.Ox.AppSecret = v.GetString("Onix.AppSecret")
 	c.Ox.TokenURI = v.GetString("Onix.TokenURI")
-	c.Terra.AuthMode = v.GetString("Service.AuthMode")
-	c.Terra.InsecureSkipVerify = v.GetBool("Service.InsecureSkipVerify")
-	c.Terra.Metrics = v.GetBool("Service.Metrics")
-	c.Terra.Username = v.GetString("Service.Username")
-	c.Terra.Password = v.GetString("Service.Password")
-	c.Terra.Port = v.GetString("Service.Port")
-	c.Terra.Path = v.GetString("Service.Path")
+	c.Ox.SetAuthMode(v.GetString("Onix.AuthMode"))
+	c.Ox.InsecureSkipVerify = v.GetBool("Onix.InsecureSkipVerify")
 
 	return c, nil
 }
