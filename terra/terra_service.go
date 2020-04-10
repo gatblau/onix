@@ -22,6 +22,7 @@ import (
 	"fmt"
 	. "github.com/gatblau/oxc"
 	"github.com/gorilla/mux"
+	"github.com/hashicorp/terraform/states/statemgr"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 	"io"
@@ -55,7 +56,7 @@ func (s *TerraService) Start() {
 
 	// registers web handlers
 	log.Trace().Msg("registering web root / and liveliness probe /live handlers")
-	pattern := fmt.Sprintf("/%s/{key}", s.conf.Path)
+	pattern := fmt.Sprintf("/%s/{stateKey}", s.conf.Path)
 	mux.HandleFunc(pattern, s.rootHandler)
 	mux.HandleFunc("/live", s.liveHandler)
 
@@ -122,7 +123,7 @@ func (s *TerraService) rootHandler(w http.ResponseWriter, r *http.Request) {
 			// constructs a default terraform state object
 			state := TfState{Version: 1}
 			// attempts to load the state from Onix
-			err := state.loadState(s.ox, vars["key"])
+			err := state.loadState(s.ox, vars["stateKey"])
 			if err != nil {
 				if !strings.Contains(err.Error(), "404") {
 					// only logs the error if it is anything other than 404 (Not Found)
@@ -132,22 +133,20 @@ func (s *TerraService) rootHandler(w http.ResponseWriter, r *http.Request) {
 			// writes the state to the response
 			io.WriteString(w, state.toJSONString())
 		}
-
 	case "POST":
 		{
 			// reads the request body
-			state, err := s.readRequestBody(r)
+			state, err := s.readStateFromHttpBody(r)
 			if err != nil {
 				log.Err(err).Msg("failed to read request payload")
 				return
 			}
 			// persists the state in Onix
-			err = state.save(s.ox, vars["key"])
+			err = state.save(s.ox, vars["stateKey"])
 			if err != nil {
 				log.Error().Msg(err.Error())
 			}
 		}
-
 	case "PUT":
 		{
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -157,6 +156,35 @@ func (s *TerraService) rootHandler(w http.ResponseWriter, r *http.Request) {
 		{
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			_, _ = w.Write([]byte("405 - Method Not Allowed"))
+		}
+	case "LOCK":
+		{
+			lockInfo, err := s.readLockInfoFromHttpBody(r)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(fmt.Sprintf("failed to read lock information: %s", err.Error())))
+				log.Err(err).Msg("LOCK method failed to read LockInfo")
+				return
+			}
+			lock := NewLock(vars["stateKey"], s.ox)
+			err, responseStatus := lock.lock(lockInfo)
+			w.WriteHeader(responseStatus)
+			if err != nil {
+				_, _ = w.Write([]byte(fmt.Sprintf("failed to write a lock: %s", err.Error())))
+				return
+			}
+			return
+		}
+	case "UNLOCK":
+		{
+			lock := NewLock(vars["stateKey"], s.ox)
+			err, responseStatus := lock.unlock()
+			w.WriteHeader(responseStatus)
+			if err != nil {
+				_, _ = w.Write([]byte(fmt.Sprintf("failed to unlock state with key '%s': %s", vars["stateKey"], err.Error())))
+				return
+			}
+			return
 		}
 	}
 }
@@ -180,8 +208,8 @@ func (s *TerraService) liveHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("OK"))
 }
 
-// unmarshal the http request into a TfState structure
-func (s *TerraService) readRequestBody(r *http.Request) (*TfState, error) {
+// unmarshal the http request body into a TfState structure
+func (s *TerraService) readStateFromHttpBody(r *http.Request) (*TfState, error) {
 	var state TfState
 	// read the request body into a byte array
 	bytes, err := ioutil.ReadAll(r.Body)
@@ -195,6 +223,23 @@ func (s *TerraService) readRequestBody(r *http.Request) (*TfState, error) {
 	}
 	// return the terraform state
 	return &state, nil
+}
+
+// unmarshal the http request body into a LockInfo structure
+func (s *TerraService) readLockInfoFromHttpBody(r *http.Request) (*statemgr.LockInfo, error) {
+	var info statemgr.LockInfo
+	// read the request body into a byte array
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	// unmarshal the byte array into a TfState object
+	err = json.Unmarshal(bytes, &info)
+	if err != nil {
+		return nil, err
+	}
+	// return the terraform state
+	return &info, nil
 }
 
 func loggingMiddleware(next http.Handler) http.Handler {

@@ -34,6 +34,7 @@ const (
 	TfStateType    = "TF_STATE"
 	TfResourceType = "TF_RESOURCE"
 	TfLinkType     = "TF_STATE_LINK"
+	TfLockType     = "TF_STATE_LOCK"
 )
 
 // creates a new instance of the Terraform model
@@ -128,9 +129,17 @@ func (m *TerraModel) getModelData() *GraphData {
 				Model:       TfModelType,
 				Managed:     true,
 			},
+			ItemType{
+				Key:         TfLockType,
+				Name:        "Terraform State Lock",
+				Description: "Stores terraform state lock information",
+				Model:       TfModelType,
+				Managed:     true,
+			},
 		},
 		ItemTypeAttributes: []ItemTypeAttribute{
 			ItemTypeAttribute{
+				// TF_STATE attributes
 				Key:         "TF_STATE_ATTR_VERSION",
 				Name:        "version",
 				Description: "The version number.",
@@ -166,8 +175,9 @@ func (m *TerraModel) getModelData() *GraphData {
 				Required:    true,
 				Managed:     true,
 			},
+			// TF_RESOURCE attributes
 			ItemTypeAttribute{
-				Key:         "TF_ITEM_ATTR_NAME",
+				Key:         "TF_RESOURCE_ITEM_ATTR_NAME",
 				Name:        "name",
 				Description: "The name of the resource.",
 				Type:        "string",
@@ -176,7 +186,7 @@ func (m *TerraModel) getModelData() *GraphData {
 				Managed:     true,
 			},
 			ItemTypeAttribute{
-				Key:         "TF_ITEM_ATTR_MODE",
+				Key:         "TF_RESOURCE_ITEM_ATTR_MODE",
 				Name:        "mode",
 				Description: "Whether the resource is a data source or a managed resource.",
 				Type:        "string",
@@ -185,7 +195,7 @@ func (m *TerraModel) getModelData() *GraphData {
 				Managed:     true,
 			},
 			ItemTypeAttribute{
-				Key:         "TF_ITEM_ATTR_TYPE",
+				Key:         "TF_RESOURCE_ITEM_ATTR_TYPE",
 				Name:        "type",
 				Description: "The resource type.",
 				Type:        "string",
@@ -194,12 +204,62 @@ func (m *TerraModel) getModelData() *GraphData {
 				Managed:     true,
 			},
 			ItemTypeAttribute{
-				Key:         "TF_ITEM_ATTR_PROVIDER",
+				Key:         "TF_RESOURCE_ITEM_ATTR_PROVIDER",
 				Name:        "provider",
 				Description: "The provider used to manage this resource.",
 				Type:        "string",
 				ItemTypeKey: TfResourceType,
 				Required:    true,
+				Managed:     true,
+			},
+			// TF_LOCK attributes
+			ItemTypeAttribute{
+				Key:         "TF_LOCK_ITEM_ATTR_ID",
+				Name:        "id",
+				Description: "Unique ID for the lock.",
+				Type:        "string",
+				ItemTypeKey: TfLockType,
+				Required:    true,
+				Managed:     true,
+			},
+			ItemTypeAttribute{
+				Key:         "TF_LOCK_ITEM_ATTR_OPERATION",
+				Name:        "operation",
+				Description: "Terraform operation, provided by the caller.",
+				Type:        "string",
+				ItemTypeKey: TfLockType,
+				Managed:     true,
+			},
+			ItemTypeAttribute{
+				Key:         "TF_LOCK_ITEM_ATTR_INFO",
+				Name:        "info",
+				Description: "Extra information to store with the lock, provided by the caller.",
+				Type:        "string",
+				ItemTypeKey: TfLockType,
+				Managed:     true,
+			},
+			ItemTypeAttribute{
+				Key:         "TF_LOCK_ITEM_ATTR_WHO",
+				Name:        "who",
+				Description: "user@hostname when available",
+				Type:        "string",
+				ItemTypeKey: TfLockType,
+				Managed:     true,
+			},
+			ItemTypeAttribute{
+				Key:         "TF_LOCK_ITEM_ATTR_PATH",
+				Name:        "path",
+				Description: "Path to the state file when applicable. Set by the Lock implementation.",
+				Type:        "string",
+				ItemTypeKey: TfLockType,
+				Managed:     true,
+			},
+			ItemTypeAttribute{
+				Key:         "TF_LOCK_ITEM_ATTR_VERSION",
+				Name:        "version",
+				Description: "Terraform version.",
+				Type:        "string",
+				ItemTypeKey: TfLockType,
 				Managed:     true,
 			},
 		},
