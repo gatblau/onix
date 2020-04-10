@@ -7,6 +7,8 @@ require (
 	github.com/gatblau/oxc v0.0.0-20200407141420-56444130475e
 	github.com/golang/protobuf v1.3.5 // indirect
 	github.com/gorilla/mux v1.7.4
+	github.com/hashicorp/go-uuid v1.0.1
+	github.com/hashicorp/terraform v0.12.24
 	github.com/mitchellh/mapstructure v1.2.2 // indirect
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/prometheus/client_golang v1.5.1
@@ -17,8 +19,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.2
-	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
-	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/ini.v1 v1.55.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )

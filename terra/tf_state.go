@@ -67,7 +67,7 @@ func (state *TfState) save(client *Client, key string) error {
 
 // retrieve the terraform state
 func (state *TfState) loadState(client *Client, key string) error {
-	keyItem := &Item{Key: state.stateKey(key)}
+	keyItem := &Item{Key: stateKey(key)}
 	// load the state
 	item, err := client.GetItem(keyItem)
 	if err != nil || item == nil {
@@ -111,8 +111,8 @@ func (state *TfState) saveStateItem(client *Client, key string) error {
 	attrs["serial"] = state.Serial
 	attrs["lineage"] = state.Lineage
 	result, err := client.PutItem(&Item{
-		Key:         state.stateKey(key),
-		Name:        fmt.Sprintf("STATE -> %s"),
+		Key:         stateKey(key),
+		Name:        fmt.Sprintf("STATE -> %s", key),
 		Description: "",
 		Type:        TfStateType,
 		Attribute:   attrs,
@@ -177,10 +177,6 @@ func (state *TfState) toJSONString() string {
 	return string(result[:])
 }
 
-func (state *TfState) stateKey(key string) string {
-	return fmt.Sprintf("TF_STATE_%s", key)
-}
-
 func (state *TfState) instance(meta map[string]interface{}) []TfInstance {
 	metaBytes, err := json.Marshal(meta)
 	if err != nil {
@@ -193,4 +189,8 @@ func (state *TfState) instance(meta map[string]interface{}) []TfInstance {
 		return nil
 	}
 	return instances.Instances
+}
+
+func stateKey(key string) string {
+	return fmt.Sprintf("TF_STATE_%s", key)
 }
