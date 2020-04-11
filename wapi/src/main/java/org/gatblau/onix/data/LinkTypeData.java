@@ -39,7 +39,7 @@ public class LinkTypeData implements Serializable {
     private List<String> tag;
     private boolean encryptMeta;
     private boolean encryptTxt;
-    private boolean managed;
+    private JSONObject style;
     private String created;
     private String updated;
     private Integer version;
@@ -240,17 +240,16 @@ public class LinkTypeData implements Serializable {
     }
 
     @ApiModelProperty(
-            position = 15,
+            position = 13,
             required = false,
-            value = "Indicates whether the Configuration Link is fully managed by an agent.",
-            example = "true",
+            value = "A json object that store style information for the UI to render the link type.",
             allowEmptyValue = true
     )
-    public boolean getManaged() {
-        return managed;
+    public JSONObject getStyle() {
+        return style;
     }
 
-    public void setManaged(boolean managed) {
-        this.managed = managed;
+    public void setStyle(JSONObject style) {
+        this.style = style;
     }
 }

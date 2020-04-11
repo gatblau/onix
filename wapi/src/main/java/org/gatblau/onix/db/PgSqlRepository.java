@@ -1,5 +1,5 @@
 /*
-Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -509,11 +509,11 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(6, itemType.getVersion()); // version_param
             db.setObject(7, itemType.getModelKey()); // meta model key
             db.setString(8, getUser()); // changed_by_param
-            db.setObject(9, itemType.getNotifyChange());
+            db.setChar(9, itemType.getNotifyChange(), 'N');
             db.setString(10, util.toArrayString(itemType.getTag())); // tag_param
             db.setObject(11, itemType.getEncryptMeta());
             db.setObject(12, itemType.getEncryptTxt());
-            db.setBoolean(13, itemType.getManaged());
+            db.setString(13, util.toJSONString(itemType.getStyle()));
             db.setArray(14, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_item_type"));
         } catch (Exception ex) {
@@ -583,14 +583,13 @@ public class PgSqlRepository implements DbRepository {
             db.setString(3, typeAttr.getDescription()); // description_param
             db.setString(4, typeAttr.getType());
             db.setString(5, typeAttr.getDefValue());
-            db.setBoolean(6, typeAttr.getManaged());
-            db.setBoolean(7, typeAttr.getRequired());
-            db.setString(8, typeAttr.getRegex());
-            db.setString(9, itemTypeKey); // the item type to link the attr to
-            db.setString(10, null); // no link type key as is linking to the item type
-            db.setObject(11, typeAttr.getVersion()); // version_param
-            db.setString(12, getUser()); // changed_by_param
-            db.setArray(13, role);
+            db.setBoolean(6, typeAttr.getRequired());
+            db.setString(7, typeAttr.getRegex());
+            db.setString(8, itemTypeKey); // the item type to link the attr to
+            db.setString(9, null); // no link type key as is linking to the item type
+            db.setObject(10, typeAttr.getVersion()); // version_param
+            db.setString(11, getUser()); // changed_by_param
+            db.setArray(12, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_type_attribute"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -610,7 +609,6 @@ public class PgSqlRepository implements DbRepository {
                 "?::text," + // description_param
                 "?::character varying," + // type_param
                 "?::character varying," + // def_value_param
-                "?::boolean," + // managed_param
                 "?::boolean," + // required_param
                 "?::character varying," + // regex_param
                 "?::character varying," + // item_type_key_param
@@ -723,14 +721,13 @@ public class PgSqlRepository implements DbRepository {
             db.setString(3, typeAttr.getDescription()); // description_param
             db.setString(4, typeAttr.getType());
             db.setString(5, typeAttr.getDefValue());
-            db.setBoolean(6, typeAttr.getManaged());
-            db.setBoolean(7, typeAttr.getRequired());
-            db.setString(8, typeAttr.getRegex());
-            db.setString(9, null); // no item type key as is linking to the link type
-            db.setString(10, linkTypeKey); // the link type to link the attr to
-            db.setObject(11, typeAttr.getVersion()); // version_param
-            db.setString(12, getUser()); // changed_by_param
-            db.setArray(13, role);
+            db.setBoolean(6, typeAttr.getRequired());
+            db.setString(7, typeAttr.getRegex());
+            db.setString(8, null); // no item type key as is linking to the link type
+            db.setString(9, linkTypeKey); // the link type to link the attr to
+            db.setObject(10, typeAttr.getVersion()); // version_param
+            db.setString(11, getUser()); // changed_by_param
+            db.setArray(12, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_type_attribute"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -790,7 +787,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(5, util.toArrayString(linkType.getTag())); // tag_param
             db.setBoolean(6, linkType.getEncryptMeta());
             db.setBoolean(7, linkType.getEncryptTxt());
-            db.setBoolean(8, linkType.getManaged());
+            db.setString(8, util.toJSONString(linkType.getStyle()));
             db.setObject(9, linkType.getVersion()); // version_param
             db.setString(10, linkType.getModelKey()); // model_key_param
             db.setString(11, getUser()); // changed_by_param
@@ -1100,11 +1097,11 @@ public class PgSqlRepository implements DbRepository {
                 "?::bigint," + // version
                 "?::character varying," + // meta model key
                 "?::character varying," + // changed_by
-                "?::boolean," + // notify_change
+                "?::char," + // notify_change
                 "?::text[]," + // tag
                 "?::boolean," + // encrypt_meta
                 "?::boolean," + // encrypt_txt
-                "?::boolean," + // managed
+                "?::jsonb," + // style
                 "?::character varying[]" + // role_key_param
                 ")";
     }
@@ -1154,7 +1151,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::text[]," + // tag
                 "?::boolean," + // encrypt meta
                 "?::boolean," + // encrypt txt
-                "?::boolean," + // managed
+                "?::jsonb," + // managed
                 "?::bigint," + // version
                 "?::character varying," + // model_key
                 "?::character varying," + // changed_by

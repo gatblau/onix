@@ -2,8 +2,7 @@
   "name": "Item Type 1",
   "description": "This item type is for testing purposes only.",
   "modelKey": "meta_model_1",
-  "notifyChange": true,
+  "notifyChange": "T",
   "encryptTxt": false,
-  "encryptMeta": true,
-  "managed": true
+  "encryptMeta": true
 }

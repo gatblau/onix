@@ -16,7 +16,6 @@ public class ItemTypeAttrData implements Serializable {
     private String description;
     private String type;
     private String defValue;
-    private Boolean managed;
     private Boolean required;
     private String regex;
     private String itemTypeKey;
@@ -69,14 +68,6 @@ public class ItemTypeAttrData implements Serializable {
 
     public void setDefValue(String defValue) {
         this.defValue = defValue;
-    }
-
-    public Boolean getManaged() {
-        return managed;
-    }
-
-    public void setManaged(Boolean managed) {
-        this.managed = managed;
     }
 
     public Boolean getRequired() {

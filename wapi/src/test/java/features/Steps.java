@@ -538,10 +538,13 @@ public class Steps extends BaseTest {
     @Given(("^there are item types in the database$"))
     public void thereAreItemTypesInTheDatabase(){
         for (int i = 0; i < 2; i++) {
-            putItemType(
+            Result result = putItemType(
                 String.format("item_type_%s", i+1) ,
                 String.format("payload/create_item_type_%s_payload.json", i+1)
             );
+            if (result.isError()) {
+                throw new RuntimeException(String.format("failed to put item type '%s': %s", String.format("item_type_%s", i+1), result.getMessage()));
+            }
         }
     }
 

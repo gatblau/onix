@@ -35,7 +35,6 @@ public class ItemTypeData implements Serializable {
     private String key;
     private String name;
     private String description;
-    private JSONObject attrValid;
     private JSONObject filter;
     private JSONObject metaSchema;
     private String created;
@@ -44,11 +43,11 @@ public class ItemTypeData implements Serializable {
     private String changedBy;
     private String modelKey;
     private boolean root;
-    private boolean notifyChange;
+    private char notifyChange;
     private List<String> tag;
     private boolean encryptMeta;
     private boolean encryptTxt;
-    private boolean managed;
+    private JSONObject style;
 
     public ItemTypeData() {
     }
@@ -190,14 +189,14 @@ public class ItemTypeData implements Serializable {
     @ApiModelProperty(
             position = 10,
             required = false,
-            value = "Indicates if change notification events should be raised when items of this type change.",
-            example = "true"
+            value = "Indicates if change notification events should be raised when items of this type change. Its value can be N: no notification, T: publish to topic for the item type, or I: publish to channel for the specific item instance.",
+            example = "T"
     )
-    public boolean getNotifyChange() {
+    public char getNotifyChange() {
         return notifyChange;
     }
 
-    public void setNotifyChange(boolean notifyChange) {
+    public void setNotifyChange(char notifyChange) {
         this.notifyChange = notifyChange;
     }
 
@@ -262,17 +261,15 @@ public class ItemTypeData implements Serializable {
     }
 
     @ApiModelProperty(
-            position = 15,
-            required = false,
-            value = "Indicates whether the Configuration Item is fully managed by an agent.",
-            example = "true",
-            allowEmptyValue = true
+        position = 15,
+        required = false,
+        value = "A Json object containing the style information for the UI to render items of this type."
     )
-    public boolean getManaged() {
-        return managed;
+    public JSONObject getStyle() {
+        return style;
     }
 
-    public void setManaged(boolean managed) {
-        this.managed = managed;
+    public void setStyle(JSONObject style) {
+        this.style = style;
     }
 }

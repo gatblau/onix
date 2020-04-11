@@ -5,7 +5,6 @@
   "metaSchema": {
   },
   "tag": ["cmdb", "host", "rhel"],
-  "managed": "true",
   "encryptMeta": "true",
   "encryptTxt": "false"
 }

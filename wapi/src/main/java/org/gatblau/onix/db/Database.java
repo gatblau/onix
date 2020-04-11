@@ -138,6 +138,14 @@ class Database {
         stmt.setObject(parameterIndex, value);
     }
 
+    void setChar(int parameterIndex, char value, char defaultValue) throws SQLException {
+        // if no character value assigned, then use the default value
+        if (value == '\u0000') {
+            value = defaultValue;
+        }
+        stmt.setString(parameterIndex, String.valueOf(value));
+    }
+
     void setObjectRange(int fromIndex, int toIndex, Object value) throws SQLException {
         for (int i = fromIndex; i < toIndex + 1; i++) {
             setObject(i, null);

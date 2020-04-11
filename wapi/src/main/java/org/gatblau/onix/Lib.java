@@ -201,14 +201,12 @@ public class Lib implements InitializingBean {
             typeAttr.setItemTypeKey(set.getString("item_type_key"));
             typeAttr.setType(set.getString("type"));
             typeAttr.setDefValue(set.getString("def_value"));
-            typeAttr.setManaged(set.getBoolean("managed"));
             typeAttr.setRequired(set.getBoolean("required"));
             typeAttr.setRegex(set.getString("regex"));
             typeAttr.setCreated(dateFormat.format(set.getDate("created")));
             typeAttr.setUpdated((updated != null) ? dateFormat.format(updated) : null);
             typeAttr.setVersion(set.getInt("version"));
             typeAttr.setChangedBy(set.getString("changed_by"));
-            typeAttr.setManaged(set.getBoolean("managed"));
         }
         return typeAttr;
     }
@@ -224,14 +222,12 @@ public class Lib implements InitializingBean {
             typeAttr.setLinkTypeKey(set.getString("link_type_key"));
             typeAttr.setType(set.getString("type"));
             typeAttr.setDefValue(set.getString("def_value"));
-            typeAttr.setManaged(set.getBoolean("managed"));
             typeAttr.setRequired(set.getBoolean("required"));
             typeAttr.setRegex(set.getString("regex"));
             typeAttr.setCreated(dateFormat.format(set.getDate("created")));
             typeAttr.setUpdated((updated != null) ? dateFormat.format(updated) : null);
             typeAttr.setVersion(set.getInt("version"));
             typeAttr.setChangedBy(set.getString("changed_by"));
-            typeAttr.setManaged(set.getBoolean("managed"));
         }
         return typeAttr;
     }
@@ -252,33 +248,13 @@ public class Lib implements InitializingBean {
             itemType.setModelKey(set.getString("model_key"));
             itemType.setChangedBy(set.getString("changed_by"));
             itemType.setRoot(set.getBoolean("root"));
-            itemType.setNotifyChange(set.getBoolean("notify_change"));
+            itemType.setNotifyChange(set.getString("notify_change").charAt(0));
             itemType.setTag(toList(set.getObject("tag")));
             itemType.setEncryptMeta(set.getBoolean("encrypt_meta"));
             itemType.setEncryptTxt(set.getBoolean("encrypt_txt"));
-            itemType.setManaged(set.getBoolean("managed"));
+            itemType.setStyle(toJSON(set.getObject("style")));
         }
         return itemType;
-    }
-
-    public String toHStoreString(Map<String, String> map) {
-        String result = null;
-        if (map == null) {
-            result = null;
-        }
-        else {
-            StringBuilder sb = new StringBuilder();
-            int count = 0;
-            for (Map.Entry<String, String> entry : map.entrySet()) {
-                sb.append(entry.getKey()).append("=>").append(entry.getValue());
-                if (count < map.entrySet().size() - 1) {
-                    sb.append(",");
-                }
-                count++;
-            }
-            result = sb.toString();
-        }
-        return result;
     }
 
     public LinkTypeData toLinkTypeData(ResultSet set) throws SQLException, ParseException, IOException {
@@ -296,7 +272,7 @@ public class Lib implements InitializingBean {
             linkType.setTag(toList(set.getObject("tag")));
             linkType.setEncryptMeta(set.getBoolean("encrypt_meta"));
             linkType.setEncryptTxt(set.getBoolean("encrypt_txt"));
-            linkType.setManaged(set.getBoolean("managed"));
+            linkType.setStyle(toJSON(set.getObject("style")));
             linkType.setModelKey(set.getString("model_key"));
             linkType.setChangedBy(set.getString("changed_by"));
         }
