@@ -25,6 +25,5 @@
       }
     },
     "required": [ "productId", "productName", "price" ]
-  },
-  "managed": true
+  }
 }

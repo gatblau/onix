@@ -3,7 +3,6 @@
   "description": "The company name.",
   "type": "list",
   "defValue": "Acme Inc.",
-  "managed": true,
   "required": true,
   "regex": "",
   "itemTypeKey": "item_type_1"

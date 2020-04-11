@@ -93,23 +93,23 @@ DO
       CREATE OR REPLACE FUNCTION ox_item_type(key_param character varying, role_key_param character varying[])
         RETURNS TABLE
         (
-          id          integer,
-          key         character varying,
-          name        character varying,
-          description text,
-          filter      jsonb,
-          meta_schema jsonb,
-          version     bigint,
-          created     timestamp(6) with time zone,
-          updated     timestamp(6) with time zone,
-          changed_by  character varying,
-          model_key   character varying,
-          root        boolean,
-          notify_change boolean,
-          tag         text[],
-          encrypt_meta boolean,
-          encrypt_txt boolean,
-          managed     boolean
+            id            integer,
+            key           character varying,
+            name          character varying,
+            description   text,
+            filter        jsonb,
+            meta_schema   jsonb,
+            version       bigint,
+            created       timestamp(6) with time zone,
+            updated       timestamp(6) with time zone,
+            changed_by    character varying,
+            model_key     character varying,
+            root          boolean,
+            notify_change char,
+            tag           text[],
+            encrypt_meta  boolean,
+            encrypt_txt   boolean,
+            style         jsonb
         )
         LANGUAGE 'plpgsql'
         COST 100
@@ -134,7 +134,7 @@ DO
                  i.tag,
                  i.encrypt_meta,
                  i.encrypt_txt,
-                 i.managed
+                 i.style
           FROM item_type i
                  INNER JOIN model m ON i.model_id = m.id
                  INNER JOIN privilege pr on m.partition_id = pr.partition_id
@@ -239,22 +239,22 @@ DO
       CREATE OR REPLACE FUNCTION ox_link_type(key_param character varying,
                                               role_key_param character varying[])
         RETURNS TABLE
-                (
-                  id          integer,
-                  key         character varying,
-                  name        character varying,
-                  description text,
-                  meta_schema jsonb,
-                  tag         text[],
-                  encrypt_meta boolean,
-                  encrypt_txt  boolean,
-                  managed     boolean,
-                  version     bigint,
-                  created     timestamp(6) with time zone,
-                  updated     timestamp(6) with time zone,
-                  changed_by  character varying,
-                  model_key   character varying
-                )
+        (
+            id           integer,
+            key          character varying,
+            name         character varying,
+            description  text,
+            meta_schema  jsonb,
+            tag          text[],
+            encrypt_meta boolean,
+            encrypt_txt  boolean,
+            style        jsonb,
+            version      bigint,
+            created      timestamp(6) with time zone,
+            updated      timestamp(6) with time zone,
+            changed_by   character varying,
+            model_key    character varying
+        )
         LANGUAGE 'plpgsql'
         COST 100
         STABLE
@@ -270,7 +270,7 @@ DO
                  lt.tag,
                  lt.encrypt_meta,
                  lt.encrypt_txt,
-                 lt.managed,
+                 lt.style,
                  lt.version,
                  lt.created,
                  lt.updated,
@@ -297,21 +297,21 @@ DO
           type_key_param character varying,
           role_key_param character varying[]
       )
-          RETURNS TABLE(
-               id          integer,
-               key         character varying,
-               name        character varying,
-               description text,
+          RETURNS TABLE
+          (
+               id            integer,
+               key           character varying,
+               name          character varying,
+               description   text,
                item_type_key character varying,
-               type        character varying,
-               def_value   character varying,
-               managed     boolean,
-               required    boolean,
-               regex       varchar,
-               version     bigint,
-               created     timestamp(6) with time zone,
-               updated     timestamp(6) with time zone,
-               changed_by  character varying
+               type          character varying,
+               def_value     character varying,
+               required      boolean,
+               regex         varchar,
+               version       bigint,
+               created       timestamp(6) with time zone,
+               updated       timestamp(6) with time zone,
+               changed_by    character varying
            )
           LANGUAGE 'plpgsql'
           COST 100
@@ -326,7 +326,6 @@ DO
                      it.key as item_type_key,
                      ta.type,
                      ta.def_value,
-                     ta.managed,
                      ta.required,
                      ta.regex,
                      ta.version,
@@ -362,21 +361,20 @@ DO
           role_key_param character varying[]
       )
           RETURNS TABLE(
-                           id          integer,
-                           key         character varying,
-                           name        character varying,
-                           description text,
-                           link_type_key character varying,
-                           type        character varying,
-                           def_value   character varying,
-                           managed     boolean,
-                           required    boolean,
-                           regex       varchar,
-                           version     bigint,
-                           created     timestamp(6) with time zone,
-                           updated     timestamp(6) with time zone,
-                           changed_by  character varying
-                       )
+               id          integer,
+               key         character varying,
+               name        character varying,
+               description text,
+               link_type_key character varying,
+               type        character varying,
+               def_value   character varying,
+               required    boolean,
+               regex       varchar,
+               version     bigint,
+               created     timestamp(6) with time zone,
+               updated     timestamp(6) with time zone,
+               changed_by  character varying
+           )
           LANGUAGE 'plpgsql'
           COST 100
           STABLE
@@ -390,7 +388,6 @@ DO
                      lt.key as link_type_key,
                      ta.type,
                      ta.def_value,
-                     ta.managed,
                      ta.required,
                      ta.regex,
                      ta.version,

@@ -3,7 +3,6 @@
   "description": "WBS code.",
   "type": "string",
   "defValue": "AA-0001",
-  "managed": true,
   "required": true,
   "regex": "[AA]+",
   "linkTypeKey": "link_type_1"

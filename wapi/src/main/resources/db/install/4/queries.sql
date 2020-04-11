@@ -1,5 +1,5 @@
 /*
-    Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+    Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -278,11 +278,11 @@ CREATE OR REPLACE FUNCTION ox_find_item_types(
     changed_by character varying,
     model_key character varying,
     root boolean,
-    notify_change boolean,
+    notify_change char,
     tag text[],
     encrypt_meta boolean,
     encrypt_txt boolean,
-    managed boolean
+    style jsonb
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -306,7 +306,7 @@ BEGIN
      i.tag,
      i.encrypt_meta,
      i.encrypt_txt,
-     i.managed
+     i.style
   FROM item_type i
   INNER JOIN model m ON i.model_id = m.id
   INNER JOIN partition p ON m.partition_id = p.id
@@ -366,20 +366,20 @@ CREATE OR REPLACE FUNCTION ox_find_link_types(
     role_key_param character varying[] -- the role is executing the query
   )
   RETURNS TABLE(
-    id integer,
-    key character varying,
-    name character varying,
-    description text,
-    meta_schema jsonb,
-    tag text[],
-    encrypt_meta boolean,
-    encrypt_txt boolean,
-    managed boolean,
-    version bigint,
-    created timestamp(6) with time zone,
-    updated timestamp(6) with time zone,
-    changed_by character varying,
-    model_key character varying
+       id           integer,
+       key          character varying,
+       name         character varying,
+       description  text,
+       meta_schema  jsonb,
+       tag          text[],
+       encrypt_meta boolean,
+       encrypt_txt  boolean,
+       style        jsonb,
+       version      bigint,
+       created      timestamp(6) with time zone,
+       updated      timestamp(6) with time zone,
+       changed_by   character varying,
+       model_key    character varying
   )
   LANGUAGE 'plpgsql'
   COST 100
@@ -395,7 +395,7 @@ BEGIN
      l.tag,
      l.encrypt_meta,
      l.encrypt_txt,
-     l.managed,
+     l.style,
      l.version,
      l.created,
      l.updated,
@@ -1070,7 +1070,6 @@ CREATE OR REPLACE FUNCTION ox_get_item_type_attributes(
      type        character varying,
      item_type_key character varying,
      def_value   character varying,
-     managed     boolean,
      required    boolean,
      regex       varchar,
      version     bigint,
@@ -1091,7 +1090,6 @@ BEGIN
            ta.type,
            it.key as item_type_key,
            ta.def_value,
-           ta.managed,
            ta.required,
            ta.regex,
            ta.version,
@@ -1121,21 +1119,20 @@ CREATE OR REPLACE FUNCTION ox_get_link_type_attributes(
     role_key_param character varying[]
 )
     RETURNS TABLE(
-                     id          integer,
-                     key         character varying,
-                     name        character varying,
-                     description text,
-                     type        character varying,
-                     link_type_key character varying,
-                     def_value   character varying,
-                     managed     boolean,
-                     required    boolean,
-                     regex       varchar,
-                     version     bigint,
-                     created     timestamp(6) with time zone,
-                     updated     timestamp(6) with time zone,
-                     changed_by  character varying
-                 )
+         id          integer,
+         key         character varying,
+         name        character varying,
+         description text,
+         type        character varying,
+         link_type_key character varying,
+         def_value   character varying,
+         required    boolean,
+         regex       varchar,
+         version     bigint,
+         created     timestamp(6) with time zone,
+         updated     timestamp(6) with time zone,
+         changed_by  character varying
+     )
     LANGUAGE 'plpgsql'
     COST 100
     STABLE
@@ -1149,7 +1146,6 @@ BEGIN
                ta.type,
                lt.key as link_type_key,
                ta.def_value,
-               ta.managed,
                ta.required,
                ta.regex,
                ta.version,

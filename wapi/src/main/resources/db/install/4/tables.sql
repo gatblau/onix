@@ -1,5 +1,5 @@
 /*
-    Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+    Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -420,29 +420,29 @@ DO
 
         CREATE TABLE item_type
         (
-          id          INTEGER                NOT NULL DEFAULT nextval('item_type_id_seq'::regclass),
-          key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
-          description TEXT COLLATE pg_catalog."default",
-          filter      jsonb,
-          meta_schema jsonb,
-          version     bigint                 NOT NULL DEFAULT 1,
-          created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
-          updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-          model_id    INT                    NOT NULL,
-          notify_change BOOLEAN NOT NULL DEFAULT FALSE,
-          tag          TEXT[] COLLATE pg_catalog."default",
-          encrypt_meta BOOLEAN NOT NULL DEFAULT FALSE,
-          encrypt_txt  BOOLEAN NOT NULL DEFAULT FALSE,
-          managed      BOOLEAN NOT NULL DEFAULT FALSE, -- is this attribute managed by an agent
-          CONSTRAINT item_type_id_pk PRIMARY KEY (id),
-          CONSTRAINT item_type_key_uc UNIQUE (key),
-          CONSTRAINT item_type_name_uc UNIQUE (name),
-          CONSTRAINT item_type_model_id_fk FOREIGN KEY (model_id)
-            REFERENCES model (id) MATCH SIMPLE
-            ON UPDATE NO ACTION
-            ON DELETE CASCADE
+            id            INTEGER                NOT NULL DEFAULT nextval('item_type_id_seq'::regclass),
+            key           CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+            name          CHARACTER VARYING(200) COLLATE pg_catalog."default",
+            description   TEXT COLLATE pg_catalog."default",
+            filter        JSONB,
+            meta_schema   JSONB,
+            version       BIGINT                 NOT NULL DEFAULT 1,
+            created       TIMESTAMP(6) WITH TIME ZONE     DEFAULT CURRENT_TIMESTAMP(6),
+            updated       TIMESTAMP(6) WITH TIME ZONE,
+            changed_by    CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+            model_id      INT                    NOT NULL,
+            notify_change CHAR(1)                NOT NULL DEFAULT 'N' CHECK (notify_change IN ('N', 'T', 'I')), -- N: no, T: yes to a common topic by type, I:yes to a dedicated topic by instance
+            tag           TEXT[] COLLATE pg_catalog."default",
+            encrypt_meta  BOOLEAN                NOT NULL DEFAULT FALSE,
+            encrypt_txt   BOOLEAN                NOT NULL DEFAULT FALSE,
+            style         JSONB,
+            CONSTRAINT item_type_id_pk PRIMARY KEY (id),
+            CONSTRAINT item_type_key_uc UNIQUE (key),
+            CONSTRAINT item_type_name_uc UNIQUE (name),
+            CONSTRAINT item_type_model_id_fk FOREIGN KEY (model_id)
+                REFERENCES model (id) MATCH SIMPLE
+                ON UPDATE NO ACTION
+                ON DELETE CASCADE
         )
           WITH (
             OIDS = FALSE
@@ -469,24 +469,24 @@ DO
       THEN
         CREATE TABLE item_type_change
         (
-          operation   CHAR(1)                NOT NULL,
-          changed     TIMESTAMP              NOT NULL,
-          id          INTEGER,
-          key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
-          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
-          description TEXT COLLATE pg_catalog."default",
-          filter      jsonb,
-          meta_schema jsonb,
-          version     bigint,
-          created     timestamp(6) with time zone,
-          updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-          model_id    int,
-          notify_change BOOLEAN NOT NULL,
-          tag          text[] COLLATE pg_catalog."default",
-          encrypt_meta boolean,
-          encrypt_txt  boolean,
-          managed      boolean -- is this item managed by an agent Y:yes N:no P:partially
+            operation     CHAR(1)                NOT NULL,
+            changed       TIMESTAMP              NOT NULL,
+            id            INTEGER,
+            key           CHARACTER VARYING(100) COLLATE pg_catalog."default",
+            name          CHARACTER VARYING(200) COLLATE pg_catalog."default",
+            description   TEXT COLLATE pg_catalog."default",
+            filter        jsonb,
+            meta_schema   jsonb,
+            version       bigint,
+            created       timestamp(6) with time zone,
+            updated       timestamp(6) with time zone,
+            changed_by    CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+            model_id      int,
+            notify_change CHAR(1),
+            tag           text[] COLLATE pg_catalog."default",
+            encrypt_meta  boolean,
+            encrypt_txt   boolean,
+            style         JSONB
         );
 
         CREATE OR REPLACE FUNCTION ox_change_item_type() RETURNS TRIGGER AS
@@ -663,27 +663,27 @@ DO
 
         CREATE TABLE link_type
         (
-          id          INTEGER                NOT NULL DEFAULT nextval('link_type_id_seq'::regclass),
-          key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
-          description TEXT COLLATE pg_catalog."default",
-          meta_schema jsonb,
-          tag          TEXT[] COLLATE pg_catalog."default",
-          encrypt_meta BOOLEAN NOT NULL DEFAULT FALSE,
-          encrypt_txt  BOOLEAN NOT NULL DEFAULT FALSE,
-          managed      BOOLEAN NOT NULL DEFAULT FALSE, -- is this attribute managed by an agent
-          version     bigint                 NOT NULL DEFAULT 1,
-          created     timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
-          updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-          model_id    int                    NOT NULL,
-          CONSTRAINT link_type_id_pk PRIMARY KEY (id),
-          CONSTRAINT link_type_key_uc UNIQUE (key),
-          CONSTRAINT link_type_name_uc UNIQUE (name),
-          CONSTRAINT link_type_model_id_fk FOREIGN KEY (model_id)
-            REFERENCES model (id) MATCH SIMPLE
-            ON UPDATE NO ACTION
-            ON DELETE CASCADE
+            id           INTEGER                NOT NULL DEFAULT nextval('link_type_id_seq'::regclass),
+            key          CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+            name         CHARACTER VARYING(200) COLLATE pg_catalog."default",
+            description  TEXT COLLATE pg_catalog."default",
+            meta_schema  jsonb,
+            tag          TEXT[] COLLATE pg_catalog."default",
+            encrypt_meta BOOLEAN                NOT NULL DEFAULT FALSE,
+            encrypt_txt  BOOLEAN                NOT NULL DEFAULT FALSE,
+            style        JSONB,
+            version      bigint                 NOT NULL DEFAULT 1,
+            created      timestamp(6) with time zone     DEFAULT CURRENT_TIMESTAMP(6),
+            updated      timestamp(6) with time zone,
+            changed_by   CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+            model_id     int                    NOT NULL,
+            CONSTRAINT link_type_id_pk PRIMARY KEY (id),
+            CONSTRAINT link_type_key_uc UNIQUE (key),
+            CONSTRAINT link_type_name_uc UNIQUE (name),
+            CONSTRAINT link_type_model_id_fk FOREIGN KEY (model_id)
+                REFERENCES model (id) MATCH SIMPLE
+                ON UPDATE NO ACTION
+                ON DELETE CASCADE
         )
           WITH (OIDS = FALSE)
           TABLESPACE pg_default;
@@ -708,22 +708,22 @@ DO
       THEN
         CREATE TABLE link_type_change
         (
-          operation   CHAR(1)                NOT NULL,
-          changed     TIMESTAMP              NOT NULL,
-          id          INTEGER,
-          key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
-          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
-          description TEXT COLLATE pg_catalog."default",
-          meta_schema jsonb,
-          tag         TEXT[],
-          encrypt_meta BOOLEAN,
-          encrypt_txt BOOLEAN,
-          managed     BOOLEAN,
-          version     bigint,
-          created     timestamp(6) with time zone,
-          updated     timestamp(6) with time zone,
-          changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-          model_id    int
+            operation    CHAR(1)                NOT NULL,
+            changed      TIMESTAMP              NOT NULL,
+            id           INTEGER,
+            key          CHARACTER VARYING(100) COLLATE pg_catalog."default",
+            name         CHARACTER VARYING(200) COLLATE pg_catalog."default",
+            description  TEXT COLLATE pg_catalog."default",
+            meta_schema  JSONB,
+            tag          TEXT[],
+            encrypt_meta BOOLEAN,
+            encrypt_txt  BOOLEAN,
+            style        JSONB,
+            version      BIGINT,
+            created      TIMESTAMP(6) WITH TIME ZONE,
+            updated      TIMESTAMP(6) WITH TIME ZONE,
+            changed_by   CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+            model_id     INT
         );
 
         CREATE OR REPLACE FUNCTION ox_change_link_type() RETURNS TRIGGER AS
@@ -1131,7 +1131,6 @@ DO
         description TEXT COLLATE pg_catalog."default", -- an explanation of the attribute for clients to see
         type        CHARACTER VARYING(100) NOT NULL, -- is this a number, string, etc?
         def_value   CHARACTER VARYING(200), -- zero or more default values separated by commas
-        managed     BOOLEAN, -- is this attribute managed by an agent Y:yes N:no P:partially
         required    BOOLEAN NOT NULL DEFAULT FALSE, -- is this a required attribute?
         regex       VARCHAR(300), -- tell client how to validate value
         item_type_id INTEGER NULL, -- the item type this attribute belongs to
@@ -1178,7 +1177,6 @@ DO
           description TEXT COLLATE pg_catalog."default", -- an explanation of the attribute for clients to see
           type        CHARACTER VARYING(100) NOT NULL, -- is this a number, string, etc?
           def_value   CHARACTER VARYING(300), -- zero or more default values separated by commas
-          managed     BOOLEAN, -- is this attribute managed by an agent
           required    BOOLEAN NOT NULL DEFAULT FALSE, -- is this a required attribute?
           regex       VARCHAR(300), -- tell client how to validate value
           item_type_id INTEGER NULL, -- the item type this attribute belongs to
