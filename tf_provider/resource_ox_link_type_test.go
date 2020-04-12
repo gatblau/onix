@@ -55,7 +55,6 @@ func TestLinkTypeResource(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "model_key", LinkTypeRsModelKey),
 					resource.TestCheckResourceAttr(resourceName, "encrypt_meta", strconv.FormatBool(LinkTypeRsEncryptMeta)),
 					resource.TestCheckResourceAttr(resourceName, "encrypt_txt", strconv.FormatBool(LinkTypeRsEncryptTxt)),
-					resource.TestCheckResourceAttr(resourceName, "managed", strconv.FormatBool(LinkTypeRsManaged)),
 
 					// check for side effects in Onix database
 					checkLinkTypeResourceCreated(LinkTypeResourceName),
@@ -109,9 +108,6 @@ func checkLinkTypeResourceCreated(resourceName string) resource.TestCheckFunc {
 		if err := checkEntityAttr(rs, "model_key", linkType.Model); err != nil {
 			return err
 		}
-		if err := checkEntityAttr(rs, "managed", strconv.FormatBool(linkType.Managed)); err != nil {
-			return err
-		}
 		if err := checkEntityAttr(rs, "encrypt_meta", strconv.FormatBool(linkType.EncryptMeta)); err != nil {
 			return err
 		}
@@ -149,12 +145,10 @@ func oxLinkTypeResource() string {
   model_key   	= "%s"
   encrypt_txt 	= %s
   encrypt_meta 	= "%s"
-  managed 		= %s
 }`, LinkTypeRsKey,
 		LinkTypeRsName,
 		LinkTypeRsDesc,
 		LinkTypeRsModelKey,
 		strconv.FormatBool(LinkTypeRsEncryptTxt),
-		strconv.FormatBool(LinkTypeRsEncryptMeta),
-		strconv.FormatBool(LinkTypeRsManaged))
+		strconv.FormatBool(LinkTypeRsEncryptMeta))
 }

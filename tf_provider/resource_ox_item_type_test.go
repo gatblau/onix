@@ -33,10 +33,9 @@ const (
 	ItemTypeRsKey          = "test_acc_ox_item_type_1"
 	ItemTypeRsName         = "ox_item_type_1_name"
 	ItemTypeRsDesc         = "ox_item_type_1_description"
-	ItemTypeRsNotifyChange = true
+	ItemTypeRsNotifyChange = "N"
 	ItemTypeRsEncryptMeta  = false
 	ItemTypeRsEncryptTxt   = false
-	ItemTypeRsManaged      = true
 )
 
 func TestItemTypeResource(t *testing.T) {
@@ -54,10 +53,9 @@ func TestItemTypeResource(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", ItemTypeRsName),
 					resource.TestCheckResourceAttr(resourceName, "description", ItemTypeRsDesc),
 					resource.TestCheckResourceAttr(resourceName, "model_key", ItemTypeRsModelKey),
-					resource.TestCheckResourceAttr(resourceName, "notify_change", strconv.FormatBool(ItemTypeRsNotifyChange)),
+					resource.TestCheckResourceAttr(resourceName, "notify_change", ItemTypeRsNotifyChange),
 					resource.TestCheckResourceAttr(resourceName, "encrypt_meta", strconv.FormatBool(ItemTypeRsEncryptMeta)),
 					resource.TestCheckResourceAttr(resourceName, "encrypt_txt", strconv.FormatBool(ItemTypeRsEncryptTxt)),
-					resource.TestCheckResourceAttr(resourceName, "managed", strconv.FormatBool(ItemTypeRsManaged)),
 
 					// check for side effects in Onix database
 					checkItemTypeResourceCreated(ItemTypeResourceName),
@@ -111,16 +109,13 @@ func checkItemTypeResourceCreated(resourceName string) resource.TestCheckFunc {
 		if err := checkEntityAttr(rs, "model_key", itemType.Model); err != nil {
 			return err
 		}
-		if err := checkEntityAttr(rs, "managed", strconv.FormatBool(itemType.Managed)); err != nil {
-			return err
-		}
 		if err := checkEntityAttr(rs, "encrypt_meta", strconv.FormatBool(itemType.EncryptMeta)); err != nil {
 			return err
 		}
 		if err := checkEntityAttr(rs, "encrypt_txt", strconv.FormatBool(itemType.EncryptTxt)); err != nil {
 			return err
 		}
-		if err := checkEntityAttr(rs, "notify_change", strconv.FormatBool(itemType.NotifyChange)); err != nil {
+		if err := checkEntityAttr(rs, "notify_change", itemType.NotifyChange.ToString()); err != nil {
 			return err
 		}
 		return nil
@@ -152,16 +147,14 @@ func oxItemTypeResource() string {
   name        	= "%s"
   description 	= "%s"
   model_key   	= "%s"
-  notify_change = %s
+  notify_change = "%s"
   encrypt_txt 	= %s
   encrypt_meta 	= "%s"
-  managed 		= %s
 }`, ItemTypeRsKey,
 		ItemTypeRsName,
 		ItemTypeRsDesc,
 		ItemTypeRsModelKey,
-		strconv.FormatBool(ItemTypeRsNotifyChange),
+		ItemTypeRsNotifyChange,
 		strconv.FormatBool(ItemTypeRsEncryptTxt),
-		strconv.FormatBool(ItemTypeRsEncryptMeta),
-		strconv.FormatBool(ItemTypeRsManaged))
+		strconv.FormatBool(ItemTypeRsEncryptMeta))
 }

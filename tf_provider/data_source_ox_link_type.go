@@ -1,6 +1,6 @@
 /*
    Onix Config Manager - Terraform Provider
-   Copyright (c) 2018-2019 by www.gatblau.org
+   Copyright (c) 2018-2020 by www.gatblau.org
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -59,8 +59,8 @@ func LinkTypeDataSource() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
-			"managed": &schema.Schema{
-				Type:     schema.TypeBool,
+			"style": &schema.Schema{
+				Type:     schema.TypeMap,
 				Optional: true,
 			},
 			"version": &schema.Schema{

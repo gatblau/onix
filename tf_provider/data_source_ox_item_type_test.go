@@ -31,11 +31,12 @@ const (
 	ItemTypeDsKey          = "test_acc_ox_item_type_1_data"
 	ItemTypeDsName         = "ox_item_type_1_data_name"
 	ItemTypeDsDesc         = "ox_item_type_1_data_description"
-	ItemTypeDsNotifyChange = true
+	ItemTypeDsNotifyChange = "T"
 	ItemTypeDsEncryptMeta  = false
 	ItemTypeDsEncryptTxt   = false
-	ItemTypeDsManaged      = true
 )
+
+var ItemTypeDsStyle = make(map[string]interface{})
 
 func init() {
 	// defines a sweeper to clean up dangling test resources
@@ -64,10 +65,9 @@ func TestItemTypeDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", ItemTypeDsName),
 					resource.TestCheckResourceAttr(resourceName, "description", ItemTypeDsDesc),
 					resource.TestCheckResourceAttr(resourceName, "model_key", ItemTypeDsModelKey),
-					resource.TestCheckResourceAttr(resourceName, "notify_change", strconv.FormatBool(ItemTypeDsNotifyChange)),
+					resource.TestCheckResourceAttr(resourceName, "notify_change", ItemTypeDsNotifyChange),
 					resource.TestCheckResourceAttr(resourceName, "encrypt_meta", strconv.FormatBool(ItemTypeDsEncryptMeta)),
 					resource.TestCheckResourceAttr(resourceName, "encrypt_txt", strconv.FormatBool(ItemTypeDsEncryptTxt)),
-					resource.TestCheckResourceAttr(resourceName, "managed", strconv.FormatBool(ItemTypeDsManaged)),
 				),
 			},
 		},
@@ -105,7 +105,7 @@ func prepareItemTypeDataSourceTest(t *testing.T) {
 			Description:  ItemTypeDsDesc,
 			Model:        ItemTypeDsModelKey,
 			NotifyChange: ItemTypeDsNotifyChange,
-			Managed:      ItemTypeDsManaged,
+			Style:        ItemTypeDsStyle,
 		})
 	if err != nil {
 		t.Error(err)

@@ -20,7 +20,6 @@ import (
 	"github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"strconv"
 	"testing"
 )
 
@@ -32,7 +31,6 @@ const (
 	ItemTypeAttrRsDesc         = "test_acc_ox_item_type_attr_1 description"
 	ItemTypeAttrRsType         = "list"
 	ItemTypeAttrRsDefValue     = "A,B,C"
-	ItemTypeAttrRsManaged      = false
 	ItemTypeAttrRsItemTypeKey  = "test_acc_item_type_ox_item_type_attr"
 	ItemTypeAttrRsItemTypeName = "test_acc_item_type_ox_item_type_attr name"
 	ItemTypeAttrRsItemTypeDesc = "test_acc_item_type_ox_item_type_attr description"
@@ -58,7 +56,6 @@ func TestItemTypeAttrResource(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "item_type_key", ItemTypeAttrRsItemTypeKey),
 					resource.TestCheckResourceAttr(resourceName, "type", ItemTypeAttrRsType),
 					resource.TestCheckResourceAttr(resourceName, "def_value", ItemTypeAttrRsDefValue),
-					resource.TestCheckResourceAttr(resourceName, "managed", strconv.FormatBool(ItemTypeAttrRsManaged)),
 
 					// check for side effects in Onix database
 					checkItemTypeAttrResourceCreated(ItemTypeAttrResourceName),
@@ -153,12 +150,10 @@ func oxItemTypeAttrResource() string {
   item_type_key = "%s"
   type        	= "%s"
   def_value   	= "%s"
-  managed     	= %s
 }`, ItemTypeAttrRsKey,
 		ItemTypeAttrRsName,
 		ItemTypeAttrRsDesc,
 		ItemTypeAttrRsItemTypeKey,
 		ItemTypeAttrRsType,
-		ItemTypeAttrRsDefValue,
-		strconv.FormatBool(ItemTypeAttrRsManaged))
+		ItemTypeAttrRsDefValue)
 }

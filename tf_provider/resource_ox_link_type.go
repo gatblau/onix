@@ -61,8 +61,8 @@ func LinkTypeResource() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
-			"managed": &schema.Schema{
-				Type:     schema.TypeBool,
+			"style": &schema.Schema{
+				Type:     schema.TypeMap,
 				Optional: true,
 			},
 			"version": &schema.Schema{
@@ -116,7 +116,7 @@ func newLinkType(data *schema.ResourceData) *LinkType {
 		MetaSchema:  data.Get("meta_schema").(map[string]interface{}),
 		EncryptMeta: data.Get("encrypt_meta").(bool),
 		EncryptTxt:  data.Get("encrypt_txt").(bool),
-		Managed:     data.Get("managed").(bool),
+		Style:       data.Get("style").(map[string]interface{}),
 		Tag:         data.Get("tag").([]interface{}),
 		Version:     getVersion(data),
 	}
@@ -133,7 +133,7 @@ func populateLinkType(data *schema.ResourceData, linkType *LinkType) {
 	data.Set("encrypt_txt", linkType.EncryptTxt)
 	data.Set("encrypt_meta", linkType.EncryptMeta)
 	data.Set("tag", linkType.Tag)
-	data.Set("managed", linkType.Managed)
+	data.Set("style", linkType.Style)
 	data.Set("created", linkType.Created)
 	data.Set("updated", linkType.Updated)
 	data.Set("changed_by", linkType.ChangedBy)

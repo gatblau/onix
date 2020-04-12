@@ -30,6 +30,26 @@ func LinkTypeAttributeDataSource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"type": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"def_value": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"required": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"regex": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"link_type_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
