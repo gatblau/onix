@@ -20,7 +20,6 @@ import (
 	"github.com/gatblau/oxc"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"strconv"
 	"testing"
 )
 
@@ -32,7 +31,6 @@ const (
 	LinkTypeAttrRsDesc         = "test_acc_ox_link_type_attr_1 description"
 	LinkTypeAttrRsType         = "list"
 	LinkTypeAttrRsDefValue     = "A,B,C"
-	LinkTypeAttrRsManaged      = false
 	LinkTypeAttrRsLinkTypeKey  = "test_acc_link_type_ox_link_type_attr"
 	LinkTypeAttrRsLinkTypeName = "test_acc_link_type_ox_link_type_attr name"
 	LinkTypeAttrRsLinkTypeDesc = "test_acc_link_type_ox_link_type_attr description"
@@ -58,7 +56,6 @@ func TestLinkTypeAttrResource(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "link_type_key", LinkTypeAttrRsLinkTypeKey),
 					resource.TestCheckResourceAttr(resourceName, "type", LinkTypeAttrRsType),
 					resource.TestCheckResourceAttr(resourceName, "def_value", LinkTypeAttrRsDefValue),
-					resource.TestCheckResourceAttr(resourceName, "managed", strconv.FormatBool(LinkTypeAttrRsManaged)),
 
 					// check for side effects in Onix database
 					checkLinkTypeAttrResourceCreated(LinkTypeAttrResourceName),
@@ -153,12 +150,10 @@ func oxLinkTypeAttrResource() string {
   link_type_key = "%s"
   type        	= "%s"
   def_value   	= "%s"
-  managed     	= %s
 }`, LinkTypeAttrRsKey,
 		LinkTypeAttrRsName,
 		LinkTypeAttrRsDesc,
 		LinkTypeAttrRsLinkTypeKey,
 		LinkTypeAttrRsType,
-		LinkTypeAttrRsDefValue,
-		strconv.FormatBool(LinkTypeAttrRsManaged))
+		LinkTypeAttrRsDefValue)
 }

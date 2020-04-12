@@ -1,10 +1,12 @@
-//terraform {
-//  backend "http" {
-//    address = "http://localhost:8000/foo"
-//    //    lock_address = "http://localhost:8000/foo"
-//    //    unlock_address = "http://localhost:8000/foo"
-//  }
-//}
+terraform {
+  backend "http" {
+    address = "http://localhost:8081/state/foo"
+    lock_address = "http://localhost:8081/state/foo"
+    unlock_address = "http://localhost:8081/state/foo"
+    username = "admin"
+    password = "0n1x"
+  }
+}
 
 provider "ox" {
   uri = "http://localhost:8080"

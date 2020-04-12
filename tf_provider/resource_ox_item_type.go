@@ -53,7 +53,7 @@ func ItemTypeResource() *schema.Resource {
 				Required: true,
 			},
 			"notify_change": &schema.Schema{
-				Type:     schema.TypeBool,
+				Type:     schema.TypeString,
 				Optional: true,
 			},
 			"tag": &schema.Schema{
@@ -69,8 +69,8 @@ func ItemTypeResource() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
-			"managed": &schema.Schema{
-				Type:     schema.TypeBool,
+			"style": &schema.Schema{
+				Type:     schema.TypeMap,
 				Optional: true,
 			},
 			"version": &schema.Schema{
@@ -124,11 +124,11 @@ func newItemType(data *schema.ResourceData) *ItemType {
 		Model:        data.Get("model_key").(string),
 		Filter:       data.Get("filter").(map[string]interface{}),
 		MetaSchema:   data.Get("meta_schema").(map[string]interface{}),
-		NotifyChange: data.Get("notify_change").(bool),
+		NotifyChange: FromString(data.Get("notify_change").(string)),
 		EncryptMeta:  data.Get("encrypt_meta").(bool),
 		EncryptTxt:   data.Get("encrypt_txt").(bool),
-		Managed:      data.Get("managed").(bool),
 		Tag:          data.Get("tag").([]interface{}),
+		Style:        data.Get("style").(map[string]interface{}),
 		Version:      getVersion(data),
 	}
 }
@@ -145,7 +145,7 @@ func populateItemType(data *schema.ResourceData, itemType *ItemType) {
 	data.Set("tag", itemType.Tag)
 	data.Set("encrypt_meta", itemType.EncryptMeta)
 	data.Set("encrypt_txt", itemType.EncryptTxt)
-	data.Set("managed", itemType.Managed)
+	data.Set("style", itemType.Style)
 	data.Set("model_key", itemType.Model)
 	data.Set("created", itemType.Created)
 	data.Set("updated", itemType.Updated)

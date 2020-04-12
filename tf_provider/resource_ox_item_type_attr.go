@@ -52,10 +52,6 @@ func ItemTypeAttributeResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"managed": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
 			"required": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -113,8 +109,7 @@ func newItemTypeAttr(data *schema.ResourceData) *ItemTypeAttribute {
 		Description: data.Get("description").(string),
 		Type:        data.Get("type").(string),
 		DefValue:    data.Get("def_value").(string),
-		Managed:     data.Get("managed").(bool),
-		Required:    data.Get("managed").(bool),
+		Required:    data.Get("required").(bool),
 		Regex:       data.Get("regex").(string),
 		ItemTypeKey: data.Get("item_type_key").(string),
 		Version:     getVersion(data),
@@ -128,7 +123,6 @@ func populateItemTypeAttr(data *schema.ResourceData, typeAttr *ItemTypeAttribute
 	data.Set("description", typeAttr.Description)
 	data.Set("type", typeAttr.Type)
 	data.Set("def_value", typeAttr.DefValue)
-	data.Set("managed", typeAttr.Managed)
 	data.Set("required", typeAttr.Required)
 	data.Set("regex", typeAttr.Regex)
 	data.Set("item_type_key", typeAttr.ItemTypeKey)

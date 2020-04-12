@@ -7,7 +7,7 @@ require (
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/aws/aws-sdk-go v1.30.2 // indirect
 	github.com/fatih/color v1.9.0 // indirect
-	github.com/gatblau/oxc v0.0.0-20200407141420-56444130475e
+	github.com/gatblau/oxc v0.0.0-20200412100037-ffc8f46a8fe0
 	github.com/hashicorp/go-getter v1.4.2-0.20200106182914-9813cbd4eb02 // indirect
 	github.com/hashicorp/go-hclog v0.12.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.0 // indirect

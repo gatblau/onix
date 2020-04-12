@@ -48,10 +48,6 @@ func LinkTypeAttributeResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"managed": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
 			"required": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -113,8 +109,7 @@ func newLinkTypeAttr(data *schema.ResourceData) *LinkTypeAttribute {
 		Description: data.Get("description").(string),
 		Type:        data.Get("type").(string),
 		DefValue:    data.Get("def_value").(string),
-		Managed:     data.Get("managed").(bool),
-		Required:    data.Get("managed").(bool),
+		Required:    data.Get("required").(bool),
 		Regex:       data.Get("regex").(string),
 		LinkTypeKey: data.Get("link_type_key").(string),
 		Version:     getVersion(data),
@@ -128,7 +123,6 @@ func populateLinkTypeAttr(data *schema.ResourceData, typeAttr *LinkTypeAttribute
 	data.Set("description", typeAttr.Description)
 	data.Set("type", typeAttr.Type)
 	data.Set("def_value", typeAttr.DefValue)
-	data.Set("managed", typeAttr.Managed)
 	data.Set("required", typeAttr.Required)
 	data.Set("regex", typeAttr.Regex)
 	data.Set("link_type_key", typeAttr.LinkTypeKey)

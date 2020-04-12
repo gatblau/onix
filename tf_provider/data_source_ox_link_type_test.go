@@ -33,8 +33,9 @@ const (
 	LinkTypeDsDesc         = "ox_link_type_1_data_description"
 	LinkTypeDsEncryptMeta  = false
 	LinkTypeDsEncryptTxt   = false
-	LinkTypeDsManaged      = true
 )
+
+var LinkTypeDsStyle = make(map[string]interface{})
 
 func init() {
 	// defines a sweeper to clean up dangling test resources
@@ -65,7 +66,6 @@ func TestLinkTypeDataSource(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "model_key", LinkTypeDsModelKey),
 					resource.TestCheckResourceAttr(resourceName, "encrypt_meta", strconv.FormatBool(LinkTypeDsEncryptMeta)),
 					resource.TestCheckResourceAttr(resourceName, "encrypt_txt", strconv.FormatBool(LinkTypeDsEncryptTxt)),
-					resource.TestCheckResourceAttr(resourceName, "managed", strconv.FormatBool(LinkTypeDsManaged)),
 				),
 			},
 		},
@@ -102,7 +102,7 @@ func prepareLinkTypeDataSourceTest(t *testing.T) {
 			Name:        LinkTypeDsName,
 			Description: LinkTypeDsDesc,
 			Model:       LinkTypeDsModelKey,
-			Managed:     LinkTypeDsManaged,
+			Style:       LinkTypeDsStyle,
 		})
 	if err != nil {
 		t.Error(err)
