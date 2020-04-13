@@ -36,7 +36,6 @@ The following arguments can be passed to a configuration item:
 | `def_value`| optional | string | *A free format string containing the default value for the attribute, if any.* |
 | `required` | optional | boolean | *A flag indicating whether the attribute is required.* |
 | `regex`| optional | string | *A regular expression used by a client to validate the attribute value.* |
-| `managed` | optional | boolean | *A flag indicating whether the attribute is managed by a third party process. The default value is false, indicating the type can be updated by the user interface or Terraform provider clients.* |
 | `version` | optional | integer | *The version number of the attribute for [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) purposes. If specified, the entity can be written provided that the specified version number matches the one in the database. If no specified, optimistic locking is disabled.* |
 
 ## Key dependencies

@@ -18,7 +18,6 @@ resource "ox_item_type" "AWS_VPC" {
   name        = "Virtual Private Cloud"
   description = "A logically isolated section of the AWS Cloud where AWS resources can be launched in a virtual network."
   model_key   = "AWS_EC2"
-  managed     = false
 }
 
 resource "ox_item_type" "AWS_INSTANCE" {
@@ -26,7 +25,6 @@ resource "ox_item_type" "AWS_INSTANCE" {
   name        = "AWS Instance"
   description = "A virtual server in the AWS Cloud."
   model_key   = "AWS_EC2"
-  managed     = false
 }
 
 resource "ox_item_type" "AWS_EBS_VOLUME" {
@@ -34,7 +32,6 @@ resource "ox_item_type" "AWS_EBS_VOLUME" {
   name        = "AWS Block Storage Volume"
   description = "A durable, block-level storage device that can be attached to one or more instances."
   model_key   = "AWS_EC2"
-  managed     = false
 }
 ```
 
@@ -50,11 +47,11 @@ The following arguments can be passed to a configuration item:
 | `model_key` | *required* | string | *The natural key uniquely identifying the model this item type is part of.* |
 | `filter`| optional | JSON | *Defines one or more filters, namely [JSON Path](https://goessner.net/articles/JsonPath/) expressions that allow the Web API to extract parts of the JSON metadata stored in a configuration item. The format of the filter is described in the notes section below.* |
 | `meta_schema` | optional | JSON | *The [JSON Schema](https://json-schema.org/) used to validate the JSON metadata stored in a configuration item's meta attribute.* |
-| `notify_change` | optional | boolean | *Determines whether notification events should be sent by the Web API when items of this type are created, updated or deleted. The default value is false.* |
+| `notify_change` | optional | string | *Determines whether notification events should be sent by the Web API when items of this type are created, updated or deleted. The possible values are `N` = no notifications are sent; `T` = notifications are sent to a topic that is shared across all items of this type; `I` = notifications are sent to a dedicated topic for the item instance that is being changed.* |
 | `tag` | optional | string array | *A list of tags used for searching and clasifying the item type.* |
 | `encrypt_meta` | optional | boolean | *A flag indicating whether the meta attribute of the configuration item of this type should have encryption of data at rest.* |
 | `encrypt_txt` | optional | boolean | *A flag indicating whether the txt attribute of the configuration item of this type should have encryption of data at rest.* |
-| `managed` | optional | boolean | *A flag indicating whether the item type is managed by a third party process. The default value is false, indicating the type can be updated by the user interface or Terraform provider clients.* |
+| `style` | optional | JSON | *A JSON object containing user interface styling information for items of this type. It is meant for use by the Onix Web console or any other application that wants to render items on a web user interface.* |
 | `version` | optional | integer | *The version number of the item type for [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) purposes. If specified, the entity can be written provided that the specified version number matches the one in the database. If no specified, optimistic locking is disabled.* |
 
 ## Key dependencies

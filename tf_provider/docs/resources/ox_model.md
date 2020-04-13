@@ -31,7 +31,7 @@ The following arguments can be passed to a configuration item:
 | `name`| *required* | string | *The display name for the model.* |
 | `description`| *required* | string | *A meaningful description for the model.* |
 | `partition`| optional | string | *The logical access partition the model is in. If not specified, the default reference partition (REF) is used.* |
-| `managed` | optional | boolean | *A flag that informs whether the model is managed by an external application process. The default value is FALSE.* |
+| `managed` | optional | boolean | *A flag that informs whether the model is managed by an external application process. This flag applies to all item and link types, their attributes, and link rules in the model. The default value is FALSE.* |
 | `version` | optional | integer | *The version number of the model for [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) purposes. If specified, the entity can be written provided that the specified version number matches the one in the database. If no specified, optimistic locking is disabled.* |
 
 ## Key dependencies
