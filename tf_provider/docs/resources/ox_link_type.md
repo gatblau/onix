@@ -35,7 +35,7 @@ The following arguments can be passed to a link type:
 | `tag` | optional | string array | *A list of tags used for searching and clasifying the link type.* |
 | `encrypt_meta` | optional | boolean | *A flag indicating wether the meta attribute of a link of this type should have encryption of data at rest.* |
 | `encrypt_txt` | optional | boolean | *A flag indicating wether the txt attribute of a link of this type should have encryption of data at rest.* |
-| `managed` | optional | boolean | *A flag indicating whether the link type is managed by a third party process. The default value is false, indicating the type can be updated by the user interface or Terraform provider clients.* |
+| `style` | optional | JSON | *A JSON object containing user interface styling information for items of this type. It is meant for use by the Onix Web console or any other application that wants to render items on a web user interface.* |
 | `version` | optional | integer | *The version number of the link type for [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) purposes. If specified, the entity can be written provided that the specified version number matches the one in the database. If no specified, optimistic locking is disabled.* |
 
 ## Key dependencies

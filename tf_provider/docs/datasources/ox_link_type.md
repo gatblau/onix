@@ -34,7 +34,7 @@ The data source exports the following attributes:
 | `tag` | string array | *A list of tags used for searching and classifying the link type.* |
 | `encrypt_meta` | boolean | *A flag indicating whether the meta attribute of the link of this type should have encryption of data at rest.* |
 | `encrypt_txt` | boolean | *A flag indicating whether the txt attribute of the configuration item of this type should have encryption of data at rest.* |
-| `managed` | boolean | *A flag indicating whether the link type is managed by a third party process. The default value is false, indicating the type can be updated by the user interface or Terraform provider clients.* |
+| `style` | JSON | *A JSON object containing user interface styling information for items of this type. It is meant for use by the Onix Web console or any other application that wants to render items on a web user interface.* |
 | `version` | integer | *The version number of the link type for [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) purposes. If specified, the entity can be written provided that the specified version number matches the one in the database. If no specified, optimistic locking is disabled.* |
 | `created` | date & time | *The date and time the link type was created for the first time.* |
 | `updated` | date & time | *The date and time the link type was last updated.* |

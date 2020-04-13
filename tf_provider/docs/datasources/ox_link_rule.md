@@ -26,11 +26,11 @@ The data source exports the following attributes:
 
 | Name | Type |  Description |
 |---|---|---|
-| `name`| *required* | string | *The display name for the link rule.* |
-| `description`| *required* | string | *A meaningful description for the link rule.* |
-| `link_type_key` | *required* | string | *The natural key uniquely identifying the link type to which this rule applies.* |
-| `start_item_type_key` | *required* | string | *The natural key uniquely identifying the item type of the starting item being linked.* |
-| `end_item_type_key` | *required* | string | *The natural key uniquely identifying the item type of the ending item being linked.* |
+| `name`| string | *The display name for the link rule.* |
+| `description`| string | *A meaningful description for the link rule.* |
+| `link_type_key` | string | *The natural key uniquely identifying the link type to which this rule applies.* |
+| `start_item_type_key` | string | *The natural key uniquely identifying the item type of the starting item being linked.* |
+| `end_item_type_key` | string | *The natural key uniquely identifying the item type of the ending item being linked.* |
 | `version` | optional | integer | *The version number of the link type for [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) purposes. If specified, the entity can be written provided that the specified version number matches the one in the database. If no specified, optimistic locking is disabled.* |
 | `created` | date & time | *The date and time the link rule was created for the first time.* |
 | `updated` | date & time | *The date and time the link rule was last updated.* |
