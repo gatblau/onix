@@ -16,7 +16,7 @@ import org.springframework.web.client.RestTemplate;
 import java.nio.charset.Charset;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ContextConfiguration(classes= Config.class)
+@ContextConfiguration(classes= TestConfig.class)
 public class BaseTest implements InitializingBean {
     @Autowired
     protected Util util;

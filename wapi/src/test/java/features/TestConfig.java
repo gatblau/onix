@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ComponentScan(basePackages = { "features.*, org.gatblau.*" })
-public class Config {
+public class TestConfig {
     @Bean
     public Util util() {
         return new Util();
