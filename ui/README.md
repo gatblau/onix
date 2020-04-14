@@ -1,6 +1,10 @@
+# Onix Web Console
+
+The default web user interface client for the Onix Web API.
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+## Getting Started
 
 In the project directory, you can run:
 
@@ -39,6 +43,42 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 
 ## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+The following are useful links to come up to speed with the key technologies used by the Web Console:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### TypeScript
+
+[TypeScript](https://www.typescriptlang.org/) is a typed programming language to build modern web applications. It is a superset of [JavaScript](https://javascript.info/) that compiles to plain JavaScript.
+
+The Web Console is built using TypeScript. More information about the language can be found [here](https://www.typescriptlang.org/docs/home.html).
+
+### PatternFly
+
+[PatternFly](https://www.patternfly.org/v4/) is an open source design system aiming to improve the consistency, look and feel, and usability of web user interfaces.
+
+The Web Console uses Patternfly ReactJS components to render its user interface. More information on how to use PatternFly can be found [here](https://www.patternfly.org/v4/documentation/react/overview/training).
+
+### React JS
+
+[React JS](https://reactjs.org/) is a JavaScript library to build web user interfaces.
+
+The Web Console uses React JS (in conjunction with PatternFly)to build encapsulated components that manage their own state, and can be composed  to make complex UIs.
+
+A tutorial can be taken [here](https://reactjs.org/tutorial/tutorial.html).
+
+You can learn more in the [Create React App](https://facebook.github.io/create-react-app/docs/getting-started) documentation section.
+
+### Redux JS
+
+[Redux JS](https://redux.js.org/) is a library to manage state of JavaScript applications.
+
+The Web Console uses Reduc JS and [React Redux](https://react-redux.js.org/) to manage user interface state.
+
+To get started with Redux see [here](https://redux.js.org/introduction/getting-started#just-the-basics).
+
+### Yarn
+
+[Yarn](https://yarnpkg.com/) is a package manager for JavaScript.
+
+In Yarn, code is shared through something called a package. A package contains all the code being shared as well as a package.json file (called a manifest) which describes the package.
+
+The Web Console uses Yarn to develop, test and build the user interface.
