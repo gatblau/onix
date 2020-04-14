@@ -18,6 +18,7 @@ project, to be licensed under the same terms as the rest of the code.
 */
 package org.gatblau.onix.security;
 
+import org.gatblau.onix.conf.Config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -46,18 +47,6 @@ public class AESGCM implements Crypto {
     private static final String CIPHER = "AES/GCM/NoPadding";
     private static final DateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
 
-    @Value("${wapi.ek.1}")
-    private char[] KEY_1;
-
-    @Value("${wapi.ek.2}")
-    private char[] KEY_2;
-
-    @Value("${wapi.ek.expiry.date}")
-    private String KEY_EXPIRY;
-
-    @Value("${wapi.ek.default}")
-    private short KEY_DEFAULT;
-
     // This size of the IV (in bytes) is normally (keysize / 8).
     // If the default keysize is 256, so the IV must be 32 bytes long.
     // Using a 16 character string here gives us 32 bytes when converted to a byte array.
@@ -73,7 +62,10 @@ public class AESGCM implements Crypto {
     // should be preferred.
     private static final int GCM_TAG_LENGTH_BYTES = 16; // 16 * 8 = 128 bits
 
-    public AESGCM() {
+    private final Config cfg;
+
+    public AESGCM(Config cfg) {
+        this.cfg = cfg;
     }
 
     // returns a new secret key
@@ -143,9 +135,9 @@ public class AESGCM implements Crypto {
     private SecretKey getKey(int currentKey) {
         switch (currentKey) {
             case 1:
-                return fromCharArray(KEY_1);
+                return fromCharArray(cfg.getKey1());
             case 2:
-                return fromCharArray(KEY_2);
+                return fromCharArray(cfg.getKey2());
             default:
                 throw new RuntimeException("Active key invalid. Has to be either A or B.");
         }
@@ -161,13 +153,13 @@ public class AESGCM implements Crypto {
     public short getKeyIx() {
         try {
             Date today = new Date();
-            Date expiry = formatter.parse(KEY_EXPIRY);
+            Date expiry = formatter.parse(cfg.getKeyExpiry());
             if (today.after(expiry)) {
                 // return the non-active key
-                return (KEY_DEFAULT == 1) ? (short)2 : 1;
+                return (cfg.getKeyDefault() == 1) ? (short)2 : 1;
             } else {
                 // return active key
-                return KEY_DEFAULT;
+                return cfg.getKeyDefault();
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -176,11 +168,11 @@ public class AESGCM implements Crypto {
 
     @Override
     public short getDefaultKeyIx() {
-        return KEY_DEFAULT;
+        return cfg.getKeyDefault();
     }
 
     @Override
     public String getDefaultKeyExpiry() {
-        return KEY_EXPIRY;
+        return cfg.getKeyExpiry();
     }
 }

@@ -47,6 +47,18 @@ public class Config {
     @Value("${spring.datasource.url}")
     private String connString;
 
+    @Value("${wapi.ek.1}")
+    private char[] key1;
+
+    @Value("${wapi.ek.2}")
+    private char[] key2;
+
+    @Value("${wapi.ek.expiry.date}")
+    private String keyExpiry;
+
+    @Value("${wapi.ek.default}")
+    private short keyDefault;
+
     public String getDbuser() {
         return dbuser;
     }
@@ -73,5 +85,21 @@ public class Config {
 
     public String getConnString() {
         return connString;
+    }
+
+    public char[] getKey1() {
+        return key1;
+    }
+
+    public char[] getKey2() {
+        return key2;
+    }
+
+    public String getKeyExpiry() {
+        return keyExpiry;
+    }
+
+    public short getKeyDefault() {
+        return keyDefault;
     }
 }
