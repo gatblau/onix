@@ -59,6 +59,18 @@ public class Config {
     @Value("${wapi.ek.default}")
     private short keyDefault;
 
+    @Value("${wapi.amqp.host}")
+    private String amqpHost;
+
+    @Value("${wapi.amqp.port}")
+    private int amqpPort;
+
+    @Value("${wapi.amqp.incomingWindowSize}")
+    private int amqpIncomingWindowSize;
+
+    @Value("${wapi.amqp.outgoingWindowSize}")
+    private int amqpOutgoingWindowSize;
+
     public String getDbuser() {
         return dbuser;
     }
@@ -101,5 +113,21 @@ public class Config {
 
     public short getKeyDefault() {
         return keyDefault;
+    }
+
+    public String getAmqpHost() {
+        return amqpHost;
+    }
+
+    public int getAmqpPort() {
+        return amqpPort;
+    }
+
+    public int getAmqpIncomingWindowSize() {
+        return amqpIncomingWindowSize;
+    }
+
+    public int getAmqpOutgoingWindowSize() {
+        return amqpOutgoingWindowSize;
     }
 }
