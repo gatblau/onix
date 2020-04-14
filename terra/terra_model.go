@@ -120,21 +120,18 @@ func (m *TerraModel) getModelData() *GraphData {
 				Name:        "Terraform State",
 				Description: "State about a group of managed infrastructure and configuration resources. This state is used by Terraform to map real world resources to your configuration, keep track of metadata, and to improve performance for large infrastructures.",
 				Model:       "TERRA",
-				Managed:     true,
 			},
 			ItemType{
 				Key:         TfResourceType,
 				Name:        "Terraform Resource",
 				Description: "Each resource block describes one or more infrastructure objects, such as virtual networks, compute instances, or higher-level components such as DNS records.",
 				Model:       TfModelType,
-				Managed:     true,
 			},
 			ItemType{
 				Key:         TfLockType,
 				Name:        "Terraform State Lock",
 				Description: "Stores terraform state lock information",
 				Model:       TfModelType,
-				Managed:     true,
 			},
 		},
 		ItemTypeAttributes: []ItemTypeAttribute{
@@ -146,7 +143,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Type:        "integer",
 				ItemTypeKey: TfStateType,
 				Required:    true,
-				Managed:     true,
 			},
 			ItemTypeAttribute{
 				Key:         "TF_STATE_ATTR_TF_VERSION",
@@ -155,7 +151,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Type:        "string",
 				ItemTypeKey: TfStateType,
 				Required:    true,
-				Managed:     true,
 			},
 			ItemTypeAttribute{
 				Key:         "TF_STATE_ATTR_SERIAL",
@@ -164,7 +159,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Type:        "integer",
 				ItemTypeKey: TfStateType,
 				Required:    true,
-				Managed:     true,
 			},
 			ItemTypeAttribute{
 				Key:         "TF_STATE_ATTR_LINEAGE",
@@ -173,7 +167,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Type:        "integer",
 				ItemTypeKey: TfStateType,
 				Required:    true,
-				Managed:     true,
 			},
 			// TF_RESOURCE attributes
 			ItemTypeAttribute{
@@ -183,7 +176,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Type:        "string",
 				ItemTypeKey: TfResourceType,
 				Required:    true,
-				Managed:     true,
 			},
 			ItemTypeAttribute{
 				Key:         "TF_RESOURCE_ITEM_ATTR_MODE",
@@ -192,7 +184,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Type:        "string",
 				ItemTypeKey: TfResourceType,
 				Required:    true,
-				Managed:     true,
 			},
 			ItemTypeAttribute{
 				Key:         "TF_RESOURCE_ITEM_ATTR_TYPE",
@@ -201,7 +192,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Type:        "string",
 				ItemTypeKey: TfResourceType,
 				Required:    true,
-				Managed:     true,
 			},
 			ItemTypeAttribute{
 				Key:         "TF_RESOURCE_ITEM_ATTR_PROVIDER",
@@ -210,7 +200,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Type:        "string",
 				ItemTypeKey: TfResourceType,
 				Required:    true,
-				Managed:     true,
 			},
 			// TF_LOCK attributes
 			ItemTypeAttribute{
@@ -220,7 +209,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Type:        "string",
 				ItemTypeKey: TfLockType,
 				Required:    true,
-				Managed:     true,
 			},
 			ItemTypeAttribute{
 				Key:         "TF_LOCK_ITEM_ATTR_OPERATION",
@@ -228,7 +216,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Description: "Terraform operation, provided by the caller.",
 				Type:        "string",
 				ItemTypeKey: TfLockType,
-				Managed:     true,
 			},
 			ItemTypeAttribute{
 				Key:         "TF_LOCK_ITEM_ATTR_INFO",
@@ -236,7 +223,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Description: "Extra information to store with the lock, provided by the caller.",
 				Type:        "string",
 				ItemTypeKey: TfLockType,
-				Managed:     true,
 			},
 			ItemTypeAttribute{
 				Key:         "TF_LOCK_ITEM_ATTR_WHO",
@@ -244,7 +230,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Description: "user@hostname when available",
 				Type:        "string",
 				ItemTypeKey: TfLockType,
-				Managed:     true,
 			},
 			ItemTypeAttribute{
 				Key:         "TF_LOCK_ITEM_ATTR_PATH",
@@ -252,7 +237,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Description: "Path to the state file when applicable. Set by the Lock implementation.",
 				Type:        "string",
 				ItemTypeKey: TfLockType,
-				Managed:     true,
 			},
 			ItemTypeAttribute{
 				Key:         "TF_LOCK_ITEM_ATTR_VERSION",
@@ -260,7 +244,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Description: "Terraform version.",
 				Type:        "string",
 				ItemTypeKey: TfLockType,
-				Managed:     true,
 			},
 		},
 		LinkTypes: []LinkType{
@@ -269,7 +252,6 @@ func (m *TerraModel) getModelData() *GraphData {
 				Name:        "Terraform State Link Type",
 				Description: "Links Terraform resources that are part of a state.",
 				Model:       TfModelType,
-				Managed:     true,
 			},
 		},
 		LinkRules: []LinkRule{

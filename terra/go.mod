@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/gatblau/oxc v0.0.0-20200407141420-56444130475e
+	github.com/gatblau/oxc v0.0.0-20200412100037-ffc8f46a8fe0
 	github.com/golang/protobuf v1.3.5 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/hashicorp/go-uuid v1.0.1
