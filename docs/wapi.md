@@ -210,7 +210,7 @@ If no version number is specified in the PUT request, concurrency is disabled. H
 
 ## Automation Clients [(up)](#toc)
 
-Onix integrates with [Ansible](https://www.ansible.com/) (via [Ansible Modules](../ansible/readme.md)) and [Terraform](https://www.terraform.io/) (via a [Terraform Provider](../terraform/provider/readme.md)).
+Onix integrates with [Ansible](https://www.ansible.com/) (via [Ansible Modules](../ansible/readme.md)) and [Terraform](https://www.terraform.io/) (via a [Terraform Provider](../tf_provider/readme.md)).
 
 Each of the Web API resources maps directly to an Ansible Module or a Terraform Resource/Data Source. Therefore, in order to avoid maintaining multiple document sets, this document should be used to determine which attributes are available for each resource within both, Ansible and Terraform (TF).
 

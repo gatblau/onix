@@ -1,6 +1,6 @@
 <img src="../docs/pics/ox.png" width="200" height="200" align="right"/>
 
-# DEP - Application Landscape Dependency Manager & Deployer
+# DEEP - Application Landscape Dependency Manager & Deployer
 
 ## Background
 
@@ -14,7 +14,6 @@ In the world of microservices, microservice dependency can reach similar levels 
 
 Additionally, not every application out there is a microservice. It is increasingly common to find hybrid landscapes made of legacy (Virtual Machine Deployed) and new (containerised) services. In these cases, deployment of a complete landscape can be required for example, to stand up complete integration testing environments in preparation for release to production.
 
-DEP (**DEP**endency Manager & **DEP**loyer) is an orchestration command line tool, which uses a deployment configuration of services to orchestrate the deployment of entire landscapes on multi-clouds.
+DEEP (**DE**pendency Manager & d**EP**loyer) is an orchestration microservice, which uses configuration management information in Onix to orchestrate the deployment of entire landscapes on multi-clouds.
 
 The configuration uses an Onix model as described [here](docs/dep_model.md).
-
