@@ -31,15 +31,15 @@ import org.springframework.stereotype.Service;
 public class EventManager {
     // initialises thread pool and tracing facilities - context must always be created in Client mode
     private AMQPContext ctx = new AMQPContext(AMQPContext.CLIENT);
-    private final Connection connection;
-    private final Session session;
+//    private final Connection connection;
+//    private final Session session;
     private final Config cfg;
 
     public EventManager(Config cfg) throws ConnectionClosedException, SessionHandshakeException {
         this.cfg = cfg;
         // creates a connection without SASL
-        this.connection = new Connection(ctx, cfg.getAmqpHost(), cfg.getAmqpPort(), false);
-        this.session = connection.createSession(cfg.getAmqpIncomingWindowSize(), cfg.getAmqpOutgoingWindowSize());
+//        this.connection = new Connection(ctx, cfg.getAmqpHost(), cfg.getAmqpPort(), false);
+//        this.session = connection.createSession(cfg.getAmqpIncomingWindowSize(), cfg.getAmqpOutgoingWindowSize());
     }
 
     /**
@@ -48,9 +48,9 @@ public class EventManager {
      * @throws AMQPException
      */
     public void send(String target) throws AMQPException {
-        AMQPMessage msg = new AMQPMessage();
-        Producer p = session.createProducer(target, QoS.EXACTLY_ONCE);
-        p.send(msg); // Always asynchronously
-        p.close(); // Settlement completed after this call returns
+//        AMQPMessage msg = new AMQPMessage();
+//        Producer p = session.createProducer(target, QoS.EXACTLY_ONCE);
+//        p.send(msg); // Always asynchronously
+//        p.close(); // Settlement completed after this call returns
     }
 }
