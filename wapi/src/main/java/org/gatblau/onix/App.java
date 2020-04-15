@@ -21,6 +21,10 @@ package org.gatblau.onix;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.retry.backoff.FixedBackOffPolicy;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -38,5 +42,23 @@ public class App {
 
     @PreDestroy
     private void onShutDown(){
+    }
+
+    /*
+      defines retry policies for acquiring a broker session
+     */
+    @Bean
+    RetryTemplate retrySession() {
+        RetryTemplate retryTemplate = new RetryTemplate();
+
+        FixedBackOffPolicy fixedBackOffPolicy = new FixedBackOffPolicy();
+        fixedBackOffPolicy.setBackOffPeriod(5000l);
+        retryTemplate.setBackOffPolicy(fixedBackOffPolicy);
+
+        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
+        retryPolicy.setMaxAttempts(1000);
+        retryTemplate.setRetryPolicy(retryPolicy);
+
+        return retryTemplate;
     }
 }

@@ -11,7 +11,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 
-import javax.annotation.PostConstruct;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -20,7 +19,7 @@ import java.util.Map;
 
 import static features.Key.*;
 
-public class Steps extends BaseTest {
+public class Steps extends TestBase {
     private String baseUrl;
 
 //    @PostConstruct
