@@ -61,6 +61,14 @@ if [ $RESULT -eq 0 ]; then
   exit 1
 fi
 
+echo "checking port 5672 is available for the Artemis broker process"
+lsof -i:5672 | grep LISTEN
+RESULT=$?
+if [ $RESULT -eq 0 ]; then
+  echo port 5672 is in use, cannot continue: ensure there is no process using 5672/tcp port
+  exit 1
+fi
+
 echo "checking port 5432 is available for the Onix database process"
 lsof -i:5432 | grep LISTEN
 RESULT=$?
@@ -76,8 +84,9 @@ docker run --name oxdb -it -d -p 5432:5432 \
 
 echo creates the Onix message broker container
 docker run --name oxmsg -it -d \
-  -e ARTEMIS_USERNAME=admin \
-  -e ARTEMIS_PASSWORD=adm1n \
+  -e ARTEMIS_USERNAME=amqpadmin \
+  -e ARTEMIS_PASSWORD=amqppassw0rd \
   -p 8161:8161 \
   -p 61616:61616 \
+  -p 5672:5672 \
   vromero/activemq-artemis

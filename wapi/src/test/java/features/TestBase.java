@@ -17,7 +17,7 @@ import java.nio.charset.Charset;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ContextConfiguration(classes= TestConfig.class)
-public class BaseTest implements InitializingBean {
+public class TestBase implements InitializingBean {
     @Autowired
     protected Util util;
 

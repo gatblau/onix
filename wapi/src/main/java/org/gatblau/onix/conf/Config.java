@@ -21,6 +21,9 @@ package org.gatblau.onix.conf;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.spec.SecretKeySpec;
+import java.util.Base64;
+
 /*
   Abstracts Spring configuration
  */
@@ -65,11 +68,11 @@ public class Config {
     @Value("${wapi.amqp.port}")
     private int amqpPort;
 
-    @Value("${wapi.amqp.incomingWindowSize}")
-    private int amqpIncomingWindowSize;
+    @Value("${wapi.amqp.user}")
+    private String amqpUser;
 
-    @Value("${wapi.amqp.outgoingWindowSize}")
-    private int amqpOutgoingWindowSize;
+    @Value("${wapi.amqp.pwd}")
+    private char[] amqpPwd;
 
     public String getDbuser() {
         return dbuser;
@@ -123,11 +126,11 @@ public class Config {
         return amqpPort;
     }
 
-    public int getAmqpIncomingWindowSize() {
-        return amqpIncomingWindowSize;
+    public String getAmqpUser() {
+        return amqpUser;
     }
 
-    public int getAmqpOutgoingWindowSize() {
-        return amqpOutgoingWindowSize;
+    public String getAmqpPwd() {
+        return new String(amqpPwd);
     }
 }
