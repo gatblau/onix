@@ -1,5 +1,5 @@
 #
-#    Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+#    Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -28,6 +28,12 @@ DANGLING_IMS = $(shell docker images -f dangling=true -q)
 # produce a new version tag
 set-version:
 	sh version.sh $(APP_VER)
+
+# run the integration tests
+test:
+	sh start_backend.sh
+	mvn test
+	sh stop_backend.sh
 
 # build the onix docker image
 snapshot-image:

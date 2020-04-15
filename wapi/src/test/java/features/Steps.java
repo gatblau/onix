@@ -23,9 +23,24 @@ import static features.Key.*;
 public class Steps extends BaseTest {
     private String baseUrl;
 
-    @PostConstruct
-    public void init() {
+//    @PostConstruct
+//    public void init() {
+//    }
+
+    @Override
+    public void afterPropertiesSet() {
+        super.afterPropertiesSet();
         baseUrl = "http://localhost:" + port + "/";
+        ready();
+    }
+
+    /*
+       call the /ready endpoint to check/deploy database schemas
+     */
+    private void ready() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "text/html");
+        client.exchange(String.format("%sready", baseUrl), HttpMethod.GET, new HttpEntity<>(null, headers), String.class);
     }
 
     @And("^the base URL of the service is known$")
