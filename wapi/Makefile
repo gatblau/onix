@@ -32,7 +32,7 @@ set-version:
 # run the integration tests
 test:
 	sh start_backend.sh
-	mvn test
+	export WAPI_EVENTS_ENABLED=true; mvn test;
 	sh stop_backend.sh
 
 # build the onix docker image

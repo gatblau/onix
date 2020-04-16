@@ -19,6 +19,7 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix;
 
+import org.gatblau.onix.conf.Config;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +32,11 @@ import javax.annotation.PreDestroy;
 
 @SpringBootApplication
 public class App {
+    private final Config cfg;
+
+    public App(Config cfg) {
+        this.cfg = cfg;
+    }
 
     public static void main(String[] args) {
         SpringApplication.run(App.class, args);
@@ -52,11 +58,11 @@ public class App {
         RetryTemplate retryTemplate = new RetryTemplate();
 
         FixedBackOffPolicy fixedBackOffPolicy = new FixedBackOffPolicy();
-        fixedBackOffPolicy.setBackOffPeriod(5000l);
+        fixedBackOffPolicy.setBackOffPeriod(cfg.getEventsClientBackOffPeriod());
         retryTemplate.setBackOffPolicy(fixedBackOffPolicy);
 
         SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
-        retryPolicy.setMaxAttempts(1000);
+        retryPolicy.setMaxAttempts(cfg.getEventsClientRetries());
         retryTemplate.setRetryPolicy(retryPolicy);
 
         return retryTemplate;
