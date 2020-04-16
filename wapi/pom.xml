@@ -77,10 +77,22 @@
             <artifactId>HikariCP</artifactId>
             <version>3.4.2</version>
         </dependency>
+        <!-- async retry framework -->
         <dependency>
             <groupId>org.springframework.retry</groupId>
             <artifactId>spring-retry</artifactId>
             <version>1.2.5.RELEASE</version>
+        </dependency>
+        <!-- logging -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>2.13.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.13.1</version>
         </dependency>
         <!--
         Spring's RestTemplate and Spring Boot's TestRestTemplate relies on JDK's internal HttpURLConnection implementation

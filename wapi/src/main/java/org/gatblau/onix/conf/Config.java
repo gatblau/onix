@@ -21,9 +21,6 @@ package org.gatblau.onix.conf;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.spec.SecretKeySpec;
-import java.util.Base64;
-
 /*
   Abstracts Spring configuration
  */
@@ -62,17 +59,26 @@ public class Config {
     @Value("${wapi.ek.default}")
     private short keyDefault;
 
-    @Value("${wapi.amqp.host}")
-    private String amqpHost;
+    @Value("${wapi.events.server.host}")
+    private String eventsServerHost;
 
-    @Value("${wapi.amqp.port}")
-    private int amqpPort;
+    @Value("${wapi.events.server.port}")
+    private int eventsServerPort;
 
-    @Value("${wapi.amqp.user}")
-    private String amqpUser;
+    @Value("${wapi.events.server.user}")
+    private String eventsServerUser;
 
-    @Value("${wapi.amqp.pwd}")
-    private char[] amqpPwd;
+    @Value("${wapi.events.server.pwd}")
+    private char[] eventsServerPwd;
+
+    @Value("${wapi.events.enabled}")
+    private boolean eventsEnabled;
+
+    @Value("${wapi.events.client.retries}")
+    private int eventsClientRetries;
+
+    @Value("${wapi.events.client.backoffperiod}")
+    private long eventsClientBackOffPeriod;
 
     public String getDbuser() {
         return dbuser;
@@ -118,19 +124,31 @@ public class Config {
         return keyDefault;
     }
 
-    public String getAmqpHost() {
-        return amqpHost;
+    public String getEventsServerHost() {
+        return eventsServerHost;
     }
 
-    public int getAmqpPort() {
-        return amqpPort;
+    public int getEventsServerPort() {
+        return eventsServerPort;
     }
 
-    public String getAmqpUser() {
-        return amqpUser;
+    public String getEventsServerUser() {
+        return eventsServerUser;
     }
 
-    public String getAmqpPwd() {
-        return new String(amqpPwd);
+    public String getEventsServerPwd() {
+        return new String(eventsServerPwd);
+    }
+
+    public boolean isEventsEnabled() {
+        return eventsEnabled;
+    }
+
+    public int getEventsClientRetries() {
+        return eventsClientRetries;
+    }
+
+    public long getEventsClientBackOffPeriod() {
+        return eventsClientBackOffPeriod;
     }
 }

@@ -23,6 +23,8 @@ import org.gatblau.onix.conf.Config;
 import org.gatblau.onix.data.ItemData;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.jms.*;
@@ -40,31 +42,43 @@ public class EventManager {
     private final ConnectionFactory connFactory;
     private Session session;
     private Connection conn;
+    private final Logger log = LogManager.getLogger();
+    private int retryCount;
 
     public EventManager(Config cfg, RetryTemplate retrySession) {
         this.cfg = cfg;
         this.retrySession = retrySession;
-        this.connFactory = new JmsConnectionFactory(String.format("amqp://%s:%s", cfg.getAmqpHost(), cfg.getAmqpPort()));
+        this.connFactory = new JmsConnectionFactory(getConnectionURI());
     }
 
     @PostConstruct
     private void init(){
-        // tries and acquire a session with the message broker
-        // keeps retrying if it fails, based on the retry template
-        this.session = retrySession.execute(context -> {
-            try {
-                // create an amqp qpid 1.0 connection
-                conn = connFactory.createConnection(cfg.getAmqpUser(), cfg.getAmqpPwd());
-                // create a session
-                session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                // now the manager is ready to use
-                ready = true;
-            } catch (Exception e) {
-                System.out.println(String.format("WARNING: Failed to establish broker session: %s retrying...", e.getMessage()));
-               throw new RuntimeException(e);
-            }
-            return session;
-        });
+        // only initialises the connectivity to the message broker if enabled in the configuration
+        if (cfg.isEventsEnabled()) {
+            log.atInfo().log("item change notifications are enabled");
+            log.atInfo().log(String.format("attempting to connect to the message broker at %s", getConnectionURI()));
+            // tries and acquire a session with the message broker
+            // keeps retrying if it fails, based on the retry template
+            this.session = retrySession.execute(context -> {
+                try {
+                    // create an amqp qpid 1.0 connection
+                    conn = connFactory.createConnection(cfg.getEventsServerUser(), cfg.getEventsServerPwd());
+                    // create a session
+                    session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                    // now the manager is ready to use
+                    ready = true;
+                    retryCount = 0;
+                    log.atInfo().log(String.format("successfully connected to %s, publisher is ready to use", getConnectionURI()));
+                } catch (Exception e) {
+                    retryCount++;
+                    log.atInfo().log(String.format("attempt %s - %s - retrying...", retryCount, e.getMessage()));
+                    throw new RuntimeException(e);
+                }
+                return session;
+            });
+        } else {
+            log.atInfo().log("item change notifications are disabled");
+        }
     }
 
     /**
@@ -82,8 +96,9 @@ public class EventManager {
             MessageProducer sender = session.createProducer(topic);
             // send the message
             sender.send(createMessage(itemChanged.toString()));
+            log.atDebug().log("message '%s' sent to topic '%s' ", itemChanged.toString(), itemChanged.getTopicName());
         } else {
-            System.out.println("WARNING: broker service not ready");
+            log.atWarn().log("broker service not ready to publish the message, the message will be discarded");
         }
         return ready;
     }
@@ -102,5 +117,9 @@ public class EventManager {
     private long now() {
         ZonedDateTime zdt = ZonedDateTime.now();
         return zdt.toInstant().toEpochMilli();
+    }
+
+    private String getConnectionURI() {
+        return String.format("amqp://%s:%s", cfg.getEventsServerHost(), cfg.getEventsServerPort());
     }
 }
