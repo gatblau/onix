@@ -33,9 +33,9 @@ class ItemChanged {
     public String toString() {
         switch (notifyType) {
             case 'T':
-                return String.format("changed");
-            case 'I':
                 return String.format("key=%s" , item.getKey());
+            case 'I':
+                return String.format("changed");
             default:
                 throw new RuntimeException(String.format("notify type '%s' not recognised", notifyType));
         }

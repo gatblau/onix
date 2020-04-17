@@ -20,18 +20,22 @@ package org.gatblau.onix.db;
 
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ReadContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gatblau.onix.Lib;
+import org.gatblau.onix.conf.Config;
 import org.gatblau.onix.data.*;
+import org.gatblau.onix.event.EventManager;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.postgresql.util.HStoreConverter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.JwtClaimAccessor;
 import org.springframework.stereotype.Service;
 
+import javax.jms.JMSException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
@@ -40,16 +44,18 @@ import java.util.*;
 
 @Service
 public class PgSqlRepository implements DbRepository {
-
-    @Autowired
-    private Lib util;
-
-    @Autowired
-    private Database db;
-
+    private final Lib util;
+    private final Database db;
+    private final EventManager events;
+    private final Config cfg;
     private JSONObject ready;
+    private final Logger log = LogManager.getLogger();
 
-    public PgSqlRepository() {
+    public PgSqlRepository(Lib util, Database db, EventManager events, Config cfg) {
+        this.util = util;
+        this.db = db;
+        this.events = events;
+        this.cfg = cfg;
     }
 
     /*
@@ -104,6 +110,25 @@ public class PgSqlRepository implements DbRepository {
             db.setString(15, item.getPartition()); // partition_key_param
             db.setArray(16, role); // role_key_param
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_item"));
+
+            // if the item has changed and notifications are enabled for the item type
+            if (result.isChanged() && itemType.getNotifyChange() != 'N') {
+                // check that the event service is active
+                if (events.isReady()) {
+                    try {
+                        events.send(itemType.getNotifyChange(), item);
+                    } catch(JMSException je) {
+                        // logs the error: could not send the message
+                        log.atError().log(String.format("unable to send change notification for item '%s': code='%s', message='%s'", je.getErrorCode(), je.getMessage()));
+                    }
+                } else {
+                    // if the events service is meant to be working
+                    if (cfg.isEventsEnabled()) {
+                        // issue a warning
+                        log.atWarn().log(String.format("changed detected for item '%s' but event service is not ready", result.getRef()));
+                    }
+                }
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
             result.setError(true);
