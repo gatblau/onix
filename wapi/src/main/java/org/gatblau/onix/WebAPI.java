@@ -24,10 +24,8 @@ import io.swagger.annotations.*;
 import org.gatblau.onix.conf.Info;
 import org.gatblau.onix.data.*;
 import org.gatblau.onix.db.DbRepository;
-import org.gatblau.onix.event.EventManager;
 import org.gatblau.onix.security.Crypto;
 import org.json.simple.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -144,11 +142,11 @@ public class WebAPI {
             Authentication authentication // required to authenticate user
         ) {
         // check the request integrity and de-serialise the payload
-        Tuple<ResponseEntity<Result>, ItemData> req = prepareRequest(request, payloadStr, ItemData.class);
+        Tuple<ResponseEntity<Result>, ItemData> req = readRequest(request, payloadStr, ItemData.class);
         // if the data integrity check or de-serialisation fails, returns
-        if (req.response != null) { return req.response; }
+        if (req.Response != null) { return req.Response; }
         // now ready to process the request
-        Result result = data.createOrUpdateItem(key, req.payload, getRole(authentication));
+        Result result = data.createOrUpdateItem(key, req.Payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -485,11 +483,11 @@ public class WebAPI {
             Authentication authentication // required to authenticate user
     ) {
         // check the request integrity and de-serialise the payload
-        Tuple<ResponseEntity<Result>, PartitionData> req = prepareRequest(request, payloadStr, PartitionData.class);
+        Tuple<ResponseEntity<Result>, PartitionData> req = readRequest(request, payloadStr, PartitionData.class);
         // if the data integrity check or de-serialisation fails, returns
-        if (req.response != null) { return req.response; }
+        if (req.Response != null) { return req.Response; }
         // now ready to process the request
-        Result result = data.createOrUpdatePartition(key, req.payload, getRole(authentication));
+        Result result = data.createOrUpdatePartition(key, req.Payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -578,11 +576,11 @@ public class WebAPI {
             Authentication authentication // required to authenticate user
     ) {
         // check the request integrity and de-serialise the payload
-        Tuple<ResponseEntity<Result>, RoleData> req = prepareRequest(request, payloadStr, RoleData.class);
+        Tuple<ResponseEntity<Result>, RoleData> req = readRequest(request, payloadStr, RoleData.class);
         // if the data integrity check or de-serialisation fails, returns
-        if (req.response != null) { return req.response; }
+        if (req.Response != null) { return req.Response; }
         // now ready to process the request
-        Result result = data.createOrUpdateRole(key, req.payload, getRole(authentication));
+        Result result = data.createOrUpdateRole(key, req.Payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -643,11 +641,11 @@ public class WebAPI {
         Authentication authentication // required to authenticate user
     ) {
         // check the request integrity and de-serialise the payload
-        Tuple<ResponseEntity<Result>, PrivilegeData> req = prepareRequest(request, payloadStr, PrivilegeData.class);
+        Tuple<ResponseEntity<Result>, PrivilegeData> req = readRequest(request, payloadStr, PrivilegeData.class);
         // if the data integrity check or de-serialisation fails, returns
-        if (req.response != null) { return req.response; }
+        if (req.Response != null) { return req.Response; }
         // now ready to process the request
-        Result result = data.createOrUpdatePrivilege(key, req.payload, getRole(authentication));
+        Result result = data.createOrUpdatePrivilege(key, req.Payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -768,11 +766,11 @@ public class WebAPI {
         Authentication authentication // required to authenticate user
     ) {
         // check the request integrity and de-serialise the payload
-        Tuple<ResponseEntity<Result>, ItemTypeData> req = prepareRequest(request, payloadStr, ItemTypeData.class);
+        Tuple<ResponseEntity<Result>, ItemTypeData> req = readRequest(request, payloadStr, ItemTypeData.class);
         // if the data integrity check or de-serialisation fails, returns
-        if (req.response != null) { return req.response; }
+        if (req.Response != null) { return req.Response; }
         // now ready to process the request
-        Result result = data.createOrUpdateItemType(key, req.payload, getRole(authentication));
+        Result result = data.createOrUpdateItemType(key, req.Payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -960,11 +958,11 @@ public class WebAPI {
             Authentication authentication // required to authenticate user
     ) {
         // check the request integrity and de-serialise the payload
-        Tuple<ResponseEntity<Result>, LinkData> req = prepareRequest(request, payloadStr, LinkData.class);
+        Tuple<ResponseEntity<Result>, LinkData> req = readRequest(request, payloadStr, LinkData.class);
         // if the data integrity check or de-serialisation fails, returns
-        if (req.response != null) { return req.response; }
+        if (req.Response != null) { return req.Response; }
         // now ready to process the request
-        Result result = data.createOrUpdateLink(key, req.payload, getRole(authentication));
+        Result result = data.createOrUpdateLink(key, req.Payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -1106,11 +1104,11 @@ public class WebAPI {
         Authentication authentication // required to authenticate user
     ) {
         // check the request integrity and de-serialise the payload
-        Tuple<ResponseEntity<Result>, LinkTypeData> req = prepareRequest(request, payloadStr, LinkTypeData.class);
+        Tuple<ResponseEntity<Result>, LinkTypeData> req = readRequest(request, payloadStr, LinkTypeData.class);
         // if the data integrity check or de-serialisation fails, returns
-        if (req.response != null) { return req.response; }
+        if (req.Response != null) { return req.Response; }
         // now ready to process the request
-        Result result = data.createOrUpdateLinkType(key, req.payload, getRole(authentication));
+        Result result = data.createOrUpdateLinkType(key, req.Payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -1312,11 +1310,11 @@ public class WebAPI {
         Authentication authentication // required to authenticate user
     ) {
         // check the request integrity and de-serialise the payload
-        Tuple<ResponseEntity<Result>, LinkRuleData> req = prepareRequest(request, payloadStr, LinkRuleData.class);
+        Tuple<ResponseEntity<Result>, LinkRuleData> req = readRequest(request, payloadStr, LinkRuleData.class);
         // if the data integrity check or de-serialisation fails, returns
-        if (req.response != null) { return req.response; }
+        if (req.Response != null) { return req.Response; }
         // now ready to process the request
-        Result result = data.createOrUpdateLinkRule(key, req.payload, getRole(authentication));
+        Result result = data.createOrUpdateLinkRule(key, req.Payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -1366,6 +1364,63 @@ public class WebAPI {
     }
 
     /*
+        USER
+     */
+    @ApiOperation(
+            value = "Creates a new user or updates an existing user.",
+            notes = "")
+    @RequestMapping(
+            path = "/user/{key}"
+            , method = RequestMethod.PUT)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "No changes where performed to the user."),
+            @ApiResponse(code = 201, message = "The configuration user was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+            @ApiResponse(code = 400, message = "The request payload is malformed."),
+            @ApiResponse(code = 401, message = "The request was unauthorised. The requester does not have the privilege to execute the request. "),
+            @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 422, message = "The request failed MD5 checksum validation, only enabled if the Content-MD5 header is added to the request.. "),
+            @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+    )
+    public ResponseEntity<Result> createOrUpdateUser(
+            @ApiParam(
+                name = "key",
+                value = "The user unique email address.",
+                required = true,
+                example = "user@organisation.com"
+            )
+            @PathVariable("key") String key,
+            @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+            HttpServletRequest request, // required to check on http headers
+            Authentication authentication // required to authenticate user
+    ) {
+        // check the request integrity and de-serialise the payload
+        Tuple<ResponseEntity<Result>, UserData> req = readRequest(request, payloadStr, UserData.class);
+        // if the data integrity check or de-serialisation fails, returns
+        if (req.Response != null) { return req.Response; }
+        // now ready to process the request
+        Result result = data.createOrUpdateUser(key, req.Payload, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
+    }
+
+    @ApiOperation(
+            value = "Get a user for the specified key.",
+            notes = "")
+    @RequestMapping(
+            path = "/user/{key}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<UserData> getUser(
+            @PathVariable("key") String key,
+            Authentication authentication
+    ) {
+        UserData user = data.getUser(key, getRole(authentication));
+        if (user != null) {
+            return ResponseEntity.ok(user);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+    /*
         MODEL
      */
     @ApiOperation(
@@ -1413,11 +1468,11 @@ public class WebAPI {
 
     ) {
         // check the request integrity and de-serialise the payload
-        Tuple<ResponseEntity<Result>, ModelData> req = prepareRequest(request, payloadStr, ModelData.class);
+        Tuple<ResponseEntity<Result>, ModelData> req = readRequest(request, payloadStr, ModelData.class);
         // if the data integrity check or de-serialisation fails, returns
-        if (req.response != null) { return req.response; }
+        if (req.Response != null) { return req.Response; }
         // now ready to process the request
-        Result result = data.createOrUpdateModel(key, req.payload, getRole(authentication));
+        Result result = data.createOrUpdateModel(key, req.Payload, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 
@@ -1600,7 +1655,7 @@ public class WebAPI {
         ) {
         ResultList resultList = new ResultList();
         // if the payload checksum does not match the one provided in the header
-        if (!payloadIntegrityOk(request, payloadStr)) {
+        if (!validateMD5Checksum(request, payloadStr)) {
             // does not attempt to process the request as the integrity checksum does not match
             // assume http body integrity has been compromised
             Result result = new Result();
@@ -1759,9 +1814,9 @@ public class WebAPI {
         return roles;
     }
 
-    private <T> Tuple<ResponseEntity<Result>, T> prepareRequest(HttpServletRequest request, String payloadStr, Class<T> valueType) {
+    private <T> Tuple<ResponseEntity<Result>, T> readRequest(HttpServletRequest request, String payloadStr, Class<T> valueType) {
         // if the payload checksum does not match the one provided in the header
-        if (!payloadIntegrityOk(request, payloadStr)) {
+        if (!validateMD5Checksum(request, payloadStr)) {
             // does not attempt to process the request as the integrity checksum does not match
             // assume http body integrity has been compromised
             Result result = new Result();
@@ -1783,7 +1838,7 @@ public class WebAPI {
         return new Tuple(null, payload);
     }
 
-    private boolean payloadIntegrityOk(HttpServletRequest request, String httpBody) {
+    private boolean validateMD5Checksum(HttpServletRequest request, String httpBody) {
         Boolean valid = false;
         String requestSum = request.getHeader("Content-MD5");
         if (requestSum != null) {
@@ -1821,11 +1876,11 @@ public class WebAPI {
     }
 
     class Tuple<X, Y> {
-        public final X response;
-        public final Y payload;
+        public final X Response;
+        public final Y Payload;
         public Tuple(X response, Y payload) {
-            this.response = response;
-            this.payload = payload;
+            this.Response = response;
+            this.Payload = payload;
         }
     }
 }

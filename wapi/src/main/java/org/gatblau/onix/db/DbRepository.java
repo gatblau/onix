@@ -172,6 +172,12 @@ public interface DbRepository {
     /* Readiness probe */
     JSONObject checkReady();
 
+    /* User */
+    Result createOrUpdateUser(String key, UserData user, String[] role);
+    UserData getUser(String key, String[] role);
+    String getSetUserSQL();
+    String getGetUserSQL();
+
     /* Model */
     Result deleteModel(String key, String[] role);
     Result createOrUpdateModel(String key, ModelData json, String[] role);

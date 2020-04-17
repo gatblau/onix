@@ -166,6 +166,21 @@ public class Lib implements InitializingBean {
         return item;
     }
 
+    public UserData toUserData(ResultSet set) throws SQLException, ParseException, IOException {
+        UserData user = null;
+        if (set != null) {
+            Date updated = set.getDate("updated");
+            user = new UserData();
+            user.setKey(set.getString("key"));
+            user.setName(set.getString("name"));
+            user.setPwd("********");
+            user.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+            user.setVersion(set.getInt("version"));
+            user.setChangedBy(set.getString("changed_by"));
+        }
+        return user;
+    }
+
     public LinkData toLinkData(ResultSet set) throws SQLException, ParseException, IOException {
         LinkData link = null;
         if (set != null) {
