@@ -81,6 +81,10 @@ public class EventManager {
         }
     }
 
+    public boolean isReady() {
+        return ready;
+    }
+
     /**
      * Send a change notification event
      * @param notifyType

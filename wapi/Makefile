@@ -33,7 +33,7 @@ set-version:
 test:
 	sh start_backend.sh
 	export WAPI_EVENTS_ENABLED=true; mvn test;
-	sh stop_backend.sh
+	#sh stop_backend.sh
 
 # build the onix docker image
 snapshot-image:

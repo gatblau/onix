@@ -24,6 +24,7 @@ import io.swagger.annotations.*;
 import org.gatblau.onix.conf.Info;
 import org.gatblau.onix.data.*;
 import org.gatblau.onix.db.DbRepository;
+import org.gatblau.onix.event.EventManager;
 import org.gatblau.onix.security.Crypto;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,17 +48,18 @@ import java.util.*;
 @RestController
 public class WebAPI {
 
-    @Autowired
-    private DbRepository data;
-
-    @Autowired
-    private org.gatblau.onix.conf.Info info;
-
-    @Autowired
-    Crypto crypto;
+    private final DbRepository data;
+    private final org.gatblau.onix.conf.Info info;
+    private final Crypto crypto;
 
     private ObjectMapper mapper = new ObjectMapper();
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+
+    public WebAPI(DbRepository data, Info info, Crypto crypto) {
+        this.data = data;
+        this.info = info;
+        this.crypto = crypto;
+    }
 
     @ApiOperation(
             value = "Returns the username of the logged on user.",
