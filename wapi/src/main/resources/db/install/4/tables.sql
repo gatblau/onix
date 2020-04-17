@@ -16,6 +16,93 @@ DO
   $$
     BEGIN
       ---------------------------------------------------------------------------
+      -- USER
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'user')
+      THEN
+        CREATE SEQUENCE user_id_seq
+          INCREMENT 1
+          START 100
+          MINVALUE 100
+          MAXVALUE 9223372036854775807
+          CACHE 1;
+
+        ALTER SEQUENCE user_id_seq
+          OWNER TO onix;
+
+        CREATE TABLE "user"
+        (
+          id          BIGINT                 NOT NULL DEFAULT nextval('user_id_seq'::regclass),
+          key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          pwd         CHARACTER VARYING(300) NOT NULL COLLATE pg_catalog."default",
+          salt        CHARACTER VARYING(300) NOT NULL COLLATE pg_catalog."default",
+          version     BIGINT                 NOT NULL DEFAULT 1,
+          created     TIMESTAMP(6) WITH TIME ZONE     DEFAULT CURRENT_TIMESTAMP(6),
+          updated     TIMESTAMP(6) WITH TIME ZONE,
+          changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+          CONSTRAINT user_id_pk PRIMARY KEY (id),
+          CONSTRAINT user_key_uc UNIQUE (key),
+          CONSTRAINT user_name_uc UNIQUE (name)
+        )
+          WITH (
+            OIDS = FALSE
+          )
+          TABLESPACE pg_default;
+
+        ALTER TABLE "user"
+          OWNER to onix;
+
+      END IF;
+
+      ---------------------------------------------------------------------------
+      -- USER CHANGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'user_change')
+      THEN
+        CREATE TABLE user_change
+        (
+          operation   CHAR(1)                NOT NULL,
+          changed     TIMESTAMP              NOT NULL,
+          id          BIGINT,
+          key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
+          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          pwd         CHARACTER VARYING(300) COLLATE pg_catalog."default",
+          salt        CHARACTER VARYING(300) COLLATE pg_catalog."default",
+          version     BIGINT,
+          created     TIMESTAMP(6) WITH TIME ZONE,
+          updated     TIMESTAMP(6) WITH TIME ZONE,
+          changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default"
+        );
+
+        CREATE OR REPLACE FUNCTION ox_change_user() RETURNS TRIGGER AS
+        $user_change$
+        BEGIN
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO user_change SELECT 'D', now(), OLD.*;
+            RETURN OLD;
+          ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO user_change SELECT 'U', now(), NEW.*;
+            RETURN NEW;
+          ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO user_change SELECT 'I', now(), NEW.*;
+            RETURN NEW;
+          END IF;
+          RETURN NULL; -- result is ignored since this is an AFTER trigger
+        END;
+        $user_change$ LANGUAGE plpgsql;
+
+        CREATE TRIGGER user_change
+          AFTER INSERT OR UPDATE OR DELETE
+          ON "user"
+          FOR EACH ROW
+        EXECUTE PROCEDURE ox_change_user();
+
+        ALTER TABLE user_change
+          OWNER to onix;
+      END IF;
+
+      ---------------------------------------------------------------------------
       -- PARTITION
       ---------------------------------------------------------------------------
       IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'partition')
@@ -309,6 +396,94 @@ DO
       VALUES (5, 'WRITER-REF', 3, 0, false, true, false, 'onix', 1); -- writer privilege on part 0
       INSERT INTO privilege(id, key, role_id, partition_id, can_create, can_read, can_delete, changed_by, version)
       VALUES (6, 'WRITER-INS', 3, 1, true, true, true, 'onix', 1);
+
+      ---------------------------------------------------------------------------
+      -- MEMBERSHIP
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'membership')
+      THEN
+        CREATE SEQUENCE membership_id_seq
+          INCREMENT 1
+          START 10
+          MINVALUE 10
+          MAXVALUE 9223372036854775807
+          CACHE 1;
+
+        ALTER SEQUENCE membership_id_seq OWNER TO onix;
+
+        CREATE TABLE membership
+        (
+          id           bigint                 NOT NULL DEFAULT nextval('membership_id_seq'::regclass),
+          key          CHARACTER VARYING(100) NOT NULL,
+          user_id      bigint,
+          role_id      bigint,
+          version      bigint,
+          created      timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
+          updated      timestamp(6) with time zone,
+          changed_by   CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
+          CONSTRAINT membership_id_pk PRIMARY KEY (id, user_id, role_id),
+          CONSTRAINT membership_role_id_fk FOREIGN KEY (role_id)
+            REFERENCES role (id) MATCH SIMPLE
+            ON UPDATE NO ACTION
+            ON DELETE CASCADE,
+          CONSTRAINT membership_user_id_fk FOREIGN KEY (user_id)
+            REFERENCES "user" (id) MATCH SIMPLE
+            ON UPDATE NO ACTION
+            ON DELETE CASCADE
+        )
+          WITH (OIDS = FALSE)
+          TABLESPACE pg_default;
+
+        ALTER TABLE membership
+          OWNER to onix;
+
+      END IF;
+
+      ---------------------------------------------------------------------------
+      -- MEMBERSHIP CHANGE
+      ---------------------------------------------------------------------------
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'membership_change')
+      THEN
+        CREATE TABLE membership_change
+        (
+          operation    CHAR(1)   NOT NULL,
+          changed      TIMESTAMP NOT NULL,
+          id           INTEGER   NOT NULL,
+          key          CHARACTER VARYING(100),
+          user_id      bigint,
+          role_id      bigint,
+          version      bigint,
+          created      timestamp(6) with time zone,
+          updated      timestamp(6) with time zone,
+          changed_by   CHARACTER VARYING(100)
+        );
+
+        CREATE OR REPLACE FUNCTION ox_change_membership() RETURNS TRIGGER AS
+        $membership_change$
+        BEGIN
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO membership_change SELECT 'D', now(), OLD.*;
+            RETURN OLD;
+          ELSIF (TG_OP = 'UPDATE') THEN
+            INSERT INTO membership_change SELECT 'U', now(), NEW.*;
+            RETURN NEW;
+          ELSIF (TG_OP = 'INSERT') THEN
+            INSERT INTO membership_change SELECT 'I', now(), NEW.*;
+            RETURN NEW;
+          END IF;
+          RETURN NULL; -- result is ignored since this is an AFTER trigger
+        END;
+        $membership_change$ LANGUAGE plpgsql;
+
+        CREATE TRIGGER membership_change
+          AFTER INSERT OR UPDATE OR DELETE
+          ON membership
+          FOR EACH ROW
+        EXECUTE PROCEDURE ox_change_membership();
+
+        ALTER TABLE membership_change
+          OWNER to onix;
+      END IF;
 
       ---------------------------------------------------------------------------
       -- MODEL

@@ -223,6 +223,96 @@ DO $$
       OWNER TO onix;
 
     /*
+      ox_set_user(...)
+      Inserts a new or updates an existing user.
+    */
+    CREATE OR REPLACE FUNCTION ox_set_user(
+        key_param character varying,
+        name_param character varying,
+        pwd_param character varying,
+        salt_param character varying,
+        local_version_param bigint,
+        changed_by_param character varying,
+        role_key_param character varying[])
+        RETURNS TABLE(result char(1))
+        LANGUAGE 'plpgsql'
+        COST 100
+        VOLATILE
+    AS
+    $BODY$
+    DECLARE
+        result          char(1); -- the result status for the upsert
+        current_version bigint; -- the version of the row before the update or null if no row
+        rows_affected   integer;
+        isSuperAdmin    boolean; -- the role level of the logged in user
+    BEGIN
+        -- gets the current user version
+        SELECT version FROM "user" WHERE key = key_param INTO current_version;
+        SELECT ox_is_super_admin(role_key_param) INTO isSuperAdmin;
+
+        -- needs to be a role level 2 to manage users
+        IF (NOT isSuperAdmin) THEN
+            RAISE EXCEPTION 'Role % is not authorised to create or update users.', role_key_param
+                USING hint = 'The role level is not 2.';
+        END IF;
+
+        IF (current_version IS NULL) THEN
+            INSERT INTO "user" (
+                id,
+                key,
+                name,
+                pwd,
+                salt,
+                version,
+                created,
+                updated,
+                changed_by
+            )
+            VALUES (
+               nextval('user_id_seq'),
+               key_param,
+               name_param,
+               pwd_param,
+               salt_param,
+               1,
+               current_timestamp,
+               null,
+               changed_by_param
+            );
+            result := 'I';
+        ELSE
+            UPDATE "user"
+            SET name         = name_param,
+                pwd          = COALESCE(pwd_param, pwd),
+                version      = version + 1,
+                updated      = current_timestamp,
+                changed_by   = changed_by_param
+            WHERE key = key_param
+              -- concurrency management - optimistic locking
+              AND (local_version_param = current_version OR local_version_param IS NULL OR local_version_param = 0)
+              AND (
+                    name != name_param OR
+                    pwd != pwd_param AND pwd_param IS NOT NULL
+                );
+            GET DIAGNOSTICS rows_affected := ROW_COUNT;
+            SELECT ox_get_update_status(current_version, local_version_param, rows_affected > 0) INTO result;
+        END IF;
+        RETURN QUERY SELECT result;
+    END;
+    $BODY$;
+
+    ALTER FUNCTION ox_set_user(
+            character varying, -- key
+            character varying, -- name
+            character varying, -- pwd
+            character varying, -- salt
+            bigint, -- client version
+            character varying, -- changed by
+            character varying[] -- role keys
+        )
+        OWNER TO onix;
+
+    /*
       ox_set_model(...)
       Inserts a new or updates an existing meta model.
      */

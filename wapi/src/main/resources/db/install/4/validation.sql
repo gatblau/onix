@@ -16,6 +16,33 @@
 DO $$
   BEGIN
     /*
+      checks that at least one of the passed in roles is a super admin (level 2)
+     */
+    CREATE OR REPLACE FUNCTION ox_is_super_admin(
+          role_key_param character varying[]
+    )
+        RETURNS BOOLEAN
+        LANGUAGE 'plpgsql'
+        COST 100
+        STABLE
+    AS
+    $BODY$
+    DECLARE
+        is_super_admin BOOLEAN;
+    BEGIN
+        -- gets the level of the logged in role
+        SELECT r.level = 2
+        FROM role r
+        WHERE r.key = ANY(role_key_param)
+        ORDER BY r.level DESC
+        LIMIT 1
+        INTO is_super_admin;
+
+        RETURN is_super_admin;
+    END;
+    $BODY$;
+
+    /*
       checks that the specified role can modify partition, privilege and role tables
       based on its role level
      */

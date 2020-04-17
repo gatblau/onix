@@ -26,6 +26,7 @@ import org.gatblau.onix.Lib;
 import org.gatblau.onix.conf.Config;
 import org.gatblau.onix.data.*;
 import org.gatblau.onix.event.EventManager;
+import org.gatblau.onix.security.PwdBasedEncryptor;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.postgresql.util.HStoreConverter;
@@ -50,12 +51,14 @@ public class PgSqlRepository implements DbRepository {
     private final Config cfg;
     private JSONObject ready;
     private final Logger log = LogManager.getLogger();
+    private final PwdBasedEncryptor pbe;
 
-    public PgSqlRepository(Lib util, Database db, EventManager events, Config cfg) {
+    public PgSqlRepository(Lib util, Database db, EventManager events, Config cfg, PwdBasedEncryptor pbe) {
         this.util = util;
         this.db = db;
         this.events = events;
         this.cfg = cfg;
+        this.pbe = pbe;
     }
 
     /*
@@ -2101,6 +2104,69 @@ public class PgSqlRepository implements DbRepository {
             results.add(createOrUpdateLink(link.getKey(), link, role));
         }
         return results;
+    }
+
+    @Override
+    public Result createOrUpdateUser(String key, UserData user, String[] role) {
+        Result result = new Result(String.format("User:%s", key));
+        try {
+            String salt = pbe.generateSalt();
+            db.prepare(getSetUserSQL());
+            db.setString(1, key); // model key
+            db.setString(2, user.getName()); // name_param
+            db.setString(3, pbe.getEncryptedPwd(user.getPwd(), salt)); // pwd_param
+            db.setString(4, salt); // salt_param
+            db.setObject(5, user.getVersion()); // version_param
+            db.setString(6, getUser()); // changed_by_param
+            db.setArray(7, role);
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_user"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
+        } finally {
+            db.close();
+        }
+        return result;
+    }
+
+    @Override
+    public UserData getUser(String key, String[] role) {
+        UserData userData = null;
+        try {
+            db.prepare(getGetUserSQL());
+            db.setString(1, key);
+            db.setArray(2, role);
+            ResultSet set = db.executeQuerySingleRow();
+            userData = util.toUserData(set);
+            db.close();
+        } catch (Exception ex) {
+            throw new RuntimeException(String.format("Failed to get user with key '%s': %s", key, ex.getMessage()), ex);
+        } finally {
+            db.close();
+        }
+        return userData;
+    }
+
+    @Override
+    public String getGetUserSQL() {
+        return "SELECT * FROM ox_user(" +
+                "?::character varying," + // key_param
+                "?::character varying[]" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public String getSetUserSQL() {
+        return "SELECT ox_set_user(" +
+                "?::character varying," + // key
+                "?::character varying," + // name_param
+                "?::character varying," + // pwd_param
+                "?::character varying," + // salt_param
+                "?::bigint," + // version_param
+                "?::character varying," + // changed_by_param
+                "?::character varying[]" + // logged_role_key_param
+                ")";
     }
 
     @Override

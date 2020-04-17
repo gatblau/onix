@@ -465,6 +465,46 @@ DO
         OWNER TO onix;
 
       /*
+          user(user_key_param): gets the user specified by the user_key_param.
+          use: select * ox_user(user_key_param)
+         */
+      CREATE OR REPLACE FUNCTION ox_user(user_key_param character varying, role_key_param character varying[])
+          RETURNS TABLE
+              (
+                  id          bigint,
+                  key         character varying,
+                  name        character varying,
+                  pwd         character varying,
+                  version     bigint,
+                  created     timestamp(6) with time zone,
+                  updated     timestamp(6) with time zone,
+                  changed_by  character varying
+              )
+          LANGUAGE 'plpgsql'
+          COST 100
+          STABLE
+      AS
+      $BODY$
+      BEGIN
+          RETURN QUERY
+              SELECT u.id,
+                     u.key,
+                     u.name,
+                     u.pwd,
+                     u.version,
+                     u.created,
+                     u.updated,
+                     u.changed_by
+              FROM "user" u
+              WHERE u.key = user_key_param
+                AND ox_is_super_admin(role_key_param);
+      END;
+      $BODY$;
+
+      ALTER FUNCTION ox_user(character varying, character varying[])
+          OWNER TO onix;
+
+      /*
           model(model_key_param): gets the model specified by the model_key_param.
           use: select * ox_model(model_key_param)
          */
