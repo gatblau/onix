@@ -23,6 +23,7 @@ import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -182,6 +183,16 @@ public interface DbRepository {
     String getGetUsersSQL();
     String getDeleteUserSQL();
 
+    /* Membership */
+    Result addMembership(String key, MembershipData membership, String[] role);
+    MembershipData getMembership(String key, String[] role);
+    Result deleteMembership(String key, String[] role);
+    MembershipDataList getMemberships(String[] role);
+    String getAddMembershipSQL();
+    String getGetMembershipSQL();
+    String getGetMembershipsSQL();
+    String getDeleteMembershipSQL();
+
     /* Model */
     Result deleteModel(String key, String[] role);
     Result createOrUpdateModel(String key, ModelData json, String[] role);
@@ -214,6 +225,10 @@ public interface DbRepository {
     Result createOrUpdateRole(String key, RoleData role, String[] role1);
     RoleData getRole(String key, String[] role);
     RoleDataList getAllRoles(String[] role);
+
+    // this function MUST be called internally and not exposed via Web API
+    List<String> getUserRolesInternal(String userKey);
+    String getGetUserRolesInternalSQL();
 
     /* Privileges */
     String getSetPrivilegeSQL();

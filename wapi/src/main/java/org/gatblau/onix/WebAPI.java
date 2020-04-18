@@ -517,7 +517,7 @@ public class WebAPI {
         ROLES
      */
     @ApiOperation(
-            value = "Deletes a logical partition.",
+            value = "Deletes a user role.",
             notes = "")
     @RequestMapping(
             path = "/role/{key}"
@@ -604,6 +604,60 @@ public class WebAPI {
             return ResponseEntity.ok(role);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    /*
+        MEMBERSHIP
+     */
+    @ApiOperation(
+            value = "Adds a new membership for a user to a role.",
+            notes = "")
+    @RequestMapping(
+            path = "/membership/{key}"
+            , method = RequestMethod.PUT)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "No changes where performed to the membership."),
+            @ApiResponse(code = 201, message = "The membership was created or updated. The operation attribute in the response can be used to determined if an insert or an update was performed. ", response = Result.class),
+            @ApiResponse(code = 400, message = "The request payload is malformed."),
+            @ApiResponse(code = 401, message = "The request was unauthorised. The requestor does not have the right to execute the request. "),
+            @ApiResponse(code = 404, message = "The request was made to an URI which does not exist on the server. "),
+            @ApiResponse(code = 422, message = "The request failed MD5 checksum validation, only enabled if the Content-MD5 header is added to the request.. "),
+            @ApiResponse(code = 500, message = "There was an internal side server error.", response = Result.class)}
+    )
+    public ResponseEntity<Result> addMembership(
+            @PathVariable("key") String key,
+            @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+            HttpServletRequest request, // required to check on http headers
+            Authentication authentication // required to authenticate user
+    ) {
+        // check the request integrity and de-serialise the payload
+        Tuple<ResponseEntity<Result>, MembershipData> req = readRequest(request, payloadStr, MembershipData.class);
+        // if the data integrity check or de-serialisation fails, returns
+        if (req.Response != null) { return req.Response; }
+        // now ready to process the request
+        Result result = data.addMembership(key, req.Payload, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
+    }
+
+    @ApiOperation(
+            value = "Deletes a membership of a user to a role.",
+            notes = "")
+    @RequestMapping(
+            path = "/membership/{key}"
+            , method = RequestMethod.DELETE
+    )
+    public ResponseEntity<Result> deleteMembership(
+            @ApiParam(
+                    name = "key",
+                    value = "A string which uniquely identifies the membership to be deleted.",
+                    required = true,
+                    example = "READER-MEMBER"
+            )
+            @PathVariable("key") String key,
+            Authentication authentication
+    ) {
+        Result result = data.deleteMembership(key, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     /*

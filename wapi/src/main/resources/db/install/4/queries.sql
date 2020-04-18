@@ -17,6 +17,28 @@ $$
 BEGIN
 
 /*
+ this function is used by the authentication logic to retrieve a list of the roles
+ the logged user is in
+ */
+CREATE OR REPLACE FUNCTION ox_get_user_roles_list(
+    user_key_param character varying
+)
+    RETURNS TABLE(role_key character varying)
+    LANGUAGE 'plpgsql'
+    COST 100
+    STABLE
+AS $BODY$
+BEGIN
+    RETURN QUERY
+        SELECT r.key as role_key
+        FROM role r
+            INNER JOIN membership m ON r.id = m.role_id
+            INNER JOIN "user" u ON m.user_id = u.id
+        WHERE u.key = user_key_param;
+END;
+$BODY$;
+
+/*
   ox_find_items: find items that comply with the passed-in query parameters
  */
 CREATE OR REPLACE FUNCTION ox_find_items(
