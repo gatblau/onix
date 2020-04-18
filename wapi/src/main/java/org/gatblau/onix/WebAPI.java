@@ -60,16 +60,6 @@ public class WebAPI {
     }
 
     @ApiOperation(
-            value = "Returns the username of the logged on user.",
-            notes = "",
-            response = String.class)
-    @RequestMapping(value = "/user", method = RequestMethod.GET, produces = "application/json")
-    public synchronized final String user() {
-        final String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return String.format("You are logged on as: '%s'", username);
-    }
-
-    @ApiOperation(
             value = "Returns information about the service.",
             notes = "",
             response = String.class)
@@ -1367,6 +1357,32 @@ public class WebAPI {
         USER
      */
     @ApiOperation(
+            value = "Returns the username of the logged on user.",
+            notes = "",
+            response = String.class)
+    @RequestMapping(value = "/user/name", method = RequestMethod.GET, produces = "application/json")
+    public synchronized final String user() {
+        final String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return String.format("You are logged on as: '%s'", username);
+    }
+
+    @ApiOperation(
+            value = "Deletes a user identified by the specified key.",
+            notes = "")
+    @RequestMapping(
+            path = "/user/{key}"
+            , method = RequestMethod.DELETE
+    )
+    public ResponseEntity<Result> deleteUser(
+            @PathVariable("key")
+            String key,
+            Authentication authentication
+    ) {
+        Result result = data.deleteUser(key, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
+    }
+
+    @ApiOperation(
             value = "Creates a new user or updates an existing user.",
             notes = "")
     @RequestMapping(
@@ -1419,6 +1435,18 @@ public class WebAPI {
             return ResponseEntity.ok(user);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @ApiOperation(
+            value = "Get all users.",
+            notes = "Use this search to retrieve the list of all users known to the system.")
+    @RequestMapping(
+            path = "/user"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<UserDataList> getUsers(Authentication authentication) {
+        return ResponseEntity.ok(data.getUsers(getRole(authentication)));
     }
     /*
         MODEL
