@@ -102,6 +102,14 @@ DO
           OWNER to onix;
       END IF;
 
+      -- generic users - should change passwords after first login
+      INSERT INTO "user"(id, key, name, pwd, salt, version, changed_by)
+        VALUES (1, 'admin', 'Onix System Administrator', 'Pjy41SMjgoMGcd2QFRiH7jVcv6I=', '8DZMiAR+XGA=', 1, 'onix');
+      INSERT INTO "user"(id, key, name, pwd, salt, version, changed_by)
+        VALUES (2, 'reader', 'Onix Generic Writer User', '/EvDpP8kHkfd30mXk+Ne9aA4h5o=', 'B0zo+y0Keiw=', 1, 'onix');
+      INSERT INTO "user"(id, key, name, pwd, salt, version, changed_by)
+        VALUES (3, 'writer', 'Onix Generic Reader User', 'DkV3uMWjAjHSTZnW9TkJNI6XOzU=', 'yWJm38+RPtc=', 1, 'onix');
+
       ---------------------------------------------------------------------------
       -- PARTITION
       ---------------------------------------------------------------------------
@@ -484,6 +492,13 @@ DO
         ALTER TABLE membership_change
           OWNER to onix;
       END IF;
+
+      INSERT INTO membership(id, key, user_id, role_id, changed_by, version)
+        VALUES (1, 'ADMIN-MEMBER', 1, 1, 'onix', 1);
+      INSERT INTO membership(id, key, user_id, role_id, changed_by, version)
+        VALUES (1, 'READER-MEMBER', 2, 2, 'onix', 1);
+      INSERT INTO membership(id, key, user_id, role_id, changed_by, version)
+        VALUES (1, 'WRITER-MEMBER', 3, 3, 'onix', 1);
 
       ---------------------------------------------------------------------------
       -- MODEL
