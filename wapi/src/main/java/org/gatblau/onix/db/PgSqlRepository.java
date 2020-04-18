@@ -1616,6 +1616,14 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public String getDeleteUserSQL() {
+        return "SELECT ox_delete_user(" +
+                "?::character varying, " + // model_key_param
+                "?::character varying[]" + // role_key_param
+                ")";
+    }
+
+    @Override
     public String getSetLinkRuleSQL() {
         return "SELECT ox_set_link_rule(" +
                 "?::character varying," + // key
@@ -2149,6 +2157,27 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public synchronized Result deleteUser(String key, String[] role) {
+        return delete(getDeleteUserSQL(), "ox_delete_user", key, null, role);
+    }
+
+    @Override
+    public synchronized UserDataList getUsers(String[] role) {
+        UserDataList users = new UserDataList();
+        try {
+            db.prepare(getGetUsersSQL());
+            db.setArray(1, role);
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                users.getValues().add(util.toUserData(set));
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to retrieve models.", ex);
+        }
+        return users;
+    }
+
+    @Override
     public String getGetUserSQL() {
         return "SELECT * FROM ox_user(" +
                 "?::character varying," + // key_param
@@ -2166,6 +2195,13 @@ public class PgSqlRepository implements DbRepository {
                 "?::bigint," + // version_param
                 "?::character varying," + // changed_by_param
                 "?::character varying[]" + // logged_role_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetUsersSQL() {
+        return "SELECT * FROM ox_get_users(" +
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 

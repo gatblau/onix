@@ -497,7 +497,7 @@ DO
                      u.changed_by
               FROM "user" u
               WHERE u.key = user_key_param
-                AND ox_is_super_admin(role_key_param);
+                AND ox_is_super_admin(role_key_param, FALSE);
       END;
       $BODY$;
 
@@ -596,6 +596,44 @@ DO
 
       ALTER FUNCTION ox_get_models(character varying[])
         OWNER TO onix;
+
+      /*
+        get_users(): gets all users in the system.
+        use: select * from ox_get_users()
+      */
+      CREATE OR REPLACE FUNCTION ox_get_users(role_key_param character varying[])
+          RETURNS TABLE
+              (
+                  id          bigint,
+                  key         character varying,
+                  name        character varying,
+                  version     bigint,
+                  created     timestamp(6) with time zone,
+                  updated     timestamp(6) with time zone,
+                  changed_by  character varying
+              )
+          LANGUAGE 'plpgsql'
+          COST 100
+          STABLE
+      AS
+      $BODY$
+      BEGIN
+          -- only retrieve users if the logged user has a level 2 role
+          RETURN QUERY
+              SELECT u.id,
+                     u.key,
+                     u.name,
+                     u.version,
+                     u.created,
+                     u.updated,
+                     u.changed_by
+              FROM "user" u
+                WHERE ox_is_super_admin(role_key_param, FALSE);
+      END;
+      $BODY$;
+
+      ALTER FUNCTION ox_get_models(character varying[])
+          OWNER TO onix;
 
       /*
         partition(key_param, role_key_param): gets the partition specified by the key_param.

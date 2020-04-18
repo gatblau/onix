@@ -244,17 +244,14 @@ DO $$
         result          char(1); -- the result status for the upsert
         current_version bigint; -- the version of the row before the update or null if no row
         rows_affected   integer;
-        isSuperAdmin    boolean; -- the role level of the logged in user
+        new_salt        character varying;
     BEGIN
+        -- only users in level 2 roles can create or update other users
+        -- if not super admin then raise exception
+        PERFORM ox_is_super_admin(role_key_param, TRUE);
+
         -- gets the current user version
         SELECT version FROM "user" WHERE key = key_param INTO current_version;
-        SELECT ox_is_super_admin(role_key_param) INTO isSuperAdmin;
-
-        -- needs to be a role level 2 to manage users
-        IF (NOT isSuperAdmin) THEN
-            RAISE EXCEPTION 'Role % is not authorised to create or update users.', role_key_param
-                USING hint = 'The role level is not 2.';
-        END IF;
 
         IF (current_version IS NULL) THEN
             INSERT INTO "user" (
@@ -281,9 +278,20 @@ DO $$
             );
             result := 'I';
         ELSE
+            -- NOTE: if a password has been provided, even if it is the same as the originally
+            -- stored in the database, it would have got here encrypted with a new randomly generated
+            -- salt and therefore, it would look different to the database server
+            -- so it would get updated and would look different both pwd and salt in the database
+            IF (pwd_param IS NOT NULL) THEN
+                -- has to update the salt otherwise the app will not be able to authenticate
+                -- the new pwd in the future
+                new_salt = salt_param;
+            END IF;
+
             UPDATE "user"
             SET name         = name_param,
-                pwd          = COALESCE(pwd_param, pwd),
+                pwd          = COALESCE(pwd_param, pwd),  -- if the passed-in password is NULL, then do not change it
+                salt         = COALESCE(new_salt, salt),  -- if new_salt is NOT NULL, the update the salt
                 version      = version + 1,
                 updated      = current_timestamp,
                 changed_by   = changed_by_param

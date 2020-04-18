@@ -175,8 +175,12 @@ public interface DbRepository {
     /* User */
     Result createOrUpdateUser(String key, UserData user, String[] role);
     UserData getUser(String key, String[] role);
+    Result deleteUser(String key, String[] role);
+    UserDataList getUsers(String[] role);
     String getSetUserSQL();
     String getGetUserSQL();
+    String getGetUsersSQL();
+    String getDeleteUserSQL();
 
     /* Model */
     Result deleteModel(String key, String[] role);

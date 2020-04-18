@@ -19,7 +19,8 @@ DO $$
       checks that at least one of the passed in roles is a super admin (level 2)
      */
     CREATE OR REPLACE FUNCTION ox_is_super_admin(
-          role_key_param character varying[]
+          role_key_param character varying[],
+          raise_exception_param boolean
     )
         RETURNS BOOLEAN
         LANGUAGE 'plpgsql'
@@ -37,6 +38,12 @@ DO $$
         ORDER BY r.level DESC
         LIMIT 1
         INTO is_super_admin;
+
+        -- needs to be a role level 2 to manage users
+        IF (NOT is_super_admin AND raise_exception_param) THEN
+            RAISE EXCEPTION 'Role % is not authorised to create or update users.', role_key_param
+                USING hint = 'The role level is not 2.';
+        END IF;
 
         RETURN is_super_admin;
     END;
