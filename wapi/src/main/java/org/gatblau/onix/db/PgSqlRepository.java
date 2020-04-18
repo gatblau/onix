@@ -1624,6 +1624,96 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public List<String> getUserRolesInternal(String userKey) {
+        List<String> roles = new ArrayList<>();
+        try {
+            db.prepare(getGetUserRolesInternalSQL());
+            db.setString(1, userKey);
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                roles.add(set.getString("ox_get_user_roles_list"));
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to get roles.", ex);
+        } finally {
+            db.close();
+        }
+        return roles;
+    }
+
+    @Override
+    public String getGetUserRolesInternalSQL() {
+        return "SELECT * FROM ox_get_user_roles_list(" +
+                "?::character varying" + // user_key_param
+                ")";
+    }
+
+    @Override
+    public Result addMembership(String key, MembershipData membership, String[] role) {
+        Result result = new Result(String.format("Membership:%s", key));
+        try {
+            db.prepare(getAddMembershipSQL());
+            db.setString(1, key); // membership key
+            db.setString(2, membership.getUserKey()); // user_key_param
+            db.setString(3, membership.getRoleKey()); // role_key_param
+            db.setString(4, getUser()); // changed_by_param
+            db.setArray(5, role); // role_key_param
+            result.setOperation(db.executeQueryAndRetrieveStatus("ox_add_membership"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            result.setError(true);
+            result.setMessage(ex.getMessage());
+        } finally {
+            db.close();
+        }
+        return result;
+    }
+
+    @Override
+    public MembershipData getMembership(String key, String[] role) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Result deleteMembership(String key, String[] role) {
+        return delete(getDeleteMembershipSQL(), "ox_delete_membership", key, null, role);
+    }
+
+    @Override
+    public MembershipDataList getMemberships(String[] role) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getAddMembershipSQL() {
+        return "SELECT ox_add_membership(" +
+                "?::character varying," + // key
+                "?::character varying," + // user_key_param
+                "?::character varying," + // role_key_param
+                "?::character varying," + // changed_by
+                "?::character varying[]" + // logged_role_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetMembershipSQL() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getGetMembershipsSQL() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getDeleteMembershipSQL() {
+        return "SELECT ox_delete_membership(" +
+                "?::character varying, " + // membership_key_param
+                "?::character varying[]" + // role_key_param
+                ")";
+    }
+
+    @Override
     public String getSetLinkRuleSQL() {
         return "SELECT ox_set_link_rule(" +
                 "?::character varying," + // key

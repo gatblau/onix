@@ -168,6 +168,37 @@ DO
         OWNER TO onix;
 
     /*
+      ox_delete_membership
+     */
+    CREATE OR REPLACE FUNCTION ox_delete_membership(
+        key_param character varying,
+        role_key_param character varying[]
+    )
+        RETURNS TABLE(result char(1))
+        LANGUAGE 'plpgsql'
+        COST 100
+        VOLATILE
+    AS
+    $BODY$
+    DECLARE
+        rows_affected INTEGER;
+    BEGIN
+        -- only users in level 2 roles can delete other users
+        -- if not super admin then raise exception
+        PERFORM ox_is_super_admin(role_key_param, TRUE);
+
+        DELETE FROM membership m
+        WHERE m.key = key_param;
+
+        GET DIAGNOSTICS rows_affected := ROW_COUNT;
+        RETURN QUERY SELECT ox_get_delete_result(rows_affected);
+    END
+    $BODY$;
+
+    ALTER FUNCTION ox_delete_membership(key_param character varying, role_key_param character varying[])
+        OWNER TO onix;
+
+    /*
         ox_delete_item
        */
       CREATE OR REPLACE FUNCTION ox_delete_item(

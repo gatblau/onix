@@ -321,6 +321,87 @@ DO $$
         OWNER TO onix;
 
     /*
+      ox_add_membership(...)
+      creates a new membership.
+    */
+    CREATE OR REPLACE FUNCTION ox_add_membership(
+        key_param character varying,
+        user_key_param character varying,
+        role_key_param character varying,
+        changed_by_param character varying,
+        logged_role_key_param character varying[])
+        RETURNS TABLE(result char(1))
+        LANGUAGE 'plpgsql'
+        COST 100
+        VOLATILE
+    AS
+    $BODY$
+    DECLARE
+        current_version bigint; -- the version of the row before the update or null if no row
+        role_id_value   bigint;
+        user_id_value   bigint;
+    BEGIN
+        -- only users in level 2 roles can create or update other users
+        -- if not super admin then raise exception
+        PERFORM ox_is_super_admin(logged_role_key_param, TRUE);
+
+        -- gets the current membership version
+        SELECT version FROM membership WHERE key = key_param INTO current_version;
+
+        -- gets the role id from the passed-in key
+        SELECT id FROM role WHERE key = role_key_param INTO role_id_value;
+
+        -- if role Id not found raise exception
+        IF (role_id_value IS NULL) THEN
+            RAISE EXCEPTION 'Role with key ''%'' has not been found.', role_key_param
+                USING HINT = 'Check the role you specified exists.';
+        END IF;
+
+        -- gets the user id from the passed-in key
+        SELECT id FROM "user" WHERE key = user_key_param INTO user_id_value;
+
+        -- if user Id not found raise exception
+        IF (user_id_value IS NULL) THEN
+            RAISE EXCEPTION 'User with key ''%'' has not been found.', user_key_param
+                USING HINT = 'Check the user you specified exists.';
+        END IF;
+
+        IF (current_version IS NULL) THEN
+            INSERT INTO membership (
+                id,
+                key,
+                role_id,
+                user_id,
+                version,
+                created,
+                updated,
+                changed_by
+            )
+            VALUES (
+               nextval('membership_id_seq'),
+               key_param,
+               role_id_value,
+               user_id_value,
+               1,
+               current_timestamp,
+               null,
+               changed_by_param
+            );
+        END IF;
+        RETURN QUERY SELECT 'I'::char(1);
+    END;
+    $BODY$;
+
+    ALTER FUNCTION ox_add_membership(
+        character varying, -- key
+        character varying, -- user_key_param
+        character varying, -- role_key_param
+        character varying, -- changed_by_param
+        character varying[] -- role_key_param
+        )
+        OWNER TO onix;
+
+    /*
       ox_set_model(...)
       Inserts a new or updates an existing meta model.
      */
