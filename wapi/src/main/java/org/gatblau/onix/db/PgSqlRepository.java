@@ -2207,13 +2207,39 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public Result createOrUpdateUser(String key, UserData user, String[] role) {
         Result result = new Result(String.format("User:%s", key));
+        String newPwd = user.getPwd();
+        String encPwd = null;
+        String newSalt = null;
         try {
-            String salt = pbe.generateSalt();
+            /*
+             *  prevents a change in the user record if the pwd specified already exists in the database
+             */
+            // first try and get the existing password and salt
+            UserData u = getUser(key, role);
+            // if the user already exists
+            if (u != null) {
+                // checks the provided password is not the same as the one in the database
+                // this cannot be done at database level as the database only sees different salted strings
+                encPwd = pbe.getEncryptedPwd(newPwd, u.getSalt()); // uses the salt in the database
+                // if the provided password is the same as the one in the database
+                if (encPwd.equals(u.getPwd())) {
+                    // then prevents the update by making both the pwd and salt NULL
+                    encPwd = null;
+                    newSalt = null;
+                }
+            } else {
+                // otherwise, if there was a pwd specified
+                if (newPwd != null) {
+                    // an encrypted password and salt are calculated
+                    newSalt = pbe.generateSalt();
+                    encPwd = pbe.getEncryptedPwd(newPwd, newSalt);
+                }
+            }
             db.prepare(getSetUserSQL());
             db.setString(1, key); // model key
             db.setString(2, user.getName()); // name_param
-            db.setString(3, pbe.getEncryptedPwd(user.getPwd(), salt)); // pwd_param
-            db.setString(4, salt); // salt_param
+            db.setString(3, encPwd); // pwd_param
+            db.setString(4, newSalt); // salt_param
             db.setObject(5, user.getVersion()); // version_param
             db.setString(6, getUser()); // changed_by_param
             db.setArray(7, role);

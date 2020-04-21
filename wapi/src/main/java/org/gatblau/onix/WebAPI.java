@@ -501,7 +501,7 @@ public class WebAPI {
             , method = RequestMethod.GET
             , produces = {"application/json", "application/x-yaml"}
     )
-    public ResponseEntity<PartitionData> getParttition(
+    public ResponseEntity<PartitionData> getPartition(
             @PathVariable("key")
             String key,
             Authentication authentication
@@ -1486,6 +1486,9 @@ public class WebAPI {
     ) {
         UserData user = data.getUser(key, getRole(authentication));
         if (user != null) {
+            // the pwd is hashed but anonymize it anyway, so that hashes are not leaked out
+            user.setPwd("*******");
+            user.setSalt("*******");
             return ResponseEntity.ok(user);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
