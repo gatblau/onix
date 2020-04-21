@@ -173,7 +173,8 @@ public class Lib implements InitializingBean {
             user = new UserData();
             user.setKey(set.getString("key"));
             user.setName(set.getString("name"));
-            user.setPwd("********");
+            user.setPwd(set.getString("pwd"));
+            user.setSalt(set.getString("salt"));
             user.setUpdated((updated != null) ? dateFormat.format(updated) : null);
             user.setVersion(set.getInt("version"));
             user.setChangedBy(set.getString("changed_by"));
