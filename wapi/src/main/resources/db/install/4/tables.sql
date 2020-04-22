@@ -104,7 +104,7 @@ DO
 
       -- generic users - should change passwords after first login
       INSERT INTO "user"(id, key, name, pwd, salt, version, changed_by)
-        VALUES (1, 'admin', 'Onix System Administrator', 'Pjy41SMjgoMGcd2QFRiH7jVcv6I=', '8DZMiAR+XGA=', 1, 'onix');
+        VALUES (1, 'admin', 'Onix System Administrator', 'E2BgmQs4vH4rYvj5Fe0p9DbZUKU=', '8DZMiAR+XGA=', 1, 'onix');
       INSERT INTO "user"(id, key, name, pwd, salt, version, changed_by)
         VALUES (2, 'reader', 'Onix Generic Writer User', '/EvDpP8kHkfd30mXk+Ne9aA4h5o=', 'B0zo+y0Keiw=', 1, 'onix');
       INSERT INTO "user"(id, key, name, pwd, salt, version, changed_by)

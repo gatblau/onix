@@ -1631,7 +1631,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(1, userKey);
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                roles.add(set.getString("ox_get_user_roles_list"));
+                roles.add(set.getString("role_key"));
             }
         } catch (Exception ex) {
             throw new RuntimeException("Failed to get roles.", ex);
@@ -2263,7 +2263,6 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(2, role);
             ResultSet set = db.executeQuerySingleRow();
             userData = util.toUserData(set);
-            db.close();
         } catch (Exception ex) {
             throw new RuntimeException(String.format("Failed to get user with key '%s': %s", key, ex.getMessage()), ex);
         } finally {
@@ -2285,7 +2284,10 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(1, role);
             ResultSet set = db.executeQuery();
             while (set.next()) {
-                users.getValues().add(util.toUserData(set));
+                UserData user = util.toUserData(set);
+                user.setSalt("*****");
+                user.setPwd("*****");
+                users.getValues().add(user);
             }
         } catch (Exception ex) {
             throw new RuntimeException("Failed to retrieve models.", ex);
