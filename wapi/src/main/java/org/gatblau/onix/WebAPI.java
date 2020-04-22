@@ -20,11 +20,13 @@ project, to be licensed under the same terms as the rest of the code.
 package org.gatblau.onix;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Claims;
 import io.swagger.annotations.*;
 import org.gatblau.onix.conf.Info;
 import org.gatblau.onix.data.*;
 import org.gatblau.onix.db.DbRepository;
 import org.gatblau.onix.security.Crypto;
+import org.gatblau.onix.security.Jwt;
 import org.json.simple.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,14 +51,16 @@ public class WebAPI {
     private final DbRepository data;
     private final org.gatblau.onix.conf.Info info;
     private final Crypto crypto;
+    private final Jwt jwt;
 
     private ObjectMapper mapper = new ObjectMapper();
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
 
-    public WebAPI(DbRepository data, Info info, Crypto crypto) {
+    public WebAPI(DbRepository data, Info info, Crypto crypto, Jwt jwt) {
         this.data = data;
         this.info = info;
         this.crypto = crypto;
+        this.jwt = jwt;
     }
 
     @ApiOperation(
@@ -1798,6 +1802,23 @@ public class WebAPI {
     }
 
     /*
+       PASSWORD RESET
+     */
+    @ApiOperation(
+            value = "Returns a new secret key for jwt token encryption.",
+            notes = "Use this endpoint to generate encryption keys that can be used to encrypt/decrypt jwt tokens for password reset.",
+            response = JSONObject.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful request.", response = JSONObject.class)}
+    )
+    @RequestMapping(value = "/jwtsecret/generate", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity<JSONObject> jwtSecret() {
+        JSONObject response = new JSONObject();
+        response.put("secret", jwt.newSecret());
+        return ResponseEntity.ok(response);
+    }
+    
+    /*
         ENCRYPTION KEYS
      */
     @ApiOperation(
@@ -1808,7 +1829,7 @@ public class WebAPI {
             @ApiResponse(code = 200, message = "Successful request.", response = JSONObject.class)}
     )
     @RequestMapping(value = "/enckey/generate", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity<JSONObject> key() {
+    public ResponseEntity<JSONObject> enckey() {
         JSONObject response = new JSONObject();
         response.put("key", crypto.newKey());
         return ResponseEntity.ok(response);
