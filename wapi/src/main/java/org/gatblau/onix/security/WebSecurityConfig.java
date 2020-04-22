@@ -1,5 +1,5 @@
 /*
-Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,97 +19,64 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix.security;
 
+import org.gatblau.onix.conf.Config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 import org.springframework.security.oauth2.client.filter.OAuth2ClientContextFilter;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-    @Autowired
-    private OAuth2RestTemplate restTemplate;
+    private final OAuth2RestTemplate restTemplate;
+    private final Config cfg;
+    private final AuthenticationProvider dbAuthProvider;
 
-    @Autowired
-    private OnixBasicAuthEntryPoint authenticationEntryPoint;
-
-    @Value("${wapi.auth.mode}")
-    private String authMode;
-
-    @Value("${wapi.admin.user}")
-    private String adminUsername;
-
-    @Value("${wapi.admin.pwd}")
-    private String adminPassword;
-
-    @Value("${wapi.reader.user}")
-    private String readerUsername;
-
-    @Value("${wapi.reader.pwd}")
-    private String readerPassword;
-
-    @Value("${wapi.writer.user}")
-    private String writerUsername;
-
-    @Value("${wapi.writer.pwd}")
-    private String writerPassword;
-
-    @Value("${WAPI_CSRF_ENABLED:false}")
-    private boolean csrfEnabled;
+    public WebSecurityConfig(OAuth2RestTemplate restTemplate, UserPwdAuthProvider dbAuthProvider, Config cfg) {
+        this.restTemplate = restTemplate;
+        this.dbAuthProvider = dbAuthProvider;
+        this.cfg = cfg;
+    }
 
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        if (authMode.equals("basic")) {
-            auth.inMemoryAuthentication()
-                .withUser(readerUsername).password(passwordEncoder().encode(readerPassword)).roles("READER").and()
-                .withUser(writerUsername).password(passwordEncoder().encode(writerPassword)).roles("WRITER").and()
-                .withUser(adminUsername).password(passwordEncoder().encode(adminPassword)).roles("ADMIN");
+        if (cfg.getAuthMode().equals(Config.AuthMode.Basic)) {
+            auth.authenticationProvider(dbAuthProvider);
         }
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        if (authMode.equals("basic")) {
-            // Basic Access Authentication: the request should contain a header field of the form Authorization: Basic <credentials>
-            //  where credentials is the base64 encoding of username and password joined by a single colon (e.g. user:password)
-            http
-                .authorizeRequests()
-                .antMatchers("/").permitAll()
-                .antMatchers("/live").permitAll()
-                .antMatchers("/ready").permitAll()
-                .antMatchers(HttpMethod.GET, "(item|link|data|tag|linktype|itemtype|model|enckey)/**").hasAnyRole("READER", "WRITER")
-                .antMatchers(HttpMethod.PUT, "(item|link|tag|data)/**").hasRole("WRITER")
-                .antMatchers(HttpMethod.POST, "(tag)/**").hasRole("WRITER")
-                .antMatchers(HttpMethod.DELETE, "(item|link|tag)/**").hasRole("WRITER")
-                .antMatchers("/**").hasRole("ADMIN")
-                // http basic authentication
-                .and().httpBasic()
-                // 401 challenge response configuration
-                .authenticationEntryPoint(authenticationEntryPoint)
-                // No need session.
-                .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        }
-        else if (authMode.equals("none")) {
+        if (cfg.getAuthMode().equals(Config.AuthMode.None)) {
             http.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).and()
-                .authorizeRequests()
-                .antMatchers("/**").permitAll().and()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        }
-        else if (authMode.equals("oidc")) {
+                    .authorizeRequests()
+                    .antMatchers("/**").permitAll().and()
+                    .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+        } else if (cfg.getAuthMode().equals(Config.AuthMode.Basic)) {
+            http.authorizeRequests()
+                    .antMatchers("/").permitAll()
+                    .antMatchers("/live").permitAll()
+                    .antMatchers("/ready").permitAll()
+                    .anyRequest().authenticated()
+                    .and().httpBasic();
+        } else if (cfg.getAuthMode().equals(Config.AuthMode.OIDC)) {
             // OpenId Connect authentication and OAuth 2.0 authorisation
             // Implements both authorisation code and password grant types (flows) to support
             //   Web UI and Native or Automated client implementations
@@ -139,10 +106,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         }
         else {
             throw new RuntimeException(
-                String.format("Incorrect AUTH_MODE value '%s': expected one of 'none', 'basic' or 'oidc'.", authMode));
+                String.format("Incorrect AUTH_MODE value '%s': expected one of 'none', 'basic' or 'oidc'.", cfg.getAuthMode()));
         }
 
-        if (csrfEnabled) {
+        if (cfg.isCsrfEnabled()) {
             // persists the CSRF token in a cookie named "XSRF-TOKEN"
             http.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
         } else {

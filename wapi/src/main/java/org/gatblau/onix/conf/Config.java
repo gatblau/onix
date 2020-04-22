@@ -26,6 +26,21 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class Config {
+    public String getJwtSecret() {
+        return jwtSecret;
+    }
+
+    public enum AuthMode {
+        Basic,
+        OIDC,
+        None,
+    }
+    @Value("${wapi.auth.mode}")
+    private String authMode;
+
+    @Value("${WAPI_CSRF_ENABLED:false}")
+    private boolean csrfEnabled;
+    
     @Value("${spring.datasource.username}")
     private String dbuser;
 
@@ -79,7 +94,10 @@ public class Config {
 
     @Value("${wapi.events.client.backoffperiod}")
     private long eventsClientBackOffPeriod;
-
+    
+    @Value("${wapi.jwt.secret}")
+    private String jwtSecret;
+    
     public String getDbuser() {
         return dbuser;
     }
@@ -150,5 +168,21 @@ public class Config {
 
     public long getEventsClientBackOffPeriod() {
         return eventsClientBackOffPeriod;
+    }
+
+    public AuthMode getAuthMode() {
+        switch (authMode.toLowerCase()) {
+            case "none":
+                return AuthMode.None;
+            case "oidc":
+                return AuthMode.OIDC;
+            case "basic":
+            default:
+                return AuthMode.Basic;
+        }
+    }
+
+    public boolean isCsrfEnabled() {
+        return csrfEnabled;
     }
 }
