@@ -26,8 +26,9 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class Config {
-    public String getJwtSecret() {
-        return jwtSecret;
+
+    public String getSmtpFromUser() {
+        return smtpFromUser;
     }
 
     public enum AuthMode {
@@ -35,6 +36,7 @@ public class Config {
         OIDC,
         None,
     }
+    
     @Value("${wapi.auth.mode}")
     private String authMode;
 
@@ -97,6 +99,21 @@ public class Config {
     
     @Value("${wapi.jwt.secret}")
     private String jwtSecret;
+
+    @Value("${wapi.smtp.auth}")
+    private boolean smtpAuth;
+    
+    @Value("S{wapi.smtp.starttls.enable}")
+    private boolean smtpStartTLS;
+
+    @Value("${wapi.smtp.host}")
+    private String smtpHost;
+
+    @Value("${wapi.smtp.port}")
+    private int smtpPort;
+
+    @Value("${wapi.smtp.from.user}")
+    private String smtpFromUser;
     
     public String getDbuser() {
         return dbuser;
@@ -184,5 +201,25 @@ public class Config {
 
     public boolean isCsrfEnabled() {
         return csrfEnabled;
+    }
+
+    public String getJwtSecret() {
+        return jwtSecret;
+    }
+
+    public boolean isSmtpAuth() {
+        return smtpAuth;
+    }
+
+    public boolean isSmtpStartTLS() {
+        return smtpStartTLS;
+    }
+
+    public String getSmtpHost() {
+        return smtpHost;
+    }
+
+    public int getSmtpPort() {
+        return smtpPort;
     }
 }
