@@ -1,0 +1,1 @@
+docker run --name oxman -it -d -p 3000:8080 "gatblau/oxman-snapshot"
