@@ -23,9 +23,11 @@ import com.jayway.jsonpath.ReadContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gatblau.onix.Lib;
+import org.gatblau.onix.Mailer;
 import org.gatblau.onix.conf.Config;
 import org.gatblau.onix.data.*;
 import org.gatblau.onix.event.EventManager;
+import org.gatblau.onix.security.Jwt;
 import org.gatblau.onix.security.PwdBasedEncryptor;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
@@ -52,13 +54,17 @@ public class PgSqlRepository implements DbRepository {
     private JSONObject ready;
     private final Logger log = LogManager.getLogger();
     private final PwdBasedEncryptor pbe;
+    private final Jwt jwt;
+    private final Mailer mailer;
 
-    public PgSqlRepository(Lib util, Database db, EventManager events, Config cfg, PwdBasedEncryptor pbe) {
+    public PgSqlRepository(Lib util, Database db, EventManager events, Config cfg, PwdBasedEncryptor pbe, Jwt jwt, Mailer mailer) {
         this.util = util;
         this.db = db;
         this.events = events;
         this.cfg = cfg;
         this.pbe = pbe;
+        this.jwt = jwt;
+        this.mailer = mailer;
     }
 
     /*
@@ -2296,6 +2302,35 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public Result changePassword(String email, PwdResetData pwdResetData) {
+        return null;
+    }
+
+    @Override
+    public Result requestPwdReset(String email) {
+        Result result = new Result(String.format("pwd_reset:%s", email));
+        // user must exist in the database
+        UserData user = getUserByEmail(email, new String[]{"ADMIN"});
+        // if the user is not found then returns
+        if (user == null) {
+            result.setError(true);
+            result.setMessage(String.format("User with email '%s' does not exist.", email));
+            return result;
+        }
+        // user exists so create a jwt token
+        String token = jwt.createJWT(UUID.randomUUID().toString(), "onix", email, 10*60*1000);
+        try {
+            mailer.sendResetPwdEmail(email, String.format("Onix Password Reset"), user.getName(), token);
+            result.setOperation("I"); // mail was sent
+            result.setMessage(String.format("email sent to %s", email));
+        } catch (Exception ex) {
+            result.setOperation("N"); // no email was sent
+            result.setMessage(ex.getMessage()); // why was it not sent?
+        }
+        return result;
+    }
+
+    @Override
     public String getGetUserSQL() {
         return "SELECT * FROM ox_user(" +
                 "?::character varying," + // key_param
@@ -2410,6 +2445,29 @@ public class PgSqlRepository implements DbRepository {
         return "SELECT * FROM ox_privilege(" +
                 "?::character varying," + // key_param
                 "?::character varying[]" + // user_role_key_param
+                ")";
+    }
+
+    public UserData getUserByEmail(String email, String[] role) {
+        UserData userData = null;
+        try {
+            db.prepare(getGetUserByEmailSQL());
+            db.setString(1, email);
+            db.setArray(2, role);
+            ResultSet set = db.executeQuerySingleRow();
+            userData = util.toUserData(set);
+        } catch (Exception ex) {
+            throw new RuntimeException(String.format("Failed to get user with email '%s': %s", email, ex.getMessage()), ex);
+        } finally {
+            db.close();
+        }
+        return userData;
+    }
+
+    public String getGetUserByEmailSQL() {
+        return "SELECT * FROM ox_user_by_email(" +
+                "?::character varying," + // email_param
+                "?::character varying[]" + // role_key_param
                 ")";
     }
 

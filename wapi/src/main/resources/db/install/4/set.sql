@@ -229,6 +229,7 @@ DO $$
     CREATE OR REPLACE FUNCTION ox_set_user(
         key_param character varying,
         name_param character varying,
+        email_param character varying,
         pwd_param character varying,
         salt_param character varying,
         local_version_param bigint,
@@ -258,6 +259,7 @@ DO $$
                 id,
                 key,
                 name,
+                email,
                 pwd,
                 salt,
                 version,
@@ -269,6 +271,7 @@ DO $$
                nextval('user_id_seq'),
                key_param,
                name_param,
+               email_param,
                pwd_param,
                salt_param,
                1,
@@ -290,6 +293,7 @@ DO $$
 
             UPDATE "user"
             SET name         = name_param,
+                email        = email_param,
                 pwd          = COALESCE(pwd_param, pwd),  -- if the passed-in password is NULL, then do not change it
                 salt         = COALESCE(new_salt, salt),  -- if new_salt is NOT NULL, the update the salt
                 version      = version + 1,
@@ -300,6 +304,7 @@ DO $$
               AND (local_version_param = current_version OR local_version_param IS NULL OR local_version_param = 0)
               AND (
                     name != name_param OR
+                    email != email_param OR
                     pwd != pwd_param AND pwd_param IS NOT NULL
                 );
             GET DIAGNOSTICS rows_affected := ROW_COUNT;
@@ -312,6 +317,7 @@ DO $$
     ALTER FUNCTION ox_set_user(
             character varying, -- key
             character varying, -- name
+            character varying, -- email
             character varying, -- pwd
             character varying, -- salt
             bigint, -- client version

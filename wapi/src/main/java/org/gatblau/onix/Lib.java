@@ -166,13 +166,14 @@ public class Lib implements InitializingBean {
         return item;
     }
 
-    public UserData toUserData(ResultSet set) throws SQLException, ParseException, IOException {
+    public UserData toUserData(ResultSet set) throws SQLException {
         UserData user = null;
         if (set != null) {
             Date updated = set.getDate("updated");
             user = new UserData();
             user.setKey(set.getString("key"));
             user.setName(set.getString("name"));
+            user.setEmail(set.getString("email"));
             user.setPwd(set.getString("pwd"));
             user.setSalt(set.getString("salt"));
             user.setUpdated((updated != null) ? dateFormat.format(updated) : null);

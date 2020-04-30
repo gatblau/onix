@@ -20,7 +20,6 @@ project, to be licensed under the same terms as the rest of the code.
 package org.gatblau.onix;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jsonwebtoken.Claims;
 import io.swagger.annotations.*;
 import org.gatblau.onix.conf.Info;
 import org.gatblau.onix.data.*;
@@ -1817,7 +1816,39 @@ public class WebAPI {
         response.put("secret", jwt.newSecret());
         return ResponseEntity.ok(response);
     }
-    
+
+    @ApiOperation(
+            value = "Request a password reset token delivered to the user email address.",
+            notes = "Use this endpoint to request a token to change the user password.",
+            response = JSONObject.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful request.", response = JSONObject.class)}
+    )
+    @RequestMapping(value = "/user/{email}/pwd/reset/token", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<Result> requestPasswordResetToken(
+            @PathVariable("email") String email,
+            Authentication authentication) {
+        Result result = data.requestPwdReset(email);
+        return ResponseEntity.ok(result);
+    }
+
+    @ApiOperation(
+            value = "Reset the user password.",
+            notes = "Use this endpoint to request a token to change the user password.",
+            response = JSONObject.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful request.", response = JSONObject.class)}
+    )
+    @RequestMapping(value = "/user/{key}/pwd/reset", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity<Result> changePassword(
+            @PathVariable("email") String email,
+            @RequestBody String payloadStr,
+            HttpServletRequest request,
+            Authentication authentication) {
+        Result result = data.requestPwdReset(email);
+        return ResponseEntity.ok(result);
+    }
+
     /*
         ENCRYPTION KEYS
      */

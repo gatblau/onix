@@ -474,6 +474,7 @@ DO
                   id          bigint,
                   key         character varying,
                   name        character varying,
+                  email       character varying,
                   pwd         character varying,
                   salt        character varying,
                   version     bigint,
@@ -491,6 +492,7 @@ DO
               SELECT u.id,
                      u.key,
                      u.name,
+                     u.email,
                      u.pwd,
                      u.salt,
                      u.version,
@@ -504,6 +506,50 @@ DO
       $BODY$;
 
       ALTER FUNCTION ox_user(character varying, character varying[])
+          OWNER TO onix;
+
+      /*
+          ox_user_by_email(email_key_param): gets the user specified by the email address.
+          use: select * from ox_user_by_email(email_key_param)
+         */
+      CREATE OR REPLACE FUNCTION ox_user_by_email(email_param character varying, role_key_param character varying[])
+          RETURNS TABLE
+                  (
+                      id          bigint,
+                      key         character varying,
+                      name        character varying,
+                      email       character varying,
+                      pwd         character varying,
+                      salt        character varying,
+                      version     bigint,
+                      created     timestamp(6) with time zone,
+                      updated     timestamp(6) with time zone,
+                      changed_by  character varying
+                  )
+          LANGUAGE 'plpgsql'
+          COST 100
+          STABLE
+      AS
+      $BODY$
+      BEGIN
+          RETURN QUERY
+              SELECT u.id,
+                     u.key,
+                     u.name,
+                     u.email,
+                     u.pwd,
+                     u.salt,
+                     u.version,
+                     u.created,
+                     u.updated,
+                     u.changed_by
+              FROM "user" u
+              WHERE u.email = email_param
+                AND ox_is_super_admin(role_key_param, FALSE);
+      END;
+      $BODY$;
+
+      ALTER FUNCTION ox_user_by_email(character varying, character varying[])
           OWNER TO onix;
 
       /*
@@ -609,6 +655,7 @@ DO
                   id          bigint,
                   key         character varying,
                   name        character varying,
+                  email       character varying,
                   pwd         character varying,
                   salt        character varying,
                   version     bigint,
@@ -627,6 +674,7 @@ DO
               SELECT u.id,
                      u.key,
                      u.name,
+                     u.email,
                      u.pwd,
                      u.salt,
                      u.version,
