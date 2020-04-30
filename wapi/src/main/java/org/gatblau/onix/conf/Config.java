@@ -125,6 +125,13 @@ public class Config {
     @Value("${wapi.smtp.enabled}")
     private boolean smtpEnabled;
 
+    @Value("${wapi.smtp.pwd.reset.tokenexpiry}")
+    private long smtpPwdResetTokenExpirySecs;
+
+    public long getSmtpPwdResetTokenExpirySecs() {
+        return smtpPwdResetTokenExpirySecs;
+    }
+
     public boolean isSmtpEnabled() {
         return smtpEnabled;
     }

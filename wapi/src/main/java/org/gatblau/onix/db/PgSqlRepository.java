@@ -2318,7 +2318,7 @@ public class PgSqlRepository implements DbRepository {
             return result;
         }
         // user exists so create a jwt token
-        String token = jwt.createJWT(UUID.randomUUID().toString(), "onix", email, 10*60*1000);
+        String token = jwt.createJWT(UUID.randomUUID().toString(), "onix", email, cfg.getSmtpPwdResetTokenExpirySecs() * 1000);
         try {
             mailer.sendResetPwdEmail(email, String.format("Onix Password Reset"), user.getName(), token);
             result.setOperation("I"); // mail was sent
