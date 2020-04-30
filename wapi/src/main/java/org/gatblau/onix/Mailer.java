@@ -27,14 +27,23 @@ import org.springframework.stereotype.Service;
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /*
   send emails
  */
 @Service
 public class Mailer {
+    private final String UTF8 = StandardCharsets.UTF_8.toString();
+
     @Value("${wapi.smtp.from.pwd}")
     private char[] smtpFromPwd;
     private final Config cfg;
@@ -48,26 +57,40 @@ public class Mailer {
     public void sendHtmlEmail(String toEmail, String subject, String body) {
         try {
             Session session = getSession();
+            if (!cfg.isSmtpEnabled()) {
+                String msg = String.format("cannot email to %s: email sending is disabled", toEmail);
+                log.atWarn().log(String.format(msg));
+                throw new RuntimeException(msg);
+            }
             MimeMessage msg = new MimeMessage(session);
             //set message headers
             msg.addHeader("Content-type", "text/HTML; charset=UTF-8");
             msg.addHeader("format", "flowed");
             msg.addHeader("Content-Transfer-Encoding", "8bit");
-            msg.setFrom(new InternetAddress("no_reply@onix.com", "NoReply-Onix"));
-            msg.setReplyTo(InternetAddress.parse("no_reply@onix.com", false));
-            msg.setSubject(subject, "UTF-8");
-            msg.setText(body, "UTF-8");
+            msg.setFrom(new InternetAddress(cfg.getSmtpFromUser(), cfg.getSmtpFromUser()));
+            msg.setReplyTo(InternetAddress.parse(cfg.getSmtpFromUser(), false));
+            msg.setSubject(subject, UTF8);
+            msg.setText(body, UTF8);
             msg.setSentDate(new Date());
             msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail, false));
-            log.atDebug().log("message is ready");
             Transport.send(msg);
             log.atDebug().log(String.format("email sent successfully to %s, subject: %s", toEmail, subject));
         } catch (Exception e) {
             log.atError().log(String.format("failed to send email to '%s' with subject '%s': %s", toEmail, subject, e.getMessage()));
+            throw new RuntimeException(e);
         }
     }
 
+    public void sendResetPwdEmail(String toEmail, String subject, String username, String jwt) {
+        sendHtmlEmail(toEmail, subject, getMailHtml(username, jwt));
+    }
+
     private Session getSession() {
+        // if the host is not set then do not create a session
+        if (!cfg.isSmtpEnabled()) {
+            log.atWarn().log("email sending is disabled in the configuration");
+            return null;
+        }
         Properties props = new Properties();
         props.put("mail.smtp.host", cfg.getSmtpHost()); //SMTP Host
         props.put("mail.smtp.port", cfg.getSmtpPort()); //TLS Port
@@ -78,9 +101,24 @@ public class Mailer {
         Authenticator auth = new Authenticator() {
             //override the getPasswordAuthentication method
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(cfg.getSmtpFromUser(), new String(smtpFromPwd));
+            return new PasswordAuthentication(cfg.getSmtpFromUser(), new String(smtpFromPwd));
             }
         };
         return Session.getInstance(props, auth);
+    }
+
+    private String getMailHtml(String username, String jwtToken) {
+        String encJwtToken = null;
+        try {
+            encJwtToken = URLEncoder.encode(jwtToken, UTF8);
+        } catch (UnsupportedEncodingException e) {
+            log.atError().log("failed to encode password reset url");
+            throw new RuntimeException(e);
+        }
+        String pwdResetUri = String.format("%s?token=%s", cfg.getSmtpPwdRestURI(), encJwtToken);
+        ClassLoader classloader = Thread.currentThread().getContextClassLoader();
+        InputStream inputStream = classloader.getResourceAsStream("pwdReset.html");
+        String html = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
+        return String.format(html, username, pwdResetUri);
     }
 }

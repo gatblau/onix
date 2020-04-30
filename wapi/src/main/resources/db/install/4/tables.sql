@@ -34,7 +34,8 @@ DO
         (
           id          BIGINT                 NOT NULL DEFAULT nextval('user_id_seq'::regclass),
           key         CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
-          name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          name        CHARACTER VARYING(200) NOT NULL COLLATE pg_catalog."default",
+          email       CHARACTER VARYING(200) NOT NULL COLLATE pg_catalog."default",
           pwd         CHARACTER VARYING(300) NOT NULL COLLATE pg_catalog."default",
           salt        CHARACTER VARYING(300) NOT NULL COLLATE pg_catalog."default",
           version     BIGINT                 NOT NULL DEFAULT 1,
@@ -43,7 +44,9 @@ DO
           changed_by  CHARACTER VARYING(100) NOT NULL COLLATE pg_catalog."default",
           CONSTRAINT user_id_pk PRIMARY KEY (id),
           CONSTRAINT user_key_uc UNIQUE (key),
-          CONSTRAINT user_name_uc UNIQUE (name)
+          CONSTRAINT user_name_uc UNIQUE (name),
+          CONSTRAINT user_email_uc UNIQUE (email),
+          CONSTRAINT valid_email CHECK (email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$')
         )
           WITH (
             OIDS = FALSE
@@ -67,6 +70,7 @@ DO
           id          BIGINT,
           key         CHARACTER VARYING(100) COLLATE pg_catalog."default",
           name        CHARACTER VARYING(200) COLLATE pg_catalog."default",
+          email       CHARACTER VARYING(200) COLLATE pg_catalog."default",
           pwd         CHARACTER VARYING(300) COLLATE pg_catalog."default",
           salt        CHARACTER VARYING(300) COLLATE pg_catalog."default",
           version     BIGINT,
@@ -103,12 +107,12 @@ DO
       END IF;
 
       -- generic users - should change passwords after first login
-      INSERT INTO "user"(id, key, name, pwd, salt, version, changed_by)
-        VALUES (1, 'admin', 'Onix System Administrator', 'E2BgmQs4vH4rYvj5Fe0p9DbZUKU=', '8DZMiAR+XGA=', 1, 'onix');
-      INSERT INTO "user"(id, key, name, pwd, salt, version, changed_by)
-        VALUES (2, 'reader', 'Onix Generic Writer User', '/EvDpP8kHkfd30mXk+Ne9aA4h5o=', 'B0zo+y0Keiw=', 1, 'onix');
-      INSERT INTO "user"(id, key, name, pwd, salt, version, changed_by)
-        VALUES (3, 'writer', 'Onix Generic Reader User', 'DkV3uMWjAjHSTZnW9TkJNI6XOzU=', 'yWJm38+RPtc=', 1, 'onix');
+      INSERT INTO "user"(id, key, name, email, pwd, salt, version, changed_by)
+        VALUES (1, 'admin', 'Administrator', 'admin@onix.com', 'E2BgmQs4vH4rYvj5Fe0p9DbZUKU=', '8DZMiAR+XGA=', 1, 'onix');
+      INSERT INTO "user"(id, key, name, email, pwd, salt, version, changed_by)
+        VALUES (2, 'reader', 'Reader', 'reader@onix.com', '/EvDpP8kHkfd30mXk+Ne9aA4h5o=', 'B0zo+y0Keiw=', 1, 'onix');
+      INSERT INTO "user"(id, key, name, email, pwd, salt, version, changed_by)
+        VALUES (3, 'writer', 'Writer', 'writer@onix.com', 'DkV3uMWjAjHSTZnW9TkJNI6XOzU=', 'yWJm38+RPtc=', 1, 'onix');
 
       ---------------------------------------------------------------------------
       -- PARTITION

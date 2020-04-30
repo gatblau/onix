@@ -31,6 +31,10 @@ public class Config {
         return smtpFromUser;
     }
 
+    public String getSmtpPwdRestURI() {
+        return smtpPwdRestURI;
+    }
+
     public enum AuthMode {
         Basic,
         OIDC,
@@ -103,7 +107,7 @@ public class Config {
     @Value("${wapi.smtp.auth}")
     private boolean smtpAuth;
     
-    @Value("S{wapi.smtp.starttls.enable}")
+    @Value("${wapi.smtp.starttls.enable}")
     private boolean smtpStartTLS;
 
     @Value("${wapi.smtp.host}")
@@ -114,7 +118,17 @@ public class Config {
 
     @Value("${wapi.smtp.from.user}")
     private String smtpFromUser;
-    
+
+    @Value("${wapi.smtp.pwd.reset.uri}")
+    private String smtpPwdRestURI;
+
+    @Value("${wapi.smtp.enabled}")
+    private boolean smtpEnabled;
+
+    public boolean isSmtpEnabled() {
+        return smtpEnabled;
+    }
+
     public String getDbuser() {
         return dbuser;
     }

@@ -1,5 +1,5 @@
 /*
-Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.gatblau.onix.data.*;
 import org.json.simple.JSONObject;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -178,6 +177,9 @@ public interface DbRepository {
     UserData getUser(String key, String[] role);
     Result deleteUser(String key, String[] role);
     UserDataList getUsers(String[] role);
+    Result changePassword(String email, PwdResetData pwdResetData);
+    Result requestPwdReset(String email);
+    
     String getSetUserSQL();
     String getGetUserSQL();
     String getGetUsersSQL();
