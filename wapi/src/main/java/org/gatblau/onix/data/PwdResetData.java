@@ -29,7 +29,7 @@ public class PwdResetData implements Serializable {
 
     private String pwd;
     private String jwt;
-    private boolean notifyUser;
+    private boolean notifyUser = true;
 
     public PwdResetData() {
     }

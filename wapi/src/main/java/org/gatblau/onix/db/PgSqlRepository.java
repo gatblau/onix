@@ -2339,6 +2339,10 @@ public class PgSqlRepository implements DbRepository {
         user.setPwd(pwdResetData.getPwd());
         // persist changes
         result = createOrUpdateUser(user.getKey(), user, new String[]{"ADMIN"});
+        // email the user if the pwd has effectively been changed
+        if (result.isChanged() && pwdResetData.isNotifyUser()) {
+            mailer.sendPwdChangedEmail(email, String.format("Onix Password Changed"), user.getName());
+        }
         return result;
     }
 
