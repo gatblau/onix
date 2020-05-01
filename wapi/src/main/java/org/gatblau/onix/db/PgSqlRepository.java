@@ -20,6 +20,7 @@ package org.gatblau.onix.db;
 
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ReadContext;
+import io.jsonwebtoken.Claims;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.gatblau.onix.Lib;
@@ -2244,11 +2245,12 @@ public class PgSqlRepository implements DbRepository {
             db.prepare(getSetUserSQL());
             db.setString(1, key); // model key
             db.setString(2, user.getName()); // name_param
-            db.setString(3, encPwd); // pwd_param
-            db.setString(4, newSalt); // salt_param
-            db.setObject(5, user.getVersion()); // version_param
-            db.setString(6, getUser()); // changed_by_param
-            db.setArray(7, role);
+            db.setString(3, user.getEmail()); // email_param
+            db.setString(4, encPwd); // pwd_param
+            db.setString(5, newSalt); // salt_param
+            db.setObject(6, user.getVersion()); // version_param
+            db.setString(7, getUser()); // changed_by_param
+            db.setArray(8, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_user"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -2303,7 +2305,41 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public Result changePassword(String email, PwdResetData pwdResetData) {
-        return null;
+        Result result = new Result(String.format("change_pwd:%s", email));
+        Claims claims = null;
+        try {
+            // validate the jwt token
+            claims = jwt.parseJWT(pwdResetData.getJwt());
+        } catch (Exception ex) {
+            // the jwt is not valid, so cannot proceed
+            result.setMessage(String.format("attempt to change password failed for '%s' , invalid jwt: %s", email, ex.getMessage()));
+            return result;
+        }
+        // check that the jwt subject matches the user email
+        if (!claims.getSubject().equals(email)) {
+            // the jwt subject is different from the user email, so cannot proceed
+            result.setMessage(String.format("attempt to change password failed for '%s', jwt subject '%s' does not user email", email, claims.getSubject()));
+            return result;
+        }
+        // check the token has not expired
+        if (jwt.hasExpired(claims.getExpiration())) {
+            // the jwt has expired, so cannot proceed
+            result.setMessage(String.format("attempt to change password failed for '%s', jwt token has expired", email));
+            return result;
+        }
+        // if we got to here then we are good to go
+        // check if the user exists in the database
+        UserData user = getUserByEmail(email, new String[]{"ADMIN"});
+        if (user == null) {
+            // the user is not in the database, so cannot proceed
+            result.setMessage(String.format("attempt to change password failed for '%s', user does not exist", email));
+            return result;
+        }
+        // update the password
+        user.setPwd(pwdResetData.getPwd());
+        // persist changes
+        result = createOrUpdateUser(user.getKey(), user, new String[]{"ADMIN"});
+        return result;
     }
 
     @Override
@@ -2343,6 +2379,7 @@ public class PgSqlRepository implements DbRepository {
         return "SELECT ox_set_user(" +
                 "?::character varying," + // key
                 "?::character varying," + // name_param
+                "?::character varying," + // email_param
                 "?::character varying," + // pwd_param
                 "?::character varying," + // salt_param
                 "?::bigint," + // version_param

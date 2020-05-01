@@ -1819,7 +1819,7 @@ public class WebAPI {
 
     @ApiOperation(
             value = "Request a password reset token delivered to the user email address.",
-            notes = "Use this endpoint to request a token to change the user password.",
+            notes = "Use this endpoint to request a password reset token to be emailed to the user inbox.",
             response = JSONObject.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successful request.", response = JSONObject.class)}
@@ -1833,19 +1833,23 @@ public class WebAPI {
     }
 
     @ApiOperation(
-            value = "Reset the user password.",
-            notes = "Use this endpoint to request a token to change the user password.",
+            value = "Allows a user to reset their password when providing a password reset token they requested to be sent to their email address.",
+            notes = "Use this endpoint to change the user password after being in possession of a valid reset token.",
             response = JSONObject.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successful request.", response = JSONObject.class)}
     )
-    @RequestMapping(value = "/user/{key}/pwd/reset", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/user/{email}/pwd/reset", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<Result> changePassword(
             @PathVariable("email") String email,
             @RequestBody String payloadStr,
             HttpServletRequest request,
             Authentication authentication) {
-        Result result = data.requestPwdReset(email);
+        // check the request integrity and de-serialise the payload
+        Tuple<ResponseEntity<Result>, PwdResetData> req = readRequest(request, payloadStr, PwdResetData.class);
+        // if the data integrity check or de-serialisation fails, returns
+        if (req.Response != null) { return req.Response; }
+        Result result = data.changePassword(email, req.Payload);
         return ResponseEntity.ok(result);
     }
 
