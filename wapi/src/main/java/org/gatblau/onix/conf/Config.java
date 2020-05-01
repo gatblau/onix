@@ -21,19 +21,13 @@ package org.gatblau.onix.conf;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.Serializable;
+
 /*
   Abstracts Spring configuration
  */
 @Service
-public class Config {
-
-    public String getSmtpFromUser() {
-        return smtpFromUser;
-    }
-
-    public String getSmtpPwdRestURI() {
-        return smtpPwdRestURI;
-    }
+public class Config implements Serializable {
 
     public enum AuthMode {
         Basic,
@@ -120,7 +114,10 @@ public class Config {
     private String smtpFromUser;
 
     @Value("${wapi.smtp.pwd.reset.uri}")
-    private String smtpPwdRestURI;
+    private String smtpPwdResetURI;
+
+    @Value("${wapi.smtp.pwd.setup.uri}")
+    private String smtpPwdSetupURI;
 
     @Value("${wapi.smtp.enabled}")
     private boolean smtpEnabled;
@@ -242,5 +239,17 @@ public class Config {
 
     public int getSmtpPort() {
         return smtpPort;
+    }
+
+    public String getSmtpFromUser() {
+        return smtpFromUser;
+    }
+
+    public String getSmtpPwdResetURI() {
+        return smtpPwdResetURI;
+    }
+
+    public String getSmtpPwdSetupURI() {
+        return smtpPwdSetupURI;
     }
 }
