@@ -82,7 +82,11 @@ public class Mailer {
     }
 
     public void sendResetPwdEmail(String toEmail, String subject, String username, String jwt) {
-        sendHtmlEmail(toEmail, subject, getMailHtml(username, jwt));
+        sendHtmlEmail(toEmail, subject, getPwdResetTokenEmailHtml(username, jwt));
+    }
+
+    public void sendPwdChangedEmail(String toEmail, String subject, String username) {
+        sendHtmlEmail(toEmail, subject, getPwdChangedEmailHtml(username));
     }
 
     private Session getSession() {
@@ -107,7 +111,7 @@ public class Mailer {
         return Session.getInstance(props, auth);
     }
 
-    private String getMailHtml(String username, String jwtToken) {
+    private String getPwdResetTokenEmailHtml(String username, String jwtToken) {
         String encJwtToken = null;
         try {
             encJwtToken = URLEncoder.encode(jwtToken, UTF8);
@@ -117,8 +121,15 @@ public class Mailer {
         }
         String pwdResetUri = String.format("%s?token=%s", cfg.getSmtpPwdRestURI(), encJwtToken);
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-        InputStream inputStream = classloader.getResourceAsStream("pwdReset.html");
+        InputStream inputStream = classloader.getResourceAsStream("mail/pwdReset.html");
         String html = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
         return String.format(html, username, pwdResetUri);
+    }
+
+    private String getPwdChangedEmailHtml(String username) {
+        ClassLoader classloader = Thread.currentThread().getContextClassLoader();
+        InputStream inputStream = classloader.getResourceAsStream("mail/pwdChanged.html");
+        String html = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
+        return String.format(html, username);
     }
 }
