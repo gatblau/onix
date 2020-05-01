@@ -71,6 +71,16 @@ public class Jwt {
         return builder.compact();
     }
 
+    /**
+     * check the passed in date is not in the past
+     * @param tokenExpirationDate
+     * @return
+     */
+    public boolean hasExpired(Date tokenExpirationDate) {
+        // token expired if now is after the date in the token
+        return getNow().after(tokenExpirationDate);
+    }
+
     //Sample method to validate and read the JWT
     public Claims parseJWT(String jwt) {
         //This line will throw an exception if it is not a signed JWS (as expected)
@@ -82,5 +92,10 @@ public class Jwt {
     public String newSecret() {
         SecretKey key = Keys.secretKeyFor(signatureAlgorithm); 
         return Encoders.BASE64.encode(key.getEncoded());
+    }
+
+    private Date getNow() {
+        long nowMillis = System.currentTimeMillis();
+        return new Date(nowMillis);
     }
 }

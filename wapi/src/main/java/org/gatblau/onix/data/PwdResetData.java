@@ -16,7 +16,6 @@
     Contributors to this project, hereby assign copyright in their code to the
     project, to be licensed under the same terms as the rest of the code.
 */
-
 package org.gatblau.onix.data;
 
 import io.swagger.annotations.ApiModel;
@@ -30,6 +29,7 @@ public class PwdResetData implements Serializable {
 
     private String pwd;
     private String jwt;
+    private boolean notifyUser;
 
     public PwdResetData() {
     }
@@ -48,5 +48,13 @@ public class PwdResetData implements Serializable {
 
     public void setJwt(String jwt) {
         this.jwt = jwt;
+    }
+
+    public boolean isNotifyUser() {
+        return notifyUser;
+    }
+
+    public void setNotifyUser(boolean notifyUser) {
+        this.notifyUser = notifyUser;
     }
 }
