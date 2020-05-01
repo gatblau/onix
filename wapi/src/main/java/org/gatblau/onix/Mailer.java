@@ -89,6 +89,10 @@ public class Mailer {
         sendHtmlEmail(toEmail, subject, getPwdChangedEmailHtml(username));
     }
 
+    public void sendNewAccountEmail(String toEmail, String subject, String username) {
+        sendHtmlEmail(toEmail, subject, getNewAccountEmailHtml(username));
+    }
+
     private Session getSession() {
         // if the host is not set then do not create a session
         if (!cfg.isSmtpEnabled()) {
@@ -119,17 +123,24 @@ public class Mailer {
             log.atError().log("failed to encode password reset url");
             throw new RuntimeException(e);
         }
-        String pwdResetUri = String.format("%s?token=%s", cfg.getSmtpPwdRestURI(), encJwtToken);
+        String pwdResetUri = String.format("%s?token=%s", cfg.getSmtpPwdResetURI(), encJwtToken);
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-        InputStream inputStream = classloader.getResourceAsStream("mail/pwdReset.html");
+        InputStream inputStream = classloader.getResourceAsStream("mail/en/pwdReset.html");
         String html = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
         return String.format(html, username, pwdResetUri);
     }
 
     private String getPwdChangedEmailHtml(String username) {
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-        InputStream inputStream = classloader.getResourceAsStream("mail/pwdChanged.html");
+        InputStream inputStream = classloader.getResourceAsStream("mail/en/pwdChanged.html");
         String html = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
         return String.format(html, username);
+    }
+
+    private String getNewAccountEmailHtml(String username) {
+        ClassLoader classloader = Thread.currentThread().getContextClassLoader();
+        InputStream inputStream = classloader.getResourceAsStream("mail/en/newAccount.html");
+        String html = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
+        return String.format(html, username, cfg.getSmtpPwdSetupURI());
     }
 }

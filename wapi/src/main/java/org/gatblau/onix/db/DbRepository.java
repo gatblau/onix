@@ -173,7 +173,7 @@ public interface DbRepository {
     JSONObject checkReady();
 
     /* User */
-    Result createOrUpdateUser(String key, UserData user, String[] role);
+    Result createOrUpdateUser(String key, UserData user, boolean notifyUser, String[] role);
     UserData getUser(String key, String[] role);
     Result deleteUser(String key, String[] role);
     UserDataList getUsers(String[] role);

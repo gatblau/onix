@@ -1462,6 +1462,7 @@ public class WebAPI {
                 example = "user@organisation.com"
             )
             @PathVariable("key") String key,
+            @RequestParam(value="notify", required = false, defaultValue = "true") boolean notifyUser, // whether to notify user by email when account is created
             @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
             HttpServletRequest request, // required to check on http headers
             Authentication authentication // required to authenticate user
@@ -1471,7 +1472,7 @@ public class WebAPI {
         // if the data integrity check or de-serialisation fails, returns
         if (req.Response != null) { return req.Response; }
         // now ready to process the request
-        Result result = data.createOrUpdateUser(key, req.Payload, getRole(authentication));
+        Result result = data.createOrUpdateUser(key, req.Payload, notifyUser, getRole(authentication));
         return ResponseEntity.status(result.getStatus()).body(result);
     }
 

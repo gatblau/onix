@@ -2212,7 +2212,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result createOrUpdateUser(String key, UserData user, String[] role) {
+    public Result createOrUpdateUser(String key, UserData user, boolean notifyUser, String[] role) {
         Result result = new Result(String.format("User:%s", key));
         String newPwd = user.getPwd();
         String encPwd = null;
@@ -2258,6 +2258,10 @@ public class PgSqlRepository implements DbRepository {
             result.setMessage(ex.getMessage());
         } finally {
             db.close();
+        }
+        // notify the user of their newly created account
+        if (result.getOperation().equals("I") && notifyUser) {
+            mailer.sendNewAccountEmail(user.getEmail(), String.format("New Account Notification"), user.getName());
         }
         return result;
     }
@@ -2338,7 +2342,7 @@ public class PgSqlRepository implements DbRepository {
         // update the password
         user.setPwd(pwdResetData.getPwd());
         // persist changes
-        result = createOrUpdateUser(user.getKey(), user, new String[]{"ADMIN"});
+        result = createOrUpdateUser(user.getKey(), user, false, new String[]{"ADMIN"});
         // email the user if the pwd has effectively been changed
         if (result.isChanged() && pwdResetData.isNotifyUser()) {
             mailer.sendPwdChangedEmail(email, String.format("Onix Password Changed"), user.getName());
