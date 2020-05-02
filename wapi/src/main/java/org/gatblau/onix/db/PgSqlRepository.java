@@ -32,7 +32,9 @@ import org.gatblau.onix.security.Jwt;
 import org.gatblau.onix.security.PwdBasedEncryptor;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
+import org.postgresql.jdbc.PgArray;
 import org.postgresql.util.HStoreConverter;
+import org.postgresql.util.PGobject;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -43,6 +45,7 @@ import javax.jms.JMSException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.time.ZonedDateTime;
 import java.util.*;
 
@@ -958,6 +961,77 @@ public class PgSqlRepository implements DbRepository {
     @Override
     public synchronized Result deleteLinkRules(String[] role) {
         return delete(getDeleteLinkRulesSQL(), "ox_delete_link_rules",null, role);
+    }
+
+    @Override
+    public TabularData query(String query, String[] role) {
+        // create a table structure to return the query content
+        TabularData table = new TabularData();
+        // turn any capital case to lower case
+        String q = query.toLowerCase();
+        // check if the query not read only
+        if (q.contains("insert") ||
+                q.contains("update") ||
+                q.contains("delete") ||
+                q.contains("drop") ||
+                q.contains("trunk")
+        ) {
+            // then it is not allowed!
+            throw new RuntimeException("invalid query, queries must be strictly read-only");
+        }
+        // remove any unwanted characters
+        // \s+ is a regular expression. \s matches a space, tab, new line, carriage return, form feed or vertical tab,
+        // and + says "one or more of those". Thus the above code will collapse all "whitespace substrings" longer than
+        // one character, with a single space character.
+        q = query; // set query back to normal casing
+        q = q.replaceAll("\\s+", " ");
+
+        // is this a query for items?
+        int itemIx = query.indexOf("from item");
+
+        // if the query is not for items then it is not allowed
+        if (itemIx == -1) {
+            throw new RuntimeException("invalid query, queries must be for items only. if you are querying items then ensure the query respect the casing on 'from item'");
+        }
+
+        // ensures all queries are filtered by role(s)
+        q = q.replace("from item", "from ox_items(?::character varying[])");
+
+        try {
+            // creates a sql statement to pass to the database
+            db.prepare(q);
+            // set the query parameters
+            db.setArray(1, role);
+            // execute the query
+            ResultSet set = db.executeQuery();
+            // gets the result set metadata
+            ResultSetMetaData setMetaData = set.getMetaData();
+            // get the number of columns in the result set
+            int cols = setMetaData.getColumnCount();
+            // populate the columns definition in the returned table
+            for (int i = 1; i <= cols; i++) {
+                table.addColumn(setMetaData.getColumnType(i), setMetaData.getColumnName(i));
+            }
+            // populate the rows in the returned table
+            while (set.next()) {
+                TabularData.Row row = new TabularData.Row();
+                for (int i = 1; i <= cols; i++){
+                    Object value = set.getObject(i);
+                    if (value instanceof PgArray) {
+                        value = util.toList(value);
+                    } else if (value instanceof PGobject) {
+                        value = util.toJSON(value);
+                    }
+                    row.add(value);
+                }
+                table.addRow(row);
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException("failed to run universal query", ex);
+        } finally {
+            db.close();
+        }
+        return table;
     }
 
     @Override
