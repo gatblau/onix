@@ -1921,6 +1921,12 @@ public class WebAPI {
     /*
         universal query
      */
+    @ApiOperation(
+            value = "Submits a read-only PL-SQL query for data retrieval of item information in a secure way. ",
+            notes = "Use this endpoint to execute flexible ad-hoc queries. " +
+                    "Only SELECT statements on ITEMS are allowed. " +
+                    "The queried data is only provided if the logged user has privilege to access it.",
+            response = JSONObject.class)
     @RequestMapping(value = "/query", method = RequestMethod.POST, consumes = "text/plain", produces = "application/json")
     public ResponseEntity<TabularData> query(
             @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
