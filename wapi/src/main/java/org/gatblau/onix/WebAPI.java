@@ -1919,6 +1919,25 @@ public class WebAPI {
     }
 
     /*
+        universal query
+     */
+    @RequestMapping(value = "/query", method = RequestMethod.POST, consumes = "text/plain", produces = "application/json")
+    public ResponseEntity<TabularData> query(
+            @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+            HttpServletRequest request, // required to check on http headers
+            Authentication authentication // required to authenticate user
+    ) {
+        // if the payload checksum does not match the one provided in the header
+        if (!validateMD5Checksum(request, payloadStr)) {
+            // does not attempt to process the request as the integrity checksum does not match
+            // assume http body integrity has been compromised
+            throw new RuntimeException("HTTP body has failed MD5 checksum validation: the checksum sent by the client does not match the one calculated by the server.");
+        }
+        TabularData result = data.query(payloadStr, getRole(authentication));
+        return ResponseEntity.ok(result);
+    }
+
+    /*
         helper methods
      */
     private ZonedDateTime getZonedDateTime(@RequestParam(value = "createdFrom", required = false) String createdFromDate) {

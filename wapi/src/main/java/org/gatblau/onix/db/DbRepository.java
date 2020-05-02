@@ -106,6 +106,11 @@ public interface DbRepository {
     Result deleteLinkRules(String[] role);
 
     /*
+       UNIVERSAL QUERY
+    */
+    TabularData query(String query, String[] role);
+
+    /*
         Function Calls
      */
     String getGetItemSQL();
