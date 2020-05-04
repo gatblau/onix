@@ -11,6 +11,7 @@
 :root {
     --ifm-code-font-size: 95%;
     --ifm-font-family-base: 'Varela Round', sans-serif;
+    --ifm-font-size-base: 18px;
 }
 
 .docusaurus-highlight-code-line {

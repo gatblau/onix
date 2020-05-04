@@ -8,6 +8,7 @@ module.exports = {
       {type:'doc', id:'started_config'}
     ],
     'Concepts': [
+      {type:'doc', id:'concept_users'},
       {type:'doc', id:'doc1'}
     ],
     'Architecture': [],
