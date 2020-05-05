@@ -127,3 +127,25 @@ Not storing users and memberships in Onix allows an organisation to leverage exi
 security procedures that comply with their specific requirements.
 
 :::
+
+## Users & RBAC
+
+Onix provides Role Based Access Control (RBAC). 
+As users can be stored either outside or inside Onix, it is important to understand
+how RBAC works regardless of where users reside.
+
+The picture below show how Onix obtains a list of roles in the case of:
+ 
+ 1. **Local users**: the logging service (3) receives a basic access authentication token and performs authentication by 
+ matching the credentials in the token with the ones stored in the database. After a successful authentication, it 
+ retrieves the roles linked to the user by the memberships. Then, a list of roles is passed to the data service.
+ 
+ 2. **External users**:  the logging service (3) receives an OAuth 2.0 [bearer token](https://tools.ietf.org/html/rfc6750) 
+ and verifies its signature. After a successful authentication, it retrieves the roles in the token (i.e. claims). Then, 
+ a list of roles is passed to the data service.
+
+![user roles](/img/concept_users.png)
+
+External users are typically held in a directory service where memberships are representing by linking users with groups.
+An OpenId server connected to the directory service can retrieve membership information and populate a list of claims
+in the OpenId token.
