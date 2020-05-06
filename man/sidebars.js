@@ -9,7 +9,7 @@ module.exports = {
     ],
     'Concepts': [
       {type:'doc', id:'concept_users'},
-      {type:'doc', id:'doc1'}
+      {type:'doc', id:'concept_roles'},
     ],
     'Architecture': [],
     'Features': [],

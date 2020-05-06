@@ -10,7 +10,9 @@ Accounts in Onix are represented by *Users*.
 Depending on the authentication method selected, **users** can be stored in:
 
 1. The Onix database, when using [Basic Access Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication).
+These users are referred to as *local users*.
 2. An external system, when using [OpenId Connect](https://en.wikipedia.org/wiki/OpenID_Connect).
+These users are referred to as *external users*.
 
 ## Local Users
 
@@ -130,22 +132,24 @@ security procedures that comply with their specific requirements.
 
 ## Users & RBAC
 
-Onix provides Role Based Access Control (RBAC). 
+Onix provides [Role Based Access Control](https://en.wikipedia.org/wiki/Role-based_access_control) (RBAC). 
 As users can be stored either outside or inside Onix, it is important to understand
 how RBAC works regardless of where users reside.
 
 The picture below show how Onix obtains a list of roles in the case of:
  
- 1. **Local users**: the logging service (3) receives a basic access authentication token and performs authentication by 
+ 1. **Local users**: the login service (3) receives a basic access authentication token and performs authentication by 
  matching the credentials in the token with the ones stored in the database. After a successful authentication, it 
- retrieves the roles linked to the user by the memberships. Then, a list of roles is passed to the data service.
+ retrieves the roles linked to the user by the memberships. Then, the list of roles is passed to the data service, which 
+ uses them to decide what operation(s) the user is allowed.
  
- 2. **External users**:  the logging service (3) receives an OAuth 2.0 [bearer token](https://tools.ietf.org/html/rfc6750) 
+ 2. **External users**:  the login service (3) receives an [OAuth 2.0](https://oauth.net/2/) [bearer token](https://tools.ietf.org/html/rfc6750) 
  and verifies its signature. After a successful authentication, it retrieves the roles in the token (i.e. claims). Then, 
- a list of roles is passed to the data service.
+ the list of roles is passed to the data service, which uses them to decide what operation(s) the user is allowed.
 
-![user roles](/img/concept_users.png)
+![user roles](/onix/img/concept_users.png)
 
-External users are typically held in a directory service where memberships are representing by linking users with groups.
-An OpenId server connected to the directory service can retrieve membership information and populate a list of claims
-in the OpenId token.
+External users are typically held in a [Directory Service](https://en.wikipedia.org/wiki/Directory_service) where memberships are represented by linking users with groups.
+An [OpenId Server](https://openid.net/developers/certified/) connected to the directory service can retrieve membership 
+information and populate a list of [Claims](https://developer.okta.com/blog/2017/07/25/oidc-primer-part-1#whats-a-claim) 
+in the [ID Token](https://developer.okta.com/blog/2017/07/25/oidc-primer-part-1#id-tokens).

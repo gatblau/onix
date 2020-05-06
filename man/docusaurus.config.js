@@ -1,8 +1,8 @@
 module.exports = {
   title: 'Onix',
   tagline: 'A reactive configuration manager for the cloud.',
-  url: 'https://onix.gatblau.org',
-  baseUrl: '/',
+  url: 'https://gatblau.github.io',
+  baseUrl: '/onix/',
   favicon: 'img/favicon.png',
   organizationName: 'gatblau', // Usually your GitHub org/user name.
   projectName: 'onix', // Usually your repo name.
@@ -15,7 +15,7 @@ module.exports = {
       },
       links: [
         {
-          to: 'docs/doc1',
+          to: 'docs/concept_users',
           activeBasePath: 'docs',
           label: 'Docs',
           position: 'left',
