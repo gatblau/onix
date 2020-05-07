@@ -39,11 +39,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Component
 public class Lib implements InitializingBean {
-    private DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss Z");
+    private final DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss Z");
     private JSONParser jsonParser = new JSONParser();
 
     @Autowired
@@ -170,6 +172,7 @@ public class Lib implements InitializingBean {
         UserData user = null;
         if (set != null) {
             Date updated = set.getDate("updated");
+            Date valuntil = set.getDate("valuntil");
             user = new UserData();
             user.setKey(set.getString("key"));
             user.setName(set.getString("name"));
@@ -177,6 +180,7 @@ public class Lib implements InitializingBean {
             user.setPwd(set.getString("pwd"));
             user.setSalt(set.getString("salt"));
             user.setUpdated((updated != null) ? dateFormat.format(updated) : null);
+            user.setValuntil((valuntil != null) ? dateFormat.format(valuntil) : null);
             user.setVersion(set.getInt("version"));
             user.setChangedBy(set.getString("changed_by"));
         }
@@ -460,5 +464,9 @@ public class Lib implements InitializingBean {
 
     public String getDefaultEncKeyExpiry() {
         return crypto.getDefaultKeyExpiry();
+    }
+    
+    public Date toDate(String dateString) throws java.text.ParseException {
+        return dateFormat.parse(dateString);
     }
 }

@@ -232,6 +232,7 @@ DO $$
         email_param character varying,
         pwd_param character varying,
         salt_param character varying,
+        valuntil_param timestamp(6) with time zone,
         local_version_param bigint,
         changed_by_param character varying,
         role_key_param character varying[])
@@ -262,6 +263,7 @@ DO $$
                 email,
                 pwd,
                 salt,
+                valuntil,
                 version,
                 created,
                 updated,
@@ -274,6 +276,7 @@ DO $$
                email_param,
                pwd_param,
                salt_param,
+               valuntil_param,
                1,
                current_timestamp,
                null,
@@ -296,6 +299,7 @@ DO $$
                 email        = email_param,
                 pwd          = COALESCE(pwd_param, pwd),  -- if the passed-in password is NULL, then do not change it
                 salt         = COALESCE(new_salt, salt),  -- if new_salt is NOT NULL, the update the salt
+                valuntil     = valuntil_param,
                 version      = version + 1,
                 updated      = current_timestamp,
                 changed_by   = changed_by_param
@@ -305,6 +309,7 @@ DO $$
               AND (
                     name != name_param OR
                     email != email_param OR
+                    valuntil != valuntil_param OR
                     pwd != pwd_param AND pwd_param IS NOT NULL
                 );
             GET DIAGNOSTICS rows_affected := ROW_COUNT;
@@ -320,6 +325,7 @@ DO $$
             character varying, -- email
             character varying, -- pwd
             character varying, -- salt
+            timestamp(6) with time zone, -- valuntil
             bigint, -- client version
             character varying, -- changed by
             character varying[] -- role keys

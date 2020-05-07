@@ -33,6 +33,7 @@ public class UserData implements Serializable {
     private String email;
     private String pwd;
     private String salt;
+    private String valuntil;
     private String created;
     private String updated;
     private Integer version;
@@ -149,5 +150,13 @@ public class UserData implements Serializable {
 
     public void setSalt(String salt) {
         this.salt = salt;
+    }
+
+    public String getValuntil() {
+        return valuntil;
+    }
+
+    public void setValuntil(String valuntil) {
+        this.valuntil = valuntil;
     }
 }
