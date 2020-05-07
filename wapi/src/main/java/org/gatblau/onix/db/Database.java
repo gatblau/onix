@@ -130,10 +130,6 @@ class Database {
         stmt.setShort(parameterIndex, value);
     }
 
-    void setDate(int parameterIndex, Date value) throws SQLException {
-        stmt.setDate(parameterIndex, value);
-    }
-
     void setObject(int parameterIndex, Object value) throws SQLException {
         stmt.setObject(parameterIndex, value);
     }
