@@ -19,6 +19,7 @@ project, to be licensed under the same terms as the rest of the code.
 
 package org.gatblau.onix;
 
+import org.gatblau.onix.conf.Config;
 import org.gatblau.onix.data.*;
 import org.gatblau.onix.security.Crypto;
 import org.json.simple.JSONObject;
@@ -46,10 +47,15 @@ import java.util.*;
 @Component
 public class Lib implements InitializingBean {
     private final DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss Z");
-    private JSONParser jsonParser = new JSONParser();
+    private final JSONParser jsonParser = new JSONParser();
+    private final Config cfg;
 
     @Autowired
     private Crypto crypto;
+
+    public Lib(Config cfg) {
+        this.cfg = cfg;
+    }
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -466,7 +472,45 @@ public class Lib implements InitializingBean {
         return crypto.getDefaultKeyExpiry();
     }
     
-    public Date toDate(String dateString) throws java.text.ParseException {
-        return dateFormat.parse(dateString);
+    public String checkPwd(String password) {
+        if (password == null) return null;
+        
+        int lowerCount = 0;
+        int upperCount = 0;
+        int specialCount = 0;
+        int digitCount = 0;
+
+        if (password.length() >= cfg.getPwdLen()) {
+            for (int i = 0; i < password.length(); i++) {
+                char x = password.charAt(i);
+                if (Character.isLetter(x)) {
+                    if (String.valueOf(x).matches("(?=.*[~!@#$%^&*()_-]).*")){
+                        specialCount++;
+                    } else if (Character.isUpperCase(x)){
+                        upperCount++;
+                    } else if (Character.isLowerCase(x)) {
+                        lowerCount++;
+                    }
+                } else if (Character.isDigit(x)) {
+                    // note: must check for digit before upper and lower cases
+                    digitCount++;
+                }
+            }
+            if (upperCount <= cfg.getPwdUpper()) {
+                return String.format("Password must have at least %s upper case characters", cfg.getPwdUpper());
+            }
+            if (lowerCount <= cfg.getPwdLower()) {
+                return String.format("Password must have at least %s lower case characters", cfg.getPwdUpper());
+            }
+            if (digitCount <= cfg.getPwdDigits()) {
+                return String.format("Password must have at least %s digits", cfg.getPwdDigits());
+            }
+            if (specialCount <= cfg.getPwdSpecialChars()) {
+                return String.format("Password must have at least %s special characters", cfg.getPwdSpecialChars());
+            }
+        } else {
+            return String.format("Password must have at least %s characters", cfg.getPwdLen());
+        }
+        return null;
     }
 }
