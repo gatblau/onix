@@ -10,6 +10,7 @@ module.exports = {
     'Concepts': [
       {type:'doc', id:'concept_users'},
       {type:'doc', id:'concept_roles'},
+      {type:'doc', id:'concept_items'},
     ],
     'Architecture': [],
     'Features': [],
