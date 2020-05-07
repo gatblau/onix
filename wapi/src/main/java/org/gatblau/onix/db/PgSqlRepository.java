@@ -2291,6 +2291,14 @@ public class PgSqlRepository implements DbRepository {
         String newPwd = user.getPwd();
         String encPwd = null;
         String newSalt = null;
+        // check the provided password is within policy
+        String pwdResult = util.checkPwd(user.getPwd());
+        // if not
+        if (pwdResult != null) {
+            // return a message 
+            result.setMessage(String.format("password policy failed for '%s', %s", user.getEmail(), pwdResult));
+            return result;
+        }
         try {
             /*
              *  prevents a change in the user record if the pwd specified already exists in the database
@@ -2408,6 +2416,12 @@ public class PgSqlRepository implements DbRepository {
         }
         // if we got to here then we are good to go
         // check if the user exists in the database
+        // first check the password policy
+        String pwdResult = util.checkPwd(pwdResetData.getPwd());
+        if (pwdResult != null) {
+            result.setMessage(String.format("password policy failed for '%s', %s", email, pwdResult));
+            return result;
+        }
         UserData user = getUserByEmail(email, new String[]{"ADMIN"});
         if (user == null) {
             // the user is not in the database, so cannot proceed

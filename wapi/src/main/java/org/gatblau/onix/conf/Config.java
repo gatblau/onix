@@ -28,7 +28,6 @@ import java.io.Serializable;
  */
 @Service
 public class Config implements Serializable {
-
     public enum AuthMode {
         Basic,
         OIDC,
@@ -125,6 +124,21 @@ public class Config implements Serializable {
     @Value("${wapi.smtp.pwd.reset.tokenexpiry}")
     private long smtpPwdResetTokenExpirySecs;
 
+    @Value("${wapi.pwd.len}")
+    private int pwdLen;
+    
+    @Value("${wapi.pwd.upper}")
+    private int pwdUpper;
+    
+    @Value("${wapi.pwd.lower}")
+    private int pwdLower;
+    
+    @Value("${wapi.pwd.digits}")
+    private int pwdDigits;
+    
+    @Value("${wapi.pws.specialchars}")
+    private int pwdSpecialChars;
+    
     public long getSmtpPwdResetTokenExpirySecs() {
         return smtpPwdResetTokenExpirySecs;
     }
@@ -251,5 +265,25 @@ public class Config implements Serializable {
 
     public String getSmtpPwdSetupURI() {
         return smtpPwdSetupURI;
+    }
+
+    public int getPwdLen() {
+        return pwdLen;
+    }
+
+    public int getPwdUpper() {
+        return pwdUpper;
+    }
+
+    public int getPwdLower() {
+        return pwdLower;
+    }
+
+    public int getPwdSpecialChars() {
+        return pwdSpecialChars;
+    }
+
+    public int getPwdDigits() {
+        return pwdDigits;
     }
 }

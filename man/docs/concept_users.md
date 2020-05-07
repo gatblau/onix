@@ -27,6 +27,13 @@ Local users have the following data attributes:
 | name | the unique username |
 | email | the unique user email address |
 | pwd | the user password |
+| valuntil | the expiration date and time for the password. If no value is specified, then the password never expires. |
+
+:::note
+
+The format of *valuntil* is "dd-MM-yyyy HH:mm:ss Z", for example "01-03-2050 09:15:00 +0100"
+
+:::
 
 Storing users locally is useful in cases where integration with an organisation's identity and access management system 
 is not desired. It is provided as a way to get up and running easily whilst giving complete access control to configuration
@@ -71,6 +78,42 @@ as follows:
 | **User** | enters their password using the reset token |
 | **System** | validates the token and changes the password |
 | **System** | emails the user to notify them their password has been changed |
+
+### Password Expiration
+
+If there is a need to make the user password expire, this can be done by setting the *valuntil* property of the user to 
+an expiration date and time.
+
+If no value is specified, then the password never expires.
+
+### Password Strength
+
+The strength of a password typically varies depending on:
+
+  1. The total length of the password
+  2. The number of upper case and lower case letters
+  3. The number of digits in the password
+  4. The number of special characters in the password.
+  
+Onix can be configured to require specific values for all the above points so that customised password strength policies 
+can be created. 
+
+The following table shows the Onix Web API environment variables that control the password strength policy, and their
+default values:
+
+| environment variable | description | default value |
+|---|---|:---:|
+| **WAPI_PWD_LEN** | the total minimum number of characters in the password | 8 |
+| **WAPI_PWD_UP** | the minimum number of upper case characters in the password | 1 |
+| **WAPI_PWD_LO** | the minimum number of lower case characters in the password | 1 |
+| **WAPI_PWD_DIGITS** | the minimum number of digits in the password | 2 |
+| **WAPI_PWD_SPECIALCHARS** | the minimum number of special characters in the password - i.e. ~!@#$%^&*()_ | 0 |
+
+:::note
+
+Onix is pre-configured with a *password policy* based on the default values shown in the table above.
+
+:::
 
 ### Memberships
 
