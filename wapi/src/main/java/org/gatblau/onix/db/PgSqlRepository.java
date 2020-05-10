@@ -1705,7 +1705,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public List<String> getUserRolesInternal(String userKey) {
+    public synchronized List<String> getUserRolesInternal(String userKey) {
         List<String> roles = new ArrayList<>();
         try {
             db.prepare(getGetUserRolesInternalSQL());
@@ -1715,7 +1715,7 @@ public class PgSqlRepository implements DbRepository {
                 roles.add(set.getString("role_key"));
             }
         } catch (Exception ex) {
-            throw new RuntimeException("Failed to get roles.", ex);
+            throw new RuntimeException(String.format("Failed to get roles for user '%s'", userKey), ex);
         } finally {
             db.close();
         }
@@ -2286,7 +2286,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result createOrUpdateUser(String key, UserData user, boolean notifyUser, String[] role) {
+    public synchronized Result createOrUpdateUser(String key, UserData user, boolean notifyUser, String[] role) {
         Result result = new Result(String.format("User:%s", key));
         String newPwd = user.getPwd();
         String encPwd = null;
@@ -2350,7 +2350,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public UserData getUser(String key, String[] role) {
+    public synchronized UserData getUser(String key, String[] role) {
         UserData userData = null;
         try {
             db.prepare(getGetUserSQL());
@@ -2391,7 +2391,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result changePassword(String email, PwdResetData pwdResetData) {
+    public synchronized Result changePassword(String email, PwdResetData pwdResetData) {
         Result result = new Result(String.format("change_pwd:%s", email));
         Claims claims = null;
         try {
@@ -2440,7 +2440,7 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
-    public Result requestPwdReset(String email) {
+    public synchronized Result requestPwdReset(String email) {
         Result result = new Result(String.format("pwd_reset:%s", email));
         // user must exist in the database
         UserData user = getUserByEmail(email, new String[]{"ADMIN"});
@@ -2583,7 +2583,7 @@ public class PgSqlRepository implements DbRepository {
                 ")";
     }
 
-    public UserData getUserByEmail(String email, String[] role) {
+    public synchronized UserData getUserByEmail(String email, String[] role) {
         UserData userData = null;
         try {
             db.prepare(getGetUserByEmailSQL());
