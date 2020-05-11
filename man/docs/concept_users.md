@@ -27,11 +27,11 @@ Local users have the following data attributes:
 | name | the unique username |
 | email | the unique user email address |
 | pwd | the user password |
-| valuntil | the expiration date and time for the password. If no value is specified, then the password never expires. |
+| expires | the expiration date and time for the password. If no value is specified, then the password never expires. |
 
 :::note
 
-The format of *valuntil* is "dd-MM-yyyy HH:mm:ss Z", for example "01-03-2050 09:15:00 +0100"
+The format of *expires* is "dd-MM-yyyy HH:mm:ss Z", for example "01-03-2050 09:15:00 +0100"
 
 :::
 
