@@ -37,7 +37,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.zip.DataFormatException;
 
 /*
   authenticates the user based on credentials securely stored in the Onix database
@@ -66,11 +65,11 @@ public class UserPwdAuthProvider implements AuthenticationProvider {
         }
 
         // if there is a password expiration date set
-        if (user.getValuntil() != null) {
+        if (user.getExpires() != null) {
             try {
                 // checks it has not expired
                 Date now = new Date();
-                Date expiry = dateFormat.parse(user.getValuntil());
+                Date expiry = dateFormat.parse(user.getExpires());
                 // if the expiry date is in the past
                 if (expiry.before(now)) {
                     throw new RuntimeException(String.format("password expired for user: %s", user.getName()));

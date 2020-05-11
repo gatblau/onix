@@ -33,7 +33,7 @@ public class UserData implements Serializable {
     private String email;
     private String pwd;
     private String salt;
-    private String valuntil;
+    private String expires;
     private String created;
     private String updated;
     private Integer version;
@@ -152,11 +152,11 @@ public class UserData implements Serializable {
         this.salt = salt;
     }
 
-    public String getValuntil() {
-        return valuntil;
+    public String getExpires() {
+        return expires;
     }
 
-    public void setValuntil(String valuntil) {
-        this.valuntil = valuntil;
+    public void setExpires(String expires) {
+        this.expires = expires;
     }
 }
