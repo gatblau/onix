@@ -81,7 +81,7 @@ as follows:
 
 ### Password Expiration
 
-If there is a need to make the user password expire, this can be done by setting the *valuntil* property of the user to 
+If there is a need to make the user password expire, this can be done by setting the *expires* property of the user to 
 an expiration date and time.
 
 If no value is specified, then the password never expires.
