@@ -2306,7 +2306,7 @@ public class PgSqlRepository implements DbRepository {
             // first try and get the existing password and salt
             UserData u = getUser(key, role);
             // if the user already exists
-            if (u != null) {
+            if (u != null && newPwd != null && newPwd.length() > 0) {
                 // checks the provided password is not the same as the one in the database
                 // this cannot be done at database level as the database only sees different salted strings
                 encPwd = pbe.getEncryptedPwd(newPwd, u.getSalt()); // uses the salt in the database
@@ -2318,7 +2318,7 @@ public class PgSqlRepository implements DbRepository {
                 }
             } else {
                 // otherwise, if there was a pwd specified
-                if (newPwd != null) {
+                if (newPwd != null && newPwd.length() > 0) {
                     // an encrypted password and salt are calculated
                     newSalt = pbe.generateSalt();
                     encPwd = pbe.getEncryptedPwd(newPwd, newSalt);
@@ -2330,7 +2330,7 @@ public class PgSqlRepository implements DbRepository {
             db.setString(3, user.getEmail()); // email_param
             db.setString(4, encPwd); // pwd_param
             db.setString(5, newSalt); // salt_param
-            db.setObject(6, user.getValuntil()); // valuntil_param
+            db.setObject(6, user.getExpires()); // expires_param
             db.setObject(7, user.getVersion()); // version_param
             db.setString(8, getUser()); // changed_by_param
             db.setArray(9, role);
@@ -2344,7 +2344,11 @@ public class PgSqlRepository implements DbRepository {
         }
         // notify the user of their newly created account
         if (result.getOperation().equals("I") && notifyUser) {
-            mailer.sendNewAccountEmail(user.getEmail(), String.format("New Account Notification"), user.getName());
+            try {
+                mailer.sendNewAccountEmail(user.getEmail(), String.format("New Account Notification"), user.getName());
+            } catch (Exception ex) {
+                result.setMessage(ex.getMessage());
+            }
         }
         return result;
     }
@@ -2479,7 +2483,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," + // email_param
                 "?::character varying," + // pwd_param
                 "?::character varying," + // salt_param
-                "?::timestamp with time zone," + // valuntil_param
+                "?::timestamp with time zone," + // expires_param
                 "?::bigint," + // version_param
                 "?::character varying," + // changed_by_param
                 "?::character varying[]" + // logged_role_key_param

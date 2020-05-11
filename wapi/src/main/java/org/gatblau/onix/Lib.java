@@ -40,8 +40,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Component
@@ -178,7 +176,7 @@ public class Lib implements InitializingBean {
         UserData user = null;
         if (set != null) {
             Date updated = set.getDate("updated");
-            Date valuntil = set.getDate("valuntil");
+            Date expires = set.getDate("expires");
             user = new UserData();
             user.setKey(set.getString("key"));
             user.setName(set.getString("name"));
@@ -186,7 +184,7 @@ public class Lib implements InitializingBean {
             user.setPwd(set.getString("pwd"));
             user.setSalt(set.getString("salt"));
             user.setUpdated((updated != null) ? dateFormat.format(updated) : null);
-            user.setValuntil((valuntil != null) ? dateFormat.format(valuntil) : null);
+            user.setExpires((expires != null) ? dateFormat.format(expires) : null);
             user.setVersion(set.getInt("version"));
             user.setChangedBy(set.getString("changed_by"));
         }
@@ -473,7 +471,7 @@ public class Lib implements InitializingBean {
     }
     
     public String checkPwd(String password) {
-        if (password == null) return null;
+        if (password == null || password.length() == 0) return null;
         
         int lowerCount = 0;
         int upperCount = 0;
