@@ -20,7 +20,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v4"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
