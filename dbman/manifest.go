@@ -15,41 +15,14 @@
 */
 package main
 
-import (
-	"errors"
-	"fmt"
-)
-
-type Script struct {
-	client    *Client
-	index     Index
-	manifests []Manifest
-	cfg       *Config
-}
-
-func NewScript(cfg *Config) (*Script, error) {
-	script := new(Script)
-	script.cfg = cfg
-	script.client = new(Client)
-	return script, nil
-}
-
-// fetches the release index
-func (s *Script) fetchIndex() (*Index, error) {
-	if s.cfg == nil {
-		return nil, errors.New("configuration object not set")
-	}
-	response, err := s.client.get(fmt.Sprintf("%s/index.json", s.cfg.SchemaURI))
-	if err != nil {
-		return nil, err
-	}
-	i := &Index{}
-	i, err = i.decode(response)
-
-	defer func() {
-		if ferr := response.Body.Close(); ferr != nil {
-			err = ferr
-		}
-	}()
-	return i, err
+type Manifest struct {
+	Release int `json:"release"`
+	Schemas []struct {
+		File     string `json:"file"`
+		Checksum string `json:"checksum"`
+	} `json:"schemas"`
+	Functions []struct {
+		File     string `json:"file"`
+		Checksum string `json:"checksum"`
+	} `json:"functions"`
 }
