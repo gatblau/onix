@@ -23,18 +23,21 @@ import (
 
 // the configuration for the http backend service
 type Config struct {
-	Id           string
-	LogLevel     string
-	AuthMode     string
-	Path         string
-	Port         string
-	Username     string
-	Password     string
-	Metrics      bool
-	DbName       string
-	DbConnString string
-	DbUsername   string
-	DbPassword   string
+	Id             string
+	LogLevel       string
+	AuthMode       string
+	Path           string
+	Port           string
+	Username       string
+	Password       string
+	Metrics        bool
+	DbName         string
+	DbConnString   string
+	DbUsername     string
+	DbPassword     string
+	SchemaURI      string
+	SchemaUsername string
+	SchemaToken    string
 }
 
 func NewConfig() (*Config, error) {
@@ -71,6 +74,9 @@ func NewConfig() (*Config, error) {
 	_ = v.BindEnv("Db.ConnString")
 	_ = v.BindEnv("Db.Username")
 	_ = v.BindEnv("Db.Password")
+	_ = v.BindEnv("Schema.URI")
+	_ = v.BindEnv("Schema.Username")
+	_ = v.BindEnv("Schema.Token")
 
 	// creates a config struct and populate it with values
 	c := new(Config)
@@ -87,6 +93,9 @@ func NewConfig() (*Config, error) {
 	c.DbConnString = v.GetString("Db.ConnString")
 	c.DbUsername = v.GetString("Db.Username")
 	c.DbPassword = v.GetString("Db.Password")
+	c.SchemaURI = v.GetString("Schema.URI")
+	c.SchemaUsername = v.GetString("Schema.Username")
+	c.SchemaToken = v.GetString("Schema.Token")
 
 	return c, nil
 }

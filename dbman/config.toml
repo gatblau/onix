@@ -20,4 +20,6 @@ Password    = "0n1x"
     Username    = "admin"
     Password    = "0n1x"
 [Schema]
-    Path        = "~/dev/onix/wapi/src/main/resources/db/install"
+    URI         = "https://raw.githubusercontent.com/gatblau/ox-db/master"
+    Username    = ""
+    Token       = ""

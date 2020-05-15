@@ -16,40 +16,37 @@
 package main
 
 import (
-	"errors"
-	"fmt"
+	"bytes"
+	"encoding/json"
+	"net/http"
 )
 
-type Script struct {
-	client    *Client
-	index     Index
-	manifests []Manifest
-	cfg       *Config
+type Index struct {
+	Releases []struct {
+		DbVersion  string `json:"dbVersion"`
+		AppVersion string `json:"appVersion"`
+		Path       string `json:"path"`
+	} `json:"releases"`
 }
 
-func NewScript(cfg *Config) (*Script, error) {
-	script := new(Script)
-	script.cfg = cfg
-	script.client = new(Client)
-	return script, nil
-}
-
-// fetches the release index
-func (s *Script) fetchIndex() (*Index, error) {
-	if s.cfg == nil {
-		return nil, errors.New("configuration object not set")
-	}
-	response, err := s.client.get(fmt.Sprintf("%s/index.json", s.cfg.SchemaURI))
+// get a JSON bytes reader for the Index
+func (ix *Index) json() (*bytes.Reader, error) {
+	jsonBytes, err := ix.bytes()
 	if err != nil {
 		return nil, err
 	}
-	i := &Index{}
-	i, err = i.decode(response)
+	return bytes.NewReader(*jsonBytes), err
+}
 
-	defer func() {
-		if ferr := response.Body.Close(); ferr != nil {
-			err = ferr
-		}
-	}()
-	return i, err
+// get a []byte representing the Index
+func (ix *Index) bytes() (*[]byte, error) {
+	b, err := jsonBytes(ix)
+	return &b, err
+}
+
+// get the Index in the http Response
+func (ix *Index) decode(response *http.Response) (*Index, error) {
+	result := new(Index)
+	err := json.NewDecoder(response.Body).Decode(result)
+	return result, err
 }
