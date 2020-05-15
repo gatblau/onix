@@ -54,8 +54,8 @@ snapshot-push:
 
 # deletes dangling
 clean:
-	docker rmi $(DANGLING_IMGS)
+	docker rmi $(DANGLING_IMGS) -f
 
 # delete any images in the local cache
 delete-images:
-	docker rmi $(DBMAN_IMGS)
+	docker rmi $(DBMAN_IMGS) -f
