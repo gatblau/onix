@@ -15,7 +15,31 @@
 */
 package main
 
-func main() {
-	dbMan := DbMan{}
-	dbMan.start()
+type Script struct {
+	Index     Index
+	Manifests []Manifest
+}
+
+type Index struct {
+	Releases []struct {
+		DbVersion  string `json:"dbVersion"`
+		AppVersion string `json:"appVersion"`
+		Path       string `json:"path"`
+	} `json:"releases"`
+}
+
+type Manifest struct {
+	Release int `json:"release"`
+	Schemas []struct {
+		File     string `json:"file"`
+		Checksum string `json:"checksum"`
+	} `json:"schemas"`
+	Functions []struct {
+		File     string `json:"file"`
+		Checksum string `json:"checksum"`
+	} `json:"functions"`
+}
+
+func (s *Script) load() {
+
 }

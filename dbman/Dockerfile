@@ -17,6 +17,9 @@
 # Springboot uberjar files to improve startup times
 # The release image copy the prepared app files from the builder image
 
+# NOTE: see https://access.redhat.com/solutions/4643601
+# dnf checks for subsciptions even if not needed (not using RHEL repos)
+
 # building stage: compiles dbman
 FROM golang as builder
 WORKDIR /app
@@ -29,8 +32,7 @@ MAINTAINER gatblau <onix@gatblau.org>
 LABEL author="gatblau.org"
 WORKDIR /app
 COPY --from=builder /app/dbman /app/config.toml ./
-RUN rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-RUN microdnf update -y && rm -rf /var/cache/yum && microdnf install postgresql12 && microdnf clean all
+RUN rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && microdnf update -y && rm -rf /var/cache/yum && microdnf install postgresql12 && microdnf clean all
 USER 20
 CMD ["./dbman"]
 EXPOSE 8085/tcp
