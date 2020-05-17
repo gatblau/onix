@@ -1,18 +1,8 @@
-/*
-   Onix Config Manager - Dbman- Onix Database Manager
-   Copyright (c) 2018-2020 by www.gatblau.org
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software distributed under
-   the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-   either express or implied.
-   See the License for the specific language governing permissions and limitations under the License.
-
-   Contributors to this project, hereby assign copyright in this code to the project,
-   to be licensed under the same terms as the rest of the code.
-*/
+//   Onix Config Manager - Dbman
+//   Copyright (c) 2018-2020 by www.gatblau.org
+//   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
+//   Contributors to this project, hereby assign copyright in this code to the project,
+//   to be licensed under the same terms as the rest of the code.
 package main
 
 import (
@@ -31,7 +21,7 @@ type entity interface {
 }
 
 // Scripts HTTP client
-type Client struct {
+type Source struct {
 	cfg *Config
 }
 
@@ -39,15 +29,21 @@ const (
 	GET = "GET"
 )
 
+func NewSource(cfg *Config) *Source {
+	return &Source{
+		cfg: cfg,
+	}
+}
+
 // Make a GET HTTP request to the WAPI
-func (c *Client) get(url string) (*http.Response, error) {
+func (s *Source) get(url string) (*http.Response, error) {
 	// create request
 	req, err := http.NewRequest(GET, url, nil)
 	if err != nil {
 		return nil, err
 	}
 	// add http headers
-	err = c.addHttpHeaders(req, nil)
+	err = s.addHttpHeaders(req, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -65,20 +61,20 @@ func (c *Client) get(url string) (*http.Response, error) {
 }
 
 // add http headers to the request object
-func (c *Client) addHttpHeaders(req *http.Request, payload entity) error {
+func (s *Source) addHttpHeaders(req *http.Request, payload entity) error {
 	// add headers to disable caching
 	req.Header.Add("Cache-Control", `no-cache"`)
 	req.Header.Add("Pragma", "no-cache")
 	// if there is an access token defined
-	if len(c.cfg.SchemaUsername) > 0 && len(c.cfg.SchemaToken) > 0 {
+	if len(s.cfg.SchemaUsername) > 0 && len(s.cfg.SchemaToken) > 0 {
 		credentials := base64.StdEncoding.EncodeToString([]byte(
-			fmt.Sprintf("%s:%s", c.cfg.SchemaUsername, c.cfg.SchemaToken)))
+			fmt.Sprintf("%s:%s", s.cfg.SchemaUsername, s.cfg.SchemaToken)))
 		req.Header.Add("Authorization", credentials)
 	}
 	return nil
 }
 
-func (c *Client) getRequestBody(payload entity) (*bytes.Reader, error) {
+func (s *Source) getRequestBody(payload entity) (*bytes.Reader, error) {
 	// if no payload exists
 	if payload == nil {
 		// returns an empty reader
