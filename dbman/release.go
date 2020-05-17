@@ -11,19 +11,26 @@ import (
 	"net/http"
 )
 
-type Index struct {
-	Releases []ReleaseInfo `json:"releases"`
-}
-
-type ReleaseInfo struct {
-	DbVersion  string `json:"dbVersion"`
-	AppVersion string `json:"appVersion"`
-	Path       string `json:"path"`
+// describes a database release
+type Release struct {
+	Release string `json:"release"`
+	Schemas []struct {
+		File     string `json:"file"`
+		Checksum string `json:"checksum"`
+	} `json:"schemas"`
+	Functions []struct {
+		File     string `json:"file"`
+		Checksum string `json:"checksum"`
+	} `json:"functions"`
+	Upgrade []struct {
+		File     string `json:"file"`
+		Checksum string `json:"checksum"`
+	} `json:"upgrade"`
 }
 
 // get a JSON bytes reader for the Index
-func (ix *Index) json() (*bytes.Reader, error) {
-	jsonBytes, err := ix.bytes()
+func (r *Release) json() (*bytes.Reader, error) {
+	jsonBytes, err := r.bytes()
 	if err != nil {
 		return nil, err
 	}
@@ -31,14 +38,14 @@ func (ix *Index) json() (*bytes.Reader, error) {
 }
 
 // get a []byte representing the Index
-func (ix *Index) bytes() (*[]byte, error) {
-	b, err := jsonBytes(ix)
+func (r *Release) bytes() (*[]byte, error) {
+	b, err := jsonBytes(r)
 	return &b, err
 }
 
 // get the Index in the http Response
-func (ix *Index) decode(response *http.Response) (*Index, error) {
-	result := new(Index)
+func (r *Release) decode(response *http.Response) (*Release, error) {
+	result := new(Release)
 	err := json.NewDecoder(response.Body).Decode(result)
 	return result, err
 }
