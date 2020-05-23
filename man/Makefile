@@ -46,3 +46,7 @@ snapshot-push:
 # deletes dangling images
 clean:
 	docker rmi $(DANGLING_IMS) -f
+
+# deploy to github pages
+deploy:
+	export GIT_USER=gatblau; yarn deploy
