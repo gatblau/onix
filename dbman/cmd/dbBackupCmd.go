@@ -3,14 +3,23 @@
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
 //   to be licensed under the same terms as the rest of the code.
-package main
+package cmd
 
-import "github.com/gatblau/onix/dbman/cmd"
+import (
+	"fmt"
 
-func main() {
-	rootCmd := cmd.InitialiseRootCmd()
+	"github.com/spf13/cobra"
+)
 
-	// Execute adds all child commands to the root command and sets flags appropriately.
-	// This is called by main.main(). It only needs to happen once to the rootCmd.
-	rootCmd.Execute()
+var dbBackupCmd = &cobra.Command{
+	Use:   "backup",
+	Short: "Backups the database",
+	Long:  ``,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("dbBackup called")
+	},
+}
+
+func init() {
+	dbCmd.AddCommand(dbBackupCmd)
 }
