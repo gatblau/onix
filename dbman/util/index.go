@@ -3,34 +3,28 @@
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
 //   to be licensed under the same terms as the rest of the code.
-package main
+package util
 
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/gatblau/oxc"
 	"net/http"
 )
 
-// describes a database release
-type Release struct {
-	Release string `json:"release"`
-	Schemas []struct {
-		File     string `json:"file"`
-		Checksum string `json:"checksum"`
-	} `json:"schemas"`
-	Functions []struct {
-		File     string `json:"file"`
-		Checksum string `json:"checksum"`
-	} `json:"functions"`
-	Upgrade []struct {
-		File     string `json:"file"`
-		Checksum string `json:"checksum"`
-	} `json:"upgrade"`
+type Index struct {
+	Releases []ReleaseInfo `json:"releases"`
+}
+
+type ReleaseInfo struct {
+	DbVersion  string `json:"dbVersion"`
+	AppVersion string `json:"appVersion"`
+	Path       string `json:"path"`
 }
 
 // get a JSON bytes reader for the Index
-func (r *Release) json() (*bytes.Reader, error) {
-	jsonBytes, err := r.bytes()
+func (ix *Index) json() (*bytes.Reader, error) {
+	jsonBytes, err := ix.bytes()
 	if err != nil {
 		return nil, err
 	}
@@ -38,14 +32,14 @@ func (r *Release) json() (*bytes.Reader, error) {
 }
 
 // get a []byte representing the Index
-func (r *Release) bytes() (*[]byte, error) {
-	b, err := jsonBytes(r)
+func (ix *Index) bytes() (*[]byte, error) {
+	b, err := oxc.ToJson(ix)
 	return &b, err
 }
 
 // get the Index in the http Response
-func (r *Release) decode(response *http.Response) (*Release, error) {
-	result := new(Release)
+func (ix *Index) decode(response *http.Response) (*Index, error) {
+	result := new(Index)
 	err := json.NewDecoder(response.Body).Decode(result)
 	return result, err
 }
