@@ -21,7 +21,8 @@ func NewReleaseInfoCmd() *ReleaseInfoCmd {
 			Use:   "info [version]",
 			Short: "shows specific release information",
 			Long:  ``,
-		}}
+		},
+	}
 	c.cmd.Run = c.run
 	return c
 }

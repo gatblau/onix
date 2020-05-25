@@ -11,15 +11,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var dbDeployCmd = &cobra.Command{
-	Use:   "deploy [version]",
-	Short: "Deploys a database schema.",
-	Long:  `If version is not specified, then it deploys the latest schema.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("deploy called")
-	},
+type DbDeployCmd struct {
+	cmd *cobra.Command
 }
 
-func init() {
-	dbCmd.AddCommand(dbDeployCmd)
+func NewDbDeployCmd() *DbDeployCmd {
+	c := &DbDeployCmd{
+		&cobra.Command{
+			Use:   "deploy [version]",
+			Short: "deploys a database schema",
+			Long:  `if version is not specified, then it deploys the latest schema`,
+		},
+	}
+	c.cmd.Run = c.Run
+	return c
+}
+
+func (c *DbDeployCmd) Run(cmd *cobra.Command, args []string) {
+	fmt.Println("deploy called")
 }

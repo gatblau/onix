@@ -21,26 +21,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// dbVersionCmd represents the dbVersion command
-var dbVersionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Retrieves database version information",
-	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("dbVersion called")
-	},
+type DbVersionCmd struct {
+	cmd *cobra.Command
 }
 
-func init() {
-	dbCmd.AddCommand(dbVersionCmd)
+func NewDbVersionCmd() *DbVersionCmd {
+	c := &DbVersionCmd{
+		&cobra.Command{
+			Use:   "version",
+			Short: "retrieves database version information",
+			Long:  ``,
+		},
+	}
+	c.cmd.Run = c.Run
+	return c
+}
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// dbVersionCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// dbVersionCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+func (c *DbVersionCmd) Run(cmd *cobra.Command, args []string) {
+	fmt.Println("restore called")
 }

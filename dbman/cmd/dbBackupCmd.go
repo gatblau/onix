@@ -11,15 +11,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var dbBackupCmd = &cobra.Command{
-	Use:   "backup",
-	Short: "Backups the database",
-	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("dbBackup called")
-	},
+type DbBackupCmd struct {
+	cmd *cobra.Command
 }
 
-func init() {
-	dbCmd.AddCommand(dbBackupCmd)
+func NewDbBackupCmd() *DbBackupCmd {
+	c := &DbBackupCmd{
+		&cobra.Command{
+			Use:   "backup",
+			Short: "backups the database",
+			Long:  ``,
+		},
+	}
+	c.cmd.Run = c.Run
+	return c
+}
+
+func (c *DbBackupCmd) Run(cmd *cobra.Command, args []string) {
+	fmt.Println("backup called")
 }
