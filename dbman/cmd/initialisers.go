@@ -7,15 +7,27 @@ package cmd
 
 func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
-	releaseCmd := InitialiseReleaseCmd(rootCmd)
-	rootCmd.Command.AddCommand(releaseCmd.cmd)
+	releaseCmd := InitialiseReleaseCmd()
+	dbCmd := InitialiseDbCmd()
+	rootCmd.Command.AddCommand(releaseCmd.cmd, dbCmd.cmd)
 	return rootCmd
 }
 
-func InitialiseReleaseCmd(rootCmd *RootCmd) *ReleaseCmd {
-	releaseCmd := NewReleaseCmd(rootCmd.cfg)
+func InitialiseReleaseCmd() *ReleaseCmd {
+	releaseCmd := NewReleaseCmd()
 	releaseInfoCmd := NewReleaseInfoCmd()
 	releasePlanCmd := NewReleasePlanCmd()
 	releaseCmd.cmd.AddCommand(releaseInfoCmd.cmd, releasePlanCmd.cmd)
 	return releaseCmd
+}
+
+func InitialiseDbCmd() *DbCmd {
+	dbCmd := NewDbCmd()
+	dbVersionCmd := NewDbVersionCmd()
+	dbDeployCmd := NewDbDeployCmd()
+	dbUpgradeCmd := NewDbUpgradeCmd()
+	dbBackupCmd := NewDbBackupCmd()
+	dbRestoreCmd := NewDbRestoreCmd()
+	dbCmd.cmd.AddCommand(dbVersionCmd.cmd, dbUpgradeCmd.cmd, dbDeployCmd.cmd, dbBackupCmd.cmd, dbRestoreCmd.cmd)
+	return dbCmd
 }

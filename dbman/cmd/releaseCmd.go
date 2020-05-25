@@ -22,11 +22,10 @@ import (
 
 type ReleaseCmd struct {
 	cmd  *cobra.Command
-	cfg  *util.Config
 	info *util.RInfo
 }
 
-func NewReleaseCmd(cfg *util.Config) *ReleaseCmd {
+func NewReleaseCmd() *ReleaseCmd {
 	c := &ReleaseCmd{
 		cmd: &cobra.Command{
 			Use:   "release",

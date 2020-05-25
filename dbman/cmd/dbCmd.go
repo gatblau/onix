@@ -6,16 +6,20 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
-var dbCmd = &cobra.Command{
-	Use:   "db",
-	Short: "Manage a database",
-	Long:  `Access database maintenance commands.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("db called")
-	},
+type DbCmd struct {
+	cmd *cobra.Command
+}
+
+func NewDbCmd() *DbCmd {
+	c := &DbCmd{
+		&cobra.Command{
+			Use:   "db",
+			Short: "Manage a database",
+			Long:  `Access database maintenance commands.`,
+		},
+	}
+	return c
 }

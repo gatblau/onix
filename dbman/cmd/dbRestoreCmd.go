@@ -11,15 +11,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var dbRestoreCmd = &cobra.Command{
-	Use:   "restore [backup]",
-	Short: "restores a specific backup",
-	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("dbRestore called")
-	},
+type DbRestoreCmd struct {
+	cmd *cobra.Command
 }
 
-func init() {
-	dbCmd.AddCommand(dbRestoreCmd)
+func NewDbRestoreCmd() *DbRestoreCmd {
+	c := &DbRestoreCmd{
+		&cobra.Command{
+			Use:   "restore [backup]",
+			Short: "restores a specific backup",
+			Long:  ``,
+		},
+	}
+	c.cmd.Run = c.Run
+	return c
+}
+
+func (c *DbRestoreCmd) Run(cmd *cobra.Command, args []string) {
+	fmt.Println("restore called")
 }

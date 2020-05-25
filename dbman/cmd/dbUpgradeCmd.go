@@ -7,19 +7,25 @@ package cmd
 
 import (
 	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
-var dbUpgradeCmd = &cobra.Command{
-	Use:   "upgrade [version]",
-	Short: "Upgrades the current schema to a specific version",
-	Long:  `If version is not specified, then rolling upgrades to the latest version are executed.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("upgrade called")
-	},
+type DbUpgradeCmd struct {
+	cmd *cobra.Command
 }
 
-func init() {
-	dbCmd.AddCommand(dbUpgradeCmd)
+func NewDbUpgradeCmd() *DbUpgradeCmd {
+	c := &DbUpgradeCmd{
+		&cobra.Command{
+			Use:   "upgrade [version]",
+			Short: "upgrades the current schema to a specific version",
+			Long:  `if version is not specified, then rolling upgrades to the latest version are executed`,
+		},
+	}
+	c.cmd.Run = c.Run
+	return c
+}
+
+func (c *DbUpgradeCmd) Run(cmd *cobra.Command, args []string) {
+	fmt.Println("restore called")
 }

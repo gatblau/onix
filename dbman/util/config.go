@@ -17,6 +17,9 @@ import (
 // dbman config file name
 const CfgFileName = ".dbman"
 
+// global only because it is runtime configuration
+var Conf *Config
+
 // the configuration for the http backend service
 type Config struct {
 	Id             string

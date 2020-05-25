@@ -21,8 +21,9 @@ func NewReleasePlanCmd() *ReleasePlanCmd {
 		cmd: &cobra.Command{
 			Use:   "plan",
 			Short: "displays the release plan",
-			Long:  `A release plan is the list of all releases available.`,
-		}}
+			Long:  `A release plan is the list of all releases available`,
+		},
+	}
 	c.cmd.Run = c.run
 	return c
 }
