@@ -8,7 +8,6 @@ package util
 import (
 	"fmt"
 	homedir "github.com/mitchellh/go-homedir"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"os"
 	"strings"
@@ -17,15 +16,11 @@ import (
 // dbman config file name
 const CfgFileName = ".dbman"
 
-// global only because it is runtime configuration
-var Conf *Config
-
 // the configuration for the http backend service
 type Config struct {
 	Id             string
 	LogLevel       string
 	AuthMode       string
-	Path           string
 	Port           string
 	Username       string
 	Password       string
@@ -42,8 +37,6 @@ type Config struct {
 // creates a new configuration object from a file in the specified path
 // if no path is specified, then uses the location where dbman is running from
 func NewConfig(configPath string) (*Config, error) {
-	log.Info().Msg("loading configuration")
-
 	// defines the config file name (always the same)
 	viper.SetConfigName(CfgFileName)
 	viper.SetConfigType("toml")
@@ -53,7 +46,7 @@ func NewConfig(configPath string) (*Config, error) {
 		// find home directory
 		home, err := homedir.Dir()
 		if err != nil {
-			log.Error().Msg("cant find home directory whilst trying to set up dbman's configuration file.")
+			fmt.Println("cant find home directory whilst trying to set up dbman's configuration file.")
 			return nil, err
 		}
 		configPath = home
@@ -63,11 +56,12 @@ func NewConfig(configPath string) (*Config, error) {
 	// reads the configuration file
 	err := viper.ReadInConfig()
 	if err != nil { // handle errors reading the config file
-		log.Warn().Msgf("cant read from configuration file: %v \n", err)
+		fmt.Println(err)
 		err = createDefaultCfgFile(configPath)
 		if err != nil {
 			return nil, err
 		}
+		viper.ReadInConfig()
 	}
 
 	// binds all environment variables to make it container friendly
@@ -120,52 +114,23 @@ func (cfg *Config) save() {
 
 // creates a default configuration file
 func createDefaultCfgFile(filePath string) error {
-	log.Info().Msg("creating default configuration")
+	fmt.Println("creating default configuration")
 	f, err := os.Create(fmt.Sprintf("%v/%v.toml", filePath, CfgFileName))
 	if err != nil {
-		log.Error().Msgf("failed to create configuration file: %s", err)
+		fmt.Printf("failed to create configuration file: %s\n", err)
 		return err
 	}
 	l, err := f.WriteString(cfgFile)
 	if err != nil {
-		log.Error().Msgf("failed to write content into configuration file: %s", err)
+		fmt.Printf("failed to write content into configuration file: %s\n", err)
 		f.Close()
 		return err
 	}
-	log.Info().Msgf("%v bytes written successfully to %v/%v.toml", l, filePath, CfgFileName)
+	fmt.Printf("%v bytes written successfully to %v/%v.toml\n", l, filePath, CfgFileName)
 	err = f.Close()
 	if err != nil {
-		log.Error().Msgf("failed to close configuration file: %s", err)
+		fmt.Printf("failed to close configuration file: %s\n", err)
 		return err
 	}
 	return err
 }
-
-// default config file content
-const cfgFile = `
-# the dbman service instance Id for logging identification purposes
-Id = "DbMan"
-
-# verbosity of logging (Trace, Debug, Warning, Info, Error, Fatal, Panic)
-LogLevel = "Trace"
-
-# enables metrics
-Metrics = "true"
-
-# configuration for DbMan
-AuthMode    = "basic"
-Port        = "8085"
-Username    = "admin"
-Password    = "0n1x"
-
-# configuration for the Onix Web API integration
-[Db]
-    Name        = "onix"
-    ConnString  = "http://localhost:8080"
-    Username    = "admin"
-    Password    = "0n1x"
-[Schema]
-    URI         = "https://raw.githubusercontent.com/gatblau/ox-db/master"
-    Username    = ""
-    Token       = ""
-`

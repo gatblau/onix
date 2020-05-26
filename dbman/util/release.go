@@ -29,7 +29,7 @@ type Release struct {
 	} `json:"upgrade"`
 }
 
-// get a JSON bytes reader for the Index
+// get a JSON bytes reader for the ReleasePlan
 func (r *Release) json() (*bytes.Reader, error) {
 	jsonBytes, err := r.bytes()
 	if err != nil {
@@ -38,13 +38,13 @@ func (r *Release) json() (*bytes.Reader, error) {
 	return bytes.NewReader(*jsonBytes), err
 }
 
-// get a []byte representing the Index
+// get a []byte representing the ReleasePlan
 func (r *Release) bytes() (*[]byte, error) {
 	b, err := oxc.ToJson(r)
 	return &b, err
 }
 
-// get the Index in the http Response
+// get the ReleasePlan in the http Response
 func (r *Release) decode(response *http.Response) (*Release, error) {
 	result := new(Release)
 	err := json.NewDecoder(response.Body).Decode(result)
