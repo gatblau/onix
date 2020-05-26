@@ -36,11 +36,9 @@ func NewRootCmd() *RootCmd {
 
 // initConfig reads in config file and ENV variables if set.
 func (c *RootCmd) initConfig() {
-	// if cfgPath is empty, then NewConfig will default to $HOME path
-	cfg, err := util.NewConfig(cfgPath)
+	dm, err := util.NewDbMan(cfgPath)
 	if err != nil {
-		log.Err(err).Msg("cannot initialise configuration file")
+		log.Err(err).Msg("cannot create DbMan instance")
 	}
-	// sets the global conf object
-	util.Conf = cfg
+	util.DM = dm
 }

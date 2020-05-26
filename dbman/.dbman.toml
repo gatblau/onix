@@ -2,7 +2,7 @@
 Id = "DbMan"
 
 # verbosity of logging (Trace, Debug, Warning, Info, Error, Fatal, Panic)
-LogLevel = "Trace"
+LogLevel = "Warning"
 
 # enables metrics
 Metrics = "true"

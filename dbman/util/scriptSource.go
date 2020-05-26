@@ -15,63 +15,63 @@ import (
 	"net/http"
 )
 
-// database release information
-type RInfo struct {
+// the source of database scripts
+type ScriptSource struct {
 	client    *oxc.Client
-	index     *Index
+	index     *ReleasePlan
 	manifests []Release
 	cfg       *Config
 }
 
 // factory function
-func NewRInfo(cfg *Config, client *oxc.Client) (*RInfo, error) {
+func NewScriptSource(cfg *Config, client *oxc.Client) (*ScriptSource, error) {
 	// creates a new struct
-	script := new(RInfo)
+	source := new(ScriptSource)
 	// setup attributes
-	script.cfg = cfg
-	script.client = client
-	return script, nil
+	source.cfg = cfg
+	source.client = client
+	return source, nil
 }
 
 // new oxc configuration
 func NewClientConf(cfg *Config) *oxc.ClientConf {
 	return &oxc.ClientConf{
-		BaseURI:            cfg.Path,
+		BaseURI:            cfg.SchemaURI,
 		InsecureSkipVerify: false,
 		AuthMode:           oxc.None,
 	}
 }
 
 // access a cached index reference
-func (info *RInfo) ix() *Index {
+func (info *ScriptSource) ix() *ReleasePlan {
 	// if the index is not fetched
 	if info.index == nil {
 		// fetches it
 		err := info.loadIx()
 		if err != nil {
-			log.Error().Msgf("cannot retrieve index, %info", err)
+			log.Error().Msgf("cannot retrieve index, %v", err)
 		}
 	}
 	return info.index
 }
 
 // (re)loads the internal index reference
-func (info *RInfo) loadIx() error {
-	ix, err := info.fetchIndex()
+func (info *ScriptSource) loadIx() error {
+	ix, err := info.fetchPlan()
 	info.index = ix
 	return err
 }
 
 // fetches the release index
-func (info *RInfo) fetchIndex() (*Index, error) {
+func (info *ScriptSource) fetchPlan() (*ReleasePlan, error) {
 	if info.cfg == nil {
-		return nil, errors.New("configuration object not initialised when fetching release index")
+		return nil, errors.New("configuration object not initialised when fetching release plan")
 	}
-	response, err := info.client.Get(fmt.Sprintf("%s/index.json", info.cfg.SchemaURI), info.addHttpHeaders)
+	response, err := info.client.Get(fmt.Sprintf("%s/plan.json", info.cfg.SchemaURI), info.addHttpHeaders)
 	if err != nil {
 		return nil, err
 	}
-	i := &Index{}
+	i := &ReleasePlan{}
 	i, err = i.decode(response)
 	defer func() {
 		if ferr := response.Body.Close(); ferr != nil {
@@ -82,7 +82,7 @@ func (info *RInfo) fetchIndex() (*Index, error) {
 }
 
 // fetches the scripts for a database release
-func (info *RInfo) fetchRelease(appVersion string) (*Release, error) {
+func (info *ScriptSource) fetchRelease(appVersion string) (*Release, error) {
 	// if cfg not initialised, no point in continuing
 	if info.cfg == nil {
 		return nil, errors.New("configuration object not initialised when calling fetching release")
@@ -126,7 +126,7 @@ func read(response *http.Response, obj *interface{}) (*interface{}, error) {
 }
 
 // get the release information for a given application version
-func (info *RInfo) release(appVersion string) (*ReleaseInfo, error) {
+func (info *ScriptSource) release(appVersion string) (*ReleaseInfo, error) {
 	for _, release := range info.ix().Releases {
 		if release.AppVersion == appVersion {
 			return &release, nil
@@ -136,7 +136,7 @@ func (info *RInfo) release(appVersion string) (*ReleaseInfo, error) {
 }
 
 // add http headers to the request object
-func (info *RInfo) addHttpHeaders(req *http.Request, payload oxc.Serializable) error {
+func (info *ScriptSource) addHttpHeaders(req *http.Request, payload oxc.Serializable) error {
 	// add headers to disable caching
 	req.Header.Add("Cache-Control", `no-cache"`)
 	req.Header.Add("Pragma", "no-cache")
