@@ -9,8 +9,6 @@ import (
 	"fmt"
 	. "github.com/gatblau/onix/dbman/util"
 	"github.com/spf13/cobra"
-	"os"
-	"path/filepath"
 )
 
 // decorator for the release plan cobra command
@@ -30,7 +28,7 @@ func NewReleasePlanCmd() *ReleasePlanCmd {
 	}
 	c.cmd.Run = c.run
 	c.cmd.Flags().StringVarP(&c.format, "output", "o", "json", "the format of the output - yaml or json")
-	c.cmd.Flags().StringVarP(&c.filename, "filename", "f", "", "if the plan filename (without extension) is specified, the output will be written to the file")
+	c.cmd.Flags().StringVarP(&c.filename, "filename", "f", "", `if a file name is specified, the output will be written to the file. The file name should not include extension.`)
 	return c
 }
 
@@ -41,23 +39,5 @@ func (c *ReleasePlanCmd) run(cmd *cobra.Command, args []string) {
 		fmt.Printf("oops! cannot get release plan: %v", err)
 		return
 	}
-	// if an output filename is provided
-	if len(c.filename) > 0 {
-		// get the path of the current executing process
-		ex, err := os.Executable()
-		if err != nil {
-			panic(err)
-		}
-		exPath := filepath.Dir(ex)
-		// create a file with the release plan
-		f, err := os.Create(fmt.Sprintf("%v/%v.%v", exPath, c.filename, c.format))
-		if err != nil {
-			fmt.Printf("failed to create plan file: %s\n", err)
-		}
-		f.WriteString(plan.Format(c.format))
-		f.Close()
-	} else {
-		// print the plan
-		fmt.Println(plan.Format(c.format))
-	}
+	Print(plan, c.format, c.filename)
 }

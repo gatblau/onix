@@ -9,6 +9,7 @@ import (
 	"fmt"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -18,13 +19,12 @@ const CfgFileName = ".dbman"
 
 // the configuration for the http backend service
 type Config struct {
-	Id             string
 	LogLevel       string
-	AuthMode       string
-	Port           string
-	Username       string
-	Password       string
-	Metrics        bool
+	HttpAuthMode   string
+	HttpPort       string
+	HttpUsername   string
+	HttpPassword   string
+	HttpMetrics    bool
 	DbName         string
 	DbConnString   string
 	DbUsername     string
@@ -71,13 +71,12 @@ func NewConfig(configPath string) (*Config, error) {
 	// replace character to support environment variable format
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	_ = viper.BindEnv("Id")
 	_ = viper.BindEnv("LogLevel")
-	_ = viper.BindEnv("Port")
-	_ = viper.BindEnv("AuthMode")
-	_ = viper.BindEnv("Username")
-	_ = viper.BindEnv("Password")
-	_ = viper.BindEnv("Metrics")
+	_ = viper.BindEnv("Http.Port")
+	_ = viper.BindEnv("Http.AuthMode")
+	_ = viper.BindEnv("Http.Username")
+	_ = viper.BindEnv("Http.Password")
+	_ = viper.BindEnv("Http.Metrics")
 	_ = viper.BindEnv("Db.Name")
 	_ = viper.BindEnv("Db.ConnString")
 	_ = viper.BindEnv("Db.Username")
@@ -88,15 +87,18 @@ func NewConfig(configPath string) (*Config, error) {
 
 	// creates a config struct and populate it with values
 	c := new(Config)
+	load(c)
+	return c, nil
+}
 
-	// general configuration
-	c.Id = viper.GetString("Id")
+// load the passed-in config from viper file
+func load(c *Config) {
 	c.LogLevel = viper.GetString("LogLevel")
-	c.Port = viper.GetString("Port")
-	c.AuthMode = viper.GetString("AuthMode")
-	c.Username = viper.GetString("Username")
-	c.Password = viper.GetString("Password")
-	c.Metrics = viper.GetBool("Metrics")
+	c.HttpPort = viper.GetString("Http.Port")
+	c.HttpAuthMode = viper.GetString("Http.AuthMode")
+	c.HttpUsername = viper.GetString("Http.Username")
+	c.HttpPassword = viper.GetString("Http.Password")
+	c.HttpMetrics = viper.GetBool("Http.Metrics")
 	c.DbName = viper.GetString("Db.Name")
 	c.DbConnString = viper.GetString("Db.ConnString")
 	c.DbUsername = viper.GetString("Db.Username")
@@ -104,12 +106,36 @@ func NewConfig(configPath string) (*Config, error) {
 	c.SchemaURI = viper.GetString("Schema.URI")
 	c.SchemaUsername = viper.GetString("Schema.Username")
 	c.SchemaToken = viper.GetString("Schema.Token")
-
-	return c, nil
 }
 
-func (cfg *Config) save() {
+// set the configuration value for the passed-in key
+func (c *Config) set(key string, value string) bool {
+	validKey := c.contains(key)
+	// only updates if a valid key is passed in
+	if validKey {
+		viper.Set(key, value)
+		load(c)
+	} else {
+		fmt.Printf("oops! key '%v' is not recognised, cannot update configuration\n", key)
+	}
+	return validKey
+}
+
+// check if a key is contained in the internal viper registry
+func (c *Config) contains(key string) bool {
+	keys := viper.AllKeys()
+	for _, a := range keys {
+		if a == key {
+			return true
+		}
+	}
+	return false
+}
+
+// save the configuration to file
+func (c *Config) save() {
 	viper.WriteConfig()
+	viper.ReadInConfig()
 }
 
 // creates a default configuration file
@@ -133,4 +159,13 @@ func createDefaultCfgFile(filePath string) error {
 		return err
 	}
 	return err
+}
+
+func (c *Config) print() {
+	dat, err := ioutil.ReadFile(viper.ConfigFileUsed())
+	if err != nil {
+		fmt.Sprintf("cannot read config file: %v", err)
+		return
+	}
+	fmt.Print(string(dat))
 }

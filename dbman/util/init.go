@@ -1,5 +1,5 @@
 package util
 
-func InitialiseReleaseInfo() *ReleaseInfo {
+func InitialiseReleaseInfo() *Info {
 	return nil
 }

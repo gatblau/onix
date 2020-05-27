@@ -7,9 +7,10 @@ package cmd
 
 func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
+	configCmd := InitialiseConfigCmd()
 	releaseCmd := InitialiseReleaseCmd()
 	dbCmd := InitialiseDbCmd()
-	rootCmd.Command.AddCommand(releaseCmd.cmd, dbCmd.cmd)
+	rootCmd.Command.AddCommand(releaseCmd.cmd, dbCmd.cmd, configCmd.cmd)
 	return rootCmd
 }
 
@@ -30,4 +31,12 @@ func InitialiseDbCmd() *DbCmd {
 	dbRestoreCmd := NewDbRestoreCmd()
 	dbCmd.cmd.AddCommand(dbVersionCmd.cmd, dbUpgradeCmd.cmd, dbDeployCmd.cmd, dbBackupCmd.cmd, dbRestoreCmd.cmd)
 	return dbCmd
+}
+
+func InitialiseConfigCmd() *ConfigCmd {
+	cfgCmd := NewConfigCmd()
+	cfgSetCmd := NewConfigSetCmd()
+	cfgListCmd := NewConfigListCmd()
+	cfgCmd.cmd.AddCommand(cfgSetCmd.cmd, cfgListCmd.cmd)
+	return cfgCmd
 }

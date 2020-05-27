@@ -30,7 +30,6 @@ func NewRootCmd() *RootCmd {
 	}
 	cobra.OnInitialize(c.initConfig)
 	c.PersistentFlags().StringVar(&cfgPath, "config-path", "", "path to dbman's config file (default is $HOME)")
-	c.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	return c
 }
 

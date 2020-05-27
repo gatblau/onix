@@ -2,24 +2,24 @@ package util
 
 // var (
 // 	script, _ = InitializeScript()
-// 	ix        *ReleasePlan
+// 	plan        *Plan
 // 	err       error
 // )
 //
 // func TestFetchIndex(t *testing.T) {
-// 	ix, err = script.fetchIndex()
+// 	plan, err = script.fetchIndex()
 // 	if err != nil {
 // 		t.Error(err)
 // 		t.Fail()
 // 	}
-// 	if len(ix.Releases) == 0 {
-// 		t.Error("no releases found in ReleasePlan")
+// 	if len(plan.Releases) == 0 {
+// 		t.Error("no releases found in Plan")
 // 	}
 // }
 //
 // func TestFetchRelease(t *testing.T) {
 // 	// need an index so if not loaded yet
-// 	if ix == nil {
+// 	if plan == nil {
 // 		// fetches it
 // 		TestFetchIndex(t)
 // 	}

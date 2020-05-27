@@ -45,7 +45,7 @@ func (db *Database) createDb() error {
 		return err
 	}
 	log.Info().Msgf("creating user: %s", db.cfg.DbUsername)
-	_, err = conn.Exec(context.Background(), "CREATE USER $1 WITH PASSWORD '$2';", db.cfg.DbUsername, db.cfg.Password)
+	_, err = conn.Exec(context.Background(), "CREATE USER $1 WITH PASSWORD '$2';", db.cfg.DbUsername, db.cfg.DbPassword)
 	if err != nil {
 		return err
 	}

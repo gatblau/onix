@@ -23,3 +23,8 @@ func TestFetchReleasePlan(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestSaveConfig(t *testing.T) {
+	dbman.SetConfig("Schema.URI", "AAAA")
+	dbman.SaveConfig()
+}

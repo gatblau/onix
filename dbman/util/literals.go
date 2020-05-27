@@ -37,20 +37,16 @@ DO
 
 // default config file content
 const cfgFile = `
-# the dbman service instance Id for logging identification purposes
-Id = "DbMan"
-
 # verbosity of logging (Trace, Debug, Warning, Info, Error, Fatal, Panic)
 LogLevel = "Warning"
 
-# enables metrics
-Metrics = "true"
-
-# configuration for DbMan
-AuthMode    = "basic"
-Port        = "8085"
-Username    = "admin"
-Password    = "0n1x"
+# configuration for running DbMan in http mode
+[Http]
+	Metrics = "true"
+	AuthMode    = "basic"
+	Port        = "8085"
+	Username    = "admin"
+	Password    = "0n1x"
 
 # configuration for the Onix Web API integration
 [Db]
@@ -58,6 +54,8 @@ Password    = "0n1x"
     ConnString  = "http://localhost:8080"
     Username    = "admin"
     Password    = "0n1x"
+
+# configuration of database scripts remote repository
 [Schema]
     URI         = "https://raw.githubusercontent.com/gatblau/ox-db/master"
     Username    = ""

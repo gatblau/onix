@@ -7,18 +7,16 @@ package util
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gatblau/oxc"
-	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
 // the source of database scripts
 type ScriptSource struct {
 	client    *oxc.Client
-	index     *ReleasePlan
+	index     *Plan
 	manifests []Release
 	cfg       *Config
 }
@@ -43,27 +41,27 @@ func NewClientConf(cfg *Config) *oxc.ClientConf {
 }
 
 // access a cached index reference
-func (info *ScriptSource) ix() *ReleasePlan {
+func (info *ScriptSource) plan() *Plan {
 	// if the index is not fetched
 	if info.index == nil {
 		// fetches it
-		err := info.loadIx()
+		err := info.loadPlan()
 		if err != nil {
-			log.Error().Msgf("cannot retrieve index, %v", err)
+			fmt.Sprintf("cannot retrieve plan, %v", err)
 		}
 	}
 	return info.index
 }
 
 // (re)loads the internal index reference
-func (info *ScriptSource) loadIx() error {
+func (info *ScriptSource) loadPlan() error {
 	ix, err := info.fetchPlan()
 	info.index = ix
 	return err
 }
 
 // fetches the release index
-func (info *ScriptSource) fetchPlan() (*ReleasePlan, error) {
+func (info *ScriptSource) fetchPlan() (*Plan, error) {
 	if info.cfg == nil {
 		return nil, errors.New("configuration object not initialised when fetching release plan")
 	}
@@ -71,7 +69,7 @@ func (info *ScriptSource) fetchPlan() (*ReleasePlan, error) {
 	if err != nil {
 		return nil, err
 	}
-	i := &ReleasePlan{}
+	i := &Plan{}
 	i, err = i.decode(response)
 	defer func() {
 		if ferr := response.Body.Close(); ferr != nil {
@@ -109,25 +107,12 @@ func (info *ScriptSource) fetchRelease(appVersion string) (*Release, error) {
 			err = ferr
 		}
 	}()
-	// result, err := read(response, &Release{})
-	// return result.(*Release), err
-	return nil, nil
-}
-
-func read(response *http.Response, obj *interface{}) (*interface{}, error) {
-	var err error
-	defer func() {
-		if ferr := response.Body.Close(); ferr != nil {
-			err = ferr
-		}
-	}()
-	err = json.NewDecoder(response.Body).Decode(obj)
-	return obj, err
+	return r, err
 }
 
 // get the release information for a given application version
-func (info *ScriptSource) release(appVersion string) (*ReleaseInfo, error) {
-	for _, release := range info.ix().Releases {
+func (info *ScriptSource) release(appVersion string) (*Info, error) {
+	for _, release := range info.plan().Releases {
 		if release.AppVersion == appVersion {
 			return &release, nil
 		}
