@@ -12,26 +12,19 @@ import (
 	"net/http"
 )
 
-// describes a database release
-type Release struct {
-	Release string `json:"release"`
-	Schemas []struct {
-		File     string `json:"file"`
-		Checksum string `json:"checksum"`
-	} `json:"schemas"`
-	Functions []struct {
-		File     string `json:"file"`
-		Checksum string `json:"checksum"`
-	} `json:"functions"`
-	Upgrade []struct {
-		File     string `json:"file"`
-		Checksum string `json:"checksum"`
-	} `json:"upgrade"`
+type Plan struct {
+	Releases []Info `json:"releases"`
+}
+
+type Info struct {
+	DbVersion  string `json:"dbVersion"`
+	AppVersion string `json:"appVersion"`
+	Path       string `json:"path"`
 }
 
 // get a JSON bytes reader for the Plan
-func (r *Release) json() (*bytes.Reader, error) {
-	jsonBytes, err := r.bytes()
+func (plan *Plan) json() (*bytes.Reader, error) {
+	jsonBytes, err := plan.bytes()
 	if err != nil {
 		return nil, err
 	}
@@ -39,14 +32,14 @@ func (r *Release) json() (*bytes.Reader, error) {
 }
 
 // get a []byte representing the Plan
-func (r *Release) bytes() (*[]byte, error) {
-	b, err := oxc.ToJson(r)
+func (plan *Plan) bytes() (*[]byte, error) {
+	b, err := oxc.ToJson(plan)
 	return &b, err
 }
 
 // get the Plan in the http Response
-func (r *Release) decode(response *http.Response) (*Release, error) {
-	result := new(Release)
+func (plan *Plan) decode(response *http.Response) (*Plan, error) {
+	result := new(Plan)
 	err := json.NewDecoder(response.Body).Decode(result)
 	return result, err
 }

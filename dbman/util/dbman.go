@@ -10,7 +10,7 @@ import "github.com/gatblau/oxc"
 var DM *DbMan
 
 type DbMan struct {
-	cfg  *Config
+	Cfg  *Config
 	info *ScriptSource
 }
 
@@ -28,11 +28,27 @@ func NewDbMan(cfgFilePath string) (*DbMan, error) {
 		return nil, err
 	}
 	return &DbMan{
-		cfg:  cfg,
+		Cfg:  cfg,
 		info: rInfo,
 	}, nil
 }
 
-func (dm *DbMan) GetReleasePlan() (*ReleasePlan, error) {
+func (dm *DbMan) GetReleasePlan() (*Plan, error) {
 	return dm.info.fetchPlan()
+}
+
+func (dm *DbMan) GetReleaseInfo(appVersion string) (*Release, error) {
+	return dm.info.fetchRelease(appVersion)
+}
+
+func (dm *DbMan) SaveConfig() {
+	dm.Cfg.save()
+}
+
+func (dm *DbMan) SetConfig(key string, value string) {
+	dm.Cfg.set(key, value)
+}
+
+func (dm *DbMan) PrintConfig() {
+	dm.Cfg.print()
 }
