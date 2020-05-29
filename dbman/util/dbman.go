@@ -5,20 +5,19 @@
 //   to be licensed under the same terms as the rest of the code.
 package util
 
-import "github.com/gatblau/oxc"
+import (
+	"github.com/gatblau/oxc"
+)
 
 var DM *DbMan
 
 type DbMan struct {
-	Cfg  *Config
+	Cfg  *AppCfg
 	info *ScriptSource
 }
 
-func NewDbMan(cfgFilePath string) (*DbMan, error) {
-	cfg, err := NewConfig(cfgFilePath)
-	if err != nil {
-		return nil, err
-	}
+func NewDbMan(cfgFilePath string, cfgFileName string) (*DbMan, error) {
+	cfg := NewAppCfg(cfgFilePath, cfgFileName)
 	scriptClient, err := oxc.NewClient(NewClientConf(cfg))
 	if err != nil {
 		return nil, err
@@ -49,6 +48,14 @@ func (dm *DbMan) SetConfig(key string, value string) {
 	dm.Cfg.set(key, value)
 }
 
+func (dm *DbMan) GetConfig(key string) {
+	dm.Cfg.get(key)
+}
+
 func (dm *DbMan) PrintConfig() {
 	dm.Cfg.print()
+}
+
+func (dm *DbMan) Use(filepath string, filename string) {
+	dm.Cfg.load(filepath, filename)
 }

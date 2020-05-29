@@ -18,11 +18,11 @@ type ScriptSource struct {
 	client    *oxc.Client
 	index     *Plan
 	manifests []Release
-	cfg       *Config
+	cfg       *AppCfg
 }
 
 // factory function
-func NewScriptSource(cfg *Config, client *oxc.Client) (*ScriptSource, error) {
+func NewScriptSource(cfg *AppCfg, client *oxc.Client) (*ScriptSource, error) {
 	// creates a new struct
 	source := new(ScriptSource)
 	// setup attributes
@@ -32,9 +32,9 @@ func NewScriptSource(cfg *Config, client *oxc.Client) (*ScriptSource, error) {
 }
 
 // new oxc configuration
-func NewClientConf(cfg *Config) *oxc.ClientConf {
+func NewClientConf(cfg *AppCfg) *oxc.ClientConf {
 	return &oxc.ClientConf{
-		BaseURI:            cfg.SchemaURI,
+		BaseURI:            cfg.get(SchemaURI),
 		InsecureSkipVerify: false,
 		AuthMode:           oxc.None,
 	}
@@ -65,7 +65,7 @@ func (info *ScriptSource) fetchPlan() (*Plan, error) {
 	if info.cfg == nil {
 		return nil, errors.New("configuration object not initialised when fetching release plan")
 	}
-	response, err := info.client.Get(fmt.Sprintf("%s/plan.json", info.cfg.SchemaURI), info.addHttpHeaders)
+	response, err := info.client.Get(fmt.Sprintf("%s/plan.json", info.get(SchemaURI)), info.addHttpHeaders)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (info *ScriptSource) fetchRelease(appVersion string) (*Release, error) {
 		return nil, err
 	}
 	// builds a uri to fetch the specific release manifest
-	uri := fmt.Sprintf("%s/%s/release.json", info.cfg.SchemaURI, ri.Path)
+	uri := fmt.Sprintf("%s/%s/release.json", info.get(SchemaURI), ri.Path)
 	// fetch the release.json manifest
 	response, err := info.client.Get(uri, info.addHttpHeaders)
 	// if the request was unsuccessful then return the error
@@ -126,10 +126,14 @@ func (info *ScriptSource) addHttpHeaders(req *http.Request, payload oxc.Serializ
 	req.Header.Add("Cache-Control", `no-cache"`)
 	req.Header.Add("Pragma", "no-cache")
 	// if there is an access token defined
-	if len(info.cfg.SchemaUsername) > 0 && len(info.cfg.SchemaToken) > 0 {
+	if len(info.get(SchemaUsername)) > 0 && len(info.get(SchemaToken)) > 0 {
 		credentials := base64.StdEncoding.EncodeToString([]byte(
-			fmt.Sprintf("%s:%s", info.cfg.SchemaUsername, info.cfg.SchemaToken)))
+			fmt.Sprintf("%s:%s", info.get(SchemaUsername), info.get(SchemaToken))))
 		req.Header.Add("Authorization", credentials)
 	}
 	return nil
+}
+
+func (info *ScriptSource) get(key string) string {
+	return info.cfg.get(key)
 }

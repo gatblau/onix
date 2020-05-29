@@ -5,6 +5,7 @@ The command hierarchy is:
 - config (manages dbman's configuration)
     - list (list configuration variables)
     - set (set a configuration value)
+    - use (use a specified configuration)
 - release (release information)
     - plan (shows the release plan)
     - info (shows a specific release information)

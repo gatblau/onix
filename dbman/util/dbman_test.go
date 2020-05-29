@@ -5,7 +5,7 @@ import "testing"
 var dbman *DbMan
 
 func init() {
-	dbm, err := NewDbMan("")
+	dbm, err := NewDbMan("", "")
 	if err != nil {
 		panic(err)
 	}
@@ -27,4 +27,8 @@ func TestFetchReleasePlan(t *testing.T) {
 func TestSaveConfig(t *testing.T) {
 	dbman.SetConfig("Schema.URI", "AAAA")
 	dbman.SaveConfig()
+}
+
+func TestUseConfig(t *testing.T) {
+	dbman.Use("", "myapp")
 }

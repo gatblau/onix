@@ -11,8 +11,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// the path to dbman's config file
-var cfgPath string
+// the path and name to dbman's config file
+var (
+	cfgPath = ""
+	cfgName = "default"
+)
 
 type RootCmd struct {
 	*cobra.Command
@@ -29,13 +32,12 @@ func NewRootCmd() *RootCmd {
 		},
 	}
 	cobra.OnInitialize(c.initConfig)
-	c.PersistentFlags().StringVar(&cfgPath, "config-path", "", "path to dbman's config file (default is $HOME)")
 	return c
 }
 
 // initConfig reads in config file and ENV variables if set.
 func (c *RootCmd) initConfig() {
-	dm, err := util.NewDbMan(cfgPath)
+	dm, err := util.NewDbMan(cfgPath, cfgName)
 	if err != nil {
 		log.Err(err).Msg("cannot create DbMan instance")
 	}

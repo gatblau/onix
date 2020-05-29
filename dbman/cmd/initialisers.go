@@ -37,6 +37,7 @@ func InitialiseConfigCmd() *ConfigCmd {
 	cfgCmd := NewConfigCmd()
 	cfgSetCmd := NewConfigSetCmd()
 	cfgListCmd := NewConfigListCmd()
-	cfgCmd.cmd.AddCommand(cfgSetCmd.cmd, cfgListCmd.cmd)
+	cfgUseCmd := NewConfigUseCmd()
+	cfgCmd.cmd.AddCommand(cfgSetCmd.cmd, cfgListCmd.cmd, cfgUseCmd.cmd)
 	return cfgCmd
 }
