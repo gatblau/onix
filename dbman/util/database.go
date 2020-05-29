@@ -12,19 +12,19 @@ import (
 )
 
 type Database struct {
-	cfg *Config
+	cfg *AppCfg
 }
 
 // checks if the database exists
 func (db *Database) exists() (bool, error) {
-	conn, err := pgx.Connect(context.Background(), db.cfg.DbConnString)
+	conn, err := pgx.Connect(context.Background(), db.get(DbConnString))
 	if err != nil {
 		log.Error().Msgf("unable to connect to database: %v\n", err)
 		return false, err
 	}
 	defer conn.Close(context.Background())
 	var count int
-	err = conn.QueryRow(context.Background(), "SELECT 1 from pg_database WHERE datname='$1';", db.cfg.DbName).Scan(&count)
+	err = conn.QueryRow(context.Background(), "SELECT 1 from pg_database WHERE datname='$1';", db.get(DbName)).Scan(&count)
 	if err != nil {
 		log.Error().Msgf("cannot check if database exists: %v\n", err)
 	}
@@ -33,19 +33,19 @@ func (db *Database) exists() (bool, error) {
 
 // createDb the Onix database
 func (db *Database) createDb() error {
-	conn, err := pgx.Connect(context.Background(), db.cfg.DbConnString)
+	conn, err := pgx.Connect(context.Background(), db.get(DbConnString))
 	if err != nil {
 		log.Error().Msgf("unable to connect to database: %v\n", err)
 		return err
 	}
 	defer conn.Close(context.Background())
-	log.Info().Msgf("creating database: %s", db.cfg.DbName)
-	_, err = conn.Exec(context.Background(), "CREATE DATABASE $1;", db.cfg.DbName)
+	log.Info().Msgf("creating database: %s", db.get(DbName))
+	_, err = conn.Exec(context.Background(), "CREATE DATABASE $1;", db.get(DbName))
 	if err != nil {
 		return err
 	}
-	log.Info().Msgf("creating user: %s", db.cfg.DbUsername)
-	_, err = conn.Exec(context.Background(), "CREATE USER $1 WITH PASSWORD '$2';", db.cfg.DbUsername, db.cfg.DbPassword)
+	log.Info().Msgf("creating user: %s", db.get(DbUsername))
+	_, err = conn.Exec(context.Background(), "CREATE USER $1 WITH PASSWORD '$2';", db.get(DbUsername), db.get(DbPassword))
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (db *Database) createDb() error {
 
 // gets the current app and db version
 func (db *Database) getVersion() (string, string, error) {
-	conn, err := pgx.Connect(context.Background(), db.cfg.DbConnString)
+	conn, err := pgx.Connect(context.Background(), db.get(DbConnString))
 	if err != nil {
 		log.Error().Msgf("unable to connect to database: %v\n", err)
 		return "", "", err
@@ -100,7 +100,7 @@ func (db *Database) installDb() error {
 			return err
 		}
 	} else {
-		log.Info().Msgf("database %s found, skipping creation", db.cfg.DbName)
+		log.Info().Msgf("database %s found, skipping creation", db.get(DbName))
 	}
 	_, dbVer, err := db.getVersion()
 	if err != nil {
@@ -111,4 +111,9 @@ func (db *Database) installDb() error {
 
 	}
 	return nil
+}
+
+// return a configuration item
+func (db *Database) get(key string) string {
+	return db.cfg.get(key)
 }
