@@ -6,29 +6,39 @@
 package cmd
 
 import (
+	"fmt"
 	. "github.com/gatblau/onix/dbman/util"
 	"github.com/spf13/cobra"
+	"io/ioutil"
+	"strings"
 )
 
 type ConfigListCmd struct {
-	cmd      *cobra.Command
-	format   string
-	filename string
+	cmd *cobra.Command
 }
 
 func NewConfigListCmd() *ConfigListCmd {
 	c := &ConfigListCmd{
 		cmd: &cobra.Command{
 			Use:     "list",
-			Short:   "list dbman's configuration values",
+			Short:   "list all available configuration sets",
 			Example: `dbman config list`,
 		}}
 	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.format, "output", "o", "json", "the format of the output - yaml or json")
-	c.cmd.Flags().StringVarP(&c.filename, "filename", "f", "", `if a filename is specified, the output will be written to the file. The file name should not include extension.`)
 	return c
 }
 
 func (c *ConfigListCmd) Run(cmd *cobra.Command, args []string) {
-	DM.PrintConfig()
+	// get the files in the current path
+	files, err := ioutil.ReadDir(DM.GetCurrentDir())
+	if err != nil {
+		fmt.Printf("oops! I cannot read from directory %v: %v", DM.GetCurrentDir(), err)
+		return
+	}
+	// print a list
+	for _, file := range files {
+		if strings.HasPrefix(file.Name(), ".dbman_") {
+			fmt.Println(file.Name()[7 : len(file.Name())-5])
+		}
+	}
 }

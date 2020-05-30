@@ -13,21 +13,21 @@ import (
 )
 
 // dbman root configuration management struct
-type RootCfg struct {
+type Cache struct {
 	cfg *viper.Viper
 }
 
-// create a new RootCfg instance
-func NewRootCfg() *RootCfg {
-	rootCfg := &RootCfg{
+// create a new Cache instance
+func NewCache() *Cache {
+	rootCfg := &Cache{
 		cfg: viper.New(),
 	}
 	rootCfg.load()
 	return rootCfg
 }
 
-// load the RootCfg
-func (c *RootCfg) load() {
+// load the Cache
+func (c *Cache) load() {
 	home := homeDir()
 	c.cfg.AddConfigPath(home)
 	c.cfg.SetConfigName(".dbman")
@@ -39,35 +39,39 @@ func (c *RootCfg) load() {
 		c.save()
 		err := c.cfg.ReadInConfig()
 		if err != nil {
-			fmt.Printf("cannot save root configuration: %v", err)
+			fmt.Printf("oops! I cannot save root configuration: %v", err)
 		}
 	}
 }
 
 // save the config path & name to file
-func (c *RootCfg) save() {
+func (c *Cache) save() {
 	err := c.cfg.WriteConfig()
 	if err != nil {
-		fmt.Printf("oops! cannot save cache: %v", err)
+		// the file does not exist then try create it
+		err := c.cfg.SafeWriteConfig()
+		if err != nil {
+			fmt.Printf("oops! I cannot save cache: %v", err)
+		}
 	}
 }
 
 // return the config file path to use
-func (c *RootCfg) path() string {
+func (c *Cache) path() string {
 	return c.cfg.GetString("path")
 }
 
 // return the config name to use
-func (c *RootCfg) name() string {
+func (c *Cache) name() string {
 	return c.cfg.GetString("name")
 }
 
-// return the config file name to use
-func (c *RootCfg) filename() string {
+// return the config file name to use without extension
+func (c *Cache) filename() string {
 	return fmt.Sprintf(".dbman_%v", c.name())
 }
 
-func (c *RootCfg) setName(name string) {
+func (c *Cache) setName(name string) {
 	// check file name should not contain a file extension
 	if strings.Contains(name, ".toml") ||
 		strings.Contains(name, ".json") ||
@@ -75,19 +79,19 @@ func (c *RootCfg) setName(name string) {
 		strings.Contains(name, ".yml") ||
 		strings.Contains(name, ".yaml") ||
 		strings.Contains(name, ".txt") {
-		fmt.Printf("file extension not allowed in config filename %v", name)
+		fmt.Printf("oops! I found a file extension in the configuration filename '%v': it should not contain any extension", name)
 		return
 	}
 
 	// invalid if the file name is prepended by '.'
 	if strings.Index(name, ".") == 1 {
-		fmt.Printf("invalid name '%v' should not start with '.'", name)
+		fmt.Printf("oops! I found an invalid name '%v': it should not start with '.'", name)
 		return
 	}
 	c.cfg.Set("name", name)
 }
 
-func (c *RootCfg) setPath(value string) {
+func (c *Cache) setPath(value string) {
 	c.cfg.Set("path", value)
 }
 
@@ -96,7 +100,7 @@ func homeDir() string {
 	// find home directory
 	home, err := homedir.Dir()
 	if err != nil {
-		fmt.Printf("cant find home directory: %v\n", err)
+		fmt.Printf("oops! I cannot find the home directory: %v\n", err)
 		return ""
 	}
 	return home
