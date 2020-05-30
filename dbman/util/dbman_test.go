@@ -5,7 +5,7 @@ import "testing"
 var dbman *DbMan
 
 func init() {
-	dbm, err := NewDbMan("", "")
+	dbm, err := NewDbMan()
 	if err != nil {
 		panic(err)
 	}

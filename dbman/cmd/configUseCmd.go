@@ -25,10 +25,18 @@ func NewConfigUseCmd() *ConfigUseCmd {
 			Example: `dbman config use myapp_dev`,
 		}}
 	c.cmd.Run = c.Run
+	c.cmd.Flags().StringVarP(&c.cfgPath, "path", "p", "", "set the path where the configuration files are written")
+	c.cmd.Flags().StringVarP(&c.cfgName, "name", "n", "", "set the name of the configuration to use; e.g. different configurations can be kept for different environments")
 	return c
 }
 
 func (c *ConfigUseCmd) Run(cmd *cobra.Command, args []string) {
-	DM.Use(cfgPath, cfgName)
-	fmt.Printf("using configuration from %v\n", DM.Cfg.ConfigFileUsed())
+	if len(args) > 0 {
+		fmt.Print("oops! I do not take any arguments, use flags instead\n")
+	}
+	fmt.Printf("I am currently using the configuration from %v\n", DM.Cfg.ConfigFileUsed())
+	if len(c.cfgPath) > 0 || len(c.cfgName) > 0 {
+		DM.Use(c.cfgPath, c.cfgName)
+		fmt.Printf("I have changed it to %v\n", DM.Cfg.ConfigFileUsed())
+	}
 }

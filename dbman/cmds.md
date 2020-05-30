@@ -3,8 +3,10 @@
 The command hierarchy is:
 
 - config (manages dbman's configuration)
-    - list (list configuration variables)
-    - set (set a configuration value)
+    - show (shows the current configuration)
+    - delete (deletes a configuration set)
+    - list (list configuration sets)
+    - set (set a configuration value in the current configuration)
     - use (use a specified configuration)
 - release (release information)
     - plan (shows the release plan)

@@ -25,7 +25,7 @@ const (
 
 // dbman configuration management struct
 type AppCfg struct {
-	root *RootCfg
+	root *Cache
 	cfg  *viper.Viper
 	path string
 	name string
@@ -34,7 +34,7 @@ type AppCfg struct {
 // create a new instance
 func NewAppCfg(path string, name string) *AppCfg {
 	conf := &AppCfg{
-		root: NewRootCfg(),
+		root: NewCache(),
 		cfg:  viper.New(),
 	}
 	conf.load(path, name)
@@ -80,7 +80,7 @@ func (c *AppCfg) load(path string, name string) error {
 	err := c.cfg.ReadInConfig()
 	if err != nil { // handle errors reading the config file
 		fmt.Println(err)
-		err = c.createCfgFile(path, name)
+		err = c.createCfgFile(path, c.root.filename())
 		if err != nil {
 			return err
 		}
@@ -118,22 +118,22 @@ func (c *AppCfg) ConfigFileUsed() string {
 
 // creates a default configuration file
 func (c *AppCfg) createCfgFile(filePath string, filename string) error {
-	fmt.Println("writing configuration file to disk")
+	fmt.Println("I am writing configuration file to disk")
 	f, err := os.Create(fmt.Sprintf("%v/%v.toml", filePath, filename))
 	if err != nil {
-		fmt.Printf("failed to create configuration file: %s\n", err)
+		fmt.Printf("oops! I failed to create a new configuration file: %s\n", err)
 		return err
 	}
 	l, err := f.WriteString(cfgFile)
 	if err != nil {
-		fmt.Printf("failed to write content into configuration file: %s\n", err)
+		fmt.Printf("oops! I failed to create a new configuration file: %s\n", err)
 		f.Close()
 		return err
 	}
-	fmt.Printf("%v bytes written successfully to %v/%v.toml\n", l, filePath, filename)
+	fmt.Printf("I have written %v bytes to %v/%v.toml\n", l, filePath, filename)
 	err = f.Close()
 	if err != nil {
-		fmt.Printf("failed to close configuration file: %s\n", err)
+		fmt.Printf("oops! I cannot close the configuration file: %s\n", err)
 		return err
 	}
 	return err
@@ -165,7 +165,7 @@ func (c *AppCfg) set(key string, value string) bool {
 	if validKey {
 		c.cfg.Set(key, value)
 	} else {
-		fmt.Printf("oops! key '%v' is not recognised, cannot update configuration\n", key)
+		fmt.Printf("oops! I cannot recognise the key '%v' and therfore cannot update the configuration\n", key)
 	}
 	return validKey
 }
@@ -179,8 +179,9 @@ func (c *AppCfg) get(key string) string {
 func (c *AppCfg) print() {
 	dat, err := ioutil.ReadFile(c.cfg.ConfigFileUsed())
 	if err != nil {
-		fmt.Sprintf("cannot read config file: %v", err)
+		fmt.Sprintf("oops! I cannot read the configuration file: %v", err)
 		return
 	}
+	fmt.Printf("I am showing the content of %v\n", c.cfg.ConfigFileUsed())
 	fmt.Print(string(dat))
 }

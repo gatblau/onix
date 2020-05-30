@@ -36,8 +36,10 @@ func InitialiseDbCmd() *DbCmd {
 func InitialiseConfigCmd() *ConfigCmd {
 	cfgCmd := NewConfigCmd()
 	cfgSetCmd := NewConfigSetCmd()
-	cfgListCmd := NewConfigListCmd()
+	cfgShowCmd := NewConfigShowCmd()
 	cfgUseCmd := NewConfigUseCmd()
-	cfgCmd.cmd.AddCommand(cfgSetCmd.cmd, cfgListCmd.cmd, cfgUseCmd.cmd)
+	cfgListCmd := NewConfigListCmd()
+	cfgRmCmd := NewConfigDeleteCmd()
+	cfgCmd.cmd.AddCommand(cfgSetCmd.cmd, cfgShowCmd.cmd, cfgUseCmd.cmd, cfgListCmd.cmd, cfgRmCmd.cmd)
 	return cfgCmd
 }

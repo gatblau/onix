@@ -16,8 +16,8 @@ type DbMan struct {
 	info *ScriptSource
 }
 
-func NewDbMan(cfgFilePath string, cfgFileName string) (*DbMan, error) {
-	cfg := NewAppCfg(cfgFilePath, cfgFileName)
+func NewDbMan() (*DbMan, error) {
+	cfg := NewAppCfg("", "")
 	scriptClient, err := oxc.NewClient(NewClientConf(cfg))
 	if err != nil {
 		return nil, err
@@ -56,6 +56,14 @@ func (dm *DbMan) PrintConfig() {
 	dm.Cfg.print()
 }
 
-func (dm *DbMan) Use(filepath string, filename string) {
-	dm.Cfg.load(filepath, filename)
+func (dm *DbMan) Use(filepath string, name string) {
+	dm.Cfg.load(filepath, name)
+}
+
+func (dm *DbMan) GetCurrentConfigFile() string {
+	return dm.Cfg.ConfigFileUsed()
+}
+
+func (dm *DbMan) GetCurrentDir() string {
+	return dm.Cfg.root.path()
 }
