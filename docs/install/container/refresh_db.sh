@@ -36,7 +36,7 @@ PORT=5432
 DB=onix
 DBUSER=onix
 DBPWD=onix
-SPATH=${HOME}"/dev/onix/wapi/src/main/resources/db/install/4"
+SPATH=${HOME}"/go/src/github.com/gatblau/onix/wapi/src/main/resources/db/install/4"
 
 # removes the container
 docker rm -f oxdb
