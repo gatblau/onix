@@ -22,7 +22,7 @@ import (
 
 type ReleaseCmd struct {
 	cmd  *cobra.Command
-	info *util.ScriptSource
+	info *util.Scripts
 }
 
 func NewReleaseCmd() *ReleaseCmd {

@@ -9,8 +9,9 @@ func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
 	configCmd := InitialiseConfigCmd()
 	releaseCmd := InitialiseReleaseCmd()
+	checkCmd := NewCheckCmd()
 	dbCmd := InitialiseDbCmd()
-	rootCmd.Command.AddCommand(releaseCmd.cmd, dbCmd.cmd, configCmd.cmd)
+	rootCmd.Command.AddCommand(releaseCmd.cmd, dbCmd.cmd, configCmd.cmd, checkCmd.cmd)
 	return rootCmd
 }
 
