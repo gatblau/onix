@@ -8,7 +8,7 @@ package util
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/rs/zerolog/log"
 )
 
@@ -25,22 +25,22 @@ func NewPgDb(appCfg *AppCfg) Db {
 
 // check a connection to the database can be established
 func (db *PgDb) CanConnect() (bool, error) {
-	conn, err := pgx.Connect(context.Background(), db.connString())
+	conn, err := pgxpool.Connect(context.Background(), db.connString())
 	if err != nil {
 		return false, err
 	}
-	defer conn.Close(context.Background())
+	defer conn.Close()
 	return true, nil
 }
 
 // checks if the database exists
 func (db *PgDb) Exists() (bool, error) {
-	conn, err := pgx.Connect(context.Background(), db.connString())
+	conn, err := pgxpool.Connect(context.Background(), db.connString())
 	if err != nil {
 		fmt.Printf("oops! I cannot connect to database: %v\n", err)
 		return false, err
 	}
-	defer conn.Close(context.Background())
+	defer conn.Close()
 	var count int
 	err = conn.QueryRow(context.Background(), "SELECT 1 from pg_database WHERE datname='$1';", db.get(DbName)).Scan(&count)
 	if err != nil {
@@ -50,13 +50,13 @@ func (db *PgDb) Exists() (bool, error) {
 }
 
 // create the Onix database
-func (db *PgDb) Create() error {
-	conn, err := pgx.Connect(context.Background(), db.connString())
+func (db *PgDb) Initialise() error {
+	conn, err := pgxpool.Connect(context.Background(), db.connString())
 	if err != nil {
 		fmt.Printf("oops! I am unable to connect to database: %v\n", err)
 		return err
 	}
-	defer conn.Close(context.Background())
+	defer conn.Close()
 	fmt.Printf("creating database: %s", db.get(DbName))
 	_, err = conn.Exec(context.Background(), "CREATE DATABASE $1;", db.get(DbName))
 	if err != nil {
@@ -85,12 +85,12 @@ func (db *PgDb) Create() error {
 
 // gets the current app and db version
 func (db *PgDb) GetVersion() (string, string, error) {
-	conn, err := pgx.Connect(context.Background(), db.connString())
+	conn, err := pgxpool.Connect(context.Background(), db.connString())
 	if err != nil {
 		log.Error().Msgf("unable to connect to database: %v\n", err)
 		return "", "", err
 	}
-	defer conn.Close(context.Background())
+	defer conn.Close()
 	rows, _ := conn.Query(context.Background(), "SELECT application_version, database_version from version ORDER BY time DESC LIMIT 1;")
 	if rows.Next() {
 		var appVer string
@@ -113,7 +113,7 @@ func (db *PgDb) Deploy() error {
 	}
 	// if the database does not exists, then create it
 	if !exist {
-		err = db.Create()
+		err = db.Initialise()
 		if err != nil {
 			return err
 		}

@@ -12,7 +12,7 @@ type Db interface {
 	// check the database exists
 	Exists() (bool, error)
 	// create the database
-	Create() error
+	Initialise() error
 	// get the database version information
 	GetVersion() (string, string, error)
 	// deploy the schemas and functions
