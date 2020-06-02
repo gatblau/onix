@@ -59,3 +59,7 @@ clean:
 # delete any images in the local cache
 delete-images:
 	docker rmi $(DBMAN_IMGS) -f
+
+# delete all exited containers
+delete-exited:
+	docker ps -a | grep Exit | cut -d ' ' -f 1 | xargs docker rm

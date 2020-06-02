@@ -19,7 +19,7 @@ func TestFetchReleasePlan(t *testing.T) {
 		t.Fail()
 	}
 	if len(plan.Releases) == 0 {
-		t.Errorf("no releases found in plan")
+		t.Errorf("no releases found in getPlan")
 		t.Fail()
 	}
 }

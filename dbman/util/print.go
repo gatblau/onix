@@ -1,4 +1,4 @@
-//   Onix Config Manager - Dbman
+//   Onix Config Db - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -27,15 +27,15 @@ func Print(obj interface{}, format string, filename string) {
 			panic(err)
 		}
 		exPath := filepath.Dir(ex)
-		// create a file with the release plan
+		// create a file with the release getPlan
 		f, err := os.Create(fmt.Sprintf("%v/%v.%v", exPath, filename, format))
 		if err != nil {
-			fmt.Printf("failed to create plan file: %s\n", err)
+			fmt.Printf("failed to create getPlan file: %s\n", err)
 		}
 		f.WriteString(toString(obj, format))
 		f.Close()
 	} else {
-		// print the plan
+		// print the getPlan
 		fmt.Println(toString(obj, format))
 	}
 }
