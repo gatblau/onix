@@ -9,9 +9,8 @@ func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
 	configCmd := InitialiseConfigCmd()
 	releaseCmd := InitialiseReleaseCmd()
-	checkCmd := NewCheckCmd()
 	dbCmd := InitialiseDbCmd()
-	rootCmd.Command.AddCommand(releaseCmd.cmd, dbCmd.cmd, configCmd.cmd, checkCmd.cmd)
+	rootCmd.Command.AddCommand(releaseCmd.cmd, dbCmd.cmd, configCmd.cmd)
 	return rootCmd
 }
 
@@ -41,6 +40,7 @@ func InitialiseConfigCmd() *ConfigCmd {
 	cfgUseCmd := NewConfigUseCmd()
 	cfgListCmd := NewConfigListCmd()
 	cfgRmCmd := NewConfigDeleteCmd()
-	cfgCmd.cmd.AddCommand(cfgSetCmd.cmd, cfgShowCmd.cmd, cfgUseCmd.cmd, cfgListCmd.cmd, cfgRmCmd.cmd)
+	checkCmd := NewCheckCmd()
+	cfgCmd.cmd.AddCommand(cfgSetCmd.cmd, cfgShowCmd.cmd, cfgUseCmd.cmd, cfgListCmd.cmd, cfgRmCmd.cmd, checkCmd.cmd)
 	return cfgCmd
 }

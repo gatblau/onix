@@ -1,4 +1,4 @@
-//   Onix Config Manager - Dbman
+//   Onix Config Db - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -6,38 +6,48 @@
 package util
 
 import (
+	"fmt"
 	"github.com/gatblau/oxc"
 )
 
 var DM *DbMan
 
 type DbMan struct {
-	Cfg  *AppCfg
-	info *ScriptSource
+	// configuration
+	Cfg *AppCfg
+	// scrips manager
+	script *ScriptManager
+	// database manager
+	db Db
 }
 
 func NewDbMan() (*DbMan, error) {
+	// create an instance of the current configuration set
 	cfg := NewAppCfg("", "")
-	scriptClient, err := oxc.NewClient(NewClientConf(cfg))
+	// create an instance of the script http client
+	scriptClient, err := oxc.NewClient(NewOxClientConf(cfg))
 	if err != nil {
 		return nil, err
 	}
-	rInfo, err := NewScriptSource(cfg, scriptClient)
+	// create an instance of the script manager
+	rInfo, err := NewScriptManager(cfg, scriptClient)
 	if err != nil {
 		return nil, err
 	}
+	pgdb := NewPgDb(cfg)
 	return &DbMan{
-		Cfg:  cfg,
-		info: rInfo,
+		Cfg:    cfg,
+		script: rInfo,
+		db:     pgdb,
 	}, nil
 }
 
 func (dm *DbMan) GetReleasePlan() (*Plan, error) {
-	return dm.info.fetchPlan()
+	return dm.script.fetchPlan()
 }
 
 func (dm *DbMan) GetReleaseInfo(appVersion string) (*Release, error) {
-	return dm.info.fetchRelease(appVersion)
+	return dm.script.fetchRelease(appVersion)
 }
 
 func (dm *DbMan) SaveConfig() {
@@ -49,7 +59,7 @@ func (dm *DbMan) SetConfig(key string, value string) {
 }
 
 func (dm *DbMan) GetConfig(key string) {
-	dm.Cfg.get(key)
+	dm.Cfg.Get(key)
 }
 
 func (dm *DbMan) PrintConfig() {
@@ -66,4 +76,21 @@ func (dm *DbMan) GetCurrentConfigFile() string {
 
 func (dm *DbMan) GetCurrentDir() string {
 	return dm.Cfg.root.path()
+}
+
+func (dm *DbMan) Check() {
+	fmt.Printf("checking: can I connect to schema.uri? : '%v'\n", dm.Cfg.Get(SchemaURI))
+	_, err := dm.script.fetchPlan()
+	if err != nil {
+		fmt.Printf("oops! check failed: %v\n", err)
+	} else {
+		fmt.Printf("yeah! check suceeded!\n")
+	}
+	fmt.Printf("checking: can I connect to db.provider? : '%v'\n", dm.Cfg.Get(DbProvider))
+	_, err = dm.db.CanConnect()
+	if err != nil {
+		fmt.Printf("oops! check failed: %v\n", err)
+	} else {
+		fmt.Printf("yeah! check suceeded!\n")
+	}
 }

@@ -1,4 +1,4 @@
-//   Onix Config Manager - Dbman
+//   Onix Config Db - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -21,7 +21,7 @@ func NewRootCmd() *RootCmd {
 			Use:   "dbman",
 			Short: "database manager",
 			Long: `dbman is a CLI tool to manage database schema released versions, upgrade data and perform database backups and restores.
-	dbman is part of (and used by) Onix Configuration Manager (see https://onix.gatblau.org) to manage its configuration database.
+	dbman is part of (and used by) Onix Configuration Db (see https://onix.gatblau.org) to manage its configuration database.
 	dbman can also be run from a container (when in http mode) to manage the data / schema life cycle of databases from a container platform.`,
 		},
 	}

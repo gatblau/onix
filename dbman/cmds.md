@@ -17,4 +17,5 @@ The command hierarchy is:
     - upgrade (upgrades to a specific release)
     - backup (backups the database)
     - restore (restores the database)
+- check (check that tools and connections are working for the current config set)
 - serve (starts dbman as an http service)

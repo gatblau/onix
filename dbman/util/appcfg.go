@@ -1,4 +1,4 @@
-//   Onix Config Manager - Dbman
+//   Onix Config Db - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -17,7 +17,9 @@ const (
 	SchemaURI      = "Schema.URI"
 	SchemaUsername = "Schema.Username"
 	SchemaToken    = "Schema.Token"
-	DbConnString   = "Db.ConnString"
+	DbProvider     = "Db.Provider"
+	DbHost         = "Db.Host"
+	DbPort         = "Db.Port"
 	DbName         = "Db.Name"
 	DbUsername     = "Db.Username"
 	DbPassword     = "Db.Password"
@@ -27,8 +29,8 @@ const (
 type AppCfg struct {
 	root *Cache
 	cfg  *viper.Viper
-	path string
-	name string
+	// path string
+	// name string
 }
 
 // create a new instance
@@ -101,7 +103,9 @@ func (c *AppCfg) load(path string, name string) error {
 	_ = c.cfg.BindEnv("Http.Password")
 	_ = c.cfg.BindEnv("Http.Metrics")
 	_ = c.cfg.BindEnv("Db.Name")
-	_ = c.cfg.BindEnv("Db.ConnString")
+	_ = c.cfg.BindEnv("Db.Host")
+	_ = c.cfg.BindEnv("Db.Port")
+	_ = c.cfg.BindEnv("Db.Provider")
 	_ = c.cfg.BindEnv("Db.Username")
 	_ = c.cfg.BindEnv("Db.Password")
 	_ = c.cfg.BindEnv("Schema.URI")
@@ -171,7 +175,7 @@ func (c *AppCfg) set(key string, value string) bool {
 }
 
 // get a configuration value
-func (c *AppCfg) get(key string) string {
+func (c *AppCfg) Get(key string) string {
 	return c.cfg.GetString(key)
 }
 

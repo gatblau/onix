@@ -1,4 +1,4 @@
-//   Onix Config Manager - Dbman
+//   Onix Config Db - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -50,8 +50,10 @@ LogLevel = "Warning"
 
 # configuration for the Onix Web API integration
 [Db]
+    Provider    = "pgsql"
     Name        = "onix"
-    ConnString  = "http://localhost:8080"
+    Host        = "localhost"
+    Port        = "5432"
     Username    = "admin"
     Password    = "0n1x"
 
