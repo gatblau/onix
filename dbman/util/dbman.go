@@ -1,4 +1,4 @@
-//   Onix Config Db - Dbman
+//   Onix Config DatabaseProvider - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -6,6 +6,7 @@
 package util
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gatblau/oxc"
 )
@@ -18,7 +19,7 @@ type DbMan struct {
 	// scrips manager
 	script *ScriptManager
 	// database manager
-	db Db
+	db DatabaseProvider
 }
 
 func NewDbMan() (*DbMan, error) {
@@ -30,15 +31,15 @@ func NewDbMan() (*DbMan, error) {
 		return nil, err
 	}
 	// create an instance of the script manager
-	rInfo, err := NewScriptManager(cfg, scriptClient)
+	scriptManager, err := NewScriptManager(cfg, scriptClient)
 	if err != nil {
 		return nil, err
 	}
-	pgdb := NewPgDb(cfg)
+	dbProvider := NewDb(cfg)
 	return &DbMan{
 		Cfg:    cfg,
-		script: rInfo,
-		db:     pgdb,
+		script: scriptManager,
+		db:     dbProvider,
 	}, nil
 }
 
@@ -62,35 +63,122 @@ func (dm *DbMan) GetConfig(key string) {
 	dm.Cfg.Get(key)
 }
 
-func (dm *DbMan) PrintConfig() {
+// print the current configuration set to stdout
+func (dm *DbMan) PrintConfigSet() {
 	dm.Cfg.print()
 }
 
-func (dm *DbMan) Use(filepath string, name string) {
+// use the configuration set specified by name
+// name: the name of the configuration set to use
+// filepath: the path to the configuration set
+func (dm *DbMan) UseConfigSet(filepath string, name string) {
 	dm.Cfg.load(filepath, name)
 }
 
-func (dm *DbMan) GetCurrentConfigFile() string {
+// get the content of the current configuration set
+func (dm *DbMan) GetConfigSet() string {
 	return dm.Cfg.ConfigFileUsed()
 }
 
-func (dm *DbMan) GetCurrentDir() string {
+// get the current configuration directory
+func (dm *DbMan) GetConfigSetDir() string {
 	return dm.Cfg.root.path()
 }
 
-func (dm *DbMan) Check() {
-	fmt.Printf("checking: can I connect to schema.uri? : '%v'\n", dm.Cfg.Get(SchemaURI))
+// performs various connectivity checks using the information in the current configuration set
+// returns a map containing entries with the type of check and the result
+func (dm *DbMan) CheckConfigSet() map[string]string {
+	results := make(map[string]string)
+	// try and fetch the release plan
 	_, err := dm.script.fetchPlan()
 	if err != nil {
-		fmt.Printf("oops! check failed: %v\n", err)
+		fmt.Printf("!!! check failed: %v\n", err)
+		results["scripts uri"] = err.Error()
 	} else {
-		fmt.Printf("yeah! check suceeded!\n")
+		results["scripts uri"] = "OK"
 	}
-	fmt.Printf("checking: can I connect to db.provider? : '%v'\n", dm.Cfg.Get(DbProvider))
+	// try and connect to the database
 	_, err = dm.db.CanConnect()
 	if err != nil {
-		fmt.Printf("oops! check failed: %v\n", err)
+		results["db connection"] = fmt.Sprintf("FAILED: %v", err)
 	} else {
-		fmt.Printf("yeah! check suceeded!\n")
+		results["db connection"] = "OK"
 	}
+	return results
+}
+
+// initialises the database (i.e. create database, user, extensions, etc)
+// it does not include schema deployment or upgrades
+func (dm *DbMan) InitialiseDb() error {
+	fmt.Printf("? I am fetching database initialisation info.")
+	init, err := dm.script.fetchInit()
+	if err != nil {
+		return err
+	}
+	fmt.Printf("? I am applying the database initialisation scripts.")
+	err = dm.db.Initialise(init)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("? I am creating the database version tracking table.")
+	// NOTE: its schema is enforced by DbMan
+	err = dm.db.CreateVersionTable()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (dm *DbMan) Deploy(targetAppVersion string) error {
+	var (
+		newDb             bool = false
+		currentAppVersion string
+	)
+	// check if the database exists
+	exist, err := dm.db.Exists()
+	if err != nil {
+		return err
+	}
+	// if the database does not exists, then create it
+	if !exist {
+		fmt.Printf("! I could not find the database '%v': proceeding to create it.\n", dm.Cfg.Get(DbName))
+		err := dm.InitialiseDb()
+		if err != nil {
+			return err
+		}
+		// a new database has been created
+		newDb = true
+	}
+	// if the database already exists, the it needs to check what is the current version
+	if !newDb {
+		fmt.Printf("? I am checking database version compatibility for requested version '%v'\n", targetAppVersion)
+		// get database version
+		currentAppVersion, _, err = dm.db.GetVersion()
+		// if the currently deployed db version does not match the target version
+		if currentAppVersion != targetAppVersion {
+			// should not deploy the schemas, more likely an upgrade is needed?
+			return errors.New(fmt.Sprintf("!!! I cannot deploy the database schemas for application version '%v' as it differs from the existing application version '%v'\n", currentAppVersion, targetAppVersion))
+		}
+	}
+	fmt.Printf("? I am fetching database release for application version '%v'.\n", currentAppVersion)
+	release, err := dm.script.fetchRelease(currentAppVersion)
+	if err != nil {
+		return err
+	}
+	// fetches the release plan
+	plan, err := dm.GetReleasePlan()
+	if err != nil {
+		return err
+	}
+	// get release information for the target application version
+	info := plan.info(targetAppVersion)
+	if info == nil {
+		return errors.New(fmt.Sprintf("!!! I cannot find release information ofr application version '%v'", targetAppVersion))
+	}
+	// fetches the release scripts
+	for _, schema := range release.Schemas {
+		url := fmt.Sprintf("%v/%v/%v", dm.Cfg.Get(SchemaURI), info.Path, schema.File)
+		fmt.Printf(url)
+	}
+	return nil
 }

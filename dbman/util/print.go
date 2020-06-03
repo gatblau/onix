@@ -1,4 +1,4 @@
-//   Onix Config Db - Dbman
+//   Onix Config DatabaseProvider - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -50,17 +50,17 @@ func toString(obj interface{}, format string) string {
 	case "yaml":
 		o, err := yaml.Marshal(obj)
 		if err != nil {
-			fmt.Printf("oops! cannot convert output to yaml: %v", err)
+			fmt.Printf("!!! cannot convert output to yaml: %v", err)
 		}
 		return string(o)
 	case "json":
 		o, err := json.MarshalIndent(obj, "", " ")
 		if err != nil {
-			fmt.Printf("oops! cannot convert output to json: %v", err)
+			fmt.Printf("!!! cannot convert output to json: %v", err)
 		}
 		return string(o)
 	default:
-		fmt.Printf("oops! output format %v not supported, try yaml or json", format)
+		fmt.Printf("!!! output format %v not supported, try yaml or json", format)
 	}
 	return ""
 }

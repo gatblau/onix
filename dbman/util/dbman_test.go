@@ -30,5 +30,13 @@ func TestSaveConfig(t *testing.T) {
 }
 
 func TestUseConfig(t *testing.T) {
-	dbman.Use("", "myapp")
+	dbman.UseConfigSet("", "myapp")
+}
+
+func TestDbMan_InitialiseDb(t *testing.T) {
+	err := dbman.InitialiseDb()
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
 }

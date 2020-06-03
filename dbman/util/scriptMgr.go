@@ -1,4 +1,4 @@
-//   Onix Config Db - Dbman
+//   Onix Config DatabaseProvider - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gatblau/oxc"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -42,18 +43,48 @@ func NewOxClientConf(cfg *AppCfg) *oxc.ClientConf {
 
 // get database initialisation information
 func (s *ScriptManager) fetchInit() (*DbInit, error) {
+	// fetch the db init manifest
 	response, err := s.client.Get(fmt.Sprintf("%s/init/init.json", s.get(SchemaURI)), s.addHttpHeaders)
 	if err != nil {
 		return nil, err
 	}
 	init := &DbInit{}
 	init, err = init.decode(response)
-	defer func() {
-		if ferr := response.Body.Close(); ferr != nil {
-			err = ferr
+	if err != nil {
+		err = errors.New(fmt.Sprintf("database initialisation manifest is not in the right format: %v\n", err))
+	}
+	err = response.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+	// creates a result to hold the fetched scripts
+	result := &DbInit{
+		Items: make([]Item, len(init.Items)),
+	}
+
+	// for each item retrieve the underlying db script
+	for ix, item := range init.Items {
+		// fetch the db script
+		response, err = s.client.Get(fmt.Sprintf("%s/init/%s", s.get(SchemaURI), item.Script), s.addHttpHeaders)
+		// decode response into a string
+		if response.StatusCode == http.StatusOK {
+			bodyBytes, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				response.Body.Close()
+				return nil, err
+			}
+			bodyString := string(bodyBytes)
+			// updates the item script with the script content fetched
+			item.Script = bodyString
+			// assign the item to the result
+			result.Items[ix] = item
 		}
-	}()
-	return init, err
+		if err != nil {
+			return nil, err
+		}
+		response.Body.Close()
+	}
+	return result, err
 }
 
 // access a cached plan reference

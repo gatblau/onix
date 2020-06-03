@@ -1,4 +1,4 @@
-//   Onix Config Db - Dbman
+//   Onix Config DatabaseProvider - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -42,4 +42,15 @@ func (plan *Plan) decode(response *http.Response) (*Plan, error) {
 	result := new(Plan)
 	err := json.NewDecoder(response.Body).Decode(result)
 	return result, err
+}
+
+// return the info for the release of the specified app version
+// Info: release information
+func (plan *Plan) info(appVersion string) *Info {
+	for _, release := range plan.Releases {
+		if release.AppVersion == appVersion {
+			return &release
+		}
+	}
+	return nil
 }

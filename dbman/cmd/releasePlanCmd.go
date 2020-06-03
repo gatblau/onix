@@ -1,4 +1,4 @@
-//   Onix Config Db - Dbman
+//   Onix Config DatabaseProvider - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -36,7 +36,7 @@ func (c *ReleasePlanCmd) run(cmd *cobra.Command, args []string) {
 	// fetch the release plan
 	plan, err := DM.GetReleasePlan()
 	if err != nil {
-		fmt.Printf("oops! cannot get release plan: %v", err)
+		fmt.Printf("!!! cannot get release plan: %v", err)
 		return
 	}
 	Print(plan, c.format, c.filename)

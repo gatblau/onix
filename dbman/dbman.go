@@ -33,7 +33,7 @@ type DbMan struct {
 
 // func (m *DbMan) listen() {
 // 	mux := mux.NewRouter()
-// 	mux.Use(m.loggingMiddleware)
+// 	mux.UseConfigSet(m.loggingMiddleware)
 //
 // 	// registers web handlers
 // 	log.Trace().Msg("registering web root / and liveliness probe /live handlers")

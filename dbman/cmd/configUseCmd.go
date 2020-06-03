@@ -1,4 +1,4 @@
-//   Onix Config Db - Dbman
+//   Onix Config DatabaseProvider - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -32,11 +32,11 @@ func NewConfigUseCmd() *ConfigUseCmd {
 
 func (c *ConfigUseCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) > 0 {
-		fmt.Print("oops! I do not take any arguments, use flags instead\n")
+		fmt.Print("!!! I do not take any arguments, use flags instead\n")
 	}
 	fmt.Printf("I am currently using the configuration from %v\n", DM.Cfg.ConfigFileUsed())
 	if len(c.cfgPath) > 0 || len(c.cfgName) > 0 {
-		DM.Use(c.cfgPath, c.cfgName)
+		DM.UseConfigSet(c.cfgPath, c.cfgName)
 		fmt.Printf("I have changed it to %v\n", DM.Cfg.ConfigFileUsed())
 	}
 }
