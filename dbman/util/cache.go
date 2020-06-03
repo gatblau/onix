@@ -1,4 +1,4 @@
-//   Onix Config Db - Dbman
+//   Onix Config DatabaseProvider - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -39,7 +39,7 @@ func (c *Cache) load() {
 		c.save()
 		err := c.cfg.ReadInConfig()
 		if err != nil {
-			fmt.Printf("oops! I cannot save root configuration: %v", err)
+			fmt.Printf("!!! I cannot save root configuration: %v", err)
 		}
 	}
 }
@@ -51,7 +51,7 @@ func (c *Cache) save() {
 		// the file does not exist then try create it
 		err := c.cfg.SafeWriteConfig()
 		if err != nil {
-			fmt.Printf("oops! I cannot save cache: %v", err)
+			fmt.Printf("!!! I cannot save cache: %v", err)
 		}
 	}
 }
@@ -79,13 +79,13 @@ func (c *Cache) setName(name string) {
 		strings.Contains(name, ".yml") ||
 		strings.Contains(name, ".yaml") ||
 		strings.Contains(name, ".txt") {
-		fmt.Printf("oops! I found a file extension in the configuration filename '%v': it should not contain any extension", name)
+		fmt.Printf("!!! I found a file extension in the configuration filename '%v': it should not contain any extension", name)
 		return
 	}
 
 	// invalid if the file name is prepended by '.'
 	if strings.Index(name, ".") == 1 {
-		fmt.Printf("oops! I found an invalid name '%v': it should not start with '.'", name)
+		fmt.Printf("!!! I found an invalid name '%v': it should not start with '.'", name)
 		return
 	}
 	c.cfg.Set("name", name)
@@ -100,7 +100,7 @@ func homeDir() string {
 	// find home directory
 	home, err := homedir.Dir()
 	if err != nil {
-		fmt.Printf("oops! I cannot find the home directory: %v\n", err)
+		fmt.Printf("!!! I cannot find the home directory: %v\n", err)
 		return ""
 	}
 	return home

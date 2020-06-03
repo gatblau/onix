@@ -1,4 +1,4 @@
-//   Onix Config Db - Dbman
+//   Onix Config DatabaseProvider - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -6,6 +6,7 @@
 package cmd
 
 import (
+	"fmt"
 	. "github.com/gatblau/onix/dbman/util"
 	"github.com/spf13/cobra"
 )
@@ -26,5 +27,8 @@ func NewCheckCmd() *CheckCmd {
 }
 
 func (c *CheckCmd) Run(cmd *cobra.Command, args []string) {
-	DM.Check()
+	results := DM.CheckConfigSet()
+	for check, result := range results {
+		fmt.Printf("[%v] => %v\n", check, result)
+	}
 }

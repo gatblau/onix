@@ -1,4 +1,4 @@
-//   Onix Config Db - Dbman
+//   Onix Config DatabaseProvider - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -39,7 +39,7 @@ func (c *ReleaseInfoCmd) run(cmd *cobra.Command, args []string) {
 	// get the release manifest that matches the app version
 	release, err := DM.GetReleaseInfo(appVer)
 	if err != nil {
-		fmt.Sprintf("oops! cannot fetch release information: %v", err)
+		fmt.Sprintf("!!! cannot fetch release information: %v", err)
 		return
 	}
 	Print(release, c.format, c.filename)

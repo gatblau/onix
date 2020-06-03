@@ -1,4 +1,4 @@
-//   Onix Config Db - Dbman
+//   Onix Config DatabaseProvider - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -29,13 +29,13 @@ func NewConfigDeleteCmd() *ConfigDeleteCmd {
 
 func (c *ConfigDeleteCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) == 0 {
-		fmt.Println("oops! I need to know the configuration set name")
+		fmt.Println("!!! I need to know the configuration set name")
 		return
 	}
-	err := os.Remove(fmt.Sprintf("%v/.dbman_%v.toml", DM.GetCurrentDir(), args[0]))
+	err := os.Remove(fmt.Sprintf("%v/.dbman_%v.toml", DM.GetConfigSetDir(), args[0]))
 
 	if err != nil {
-		fmt.Printf("oops! I could not remove configuration %v: %v\n", args[0], err)
+		fmt.Printf("!!! I could not remove configuration %v: %v\n", args[0], err)
 		return
 	}
 }

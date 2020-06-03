@@ -1,4 +1,4 @@
-//   Onix Config Db - Dbman
+//   Onix Config DatabaseProvider - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -17,12 +17,13 @@ const (
 	SchemaURI      = "Schema.URI"
 	SchemaUsername = "Schema.Username"
 	SchemaToken    = "Schema.Token"
-	DbProvider     = "Db.Provider"
-	DbHost         = "Db.Host"
-	DbPort         = "Db.Port"
-	DbName         = "Db.Name"
-	DbUsername     = "Db.Username"
-	DbPassword     = "Db.Password"
+	DbProvider     = "DatabaseProvider.Provider"
+	DbHost         = "DatabaseProvider.Host"
+	DbPort         = "DatabaseProvider.Port"
+	DbName         = "DatabaseProvider.Name"
+	DbUsername     = "DatabaseProvider.Username"
+	DbPassword     = "DatabaseProvider.Password"
+	DbAdminPwd     = "DatabaseProvider.AdminPwd"
 )
 
 // dbman configuration management struct
@@ -102,12 +103,12 @@ func (c *AppCfg) load(path string, name string) error {
 	_ = c.cfg.BindEnv("Http.Username")
 	_ = c.cfg.BindEnv("Http.Password")
 	_ = c.cfg.BindEnv("Http.Metrics")
-	_ = c.cfg.BindEnv("Db.Name")
-	_ = c.cfg.BindEnv("Db.Host")
-	_ = c.cfg.BindEnv("Db.Port")
-	_ = c.cfg.BindEnv("Db.Provider")
-	_ = c.cfg.BindEnv("Db.Username")
-	_ = c.cfg.BindEnv("Db.Password")
+	_ = c.cfg.BindEnv("DatabaseProvider.Name")
+	_ = c.cfg.BindEnv("DatabaseProvider.Host")
+	_ = c.cfg.BindEnv("DatabaseProvider.Port")
+	_ = c.cfg.BindEnv("DatabaseProvider.Provider")
+	_ = c.cfg.BindEnv("DatabaseProvider.Username")
+	_ = c.cfg.BindEnv("DatabaseProvider.Password")
 	_ = c.cfg.BindEnv("Schema.URI")
 	_ = c.cfg.BindEnv("Schema.Username")
 	_ = c.cfg.BindEnv("Schema.Token")
@@ -125,19 +126,19 @@ func (c *AppCfg) createCfgFile(filePath string, filename string) error {
 	fmt.Println("I am writing configuration file to disk")
 	f, err := os.Create(fmt.Sprintf("%v/%v.toml", filePath, filename))
 	if err != nil {
-		fmt.Printf("oops! I failed to create a new configuration file: %s\n", err)
+		fmt.Printf("!!! I failed to create a new configuration file: %s\n", err)
 		return err
 	}
 	l, err := f.WriteString(cfgFile)
 	if err != nil {
-		fmt.Printf("oops! I failed to create a new configuration file: %s\n", err)
+		fmt.Printf("!!! I failed to create a new configuration file: %s\n", err)
 		f.Close()
 		return err
 	}
 	fmt.Printf("I have written %v bytes to %v/%v.toml\n", l, filePath, filename)
 	err = f.Close()
 	if err != nil {
-		fmt.Printf("oops! I cannot close the configuration file: %s\n", err)
+		fmt.Printf("!!! I cannot close the configuration file: %s\n", err)
 		return err
 	}
 	return err
@@ -162,16 +163,15 @@ func (c *AppCfg) contains(key string) bool {
 
 // set the configuration value for the passed-in key
 // return: true if the value was set or false otherwise
-func (c *AppCfg) set(key string, value string) bool {
+func (c *AppCfg) set(key string, value string) {
 	key = strings.ToLower(key)
-	validKey := c.contains(key)
-	// only updates if a valid key is passed in
-	if validKey {
-		c.cfg.Set(key, value)
-	} else {
-		fmt.Printf("oops! I cannot recognise the key '%v' and therfore cannot update the configuration\n", key)
+	// updates the key
+	c.cfg.Set(key, value)
+	// if key passed in is not standard (i.e. not part of the default set of config keys)
+	if !c.contains(key) {
+		// warn the user in case they misspelled a standard key
+		fmt.Printf("! The key '%v' you provided is not standard, I am adding it to the configuration set.\n", key)
 	}
-	return validKey
 }
 
 // get a configuration value
@@ -183,7 +183,7 @@ func (c *AppCfg) Get(key string) string {
 func (c *AppCfg) print() {
 	dat, err := ioutil.ReadFile(c.cfg.ConfigFileUsed())
 	if err != nil {
-		fmt.Sprintf("oops! I cannot read the configuration file: %v", err)
+		fmt.Sprintf("!!! I cannot read the configuration file: %v", err)
 		return
 	}
 	fmt.Printf("I am showing the content of %v\n", c.cfg.ConfigFileUsed())

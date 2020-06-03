@@ -15,8 +15,9 @@ LogLevel = "Warning"
     Name        = "onix"
     Host        = "localhost"
     Port        = "5432"
-    Username    = "admin"
-    Password    = "0n1x"
+    Username    = "onix"
+    Password    = "onix"
+    AdminPwd    = "onix"
 
 # configuration of database scripts remote repository
 [Schema]

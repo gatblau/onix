@@ -1,4 +1,4 @@
-//   Onix Config Db - Dbman
+//   Onix Config DatabaseProvider - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -6,17 +6,19 @@
 package util
 
 // implemented by database specific implementations
-type Db interface {
+type DatabaseProvider interface {
 	// check it can connect to the database server
 	CanConnect() (bool, error)
 	// check the database exists
 	Exists() (bool, error)
 	// create the database
-	Initialise() error
+	Initialise(init *DbInit) error
 	// get the database version information
 	GetVersion() (string, string, error)
 	// deploy the schemas and functions
 	Deploy() error
 	// upgrade the database
 	Upgrade() error
+	// create database version tracking table
+	CreateVersionTable() error
 }

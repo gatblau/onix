@@ -1,4 +1,4 @@
-//   Onix Config Db - Dbman
+//   Onix Config DatabaseProvider - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -13,12 +13,19 @@ import (
 )
 
 // database initialisation information
-type DbInit []struct {
+type DbInit struct {
+	Items []Item `json:"items"`
+}
+
+type Item struct {
+	Action string `json:"action"`
 	Script string `json:"script"`
-	Vars   []struct {
-		Name string `json:"name"`
-		From string `json:"from"`
-	} `json:"vars"`
+	Vars   []Var  `json:"vars"`
+}
+
+type Var struct {
+	Name string `json:"name"`
+	From string `json:"from"`
 }
 
 // get a JSON bytes reader for the Plan

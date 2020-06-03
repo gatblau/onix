@@ -1,4 +1,4 @@
-//   Onix Config Db - Dbman
+//   Onix Config DatabaseProvider - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -30,9 +30,9 @@ func NewConfigListCmd() *ConfigListCmd {
 
 func (c *ConfigListCmd) Run(cmd *cobra.Command, args []string) {
 	// get the files in the current path
-	files, err := ioutil.ReadDir(DM.GetCurrentDir())
+	files, err := ioutil.ReadDir(DM.GetConfigSetDir())
 	if err != nil {
-		fmt.Printf("oops! I cannot read from directory %v: %v", DM.GetCurrentDir(), err)
+		fmt.Printf("!!! I cannot read from directory %v: %v", DM.GetConfigSetDir(), err)
 		return
 	}
 	// print a list

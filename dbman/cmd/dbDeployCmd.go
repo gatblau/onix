@@ -6,8 +6,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -28,5 +26,6 @@ func NewDbDeployCmd() *DbDeployCmd {
 }
 
 func (c *DbDeployCmd) Run(cmd *cobra.Command, args []string) {
-	fmt.Println("deploy called")
+	// first initialises the database
+
 }
