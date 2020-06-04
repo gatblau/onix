@@ -14,19 +14,10 @@ import (
 
 // describes a database release
 type Release struct {
-	Release string `json:"release"`
-	Schemas []struct {
-		File     string `json:"file"`
-		Checksum string `json:"checksum"`
-	} `json:"schemas"`
-	Functions []struct {
-		File     string `json:"file"`
-		Checksum string `json:"checksum"`
-	} `json:"functions"`
-	Upgrade []struct {
-		File     string `json:"file"`
-		Checksum string `json:"checksum"`
-	} `json:"upgrade"`
+	Release   string   `json:"release"`
+	Schemas   []string `json:"schemas"`
+	Functions []string `json:"functions"`
+	Upgrade   []string `json:"upgrade"`
 }
 
 // get a JSON bytes reader for the Plan

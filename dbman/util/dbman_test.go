@@ -40,3 +40,11 @@ func TestDbMan_InitialiseDb(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestDbMan_Deploy(t *testing.T) {
+	err := dbman.Deploy("0.0.4")
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+}

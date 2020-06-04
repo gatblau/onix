@@ -17,13 +17,13 @@ const (
 	SchemaURI      = "Schema.URI"
 	SchemaUsername = "Schema.Username"
 	SchemaToken    = "Schema.Token"
-	DbProvider     = "DatabaseProvider.Provider"
-	DbHost         = "DatabaseProvider.Host"
-	DbPort         = "DatabaseProvider.Port"
-	DbName         = "DatabaseProvider.Name"
-	DbUsername     = "DatabaseProvider.Username"
-	DbPassword     = "DatabaseProvider.Password"
-	DbAdminPwd     = "DatabaseProvider.AdminPwd"
+	DbProvider     = "Db.Provider"
+	DbHost         = "Db.Host"
+	DbPort         = "Db.Port"
+	DbName         = "Db.Name"
+	DbUsername     = "Db.Username"
+	DbPassword     = "Db.Password"
+	DbAdminPwd     = "Db.AdminPwd"
 )
 
 // dbman configuration management struct

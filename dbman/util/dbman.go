@@ -89,7 +89,7 @@ func (dm *DbMan) GetConfigSetDir() string {
 // returns a map containing entries with the type of check and the result
 func (dm *DbMan) CheckConfigSet() map[string]string {
 	results := make(map[string]string)
-	// try and fetch the release plan
+	// try and fetch the getReleaseInfo plan
 	_, err := dm.script.fetchPlan()
 	if err != nil {
 		fmt.Printf("!!! check failed: %v\n", err)
@@ -98,7 +98,7 @@ func (dm *DbMan) CheckConfigSet() map[string]string {
 		results["scripts uri"] = "OK"
 	}
 	// try and connect to the database
-	_, err = dm.db.CanConnect()
+	_, err = dm.db.CanConnectToServer()
 	if err != nil {
 		results["db connection"] = fmt.Sprintf("FAILED: %v", err)
 	} else {
@@ -110,17 +110,17 @@ func (dm *DbMan) CheckConfigSet() map[string]string {
 // initialises the database (i.e. create database, user, extensions, etc)
 // it does not include schema deployment or upgrades
 func (dm *DbMan) InitialiseDb() error {
-	fmt.Printf("? I am fetching database initialisation info.")
+	fmt.Printf("? I am fetching database initialisation info.\n")
 	init, err := dm.script.fetchInit()
 	if err != nil {
 		return err
 	}
-	fmt.Printf("? I am applying the database initialisation scripts.")
-	err = dm.db.Initialise(init)
+	fmt.Printf("? I am applying the database initialisation scripts.\n")
+	err = dm.db.InitialiseDb(init)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("? I am creating the database version tracking table.")
+	fmt.Printf("? I am creating the database version tracking table.\n")
 	// NOTE: its schema is enforced by DbMan
 	err = dm.db.CreateVersionTable()
 	if err != nil {
@@ -131,14 +131,10 @@ func (dm *DbMan) InitialiseDb() error {
 
 func (dm *DbMan) Deploy(targetAppVersion string) error {
 	var (
-		newDb             bool = false
-		currentAppVersion string
+		newDb bool = false
 	)
 	// check if the database exists
-	exist, err := dm.db.Exists()
-	if err != nil {
-		return err
-	}
+	exist, _ := dm.db.DbExists()
 	// if the database does not exists, then create it
 	if !exist {
 		fmt.Printf("! I could not find the database '%v': proceeding to create it.\n", dm.Cfg.Get(DbName))
@@ -153,32 +149,18 @@ func (dm *DbMan) Deploy(targetAppVersion string) error {
 	if !newDb {
 		fmt.Printf("? I am checking database version compatibility for requested version '%v'\n", targetAppVersion)
 		// get database version
-		currentAppVersion, _, err = dm.db.GetVersion()
-		// if the currently deployed db version does not match the target version
-		if currentAppVersion != targetAppVersion {
+		currentAppVersion, _, _ := dm.db.GetVersion()
+		// if the currently deployed db version exists and it does not match the target version
+		if len(currentAppVersion) > 0 && currentAppVersion != targetAppVersion {
 			// should not deploy the schemas, more likely an upgrade is needed?
 			return errors.New(fmt.Sprintf("!!! I cannot deploy the database schemas for application version '%v' as it differs from the existing application version '%v'\n", currentAppVersion, targetAppVersion))
 		}
 	}
-	fmt.Printf("? I am fetching database release for application version '%v'.\n", currentAppVersion)
-	release, err := dm.script.fetchRelease(currentAppVersion)
+	fmt.Printf("? I am fetching database release info for application version '%v'.\n", targetAppVersion)
+	release, err := dm.script.fetchRelease(targetAppVersion)
 	if err != nil {
 		return err
 	}
-	// fetches the release plan
-	plan, err := dm.GetReleasePlan()
-	if err != nil {
-		return err
-	}
-	// get release information for the target application version
-	info := plan.info(targetAppVersion)
-	if info == nil {
-		return errors.New(fmt.Sprintf("!!! I cannot find release information ofr application version '%v'", targetAppVersion))
-	}
-	// fetches the release scripts
-	for _, schema := range release.Schemas {
-		url := fmt.Sprintf("%v/%v/%v", dm.Cfg.Get(SchemaURI), info.Path, schema.File)
-		fmt.Printf(url)
-	}
-	return nil
+	// deploys the release
+	return dm.db.DeployDb(release)
 }

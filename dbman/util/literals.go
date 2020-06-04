@@ -49,7 +49,7 @@ LogLevel = "Warning"
 	Password    = "0n1x"
 
 # configuration for the Onix Web API integration
-[DatabaseProvider]
+[Db]
     Provider    = "pgsql"
     Name        = "onix"
     Host        = "localhost"
