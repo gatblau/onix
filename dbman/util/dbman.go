@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gatblau/oxc"
+	"strings"
 )
 
 var DM *DbMan
@@ -20,6 +21,8 @@ type DbMan struct {
 	script *ScriptManager
 	// database manager
 	db DatabaseProvider
+	// is it ready?
+	ready bool
 }
 
 func NewDbMan() (*DbMan, error) {
@@ -163,4 +166,23 @@ func (dm *DbMan) Deploy(targetAppVersion string) error {
 	}
 	// deploys the release
 	return dm.db.DeployDb(release)
+}
+
+func (dm *DbMan) CheckReady() (bool, error) {
+	// ready if check passes
+	results := dm.CheckConfigSet()
+	for check, result := range results {
+		if !strings.Contains(strings.ToLower(result), "ok") {
+			dm.ready = false
+			return false, errors.New(fmt.Sprintf("%v: %v", check, result))
+		}
+	}
+	dm.ready = true
+	return true, nil
+}
+
+// launch DbMan as an http server
+func (dm *DbMan) Serve() {
+	server := NewServer(dm.Cfg)
+	server.Serve()
 }

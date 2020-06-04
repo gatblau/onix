@@ -14,6 +14,11 @@ import (
 )
 
 const (
+	HttpMetrics    = "Http.Metrics"
+	HttpAuthMode   = "Http.AuthMode"
+	HttpUsername   = "Http.Username"
+	HttpPassword   = "Http.Password"
+	HttpPort       = "Http.Port"
 	SchemaURI      = "Schema.URI"
 	SchemaUsername = "Schema.Username"
 	SchemaToken    = "Schema.Token"
@@ -97,7 +102,6 @@ func (c *AppCfg) load(path string, name string) error {
 	// replace character to support environment variable format
 	c.cfg.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	_ = c.cfg.BindEnv("LogLevel")
 	_ = c.cfg.BindEnv("Http.Port")
 	_ = c.cfg.BindEnv("Http.AuthMode")
 	_ = c.cfg.BindEnv("Http.Username")
@@ -123,7 +127,7 @@ func (c *AppCfg) ConfigFileUsed() string {
 
 // creates a default configuration file
 func (c *AppCfg) createCfgFile(filePath string, filename string) error {
-	fmt.Println("I am writing configuration file to disk")
+	fmt.Println("? I am writing configuration file to disk")
 	f, err := os.Create(fmt.Sprintf("%v/%v.toml", filePath, filename))
 	if err != nil {
 		fmt.Printf("!!! I failed to create a new configuration file: %s\n", err)
@@ -135,7 +139,7 @@ func (c *AppCfg) createCfgFile(filePath string, filename string) error {
 		f.Close()
 		return err
 	}
-	fmt.Printf("I have written %v bytes to %v/%v.toml\n", l, filePath, filename)
+	fmt.Printf("? I have written %v bytes to %v/%v.toml\n", l, filePath, filename)
 	err = f.Close()
 	if err != nil {
 		fmt.Printf("!!! I cannot close the configuration file: %s\n", err)
@@ -179,6 +183,10 @@ func (c *AppCfg) Get(key string) string {
 	return c.cfg.GetString(key)
 }
 
+func (c *AppCfg) GetBool(key string) bool {
+	return c.cfg.GetBool(key)
+}
+
 // print the current configuration file
 func (c *AppCfg) print() {
 	dat, err := ioutil.ReadFile(c.cfg.ConfigFileUsed())
@@ -186,6 +194,33 @@ func (c *AppCfg) print() {
 		fmt.Sprintf("!!! I cannot read the configuration file: %v", err)
 		return
 	}
-	fmt.Printf("I am showing the content of %v\n", c.cfg.ConfigFileUsed())
+	fmt.Printf("? I am showing the content of %v\n", c.cfg.ConfigFileUsed())
 	fmt.Print(string(dat))
 }
+
+// default config file content
+const cfgFile = `
+# configuration for running DbMan in http mode
+[Http]
+	Metrics = "true"
+	AuthMode    = "basic"
+	Port        = "8085"
+	Username    = "admin"
+	Password    = "0n1x"
+
+# configuration for the Onix Web API integration
+[Db]
+    Provider    = "pgsql"
+    Name        = "onix"
+    Host        = "localhost"
+    Port        = "5432"
+    Username    = "onix"
+    Password    = "onix"
+    AdminPwd    = "onix"
+
+# configuration of database scripts remote repository
+[Schema]
+    URI         = "https://raw.githubusercontent.com/gatblau/ox-db/master"
+    Username    = ""
+    Token       = ""
+`

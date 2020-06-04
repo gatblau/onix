@@ -7,10 +7,11 @@ package cmd
 
 func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
+	serveCmd := NewServeCmd()
 	configCmd := InitialiseConfigCmd()
 	releaseCmd := InitialiseReleaseCmd()
 	dbCmd := InitialiseDbCmd()
-	rootCmd.Command.AddCommand(releaseCmd.cmd, dbCmd.cmd, configCmd.cmd)
+	rootCmd.Command.AddCommand(releaseCmd.cmd, dbCmd.cmd, configCmd.cmd, serveCmd.cmd)
 	return rootCmd
 }
 
