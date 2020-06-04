@@ -8,17 +8,17 @@ package util
 // implemented by database specific implementations
 type DatabaseProvider interface {
 	// check it can connect to the database server
-	CanConnect() (bool, error)
+	CanConnectToServer() (bool, error)
 	// check the database exists
-	Exists() (bool, error)
+	DbExists() (bool, error)
 	// create the database
-	Initialise(init *DbInit) error
+	InitialiseDb(init *DbInit) error
 	// get the database version information
 	GetVersion() (string, string, error)
 	// deploy the schemas and functions
-	Deploy() error
+	DeployDb(release *Release) error
 	// upgrade the database
-	Upgrade() error
+	UpgradeDb() error
 	// create database version tracking table
 	CreateVersionTable() error
 }

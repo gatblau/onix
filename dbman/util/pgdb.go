@@ -34,9 +34,9 @@ func NewDb(appCfg *AppCfg) DatabaseProvider {
 	}
 }
 
-// check a connection to the database can be established
-func (db *PgSQLProvider) CanConnect() (bool, error) {
-	conn, err := pgxpool.Connect(context.Background(), db.connString(false))
+// check a connection to the server can be established
+func (db *PgSQLProvider) CanConnectToServer() (bool, error) {
+	conn, err := pgxpool.Connect(context.Background(), db.connString(true, false))
 	if err != nil {
 		return false, err
 	}
@@ -45,31 +45,21 @@ func (db *PgSQLProvider) CanConnect() (bool, error) {
 }
 
 // checks if the database exists
-func (db *PgSQLProvider) Exists() (bool, error) {
-	conn, err := pgxpool.Connect(context.Background(), db.connString(true))
+func (db *PgSQLProvider) DbExists() (bool, error) {
+	conn, err := pgxpool.Connect(context.Background(), db.connString(true, true))
 	if err != nil {
 		fmt.Printf("!!! I cannot connect to database: %v\n", err)
 		return false, err
 	}
 	defer conn.Close()
 	var count int
-	err = conn.QueryRow(context.Background(), "SELECT 1 from pg_database WHERE datname='$1';", db.get(DbName)).Scan(&count)
-	if err != nil {
-		fmt.Printf("!!! I cannot check if the database exists: %v\n", err)
-	}
-	return count == 1, err
+	sql := fmt.Sprintf("SELECT 1 FROM pg_database WHERE datname='%s';", db.get(DbName))
+	err = conn.QueryRow(context.Background(), sql).Scan(&count)
+	return err == nil, err
 }
 
 // initialises the database from db init info
-func (db *PgSQLProvider) Initialise(init *DbInit) error {
-	// connect to the database
-	conn, err := pgxpool.Connect(context.Background(), db.connString(true))
-	if err != nil {
-		fmt.Printf("!!! I am unable to connect to database: %v\n", err)
-		return err
-	}
-	defer conn.Close()
-
+func (db *PgSQLProvider) InitialiseDb(init *DbInit) error {
 	for _, item := range init.Items {
 		// prepares to execute script
 		// print the action to be carried out
@@ -83,19 +73,27 @@ func (db *PgSQLProvider) Initialise(init *DbInit) error {
 			// update the value of script with the merged result
 			item.Script = result
 		}
+		// connect to the server or database as admin or user
+		conn, err := pgxpool.Connect(context.Background(), db.connString(item.Admin, item.Db))
+		if err != nil {
+			fmt.Printf("!!! I am unable to connect to database: %v\n", err)
+			return err
+		}
 		// execute the script
 		_, err = conn.Exec(context.Background(), item.Script)
 		// if an error is encountered then exit
 		if err != nil {
 			return err
 		}
+		// closes the connection
+		conn.Close()
 	}
 	return nil
 }
 
 // gets the current app and db version
 func (db *PgSQLProvider) GetVersion() (appVersion string, dbVersion string, err error) {
-	conn, err := db.newConn(false)
+	conn, err := db.newConn(false, true)
 	if err != nil {
 		return "", "", err
 	}
@@ -114,11 +112,29 @@ func (db *PgSQLProvider) GetVersion() (appVersion string, dbVersion string, err 
 }
 
 // deploy the database schemas
-func (db *PgSQLProvider) Deploy() error {
+func (db *PgSQLProvider) DeployDb(release *Release) error {
+	conn, err := db.newConn(false, true)
+	if err != nil {
+		return err
+	}
+	// deploy the schemas
+	for _, schema := range release.Schemas {
+		_, err := conn.Exec(context.Background(), schema)
+		if err != nil {
+			return err
+		}
+	}
+	// deploy the functions
+	for _, function := range release.Functions {
+		_, err := conn.Exec(context.Background(), function)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func (db *PgSQLProvider) Upgrade() error {
+func (db *PgSQLProvider) UpgradeDb() error {
 	return nil
 }
 
@@ -131,24 +147,32 @@ func (db *PgSQLProvider) get(key string) string {
 // admin:
 //  - if true, a connection using the postgres user is returned
 //  - if false, a connection using the database user is returned
-func (db *PgSQLProvider) connString(admin bool) string {
+// database:
+//  - if true, adds the database name to the connection string
+func (db *PgSQLProvider) connString(admin bool, database bool) string {
+	connStr := ""
 	if admin {
-		return fmt.Sprintf("postgresql://%v:%v@%v:%v",
+		connStr = fmt.Sprintf("postgresql://%v:%v@%v:%v",
 			"postgres",
 			db.get(DbAdminPwd),
 			db.get(DbHost),
 			db.get(DbPort))
+	} else {
+		connStr = fmt.Sprintf("postgresql://%v:%v@%v:%v",
+			db.get(DbUsername),
+			db.get(DbPassword),
+			db.get(DbHost),
+			db.get(DbPort))
 	}
-	return fmt.Sprintf("postgresql://%v:%v@%v:%v",
-		db.get(DbUsername),
-		db.get(DbPassword),
-		db.get(DbHost),
-		db.get(DbPort))
+	if database {
+		connStr = fmt.Sprintf("%v/%v", connStr, db.get(DbName))
+	}
+	return connStr
 }
 
 // create the version tracking table in the target database
 func (db *PgSQLProvider) CreateVersionTable() error {
-	conn, err := db.newConn(false)
+	conn, err := db.newConn(false, true)
 	if err != nil {
 		return err
 	}
@@ -158,8 +182,8 @@ func (db *PgSQLProvider) CreateVersionTable() error {
 }
 
 // create a new connection
-func (db *PgSQLProvider) newConn(admin bool) (*pgxpool.Pool, error) {
-	conn, err := pgxpool.Connect(context.Background(), db.connString(admin))
+func (db *PgSQLProvider) newConn(admin bool, database bool) (*pgxpool.Pool, error) {
+	conn, err := pgxpool.Connect(context.Background(), db.connString(admin, database))
 	if err != nil {
 		fmt.Printf("!!! I cannot connect to the database: %v\n", err)
 		return nil, err

@@ -16,10 +16,8 @@ import (
 
 // the source of database scripts
 type ScriptManager struct {
-	client    *oxc.Client
-	plan      *Plan
-	manifests []Release
-	cfg       *AppCfg
+	client *oxc.Client
+	cfg    *AppCfg
 }
 
 // factory function
@@ -61,7 +59,6 @@ func (s *ScriptManager) fetchInit() (*DbInit, error) {
 	result := &DbInit{
 		Items: make([]Item, len(init.Items)),
 	}
-
 	// for each item retrieve the underlying db script
 	for ix, item := range init.Items {
 		// fetch the db script
@@ -87,30 +84,10 @@ func (s *ScriptManager) fetchInit() (*DbInit, error) {
 	return result, err
 }
 
-// access a cached plan reference
-func (s *ScriptManager) getPlan() *Plan {
-	// if the plan is not fetched
-	if s.plan == nil {
-		// fetches it
-		err := s.loadPlan()
-		if err != nil {
-			fmt.Sprintf("cannot retrieve plan, %v", err)
-		}
-	}
-	return s.plan
-}
-
-// (re)loads the internal plan reference
-func (s *ScriptManager) loadPlan() error {
-	p, err := s.fetchPlan()
-	s.plan = p
-	return err
-}
-
-// fetches the release plan
+// fetches the getReleaseInfo plan
 func (s *ScriptManager) fetchPlan() (*Plan, error) {
 	if s.cfg == nil {
-		return nil, errors.New("configuration object not initialised when fetching release getPlan")
+		return nil, errors.New("configuration object not initialised when fetching getReleaseInfo getPlan")
 	}
 	response, err := s.client.Get(fmt.Sprintf("%s/plan.json", s.get(SchemaURI)), s.addHttpHeaders)
 	if err != nil {
@@ -126,21 +103,21 @@ func (s *ScriptManager) fetchPlan() (*Plan, error) {
 	return p, err
 }
 
-// fetches the scripts for a database release
+// fetches the scripts for a database getReleaseInfo
 func (s *ScriptManager) fetchRelease(appVersion string) (*Release, error) {
 	// if cfg not initialised, no point in continuing
 	if s.cfg == nil {
-		return nil, errors.New("configuration object not initialised when calling fetching release")
+		return nil, errors.New("configuration object not initialised when calling fetching getReleaseInfo")
 	}
-	// get the release information based on the
-	ri, err := s.release(appVersion)
+	// get the getReleaseInfo information based on the
+	ri, err := s.getReleaseInfo(appVersion)
 	if err != nil {
-		// could not find release information in the release plan
+		// could not find getReleaseInfo information in the getReleaseInfo plan
 		return nil, err
 	}
-	// builds a uri to fetch the specific release manifest
+	// builds a uri to fetch the specific getReleaseInfo manifest
 	uri := fmt.Sprintf("%s/%s/release.json", s.get(SchemaURI), ri.Path)
-	// fetch the release.json manifest
+	// fetch the getReleaseInfo.json manifest
 	response, err := s.client.Get(uri, s.addHttpHeaders)
 	// if the request was unsuccessful then return the error
 	if err != nil {
@@ -149,22 +126,46 @@ func (s *ScriptManager) fetchRelease(appVersion string) (*Release, error) {
 	// request was good so construct a release manifest reference
 	r := &Release{}
 	r, err = r.decode(response)
-	defer func() {
-		if ferr := response.Body.Close(); ferr != nil {
-			err = ferr
-		}
-	}()
+	if err != nil {
+		return nil, err
+	}
+	err = response.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+	// fetch the schema scripts
+	schemas, err := s.getScripts(ri.Path, r.Schemas)
+	if err != nil {
+		return nil, err
+	}
+	r.Schemas = schemas
+	// fetch function scripts
+	funcs, err := s.getScripts(ri.Path, r.Functions)
+	if err != nil {
+		return nil, err
+	}
+	r.Functions = funcs
+	// fetch upgrade scripts
+	up, err := s.getScripts(ri.Path, r.Upgrade)
+	if err != nil {
+		return nil, err
+	}
+	r.Upgrade = up
 	return r, err
 }
 
-// get the release information for a given application version
-func (s *ScriptManager) release(appVersion string) (*Info, error) {
-	for _, release := range s.getPlan().Releases {
+// get the getReleaseInfo information for a given application version
+func (s *ScriptManager) getReleaseInfo(appVersion string) (*Info, error) {
+	plan, err := s.fetchPlan()
+	if err != nil {
+		return nil, err
+	}
+	for _, release := range plan.Releases {
 		if release.AppVersion == appVersion {
 			return &release, nil
 		}
 	}
-	return nil, errors.New(fmt.Sprintf("information for application version '%s' does not exist in the release plan", appVersion))
+	return nil, errors.New(fmt.Sprintf("!!! information for application version '%s' does not exist in the release plan", appVersion))
 }
 
 // add http headers to the request object
@@ -183,4 +184,28 @@ func (s *ScriptManager) addHttpHeaders(req *http.Request, payload oxc.Serializab
 
 func (s *ScriptManager) get(key string) string {
 	return s.cfg.Get(key)
+}
+
+// returns a slice with release scripts
+// path: the release path
+// the list of file names under the path to read
+func (s *ScriptManager) getScripts(path string, files []string) ([]string, error) {
+	result := make([]string, len(files))
+	for ix, file := range files {
+		uri := fmt.Sprintf("%v/%v/%v", s.cfg.Get(SchemaURI), path, file)
+		response, err := s.client.Get(uri, s.addHttpHeaders)
+		if err != nil {
+			return nil, err
+		}
+		// decode response into a string
+		if response.StatusCode == http.StatusOK {
+			bodyBytes, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				response.Body.Close()
+				return nil, err
+			}
+			result[ix] = string(bodyBytes)
+		}
+	}
+	return result, nil
 }

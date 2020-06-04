@@ -27,7 +27,7 @@ func Print(obj interface{}, format string, filename string) {
 			panic(err)
 		}
 		exPath := filepath.Dir(ex)
-		// create a file with the release getPlan
+		// create a file with the getReleaseInfo getPlan
 		f, err := os.Create(fmt.Sprintf("%v/%v.%v", exPath, filename, format))
 		if err != nil {
 			fmt.Printf("failed to create getPlan file: %s\n", err)

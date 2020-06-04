@@ -44,8 +44,8 @@ func (plan *Plan) decode(response *http.Response) (*Plan, error) {
 	return result, err
 }
 
-// return the info for the release of the specified app version
-// Info: release information
+// return the info for the getReleaseInfo of the specified app version
+// Info: getReleaseInfo information
 func (plan *Plan) info(appVersion string) *Info {
 	for _, release := range plan.Releases {
 		if release.AppVersion == appVersion {

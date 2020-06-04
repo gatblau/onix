@@ -29,7 +29,7 @@ package util
 // 		t.Fail()
 // 	}
 // 	if len(r.Release) == 0 {
-// 		t.Error("release has no content")
+// 		t.Error("getReleaseInfo has no content")
 // 		t.Fail()
 // 	}
 // }

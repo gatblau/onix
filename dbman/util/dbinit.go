@@ -20,6 +20,8 @@ type DbInit struct {
 type Item struct {
 	Action string `json:"action"`
 	Script string `json:"script"`
+	Admin  bool   `json:"admin"`
+	Db     bool   `json:db`
 	Vars   []Var  `json:"vars"`
 }
 
