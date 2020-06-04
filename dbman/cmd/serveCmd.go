@@ -6,16 +6,25 @@
 package cmd
 
 import (
-	"fmt"
-
+	. "github.com/gatblau/onix/dbman/util"
 	"github.com/spf13/cobra"
 )
 
-var serveCmd = &cobra.Command{
-	Use:   "serve",
-	Short: "Runs as an HTTP service",
-	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("serve called")
-	},
+type ServeCmd struct {
+	cmd *cobra.Command
+}
+
+func NewServeCmd() *ServeCmd {
+	c := &ServeCmd{
+		cmd: &cobra.Command{
+			Use:     "serve",
+			Short:   "runs dbman as an http service",
+			Example: `dbman serve`,
+		}}
+	c.cmd.Run = c.Run
+	return c
+}
+
+func (c *ServeCmd) Run(cmd *cobra.Command, args []string) {
+	DM.Serve()
 }
