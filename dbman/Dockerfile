@@ -19,12 +19,13 @@ COPY . .
 RUN go get . && CGO_ENABLED=0 GOOS=linux go build -o dbman .
 
 # package stage: copy the binary into the deployment image
-FROM registry.access.redhat.com/ubi8/ubi-minimal
-MAINTAINER gatblau <onix@gatblau.org>
-LABEL author="gatblau.org"
+FROM registry.access.redhat.com/ubi8/ubi
+LABEL author="gatblau"
+LABEL maintainer="onix@gatblau.org"
 WORKDIR /app
-COPY --from=builder /app/dbman /app/config.toml ./
-RUN rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && microdnf update -y && rm -rf /var/cache/yum && microdnf install postgresql12 && microdnf clean all
+COPY --from=builder /app/dbman ./
+COPY --from=builder /app/.dbman.toml /app/.dbman_default.toml /
+#RUN rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && microdnf update -y && rm -rf /var/cache/yum && microdnf install postgresql12 && microdnf clean all
 USER 20
-CMD ["./dbman"]
+CMD ["/app/dbman", "serve"]
 EXPOSE 8085/tcp
