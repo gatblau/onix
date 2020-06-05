@@ -48,3 +48,11 @@ func TestDbMan_Deploy(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestDbMan_CheckConfigSet(t *testing.T) {
+	err := dbman.CheckConfigSet()
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+}

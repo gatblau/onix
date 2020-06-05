@@ -82,7 +82,12 @@ func (s *Server) readyHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) deployHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	appVersion := vars["appVersion"]
-	DM.Deploy(appVersion)
+	// deploy the schema and functions
+	err := DM.Deploy(appVersion)
+	// return an error if failed
+	if err != nil {
+		s.writeError(w, err)
+	}
 }
 
 // determines if the request is authenticated
@@ -156,5 +161,13 @@ func (s *Server) listen(handler http.Handler) {
 	// on error shutdown
 	if err := server.Shutdown(ctx); err != nil {
 		fmt.Printf("? I am shutting down due to an error: %v\n", err)
+	}
+}
+
+func (s *Server) writeError(w http.ResponseWriter, err error) {
+	w.WriteHeader(http.StatusInternalServerError)
+	_, err = w.Write([]byte(err.Error()))
+	if err != nil {
+		fmt.Printf("!!! I failed to write error to response: %v", err)
 	}
 }

@@ -133,11 +133,14 @@ func (dm *DbMan) InitialiseDb() error {
 }
 
 func (dm *DbMan) Deploy(targetAppVersion string) error {
-	var (
-		newDb bool = false
-	)
+	var newDb bool = false
 	// check if the database exists
-	exist, _ := dm.db.DbExists()
+	exist, err := dm.db.DbExists()
+	// if there is an error, could not connect to the database
+	if err != nil {
+		// then return
+		return err
+	}
 	// if the database does not exists, then create it
 	if !exist {
 		fmt.Printf("! I could not find the database '%v': proceeding to create it.\n", dm.Cfg.Get(DbName))

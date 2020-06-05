@@ -54,7 +54,7 @@ snapshot-push:
 
 # launch the container based on the image snapshot
 run-snapshot:
-	docker run -it --rm --name dbman -p 8085:8085 $(REPO_NAME)/$(BINARY_NAME)-snapshot:latest
+	docker run -it --rm --name dbman -e OX_DBM_DB_HOST=oxdb -p 8085:8085 $(REPO_NAME)/$(BINARY_NAME)-snapshot:latest
 
 # deletes dangling
 clean:
