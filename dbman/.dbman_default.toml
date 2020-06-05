@@ -1,4 +1,3 @@
-
 # configuration for running DbMan in http mode
 [Http]
 	Metrics = "true"
