@@ -28,13 +28,13 @@ func NewCache() *Cache {
 
 // load the Cache
 func (c *Cache) load() {
-	home := homeDir()
-	c.cfg.AddConfigPath(home)
+	dir := homeDir()
+	c.cfg.AddConfigPath(dir)
 	c.cfg.SetConfigName(".dbman")
 	c.cfg.SetConfigType("toml")
 	err := c.cfg.ReadInConfig()
 	if err != nil {
-		c.setPath(home)
+		c.setPath(dir)
 		c.setName("default")
 		c.save()
 		err := c.cfg.ReadInConfig()
@@ -105,3 +105,13 @@ func homeDir() string {
 	}
 	return home
 }
+
+// get dbman's directory
+// func execDir() string {
+// 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+// 	if err != nil {
+// 		fmt.Printf("!!! I cannot find the executable directory: %v\n", err)
+// 		return ""
+// 	}
+// 	return dir
+// }

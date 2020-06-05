@@ -150,8 +150,14 @@ func (c *AppCfg) createCfgFile(filePath string, filename string) error {
 
 // save the configuration to file
 func (c *AppCfg) save() {
-	c.cfg.WriteConfig()
-	c.cfg.ReadInConfig()
+	err := c.cfg.WriteConfig()
+	if err != nil {
+		fmt.Printf("!!! I could not save configuration: %v", err)
+	}
+	err = c.cfg.ReadInConfig()
+	if err != nil {
+		fmt.Printf("!!! I could not read configuration: %v", err)
+	}
 }
 
 // check if a key is contained in the internal viper registry
@@ -199,8 +205,7 @@ func (c *AppCfg) print() {
 }
 
 // default config file content
-const cfgFile = `
-# configuration for running DbMan in http mode
+const cfgFile = `# configuration for running DbMan in http mode
 [Http]
 	Metrics = "true"
 	AuthMode    = "basic"

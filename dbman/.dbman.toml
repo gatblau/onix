@@ -1,26 +1,2 @@
-# verbosity of logging (Trace, Debug, Warning, Info, Error, Fatal, Panic)
-LogLevel = "Warning"
-
-# configuration for running DbMan in http mode
-[Http]
-	Metrics = "true"
-	AuthMode    = "basic"
-	Port        = "8085"
-	Username    = "admin"
-	Password    = "0n1x"
-
-# configuration for the Onix Web API integration
-[Db]
-    Provider    = "pgsql"
-    Name        = "onix"
-    Host        = "localhost"
-    Port        = "5432"
-    Username    = "onix"
-    Password    = "onix"
-    AdminPwd    = "onix"
-
-# configuration of database scripts remote repository
-[Schema]
-    URI         = "https://raw.githubusercontent.com/gatblau/ox-db/master"
-    Username    = ""
-    Token       = ""
+name = "default"
+path = ""

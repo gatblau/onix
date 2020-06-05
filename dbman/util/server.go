@@ -67,7 +67,7 @@ func (s *Server) liveHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) readyHandler(w http.ResponseWriter, r *http.Request) {
 	ready, err := DM.CheckReady()
 	if !ready {
-		fmt.Printf("! DbMan is not ready")
+		fmt.Printf("! I am not ready: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		_, err := w.Write([]byte(err.Error()))
 		if err != nil {

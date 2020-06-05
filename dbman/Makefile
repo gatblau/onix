@@ -52,6 +52,10 @@ snapshot-push:
 	docker push $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version)
 	docker push $(REPO_NAME)/$(BINARY_NAME)-snapshot:latest
 
+# launch the container based on the image snapshot
+run-snapshot:
+	docker run -it --rm --name dbman -p 8085:8085 $(REPO_NAME)/$(BINARY_NAME)-snapshot:latest
+
 # deletes dangling
 clean:
 	docker rmi $(DANGLING_IMGS) -f
