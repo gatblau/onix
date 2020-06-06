@@ -19,7 +19,8 @@ import (
 )
 
 type Server struct {
-	cfg *AppCfg
+	cfg   *AppCfg
+	start time.Time
 }
 
 func NewServer(cfg *AppCfg) *Server {
@@ -29,14 +30,19 @@ func NewServer(cfg *AppCfg) *Server {
 }
 
 func (s *Server) Serve() {
+	// compute the time the server is called
+	s.start = time.Now()
+
 	mux := mux.NewRouter()
 	mux.Use(s.loggingMiddleware)
+	mux.Use(s.authenticationMiddleware)
 
 	// registers web handlers
 	fmt.Printf("? I am registering http handlers\n")
 	mux.HandleFunc("/", s.liveHandler).Methods("GET")
 	mux.HandleFunc("/ready", s.readyHandler).Methods("GET")
-	mux.HandleFunc("/deploy/{appVersion}", s.deployHandler).Methods("POST")
+	mux.HandleFunc("/db/init", s.initHandler).Methods("POST")
+	mux.HandleFunc("/db/deploy/{appVersion}", s.deployHandler).Methods("POST")
 
 	if s.cfg.GetBool(HttpMetrics) {
 		// prometheus metrics
@@ -48,19 +54,12 @@ func (s *Server) Serve() {
 	s.listen(mux)
 }
 
-// log http requests to stdout
-func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("? I received http request: %s %s %s\n", r.RemoteAddr, r.Method, r.URL)
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
-		next.ServeHTTP(w, r)
-	})
-}
-
 // a liveliness probe to prove the http service is listening
 func (s *Server) liveHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("OK"))
+	_, err := w.Write([]byte("OK"))
+	if err != nil {
+		fmt.Printf("!!! I cannot write response: %v", err)
+	}
 }
 
 // a readyness probe to prove DbMan is ready to accept calls
@@ -73,8 +72,21 @@ func (s *Server) readyHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 		}
 	} else {
-		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("OK"))
+	}
+}
+
+func (s *Server) initHandler(w http.ResponseWriter, r *http.Request) {
+	// deploy the schema and functions
+	err := DM.InitialiseDb()
+	// return an error if failed
+	if err != nil {
+		s.writeError(w, err)
+	} else {
+		_, err = w.Write([]byte(fmt.Sprintf("? Initialisation complete")))
+		if err != nil {
+			fmt.Printf("!!! I failed to write error to response: %v", err)
+		}
 	}
 }
 
@@ -87,35 +99,12 @@ func (s *Server) deployHandler(w http.ResponseWriter, r *http.Request) {
 	// return an error if failed
 	if err != nil {
 		s.writeError(w, err)
-	}
-}
-
-// determines if the request is authenticated
-func (s *Server) authenticate(w http.ResponseWriter, r *http.Request) bool {
-	// gets the authentication mode
-	authMode := s.cfg.Get(HttpAuthMode)
-
-	// if there is a username and password
-	if len(authMode) > 0 && strings.ToLower(authMode) == "basic" {
-		if r.Header.Get("Authorization") == "" {
-			// if no authorisation header is passed, then it prompts a client browser to authenticate
-			w.Header().Set("WWW-Authenticate", `Basic realm="dbman"`)
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Printf("? I have received an unauthorised request from: '%v'\n", r.RemoteAddr)
-			return false
-		} else {
-			// authenticate the request
-			requiredToken := s.newBasicToken(s.cfg.Get(HttpUsername), s.cfg.Get(HttpPassword))
-			providedToken := r.Header.Get("Authorization")
-			// if the authentication fails
-			if providedToken != requiredToken {
-				// returns an unauthorised request
-				w.WriteHeader(http.StatusForbidden)
-				return false
-			}
+	} else {
+		_, err = w.Write([]byte(fmt.Sprintf("? Deployment complete")))
+		if err != nil {
+			fmt.Printf("!!! I failed to write error to response: %v", err)
 		}
 	}
-	return true
 }
 
 // creates a new Basic Authentication Token
@@ -138,8 +127,9 @@ func (s *Server) listen(handler http.Handler) {
 	// runs the server asynchronously
 	go func() {
 		fmt.Printf("? I am listening on :%s\n", s.cfg.Get(HttpPort))
+		fmt.Printf("? I have taken %v to start\n", time.Since(s.start))
 		if err := server.ListenAndServe(); err != nil {
-			fmt.Printf("!!! I have failed to start the server: %v", err)
+			fmt.Printf("! Stopping the server: %v\n", err)
 		}
 	}()
 
@@ -170,4 +160,44 @@ func (s *Server) writeError(w http.ResponseWriter, err error) {
 	if err != nil {
 		fmt.Printf("!!! I failed to write error to response: %v", err)
 	}
+}
+
+// middleware
+// log http requests to stdout
+func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("? I received http request: %s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+		// Call the next handler, which can be another middleware in the chain, or the final handler.
+		next.ServeHTTP(w, r)
+	})
+}
+
+// determines if the request is authenticated
+func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// gets the authentication mode
+		authMode := s.cfg.Get(HttpAuthMode)
+
+		// if there is a username and password
+		if len(authMode) > 0 && strings.ToLower(authMode) == "basic" {
+			if r.Header.Get("Authorization") == "" {
+				// if no authorisation header is passed, then it prompts a client browser to authenticate
+				w.Header().Set("WWW-Authenticate", `Basic realm="dbman"`)
+				w.WriteHeader(http.StatusUnauthorized)
+				fmt.Printf("? I have received an unauthorised request from: '%v'\n", r.RemoteAddr)
+			} else {
+				// authenticate the request
+				requiredToken := s.newBasicToken(s.cfg.Get(HttpUsername), s.cfg.Get(HttpPassword))
+				providedToken := r.Header.Get("Authorization")
+				// if the authentication fails
+				if providedToken == requiredToken {
+					// Pass down the request to the next middleware (or final handler)
+					next.ServeHTTP(w, r)
+				} else {
+					// Write an error and stop the handler chain
+					http.Error(w, "Forbidden", http.StatusForbidden)
+				}
+			}
+		}
+	})
 }

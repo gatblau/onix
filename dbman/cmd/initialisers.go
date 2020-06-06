@@ -26,11 +26,12 @@ func InitialiseReleaseCmd() *ReleaseCmd {
 func InitialiseDbCmd() *DbCmd {
 	dbCmd := NewDbCmd()
 	dbVersionCmd := NewDbVersionCmd()
+	dbInitCmd := NewDbInitCmd()
 	dbDeployCmd := NewDbDeployCmd()
 	dbUpgradeCmd := NewDbUpgradeCmd()
 	dbBackupCmd := NewDbBackupCmd()
 	dbRestoreCmd := NewDbRestoreCmd()
-	dbCmd.cmd.AddCommand(dbVersionCmd.cmd, dbUpgradeCmd.cmd, dbDeployCmd.cmd, dbBackupCmd.cmd, dbRestoreCmd.cmd)
+	dbCmd.cmd.AddCommand(dbVersionCmd.cmd, dbUpgradeCmd.cmd, dbDeployCmd.cmd, dbBackupCmd.cmd, dbRestoreCmd.cmd, dbInitCmd.cmd)
 	return dbCmd
 }
 

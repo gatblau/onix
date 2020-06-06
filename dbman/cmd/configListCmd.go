@@ -38,6 +38,11 @@ func (c *ConfigListCmd) Run(cmd *cobra.Command, args []string) {
 	// print a list
 	for _, file := range files {
 		if strings.HasPrefix(file.Name(), ".dbman_") {
+			if strings.Contains(DM.Cfg.ConfigFileUsed(), file.Name()) {
+				fmt.Print("* ")
+			} else {
+				fmt.Print("  ")
+			}
 			fmt.Println(file.Name()[7 : len(file.Name())-5])
 		}
 	}

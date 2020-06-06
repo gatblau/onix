@@ -28,6 +28,7 @@ const (
 	DbName         = "Db.Name"
 	DbUsername     = "Db.Username"
 	DbPassword     = "Db.Password"
+	DbAdminUser    = "Db.AdminUser"
 	DbAdminPwd     = "Db.AdminPwd"
 )
 
@@ -113,6 +114,8 @@ func (c *AppCfg) load(path string, name string) error {
 	_ = c.cfg.BindEnv("Db.Provider")
 	_ = c.cfg.BindEnv("Db.Username")
 	_ = c.cfg.BindEnv("Db.Password")
+	_ = c.cfg.BindEnv("Db.AdminUser")
+	_ = c.cfg.BindEnv("Db.AdminPwd")
 	_ = c.cfg.BindEnv("Schema.URI")
 	_ = c.cfg.BindEnv("Schema.Username")
 	_ = c.cfg.BindEnv("Schema.Token")
@@ -221,7 +224,8 @@ const cfgFile = `# configuration for running DbMan in http mode
     Port        = "5432"
     Username    = "onix"
     Password    = "onix"
-    AdminPwd    = "onix"
+    AdminUser   = "postgres"
+	AdminPwd    = "onix"
 
 # configuration of database scripts remote repository
 [Schema]

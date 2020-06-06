@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/gatblau/oxc"
 	"strings"
+	"time"
 )
 
 var DM *DbMan
@@ -113,62 +114,74 @@ func (dm *DbMan) CheckConfigSet() map[string]string {
 // initialises the database (i.e. create database, user, extensions, etc)
 // it does not include schema deployment or upgrades
 func (dm *DbMan) InitialiseDb() error {
-	fmt.Printf("? I am fetching database initialisation info.\n")
-	init, err := dm.script.fetchInit()
-	if err != nil {
-		return err
-	}
-	fmt.Printf("? I am applying the database initialisation scripts.\n")
-	err = dm.db.InitialiseDb(init)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("? I am creating the database version tracking table.\n")
-	// NOTE: its schema is enforced by DbMan
-	err = dm.db.CreateVersionTable()
-	if err != nil {
-		return err
-	}
-	return nil
-}
+	start := time.Now()
 
-func (dm *DbMan) Deploy(targetAppVersion string) error {
-	var newDb bool = false
 	// check if the database exists
 	exist, err := dm.db.DbExists()
 	// if there is an error, could not connect to the database
 	if err != nil {
-		// then return
 		return err
 	}
-	// if the database does not exists, then create it
 	if !exist {
-		fmt.Printf("! I could not find the database '%v': proceeding to create it.\n", dm.Cfg.Get(DbName))
-		err := dm.InitialiseDb()
+		fmt.Printf("? I am fetching database initialisation info.\n")
+		init, err := dm.script.fetchInit()
 		if err != nil {
 			return err
 		}
-		// a new database has been created
-		newDb = true
-	}
-	// if the database already exists, the it needs to check what is the current version
-	if !newDb {
-		fmt.Printf("? I am checking database version compatibility for requested version '%v'\n", targetAppVersion)
-		// get database version
-		currentAppVersion, _, _ := dm.db.GetVersion()
-		// if the currently deployed db version exists and it does not match the target version
-		if len(currentAppVersion) > 0 && currentAppVersion != targetAppVersion {
-			// should not deploy the schemas, more likely an upgrade is needed?
-			return errors.New(fmt.Sprintf("!!! I cannot deploy the database schemas for application version '%v' as it differs from the existing application version '%v'\n", currentAppVersion, targetAppVersion))
+		fmt.Printf("? I am applying the database initialisation scripts.\n")
+		err = dm.db.InitialiseDb(init)
+		if err != nil {
+			return err
 		}
+		fmt.Printf("? I am creating the database version tracking table.\n")
+		// NOTE: its schema is enforced by DbMan
+		err = dm.db.CreateVersionTable()
+		// logs the time taken
+		fmt.Printf("? I have initialised the database in %v", time.Since(start))
+		return err
 	}
+	fmt.Printf("? I cannot execute the initialisation because the database already exist\n")
+	return nil
+}
+
+func (dm *DbMan) Deploy(targetAppVersion string) error {
+	start := time.Now()
+	// check if the database exists
+	exist, err := dm.db.DbExists()
+	// if there is an error, could not connect to the database
+	if err != nil {
+		return err
+	}
+	// if the database does not exists, then exit (init should be run first)
+	if !exist {
+		return errors.New(fmt.Sprintf("! I could not find the database '%v': call 'dbman db init' before attemting to deploy.\n", dm.Cfg.Get(DbName)))
+	}
+	// get database version
+	appVer, dbVer, err := dm.db.GetVersion()
+	// if the version cannot be retrieved return
+	if err != nil {
+		return err
+	}
+	// if there is a previous version, deploy should not be called, returns
+	if len(appVer) > 0 && len(dbVer) > 0 {
+		return errors.New(fmt.Sprintf("!!! I have found a previous deployment for application version '%v', I cannot continue.\n", appVer))
+	}
+	// we have an empty version table so we are ready to deploy
 	fmt.Printf("? I am fetching database release info for application version '%v'.\n", targetAppVersion)
 	release, err := dm.script.fetchRelease(targetAppVersion)
 	if err != nil {
 		return err
 	}
 	// deploys the release
-	return dm.db.DeployDb(release)
+	err = dm.db.DeployDb(release)
+	if err != nil {
+		return err
+	}
+	// add the deployed version in the tracking table
+	err = dm.db.InsertVersion(targetAppVersion, release.Release, "deployed by DbMan", dm.Cfg.Get(SchemaURI))
+	// logs the time taken
+	fmt.Printf("? I have deployed the database in %v", time.Since(start))
+	return err
 }
 
 func (dm *DbMan) CheckReady() (bool, error) {

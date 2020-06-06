@@ -56,3 +56,7 @@ func TestDbMan_CheckConfigSet(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestDbMan_Serve(t *testing.T) {
+	dbman.Serve()
+}
