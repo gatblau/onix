@@ -11,31 +11,29 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type DbDeployCmd struct {
+type DbInitCmd struct {
 	cmd *cobra.Command
 }
 
-func NewDbDeployCmd() *DbDeployCmd {
-	c := &DbDeployCmd{
+func NewDbInitCmd() *DbInitCmd {
+	c := &DbInitCmd{
 		&cobra.Command{
-			Use:   "deploy [version]",
-			Short: "deploys a database schema",
-			Long:  `if version is not specified, then it deploys the latest schema`,
+			Use:   "init",
+			Short: "initialise the database",
+			Long: `execute admin level scripts to create the database, database user, etc in advanced of the creation 
+of the schema and database objects`,
+			Example: `dbman db init`,
 		},
 	}
 	c.cmd.Run = c.Run
 	return c
 }
 
-func (c *DbDeployCmd) Run(cmd *cobra.Command, args []string) {
-	if len(args) != 1 {
-		fmt.Printf("!!! Incorrect number of arguments: %v, I need the app version.", args)
-		return
-	}
-	err := DM.Deploy(args[0])
+func (c *DbInitCmd) Run(cmd *cobra.Command, args []string) {
+	err := DM.InitialiseDb()
 	if err != nil {
-		fmt.Printf("!!! I cannot deploy the database: %v", err)
+		fmt.Printf("!!! I cannot initialise the database: %v", err)
 	} else {
-		fmt.Printf("? I have completed the deployment")
+		fmt.Printf("? I have completed the database initialisation")
 	}
 }

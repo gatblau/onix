@@ -43,16 +43,19 @@ func (db *PgSQLProvider) CanConnectToServer() (bool, error) {
 
 // checks if the database exists
 func (db *PgSQLProvider) DbExists() (bool, error) {
-	conn, err := db.newConn(false, true)
+	conn, err := db.newConn(true, false)
 	if err != nil {
-		fmt.Printf("!!! I cannot connect to database: %v\n", err)
+		fmt.Printf("? I cannot connect to the database server host %v: %v\n", db.cfg.Get(DbHost), err)
 		return false, err
 	}
 	defer conn.Close()
 	var count int
 	sql := fmt.Sprintf("SELECT 1 FROM pg_database WHERE datname='%s';", db.get(DbName))
 	err = conn.QueryRow(context.Background(), sql).Scan(&count)
-	return err == nil, err
+	if err != nil {
+		return !strings.Contains(err.Error(), "no rows"), nil
+	}
+	return true, err
 }
 
 // initialises the database from db init info
@@ -96,38 +99,44 @@ func (db *PgSQLProvider) GetVersion() (appVersion string, dbVersion string, err 
 	}
 	defer conn.Close()
 	rows, _ := conn.Query(context.Background(), "SELECT application_version, database_version from version ORDER BY time DESC LIMIT 1;")
+	var appVer string
+	var dbVer string
 	if rows.Next() {
-		var appVer string
-		var dbVer string
-		err := rows.Scan(&appVer, &dbVer)
-		if err != nil {
-			return "", "", err
-		}
-		return appVer, dbVer, err
+		err = rows.Scan(&appVer, &dbVer)
 	}
-	return "", "", rows.Err()
+	rows.Close()
+	return appVer, dbVer, err
 }
 
 // deploy the database schemas
 func (db *PgSQLProvider) DeployDb(release *Release) error {
 	conn, err := db.newConn(false, true)
+	defer conn.Close()
+
 	if err != nil {
 		return err
 	}
 	// deploy the schemas
+	tx, err := conn.Begin(context.Background())
+	if err != nil {
+		return err
+	}
 	for _, schema := range release.Schemas {
-		_, err := conn.Exec(context.Background(), schema)
+		_, err := tx.Exec(context.Background(), schema)
 		if err != nil {
+			tx.Rollback(context.Background())
 			return err
 		}
 	}
 	// deploy the functions
 	for _, function := range release.Functions {
-		_, err := conn.Exec(context.Background(), function)
+		_, err := tx.Exec(context.Background(), function)
 		if err != nil {
+			tx.Rollback(context.Background())
 			return err
 		}
 	}
+	tx.Commit(context.Background())
 	return nil
 }
 
@@ -150,7 +159,7 @@ func (db *PgSQLProvider) connString(admin bool, database bool) string {
 	connStr := ""
 	if admin {
 		connStr = fmt.Sprintf("postgresql://%v:%v@%v:%v",
-			"postgres",
+			db.get(DbAdminUser),
 			db.get(DbAdminPwd),
 			db.get(DbHost),
 			db.get(DbPort))
@@ -178,6 +187,18 @@ func (db *PgSQLProvider) CreateVersionTable() error {
 	return err
 }
 
+// insert a new database version
+func (db *PgSQLProvider) InsertVersion(appVersion string, dbVersion string, description string, origin string) error {
+	conn, err := db.newConn(false, true)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	sql := fmt.Sprintf(pgSQLInsertVersion, appVersion, dbVersion, description, origin)
+	_, err = conn.Exec(context.Background(), sql)
+	return err
+}
+
 // this type carries either a connection or an error
 // used in a channel used by the connection go routine
 type conn struct {
@@ -201,8 +222,8 @@ func (db *PgSQLProvider) newConn(admin bool, database bool) (*pgxpool.Pool, erro
 	}()
 	// launch a go routine
 	go func() {
-		// timeout period is 3.5 secs
-		time.Sleep(3.5e9)
+		// timeout period is 4 secs
+		time.Sleep(4e9)
 		timeout <- true
 	}()
 
@@ -251,4 +272,9 @@ DO
       END IF;
     END;
     $$
+`
+
+const pgSQLInsertVersion = `
+INSERT INTO version (application_version, database_version, description, scripts_source)
+VALUES ('%s','%s','%s','%s');
 `

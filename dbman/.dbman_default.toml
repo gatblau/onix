@@ -14,6 +14,7 @@
     Port        = "5432"
     Username    = "onix"
     Password    = "onix"
+    AdminUser   = "postgres"
     AdminPwd    = "onix"
 
 # configuration of database scripts remote repository

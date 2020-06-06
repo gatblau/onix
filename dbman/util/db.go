@@ -21,4 +21,6 @@ type DatabaseProvider interface {
 	UpgradeDb() error
 	// create database version tracking table
 	CreateVersionTable() error
+	// insert version information in the tracking table
+	InsertVersion(appVersion string, dbVersion string, description string, origin string) error
 }
