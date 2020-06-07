@@ -34,6 +34,6 @@ func (c *DbInitCmd) Run(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Printf("!!! I cannot initialise the database: %v", err)
 	} else {
-		fmt.Printf("? I have completed the database initialisation")
+		fmt.Printf("? I have completed the database initialisation\n")
 	}
 }
