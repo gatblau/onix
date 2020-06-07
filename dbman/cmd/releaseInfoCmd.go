@@ -34,12 +34,16 @@ with the application`,
 }
 
 func (c *ReleaseInfoCmd) run(cmd *cobra.Command, args []string) {
+	if len(args) != 1 {
+		fmt.Printf("!!! I need a release tag to be provided, see help: dbman release info --help\n")
+		return
+	}
 	// get the app version from the first argument
 	appVer := args[0]
 	// get the release manifest that matches the app version
-	release, err := DM.GetReleaseInfo(appVer)
+	release, err := DM.GetReleaseInfo(appVer, false)
 	if err != nil {
-		fmt.Sprintf("!!! cannot fetch release information: %v", err)
+		fmt.Sprintf("!!! I cannot fetch release information: %v", err)
 		return
 	}
 	Print(release, c.format, c.filename)
