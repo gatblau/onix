@@ -190,14 +190,13 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 				requiredToken := s.newBasicToken(s.cfg.Get(HttpUsername), s.cfg.Get(HttpPassword))
 				providedToken := r.Header.Get("Authorization")
 				// if the authentication fails
-				if providedToken == requiredToken {
-					// Pass down the request to the next middleware (or final handler)
-					next.ServeHTTP(w, r)
-				} else {
+				if providedToken != requiredToken {
 					// Write an error and stop the handler chain
 					http.Error(w, "Forbidden", http.StatusForbidden)
 				}
 			}
 		}
+		// Pass down the request to the next middleware (or final handler)
+		next.ServeHTTP(w, r)
 	})
 }
