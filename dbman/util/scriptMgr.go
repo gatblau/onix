@@ -104,7 +104,7 @@ func (s *ScriptManager) fetchPlan() (*Plan, error) {
 }
 
 // fetches the scripts for a database getReleaseInfo
-func (s *ScriptManager) fetchRelease(appVersion string) (*Release, error) {
+func (s *ScriptManager) fetchRelease(appVersion string, fetchScripts bool) (*Release, error) {
 	// if cfg not initialised, no point in continuing
 	if s.cfg == nil {
 		return nil, errors.New("configuration object not initialised when calling fetching getReleaseInfo")
@@ -133,24 +133,28 @@ func (s *ScriptManager) fetchRelease(appVersion string) (*Release, error) {
 	if err != nil {
 		return nil, err
 	}
-	// fetch the schema scripts
-	schemas, err := s.getScripts(ri.Path, r.Schemas)
-	if err != nil {
-		return nil, err
+	// if the fetch content flag is set, then downloads the scripts and
+	// replaces the original script name with their content
+	if fetchScripts {
+		// fetch the schema scripts
+		schemas, err := s.getScripts(ri.Path, r.Schemas)
+		if err != nil {
+			return nil, err
+		}
+		r.Schemas = schemas
+		// fetch function scripts
+		funcs, err := s.getScripts(ri.Path, r.Functions)
+		if err != nil {
+			return nil, err
+		}
+		r.Functions = funcs
+		// fetch upgrade scripts
+		up, err := s.getScripts(ri.Path, r.Upgrade)
+		if err != nil {
+			return nil, err
+		}
+		r.Upgrade = up
 	}
-	r.Schemas = schemas
-	// fetch function scripts
-	funcs, err := s.getScripts(ri.Path, r.Functions)
-	if err != nil {
-		return nil, err
-	}
-	r.Functions = funcs
-	// fetch upgrade scripts
-	up, err := s.getScripts(ri.Path, r.Upgrade)
-	if err != nil {
-		return nil, err
-	}
-	r.Upgrade = up
 	return r, err
 }
 

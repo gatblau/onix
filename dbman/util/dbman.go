@@ -51,8 +51,8 @@ func (dm *DbMan) GetReleasePlan() (*Plan, error) {
 	return dm.script.fetchPlan()
 }
 
-func (dm *DbMan) GetReleaseInfo(appVersion string) (*Release, error) {
-	return dm.script.fetchRelease(appVersion)
+func (dm *DbMan) GetReleaseInfo(appVersion string, fetchScripts bool) (*Release, error) {
+	return dm.script.fetchRelease(appVersion, fetchScripts)
 }
 
 func (dm *DbMan) SaveConfig() {
@@ -168,7 +168,7 @@ func (dm *DbMan) Deploy(targetAppVersion string) error {
 	}
 	// we have an empty version table so we are ready to deploy
 	fmt.Printf("? I am fetching database release info for application version '%v'.\n", targetAppVersion)
-	release, err := dm.script.fetchRelease(targetAppVersion)
+	release, err := dm.script.fetchRelease(targetAppVersion, true)
 	if err != nil {
 		return err
 	}
