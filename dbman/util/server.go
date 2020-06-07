@@ -100,7 +100,7 @@ func (s *Server) deployHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.writeError(w, err)
 	} else {
-		_, err = w.Write([]byte(fmt.Sprintf("? Deployment complete")))
+		_, err = w.Write([]byte(fmt.Sprintf("? Deployment complete\n")))
 		if err != nil {
 			fmt.Printf("!!! I failed to write error to response: %v", err)
 		}
