@@ -25,49 +25,46 @@
 # brew link --force libpq
 
 # pre-requisites
-command -v psql >/dev/null 2>&1 || { echo >&2 "psql is required but it's not installed. Aborting."; exit 1; }
 command -v docker >/dev/null 2>&1 || { echo >&2 "docker is required but it's not installed. Aborting."; exit 1; }
 
-# configuration
-export PGPASSWORD=onix
-
+APP_VER="0.0.4"
 HOST=localhost
 PORT=5432
 DB=onix
 DBUSER=onix
 DBPWD=onix
 
-# check if dbman is running
-DBMAN_UP=$(docker inspect -f '{{.State.Running}}' dbman)
-# if dbman is not running
-if [ ! "$DBMAN_UP" = "true" ]; then
-  # launch dbman
-  docker run --name dbman -itd -p 8085:8085 -e OX_DBM_DB_HOST=oxdb "gatblau/dbman-snapshot"
-fi
+docker rm -f oxdb
+docker rm -f dbman
 
-#check if the onix database is running
-OXDB_UP=$(docker inspect -f '{{.State.Running}}' oxdb)
+echo "? starting a new database container"
+docker run --name oxdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=${DBPWD} "centos/postgresql-12-centos7"
 
-# if oxdb is not running
-if [ "$OXDB_UP" = "true" ]; then
-  # removes the container
-  docker rm -f oxdb
-fi
-
-# re-creates the container
-docker run --name oxdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=${PGPASSWORD} "centos/postgresql-12-centos7"
-
-# wait for the container to initialise
+echo "? waiting for the database to start before proceeding"
 sleep 5
 
-# shows the logs
-docker logs oxdb
+echo "? launching DbMan container"
+docker run --name dbman -itd -p 8085:8085 --link oxdb \
+  -e OX_DBM_DB_HOST=oxdb \
+  -e OX_DBM_DB_ADMINPWD=${DBPWD} \
+  -e OX_DBM_HTTP_AUTHMODE=none \
+  "gatblau/dbman-snapshot"
 
-# deploy database using dbman
-curl -H "Content-Type: application/json" -X POST http://localhost:8085/deploy/0.0.4 2>&1
+echo "? please wait for DbMan to become available"
+sleep 3
 
-# uncomment below to use psql instead of dbman
-# re-deploys the database
+echo "? creating the Onix database and user"
+curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/init 2>&1
+
+echo "? deploying the Onix database schemas and functions"
+curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy/${APP_VER} 2>&1
+
+#echo "? shutting down DbMan"
+#docker rm dbman -f
+
+# below uses psql instead of dbman
+#command -v psql >/dev/null 2>&1 || { echo >&2 "psql is required but it's not installed. Aborting."; exit 1; }
+#export PGPASSWORD=onix
 #SPATH=${HOME}"/go/src/github.com/gatblau/onix/wapi/src/main/resources/db/install/4"
 #psql -h ${HOST} -U postgres -c "CREATE DATABASE "${DB}";"
 #psql -h ${HOST} -U postgres -c "CREATE USER "${DBUSER}" WITH PASSWORD '"${DBPWD}"';"
