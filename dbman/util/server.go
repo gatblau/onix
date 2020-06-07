@@ -83,7 +83,7 @@ func (s *Server) initHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.writeError(w, err)
 	} else {
-		_, err = w.Write([]byte(fmt.Sprintf("? Initialisation complete")))
+		_, err = w.Write([]byte(fmt.Sprintf("? Initialisation complete\n")))
 		if err != nil {
 			fmt.Printf("!!! I failed to write error to response: %v", err)
 		}
