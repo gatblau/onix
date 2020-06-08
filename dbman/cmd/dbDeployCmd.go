@@ -29,13 +29,13 @@ func NewDbDeployCmd() *DbDeployCmd {
 
 func (c *DbDeployCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) != 1 {
-		fmt.Printf("!!! Incorrect number of arguments: %v, I need the app version.", args)
+		fmt.Printf("!!! Incorrect number of arguments: %v, I need the app version.\n", args)
 		return
 	}
-	err := DM.Deploy(args[0])
+	err, elapsed := DM.Deploy(args[0])
 	if err != nil {
 		fmt.Printf("!!! I cannot deploy the database: %v", err)
-	} else {
-		fmt.Printf("? I have completed the deployment")
+		return
 	}
+	fmt.Printf("? I have completed the deployment in %v\n", elapsed)
 }

@@ -67,3 +67,10 @@ delete-images:
 # delete all exited containers
 delete-exited:
 	docker ps -a | grep Exit | cut -d ' ' -f 1 | xargs docker rm
+
+# generate a swagger spec document from the source code
+swaggen:
+	swagger generate spec -b ./docs -o ./docs/swagger.yaml
+
+swagserve:
+	swagger serve ./docs/swagger.yaml -F swagger

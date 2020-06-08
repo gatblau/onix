@@ -34,7 +34,7 @@ func TestUseConfig(t *testing.T) {
 }
 
 func TestDbMan_InitialiseDb(t *testing.T) {
-	err := dbman.InitialiseDb()
+	err, _ := dbman.InitialiseDb()
 	if err != nil {
 		t.Error(err)
 		t.Fail()
@@ -42,7 +42,7 @@ func TestDbMan_InitialiseDb(t *testing.T) {
 }
 
 func TestDbMan_Deploy(t *testing.T) {
-	err := dbman.Deploy("0.0.4")
+	err, _ := dbman.Deploy("0.0.4")
 	if err != nil {
 		t.Error(err)
 		t.Fail()
