@@ -12,6 +12,7 @@ import (
 	"github.com/gatblau/oxc"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 // the source of database scripts
@@ -86,10 +87,12 @@ func (s *ScriptManager) fetchInit() (*DbInit, error) {
 
 // fetches the getReleaseInfo plan
 func (s *ScriptManager) fetchPlan() (*Plan, error) {
-	if s.cfg == nil {
-		return nil, errors.New("configuration object not initialised when fetching getReleaseInfo getPlan")
+	// get the base uri to retrieve scripts (includes credentials if set)
+	baseUri, err := s.getSchemaUri()
+	if err != nil {
+		return nil, err
 	}
-	response, err := s.client.Get(fmt.Sprintf("%s/plan.json", s.get(SchemaURI)), s.addHttpHeaders)
+	response, err := s.client.Get(fmt.Sprintf("%s/plan.json", baseUri), s.addHttpHeaders)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +108,11 @@ func (s *ScriptManager) fetchPlan() (*Plan, error) {
 
 // fetches the scripts for a database getReleaseInfo
 func (s *ScriptManager) fetchRelease(appVersion string, fetchScripts bool) (*Release, error) {
+	// get the base uri to retrieve scripts (includes credentials if set)
+	baseUri, err := s.getSchemaUri()
+	if err != nil {
+		return nil, err
+	}
 	// if cfg not initialised, no point in continuing
 	if s.cfg == nil {
 		return nil, errors.New("configuration object not initialised when calling fetching getReleaseInfo")
@@ -116,7 +124,7 @@ func (s *ScriptManager) fetchRelease(appVersion string, fetchScripts bool) (*Rel
 		return nil, err
 	}
 	// builds a uri to fetch the specific getReleaseInfo manifest
-	uri := fmt.Sprintf("%s/%s/release.json", s.get(SchemaURI), ri.Path)
+	uri := fmt.Sprintf("%s/%s/release.json", baseUri, ri.Path)
 	// fetch the getReleaseInfo.json manifest
 	response, err := s.client.Get(uri, s.addHttpHeaders)
 	// if the request was unsuccessful then return the error
@@ -137,19 +145,19 @@ func (s *ScriptManager) fetchRelease(appVersion string, fetchScripts bool) (*Rel
 	// replaces the original script name with their content
 	if fetchScripts {
 		// fetch the schema scripts
-		schemas, err := s.getScripts(ri.Path, r.Schemas)
+		schemas, err := s.getScripts(baseUri, ri.Path, r.Schemas)
 		if err != nil {
 			return nil, err
 		}
 		r.Schemas = schemas
 		// fetch function scripts
-		funcs, err := s.getScripts(ri.Path, r.Functions)
+		funcs, err := s.getScripts(baseUri, ri.Path, r.Functions)
 		if err != nil {
 			return nil, err
 		}
 		r.Functions = funcs
 		// fetch upgrade scripts
-		up, err := s.getScripts(ri.Path, r.Upgrade)
+		up, err := s.getScripts(baseUri, ri.Path, r.Upgrade)
 		if err != nil {
 			return nil, err
 		}
@@ -193,10 +201,10 @@ func (s *ScriptManager) get(key string) string {
 // returns a slice with release scripts
 // path: the release path
 // the list of file names under the path to read
-func (s *ScriptManager) getScripts(path string, files []string) ([]string, error) {
+func (s *ScriptManager) getScripts(baseUri string, path string, files []string) ([]string, error) {
 	result := make([]string, len(files))
 	for ix, file := range files {
-		uri := fmt.Sprintf("%v/%v/%v", s.cfg.Get(SchemaURI), path, file)
+		uri := fmt.Sprintf("%v/%v/%v", baseUri, path, file)
 		response, err := s.client.Get(uri, s.addHttpHeaders)
 		if err != nil {
 			return nil, err
@@ -212,4 +220,20 @@ func (s *ScriptManager) getScripts(path string, files []string) ([]string, error
 		}
 	}
 	return result, nil
+}
+
+func (s ScriptManager) getSchemaUri() (string, error) {
+	uri := s.cfg.Get(SchemaURI)
+	if len(uri) == 0 {
+		return "", errors.New(fmt.Sprintf("!!! The SchemaURI is not defined"))
+	}
+	if !strings.HasPrefix(strings.ToLower(uri), "http") {
+		return "", errors.New(fmt.Sprintf("!!! The SchemaURI must be an http(s) address"))
+	}
+	// if the username and password have been set
+	if len(s.cfg.Get(SchemaUsername)) > 0 && len(s.cfg.Get(SchemaToken)) > 0 {
+		uriParts := strings.Split(uri, "//")
+		return fmt.Sprintf("%s//%s:%s@%s", uriParts[0], s.cfg.Get(SchemaUsername), s.cfg.Get(SchemaToken), uriParts[1]), nil
+	}
+	return uri, nil
 }
