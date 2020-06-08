@@ -5,7 +5,10 @@
 //   to be licensed under the same terms as the rest of the code.
 package main
 
-import "github.com/gatblau/onix/dbman/cmd"
+import (
+	"github.com/gatblau/onix/dbman/cmd"
+	_ "github.com/gatblau/onix/dbman/docs"
+)
 
 func main() {
 	rootCmd := cmd.InitialiseRootCmd()

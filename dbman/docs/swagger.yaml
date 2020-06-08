@@ -1,0 +1,28 @@
+basePath: /
+consumes:
+- application/json
+info:
+  description: Documentation of Onix DbMan's Web API
+  title: Onix Database Manager Web API.
+  version: 0.0.4
+paths:
+  /db/init:
+    post:
+      operationId: db-init
+      responses:
+        "200": {}
+      summary: Initialises the database using the configuration in the current configuration
+        set.
+      tags:
+      - db-resource
+produces:
+- application/json
+responses:
+  string:
+    description: This text will appear as description of your response body.
+schemes:
+- http
+securityDefinitions:
+  basic:
+    type: basic
+swagger: "2.0"

@@ -30,10 +30,10 @@ of the schema and database objects`,
 }
 
 func (c *DbInitCmd) Run(cmd *cobra.Command, args []string) {
-	err := DM.InitialiseDb()
+	err, elapsed := DM.InitialiseDb()
 	if err != nil {
-		fmt.Printf("!!! I cannot initialise the database: %v", err)
-	} else {
-		fmt.Printf("? I have completed the database initialisation\n")
+		fmt.Printf("!!! I cannot initialise the database: %v\n", err)
+		return
 	}
+	fmt.Printf("? I have initialised the database in %v\n", elapsed)
 }

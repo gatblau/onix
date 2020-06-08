@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
@@ -37,12 +38,20 @@ func (s *Server) Serve() {
 	mux.Use(s.loggingMiddleware)
 	mux.Use(s.authenticationMiddleware)
 
+	// intercepts calls to /docs to render the swagger ui
+	mux.Use(s.swaggerMiddleware)
+
 	// registers web handlers
 	fmt.Printf("? I am registering http handlers\n")
 	mux.HandleFunc("/", s.liveHandler).Methods("GET")
 	mux.HandleFunc("/ready", s.readyHandler).Methods("GET")
 	mux.HandleFunc("/db/init", s.initHandler).Methods("POST")
 	mux.HandleFunc("/db/deploy/{appVersion}", s.deployHandler).Methods("POST")
+
+	// serves the swagger spec
+	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./docs/"))))
+	// swagger-ui route
+	mux.HandleFunc("/docs", nil)
 
 	if s.cfg.GetBool(HttpMetrics) {
 		// prometheus metrics
@@ -78,12 +87,12 @@ func (s *Server) readyHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) initHandler(w http.ResponseWriter, r *http.Request) {
 	// deploy the schema and functions
-	err := DM.InitialiseDb()
+	err, elapsed := DM.InitialiseDb()
 	// return an error if failed
 	if err != nil {
 		s.writeError(w, err)
 	} else {
-		_, err = w.Write([]byte(fmt.Sprintf("? Initialisation complete\n")))
+		_, err = w.Write([]byte(fmt.Sprintf("? I have completed the initialisation in %v\n", elapsed)))
 		if err != nil {
 			fmt.Printf("!!! I failed to write error to response: %v", err)
 		}
@@ -95,12 +104,12 @@ func (s *Server) deployHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	appVersion := vars["appVersion"]
 	// deploy the schema and functions
-	err := DM.Deploy(appVersion)
+	err, elapsed := DM.Deploy(appVersion)
 	// return an error if failed
 	if err != nil {
 		s.writeError(w, err)
 	} else {
-		_, err = w.Write([]byte(fmt.Sprintf("? Deployment complete\n")))
+		_, err = w.Write([]byte(fmt.Sprintf("? I have completed the deployment in %v\n", elapsed)))
 		if err != nil {
 			fmt.Printf("!!! I failed to write error to response: %v", err)
 		}
@@ -158,7 +167,7 @@ func (s *Server) writeError(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	_, err = w.Write([]byte(err.Error()))
 	if err != nil {
-		fmt.Printf("!!! I failed to write error to response: %v", err)
+		fmt.Printf("!!! I failed to write error to response: %v\n", err)
 	}
 }
 
@@ -166,7 +175,7 @@ func (s *Server) writeError(w http.ResponseWriter, err error) {
 // log http requests to stdout
 func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("? I received http request: %s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+		fmt.Printf("? I received an http request from: %s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 	})
@@ -184,7 +193,7 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 				// if no authorisation header is passed, then it prompts a client browser to authenticate
 				w.Header().Set("WWW-Authenticate", `Basic realm="dbman"`)
 				w.WriteHeader(http.StatusUnauthorized)
-				fmt.Printf("? I have received an unauthorised request from: '%v'\n", r.RemoteAddr)
+				fmt.Printf("? I have received an (unauthorised) http request from: '%v'\n", r.RemoteAddr)
 			} else {
 				// authenticate the request
 				requiredToken := s.newBasicToken(s.cfg.Get(HttpUsername), s.cfg.Get(HttpPassword))
@@ -199,4 +208,11 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 		// Pass down the request to the next middleware (or final handler)
 		next.ServeHTTP(w, r)
 	})
+}
+
+// serves the swagger-ui
+func (s *Server) swaggerMiddleware(next http.Handler) http.Handler {
+	return middleware.Redoc(middleware.RedocOpts{
+		SpecURL: "/static/swagger.yaml",
+	}, next)
 }
