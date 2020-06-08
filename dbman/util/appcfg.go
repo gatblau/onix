@@ -178,13 +178,13 @@ func (c *AppCfg) contains(key string) bool {
 // return: true if the value was set or false otherwise
 func (c *AppCfg) set(key string, value string) {
 	key = strings.ToLower(key)
-	// updates the key
-	c.cfg.Set(key, value)
 	// if key passed in is not standard (i.e. not part of the default set of config keys)
 	if !c.contains(key) {
 		// warn the user in case they misspelled a standard key
 		fmt.Printf("! The key '%v' you provided is not standard, I am adding it to the configuration set.\n", key)
 	}
+	// updates the key
+	c.cfg.Set(key, value)
 }
 
 // get a configuration value
