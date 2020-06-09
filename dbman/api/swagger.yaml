@@ -1,0 +1,87 @@
+basePath: /
+host: localhost
+info:
+  contact:
+    email: onix@gatblau.org
+    name: gatblau
+  description: |-
+    This service makes some of DbMan's cli commands available via HTTP.
+    Its main purpose is to facilitate key database maintenance operations in containerised environments.
+
+    NOTE: Any commands which are meant to modify configuration sets are not available from this service because it is
+    assumed to run from a container. Therefore, service configuration can only be set via environment variables.
+  license:
+    name: Apache License, Version 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0
+  title: Onix Database Manager Web API.
+  version: 0.0.4
+paths:
+  /conf/check:
+    get:
+      description: |-
+        Checks that a connection can be established to the database and remote git repository based on the specified configuration.
+
+        Configuration is provided as environment variables to the running service.
+      operationId: check
+      responses:
+        "200":
+          $ref: '#/responses/confCheckResponse'
+      summary: check
+      tags:
+      - configuration
+  /db/deploy/{appVersion}:
+    post:
+      description: |-
+        Executes the database schema / functions deployment scripts defined in the remote git repository.
+
+        Due to the fact some scripts might need to execute operations such as creating the database, they are not executed
+        within a transaction block.
+
+        Configuration is provided as environment variables to the running service.
+      operationId: deploy
+      parameters:
+      - description: The application version to deploy
+        in: path
+        name: appVersion
+        required: true
+        type: string
+        x-go-name: AppVersion
+      responses:
+        "200":
+          $ref: '#/responses/dbDeployResponse'
+      summary: deploy
+      tags:
+      - database
+  /db/init:
+    post:
+      description: |-
+        Executes the database initialisation scripts defined in the remote git repository.
+
+        Due to the fact some scripts might need to execute operations such as creating the database, they are not executed
+        within a transaction block.
+
+        Configuration is provided as environment variables to the running service.
+      operationId: init
+      responses:
+        "200":
+          $ref: '#/responses/dbInitResponse'
+      summary: initialise
+      tags:
+      - database
+produces:
+- text/plain
+responses:
+  confCheckResponse:
+    description: A list of checks and their result displayed in text form.
+  dbDeployResponse:
+    description: The output of the deploy command execution as a plain text log.
+  dbInitResponse:
+    description: The output of the initialisation command execution as a plain text
+      log.
+schemes:
+- http
+- https
+securityDefinitions:
+  basic:
+    type: basic
+swagger: "2.0"
