@@ -119,5 +119,11 @@ $ go build
 $ ./dbman --help
 ```
 
+## Running DbMan from a container
+
+For an example of how to run a DbMan container to deploy a PostgreSQL database [see here](https://github.com/gatblau/onix/blob/develop/docs/install/container/refresh_db.sh).
+
+---
+
 **Note** DbMan is work in progress, it will eventually replace and augment the logic for deploying and upgrading the database currenlty in the Onix Web API
 and allow a Kubernetes operator to orchestrate the required database admin tasks.
