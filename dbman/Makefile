@@ -70,7 +70,7 @@ delete-exited:
 
 # generate a swagger spec document from the source code
 swaggen:
-	swagger generate spec -b ./docs -o ./docs/swagger.yaml
+	swagger generate spec -b ./docs -o ./api/swagger.yaml
 
 swagserve:
-	swagger serve ./docs/swagger.yaml -F swagger
+	swagger serve ./api/swagger.yaml

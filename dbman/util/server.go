@@ -34,33 +34,29 @@ func (s *Server) Serve() {
 	// compute the time the server is called
 	s.start = time.Now()
 
-	mux := mux.NewRouter()
-	mux.Use(s.loggingMiddleware)
-	mux.Use(s.authenticationMiddleware)
-
-	// intercepts calls to /docs to render the swagger ui
-	mux.Use(s.swaggerMiddleware)
+	router := mux.NewRouter()
+	router.Use(s.loggingMiddleware)
+	router.Use(s.authenticationMiddleware)
 
 	// registers web handlers
 	fmt.Printf("? I am registering http handlers\n")
-	mux.HandleFunc("/", s.liveHandler).Methods("GET")
-	mux.HandleFunc("/ready", s.readyHandler).Methods("GET")
-	mux.HandleFunc("/db/init", s.initHandler).Methods("POST")
-	mux.HandleFunc("/db/deploy/{appVersion}", s.deployHandler).Methods("POST")
+	router.HandleFunc("/", s.liveHandler).Methods("GET")
+	router.HandleFunc("/ready", s.readyHandler).Methods("GET")
+	router.HandleFunc("/conf/check", s.checkConfigHandler).Methods("GET")
+	router.HandleFunc("/db/init", s.initHandler).Methods("POST")
+	router.HandleFunc("/db/deploy/{appVersion}", s.deployHandler).Methods("POST")
 
-	// serves the swagger spec
-	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./docs/"))))
-	// swagger-ui route
-	mux.HandleFunc("/docs", nil)
+	// swagger-ui configuration
+	s.setupSwagger(router)
 
 	if s.cfg.GetBool(HttpMetrics) {
 		// prometheus metrics
-		fmt.Printf("? I am registering the metrics publication handler '/metrics'\n")
-		mux.Handle("/metrics", promhttp.Handler()).Methods("GET")
+		fmt.Printf("? /metrics endpoint is enabled\n")
+		router.Handle("/metrics", promhttp.Handler()).Methods("GET")
 	}
 
 	// starts the server
-	s.listen(mux)
+	s.listen(router)
 }
 
 // a liveliness probe to prove the http service is listening
@@ -113,6 +109,14 @@ func (s *Server) deployHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Printf("!!! I failed to write error to response: %v", err)
 		}
+	}
+}
+
+// check that the information in the current configuration set is ok to connect to backend services
+func (s *Server) checkConfigHandler(w http.ResponseWriter, r *http.Request) {
+	results := DM.CheckConfigSet()
+	for check, result := range results {
+		_, _ = w.Write([]byte(fmt.Sprintf("[%v] => %v\n", check, result)))
 	}
 }
 
@@ -171,7 +175,6 @@ func (s *Server) writeError(w http.ResponseWriter, err error) {
 	}
 }
 
-// middleware
 // log http requests to stdout
 func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -210,9 +213,23 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// serves the swagger-ui
-func (s *Server) swaggerMiddleware(next http.Handler) http.Handler {
+// setups Swagger UI and serves the Swagger.yaml spec
+func (s *Server) setupSwagger(router *mux.Router) {
+	// intercepts calls to /api to render the swagger ui using redoc
+	router.Use(s.swaggerUiMiddleware)
+	// serves the swagger spec from /static route (required by swagger-ui)
+	// note: spec file is not embedded in binary but deployed within ./api folder
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./api/"))))
+	// this route is required by the middleware to trigger and render the swagger-ui
+	router.HandleFunc("/api", nil)
+}
+
+// serves the swagger-ui using redoc (https://github.com/Redocly/redoc)
+func (s *Server) swaggerUiMiddleware(next http.Handler) http.Handler {
 	return middleware.Redoc(middleware.RedocOpts{
-		SpecURL: "/static/swagger.yaml",
+		BasePath: "/",
+		Path:     "api",                  // the path to swagger-ui
+		SpecURL:  "/static/swagger.yaml", // the path to the spec
+		Title:    "DbMan Docs",
 	}, next)
 }
