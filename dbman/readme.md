@@ -127,11 +127,13 @@ The following example shows how to launch dbman in a container connecting to a p
 
 ```bash
 # set DB password
-export DBPWD="mypass"
+DBPWD="mypass"
+# set app release version
+APPVER="0.0.4"
 
 # launch a postgres database container pgdb
 docker run --name pgdb -it -d -p 5432:5432 \
-     -e POSTGRESQL_ADMIN_PASSWORD=$DBPWD \
+     -e POSTGRESQL_ADMIN_PASSWORD=${DBPWD} \
      "centos/postgresql-12-centos7"
 
 # launch dbman and link it to pgdb
@@ -142,7 +144,7 @@ docker run --name dbman -itd -p 8085:8085 \
   -e OX_DBM_DB_USERNAME=onix \ # the database user
   -e OX_DBM_DB_PASSWORD=onix \ # the database user password
   -e OX_DBM_DB_ADMINPWD=postgres \ # the database admin user
-  -e OX_DBM_DB_ADMINPWD=$DBPWD \ # the database admin password
+  -e OX_DBM_DB_ADMINPWD=${DBPWD} \ # the database admin password
   -e OX_DBM_HTTP_AUTHMODE=none \ # no authentication of dbman http service
   -e OX_DBM_SCHEMA_URI=https://raw.githubusercontent.com/gatblau/ox-db/master \ # the onix schema git repo 
   "gatblau/dbman-snapshot"
@@ -151,7 +153,7 @@ docker run --name dbman -itd -p 8085:8085 \
 curl -X POST http://localhost:8085/db/init 2>&1 
 
 # create schemas and functions by calling dbman deploy
-curl -X POST http://localhost:8085/db/deploy/${APP_VER} 2>&1
+curl -X POST http://localhost:8085/db/deploy/$APPVER 2>&1
 ```
 ---
 
