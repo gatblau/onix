@@ -67,9 +67,13 @@ func (dm *DbMan) GetConfig(key string) {
 	dm.Cfg.Get(key)
 }
 
-// print the current configuration set to stdout
-func (dm *DbMan) PrintConfigSet() {
-	dm.Cfg.print()
+// toString the current configuration set to stdout
+func (dm *DbMan) ConfigSetAsString() string {
+	return dm.Cfg.toString()
+}
+
+func (dm *DbMan) GetDbVersionHistory() (string, error) {
+	return dm.db.GetVersionHistory()
 }
 
 // use the configuration set specified by name

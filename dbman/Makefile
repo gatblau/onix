@@ -74,3 +74,7 @@ swaggen:
 
 swagserve:
 	swagger serve ./api/swagger.yaml
+
+# backups the database
+dump:
+	pg_dump -U onix -h localhost -p 5432 -W -F p onix > ${APP_VER}.sql

@@ -6,6 +6,7 @@
 package util
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -62,7 +63,7 @@ func (db *PgSQLProvider) DbExists() (bool, error) {
 func (db *PgSQLProvider) InitialiseDb(init *DbInit) error {
 	for _, item := range init.Items {
 		// prepares to execute script
-		// print the action to be carried out
+		// toString the action to be carried out
 		fmt.Println(item.Action)
 		// merge any script variables
 		for _, value := range item.Vars {
@@ -106,6 +107,36 @@ func (db *PgSQLProvider) GetVersion() (appVersion string, dbVersion string, err 
 	}
 	rows.Close()
 	return appVer, dbVer, err
+}
+
+// get database version history
+func (db *PgSQLProvider) GetVersionHistory() (string, error) {
+	conn, err := db.newConn(false, true)
+	defer conn.Close()
+	if err != nil {
+		return "", err
+	}
+	rows, err := conn.Query(context.Background(), "SELECT application_version, database_version, description, time, scripts_source FROM version ORDER BY time DESC")
+	if err != nil {
+		return "", err
+	}
+	var (
+		appVersion  string
+		dbVersion   string
+		description string
+		time        time.Time
+		source      string
+		buffer      bytes.Buffer
+	)
+	if rows.Next() {
+		err = rows.Scan(&appVersion, &dbVersion, &description, &time, &source)
+		buffer.WriteString(fmt.Sprintf("* App Release = %s\n", appVersion))
+		buffer.WriteString(fmt.Sprintf(" - Db Release = %s\n", dbVersion))
+		buffer.WriteString(fmt.Sprintf(" - Time = %s\n", time))
+		buffer.WriteString(fmt.Sprintf(" - Origin = %s\n", source))
+	}
+	rows.Close()
+	return buffer.String(), nil
 }
 
 // deploy the database schemas

@@ -14,9 +14,9 @@ import (
 	"strings"
 )
 
-// print a passed-in object to the console output or to a file
+// toString a passed-in object to the console output or to a file
 // filename: if set, output to a file
-// obj: the object to print
+// obj: the object to toString
 // format: json or yaml/yml
 func Print(obj interface{}, format string, filename string) {
 	// if an output filename is provided
@@ -35,7 +35,7 @@ func Print(obj interface{}, format string, filename string) {
 		f.WriteString(toString(obj, format))
 		f.Close()
 	} else {
-		// print the getPlan
+		// toString the getPlan
 		fmt.Println(toString(obj, format))
 	}
 }

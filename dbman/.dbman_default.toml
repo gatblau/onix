@@ -8,17 +8,17 @@
 
 # configuration for the Onix Web API integration
 [Db]
-    Provider    = "pgsql"
-    Name        = "onix"
-    Host        = "localhost"
-    Port        = "5432"
-    Username    = "onix"
-    Password    = "onix"
-    AdminUser   = "postgres"
-    AdminPwd    = "onix"
+    Provider        = "pgsql"
+    Name            = "onix"
+    Host            = "localhost"
+    Port            = "5432"
+    Username        = "onix"
+    Password        = "onix"
+    AdminUsername   = "postgres"
+    AdminPassword   = "onix"
 
 # configuration of database scripts remote repository
 [Schema]
     URI         = "https://raw.githubusercontent.com/gatblau/ox-db/master"
     Username    = ""
-    Token       = ""
+    Password    = ""

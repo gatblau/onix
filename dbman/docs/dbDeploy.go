@@ -1,8 +1,8 @@
 package docs
 
-// swagger:route POST /db/deploy/{appVersion} database deploy
+// swagger:route POST /db/deploy/{appVersion} DATABASE DEPLOY
 //
-// deploy
+// DEPLOY
 //
 // Executes the database schema / functions deployment scripts defined in the remote git repository.
 //

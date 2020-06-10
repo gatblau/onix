@@ -6,6 +6,7 @@
 package cmd
 
 import (
+	"fmt"
 	. "github.com/gatblau/onix/dbman/util"
 	"github.com/spf13/cobra"
 )
@@ -26,5 +27,6 @@ func NewConfigShowCmd() *ConfigShowCmd {
 }
 
 func (c *ConfigShowCmd) Run(cmd *cobra.Command, args []string) {
-	DM.PrintConfigSet()
+	fmt.Printf("? I am showing the content of %v\n", DM.Cfg.ConfigFileUsed())
+	fmt.Print(DM.ConfigSetAsString())
 }

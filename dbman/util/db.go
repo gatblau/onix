@@ -23,4 +23,6 @@ type DatabaseProvider interface {
 	CreateVersionTable() error
 	// insert version information in the tracking table
 	InsertVersion(appVersion string, dbVersion string, description string, origin string) error
+	// get database version history
+	GetVersionHistory() (string, error)
 }

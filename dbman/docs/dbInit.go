@@ -1,8 +1,8 @@
 package docs
 
-// swagger:route POST /db/init database init
+// swagger:route POST /db/init DATABASE INIT
 //
-// initialise
+// INITIALISE
 //
 // Executes the database initialisation scripts defined in the remote git repository.
 //

@@ -1,8 +1,8 @@
 package docs
 
-// swagger:route GET /conf/check configuration check
+// swagger:route GET /conf/check CONFIGURATION CHECK
 //
-// check
+// CHECK
 //
 // Checks that a connection can be established to the database and remote git repository based on the specified configuration.
 //

@@ -42,6 +42,8 @@ func (s *Server) Serve() {
 	fmt.Printf("? I am registering http handlers\n")
 	router.HandleFunc("/", s.liveHandler).Methods("GET")
 	router.HandleFunc("/ready", s.readyHandler).Methods("GET")
+	router.HandleFunc("/version", s.showVersionHandler).Methods("GET")
+	router.HandleFunc("/conf", s.showConfigHandler).Methods("GET")
 	router.HandleFunc("/conf/check", s.checkConfigHandler).Methods("GET")
 	router.HandleFunc("/db/init", s.initHandler).Methods("POST")
 	router.HandleFunc("/db/deploy/{appVersion}", s.deployHandler).Methods("POST")
@@ -118,6 +120,20 @@ func (s *Server) checkConfigHandler(w http.ResponseWriter, r *http.Request) {
 	for check, result := range results {
 		_, _ = w.Write([]byte(fmt.Sprintf("[%v] => %v\n", check, result)))
 	}
+}
+
+// returns the configuration variables
+func (s *Server) showConfigHandler(w http.ResponseWriter, r *http.Request) {
+	_, _ = w.Write([]byte(DM.ConfigSetAsString()))
+}
+
+// returns the database version history
+func (s *Server) showVersionHandler(w http.ResponseWriter, r *http.Request) {
+	history, err := DM.GetDbVersionHistory()
+	if err != nil {
+		s.writeError(w, err)
+	}
+	_, _ = w.Write([]byte(history))
 }
 
 // creates a new Basic Authentication Token
