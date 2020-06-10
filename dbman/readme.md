@@ -82,8 +82,8 @@ The container image can be configured by passing the following environment varia
 | `OX_DBM_DB_ADMINUSER` | The database admin user | `postgres` |
 | `OX_DBM_DB_ADMINPWD` | The database admin password | `onix` |
 | `OX_DBM_SCHEMA_URI` | The root path of the database scripts. | `https://raw.githubusercontent.com/gatblau/ox-db/master` |
-| `OX_DBM_SCHEMA_USERNAME` | The username for the scripts repository. | not supported |
-| `OX_DBM_SCHEMA_TOKEN` | The token/password for the scripts repository. | not supported |
+| `OX_DBM_SCHEMA_USERNAME` | The username for the scripts repository. | `git-username-here` |
+| `OX_DBM_SCHEMA_TOKEN` | The token/password for the scripts repository. | `git-password-here` |
 
 ## Swagger Web API
 
@@ -123,6 +123,36 @@ $ ./dbman --help
 
 For an example of how to run a DbMan container to deploy a PostgreSQL database [see here](https://github.com/gatblau/onix/blob/develop/docs/install/container/refresh_db.sh).
 
+The following example shows how to launch dbman in a container connecting to a postgres database and deploying the Onix database:
+
+```bash
+# set DB password
+export DBPWD="mypass"
+
+# launch a postgres database container pgdb
+docker run --name pgdb -it -d -p 5432:5432 \
+     -e POSTGRESQL_ADMIN_PASSWORD=$DBPWD \
+     "centos/postgresql-12-centos7"
+
+# launch dbman and link it to pgdb
+docker run --name dbman -itd -p 8085:8085 \
+  --link pgdb \
+  -e OX_DBM_DB_HOST=pgdb \ # the host name of the database server
+  -e OX_DBM_DB_PORT=5432 \ # the database server port
+  -e OX_DBM_DB_USERNAME=onix \ # the database user
+  -e OX_DBM_DB_PASSWORD=onix \ # the database user password
+  -e OX_DBM_DB_ADMINPWD=postgres \ # the database admin user
+  -e OX_DBM_DB_ADMINPWD=$DBPWD \ # the database admin password
+  -e OX_DBM_HTTP_AUTHMODE=none \ # no authentication of dbman http service
+  -e OX_DBM_SCHEMA_URI=https://raw.githubusercontent.com/gatblau/ox-db/master \ # the onix schema git repo 
+  "gatblau/dbman-snapshot"
+
+# create the database by calling dbman init
+curl -X POST http://localhost:8085/db/init 2>&1 
+
+# create schemas and functions by calling dbman deploy
+curl -X POST http://localhost:8085/db/deploy/${APP_VER} 2>&1
+```
 ---
 
 **Note** DbMan is work in progress, it will eventually replace and augment the logic for deploying and upgrading the database currenlty in the Onix Web API
