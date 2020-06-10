@@ -1,6 +1,6 @@
 # configuration for running DbMan in http mode
 [Http]
-	Metrics = "true"
+	Metrics     = "true"
 	AuthMode    = "basic"
 	Port        = "8085"
 	Username    = "admin"
