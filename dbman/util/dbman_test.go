@@ -42,7 +42,7 @@ func TestDbMan_InitialiseDb(t *testing.T) {
 }
 
 func TestDbMan_Deploy(t *testing.T) {
-	err, _ := dbman.Deploy("0.0.4")
+	err, _ := dbman.Deploy("0.0.1")
 	if err != nil {
 		t.Error(err)
 		t.Fail()
@@ -59,4 +59,12 @@ func TestDbMan_CheckConfigSet(t *testing.T) {
 
 func TestDbMan_Serve(t *testing.T) {
 	dbman.Serve()
+}
+
+func TestDbMan_GetDbVersionHistory(t *testing.T) {
+	_, err := dbman.GetDbVersionHistory()
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
 }

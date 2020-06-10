@@ -16,19 +16,29 @@ info:
   title: Onix Database Manager Web API.
   version: 0.0.4
 paths:
+  /conf:
+    get:
+      description: List all configuration variables.
+      operationId: SHOW
+      responses:
+        "200":
+          $ref: '#/responses/confResponse'
+      summary: SHOW
+      tags:
+      - CONFIGURATION
   /conf/check:
     get:
       description: |-
         Checks that a connection can be established to the database and remote git repository based on the specified configuration.
 
         Configuration is provided as environment variables to the running service.
-      operationId: check
+      operationId: CHECK
       responses:
         "200":
           $ref: '#/responses/confCheckResponse'
-      summary: check
+      summary: CHECK
       tags:
-      - configuration
+      - CONFIGURATION
   /db/deploy/{appVersion}:
     post:
       description: |-
@@ -38,20 +48,13 @@ paths:
         within a transaction block.
 
         Configuration is provided as environment variables to the running service.
-      operationId: deploy
-      parameters:
-      - description: The application version to deploy
-        in: path
-        name: appVersion
-        required: true
-        type: string
-        x-go-name: AppVersion
+      operationId: DEPLOY
       responses:
         "200":
           $ref: '#/responses/dbDeployResponse'
-      summary: deploy
+      summary: DEPLOY
       tags:
-      - database
+      - DATABASE
   /db/init:
     post:
       description: |-
@@ -61,23 +64,37 @@ paths:
         within a transaction block.
 
         Configuration is provided as environment variables to the running service.
-      operationId: init
+      operationId: INIT
       responses:
         "200":
           $ref: '#/responses/dbInitResponse'
-      summary: initialise
+      summary: INITIALISE
       tags:
-      - database
+      - DATABASE
+  /version:
+    get:
+      description: List all releases performed on the target database.
+      operationId: VERSION
+      responses:
+        "200":
+          $ref: '#/responses/versionResponse'
+      summary: VERSION
+      tags:
+      - DATABASE
 produces:
 - text/plain
 responses:
   confCheckResponse:
     description: A list of checks and their result displayed in text form.
+  confResponse:
+    description: The list of configuration variables used by DbMan.
   dbDeployResponse:
     description: The output of the deploy command execution as a plain text log.
   dbInitResponse:
     description: The output of the initialisation command execution as a plain text
       log.
+  versionResponse:
+    description: The history of all database releases
 schemes:
 - http
 - https

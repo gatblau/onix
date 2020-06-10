@@ -6,9 +6,9 @@
 package util
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/spf13/viper"
-	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -21,15 +21,15 @@ const (
 	HttpPort       = "Http.Port"
 	SchemaURI      = "Schema.URI"
 	SchemaUsername = "Schema.Username"
-	SchemaToken    = "Schema.Token"
+	SchemaPassword = "Schema.Password"
 	DbProvider     = "Db.Provider"
 	DbHost         = "Db.Host"
 	DbPort         = "Db.Port"
 	DbName         = "Db.Name"
 	DbUsername     = "Db.Username"
 	DbPassword     = "Db.Password"
-	DbAdminUser    = "Db.AdminUser"
-	DbAdminPwd     = "Db.AdminPwd"
+	DbAdminUser    = "Db.AdminUsername"
+	DbAdminPwd     = "Db.AdminPassword"
 )
 
 // dbman configuration management struct
@@ -114,11 +114,11 @@ func (c *AppCfg) load(path string, name string) error {
 	_ = c.cfg.BindEnv("Db.Provider")
 	_ = c.cfg.BindEnv("Db.Username")
 	_ = c.cfg.BindEnv("Db.Password")
-	_ = c.cfg.BindEnv("Db.AdminUser")
-	_ = c.cfg.BindEnv("Db.AdminPwd")
+	_ = c.cfg.BindEnv("Db.AdminUsername")
+	_ = c.cfg.BindEnv("Db.AdminPassword")
 	_ = c.cfg.BindEnv("Schema.URI")
 	_ = c.cfg.BindEnv("Schema.Username")
-	_ = c.cfg.BindEnv("Schema.Token")
+	_ = c.cfg.BindEnv("Schema.Password")
 
 	return nil
 }
@@ -196,15 +196,21 @@ func (c *AppCfg) GetBool(key string) bool {
 	return c.cfg.GetBool(key)
 }
 
-// print the current configuration file
-func (c *AppCfg) print() {
-	dat, err := ioutil.ReadFile(c.cfg.ConfigFileUsed())
-	if err != nil {
-		fmt.Sprintf("!!! I cannot read the configuration file: %v", err)
-		return
+// toString the current configuration file
+func (c *AppCfg) toString() string {
+	var (
+		buffer bytes.Buffer
+		line   string
+	)
+	for _, key := range c.cfg.AllKeys() {
+		if !strings.Contains(strings.ToLower(key), "password") {
+			line = fmt.Sprintf("%s = %v\n", key, c.cfg.Get(key))
+		} else {
+			line = fmt.Sprintf("%s = ???????\n", key)
+		}
+		buffer.WriteString(line)
 	}
-	fmt.Printf("? I am showing the content of %v\n", c.cfg.ConfigFileUsed())
-	fmt.Print(string(dat))
+	return buffer.String()
 }
 
 // default config file content
@@ -218,18 +224,18 @@ const cfgFile = `# configuration for running DbMan in http mode
 
 # configuration for the Onix Web API integration
 [Db]
-    Provider    = "pgsql"
-    Name        = "onix"
-    Host        = "localhost"
-    Port        = "5432"
-    Username    = "onix"
-    Password    = "onix"
-    AdminUser   = "postgres"
-	AdminPwd    = "onix"
+    Provider        = "pgsql"
+    Name            = "onix"
+    Host            = "localhost"
+    Port            = "5432"
+    Username        = "onix"
+    Password        = "onix"
+    AdminUsername   = "postgres"
+    AdminPassword   = "onix"
 
 # configuration of database scripts remote repository
 [Schema]
     URI         = "https://raw.githubusercontent.com/gatblau/ox-db/master"
     Username    = ""
-    Token       = ""
+    Password    = ""
 `

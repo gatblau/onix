@@ -186,9 +186,9 @@ func (s *ScriptManager) addHttpHeaders(req *http.Request, payload oxc.Serializab
 	req.Header.Add("Cache-Control", `no-cache"`)
 	req.Header.Add("Pragma", "no-cache")
 	// if there is an access token defined
-	if len(s.get(SchemaUsername)) > 0 && len(s.get(SchemaToken)) > 0 {
+	if len(s.get(SchemaUsername)) > 0 && len(s.get(SchemaPassword)) > 0 {
 		credentials := base64.StdEncoding.EncodeToString([]byte(
-			fmt.Sprintf("%s:%s", s.get(SchemaUsername), s.get(SchemaToken))))
+			fmt.Sprintf("%s:%s", s.get(SchemaUsername), s.get(SchemaPassword))))
 		req.Header.Add("Authorization", credentials)
 	}
 	return nil
@@ -231,9 +231,9 @@ func (s ScriptManager) getSchemaUri() (string, error) {
 		return "", errors.New(fmt.Sprintf("!!! The SchemaURI must be an http(s) address"))
 	}
 	// if the username and password have been set
-	if len(s.cfg.Get(SchemaUsername)) > 0 && len(s.cfg.Get(SchemaToken)) > 0 {
+	if len(s.cfg.Get(SchemaUsername)) > 0 && len(s.cfg.Get(SchemaPassword)) > 0 {
 		uriParts := strings.Split(uri, "//")
-		return fmt.Sprintf("%s//%s:%s@%s", uriParts[0], s.cfg.Get(SchemaUsername), s.cfg.Get(SchemaToken), uriParts[1]), nil
+		return fmt.Sprintf("%s//%s:%s@%s", uriParts[0], s.cfg.Get(SchemaUsername), s.cfg.Get(SchemaPassword), uriParts[1]), nil
 	}
 	return uri, nil
 }
