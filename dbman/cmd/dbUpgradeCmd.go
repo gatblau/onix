@@ -7,6 +7,7 @@ package cmd
 
 import (
 	"fmt"
+	. "github.com/gatblau/onix/dbman/util"
 	"github.com/spf13/cobra"
 )
 
@@ -16,10 +17,10 @@ type DbUpgradeCmd struct {
 
 func NewDbUpgradeCmd() *DbUpgradeCmd {
 	c := &DbUpgradeCmd{
-		&cobra.Command{
-			Use:   "upgrade [version]",
-			Short: "upgrades the current schema to a specific version",
-			Long:  `if version is not specified, then rolling upgrades to the latest version are executed`,
+		cmd: &cobra.Command{
+			Use:   "upgrade",
+			Short: "upgrade an existing database to the current Application Version",
+			Long:  ``,
 		},
 	}
 	c.cmd.Run = c.Run
@@ -27,5 +28,10 @@ func NewDbUpgradeCmd() *DbUpgradeCmd {
 }
 
 func (c *DbUpgradeCmd) Run(cmd *cobra.Command, args []string) {
-	fmt.Println("restore called")
+	output, err, elapsed := DM.Upgrade()
+	fmt.Print(output.String())
+	if err != nil {
+		return
+	}
+	fmt.Printf("? I have upgraded the database in %v\n", elapsed)
 }

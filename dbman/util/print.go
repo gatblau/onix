@@ -6,7 +6,9 @@
 package util
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"os"
@@ -44,6 +46,8 @@ func Print(obj interface{}, format string, filename string) {
 // obj: the object to be formatted
 // format: the format to use for the output, either json or yaml/yml
 func toString(obj interface{}, format string) string {
+	table, isTable := obj.(Table)
+
 	switch strings.ToLower(format) {
 	case "yml":
 		fallthrough
@@ -59,8 +63,47 @@ func toString(obj interface{}, format string) string {
 			fmt.Printf("!!! cannot convert output to json: %v", err)
 		}
 		return string(o)
+	case "csv":
+		if isTable {
+			o, err := tableTo(table, format)
+			if err != nil {
+				fmt.Printf("!!! cannot convert table to CVS: %v", err)
+			}
+			return o
+		} else {
+			fmt.Printf("!!! output format %v is only supported with queries", format)
+		}
 	default:
 		fmt.Printf("!!! output format %v not supported, try yaml or json", format)
 	}
 	return ""
+}
+
+func tableTo(table Table, format string) (string, error) {
+	switch strings.ToLower(format) {
+	case "csv":
+		{
+			buffer := bytes.Buffer{}
+			for i := 0; i < len(table.Header); i++ {
+				buffer.WriteString(table.Header[i])
+				if i < len(table.Header)-1 {
+					buffer.WriteString(",")
+				}
+			}
+			buffer.WriteString("\n")
+			for _, row := range table.Rows {
+				for i := 0; i < len(row); i++ {
+					buffer.WriteString(row[i])
+					if i < len(row)-1 {
+						buffer.WriteString(",")
+					}
+				}
+				buffer.WriteString("\n")
+			}
+			out := buffer.String()
+			return out[:len(out)-1], nil
+		}
+	default:
+		return "", errors.New(fmt.Sprintf("!!! I cannot recognise the format '%s'", format))
+	}
 }

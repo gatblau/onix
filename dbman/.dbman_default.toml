@@ -16,6 +16,7 @@
     Password        = "onix"
     AdminUsername   = "postgres"
     AdminPassword   = "onix"
+    ObjectsPattern  = "ox_*"
 
 # configuration of database scripts remote repository
 [Schema]

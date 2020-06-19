@@ -10,169 +10,162 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"strings"
 	"time"
 )
 
 // the database provider for PostgreSQL
 // NOTE: database providers implicitly implement the DatabaseProvider interface
 type PgSQLProvider struct {
-	cfg *AppCfg
+	cfg *Config
 }
 
-// creates a new db instance
-func NewDb(appCfg *AppCfg) DatabaseProvider {
-	switch strings.ToLower(appCfg.Get(DbProvider)) {
-	case "pgsql":
-		// load the default native postgres provider
-		return &PgSQLProvider{
-			cfg: appCfg,
-		}
-	default:
-		// only supports connections to postgres at the moment
-		// in time, a plugin approach for database providers could be implemented
-		panic(errors.New(fmt.Sprintf("!!! the database provider '%v' is not supported.", appCfg.Get(DbProvider))))
-	}
+func (db *PgSQLProvider) Setup(config *Config) {
+	db.cfg = config
 }
 
-// check a connection to the server can be established
-func (db *PgSQLProvider) CanConnectToServer() (bool, error) {
-	_, err := db.newConn(true, false)
-	return err != nil, err
-}
-
-// checks if the database exists
-func (db *PgSQLProvider) DbExists() (bool, error) {
-	conn, err := db.newConn(true, false)
+// execute the specified getAction
+func (db *PgSQLProvider) RunCommand(command *Command) (string, error) {
+	log := bytes.Buffer{}
+	conn, err := db.newConn(command.AsAdmin, command.UseDb)
+	defer conn.Close()
 	if err != nil {
-		fmt.Printf("? I cannot connect to the database server host %v: %v\n", db.cfg.Get(DbHost), err)
-		return false, err
+		return log.String(), err
+	}
+	if command.Transactional {
+		log.WriteString(fmt.Sprintf("? I am creating a db connection that is %v, %v and %v\n",
+			db.label("transactional", "non-transactional", command.Transactional),
+			db.label("as an admin", "as a user", command.AsAdmin),
+			db.label("to the db", "to the server", command.UseDb)))
+		tx, err := conn.Begin(context.Background())
+		if err != nil {
+			return log.String(), err
+		}
+		for _, script := range command.Scripts {
+			_, err := tx.Exec(context.Background(), script.Content)
+			log.WriteString(fmt.Sprintf("? I have executed the script '%s'\n", script.Name))
+			// if we have an error
+			if isNull, err := db.error(err); !isNull {
+				tx.Rollback(context.Background())
+				return log.String(), err
+			}
+		}
+		tx.Commit(context.Background())
+	} else {
+		log.WriteString(fmt.Sprintf("? I am creating a db connection that is %v, %v and %v\n",
+			db.label("transactional", "non-transactional", command.Transactional),
+			db.label("as an admin", "as a user", command.AsAdmin),
+			db.label("to the db", "to the server", command.UseDb)))
+		for _, script := range command.Scripts {
+			_, err := conn.Exec(context.Background(), script.Content)
+			// if we have an error
+			if isNull, err := db.error(err); !isNull {
+				return log.String(), err
+			}
+		}
+	}
+	return log.String(), nil
+}
+
+func (db *PgSQLProvider) RunQuery(query *Query, params ...interface{}) (Table, error) {
+	conn, err := db.newConn(false, true)
+	if err != nil {
+		return Table{}, nil
 	}
 	defer conn.Close()
-	var count int
-	sql := fmt.Sprintf("SELECT 1 FROM pg_database WHERE datname='%s';", db.get(DbName))
-	err = conn.QueryRow(context.Background(), sql).Scan(&count)
+	result, err := conn.Query(context.Background(), query.Content)
 	if err != nil {
-		return !strings.Contains(err.Error(), "no rows"), nil
+		return Table{}, nil
 	}
-	return true, err
+	header := make(Row, 0)
+	rows := make([]Row, 0)
+	for result.Next() {
+		// only the first time round populate the header
+		if len(header) == 0 {
+			for _, desc := range result.FieldDescriptions() {
+				header = append(header, string(desc.Name))
+			}
+		}
+		// create a new row
+		row := make(Row, 0)
+		// populate the row with returned values from the query
+		values, err := result.Values()
+		if err != nil {
+		}
+		for _, value := range values {
+			if v, ok := value.(string); ok {
+				row = append(row, string(v))
+			}
+			if v, ok := value.(time.Time); ok {
+				row = append(row, v.String())
+			}
+		}
+		// add the row to the row set
+		rows = append(rows, row)
+	}
+	result.Close()
+	return Table{
+		Header: header,
+		Rows:   rows,
+	}, nil
 }
 
-// initialises the database from db init info
-func (db *PgSQLProvider) InitialiseDb(init *DbInit) error {
-	for _, item := range init.Items {
-		// prepares to execute script
-		// toString the action to be carried out
-		fmt.Println(item.Action)
-		// merge any script variables
-		for _, value := range item.Vars {
-			// get the value of the variable from the configuration
-			confValue := db.cfg.Get(value.From)
-			// replace all occurrences of the placeholder (value.Name) with the confValue
-			result := strings.Replace(item.Script, value.Name, confValue, -1)
-			// update the value of script with the merged result
-			item.Script = result
-		}
-		// connect to the server or database as admin or user
-		conn, err := db.newConn(item.Admin, item.Db)
-		if err != nil {
-			fmt.Printf("!!! I am unable to connect to database: %v\n", err)
-			return err
-		}
-		// execute the script
-		_, err = conn.Exec(context.Background(), item.Script)
-		// if an error is encountered then exit
-		if err != nil {
-			return err
-		}
-		// closes the connection
-		conn.Close()
-	}
-	return nil
-}
-
-// gets the current app and db version
 func (db *PgSQLProvider) GetVersion() (appVersion string, dbVersion string, err error) {
-	conn, err := db.newConn(false, true)
+	conn, err := db.newConn(true, true)
 	if err != nil {
-		return "", "", err
+		return appVersion, dbVersion, err
 	}
 	defer conn.Close()
-	rows, _ := conn.Query(context.Background(), "SELECT application_version, database_version from version ORDER BY time DESC LIMIT 1;")
-	var appVer string
-	var dbVer string
+	rows, err := conn.Query(context.Background(), `
+		SELECT appVersion, dbVersion 
+		FROM "version"
+		ORDER BY time DESC
+		LIMIT 1`)
+	if err != nil {
+		return appVersion, dbVersion, err
+	}
 	if rows.Next() {
-		err = rows.Scan(&appVer, &dbVer)
+		rows.Scan(&appVersion, &dbVersion)
 	}
 	rows.Close()
-	return appVer, dbVer, err
+	return appVersion, dbVersion, err
 }
 
-// get database version history
-func (db *PgSQLProvider) GetVersionHistory() (string, error) {
+// add version
+func (db *PgSQLProvider) SetVersion(appVersion string, dbVersion string, description string, source string) error {
+	// create a db connection
 	conn, err := db.newConn(false, true)
+	if err != nil {
+		return errors.New(fmt.Sprintf("!!! I cannot connect to the database: %v", err))
+	}
 	defer conn.Close()
+	// find out if version table exists
+	_, err = conn.Query(context.Background(), "SELECT * FROM version")
 	if err != nil {
-		return "", err
-	}
-	rows, err := conn.Query(context.Background(), "SELECT application_version, database_version, description, time, scripts_source FROM version ORDER BY time DESC")
-	if err != nil {
-		return "", err
-	}
-	var (
-		appVersion  string
-		dbVersion   string
-		description string
-		time        time.Time
-		source      string
-		buffer      bytes.Buffer
-	)
-	if rows.Next() {
-		err = rows.Scan(&appVersion, &dbVersion, &description, &time, &source)
-		buffer.WriteString(fmt.Sprintf("* App Release = %s\n", appVersion))
-		buffer.WriteString(fmt.Sprintf(" - Db Release = %s\n", dbVersion))
-		buffer.WriteString(fmt.Sprintf(" - Time = %s\n", time))
-		buffer.WriteString(fmt.Sprintf(" - Origin = %s\n", source))
-	}
-	rows.Close()
-	return buffer.String(), nil
-}
-
-// deploy the database schemas
-func (db *PgSQLProvider) DeployDb(release *Release) error {
-	conn, err := db.newConn(false, true)
-	defer conn.Close()
-
-	if err != nil {
-		return err
-	}
-	// deploy the schemas
-	tx, err := conn.Begin(context.Background())
-	if err != nil {
-		return err
-	}
-	for _, schema := range release.Schemas {
-		_, err := tx.Exec(context.Background(), schema)
+		// could not find version table, so try and create it
+		_, err := conn.Exec(context.Background(), fmt.Sprintf(`CREATE TABLE "version"
+            (
+                appVersion  CHARACTER VARYING(25) NOT NULL COLLATE pg_catalog."default",
+                dbVersion   CHARACTER VARYING(25) NOT NULL COLLATE pg_catalog."default",
+                description TEXT COLLATE pg_catalog."default",
+                time        TIMESTAMP(6) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP(6),
+                source      CHARACTER VARYING(250),
+                CONSTRAINT version_app_version_db_release_pk PRIMARY KEY (appVersion, dbVersion)
+            ) WITH (OIDS = FALSE) TABLESPACE pg_default;
+            ALTER TABLE version OWNER to %v;`, db.cfg.Get(DbUsername)))
 		if err != nil {
-			tx.Rollback(context.Background())
-			return err
+			return errors.New(fmt.Sprintf("!!! I cannot create the version table: %v", err))
 		}
 	}
-	// deploy the functions
-	for _, function := range release.Functions {
-		_, err := tx.Exec(context.Background(), function)
-		if err != nil {
-			tx.Rollback(context.Background())
-			return err
-		}
+	// ready to insert a new version
+	_, err = conn.Exec(context.Background(),
+		fmt.Sprintf(`INSERT INTO "version"(appVersion, dbVersion, description, source) VALUES('%s', '%s', '%s', '%s');`,
+			appVersion, dbVersion, description, source))
+	if err != nil {
+		return errors.New(fmt.Sprintf("!!! I cannot update the version table: %v", err))
 	}
-	tx.Commit(context.Background())
-	return nil
-}
-
-func (db *PgSQLProvider) UpgradeDb() error {
-	return nil
+	return err
 }
 
 // return a configuration item
@@ -205,29 +198,6 @@ func (db *PgSQLProvider) connString(admin bool, database bool) string {
 		connStr = fmt.Sprintf("%v/%v", connStr, db.get(DbName))
 	}
 	return connStr
-}
-
-// create the version tracking table in the target database
-func (db *PgSQLProvider) CreateVersionTable() error {
-	conn, err := db.newConn(false, true)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	_, err = conn.Exec(context.Background(), pgSQLVersionTable)
-	return err
-}
-
-// insert a new database version
-func (db *PgSQLProvider) InsertVersion(appVersion string, dbVersion string, description string, origin string) error {
-	conn, err := db.newConn(false, true)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	sql := fmt.Sprintf(pgSQLInsertVersion, appVersion, dbVersion, description, origin)
-	_, err = conn.Exec(context.Background(), sql)
-	return err
 }
 
 // this type carries either a connection or an error
@@ -275,37 +245,29 @@ func (db *PgSQLProvider) newConn(admin bool, database bool) (*pgxpool.Pool, erro
 	}
 }
 
-const pgSQLVersionTable = `
-DO
-  $$
-    BEGIN
-      ---------------------------------------------------------------------------
-      -- VERSION - version of releases (not only database)
-      ---------------------------------------------------------------------------
-      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname = 'version')
-      THEN
-        CREATE TABLE version
-        (
-          application_version CHARACTER VARYING(25) NOT NULL COLLATE pg_catalog."default",
-          database_version    CHARACTER VARYING(25) NOT NULL COLLATE pg_catalog."default",
-          description         TEXT COLLATE pg_catalog."default",
-          time                timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP(6),
-          scripts_source      character varying(250),
-          CONSTRAINT version_app_version_db_release_pk PRIMARY KEY (application_version, database_version)
-        )
-          WITH (
-            OIDS = FALSE
-          )
-          TABLESPACE pg_default;
+// return an enhanced error
+func (db *PgSQLProvider) error(err error) (bool, error) {
+	isNull := err == nil
+	if !isNull {
+		// if the error is a postgres error
+		if pgErr, ok := err.(*pgconn.PgError); ok {
+			// return detailed info
+			var where string
+			if len(pgErr.Where) > 0 {
+				where = fmt.Sprintf(" - where: %s", pgErr.Where)
+			}
+			return isNull, errors.New(fmt.Sprintf("%s: %s (SQLSTATE %s)%s", pgErr.Severity, pgErr.Message, pgErr.Code, where))
+		} else {
+			return isNull, err
+		}
+	}
+	return isNull, err
+}
 
-        ALTER TABLE version
-          OWNER to onix;
-      END IF;
-    END;
-    $$
-`
-
-const pgSQLInsertVersion = `
-INSERT INTO version (application_version, database_version, description, scripts_source)
-VALUES ('%s','%s','%s','%s');
-`
+func (db *PgSQLProvider) label(textTrue string, textFalse string, use bool) string {
+	if use {
+		return textTrue
+	} else {
+		return textFalse
+	}
+}
