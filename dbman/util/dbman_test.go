@@ -1,6 +1,9 @@
 package util
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 var dbman *DbMan
 
@@ -24,6 +27,24 @@ func TestFetchReleasePlan(t *testing.T) {
 	}
 }
 
+func TestDbMan_GetReleaseInfo(t *testing.T) {
+	_, _ = dbman.GetReleaseInfo("0.0.4")
+}
+
+func TestDbMan_RunQuery(t *testing.T) {
+	// results, _, err := dbman.RunQuery("db-version", "0.0.4", []string{"0.0.4"})
+	// if err != nil {
+	// 	t.Error(err)
+	// 	t.Fail()
+	// }
+	// if len(results.Rows) == 0 {
+	// 	t.Error(err)
+	// 	t.Fail()
+	// }
+	// csv, _ := dbman.TableTo(results, "csv")
+	// print(csv)
+}
+
 func TestSaveConfig(t *testing.T) {
 	dbman.SetConfig("Schema.URI", "AAAA")
 	dbman.SaveConfig()
@@ -31,22 +52,6 @@ func TestSaveConfig(t *testing.T) {
 
 func TestUseConfig(t *testing.T) {
 	dbman.UseConfigSet("", "myapp")
-}
-
-func TestDbMan_InitialiseDb(t *testing.T) {
-	err, _ := dbman.InitialiseDb()
-	if err != nil {
-		t.Error(err)
-		t.Fail()
-	}
-}
-
-func TestDbMan_Deploy(t *testing.T) {
-	err, _ := dbman.Deploy("0.0.1")
-	if err != nil {
-		t.Error(err)
-		t.Fail()
-	}
 }
 
 func TestDbMan_CheckConfigSet(t *testing.T) {
@@ -61,8 +66,15 @@ func TestDbMan_Serve(t *testing.T) {
 	dbman.Serve()
 }
 
-func TestDbMan_GetDbVersionHistory(t *testing.T) {
-	_, err := dbman.GetDbVersionHistory()
+func TestDbMan_Create_Deploy(t *testing.T) {
+	output, err, _ := dbman.Create()
+	fmt.Print(output.String())
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+	output, err, _ = dbman.Deploy()
+	fmt.Print(output.String())
 	if err != nil {
 		t.Error(err)
 		t.Fail()

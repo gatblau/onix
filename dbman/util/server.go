@@ -20,11 +20,11 @@ import (
 )
 
 type Server struct {
-	cfg   *AppCfg
+	cfg   *Config
 	start time.Time
 }
 
-func NewServer(cfg *AppCfg) *Server {
+func NewServer(cfg *Config) *Server {
 	return &Server{
 		cfg: cfg,
 	}
@@ -42,11 +42,11 @@ func (s *Server) Serve() {
 	fmt.Printf("? I am registering http handlers\n")
 	router.HandleFunc("/", s.liveHandler).Methods("GET")
 	router.HandleFunc("/ready", s.readyHandler).Methods("GET")
-	router.HandleFunc("/version", s.showVersionHandler).Methods("GET")
 	router.HandleFunc("/conf", s.showConfigHandler).Methods("GET")
 	router.HandleFunc("/conf/check", s.checkConfigHandler).Methods("GET")
-	router.HandleFunc("/db/init", s.initHandler).Methods("POST")
-	router.HandleFunc("/db/deploy/{appVersion}", s.deployHandler).Methods("POST")
+	router.HandleFunc("/db/create", s.createHandler).Methods("POST")
+	router.HandleFunc("/db/deploy", s.deployHandler).Methods("POST")
+	router.HandleFunc("/db/upgrade", s.upgradeHandler).Methods("POST")
 
 	// swagger-ui configuration
 	s.setupSwagger(router)
@@ -83,31 +83,48 @@ func (s *Server) readyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) initHandler(w http.ResponseWriter, r *http.Request) {
+// create a database when it does not exist
+func (s *Server) createHandler(w http.ResponseWriter, r *http.Request) {
 	// deploy the schema and functions
-	err, elapsed := DM.InitialiseDb()
+	output, err, elapsed := DM.Create()
+	w.Write([]byte(output.String()))
 	// return an error if failed
 	if err != nil {
 		s.writeError(w, err)
 	} else {
-		_, err = w.Write([]byte(fmt.Sprintf("? I have completed the initialisation in %v\n", elapsed)))
+		_, err = w.Write([]byte(fmt.Sprintf("? I have completed the action in %v\n", elapsed)))
 		if err != nil {
 			fmt.Printf("!!! I failed to write error to response: %v", err)
 		}
 	}
 }
 
-// deploy a schema
+// deploy schema and objects in an empty database
 func (s *Server) deployHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	appVersion := vars["appVersion"]
 	// deploy the schema and functions
-	err, elapsed := DM.Deploy(appVersion)
+	output, err, elapsed := DM.Deploy()
+	w.Write([]byte(output.String()))
 	// return an error if failed
 	if err != nil {
 		s.writeError(w, err)
 	} else {
-		_, err = w.Write([]byte(fmt.Sprintf("? I have completed the deployment in %v\n", elapsed)))
+		_, err = w.Write([]byte(fmt.Sprintf("? I have completed the action in %v\n", elapsed)))
+		if err != nil {
+			fmt.Printf("!!! I failed to write error to response: %v", err)
+		}
+	}
+}
+
+// deploy schema and objects in an empty database
+func (s *Server) upgradeHandler(w http.ResponseWriter, r *http.Request) {
+	// deploy the schema and functions
+	output, err, elapsed := DM.Upgrade()
+	w.Write([]byte(output.String()))
+	// return an error if failed
+	if err != nil {
+		s.writeError(w, err)
+	} else {
+		_, err = w.Write([]byte(fmt.Sprintf("? I have completed the action in %v\n", elapsed)))
 		if err != nil {
 			fmt.Printf("!!! I failed to write error to response: %v", err)
 		}
@@ -125,15 +142,6 @@ func (s *Server) checkConfigHandler(w http.ResponseWriter, r *http.Request) {
 // returns the configuration variables
 func (s *Server) showConfigHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(DM.ConfigSetAsString()))
-}
-
-// returns the database version history
-func (s *Server) showVersionHandler(w http.ResponseWriter, r *http.Request) {
-	history, err := DM.GetDbVersionHistory()
-	if err != nil {
-		s.writeError(w, err)
-	}
-	_, _ = w.Write([]byte(history))
 }
 
 // creates a new Basic Authentication Token

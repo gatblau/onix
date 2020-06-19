@@ -11,15 +11,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type DbDeployCmd struct {
+type DbCreateCmd struct {
 	cmd *cobra.Command
 }
 
-func NewDbDeployCmd() *DbDeployCmd {
-	c := &DbDeployCmd{
+func NewDbCreateCmd() *DbCreateCmd {
+	c := &DbCreateCmd{
 		cmd: &cobra.Command{
-			Use:   "deploy",
-			Short: "deploy schemas and objects in an existing database based on the current Application Version",
+			Use:   "create",
+			Short: "create a new database based on the current Application Version",
 			Long:  ``,
 		},
 	}
@@ -27,11 +27,11 @@ func NewDbDeployCmd() *DbDeployCmd {
 	return c
 }
 
-func (c *DbDeployCmd) Run(cmd *cobra.Command, args []string) {
-	output, err, elapsed := DM.Deploy()
+func (c *DbCreateCmd) Run(cmd *cobra.Command, args []string) {
+	output, err, elapsed := DM.Create()
 	fmt.Print(output.String())
 	if err != nil {
 		return
 	}
-	fmt.Printf("? I have deployed the database in %v\n", elapsed)
+	fmt.Printf("? I have created the database in %v\n", elapsed)
 }

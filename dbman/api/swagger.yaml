@@ -39,46 +39,24 @@ paths:
       summary: CHECK
       tags:
       - CONFIGURATION
-  /db/deploy/{appVersion}:
+  /db/run/{taskName}/{appVersion}:
     post:
       description: |-
-        Executes the database schema / functions deployment scripts defined in the remote git repository.
-
-        Due to the fact some scripts might need to execute operations such as creating the database, they are not executed
-        within a transaction block.
+        Executes the database task defined in a remote git repository.
 
         Configuration is provided as environment variables to the running service.
-      operationId: DEPLOY
+      operationId: RUN
+      parameters:
+      - description: The application version to deploy
+        in: path
+        name: taskName
+        required: true
+        type: string
+        x-go-name: TaskName
       responses:
         "200":
-          $ref: '#/responses/dbDeployResponse'
-      summary: DEPLOY
-      tags:
-      - DATABASE
-  /db/init:
-    post:
-      description: |-
-        Executes the database initialisation scripts defined in the remote git repository.
-
-        Due to the fact some scripts might need to execute operations such as creating the database, they are not executed
-        within a transaction block.
-
-        Configuration is provided as environment variables to the running service.
-      operationId: INIT
-      responses:
-        "200":
-          $ref: '#/responses/dbInitResponse'
-      summary: INITIALISE
-      tags:
-      - DATABASE
-  /version:
-    get:
-      description: List all releases performed on the target database.
-      operationId: VERSION
-      responses:
-        "200":
-          $ref: '#/responses/versionResponse'
-      summary: VERSION
+          $ref: '#/responses/dbRunResponse'
+      summary: RUN
       tags:
       - DATABASE
 produces:
@@ -88,13 +66,8 @@ responses:
     description: A list of checks and their result displayed in text form.
   confResponse:
     description: The list of configuration variables used by DbMan.
-  dbDeployResponse:
-    description: The output of the deploy command execution as a plain text log.
-  dbInitResponse:
-    description: The output of the initialisation command execution as a plain text
-      log.
-  versionResponse:
-    description: The history of all database releases
+  dbRunResponse:
+    description: The output of the run command execution as a plain text log.
 schemes:
 - http
 - https

@@ -8,6 +8,7 @@ package util
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/gatblau/oxc"
 	"net/http"
 )
@@ -53,4 +54,33 @@ func (plan *Plan) info(appVersion string) *Info {
 		}
 	}
 	return nil
+}
+
+// check if an upgrade path is available from the current to the target app version
+func (plan *Plan) canUpgrade(currentAppVersion string, targetAppVersion string) (bool, string) {
+	current := plan.info(currentAppVersion)
+	if current == nil {
+		return false, fmt.Sprintf("!!! I could not find information for current application version %s", currentAppVersion)
+	}
+	target := plan.info(targetAppVersion)
+	if target == nil {
+		return false, fmt.Sprintf("!!! I could not find information for target application version %s", targetAppVersion)
+	}
+	return true, ""
+}
+
+func (plan *Plan) getUpgradeWindow(currentAppVersion string, targetAppVersion string) (currentReleaseIndex int, targetReleaseIndex int) {
+	var (
+		currentIx, targetIx int
+	)
+	for ix, release := range plan.Releases {
+		if release.AppVersion == currentAppVersion {
+			currentIx = ix + 1
+		}
+		if release.AppVersion == targetAppVersion {
+			targetIx = ix + 1
+			break
+		}
+	}
+	return currentIx, targetIx
 }

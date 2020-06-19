@@ -6,6 +6,7 @@
 package util
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/gatblau/oxc"
@@ -17,10 +18,10 @@ var DM *DbMan
 
 type DbMan struct {
 	// configuration
-	Cfg *AppCfg
+	Cfg *Config
 	// scrips manager
 	script *ScriptManager
-	// database manager
+	// db provider
 	db DatabaseProvider
 	// is it ready?
 	ready bool
@@ -39,11 +40,12 @@ func NewDbMan() (*DbMan, error) {
 	if err != nil {
 		return nil, err
 	}
-	dbProvider := NewDb(cfg)
+	db := NewDbProvider(cfg)
+
 	return &DbMan{
 		Cfg:    cfg,
 		script: scriptManager,
-		db:     dbProvider,
+		db:     db,
 	}, nil
 }
 
@@ -51,8 +53,8 @@ func (dm *DbMan) GetReleasePlan() (*Plan, error) {
 	return dm.script.fetchPlan()
 }
 
-func (dm *DbMan) GetReleaseInfo(appVersion string, fetchScripts bool) (*Release, error) {
-	return dm.script.fetchRelease(appVersion, fetchScripts)
+func (dm *DbMan) GetReleaseInfo(appVersion string) (*Manifest, error) {
+	return dm.script.fetchManifest(appVersion)
 }
 
 func (dm *DbMan) SaveConfig() {
@@ -70,10 +72,6 @@ func (dm *DbMan) GetConfig(key string) {
 // toString the current configuration set to stdout
 func (dm *DbMan) ConfigSetAsString() string {
 	return dm.Cfg.toString()
-}
-
-func (dm *DbMan) GetDbVersionHistory() (string, error) {
-	return dm.db.GetVersionHistory()
 }
 
 // use the configuration set specified by name
@@ -97,7 +95,6 @@ func (dm *DbMan) GetConfigSetDir() string {
 // returns a map containing entries with the type of check and the result
 func (dm *DbMan) CheckConfigSet() map[string]string {
 	results := make(map[string]string)
-	// try and fetch the getReleaseInfo plan
 	_, err := dm.script.fetchPlan()
 	if err != nil {
 		fmt.Printf("!!! check failed: %v\n", err)
@@ -106,7 +103,16 @@ func (dm *DbMan) CheckConfigSet() map[string]string {
 		results["scripts uri"] = "OK"
 	}
 	// try and connect to the database
-	_, err = dm.db.CanConnectToServer()
+	// create a dummy action with no scripts to test the connection
+	testConnCmd := &Command{
+		Name:          "test connection",
+		Description:   "",
+		Transactional: false,
+		AsAdmin:       true,
+		UseDb:         false,
+		Scripts:       []Script{},
+	}
+	_, err = dm.db.RunCommand(testConnCmd)
 	if err != nil {
 		results["db connection"] = fmt.Sprintf("FAILED: %v", err)
 	} else {
@@ -115,80 +121,77 @@ func (dm *DbMan) CheckConfigSet() map[string]string {
 	return results
 }
 
-// initialises the database (i.e. create database, user, extensions, etc)
-// it does not include schema deployment or upgrades
-func (dm *DbMan) InitialiseDb() (error, time.Duration) {
+func (dm *DbMan) Create() (log bytes.Buffer, err error, elapsed time.Duration) {
 	start := time.Now()
-
-	// check if the database exists
-	exist, err := dm.db.DbExists()
-	// if there is an error, could not connect to the database
+	log = bytes.Buffer{}
+	appVer := dm.Cfg.Get(AppVersion)
+	// get database release version
+	log.WriteString(fmt.Sprintf("? I am checking that the database '%s' does not already exist\n", dm.Cfg.Get(DbName)))
+	appVersion, dbVersion, err := dm.db.GetVersion()
+	if err == nil {
+		// there is already a database and cannot continue
+		return log, errors.New(fmt.Sprintf("!!! I have found an existing database version %v, which is for application version %v", dbVersion, appVersion)), time.Since(start)
+	}
+	// fetch the release manifest for appVersion
+	log.WriteString(fmt.Sprintf("? I am retrieving the release manifest for application version '%v'\n", dm.Cfg.Get(AppVersion)))
+	manifest, err := dm.script.fetchManifest(appVer)
 	if err != nil {
-		return err, time.Since(start)
+		return log, err, time.Since(start)
 	}
-	if !exist {
-		fmt.Printf("? I am fetching database initialisation info.\n")
-		init, err := dm.script.fetchInit()
-		if err != nil {
-			return err, time.Since(start)
-		}
-		fmt.Printf("? I am applying the database initialisation scripts.\n")
-		err = dm.db.InitialiseDb(init)
-		if err != nil {
-			return err, time.Since(start)
-		}
-		fmt.Printf("? I am creating the database version tracking table.\n")
-		// NOTE: its schema is enforced by DbMan
-		err = dm.db.CreateVersionTable()
-		return err, time.Since(start)
-	}
-	fmt.Printf("? I cannot execute the initialisation because the database already exist\n")
-	return nil, time.Since(start)
+	// get the commands for the create action
+	cmds := manifest.getCommands(manifest.Create.Commands)
+	// run the commands on the database
+	output, err := dm.runCommands(cmds, manifest)
+	log.WriteString(output.String())
+	// return
+	return log, err, time.Since(start)
 }
 
-func (dm *DbMan) Deploy(targetAppVersion string) (error, time.Duration) {
+func (dm *DbMan) Deploy() (log bytes.Buffer, err error, elapsed time.Duration) {
 	start := time.Now()
-	// check if the database exists
-	exist, err := dm.db.DbExists()
-	// if there is an error, could not connect to the database
+	log = bytes.Buffer{}
+	appVer := dm.Cfg.Get(AppVersion)
+	// get database release version
+	appVersion, dbVersion, err := dm.db.GetVersion()
+	if err == nil && len(appVersion) > 0 {
+		// there is already a database with a pre-existing deployment so cannot continue
+		return log, errors.New(fmt.Sprintf("!!! I have found an existing database version %v, which is for application version %v", dbVersion, appVersion)), time.Since(start)
+	}
+	// fetch the release manifest for appVersion
+	manifest, err := dm.script.fetchManifest(appVer)
 	if err != nil {
-		return err, time.Since(start)
+		return log, err, time.Since(start)
 	}
-	// if the database does not exists, then exit (init should be run first)
-	if !exist {
-		return errors.New(fmt.Sprintf("! I could not find the database '%v': call 'dbman db init' before attemting to deploy.\n", dm.Cfg.Get(DbName))), time.Since(start)
-	}
-	// get database version
-	appVer, dbVer, err := dm.db.GetVersion()
-	// if the version cannot be retrieved return
+	// get the commands for the deploy action
+	cmds := manifest.getCommands(manifest.Deploy.Commands)
+	// run the commands on the database
+	output, err := dm.runCommands(cmds, manifest)
+	log.WriteString(output.String())
 	if err != nil {
-		return err, time.Since(start)
+		return log, err, time.Since(start)
 	}
-	// if there is a previous version, deploy should not be called, returns
-	if len(appVer) > 0 && len(dbVer) > 0 {
-		return errors.New(fmt.Sprintf("!!! I have found a previous deployment for application version '%v', I cannot continue.\n", appVer)), time.Since(start)
-	}
-	// we have an empty version table so we are ready to deploy
-	fmt.Printf("? I am fetching database release info for application version '%v'.\n", targetAppVersion)
-	release, err := dm.script.fetchRelease(targetAppVersion, true)
-	if err != nil {
-		return err, time.Since(start)
-	}
-	// deploys the release
-	err = dm.db.DeployDb(release)
-	if err != nil {
-		return err, time.Since(start)
-	}
-	// add the deployed version in the tracking table
-	err = dm.db.InsertVersion(targetAppVersion, release.Release, "deployed by DbMan", dm.Cfg.Get(SchemaURI))
-	// logs the time taken
-	fmt.Printf("? I have deployed the database in %v", time.Since(start))
-	return err, time.Since(start)
+	// update release version
+	err = dm.db.SetVersion(appVer, manifest.DbVersion, fmt.Sprintf("Database Release %v", manifest.DbVersion), dm.Cfg.Get(SchemaURI))
+	// return
+	return log, err, time.Since(start)
 }
 
-func (dm *DbMan) Upgrade(targetAppVersion string) (error, time.Duration) {
+func (dm *DbMan) Upgrade() (log bytes.Buffer, err error, elapsed time.Duration) {
 	start := time.Now()
-	return nil, time.Since(start)
+	log = bytes.Buffer{}
+	return log, nil, time.Since(start)
+}
+
+func (dm *DbMan) RunQuery(manifest *Manifest, query *Query, params []string) (Table, time.Duration, error) {
+	start := time.Now()
+	// fetch the query content
+	query, err := dm.script.fetchQueryContent(dm.Cfg.Get(AppVersion), manifest.QueriesPath, *query, params)
+	if err != nil {
+		return Table{}, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot fetch content for query: %v\n", query.Name))
+	}
+	// run the query
+	result, err := dm.db.RunQuery(query, params)
+	return result, time.Since(start), err
 }
 
 func (dm *DbMan) CheckReady() (bool, error) {
@@ -208,4 +211,29 @@ func (dm *DbMan) CheckReady() (bool, error) {
 func (dm *DbMan) Serve() {
 	server := NewServer(dm.Cfg)
 	server.Serve()
+}
+
+func (dm *DbMan) runCommands(cmds []Command, manifest *Manifest) (log bytes.Buffer, err error) {
+	log = bytes.Buffer{}
+	// fetch the scripts for the commands
+	var commands []*Command
+	for _, cmd := range cmds {
+		cmd, err := dm.script.fetchCommandContent(dm.Cfg.Get(AppVersion), manifest.CommandsPath, cmd)
+		if err != nil {
+			return log, err
+		}
+		commands = append(commands, cmd)
+	}
+	// execute the commands
+	for _, c := range commands {
+		log.WriteString(fmt.Sprintf("? I have started execution of the command '%s'\n", c.Name))
+		output, err := dm.db.RunCommand(c)
+		log.WriteString(output)
+		if err != nil {
+			log.WriteString(fmt.Sprintf("!!! the execution of the command '%s' has failed: %s\n", c.Name, err))
+			return log, err
+		}
+		log.WriteString(fmt.Sprintf("? the execution of the command '%s' has succeeded\n", c.Name))
+	}
+	return log, err
 }

@@ -5,24 +5,37 @@
 //   to be licensed under the same terms as the rest of the code.
 package util
 
+import (
+	"errors"
+	"fmt"
+	"strings"
+)
+
 // implemented by database specific implementations
 type DatabaseProvider interface {
-	// check it can connect to the database server
-	CanConnectToServer() (bool, error)
-	// check the database exists
-	DbExists() (bool, error)
-	// create the database
-	InitialiseDb(init *DbInit) error
-	// get the database version information
-	GetVersion() (string, string, error)
-	// deploy the schemas and functions
-	DeployDb(release *Release) error
-	// upgrade the database
-	UpgradeDb() error
-	// create database version tracking table
-	CreateVersionTable() error
-	// insert version information in the tracking table
-	InsertVersion(appVersion string, dbVersion string, description string, origin string) error
-	// get database version history
-	GetVersionHistory() (string, error)
+	// setup the provider
+	Setup(config *Config)
+	// execute the specified db scripts
+	RunCommand(cmd *Command) (string, error)
+	// execute a query
+	RunQuery(query *Query, params ...interface{}) (Table, error)
+	// get db version
+	GetVersion() (appVersion string, dbVersion string, err error)
+	// set the version
+	SetVersion(appVersion string, dbVersion string, description string, source string) error
+}
+
+// creates a new db instance
+func NewDbProvider(appCfg *Config) DatabaseProvider {
+	switch strings.ToLower(appCfg.Get(DbProvider)) {
+	case "pgsql":
+		// load the default native postgres provider
+		return &PgSQLProvider{
+			cfg: appCfg,
+		}
+	default:
+		// only supports connections to postgres at the moment
+		// in time, a plugin approach for database providers could be implemented
+		panic(errors.New(fmt.Sprintf("!!! the database provider '%v' is not supported.", appCfg.Get(DbProvider))))
+	}
 }

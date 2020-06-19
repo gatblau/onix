@@ -14,35 +14,35 @@ import (
 )
 
 const (
-	HttpMetrics    = "Http.Metrics"
-	HttpAuthMode   = "Http.AuthMode"
-	HttpUsername   = "Http.Username"
-	HttpPassword   = "Http.Password"
-	HttpPort       = "Http.Port"
-	SchemaURI      = "Schema.URI"
-	SchemaUsername = "Schema.Username"
-	SchemaPassword = "Schema.Password"
-	DbProvider     = "Db.Provider"
-	DbHost         = "Db.Host"
-	DbPort         = "Db.Port"
-	DbName         = "Db.Name"
-	DbUsername     = "Db.Username"
-	DbPassword     = "Db.Password"
-	DbAdminUser    = "Db.AdminUsername"
-	DbAdminPwd     = "Db.AdminPassword"
+	AppVersion       = "AppVersion"
+	HttpMetrics      = "Http.Metrics"
+	HttpAuthMode     = "Http.AuthMode"
+	HttpUsername     = "Http.Username"
+	HttpPassword     = "Http.Password"
+	HttpPort         = "Http.Port"
+	SchemaURI        = "Schema.URI"
+	SchemaUsername   = "Schema.Username"
+	SchemaPassword   = "Schema.Password"
+	DbProvider       = "Db.Provider"
+	DbHost           = "Db.Host"
+	DbPort           = "Db.Port"
+	DbName           = "Db.Name"
+	DbUsername       = "Db.Username"
+	DbPassword       = "Db.Password"
+	DbAdminUser      = "Db.AdminUsername"
+	DbAdminPwd       = "Db.AdminPassword"
+	DbObjectsPattern = "Db.ObjectsPattern"
 )
 
 // dbman configuration management struct
-type AppCfg struct {
+type Config struct {
 	root *Cache
 	cfg  *viper.Viper
-	// path string
-	// name string
 }
 
 // create a new instance
-func NewAppCfg(path string, name string) *AppCfg {
-	conf := &AppCfg{
+func NewAppCfg(path string, name string) *Config {
+	conf := &Config{
 		root: NewCache(),
 		cfg:  viper.New(),
 	}
@@ -53,7 +53,7 @@ func NewAppCfg(path string, name string) *AppCfg {
 // load a dbman configuration
 // path: the configuration file path - if empty is passed-in then home directory is used
 // name: the configuration name used to create a filename as follows: .dbman_[name].toml
-func (c *AppCfg) load(path string, name string) error {
+func (c *Config) load(path string, name string) error {
 	// if no name is specified then use the cached name
 	if len(name) == 0 {
 		// get it from the root configuration
@@ -103,6 +103,7 @@ func (c *AppCfg) load(path string, name string) error {
 	// replace character to support environment variable format
 	c.cfg.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
+	_ = c.cfg.BindEnv("AppVersion")
 	_ = c.cfg.BindEnv("Http.Port")
 	_ = c.cfg.BindEnv("Http.AuthMode")
 	_ = c.cfg.BindEnv("Http.Username")
@@ -116,6 +117,7 @@ func (c *AppCfg) load(path string, name string) error {
 	_ = c.cfg.BindEnv("Db.Password")
 	_ = c.cfg.BindEnv("Db.AdminUsername")
 	_ = c.cfg.BindEnv("Db.AdminPassword")
+	_ = c.cfg.BindEnv("Db.ObjectsPattern")
 	_ = c.cfg.BindEnv("Schema.URI")
 	_ = c.cfg.BindEnv("Schema.Username")
 	_ = c.cfg.BindEnv("Schema.Password")
@@ -124,12 +126,12 @@ func (c *AppCfg) load(path string, name string) error {
 }
 
 // return the configuration file used
-func (c *AppCfg) ConfigFileUsed() string {
+func (c *Config) ConfigFileUsed() string {
 	return c.cfg.ConfigFileUsed()
 }
 
 // creates a default configuration file
-func (c *AppCfg) createCfgFile(filePath string, filename string) error {
+func (c *Config) createCfgFile(filePath string, filename string) error {
 	fmt.Println("? I am writing configuration file to disk")
 	f, err := os.Create(fmt.Sprintf("%v/%v.toml", filePath, filename))
 	if err != nil {
@@ -152,7 +154,7 @@ func (c *AppCfg) createCfgFile(filePath string, filename string) error {
 }
 
 // save the configuration to file
-func (c *AppCfg) save() {
+func (c *Config) save() {
 	err := c.cfg.WriteConfig()
 	if err != nil {
 		fmt.Printf("!!! I could not save configuration: %v", err)
@@ -164,7 +166,7 @@ func (c *AppCfg) save() {
 }
 
 // check if a key is contained in the internal viper registry
-func (c *AppCfg) contains(key string) bool {
+func (c *Config) contains(key string) bool {
 	keys := c.cfg.AllKeys()
 	for _, a := range keys {
 		if a == key {
@@ -176,7 +178,7 @@ func (c *AppCfg) contains(key string) bool {
 
 // set the configuration value for the passed-in key
 // return: true if the value was set or false otherwise
-func (c *AppCfg) set(key string, value string) {
+func (c *Config) set(key string, value string) {
 	key = strings.ToLower(key)
 	// if key passed in is not standard (i.e. not part of the default set of config keys)
 	if !c.contains(key) {
@@ -188,16 +190,16 @@ func (c *AppCfg) set(key string, value string) {
 }
 
 // get a configuration value
-func (c *AppCfg) Get(key string) string {
+func (c *Config) Get(key string) string {
 	return c.cfg.GetString(key)
 }
 
-func (c *AppCfg) GetBool(key string) bool {
+func (c *Config) GetBool(key string) bool {
 	return c.cfg.GetBool(key)
 }
 
 // toString the current configuration file
-func (c *AppCfg) toString() string {
+func (c *Config) toString() string {
 	var (
 		buffer bytes.Buffer
 		line   string
@@ -215,14 +217,13 @@ func (c *AppCfg) toString() string {
 
 // default config file content
 const cfgFile = `# configuration for running DbMan in http mode
+AppVersion = "0.0.4"
 [Http]
 	Metrics = "true"
 	AuthMode    = "basic"
 	Port        = "8085"
 	Username    = "admin"
 	Password    = "0n1x"
-
-# configuration for the Onix Web API integration
 [Db]
     Provider        = "pgsql"
     Name            = "onix"
@@ -232,8 +233,7 @@ const cfgFile = `# configuration for running DbMan in http mode
     Password        = "onix"
     AdminUsername   = "postgres"
     AdminPassword   = "onix"
-
-# configuration of database scripts remote repository
+    ObjectsPattern  = "ox_*"
 [Schema]
     URI         = "https://raw.githubusercontent.com/gatblau/ox-db/master"
     Username    = ""
