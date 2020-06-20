@@ -8,8 +8,8 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	// "fmt"
-	. "github.com/gatblau/onix/dbman/util"
+	"github.com/gatblau/onix/dbman/plugins"
+	"github.com/gatblau/onix/dbman/util"
 	"github.com/spf13/cobra"
 )
 
@@ -41,7 +41,7 @@ func (c *DbQueryCmd) Run(cmd *cobra.Command, args []string) {
 		return
 	}
 	// get the release manifest for the current application version
-	manifest, err := DM.GetReleaseInfo(DM.Cfg.Get(AppVersion))
+	manifest, err := util.DM.GetReleaseInfo(util.DM.Cfg.Get(plugins.AppVersion))
 	if err != nil {
 		fmt.Printf("!!! I cannot fetch release information: %v\n", err)
 		return
@@ -64,15 +64,15 @@ func (c *DbQueryCmd) Run(cmd *cobra.Command, args []string) {
 		fmt.Printf("!!! The query expected %v parameters but %v were provided\n", varsToString(query.Vars), providedParams)
 		return
 	}
-	result, _, err := DM.RunQuery(manifest, query, params)
+	result, _, err := util.DM.RunQuery(manifest, query, params)
 	if err != nil {
 		fmt.Printf("!!! I cannot run query '%s': %s\n", queryName, err)
 		return
 	}
-	Print(result, c.format, c.filename)
+	util.Print(result, c.format, c.filename)
 }
 
-func varsToString(vars []Var) string {
+func varsToString(vars []plugins.Var) string {
 	buffer := bytes.Buffer{}
 	for i, v := range vars {
 		buffer.WriteString(v.Name)

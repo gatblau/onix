@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	. "github.com/gatblau/onix/dbman/plugins"
 	"github.com/gatblau/oxc"
 	"io/ioutil"
 	"net/http"
@@ -86,7 +87,7 @@ func (s *ScriptManager) fetchManifest(appVersion string) (*Manifest, error) {
 	}
 	// request was good so construct a release manifest reference
 	man := &Manifest{}
-	man, err = man.decode(response)
+	man, err = man.Decode(response)
 	return man, nil
 }
 

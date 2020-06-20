@@ -1,4 +1,4 @@
-//   Onix Config DatabaseProvider - Dbman
+//   Onix Config Manager - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	. "github.com/gatblau/onix/dbman/plugins"
 	"github.com/gatblau/oxc"
 	"strings"
 	"time"
@@ -40,7 +41,8 @@ func NewDbMan() (*DbMan, error) {
 	if err != nil {
 		return nil, err
 	}
-	db := NewDbProvider(cfg)
+	//
+	db, err := LoadDbProviderPlugin(cfg)
 
 	return &DbMan{
 		Cfg:    cfg,
@@ -58,11 +60,11 @@ func (dm *DbMan) GetReleaseInfo(appVersion string) (*Manifest, error) {
 }
 
 func (dm *DbMan) SaveConfig() {
-	dm.Cfg.save()
+	dm.Cfg.Save()
 }
 
 func (dm *DbMan) SetConfig(key string, value string) {
-	dm.Cfg.set(key, value)
+	dm.Cfg.Set(key, value)
 }
 
 func (dm *DbMan) GetConfig(key string) {
@@ -71,14 +73,14 @@ func (dm *DbMan) GetConfig(key string) {
 
 // toString the current configuration set to stdout
 func (dm *DbMan) ConfigSetAsString() string {
-	return dm.Cfg.toString()
+	return dm.Cfg.ToString()
 }
 
 // use the configuration set specified by name
 // name: the name of the configuration set to use
 // filepath: the path to the configuration set
 func (dm *DbMan) UseConfigSet(filepath string, name string) {
-	dm.Cfg.load(filepath, name)
+	dm.Cfg.Load(filepath, name)
 }
 
 // get the content of the current configuration set
@@ -88,7 +90,7 @@ func (dm *DbMan) GetConfigSet() string {
 
 // get the current configuration directory
 func (dm *DbMan) GetConfigSetDir() string {
-	return dm.Cfg.root.path()
+	return dm.Cfg.Cache.Path()
 }
 
 // performs various connectivity checks using the information in the current configuration set
@@ -139,7 +141,7 @@ func (dm *DbMan) Create() (log bytes.Buffer, err error, elapsed time.Duration) {
 		return log, err, time.Since(start)
 	}
 	// get the commands for the create action
-	cmds := manifest.getCommands(manifest.Create.Commands)
+	cmds := manifest.GetCommands(manifest.Create.Commands)
 	// run the commands on the database
 	output, err := dm.runCommands(cmds, manifest)
 	log.WriteString(output.String())
@@ -163,7 +165,7 @@ func (dm *DbMan) Deploy() (log bytes.Buffer, err error, elapsed time.Duration) {
 		return log, err, time.Since(start)
 	}
 	// get the commands for the deploy action
-	cmds := manifest.getCommands(manifest.Deploy.Commands)
+	cmds := manifest.GetCommands(manifest.Deploy.Commands)
 	// run the commands on the database
 	output, err := dm.runCommands(cmds, manifest)
 	log.WriteString(output.String())

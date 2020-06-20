@@ -1,9 +1,9 @@
-//   Onix Config DatabaseProvider - Dbman
+//   Onix Config Manager - Dbman
 //   Copyright (c) 2018-2020 by www.gatblau.org
 //   Licensed under the
 //   Contributors to this project, hereby assign copyright in this code to the project,
 //   to be licensed under the same terms as the rest of the code.
-package util
+package plugins
 
 import (
 	"bytes"
@@ -148,7 +148,7 @@ func (m *Manifest) bytes() (*[]byte, error) {
 }
 
 // get the Plan in the http Response
-func (m *Manifest) decode(response *http.Response) (*Manifest, error) {
+func (m *Manifest) Decode(response *http.Response) (*Manifest, error) {
 	result := new(Manifest)
 	err := json.NewDecoder(response.Body).Decode(result)
 	return result, err
@@ -185,7 +185,7 @@ func (m *Manifest) GetQuery(queryName string) *Query {
 	return nil
 }
 
-func (m *Manifest) getCommands(commandNames []string) []Command {
+func (m *Manifest) GetCommands(commandNames []string) []Command {
 	result := make([]Command, 0)
 	for _, cmdName := range commandNames {
 		for _, command := range m.Commands {
