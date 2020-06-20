@@ -3,7 +3,7 @@
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
 //   to be licensed under the same terms as the rest of the code.
-package util
+package plugins
 
 import (
 	"bytes"
@@ -36,45 +36,45 @@ const (
 
 // dbman configuration management struct
 type Config struct {
-	root *Cache
-	cfg  *viper.Viper
+	Cache *Cache
+	cfg   *viper.Viper
 }
 
 // create a new instance
 func NewAppCfg(path string, name string) *Config {
 	conf := &Config{
-		root: NewCache(),
-		cfg:  viper.New(),
+		Cache: NewCache(),
+		cfg:   viper.New(),
 	}
-	conf.load(path, name)
+	conf.Load(path, name)
 	return conf
 }
 
 // load a dbman configuration
 // path: the configuration file path - if empty is passed-in then home directory is used
 // name: the configuration name used to create a filename as follows: .dbman_[name].toml
-func (c *Config) load(path string, name string) error {
+func (c *Config) Load(path string, name string) error {
 	// if no name is specified then use the cached name
 	if len(name) == 0 {
 		// get it from the root configuration
-		name = c.root.filename()
-	} else if name != c.root.name() {
+		name = c.Cache.filename()
+	} else if name != c.Cache.name() {
 		// if the name is different from the one cached then update the cache
-		c.root.setName(name)
-		c.root.save()
+		c.Cache.setName(name)
+		c.Cache.save()
 	}
 
 	// if no path is used, then used the cached path
 	if len(path) == 0 {
-		path = c.root.path()
-	} else if path != c.root.path() {
+		path = c.Cache.Path()
+	} else if path != c.Cache.Path() {
 		// if the path is different from the one cached then update the cache
-		c.root.setPath(path)
-		c.root.save()
+		c.Cache.setPath(path)
+		c.Cache.save()
 	}
 
 	// ensures the config file name is prepended with a dot to make it hidden
-	c.cfg.SetConfigName(c.root.filename())
+	c.cfg.SetConfigName(c.Cache.filename())
 	// always use toml as format
 	c.cfg.SetConfigType("toml")
 
@@ -89,7 +89,7 @@ func (c *Config) load(path string, name string) error {
 	err := c.cfg.ReadInConfig()
 	if err != nil { // handle errors reading the config file
 		fmt.Println(err)
-		err = c.createCfgFile(path, c.root.filename())
+		err = c.createCfgFile(path, c.Cache.filename())
 		if err != nil {
 			return err
 		}
@@ -154,7 +154,7 @@ func (c *Config) createCfgFile(filePath string, filename string) error {
 }
 
 // save the configuration to file
-func (c *Config) save() {
+func (c *Config) Save() {
 	err := c.cfg.WriteConfig()
 	if err != nil {
 		fmt.Printf("!!! I could not save configuration: %v", err)
@@ -178,7 +178,7 @@ func (c *Config) contains(key string) bool {
 
 // set the configuration value for the passed-in key
 // return: true if the value was set or false otherwise
-func (c *Config) set(key string, value string) {
+func (c *Config) Set(key string, value string) {
 	key = strings.ToLower(key)
 	// if key passed in is not standard (i.e. not part of the default set of config keys)
 	if !c.contains(key) {
@@ -199,7 +199,7 @@ func (c *Config) GetBool(key string) bool {
 }
 
 // toString the current configuration file
-func (c *Config) toString() string {
+func (c *Config) ToString() string {
 	var (
 		buffer bytes.Buffer
 		line   string
