@@ -7,7 +7,6 @@ package cmd
 
 import (
 	"github.com/gatblau/onix/dbman/util"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +32,7 @@ func NewRootCmd() *RootCmd {
 func (c *RootCmd) initConfig() {
 	dm, err := util.NewDbMan()
 	if err != nil {
-		log.Err(err).Msg("cannot create DbMan instance")
+		panic(err)
 	}
 	util.DM = dm
 }
