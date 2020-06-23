@@ -6,6 +6,7 @@
 package plugins
 
 import (
+	"fmt"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 	"log"
@@ -14,8 +15,34 @@ import (
 	"path/filepath"
 )
 
+func NewDatabase(cfg *Config) (*Database, error) {
+	provider, client, err := getDbProvider(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &Database{
+		provider: provider,
+		client:   client,
+	}, nil
+}
+
+type Database struct {
+	provider DatabaseProvider
+	client   *plugin.Client
+}
+
+// safely terminate the rpc client
+func (db *Database) Close() {
+	db.client.Kill()
+}
+
+func (db *Database) Provider() DatabaseProvider {
+	return db.provider
+}
+
 // load a database provider plugin
-func LoadDbProviderPlugin(cfg *Config) (DatabaseProvider, error) {
+func getDbProvider(cfg *Config) (DatabaseProvider, *plugin.Client, error) {
+	dbProvider := cfg.GetString(DbProvider)
 	// Create an hclog.Logger
 	logger := hclog.New(&hclog.LoggerOptions{
 		Name:   "plugin",
@@ -25,12 +52,18 @@ func LoadDbProviderPlugin(cfg *Config) (DatabaseProvider, error) {
 
 	// We're a host! Start by launching the plugin process.
 	client := plugin.NewClient(&plugin.ClientConfig{
-		HandshakeConfig: handshakeConfig,
-		Plugins:         pluginMap,
-		Cmd:             exec.Command("./pgsql"),
-		Logger:          logger,
+		HandshakeConfig: plugin.HandshakeConfig{
+			ProtocolVersion:  1,
+			MagicCookieKey:   "db_provider",
+			MagicCookieValue: dbProvider,
+		},
+		Plugins: map[string]plugin.Plugin{
+			dbProvider: &DatabaseProviderPlugin{},
+		},
+		Cmd:    exec.Command(fmt.Sprintf("./%s", dbProvider)),
+		Logger: logger,
 	})
-	defer client.Kill()
+	// defer client.Kill()
 
 	// Connect via RPC
 	rpcClient, err := client.Client()
@@ -39,7 +72,7 @@ func LoadDbProviderPlugin(cfg *Config) (DatabaseProvider, error) {
 	}
 
 	// Request the plugin
-	raw, err := rpcClient.Dispense("greeter")
+	raw, err := rpcClient.Dispense(dbProvider)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,26 +80,11 @@ func LoadDbProviderPlugin(cfg *Config) (DatabaseProvider, error) {
 	// We should have a DatabaseProvider now! This feels like a normal interface
 	// implementation but is in fact over an RPC connection.
 	db := raw.(DatabaseProvider)
-	return db, nil
+	return db, client, nil
 }
 
 // return the executable path
 func execPath() string {
 	ex, _ := os.Executable()
 	return filepath.Dir(ex)
-}
-
-// handshakeConfigs are used to just do a basic handshake between
-// a plugin and host. If the handshake fails, a user friendly error is shown.
-// This prevents users from executing bad plugins or executing a plugin
-// directory. It is a UX feature, not a security feature.
-var handshakeConfig = plugin.HandshakeConfig{
-	ProtocolVersion:  1,
-	MagicCookieKey:   "PGSQL_DB_PLUGIN",
-	MagicCookieValue: "PGSQL_DB_PLUGIN",
-}
-
-// pluginMap is the map of plugins we can dispense.
-var pluginMap = map[string]plugin.Plugin{
-	"pgsql": &DatabaseProviderPlugin{},
 }

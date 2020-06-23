@@ -24,7 +24,7 @@ type DbMan struct {
 	// scrips manager
 	script *ScriptManager
 	// db provider
-	db DatabaseProvider
+	db *Database
 	// is it ready?
 	ready bool
 }
@@ -43,9 +43,12 @@ func NewDbMan() (*DbMan, error) {
 		return nil, err
 	}
 	// load the database provider
-	db, err := LoadDbProviderPlugin(cfg)
+	db, err := NewDatabase(cfg)
 	if err != nil {
 		return nil, err
+	}
+	if db.Provider() == nil {
+		return nil, errors.New("!!! database Provider plugin loading failed")
 	}
 	return &DbMan{
 		Cfg:    cfg,
@@ -113,7 +116,8 @@ func (dm *DbMan) CheckConfigSet() map[string]string {
 		UseDb:         false,
 		Scripts:       []Script{},
 	}
-	result := dm.db.RunCommand(testConnCmd.All())
+	r := dm.data().RunCommand(testConnCmd.All())
+	result := r.(map[string]interface{})
 	err = result["error"].(error)
 	if err != nil {
 		results["db connection"] = fmt.Sprintf("FAILED: %v", err)
@@ -129,8 +133,9 @@ func (dm *DbMan) Create() (log bytes.Buffer, err error, elapsed time.Duration) {
 	appVer := dm.get(AppVersion)
 	// get database release version
 	log.WriteString(fmt.Sprintf("? I am checking that the database '%s' does not already exist\n", dm.get(DbName)))
-	result := dm.db.GetVersion()
-	err = result["error"].(error)
+	r := dm.data().GetVersion()
+	result := r.(map[string]interface{})
+	err = errors.New(result["error"].(string))
 	appVersion := result["appVersion"].(string)
 	dbVersion := result["dbVersion"].(string)
 	if err == nil {
@@ -157,7 +162,8 @@ func (dm *DbMan) Deploy() (log bytes.Buffer, err error, elapsed time.Duration) {
 	log = bytes.Buffer{}
 	appVer := dm.get(AppVersion)
 	// get database release version
-	result := dm.db.GetVersion()
+	r := dm.data().GetVersion()
+	result := r.(map[string]interface{})
 	err = result["error"].(error)
 	appVersion := result["appVersion"].(string)
 	dbVersion := result["dbVersion"].(string)
@@ -184,7 +190,7 @@ func (dm *DbMan) Deploy() (log bytes.Buffer, err error, elapsed time.Duration) {
 	m["dbVersion"] = manifest.DbVersion
 	m["description"] = fmt.Sprintf("Database Release %v", manifest.DbVersion)
 	m["source"] = dm.get(SchemaURI)
-	err = dm.db.SetVersion(m)
+	err = dm.data().SetVersion(m)
 	// return
 	return log, err, time.Since(start)
 }
@@ -203,7 +209,8 @@ func (dm *DbMan) RunQuery(manifest *Manifest, query *Query, params []string) (Ta
 		return Table{}, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot fetch content for query: %v\n", query.Name))
 	}
 	// run the query
-	result := dm.db.RunQuery(query.All(), params)
+	r := dm.data().RunQuery(query.All(), params)
+	result := r.(map[string]interface{})
 	err = result["error"].(error)
 	table := result["table"].(Table)
 	return table, time.Since(start), err
@@ -242,7 +249,8 @@ func (dm *DbMan) runCommands(cmds []Command, manifest *Manifest) (log bytes.Buff
 	// execute the commands
 	for _, c := range commands {
 		log.WriteString(fmt.Sprintf("? I have started execution of the command '%s'\n", c.Name))
-		result := dm.db.RunCommand(c.All())
+		r := dm.data().RunCommand(c.All())
+		result := r.(map[string]interface{})
 		err = result["error"].(error)
 		output := result["string"].(string)
 		log.WriteString(output)
@@ -257,4 +265,8 @@ func (dm *DbMan) runCommands(cmds []Command, manifest *Manifest) (log bytes.Buff
 
 func (dm *DbMan) get(key string) string {
 	return dm.Cfg.GetString(key)
+}
+
+func (dm *DbMan) data() DatabaseProvider {
+	return dm.db.Provider()
 }
