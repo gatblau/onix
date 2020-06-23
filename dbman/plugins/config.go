@@ -7,6 +7,7 @@ package plugins
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/spf13/viper"
 	"os"
@@ -176,9 +177,13 @@ func (c *Config) contains(key string) bool {
 	return false
 }
 
-// set the configuration value for the passed-in key
-// return: true if the value was set or false otherwise
-func (c *Config) Set(key string, value string) {
+// Get returns the value for the specified key
+func (c *Config) Get(ctx context.Context, key string) interface{} {
+	return c.cfg.GetString(key)
+}
+
+// Set sets the value for the specified key
+func (c *Config) Set(ctx context.Context, key string, value interface{}) {
 	key = strings.ToLower(key)
 	// if key passed in is not standard (i.e. not part of the default set of config keys)
 	if !c.contains(key) {
@@ -187,11 +192,6 @@ func (c *Config) Set(key string, value string) {
 	}
 	// updates the key
 	c.cfg.Set(key, value)
-}
-
-// get a configuration value
-func (c *Config) Get(key string) string {
-	return c.cfg.GetString(key)
 }
 
 func (c *Config) GetBool(key string) bool {
@@ -213,6 +213,14 @@ func (c *Config) ToString() string {
 		buffer.WriteString(line)
 	}
 	return buffer.String()
+}
+
+func (c *Config) All() map[string]interface{} {
+	return c.cfg.AllSettings()
+}
+
+func (c *Config) GetString(key string) string {
+	return c.cfg.GetString(key)
 }
 
 // default config file content

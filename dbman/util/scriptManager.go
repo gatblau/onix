@@ -35,7 +35,7 @@ func NewScriptManager(cfg *Config, client *oxc.Client) (*ScriptManager, error) {
 // new oxc configuration
 func NewOxClientConf(cfg *Config) *oxc.ClientConf {
 	return &oxc.ClientConf{
-		BaseURI:            cfg.Get(SchemaURI),
+		BaseURI:            cfg.GetString(SchemaURI),
 		InsecureSkipVerify: false,
 		AuthMode:           oxc.None,
 	}
@@ -158,7 +158,7 @@ func (s *ScriptManager) addHttpHeaders(req *http.Request, payload oxc.Serializab
 }
 
 func (s *ScriptManager) get(key string) string {
-	return s.cfg.Get(key)
+	return s.cfg.GetString(key)
 }
 
 // add the content form the remote repository to the passed-in scripts
@@ -227,7 +227,7 @@ func (s *ScriptManager) merge(script string, vars []Var, params []string) (strin
 		// if variable is in configuration
 		if len(variable.FromConf) > 0 {
 			// get the value from the configuration set
-			value = s.cfg.Get(variable.FromConf)
+			value = s.get(variable.FromConf)
 		} else
 		// if variable has a value in the manifest
 		if len(variable.FromValue) > 0 {
@@ -245,7 +245,7 @@ func (s *ScriptManager) merge(script string, vars []Var, params []string) (strin
 }
 
 func (s ScriptManager) getSchemaUri() (string, error) {
-	uri := s.cfg.Get(SchemaURI)
+	uri := s.get(SchemaURI)
 	if len(uri) == 0 {
 		return "", errors.New(fmt.Sprintf("!!! The SchemaURI is not defined"))
 	}
@@ -253,9 +253,9 @@ func (s ScriptManager) getSchemaUri() (string, error) {
 		return "", errors.New(fmt.Sprintf("!!! The SchemaURI must be an http(s) address"))
 	}
 	// if the username and password have been set
-	if len(s.cfg.Get(SchemaUsername)) > 0 && len(s.cfg.Get(SchemaPassword)) > 0 {
+	if len(s.get(SchemaUsername)) > 0 && len(s.get(SchemaPassword)) > 0 {
 		uriParts := strings.Split(uri, "//")
-		return fmt.Sprintf("%s//%s:%s@%s", uriParts[0], s.cfg.Get(SchemaUsername), s.cfg.Get(SchemaPassword), uriParts[1]), nil
+		return fmt.Sprintf("%s//%s:%s@%s", uriParts[0], s.get(SchemaUsername), s.get(SchemaPassword), uriParts[1]), nil
 	}
 	return uri, nil
 }

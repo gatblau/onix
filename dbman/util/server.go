@@ -155,7 +155,7 @@ func (s *Server) newBasicToken(user string, pwd string) string {
 func (s *Server) listen(handler http.Handler) {
 	// creates an http server listening on the specified TCP port
 	server := &http.Server{
-		Addr:         fmt.Sprintf(":%s", s.cfg.Get(HttpPort)),
+		Addr:         fmt.Sprintf(":%s", s.get(HttpPort)),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 		IdleTimeout:  time.Second * 60,
@@ -164,7 +164,7 @@ func (s *Server) listen(handler http.Handler) {
 
 	// runs the server asynchronously
 	go func() {
-		fmt.Printf("? I am listening on :%s\n", s.cfg.Get(HttpPort))
+		fmt.Printf("? I am listening on :%s\n", s.get(HttpPort))
 		fmt.Printf("? I have taken %v to start\n", time.Since(s.start))
 		if err := server.ListenAndServe(); err != nil {
 			fmt.Printf("! Stopping the server: %v\n", err)
@@ -213,7 +213,7 @@ func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// gets the authentication mode
-		authMode := s.cfg.Get(HttpAuthMode)
+		authMode := s.get(HttpAuthMode)
 
 		// if there is a username and password
 		if len(authMode) > 0 && strings.ToLower(authMode) == "basic" {
@@ -224,7 +224,7 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 				fmt.Printf("? I have received an (unauthorised) http request from: '%v'\n", r.RemoteAddr)
 			} else {
 				// authenticate the request
-				requiredToken := s.newBasicToken(s.cfg.Get(HttpUsername), s.cfg.Get(HttpPassword))
+				requiredToken := s.newBasicToken(s.get(HttpUsername), s.get(HttpPassword))
 				providedToken := r.Header.Get("Authorization")
 				// if the authentication fails
 				if providedToken != requiredToken {
@@ -257,4 +257,8 @@ func (s *Server) swaggerUiMiddleware(next http.Handler) http.Handler {
 		SpecURL:  "/static/swagger.yaml", // the path to the spec
 		Title:    "DbMan Docs",
 	}, next)
+}
+
+func (s *Server) get(key string) string {
+	return s.cfg.GetString(key)
 }

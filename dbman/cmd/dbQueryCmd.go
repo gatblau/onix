@@ -41,7 +41,7 @@ func (c *DbQueryCmd) Run(cmd *cobra.Command, args []string) {
 		return
 	}
 	// get the release manifest for the current application version
-	manifest, err := util.DM.GetReleaseInfo(util.DM.Cfg.Get(plugins.AppVersion))
+	manifest, err := util.DM.GetReleaseInfo(util.DM.Cfg.GetString(plugins.AppVersion))
 	if err != nil {
 		fmt.Printf("!!! I cannot fetch release information: %v\n", err)
 		return

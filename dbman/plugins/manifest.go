@@ -65,6 +65,21 @@ type Command struct {
 	Scripts []Script `json:"scripts"`
 }
 
+func (c *Command) All() map[string]interface{} {
+	m := map[string]interface{}{}
+	m["name"] = c.Name
+	m["description"] = c.Description
+	m["transactional"] = c.Transactional
+	m["asadmin"] = c.AsAdmin
+	m["usedb"] = c.UseDb
+	s := make([]map[string]interface{}, len(c.Scripts))
+	for ix, script := range c.Scripts {
+		s[ix] = script.All()
+	}
+	m["scripts"] = s
+	return m
+}
+
 // a database script and zero or more merge variables
 type Script struct {
 	// the script identifiable name
@@ -76,6 +91,14 @@ type Script struct {
 	// the content of the script file
 	// note: it is internal and automatically populated at runtime from the git repository
 	Content string `json:"content,omitempty"`
+}
+
+func (c *Script) All() map[string]interface{} {
+	m := map[string]interface{}{}
+	m["name"] = c.Name
+	m["file"] = c.File
+	m["content"] = c.Content
+	return m
 }
 
 // a merge variable for a script
@@ -123,6 +146,15 @@ type Query struct {
 	// the content of the script file
 	// note: it is internal and automatically populated at runtime from the git repository
 	Content string `json:"content,omitempty"`
+}
+
+func (q *Query) All() map[string]interface{} {
+	m := map[string]interface{}{}
+	m["name"] = q.Name
+	m["description"] = q.Description
+	m["file"] = q.File
+	m["content"] = q.Content
+	return m
 }
 
 // the commands to run at different stages in an upgrade
