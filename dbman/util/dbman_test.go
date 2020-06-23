@@ -2,7 +2,6 @@ package util
 
 import (
 	"fmt"
-	"github.com/gatblau/onix/dbman/plugins"
 	"testing"
 )
 
@@ -76,19 +75,6 @@ func TestDbMan_Create_Deploy(t *testing.T) {
 	}
 	output, err, _ = dbman.Deploy()
 	fmt.Print(output.String())
-	if err != nil {
-		t.Error(err)
-		t.Fail()
-	}
-}
-
-func TestLoadDbProviderPlugin(t *testing.T) {
-	cfg := plugins.NewAppCfg("", "")
-	db, err := plugins.LoadDbProviderPlugin(cfg)
-	if db == nil {
-		t.Error(err)
-		t.Fail()
-	}
 	if err != nil {
 		t.Error(err)
 		t.Fail()

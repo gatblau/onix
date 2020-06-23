@@ -13,15 +13,15 @@ import (
 // implemented by database specific implementations
 type DatabaseProvider interface {
 	// setup the provider
-	Setup(config map[string]interface{})
+	Setup(config interface{})
 	// execute the specified db scripts
-	RunCommand(cmd map[string]interface{}) map[string]interface{}
+	RunCommand(cmd interface{}) interface{}
 	// execute a query
-	RunQuery(query map[string]interface{}, params ...interface{}) map[string]interface{}
+	RunQuery(query interface{}, params ...interface{}) interface{}
 	// get db version
-	GetVersion() map[string]interface{}
+	GetVersion() interface{}
 	// set the version
-	SetVersion(args map[string]interface{}) error
+	SetVersion(args interface{}) error
 }
 
 // Database Provider RPC client
@@ -29,41 +29,44 @@ type DatabaseProviderRPC struct {
 	client *rpc.Client
 }
 
-func (db *DatabaseProviderRPC) Setup(config map[string]interface{}) {
-	err := db.client.Call("Plugin.Setup", config, nil)
+func (db *DatabaseProviderRPC) Setup(config interface{}) {
+	err := db.client.Call("Plugin.Setup", config, new(interface{}))
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (db *DatabaseProviderRPC) RunCommand(cmd map[string]interface{}) (string, error) {
-	var result map[string]interface{}
+func (db *DatabaseProviderRPC) RunCommand(cmd interface{}) interface{} {
+	var result interface{}
 	err := db.client.Call("Plugin.RunCommand", cmd, &result)
 	if err != nil {
 		panic(err)
 	}
-	return db.cmdResult(result)
+	return result
 }
 
-func (db *DatabaseProviderRPC) RunQuery(query map[string]interface{}) (Table, error) {
-	var result map[string]interface{}
-	err := db.client.Call("Plugin.RunQuery", query, &result)
+func (db *DatabaseProviderRPC) RunQuery(query interface{}, params ...interface{}) interface{} {
+	var result interface{}
+	args := make([]interface{}, 2)
+	args[0] = query
+	args[1] = params
+	err := db.client.Call("Plugin.RunQuery", args, &result)
 	if err != nil {
 		panic(err)
 	}
-	return db.queryResult(result)
+	return result
 }
 
-func (db *DatabaseProviderRPC) GetVersion() (string, string, error) {
-	var result map[string]interface{}
-	err := db.client.Call("Plugin.GetVersion", nil, &result)
+func (db *DatabaseProviderRPC) GetVersion() interface{} {
+	var result interface{}
+	err := db.client.Call("Plugin.GetVersion", new(interface{}), &result)
 	if err != nil {
 		panic(err)
 	}
-	return db.versionResult(result)
+	return result
 }
 
-func (db *DatabaseProviderRPC) SetVersion(args map[string]interface{}) error {
+func (db *DatabaseProviderRPC) SetVersion(args interface{}) error {
 	var result map[string]interface{}
 	err := db.client.Call("Plugin.SetVersion", args, &result)
 	if err != nil {
@@ -72,22 +75,25 @@ func (db *DatabaseProviderRPC) SetVersion(args map[string]interface{}) error {
 	return err
 }
 
-func (db *DatabaseProviderRPC) cmdResult(result map[string]interface{}) (string, error) {
-	strObj := result["string"]
-	errObj := result["error"]
+func (db *DatabaseProviderRPC) cmdResult(result interface{}) (string, error) {
+	r := result.(map[string]interface{})
+	strObj := r["string"]
+	errObj := r["error"]
 	return strObj.(string), errObj.(error)
 }
 
-func (db *DatabaseProviderRPC) queryResult(result map[string]interface{}) (Table, error) {
-	tableObj := result["table"]
-	errObj := result["error"]
+func (db *DatabaseProviderRPC) queryResult(result interface{}) (Table, error) {
+	r := result.(map[string]interface{})
+	tableObj := r["table"]
+	errObj := r["error"]
 	return tableObj.(Table), errObj.(error)
 }
 
-func (db *DatabaseProviderRPC) versionResult(result map[string]interface{}) (string, string, error) {
-	appVerObj := result["appVersion"]
-	dbVerObj := result["dbVersion"]
-	errObj := result["error"]
+func (db *DatabaseProviderRPC) versionResult(result interface{}) (string, string, error) {
+	r := result.(map[string]interface{})
+	appVerObj := r["appVersion"]
+	dbVerObj := r["dbVersion"]
+	errObj := r["error"]
 	return appVerObj.(string), dbVerObj.(string), errObj.(error)
 }
 
@@ -98,22 +104,22 @@ type DatabaseProviderRPCServer struct {
 	Impl DatabaseProvider
 }
 
-func (s *DatabaseProviderRPCServer) RunCommand(args map[string]interface{}, resp *map[string]interface{}) error {
+func (s *DatabaseProviderRPCServer) RunCommand(args interface{}, resp *interface{}) error {
 	*resp = s.Impl.RunCommand(args)
 	return nil
 }
 
-func (s *DatabaseProviderRPCServer) RunQuery(args map[string]interface{}, resp *map[string]interface{}) error {
+func (s *DatabaseProviderRPCServer) RunQuery(args interface{}, resp *interface{}) error {
 	*resp = s.Impl.RunQuery(args)
 	return nil
 }
 
-func (s *DatabaseProviderRPCServer) GetVersion(args interface{}, resp *map[string]interface{}) error {
+func (s *DatabaseProviderRPCServer) GetVersion(args interface{}, resp *interface{}) error {
 	*resp = s.Impl.GetVersion()
 	return nil
 }
 
-func (s *DatabaseProviderRPCServer) SetVersion(args map[string]interface{}, resp *error) error {
+func (s *DatabaseProviderRPCServer) SetVersion(args interface{}, resp *error) error {
 	*resp = s.Impl.SetVersion(args)
 	return nil
 }
