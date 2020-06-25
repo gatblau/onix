@@ -8,6 +8,7 @@ package plugins
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/spf13/viper"
 	"os"
@@ -215,8 +216,13 @@ func (c *Config) ToString() string {
 	return buffer.String()
 }
 
-func (c *Config) All() map[string]interface{} {
-	return c.cfg.AllSettings()
+func (c *Config) All() string {
+	m := c.cfg.AllSettings()
+	bytes, e := json.Marshal(m)
+	if e != nil {
+		return ""
+	}
+	return string(bytes)
 }
 
 func (c *Config) GetString(key string) string {

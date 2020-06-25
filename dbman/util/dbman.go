@@ -50,6 +50,16 @@ func NewDbMan() (*DbMan, error) {
 	if db.Provider() == nil {
 		return nil, errors.New("!!! database Provider plugin loading failed")
 	}
+	// pass in DbMan's configuration to the database provider
+	result := NewParameterFromJSON(db.Provider().Setup(cfg.All()))
+	// if an error message came back
+	if result.HasError() {
+		// return the error
+		return nil, result.Error()
+	}
+	// output the setup log
+	result.PrintLog()
+	// otherwise returns a DbMan instance
 	return &DbMan{
 		Cfg:    cfg,
 		script: scriptManager,
@@ -108,22 +118,22 @@ func (dm *DbMan) CheckConfigSet() map[string]string {
 	}
 	// try and connect to the database
 	// create a dummy action with no scripts to test the connection
-	testConnCmd := &Command{
-		Name:          "test connection",
-		Description:   "",
-		Transactional: false,
-		AsAdmin:       true,
-		UseDb:         false,
-		Scripts:       []Script{},
-	}
-	r := dm.data().RunCommand(testConnCmd.All())
-	result := r.(map[string]interface{})
-	err = result["error"].(error)
-	if err != nil {
-		results["db connection"] = fmt.Sprintf("FAILED: %v", err)
-	} else {
-		results["db connection"] = "OK"
-	}
+	// testConnCmd := &Command{
+	// 	Name:          "test connection",
+	// 	Description:   "",
+	// 	Transactional: false,
+	// 	AsAdmin:       true,
+	// 	UseDb:         false,
+	// 	Scripts:       []Script{},
+	// }
+	// r := dm.Data().RunCommand(testConnCmd.All())
+	// result, _ := ResultFromJSON(r)
+	// errorMsg := result["error"]
+	// if len(result["error"]) > 0 {
+	// 	results["db connection"] = fmt.Sprintf("FAILED: %v", err)
+	// } else {
+	// 	results["db connection"] = "OK"
+	// }
 	return results
 }
 
@@ -133,12 +143,12 @@ func (dm *DbMan) Create() (log bytes.Buffer, err error, elapsed time.Duration) {
 	appVer := dm.get(AppVersion)
 	// get database release version
 	log.WriteString(fmt.Sprintf("? I am checking that the database '%s' does not already exist\n", dm.get(DbName)))
-	r := dm.data().GetVersion()
-	result := r.(map[string]interface{})
-	err = errors.New(result["error"].(string))
-	appVersion := result["appVersion"].(string)
-	dbVersion := result["dbVersion"].(string)
-	if err == nil {
+	r := dm.DbPlugin().GetVersion()
+	result := NewParameterFromJSON(r)
+	// if no error then
+	if !result.HasError() {
+		appVersion := result.GetString("appVersion")
+		dbVersion := result.GetString("dbVersion")
 		// there is already a database and cannot continue
 		return log, errors.New(fmt.Sprintf("!!! I have found an existing database version %v, which is for application version %v", dbVersion, appVersion)), time.Since(start)
 	}
@@ -162,14 +172,13 @@ func (dm *DbMan) Deploy() (log bytes.Buffer, err error, elapsed time.Duration) {
 	log = bytes.Buffer{}
 	appVer := dm.get(AppVersion)
 	// get database release version
-	r := dm.data().GetVersion()
-	result := r.(map[string]interface{})
-	err = result["error"].(error)
-	appVersion := result["appVersion"].(string)
-	dbVersion := result["dbVersion"].(string)
-	if err == nil && len(appVersion) > 0 {
+	r := dm.DbPlugin().GetVersion()
+	result := NewParameterFromJSON(r)
+	if !result.HasError() && len(result.GetString("appVersion")) > 0 {
 		// there is already a database with a pre-existing deployment so cannot continue
-		return log, errors.New(fmt.Sprintf("!!! I have found an existing database version %v, which is for application version %v", dbVersion, appVersion)), time.Since(start)
+		return log, errors.New(fmt.Sprintf("!!! I have found an existing database version %v, which is for application version %v",
+			result.GetString("dbVersion"),
+			result.GetString("appVersion"))), time.Since(start)
 	}
 	// fetch the release manifest for appVersion
 	manifest, err := dm.script.fetchManifest(appVer)
@@ -185,12 +194,15 @@ func (dm *DbMan) Deploy() (log bytes.Buffer, err error, elapsed time.Duration) {
 		return log, err, time.Since(start)
 	}
 	// update release version
-	m := make(map[string]interface{})
-	m["appVersion"] = appVer
-	m["dbVersion"] = manifest.DbVersion
-	m["description"] = fmt.Sprintf("Database Release %v", manifest.DbVersion)
-	m["source"] = dm.get(SchemaURI)
-	err = dm.data().SetVersion(m)
+	input := NewParameter()
+	input.Set("appVersion", appVer)
+	input.Set("dbVersion", manifest.DbVersion)
+	input.Set("description", fmt.Sprintf("Database Release %v", manifest.DbVersion))
+	input.Set("source", dm.get(SchemaURI))
+	setVerResult := NewParameterFromJSON(dm.DbPlugin().SetVersion(input.ToString()))
+	if setVerResult.HasError() {
+		err = setVerResult.Error()
+	}
 	// return
 	return log, err, time.Since(start)
 }
@@ -201,19 +213,19 @@ func (dm *DbMan) Upgrade() (log bytes.Buffer, err error, elapsed time.Duration) 
 	return log, nil, time.Since(start)
 }
 
-func (dm *DbMan) RunQuery(manifest *Manifest, query *Query, params []string) (Table, time.Duration, error) {
+func (dm *DbMan) RunQuery(manifest *Manifest, query *Query, params []string) (*Table, time.Duration, error) {
 	start := time.Now()
 	// fetch the query content
 	query, err := dm.script.fetchQueryContent(dm.get(AppVersion), manifest.QueriesPath, *query, params)
 	if err != nil {
-		return Table{}, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot fetch content for query: %v\n", query.Name))
+		return nil, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot fetch content for query: %v\n", query.Name))
 	}
-	// run the query
-	r := dm.data().RunQuery(query.All(), params)
-	result := r.(map[string]interface{})
-	err = result["error"].(error)
-	table := result["table"].(Table)
-	return table, time.Since(start), err
+	// run the query on the plugin
+	r := dm.DbPlugin().RunQuery(query.ToString())
+	// recreate plugin response into parameter
+	result := NewParameterFromJSON(r)
+	// return table and error
+	return result.GetTable(), time.Since(start), result.Error()
 }
 
 func (dm *DbMan) CheckReady() (bool, error) {
@@ -249,13 +261,10 @@ func (dm *DbMan) runCommands(cmds []Command, manifest *Manifest) (log bytes.Buff
 	// execute the commands
 	for _, c := range commands {
 		log.WriteString(fmt.Sprintf("? I have started execution of the command '%s'\n", c.Name))
-		r := dm.data().RunCommand(c.All())
-		result := r.(map[string]interface{})
-		err = result["error"].(error)
-		output := result["string"].(string)
-		log.WriteString(output)
-		if err != nil {
-			log.WriteString(fmt.Sprintf("!!! the execution of the command '%s' has failed: %s\n", c.Name, err))
+		r := dm.DbPlugin().RunCommand(c.ToString())
+		result := NewParameterFromJSON(r)
+		if result.HasError() {
+			log.WriteString(fmt.Sprintf("!!! the execution of the command '%s' has failed: %s\n", c.Name, result.Error()))
 			return log, err
 		}
 		log.WriteString(fmt.Sprintf("? the execution of the command '%s' has succeeded\n", c.Name))
@@ -267,6 +276,6 @@ func (dm *DbMan) get(key string) string {
 	return dm.Cfg.GetString(key)
 }
 
-func (dm *DbMan) data() DatabaseProvider {
+func (dm *DbMan) DbPlugin() DatabaseProvider {
 	return dm.db.Provider()
 }

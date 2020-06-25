@@ -65,19 +65,19 @@ type Command struct {
 	Scripts []Script `json:"scripts"`
 }
 
-func (c *Command) All() map[string]interface{} {
-	m := map[string]interface{}{}
-	m["name"] = c.Name
-	m["description"] = c.Description
-	m["transactional"] = c.Transactional
-	m["asadmin"] = c.AsAdmin
-	m["usedb"] = c.UseDb
-	s := make([]map[string]interface{}, len(c.Scripts))
-	for ix, script := range c.Scripts {
-		s[ix] = script.All()
+// creates a new command from a serialised json string
+func NewCommand(jsonString string) (*Command, error) {
+	c := &Command{}
+	err := json.Unmarshal([]byte(jsonString), c)
+	return c, err
+}
+
+func (c *Command) ToString() string {
+	bytes, e := json.Marshal(c)
+	if e != nil {
+		return ""
 	}
-	m["scripts"] = s
-	return m
+	return string(bytes)
 }
 
 // a database script and zero or more merge variables
@@ -148,13 +148,19 @@ type Query struct {
 	Content string `json:"content,omitempty"`
 }
 
-func (q *Query) All() map[string]interface{} {
-	m := map[string]interface{}{}
-	m["name"] = q.Name
-	m["description"] = q.Description
-	m["file"] = q.File
-	m["content"] = q.Content
-	return m
+// creates a new query from a serialised json string
+func NewQuery(jsonString string) (*Query, error) {
+	q := &Query{}
+	err := json.Unmarshal([]byte(jsonString), q)
+	return q, err
+}
+
+func (q *Query) ToString() string {
+	bytes, e := json.Marshal(q)
+	if e != nil {
+		return ""
+	}
+	return string(bytes)
 }
 
 // the commands to run at different stages in an upgrade
