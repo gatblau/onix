@@ -27,7 +27,9 @@ require (
 	github.com/tidwall/pretty v1.0.1 // indirect
 	golang.org/x/sys v0.0.0-20200620081246-981b61492c35 // indirect
 	golang.org/x/text v0.3.3 // indirect
+	golang.org/x/tools v0.0.0-20191112195655-aa38f8e97acc
 	google.golang.org/protobuf v1.24.0 // indirect
 	gopkg.in/ini.v1 v1.57.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )

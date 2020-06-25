@@ -47,20 +47,20 @@ func getDbProvider(cfg *Config) (DatabaseProvider, *plugin.Client, error) {
 	logger := hclog.New(&hclog.LoggerOptions{
 		Name:   "plugin",
 		Output: os.Stdout,
-		Level:  hclog.Debug,
+		Level:  hclog.Error,
 	})
 
 	// We're a host! Start by launching the plugin process.
 	client := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig: plugin.HandshakeConfig{
 			ProtocolVersion:  1,
-			MagicCookieKey:   "db_provider",
-			MagicCookieValue: dbProvider,
+			MagicCookieKey:   "dbman-db-provider",
+			MagicCookieValue: fmt.Sprintf("dbman-db-%s", dbProvider),
 		},
 		Plugins: map[string]plugin.Plugin{
 			dbProvider: &DatabaseProviderPlugin{},
 		},
-		Cmd:    exec.Command(fmt.Sprintf("./%s", dbProvider)),
+		Cmd:    exec.Command(fmt.Sprintf("./dbman-db-%s", dbProvider)),
 		Logger: logger,
 	})
 	// defer client.Kill()
@@ -80,6 +80,7 @@ func getDbProvider(cfg *Config) (DatabaseProvider, *plugin.Client, error) {
 	// We should have a DatabaseProvider now! This feels like a normal interface
 	// implementation but is in fact over an RPC connection.
 	db := raw.(DatabaseProvider)
+	// return
 	return db, client, nil
 }
 
