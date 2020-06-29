@@ -6,7 +6,7 @@
 package cmd
 
 import (
-	"github.com/gatblau/onix/dbman/util"
+	"github.com/gatblau/onix/dbman/core"
 	"github.com/spf13/cobra"
 )
 
@@ -30,9 +30,9 @@ func NewRootCmd() *RootCmd {
 
 // initConfig reads in config file and ENV variables if set.
 func (c *RootCmd) initConfig() {
-	dm, err := util.NewDbMan()
+	dm, err := core.NewDbMan()
 	if err != nil {
 		panic(err)
 	}
-	util.DM = dm
+	core.DM = dm
 }

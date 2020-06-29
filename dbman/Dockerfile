@@ -14,19 +14,24 @@
 
 # building stage: compiles dbman
 FROM golang as builder
+ARG DB_PLUGIN_PREFIX="dbman-db-"
 WORKDIR /app
 COPY . .
-RUN go get . && CGO_ENABLED=0 GOOS=linux go build -o dbman .
+RUN cd ./plugin/pgsql && \
+    export GOOS=linux; export GOARCH=amd64; go build -o ${DB_PLUGIN_PREFIX}pgsql && \
+    cd ../.. && \
+    mv ./plugin/pgsql/${DB_PLUGIN_PREFIX}pgsql ./${DB_PLUGIN_PREFIX}pgsql && \
+    export GOOS=linux; export GOARCH=amd64; go build
 
 # package stage: copy the binary into the deployment image
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 LABEL author="gatblau"
 LABEL maintainer="onix@gatblau.org"
 WORKDIR /app
-COPY --from=builder /app/dbman ./
+COPY --from=builder /app/dbman /app/dbman-db-* ./
 COPY --from=builder /app/.dbman.toml /app/.dbman_default.toml /
 COPY --from=builder /app/api/swagger.yaml ./api/
 #RUN rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && microdnf update -y && rm -rf /var/cache/yum && microdnf install postgresql12 && microdnf clean all
-USER 20
+USER 25
 CMD ["/app/dbman", "serve"]
 EXPOSE 8085/tcp

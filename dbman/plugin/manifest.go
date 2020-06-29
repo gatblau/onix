@@ -3,7 +3,7 @@
 //   Licensed under the
 //   Contributors to this project, hereby assign copyright in this code to the project,
 //   to be licensed under the same terms as the rest of the code.
-package plugins
+package plugin
 
 import (
 	"bytes"

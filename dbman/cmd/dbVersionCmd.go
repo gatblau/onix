@@ -7,8 +7,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/gatblau/onix/dbman/plugins"
-	. "github.com/gatblau/onix/dbman/util"
+	. "github.com/gatblau/onix/dbman/core"
+	"github.com/gatblau/onix/dbman/plugin"
 	"github.com/spf13/cobra"
 )
 
@@ -34,7 +34,7 @@ func NewDbVersionCmd() *DbVersionCmd {
 
 func (c *DbVersionCmd) Run(cmd *cobra.Command, args []string) {
 	resultStr := DM.DbPlugin().GetVersion()
-	r := plugins.NewParameterFromJSON(resultStr)
+	r := plugin.NewParameterFromJSON(resultStr)
 	if r.HasError() {
 		fmt.Printf("!!! I cannot retrieve database version: '%s'", r.Error())
 		return

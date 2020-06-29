@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	. "github.com/gatblau/onix/dbman/plugins"
+	. "github.com/gatblau/onix/dbman/plugin"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"time"
 )
 
-// the database provider for PostgreSQL
-// NOTE: database providers implicitly implement the DatabaseProvider interface
+// DbMan's database provider for PostgreSQL
+// note: providers implicitly implement the DatabaseProvider interface
 type PgSQLProvider struct {
 	cfg *Conf
 }
@@ -19,18 +19,12 @@ type PgSQLProvider struct {
 // pass DbMan configuration to the database provider
 // config: map[string]interface{} serialised as a json string
 func (db *PgSQLProvider) Setup(config string) string {
-	output := NewParameter()
-	// config is a json string containing the Configuration in map[string]interface{} format
-	// de-serialises the configuration
-	conf, err := NewConf(config)
-	// if the de-serialisation failed
-	if err != nil {
-		output.SetErrorFromMessage(err.Error())
-	}
-	// assigns the config map to cfg
-	db.cfg = conf
-	// no error, so returns an empty table
-	return output.ToString()
+	// parse the configuration
+	c, output := NewConf(config)
+	// allocate the parsed object to cfg
+	db.cfg = c
+	// return the output
+	return output
 }
 
 // retrieve database information

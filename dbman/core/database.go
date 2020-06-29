@@ -3,10 +3,11 @@
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
 //   to be licensed under the same terms as the rest of the code.
-package plugins
+package core
 
 import (
 	"fmt"
+	. "github.com/gatblau/onix/dbman/plugin"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 	"log"
@@ -42,7 +43,9 @@ func (db *Database) Provider() DatabaseProvider {
 
 // load a database provider plugin
 func getDbProvider(cfg *Config) (DatabaseProvider, *plugin.Client, error) {
+	// what database provider to use?
 	dbProvider := cfg.GetString(DbProvider)
+
 	// Create an hclog.Logger
 	logger := hclog.New(&hclog.LoggerOptions{
 		Name:   "plugin",
@@ -80,6 +83,7 @@ func getDbProvider(cfg *Config) (DatabaseProvider, *plugin.Client, error) {
 	// We should have a DatabaseProvider now! This feels like a normal interface
 	// implementation but is in fact over an RPC connection.
 	db := raw.(DatabaseProvider)
+
 	// return
 	return db, client, nil
 }

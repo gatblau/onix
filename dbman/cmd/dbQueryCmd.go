@@ -8,8 +8,8 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"github.com/gatblau/onix/dbman/plugins"
-	"github.com/gatblau/onix/dbman/util"
+	"github.com/gatblau/onix/dbman/core"
+	"github.com/gatblau/onix/dbman/plugin"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +30,6 @@ func NewDbQueryCmd() *DbQueryCmd {
 	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.format, "output", "o", "json", "the format of the output - yaml, json, csv")
 	c.cmd.Flags().StringVarP(&c.filename, "filename", "f", "", `if a filename is specified, the output will be written to the file. The file name should not include extension.`)
-
 	return c
 }
 
@@ -41,7 +40,7 @@ func (c *DbQueryCmd) Run(cmd *cobra.Command, args []string) {
 		return
 	}
 	// get the release manifest for the current application version
-	manifest, err := util.DM.GetReleaseInfo(util.DM.Cfg.GetString(plugins.AppVersion))
+	manifest, err := core.DM.GetReleaseInfo(core.DM.Cfg.GetString(core.AppVersion))
 	if err != nil {
 		fmt.Printf("!!! I cannot fetch release information: %v\n", err)
 		return
@@ -64,15 +63,23 @@ func (c *DbQueryCmd) Run(cmd *cobra.Command, args []string) {
 		fmt.Printf("!!! The query expected %v parameters but %v were provided\n", varsToString(query.Vars), providedParams)
 		return
 	}
-	result, _, err := util.DM.RunQuery(manifest, query, params)
+	// execute the query
+	result, _, err := core.DM.RunQuery(manifest, query, params)
 	if err != nil {
 		fmt.Printf("!!! I cannot run query '%s': %s\n", queryName, err)
 		return
 	}
-	util.Print(result, c.format, c.filename)
+	// if a filename has been specified
+	if len(c.filename) > 0 {
+		// save to disk
+		result.Save(c.format, c.filename)
+	} else {
+		// print to stdout
+		result.Print(c.format)
+	}
 }
 
-func varsToString(vars []plugins.Var) string {
+func varsToString(vars []plugin.Var) string {
 	buffer := bytes.Buffer{}
 	for i, v := range vars {
 		buffer.WriteString(v.Name)

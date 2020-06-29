@@ -1,4 +1,5 @@
 # configuration for running DbMan in http mode
+Plugins = "false"
 [Http]
 	Metrics     = "true"
 	AuthMode    = "basic"
