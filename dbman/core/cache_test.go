@@ -1,4 +1,4 @@
-package plugins
+package core
 
 import (
 	"fmt"

@@ -3,7 +3,7 @@
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
 //   to be licensed under the same terms as the rest of the code.
-package plugins
+package core
 
 import (
 	"bytes"
@@ -17,6 +17,7 @@ import (
 
 const (
 	AppVersion       = "AppVersion"
+	Plugins          = "Plugins"
 	HttpMetrics      = "Http.Metrics"
 	HttpAuthMode     = "Http.AuthMode"
 	HttpUsername     = "Http.Username"
@@ -43,7 +44,7 @@ type Config struct {
 }
 
 // create a new instance
-func NewAppCfg(path string, name string) *Config {
+func NewConfig(path string, name string) *Config {
 	conf := &Config{
 		Cache: NewCache(),
 		cfg:   viper.New(),
@@ -106,6 +107,7 @@ func (c *Config) Load(path string, name string) error {
 	c.cfg.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	_ = c.cfg.BindEnv("AppVersion")
+	_ = c.cfg.BindEnv("Plugins")
 	_ = c.cfg.BindEnv("Http.Port")
 	_ = c.cfg.BindEnv("Http.AuthMode")
 	_ = c.cfg.BindEnv("Http.Username")
@@ -232,6 +234,7 @@ func (c *Config) GetString(key string) string {
 // default config file content
 const cfgFile = `# configuration for running DbMan in http mode
 AppVersion = "0.0.4"
+Plugins = "false"
 [Http]
 	Metrics = "true"
 	AuthMode    = "basic"

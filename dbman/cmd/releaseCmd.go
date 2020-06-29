@@ -16,13 +16,13 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/gatblau/onix/dbman/util"
+	"github.com/gatblau/onix/dbman/core"
 	"github.com/spf13/cobra"
 )
 
 type ReleaseCmd struct {
 	cmd  *cobra.Command
-	info *util.ScriptManager
+	info *core.ScriptManager
 }
 
 func NewReleaseCmd() *ReleaseCmd {

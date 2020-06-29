@@ -7,7 +7,7 @@ package cmd
 
 import (
 	"fmt"
-	. "github.com/gatblau/onix/dbman/util"
+	. "github.com/gatblau/onix/dbman/core"
 	"github.com/spf13/cobra"
 )
 

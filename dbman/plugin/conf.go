@@ -3,7 +3,7 @@
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
 //   to be licensed under the same terms as the rest of the code.
-package plugins
+package plugin
 
 import (
 	"encoding/json"
@@ -15,12 +15,21 @@ type Conf struct {
 	value map[string]interface{}
 }
 
-func NewConf(json string) (*Conf, error) {
-	r := &Conf{
+// parse the configuration from a JSON string
+func NewConf(config string) (*Conf, string) {
+	output := NewParameter()
+	// config is a json string containing the Configuration in map[string]interface{} format
+	// de-serialises the configuration
+	conf := &Conf{
 		value: make(map[string]interface{}),
 	}
-	err := r.FromJSON(json)
-	return r, err
+	err := conf.fromJSON(config)
+	// if the de-serialisation failed
+	if err != nil {
+		output.SetErrorFromMessage(err.Error())
+	}
+	// no error, so returns an empty table
+	return conf, output.ToString()
 }
 
 func (c *Conf) GetString(key string) (string, bool) {
@@ -47,7 +56,7 @@ func (c *Conf) GetString(key string) (string, bool) {
 	return "", false
 }
 
-func (c *Conf) FromJSON(jsonString string) error {
+func (c *Conf) fromJSON(jsonString string) error {
 	m := make(map[string]interface{})
 	err := json.Unmarshal([]byte(jsonString), &m)
 	c.value = m

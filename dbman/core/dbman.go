@@ -3,14 +3,14 @@
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
 //   to be licensed under the same terms as the rest of the code.
-package util
+package core
 
 import (
 	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	. "github.com/gatblau/onix/dbman/plugins"
+	. "github.com/gatblau/onix/dbman/plugin"
 	"github.com/gatblau/oxc"
 	"strings"
 	"time"
@@ -31,7 +31,7 @@ type DbMan struct {
 
 func NewDbMan() (*DbMan, error) {
 	// create an instance of the current configuration set
-	cfg := NewAppCfg("", "")
+	cfg := NewConfig("", "")
 	// create an instance of the script http client
 	scriptClient, err := oxc.NewClient(NewOxClientConf(cfg))
 	if err != nil {
@@ -118,22 +118,21 @@ func (dm *DbMan) CheckConfigSet() map[string]string {
 	}
 	// try and connect to the database
 	// create a dummy action with no scripts to test the connection
-	// testConnCmd := &Command{
-	// 	Name:          "test connection",
-	// 	Description:   "",
-	// 	Transactional: false,
-	// 	AsAdmin:       true,
-	// 	UseDb:         false,
-	// 	Scripts:       []Script{},
-	// }
-	// r := dm.Data().RunCommand(testConnCmd.All())
-	// result, _ := ResultFromJSON(r)
-	// errorMsg := result["error"]
-	// if len(result["error"]) > 0 {
-	// 	results["db connection"] = fmt.Sprintf("FAILED: %v", err)
-	// } else {
-	// 	results["db connection"] = "OK"
-	// }
+	testConnCmd := &Command{
+		Name:          "test connection",
+		Description:   "",
+		Transactional: false,
+		AsAdmin:       true,
+		UseDb:         false,
+		Scripts:       []Script{},
+	}
+	r := dm.DbPlugin().RunCommand(testConnCmd.ToString())
+	result := NewParameterFromJSON(r)
+	if result.HasError() {
+		results["db connection"] = fmt.Sprintf("FAILED: %v", result.Error())
+	} else {
+		results["db connection"] = "OK"
+	}
 	return results
 }
 
