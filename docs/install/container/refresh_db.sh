@@ -48,16 +48,17 @@ docker run --name dbman -itd -p 8085:8085 --link oxdb \
   -e OX_DBM_DB_HOST=oxdb \
   -e OX_DBM_DB_ADMINPWD=${DBPWD} \
   -e OX_DBM_HTTP_AUTHMODE=none \
+  -e OX_DBM_APPVERSION=0.0.4 \
   "gatblau/dbman-snapshot"
 
 echo "? please wait for DbMan to become available"
 sleep 3
 
 echo "? creating the Onix database and user"
-curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/init 2>&1
+curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1
 
 echo "? deploying the Onix database schemas and functions"
-curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy/${APP_VER} 2>&1
+curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy 2>&1
 
 #echo "? shutting down DbMan"
 #docker rm dbman -f
