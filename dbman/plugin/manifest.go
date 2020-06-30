@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"github.com/gatblau/oxc"
 	"net/http"
+	"time"
 )
 
 // a database manifest containing the meta data required by DbMan
@@ -25,8 +26,6 @@ type Manifest struct {
 	QueriesPath string `json:"queriesPath,omitempty"`
 	// the database provider to use
 	DbProvider string `json:"dbProvider"`
-	// inform DbMan how to query for app and db version
-	Version Version `json:"version"`
 	// the list of commands available to execute
 	Commands []Command `json:"commands"`
 	// the list of commands required to create the database in the first place
@@ -121,16 +120,32 @@ type Var struct {
 	FromInput string `json:"fromValue,omitempty"`
 }
 
-// informs DbMan how to query the database for current version and version history
+func NewVersion(jsonString string) (*Version, error) {
+	v := &Version{}
+	err := json.Unmarshal([]byte(jsonString), v)
+	return v, err
+}
+
+// carries version information
 type Version struct {
-	// the name of the query to retrieve the current version
-	Current string `json:"current"`
-	// the key of the output value (in the query) for the application version
-	AppVerKey string `json:"appVerKey"`
-	// the key of the output value (in the query) for the database version
-	DbVerKey string `json:"dbVerKey"`
+	// the application version
+	AppVersion string `json:"appVersion"`
+	// the database version
+	DbVersion string `json:"dbVersion"`
 	// the name of the query to retrieve the version history
-	History string `json:"history"`
+	Description string `json:"description"`
+	// the name of the query to retrieve the version history
+	Source string `json:"source"`
+	// the time the version was released
+	Time time.Time `json:"time"`
+}
+
+func (v *Version) ToString() string {
+	bytes, e := json.Marshal(v)
+	if e != nil {
+		panic(e)
+	}
+	return string(bytes)
 }
 
 // a database query

@@ -13,31 +13,31 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 )
 
-func NewDatabase(cfg *Config) (*Database, error) {
+func NewDatabase(cfg *Config) (*DatabaseProviderManager, error) {
 	provider, client, err := getDbProvider(cfg)
 	if err != nil {
 		return nil, err
 	}
-	return &Database{
+	return &DatabaseProviderManager{
 		provider: provider,
 		client:   client,
 	}, nil
 }
 
-type Database struct {
+// manages the lifecycle of a DatabaseProvider
+type DatabaseProviderManager struct {
 	provider DatabaseProvider
 	client   *plugin.Client
 }
 
 // safely terminate the rpc client
-func (db *Database) Close() {
+func (db *DatabaseProviderManager) Close() {
 	db.client.Kill()
 }
 
-func (db *Database) Provider() DatabaseProvider {
+func (db *DatabaseProviderManager) Provider() DatabaseProvider {
 	return db.provider
 }
 
@@ -86,10 +86,4 @@ func getDbProvider(cfg *Config) (DatabaseProvider, *plugin.Client, error) {
 
 	// return
 	return db, client, nil
-}
-
-// return the executable path
-func execPath() string {
-	ex, _ := os.Executable()
-	return filepath.Dir(ex)
 }

@@ -7,12 +7,10 @@ require (
 	github.com/gatblau/oxc v0.0.0-20200518102735-38237e6a1005
 	github.com/go-openapi/runtime v0.19.19
 	github.com/google/go-cmp v0.5.0 // indirect
-	github.com/google/wire v0.4.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/hashicorp/go-hclog v0.0.0-20181001195459-61d530d6c27f
 	github.com/hashicorp/go-plugin v1.3.0
-	github.com/hashicorp/terraform v0.12.26 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/prometheus/client_golang v1.7.0

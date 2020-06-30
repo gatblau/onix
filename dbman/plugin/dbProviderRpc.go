@@ -16,7 +16,9 @@ func (db *DatabaseProviderRPC) Setup(config string) string {
 	var result string
 	err := db.Client.Call("Plugin.Setup", config, &result)
 	if err != nil {
-		panic(err)
+		output := NewParameter()
+		output.SetError(err)
+		return output.ToString()
 	}
 	return result
 }
@@ -25,7 +27,7 @@ func (db *DatabaseProviderRPC) GetVersion() string {
 	var result string
 	err := db.Client.Call("Plugin.GetVersion", "", &result)
 	if err != nil {
-		panic(err)
+		return db.errorToString(err)
 	}
 	return result
 }
@@ -34,7 +36,7 @@ func (db *DatabaseProviderRPC) RunCommand(cmd string) string {
 	var result string
 	err := db.Client.Call("Plugin.RunCommand", cmd, &result)
 	if err != nil {
-		panic(err)
+		return db.errorToString(err)
 	}
 	return result
 }
@@ -43,7 +45,7 @@ func (db *DatabaseProviderRPC) SetVersion(args string) string {
 	var result string
 	err := db.Client.Call("Plugin.SetVersion", args, &result)
 	if err != nil {
-		panic(err)
+		return db.errorToString(err)
 	}
 	return result
 }
@@ -52,7 +54,13 @@ func (db *DatabaseProviderRPC) RunQuery(query string) string {
 	var result string
 	err := db.Client.Call("Plugin.RunQuery", query, &result)
 	if err != nil {
-		panic(err)
+		return db.errorToString(err)
 	}
 	return result
+}
+
+func (db *DatabaseProviderRPC) errorToString(err error) string {
+	output := NewParameter()
+	output.SetError(err)
+	return output.ToString()
 }
