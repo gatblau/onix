@@ -1,6 +1,12 @@
+//   Onix Config DatabaseProvider - Dbman
+//   Copyright (c) 2018-2020 by www.gatblau.org
+//   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
+//   Contributors to this project, hereby assign copyright in this code to the project,
+//   to be licensed under the same terms as the rest of the code.
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -18,23 +24,18 @@ type PgSQLProvider struct {
 
 // pass DbMan configuration to the database provider
 // config: map[string]interface{} serialised as a json string
-func (db *PgSQLProvider) Setup(config string) string {
-	// parse the configuration
-	c, output := NewConf(config)
+func (db *PgSQLProvider) Setup(config *Conf) error {
 	// allocate the parsed object to cfg
-	db.cfg = c
-	// return the output
-	return output
+	db.cfg = config
+	return nil
 }
 
 // retrieve database information
 // return: map[string]interface{} serialised as a json string
-func (db *PgSQLProvider) GetVersion() string {
-	output := NewParameter()
+func (db *PgSQLProvider) GetVersion() (*Version, error) {
 	conn, err := db.newConn(true, true)
 	if err != nil {
-		output.SetError(err)
-		return output.ToError(err)
+		return nil, err
 	}
 	defer conn.Close()
 	rows, err := conn.Query(context.Background(), `
@@ -43,7 +44,7 @@ func (db *PgSQLProvider) GetVersion() string {
 		ORDER BY time DESC
 		LIMIT 1`)
 	if err != nil {
-		return output.ToError(err)
+		return nil, err
 	}
 	var (
 		appVersion, dbVersion, description, source string
@@ -55,81 +56,70 @@ func (db *PgSQLProvider) GetVersion() string {
 	} else {
 		// no results
 		rows.Close()
-		output.SetErrorFromMessage("!!! query for version returned no results")
-		return output.ToError(err)
+		return nil, err
 	}
 	// we have version information so populate result
-	output.Set("appVersion", appVersion)
-	output.Set("dbVersion", dbVersion)
-	output.Set("description", description)
-	output.Set("time", time)
-	output.Set("source", source)
-	// return the result as a JSON string
-	return output.ToString()
+	v := &Version{
+		AppVersion:  appVersion,
+		DbVersion:   dbVersion,
+		Description: description,
+		Source:      source,
+		Time:        time,
+	}
+	return v, err
 }
 
-func (db *PgSQLProvider) RunCommand(command string) string {
-	output := NewParameter()
-	cmd, err := NewCommand(command)
-	if err != nil {
-		output.SetError(err)
-		return output.ToError(err)
-	}
-	conn, err := db.newConn(cmd.AsAdmin, cmd.UseDb)
+func (db *PgSQLProvider) RunCommand(command *Command) (bytes.Buffer, error) {
+	log := bytes.Buffer{}
+	conn, err := db.newConn(command.AsAdmin, command.UseDb)
 	defer conn.Close()
 	if err != nil {
-		return output.ToError(err)
+		return log, err
 	}
-	if cmd.Transactional {
-		output.Log(fmt.Sprintf("? I am creating a db connection that is %v, %v and %v\n",
-			db.label("transactional", "non-transactional", cmd.Transactional),
-			db.label("as an admin", "as a user", cmd.AsAdmin),
-			db.label("to the db", "to the server", cmd.UseDb)))
+	if command.Transactional {
+		log.WriteString(fmt.Sprintf("? I am creating a db connection that is %v, %v and %v\n",
+			db.label("transactional", "non-transactional", command.Transactional),
+			db.label("as an admin", "as a user", command.AsAdmin),
+			db.label("to the db", "to the server", command.UseDb)))
 		tx, err := conn.Begin(context.Background())
 		if err != nil {
-			return output.ToError(err)
+			return log, err
 		}
-		for _, script := range cmd.Scripts {
+		for _, script := range command.Scripts {
 			_, err := tx.Exec(context.Background(), script.Content)
-			output.Log(fmt.Sprintf("? I have executed the script '%s'\n", script.Name))
+			log.WriteString(fmt.Sprintf("? I have executed the script '%s'\n", script.Name))
 			// if we have an error
 			if isNull, err := db.error(err); !isNull {
 				tx.Rollback(context.Background())
-				return output.ToError(err)
+				return log, err
 			}
 		}
 		tx.Commit(context.Background())
 	} else {
-		output.Log(fmt.Sprintf("? I am creating a db connection that is %v, %v and %v\n",
-			db.label("transactional", "non-transactional", cmd.Transactional),
-			db.label("as an admin", "as a user", cmd.AsAdmin),
-			db.label("to the db", "to the server", cmd.UseDb)))
-		for _, script := range cmd.Scripts {
+		log.WriteString(fmt.Sprintf("? I am creating a db connection that is %v, %v and %v\n",
+			db.label("transactional", "non-transactional", command.Transactional),
+			db.label("as an admin", "as a user", command.AsAdmin),
+			db.label("to the db", "to the server", command.UseDb)))
+		for _, script := range command.Scripts {
 			_, err := conn.Exec(context.Background(), script.Content)
 			// if we have an error
 			if isNull, err := db.error(err); !isNull {
-				return output.ToError(err)
+				return log, err
 			}
 		}
 	}
-	return output.ToString()
+	return log, err
 }
 
-func (db *PgSQLProvider) RunQuery(queryInfo string) string {
-	output := NewParameter()
-	query, err := NewQuery(queryInfo)
-	if err != nil {
-		output.SetError(err)
-		return output.ToError(err)
-	}
+func (db *PgSQLProvider) RunQuery(query *Query) (*Table, error) {
 	conn, err := db.newConn(false, true)
 	if err != nil {
-		return output.ToError(err)
+		return nil, err
 	}
 	defer conn.Close()
 	result, err := conn.Query(context.Background(), query.Content)
 	if err != nil {
-		return output.ToError(err)
+		return nil, err
 	}
 	header := make(Row, 0)
 	rows := make([]Row, 0)
@@ -148,7 +138,7 @@ func (db *PgSQLProvider) RunQuery(queryInfo string) string {
 		}
 		for _, value := range values {
 			if v, ok := value.(string); ok {
-				row = append(row, string(v))
+				row = append(row, v)
 			}
 			if v, ok := value.(time.Time); ok {
 				row = append(row, v.String())
@@ -158,27 +148,19 @@ func (db *PgSQLProvider) RunQuery(queryInfo string) string {
 		rows = append(rows, row)
 	}
 	result.Close()
-	output.Set("table", Table{
+	return &Table{
 		Header: header,
 		Rows:   rows,
-	})
-	return output.ToString()
+	}, err
 }
 
 // set the release version
 // versionInfo: a json serialised map[string]interface{} containing version information
-func (db *PgSQLProvider) SetVersion(versionInfo string) string {
-	output := NewParameter()
-	input := NewParameterFromJSON(versionInfo)
-	appVersion := input.GetString("appVersion")
-	dbVersion := input.GetString("dbVersion")
-	description := input.GetString("description")
-	source := input.GetString("source")
-
+func (db *PgSQLProvider) SetVersion(version *Version) error {
 	// create a db connection
 	conn, err := db.newConn(false, true)
 	if err != nil {
-		return output.ToError(err)
+		return err
 	}
 	defer conn.Close()
 	// find out if version table exists
@@ -186,7 +168,7 @@ func (db *PgSQLProvider) SetVersion(versionInfo string) string {
 	if err != nil {
 		dbUser, found := db.get("Db.Username")
 		if !found {
-			return output.ToError(errors.New(fmt.Sprint("!!! could not find Db.Username config value")))
+			return errors.New(fmt.Sprint("!!! could not find Db.Username config value"))
 		}
 		// could not find version table, so try and create it
 		_, err := conn.Exec(context.Background(), fmt.Sprintf(`CREATE TABLE "version"
@@ -200,17 +182,17 @@ func (db *PgSQLProvider) SetVersion(versionInfo string) string {
             ) WITH (OIDS = FALSE) TABLESPACE pg_default;
             ALTER TABLE version OWNER to %v;`, dbUser))
 		if err != nil {
-			return output.ToError(errors.New(fmt.Sprintf("!!! I cannot create the version table: %v", err)))
+			return errors.New(fmt.Sprintf("!!! I cannot create the version table: %v", err))
 		}
 	}
 	// ready to insert a new version
 	_, err = conn.Exec(context.Background(),
 		fmt.Sprintf(`INSERT INTO "version"(appVersion, dbVersion, description, source) VALUES('%s', '%s', '%s', '%s');`,
-			appVersion, dbVersion, description, source))
+			version.AppVersion, version.DbVersion, version.Description, version.Source))
 	if err != nil {
-		return output.ToError(errors.New(fmt.Sprintf("!!! I cannot update the version table: %v", err)))
+		return errors.New(fmt.Sprintf("!!! I cannot update the version table: %v", err))
 	}
-	return output.ToString()
+	return err
 }
 
 // return the connection string

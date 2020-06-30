@@ -11,13 +11,13 @@ import (
 	"strings"
 )
 
+// the configuration used by the database plugin
 type Conf struct {
 	value map[string]interface{}
 }
 
 // parse the configuration from a JSON string
-func NewConf(config string) (*Conf, string) {
-	output := NewParameter()
+func NewConf(config string) (*Conf, error) {
 	// config is a json string containing the Configuration in map[string]interface{} format
 	// de-serialises the configuration
 	conf := &Conf{
@@ -26,10 +26,10 @@ func NewConf(config string) (*Conf, string) {
 	err := conf.fromJSON(config)
 	// if the de-serialisation failed
 	if err != nil {
-		output.SetErrorFromMessage(err.Error())
+		return conf, err
 	}
 	// no error, so returns an empty table
-	return conf, output.ToString()
+	return conf, err
 }
 
 func (c *Conf) GetString(key string) (string, bool) {

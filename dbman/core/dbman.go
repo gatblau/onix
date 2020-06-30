@@ -24,7 +24,7 @@ type DbMan struct {
 	// scrips manager
 	script *ScriptManager
 	// db provider
-	db *Database
+	db *DatabaseProviderManager
 	// is it ready?
 	ready bool
 }
@@ -193,11 +193,12 @@ func (dm *DbMan) Deploy() (log bytes.Buffer, err error, elapsed time.Duration) {
 		return log, err, time.Since(start)
 	}
 	// update release version
-	input := NewParameter()
-	input.Set("appVersion", appVer)
-	input.Set("dbVersion", manifest.DbVersion)
-	input.Set("description", fmt.Sprintf("Database Release %v", manifest.DbVersion))
-	input.Set("source", dm.get(SchemaURI))
+	input := &Version{
+		AppVersion:  appVer,
+		DbVersion:   manifest.DbVersion,
+		Description: fmt.Sprintf("Database Release %v", manifest.DbVersion),
+		Source:      dm.get(SchemaURI),
+	}
 	setVerResult := NewParameterFromJSON(dm.DbPlugin().SetVersion(input.ToString()))
 	if setVerResult.HasError() {
 		err = setVerResult.Error()

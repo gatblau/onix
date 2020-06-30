@@ -7,22 +7,9 @@ package main
 
 import (
 	. "github.com/gatblau/onix/dbman/plugin"
-	"github.com/hashicorp/go-plugin"
 )
 
 // entry point for the PGSQL plugin
 func main() {
-	// launch the plugin as an rpc server
-	plugin.Serve(&plugin.ServeConfig{
-		HandshakeConfig: plugin.HandshakeConfig{
-			ProtocolVersion:  1,
-			MagicCookieKey:   "dbman-db-provider",
-			MagicCookieValue: "dbman-db-pgsql",
-		},
-		Plugins: map[string]plugin.Plugin{
-			"pgsql": &DatabaseProviderPlugin{
-				Impl: new(PgSQLProvider),
-			},
-		},
-	})
+	ServeDbPlugin("pgsql", new(PgSQLProvider))
 }
