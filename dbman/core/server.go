@@ -161,17 +161,18 @@ func (s *Server) listen(handler http.Handler) {
 		Handler:      handler,
 	}
 
+	// creates a channel to pass a SIGINT (ctrl+C) kernel signal with buffer capacity 1
+	stop := make(chan os.Signal, 1)
+
 	// runs the server asynchronously
 	go func() {
 		fmt.Printf("? I am listening on :%s\n", s.get(HttpPort))
 		fmt.Printf("? I have taken %v to start\n", time.Since(s.start))
 		if err := server.ListenAndServe(); err != nil {
 			fmt.Printf("! Stopping the server: %v\n", err)
+			os.Exit(1)
 		}
 	}()
-
-	// creates a channel to pass a SIGINT (ctrl+C) kernel signal with buffer capacity 1
-	stop := make(chan os.Signal, 1)
 
 	// sends any SIGINT signal to the stop channel
 	signal.Notify(stop, os.Interrupt)
