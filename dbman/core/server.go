@@ -8,6 +8,7 @@ package core
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/mux"
@@ -44,6 +45,7 @@ func (s *Server) Serve() {
 	router.HandleFunc("/ready", s.readyHandler).Methods("GET")
 	router.HandleFunc("/conf", s.showConfigHandler).Methods("GET")
 	router.HandleFunc("/conf/check", s.checkConfigHandler).Methods("GET")
+	router.HandleFunc("/db/server", s.dbServerHandler).Methods("GET")
 	router.HandleFunc("/db/create", s.createHandler).Methods("POST")
 	router.HandleFunc("/db/deploy", s.deployHandler).Methods("POST")
 	router.HandleFunc("/db/upgrade", s.upgradeHandler).Methods("POST")
@@ -81,6 +83,16 @@ func (s *Server) readyHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		_, _ = w.Write([]byte("OK"))
 	}
+}
+
+// returns the configuration variables
+func (s *Server) dbServerHandler(w http.ResponseWriter, r *http.Request) {
+	info, err := DM.GetDbInfo()
+	if err != nil {
+		s.writeError(w, errors.New(fmt.Sprintf("!!! I cannot get database server information: %v\n", err)))
+		return
+	}
+	_, _ = w.Write([]byte(info.ToString()))
 }
 
 // create a database when it does not exist
