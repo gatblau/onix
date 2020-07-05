@@ -69,6 +69,38 @@ func (r *Parameter) GetTable() *Table {
 	return nil
 }
 
+func (r *Parameter) GetVersion() *Version {
+	if r.value["result"] != nil {
+		if m, ok := r.value["result"].(Version); ok {
+			// new table
+			version := &Version{}
+			// marshal the map to json
+			bytes, _ := json.Marshal(m)
+			// unmarshal the json to Version
+			json.Unmarshal(bytes, &version)
+			// return
+			return version
+		}
+	}
+	return nil
+}
+
+func (r *Parameter) GetDbInfo() *DbInfo {
+	if r.value["result"] != nil {
+		if m, ok := r.value["result"].(DbInfo); ok {
+			// new table
+			info := &DbInfo{}
+			// marshal the map to json
+			bytes, _ := json.Marshal(m)
+			// unmarshal the json to DbInfo
+			json.Unmarshal(bytes, &info)
+			// return
+			return info
+		}
+	}
+	return nil
+}
+
 func (r *Parameter) SetErrorFromMessage(message string) {
 	r.value["error"] = message
 }

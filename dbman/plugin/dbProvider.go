@@ -7,20 +7,21 @@ package plugin
 
 // the interface implemented by database specific implementations of a database provider
 type DatabaseProvider interface {
-	// setup the provider
-	// config: a map[string]interface{} serialised as a JSON string, containing DbMan's current config set
-	// result: a map[string]interface{} serialised as a JSON string, containing log and error items
+	// setup the provider with the specified configuration information
 	Setup(config string) string
 
-	// get db version
+	// get database server general information
+	GetInfo() string
+
+	// get database release version information
 	GetVersion() string
 
-	// execute the specified db scripts
-	RunCommand(cmd string) string
-
-	// set the version
+	// set database release version information
 	SetVersion(versionInfo string) string
 
-	// execute a query
+	// execute the specified command
+	RunCommand(cmd string) string
+
+	// execute the specified query
 	RunQuery(query string) string
 }
