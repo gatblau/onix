@@ -13,6 +13,7 @@ import (
 	. "github.com/gatblau/onix/dbman/plugin"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"strings"
 	"time"
 )
 
@@ -193,6 +194,40 @@ func (db *PgSQLProvider) SetVersion(version *Version) error {
 		return errors.New(fmt.Sprintf("!!! I cannot update the version table: %v", err))
 	}
 	return err
+}
+
+// get database server information
+func (db *PgSQLProvider) GetInfo() (*DbInfo, error) {
+	conn, err := db.newConn(true, true)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	rows, err := conn.Query(context.Background(), `SELECT version()`)
+	if err != nil {
+		return nil, err
+	}
+	var info string
+	if rows.Next() {
+		rows.Scan(&info)
+		rows.Close()
+	} else {
+		// no results
+		rows.Close()
+		return nil, err
+	}
+	fmt.Println(info)
+	parts := strings.Split(info, ",")
+	if len(parts) != 3 {
+		return nil, errors.New("!!! I cannot parse database server information: retrieved information not in understandable format")
+	}
+	o := strings.Split(parts[0], "on")
+	return &DbInfo{
+		Database:        strings.Trim(o[0], " "),
+		OperatingSystem: strings.Trim(o[1], " "),
+		Compiler:        strings.Trim(parts[1], " "),
+		ProcessorBits:   strings.Trim(parts[2], " "),
+	}, nil
 }
 
 // return the connection string

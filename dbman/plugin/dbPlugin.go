@@ -1,8 +1,8 @@
-//   Onix Config Manager - Dbman
-//   Copyright (c) 2018-2020 by www.gatblau.org
-//   Licensed under the
-//   Contributors to this project, hereby assign copyright in this code to the project,
-//   to be licensed under the same terms as the rest of the code.
+//  Onix Config Manager - Dbman
+//  Copyright (c) 2018-2020 by www.gatblau.org
+//  Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
+//  Contributors to this project, hereby assign copyright in this code to the project,
+//  to be licensed under the same terms as the rest of the code.
 package plugin
 
 import (
@@ -27,6 +27,9 @@ type DatabasePlugin interface {
 
 	// execute a query
 	RunQuery(query *Query) (*Table, error)
+
+	// get database server information
+	GetInfo() (*DbInfo, error)
 }
 
 // launch the database plugin
@@ -69,14 +72,21 @@ func (db *DatabasePluginDecorator) Setup(config string) string {
 	return output.ToString()
 }
 
+// RPC serialisation wrapper for getting database version information
 func (db *DatabasePluginDecorator) GetVersion() string {
+	// create the output struct
 	output := NewParameter()
+	// call the plugin operation
 	version, err := db.Plugin.GetVersion()
+	// if an error is found
 	if err != nil {
-		output.SetError(err)
+		// return the error
 		return output.ToError(err)
 	}
-	return version.ToString()
+	// set the result value
+	output.Set("result", version)
+	// return the serialised output back to the RPC client
+	return output.ToString()
 }
 
 func (db *DatabasePluginDecorator) RunCommand(command string) string {
@@ -99,15 +109,13 @@ func (db *DatabasePluginDecorator) RunQuery(queryInfo string) string {
 	output := NewParameter()
 	query, err := NewQuery(queryInfo)
 	if err != nil {
-		output.SetError(err)
 		return output.ToError(err)
 	}
 	result, err := db.Plugin.RunQuery(query)
 	if err != nil {
-		output.SetError(err)
 		return output.ToError(err)
 	}
-	output.Set("table", result)
+	output.Set("result", result)
 	return output.ToString()
 }
 
@@ -124,4 +132,20 @@ func (db *DatabasePluginDecorator) SetVersion(versionInfo string) string {
 		return output.ToError(err)
 	}
 	return v.ToString()
+}
+
+func (db *DatabasePluginDecorator) GetInfo() string {
+	// create the output struct
+	output := NewParameter()
+	// call the plugin operation
+	info, err := db.Plugin.GetInfo()
+	// if an error is found
+	if err != nil {
+		// return the error
+		return output.ToError(err)
+	}
+	// set the result value
+	output.Set("result", info)
+	// return the serialised output back to the RPC client
+	return output.ToString()
 }

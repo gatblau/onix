@@ -59,6 +59,15 @@ func (db *DatabaseProviderRPC) RunQuery(query string) string {
 	return result
 }
 
+func (db *DatabaseProviderRPC) GetInfo() string {
+	var result string
+	err := db.Client.Call("Plugin.GetInfo", "", &result)
+	if err != nil {
+		return db.errorToString(err)
+	}
+	return result
+}
+
 func (db *DatabaseProviderRPC) errorToString(err error) string {
 	output := NewParameter()
 	output.SetError(err)

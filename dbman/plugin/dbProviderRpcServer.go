@@ -17,18 +17,23 @@ func (s *DatabaseProviderRPCServer) Setup(args string, resp *string) error {
 	return nil
 }
 
+func (s *DatabaseProviderRPCServer) GetInfo(args string, resp *string) error {
+	*resp = s.Impl.GetInfo()
+	return nil
+}
+
 func (s *DatabaseProviderRPCServer) GetVersion(args string, resp *string) error {
 	*resp = s.Impl.GetVersion()
 	return nil
 }
 
-func (s *DatabaseProviderRPCServer) RunCommand(args string, resp *string) error {
-	*resp = s.Impl.RunCommand(args)
+func (s *DatabaseProviderRPCServer) SetVersion(args string, resp *string) error {
+	*resp = s.Impl.SetVersion(args)
 	return nil
 }
 
-func (s *DatabaseProviderRPCServer) SetVersion(args string, resp *string) error {
-	*resp = s.Impl.SetVersion(args)
+func (s *DatabaseProviderRPCServer) RunCommand(args string, resp *string) error {
+	*resp = s.Impl.RunCommand(args)
 	return nil
 }
 

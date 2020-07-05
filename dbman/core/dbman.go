@@ -146,10 +146,12 @@ func (dm *DbMan) Create() (log bytes.Buffer, err error, elapsed time.Duration) {
 	result := NewParameterFromJSON(r)
 	// if no error then
 	if !result.HasError() {
-		appVersion := result.GetString("appVersion")
-		dbVersion := result.GetString("dbVersion")
-		// there is already a database and cannot continue
-		return log, errors.New(fmt.Sprintf("!!! I have found an existing database version %v, which is for application version %v", dbVersion, appVersion)), time.Since(start)
+		v := result.GetVersion()
+		// if there is a version
+		if v != nil {
+			// there is already a database and cannot continue
+			return log, errors.New(fmt.Sprintf("!!! I have found an existing database version %v, which is for application version %v", v.DbVersion, v.AppVersion)), time.Since(start)
+		}
 	}
 	// fetch the release manifest for appVersion
 	log.WriteString(fmt.Sprintf("? I am retrieving the release manifest for application version '%v'\n", dm.get(AppVersion)))
@@ -173,7 +175,8 @@ func (dm *DbMan) Deploy() (log bytes.Buffer, err error, elapsed time.Duration) {
 	// get database release version
 	r := dm.DbPlugin().GetVersion()
 	result := NewParameterFromJSON(r)
-	if !result.HasError() && len(result.GetString("appVersion")) > 0 {
+	v := result.GetVersion()
+	if !result.HasError() && len(v.AppVersion) > 0 {
 		// there is already a database with a pre-existing deployment so cannot continue
 		return log, errors.New(fmt.Sprintf("!!! I have found an existing database version %v, which is for application version %v",
 			result.GetString("dbVersion"),
@@ -265,7 +268,7 @@ func (dm *DbMan) runCommands(cmds []Command, manifest *Manifest) (log bytes.Buff
 		result := NewParameterFromJSON(r)
 		if result.HasError() {
 			log.WriteString(fmt.Sprintf("!!! the execution of the command '%s' has failed: %s\n", c.Name, result.Error()))
-			return log, err
+			return log, result.Error()
 		}
 		log.WriteString(fmt.Sprintf("? the execution of the command '%s' has succeeded\n", c.Name))
 	}
@@ -278,4 +281,29 @@ func (dm *DbMan) get(key string) string {
 
 func (dm *DbMan) DbPlugin() DatabaseProvider {
 	return dm.db.Provider()
+}
+
+func (dm *DbMan) GetDbInfo() (*DbInfo, error) {
+	// query the plugin for serialised information
+	infoString := dm.DbPlugin().GetInfo()
+	// unmarshal the parameter
+	info := NewParameterFromJSON(infoString)
+	// is there an error?
+	if info.HasError() {
+		// return the error
+		return nil, info.Error()
+	}
+	// extract the result from the parameter
+	result := info.Get("result")
+	// is the result nil?
+	if result == nil {
+		// something went wrong, the plugin did not set the result value
+		return nil, errors.New("!!! The database plugin did not return a result\n")
+	}
+	// there is a result but is it a map?
+	if r, ok := result.(map[string]interface{}); ok {
+		return NewDbInfoFromMap(r)
+	}
+	// if not
+	return nil, errors.New("!!! The database plugin did not return a result of the correct type (i.e. map[string]interface{})\n")
 }
