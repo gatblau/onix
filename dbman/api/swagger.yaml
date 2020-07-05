@@ -39,24 +39,35 @@ paths:
       summary: CHECK
       tags:
       - CONFIGURATION
-  /db/run/{taskName}/{appVersion}:
+  /db/create:
     post:
-      description: |-
-        Executes the database task defined in a remote git repository.
-
-        Configuration is provided as environment variables to the running service.
-      operationId: RUN
-      parameters:
-      - description: The application version to deploy
-        in: path
-        name: taskName
-        required: true
-        type: string
-        x-go-name: TaskName
+      description: Creates a new database based on the release manifest.
+      operationId: CREATE
       responses:
         "200":
-          $ref: '#/responses/dbRunResponse'
-      summary: RUN
+          $ref: '#/responses/dbCreateResponse'
+      summary: CREATE
+      tags:
+      - DATABASE
+  /db/deploy:
+    post:
+      description: Deploys the database schemas and objects for the current database
+        release.
+      operationId: DEPLOY
+      responses:
+        "200":
+          $ref: '#/responses/dbDeployResponse'
+      summary: DEPLOY
+      tags:
+      - DATABASE
+  /db/server:
+    get:
+      description: Gets database server information.
+      operationId: SERVER
+      responses:
+        "200":
+          $ref: '#/responses/dbServerResponse'
+      summary: SERVER
       tags:
       - DATABASE
 produces:
@@ -66,8 +77,12 @@ responses:
     description: A list of checks and their result displayed in text form.
   confResponse:
     description: The list of configuration variables used by DbMan.
-  dbRunResponse:
-    description: The output of the run command execution as a plain text log.
+  dbCreateResponse:
+    description: The output of the create command execution.
+  dbDeployResponse:
+    description: The output of the deploy command execution.
+  dbServerResponse:
+    description: The output of the server command execution.
 schemes:
 - http
 - https
