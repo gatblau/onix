@@ -7,7 +7,6 @@ package main
 
 import (
 	"github.com/gatblau/onix/dbman/cmd"
-	_ "github.com/gatblau/onix/dbman/docs"
 )
 
 func main() {

@@ -31,6 +31,9 @@ func (c *DbDeployCmd) Run(cmd *cobra.Command, args []string) {
 	output, err, elapsed := DM.Deploy()
 	fmt.Print(output.String())
 	if err != nil {
+		fmt.Printf("!!! I cannot deploy the database\n")
+		fmt.Printf("%v\n", err)
+		fmt.Printf("? the execution time was %v\n", elapsed)
 		return
 	}
 	fmt.Printf("? I have deployed the database in %v\n", elapsed)

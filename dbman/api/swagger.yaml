@@ -1,5 +1,4 @@
 basePath: /
-host: localhost
 info:
   contact:
     email: onix@gatblau.org
@@ -13,79 +12,157 @@ info:
   license:
     name: Apache License, Version 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0
-  title: Onix Database Manager Web API.
+  title: Onix DbMan Web API.
   version: 0.0.4
 paths:
   /conf:
     get:
-      description: List all configuration variables.
-      operationId: SHOW
+      description: List all configuration variables used by DbMan.
+      operationId: show
       responses:
         "200":
-          $ref: '#/responses/confResponse'
-      summary: SHOW
+          $ref: '#/responses/cmdResponse'
+      summary: Show Configuration
       tags:
-      - CONFIGURATION
+        - Configuration
   /conf/check:
     get:
-      description: |-
-        Checks that a connection can be established to the database and remote git repository based on the specified configuration.
-
-        Configuration is provided as environment variables to the running service.
-      operationId: CHECK
+      summary: Validate Configuration
+      description: Check that the configuration points to valid backend services and relevant connections can be established successfuly.
+      operationId: check
       responses:
         "200":
-          $ref: '#/responses/confCheckResponse'
-      summary: CHECK
+          $ref: '#/responses/cmdResponse'
       tags:
-      - CONFIGURATION
+        - Configuration
   /db/create:
     post:
-      description: Creates a new database based on the release manifest.
-      operationId: CREATE
+      operationId: create
       responses:
         "200":
-          $ref: '#/responses/dbCreateResponse'
-      summary: CREATE
+          $ref: '#/responses/cmdResponse'
+      summary: Create Database
+      description: Create the database as specified in the release manifest. If the database already exists, an error message is returned.
       tags:
-      - DATABASE
+        - Database
   /db/deploy:
     post:
-      description: Deploys the database schemas and objects for the current database
-        release.
-      operationId: DEPLOY
+      summary: Deploy Schema
+      description: Deploys the database schema and objects as specified in the release manifest.
+      operationId: deploy
       responses:
         "200":
-          $ref: '#/responses/dbDeployResponse'
-      summary: DEPLOY
+          $ref: '#/responses/cmdResponse'
       tags:
-      - DATABASE
+        - Database
+  /db/upgrade:
+    post:
+      summary: Upgrade Schema
+      description: Upgrades the database schema and objects as specified in the release manifest.
+      operationId: upgrade
+      responses:
+        "200":
+          $ref: '#/responses/cmdResponse'
+      tags:
+        - Database
+  /db/version:
+    get:
+      summary: Get Version
+      description: Returns the current database release version information.
+      operationId: version
+      responses:
+        "200":
+          $ref: '#/responses/dbVersionResponse'
+      tags:
+        - Database
+  /db/query/{name}:
+    get:
+      summary: Query Database
+      description: |-
+        Execute the query identified by the "name" path parameter.
+        Query parameters can be passed in via the query string.
+      operationId: query
+      parameters:
+        - name: name
+          description: The name of the query (as defined in the manifest) to be executed.
+          in: path
+          required: true
+          type: string
+        - name: params
+          description: The query parameters as a pipe "|" separated list of key=value pairs.
+          in: query
+          type: string
+      responses:
+        "200":
+          $ref: '#/responses/dbQueryResponse'
+      tags:
+        - Database
   /db/server:
     get:
-      description: Gets database server information.
-      operationId: SERVER
+      summary: Get Server Info
+      description: Gets information about the database server specified in the DbMan's configuration.
+      operationId: server
       responses:
         "200":
-          $ref: '#/responses/dbServerResponse'
-      summary: SERVER
+          $ref: '#/responses/cmdResponse'
       tags:
-      - DATABASE
+        - Database
+  /db/backup:
+    post:
+      summary: Backup Database
+      description: Backups the database.
+      operationId: backup
+      responses:
+        "200":
+          $ref: '#/responses/cmdResponse'
+      tags:
+        - Database
+  /db/restore:
+    post:
+      summary: Restore Database
+      description: Restores the database.
+      operationId: restore
+      responses:
+        "200":
+          $ref: '#/responses/cmdResponse'
+      tags:
+        - Database
+  /release/plan:
+    get:
+      summary: Get Release Plan
+      description: Returns the release plan in the scripts repository.
+      operationId: plan
+      responses:
+        "200":
+          $ref: '#/responses/releasePlanResponse'
+      tags:
+        - Release
+  /release/manifest:
+    get:
+      summary: Get Release Manifest
+      description: Returns the release manifest for the application version specified in DbMan's configuration.
+      operationId: manifest
+      responses:
+        "200":
+          $ref: '#/responses/releaseManifestResponse'
+      tags:
+        - Release
 produces:
-- text/plain
+  - text/plain
 responses:
-  confCheckResponse:
-    description: A list of checks and their result displayed in text form.
-  confResponse:
-    description: The list of configuration variables used by DbMan.
-  dbCreateResponse:
-    description: The output of the create command execution.
-  dbDeployResponse:
-    description: The output of the deploy command execution.
-  dbServerResponse:
-    description: The output of the server command execution.
+  dbVersionResponse:
+    description: The application and database versions.
+  dbQueryResponse:
+    description: The result of the database query.
+  cmdResponse:
+    description: The execution logs in text format.
+  releasePlanResponse:
+    description: The release plan.
+  releaseManifestResponse:
+    description: The release manifest.
 schemes:
-- http
-- https
+  - http
+  - https
 securityDefinitions:
   basic:
     type: basic

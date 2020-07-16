@@ -18,7 +18,8 @@ import (
 )
 
 // DbMan's database provider for PostgreSQL
-// note: providers implicitly implement the DatabaseProvider interface
+// PgSQLProvider implicitly implements the DatabaseProvider interface
+// NOTE: the provider uses connection pooling so should not call conn.Close()
 type PgSQLProvider struct {
 	cfg *Conf
 }
@@ -38,7 +39,6 @@ func (db *PgSQLProvider) GetVersion() (*Version, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
 	rows, err := conn.Query(context.Background(), `
 		SELECT appVersion, dbVersion, description, time, source
 		FROM "version"
@@ -73,7 +73,6 @@ func (db *PgSQLProvider) GetVersion() (*Version, error) {
 func (db *PgSQLProvider) RunCommand(command *Command) (bytes.Buffer, error) {
 	log := bytes.Buffer{}
 	conn, err := db.newConn(command.AsAdmin, command.UseDb)
-	defer conn.Close()
 	if err != nil {
 		return log, err
 	}
@@ -163,7 +162,6 @@ func (db *PgSQLProvider) SetVersion(version *Version) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
 	// find out if version table exists
 	_, err = conn.Query(context.Background(), "SELECT * FROM version")
 	if err != nil {
@@ -202,7 +200,6 @@ func (db *PgSQLProvider) GetInfo() (*DbInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
 	rows, err := conn.Query(context.Background(), `SELECT version()`)
 	if err != nil {
 		return nil, err

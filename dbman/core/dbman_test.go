@@ -2,7 +2,9 @@ package core
 
 import (
 	"fmt"
+	"os/exec"
 	"testing"
+	"time"
 )
 
 var dbman *DbMan
@@ -79,4 +81,34 @@ func TestDbMan_Create_Deploy(t *testing.T) {
 		t.Error(err)
 		t.Fail()
 	}
+}
+
+func TestDbMan_Upgrade(t *testing.T) {
+	newDb()
+	dbman.Cfg.Set("AppVersion", "0.0.1")
+	_, err, _ := dbman.Create()
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+		return
+	}
+	_, err, _ = dbman.Deploy()
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+		return
+	}
+	dbman.Cfg.Set("AppVersion", "0.0.4")
+	output, err, _ := dbman.Upgrade()
+	fmt.Print(output.String())
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+}
+
+func newDb() {
+	exec.Command("docker", "rm", "oxdb", "-f").Run()
+	exec.Command("docker", "run", "--name", "oxdb", "-itd", "-p", "5432:5432", "-e", "POSTGRESQL_ADMIN_PASSWORD=onix", "centos/postgresql-12-centos7").Run()
+	time.Sleep(2 * time.Second)
 }

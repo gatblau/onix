@@ -41,7 +41,7 @@ func (c *ReleaseInfoCmd) run(cmd *cobra.Command, args []string) {
 	// get the app version from the first argument
 	appVer := args[0]
 	// get the release manifest that matches the app version
-	release, err := DM.GetReleaseInfo(appVer)
+	_, release, err := DM.GetReleaseInfo(appVer)
 	if err != nil {
 		fmt.Sprintf("!!! I cannot fetch release information: %v", err)
 		return

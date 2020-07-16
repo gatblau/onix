@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type Parameter struct {
@@ -70,17 +71,18 @@ func (r *Parameter) GetTable() *Table {
 }
 
 func (r *Parameter) GetVersion() *Version {
-	if r.value["result"] != nil {
-		if m, ok := r.value["result"].(Version); ok {
-			// new table
-			version := &Version{}
-			// marshal the map to json
-			bytes, _ := json.Marshal(m)
-			// unmarshal the json to Version
-			json.Unmarshal(bytes, &version)
-			// return
-			return version
+	v := r.value["result"].(map[string]interface{})
+	if v != nil {
+		t, _ := time.Parse("2006-01-02T15:04:05.000Z", v["time"].(string))
+		// the result is a map so turn it into a version object
+		version := &Version{
+			AppVersion:  v["appVersion"].(string),
+			DbVersion:   v["dbVersion"].(string),
+			Description: v["description"].(string),
+			Source:      v["source"].(string),
+			Time:        t,
 		}
+		return version
 	}
 	return nil
 }
@@ -155,6 +157,17 @@ func (r *Parameter) PrintLog() {
 	if r.value["log"] != nil {
 		fmt.Print(r.value["log"])
 	}
+}
+
+func (r *Parameter) GetLog() string {
+	var log string = ""
+	if r.value["log"] != nil {
+		log = r.value["log"].(string)
+		if strings.HasSuffix(log, "\n\n") {
+			log = strings.TrimSuffix(log, "\n")
+		}
+	}
+	return log
 }
 
 // print the content of the result to a string

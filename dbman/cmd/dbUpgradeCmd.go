@@ -31,6 +31,9 @@ func (c *DbUpgradeCmd) Run(cmd *cobra.Command, args []string) {
 	output, err, elapsed := DM.Upgrade()
 	fmt.Print(output.String())
 	if err != nil {
+		fmt.Printf("!!! I cannot upgrade the database\n")
+		fmt.Printf("%v\n", err)
+		fmt.Printf("? the execution time was %v\n", elapsed)
 		return
 	}
 	fmt.Printf("? I have upgraded the database in %v\n", elapsed)
