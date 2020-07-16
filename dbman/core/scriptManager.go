@@ -65,17 +65,17 @@ func (s *ScriptManager) fetchPlan() (*Plan, error) {
 // fetchManifest a release manifest
 // - appVersion: the version of the application release to fetchManifest
 // - contentTypes: list of content type content to fetchManifest
-func (s *ScriptManager) fetchManifest(appVersion string) (*Manifest, error) {
+func (s *ScriptManager) fetchManifest(appVersion string) (*Info, *Manifest, error) {
 	// get the base uri to retrieve scripts (includes credentials if set)
 	baseUri, err := s.getSchemaUri()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	// get the ReleaseInfo information based on the
 	release, err := s.getReleaseInfo(appVersion)
 	if err != nil {
 		// could not find ReleaseInfo information in the getReleaseInfo plan
-		return nil, err
+		return nil, nil, err
 	}
 	// builds a uri to fetchManifest the specific release manifest
 	uri := fmt.Sprintf("%s/%s/manifest.json", baseUri, release.Path)
@@ -83,12 +83,12 @@ func (s *ScriptManager) fetchManifest(appVersion string) (*Manifest, error) {
 	response, err := s.client.Get(uri, s.addHttpHeaders)
 	// if the request was unsuccessful then return the error
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	// request was good so construct a release manifest reference
 	man := &Manifest{}
 	man, err = man.Decode(response)
-	return man, nil
+	return release, man, nil
 }
 
 func (s *ScriptManager) fetchCommandContent(appVersion string, subPath string, command Command) (*Command, error) {
@@ -203,6 +203,18 @@ func (s *ScriptManager) getContent(baseUri string, path string, file string) (st
 	uri := fmt.Sprintf("%v/%v/%v", baseUri, path, file)
 	// issue an http request for the content
 	response, err := s.client.Get(uri, s.addHttpHeaders)
+	switch response.StatusCode {
+	case 401:
+		fallthrough
+	case 403:
+		return "", errors.New(fmt.Sprintf("!!! I do not have permission to get the content of the file %s at URI %s\n", file, uri))
+	case 404:
+		return "", errors.New(fmt.Sprintf("!!! I cannot find file %s at URI %s\n", file, uri))
+	case 408:
+		return "", errors.New(fmt.Sprintf("!!! I cannot retrieve content of file %s at URI %s as the server is not responding\n", file, uri))
+	case 500:
+		return "", errors.New(fmt.Sprintf("!!! I cannot retrieve content of file %s at URI %s as the server responded with an internal error\n", file, uri))
+	}
 	if err != nil {
 		return "", err
 	}

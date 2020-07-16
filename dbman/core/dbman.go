@@ -7,7 +7,6 @@ package core
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	. "github.com/gatblau/onix/dbman/plugin"
@@ -71,7 +70,7 @@ func (dm *DbMan) GetReleasePlan() (*Plan, error) {
 	return dm.script.fetchPlan()
 }
 
-func (dm *DbMan) GetReleaseInfo(appVersion string) (*Manifest, error) {
+func (dm *DbMan) GetReleaseInfo(appVersion string) (*Info, *Manifest, error) {
 	return dm.script.fetchManifest(appVersion)
 }
 
@@ -80,7 +79,7 @@ func (dm *DbMan) SaveConfig() {
 }
 
 func (dm *DbMan) SetConfig(key string, value string) {
-	dm.Cfg.Set(context.Background(), key, value)
+	dm.Cfg.Set(key, value)
 }
 
 // toString the current configuration set to stdout
@@ -155,7 +154,7 @@ func (dm *DbMan) Create() (log bytes.Buffer, err error, elapsed time.Duration) {
 	}
 	// fetch the release manifest for appVersion
 	log.WriteString(fmt.Sprintf("? I am retrieving the release manifest for application version '%v'\n", dm.get(AppVersion)))
-	manifest, err := dm.script.fetchManifest(appVer)
+	_, manifest, err := dm.script.fetchManifest(appVer)
 	if err != nil {
 		return log, err, time.Since(start)
 	}
@@ -175,15 +174,14 @@ func (dm *DbMan) Deploy() (log bytes.Buffer, err error, elapsed time.Duration) {
 	// get database release version
 	r := dm.DbPlugin().GetVersion()
 	result := NewParameterFromJSON(r)
-	v := result.GetVersion()
-	if !result.HasError() && len(v.AppVersion) > 0 {
+	if !result.HasError() {
 		// there is already a database with a pre-existing deployment so cannot continue
 		return log, errors.New(fmt.Sprintf("!!! I have found an existing database version %v, which is for application version %v",
 			result.GetString("dbVersion"),
 			result.GetString("appVersion"))), time.Since(start)
 	}
 	// fetch the release manifest for appVersion
-	manifest, err := dm.script.fetchManifest(appVer)
+	info, manifest, err := dm.script.fetchManifest(appVer)
 	if err != nil {
 		return log, err, time.Since(start)
 	}
@@ -195,24 +193,129 @@ func (dm *DbMan) Deploy() (log bytes.Buffer, err error, elapsed time.Duration) {
 	if err != nil {
 		return log, err, time.Since(start)
 	}
-	// update release version
+	// update release version history
+	err = dm.setDbVersion(appVer, manifest.DbVersion, fmt.Sprintf("Created database version %s", manifest.DbVersion), info.Path)
+	if err != nil {
+		log.WriteString(fmt.Sprintf("? I am updating the release version history\n"))
+	}
+	return log, err, time.Since(start)
+}
+
+// add a new entry in the database version history
+func (dm *DbMan) setDbVersion(appVer string, dbVersion string, description string, path string) error {
+	var err error = nil
 	input := &Version{
 		AppVersion:  appVer,
-		DbVersion:   manifest.DbVersion,
-		Description: fmt.Sprintf("Database Release %v", manifest.DbVersion),
-		Source:      dm.get(SchemaURI),
+		DbVersion:   dbVersion,
+		Description: description,
+		Source:      fmt.Sprintf("%s/%s", dm.get(SchemaURI), path),
 	}
 	setVerResult := NewParameterFromJSON(dm.DbPlugin().SetVersion(input.ToString()))
 	if setVerResult.HasError() {
 		err = setVerResult.Error()
 	}
-	// return
-	return log, err, time.Since(start)
+	return err
 }
 
 func (dm *DbMan) Upgrade() (log bytes.Buffer, err error, elapsed time.Duration) {
 	start := time.Now()
 	log = bytes.Buffer{}
+	// gets the target app version
+	targetAppVer := dm.get(AppVersion)
+
+	// gets the current app version
+	version, err := dm.getVersion()
+	if err != nil {
+		return log, err, time.Since(start)
+	}
+	if version == nil {
+		return log, errors.New("!!! the database does not exist\n"), time.Since(start)
+	}
+	// gets the release plan to understand available release path
+	plan, err := dm.GetReleasePlan()
+	if err != nil {
+		return log, err, time.Since(start)
+	}
+	// decide the upgrade path i.e. compare current vs target version
+	// if the target version matches the current installed version
+	if targetAppVer == version.AppVersion {
+		// nothing to do!
+		log.WriteString(fmt.Sprintf("? I have nothing to do: the current version (i.e. %s) matches the version deployed\nIf you need to upgrade to a different version change the value of the 'AppVersion' configuration variable\n", version.AppVersion))
+		return log, nil, time.Since(start)
+	}
+	// check if an upgrade is possible
+	currentIx, targetIx := plan.getUpgradeWindow(version.AppVersion, targetAppVer)
+	if targetIx <= currentIx {
+		// cannot upgrade so returns
+		return log, errors.New(fmt.Sprintf("!!! I cannot upgrade as target version %s is not past the current version %s", targetAppVer, version.AppVersion)), time.Since(start)
+	}
+	// execute upgrade
+	// loop through releases
+	for i := currentIx; i <= targetIx; i++ {
+		// gets the specific release information
+		info := plan.Releases[i-1]
+		log.WriteString(fmt.Sprintf("? I am applying manifest for application version %s, db version %s\n", info.AppVersion, info.DbVersion))
+		// gets the manifest for the release
+		_, manifest, err := dm.script.fetchManifest(info.AppVersion)
+		if err != nil {
+			return log, err, time.Since(start)
+		}
+		var (
+			cmd    []Command
+			output bytes.Buffer
+		)
+		// run the prepare to upgrade scripts only on the release being upgraded
+		if i == currentIx {
+			// get the prepare to upgrade commands
+			cmd = manifest.GetCommands([]string{manifest.Upgrade.Prepare})
+			// prepare the database for upgrade (e.g. drop database objects)
+			output, err = dm.runCommands(cmd, manifest)
+			log.WriteString(output.String())
+			if err != nil {
+				return log, err, time.Since(start)
+			}
+		} else {
+			// if the release is not the one being upgraded
+			// and there is an upgrade command defined in the manifest
+			if len(manifest.Upgrade.Alter) > 0 {
+				// run the schema alter scripts
+				cmd = manifest.GetCommands([]string{manifest.Upgrade.Alter})
+				// alter the database schema
+				output, err = dm.runCommands(cmd, manifest)
+				log.WriteString(output.String())
+				if err != nil {
+					return log, err, time.Since(start)
+				}
+			} else {
+				log.WriteString(fmt.Sprintf("? I did not find an Alter command in the manifest, so I am not applying any changes to the schema\n"))
+			}
+			// run the deploy objects commands only on the target release
+			if i == targetIx {
+				cmd = manifest.GetCommands([]string{manifest.Upgrade.Deploy})
+				// deploy the database objects
+				output, err = dm.runCommands(cmd, manifest)
+				log.WriteString(output.String())
+				if err != nil {
+					return log, err, time.Since(start)
+				}
+				// now can update the release version history
+				err = dm.setDbVersion(targetAppVer, manifest.DbVersion, fmt.Sprintf("Upgraded database from version %s to %s", version.DbVersion, manifest.DbVersion), info.Path)
+				if err != nil {
+					return log, err, time.Since(start)
+				} else {
+					log.WriteString(fmt.Sprintf("? I am updating the release version history\n"))
+				}
+			} else {
+				// now can update the release version history
+				err = dm.setDbVersion(info.AppVersion, manifest.DbVersion, fmt.Sprintf("Updated database schema only to version %s", manifest.DbVersion), info.Path)
+				if err != nil {
+					return log, err, time.Since(start)
+				} else {
+					log.WriteString(fmt.Sprintf("? I am updating the release version history\n"))
+				}
+			}
+		}
+	}
 	return log, nil, time.Since(start)
 }
 
@@ -270,6 +373,7 @@ func (dm *DbMan) runCommands(cmds []Command, manifest *Manifest) (log bytes.Buff
 			log.WriteString(fmt.Sprintf("!!! the execution of the command '%s' has failed: %s\n", c.Name, result.Error()))
 			return log, result.Error()
 		}
+		log.WriteString(result.GetLog())
 		log.WriteString(fmt.Sprintf("? the execution of the command '%s' has succeeded\n", c.Name))
 	}
 	return log, err
@@ -306,4 +410,11 @@ func (dm *DbMan) GetDbInfo() (*DbInfo, error) {
 	}
 	// if not
 	return nil, errors.New("!!! The database plugin did not return a result of the correct type (i.e. map[string]interface{})\n")
+}
+
+func (dm *DbMan) getVersion() (*Version, error) {
+	// gets the current app version
+	v := dm.DbPlugin().GetVersion()
+	result := NewParameterFromJSON(v)
+	return result.GetVersion(), result.Error()
 }

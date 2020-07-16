@@ -186,7 +186,7 @@ func (c *Config) Get(ctx context.Context, key string) interface{} {
 }
 
 // Set sets the value for the specified key
-func (c *Config) Set(ctx context.Context, key string, value interface{}) {
+func (c *Config) Set(key string, value interface{}) {
 	key = strings.ToLower(key)
 	// if key passed in is not standard (i.e. not part of the default set of config keys)
 	if !c.contains(key) {

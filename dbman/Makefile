@@ -75,6 +75,10 @@ swaggen:
 swagserve:
 	swagger serve ./api/swagger.yaml
 
+# runs the swagger editor in a docker container
+swaggedit:
+	docker run -d -p 80:8080 swaggerapi/swagger-editor
+
 # backups the database
 dump:
 	pg_dump -U onix -h localhost -p 5432 -W -F p onix > ${APP_VER}.sql

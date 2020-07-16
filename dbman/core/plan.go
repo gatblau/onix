@@ -8,7 +8,6 @@ package core
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/gatblau/oxc"
 	"net/http"
 )
@@ -47,26 +46,14 @@ func (plan *Plan) decode(response *http.Response) (*Plan, error) {
 
 // return the info for the getReleaseInfo of the specified app version
 // Info: getReleaseInfo information
-func (plan *Plan) info(appVersion string) *Info {
-	for _, release := range plan.Releases {
+// int: the position in the release plan
+func (plan *Plan) info(appVersion string) (*Info, int) {
+	for ix, release := range plan.Releases {
 		if release.AppVersion == appVersion {
-			return &release
+			return &release, ix
 		}
 	}
-	return nil
-}
-
-// check if an upgrade path is available from the current to the target app version
-func (plan *Plan) canUpgrade(currentAppVersion string, targetAppVersion string) (bool, string) {
-	current := plan.info(currentAppVersion)
-	if current == nil {
-		return false, fmt.Sprintf("!!! I could not find information for current application version %s", currentAppVersion)
-	}
-	target := plan.info(targetAppVersion)
-	if target == nil {
-		return false, fmt.Sprintf("!!! I could not find information for target application version %s", targetAppVersion)
-	}
-	return true, ""
+	return nil, 0
 }
 
 func (plan *Plan) getUpgradeWindow(currentAppVersion string, targetAppVersion string) (currentReleaseIndex int, targetReleaseIndex int) {

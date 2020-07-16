@@ -180,9 +180,10 @@ func (q *Query) ToString() string {
 
 // the commands to run at different stages in an upgrade
 type Upgrade struct {
-	PreSchemaUpdate  string `json:"pre-schema-update"`
-	SchemaUpdate     string `json:"schema-update"`
-	PostSchemaUpdate string `json:"post-schema-update"`
+	Description string `json:"description"`
+	Prepare     string `json:"prepare"`
+	Alter       string `json:"alter"`
+	Deploy      string `json:"deploy"`
 }
 
 // get a JSON bytes reader for the Plan
