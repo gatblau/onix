@@ -28,6 +28,7 @@ import java.io.Serializable;
  */
 @Service
 public class Config implements Serializable {
+
     public enum AuthMode {
         Basic,
         OIDC,
@@ -138,7 +139,28 @@ public class Config implements Serializable {
     
     @Value("${wapi.pws.specialchars}")
     private int pwdSpecialChars;
-    
+
+    @Value("${database.server.url}")
+    private String dbServerUrl;
+
+    @Value("${database.name}")
+    private String dbName;
+
+    @Value("${spring.datasource.username}")
+    private String dbUser;
+
+    @Value("${spring.datasource.password}")
+    private char[] dbPwd;
+
+    @Value("${database.admin.pwd}")
+    private char[] dbAdminPwd;
+
+    @Value("${database.auto.deploy}")
+    private boolean dbAutoDeploy;
+
+    @Value("${database.auto.upgrade}")
+    private boolean dbAutoUpgrade;
+
     public long getSmtpPwdResetTokenExpirySecs() {
         return smtpPwdResetTokenExpirySecs;
     }
@@ -285,5 +307,33 @@ public class Config implements Serializable {
 
     public int getPwdDigits() {
         return pwdDigits;
+    }
+
+    public String getDbServerUrl() {
+        return dbServerUrl;
+    }
+
+    public String getDbName() {
+        return dbName;
+    }
+
+    public String getDbUser() {
+        return dbUser;
+    }
+
+    public char[] getDbPwd() {
+        return dbPwd;
+    }
+
+    public char[] getDbAdminPwd() {
+        return dbAdminPwd;
+    }
+
+    public boolean isDbAutoDeploy() {
+        return dbAutoDeploy;
+    }
+
+    public boolean isDbAutoUpgrade() {
+        return dbAutoUpgrade;
     }
 }

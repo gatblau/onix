@@ -1,0 +1,18 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "The RESTful API for DbMan",
+        "title": "Onix DbMan",
+        "contact": {
+            "name": "gatblau",
+            "url": "http://onix.gatblau.org/",
+            "email": "onix@gatblau.org"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "0.0.4"
+    },
+    "paths": {}
+}

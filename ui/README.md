@@ -49,7 +49,7 @@ The following are useful links to come up to speed with the key technologies use
 
 [TypeScript](https://www.typescriptlang.org/) is a typed programming language to build modern web applications. It is a superset of [JavaScript](https://javascript.info/) that compiles to plain JavaScript.
 
-The Web Console is built using TypeScript. More information about the language can be found [here](https://www.typescriptlang.org/docs/home.html).
+The Web Console is built using TypeScript. More information about the language can be found [here](https://www.typescriptlang.org/docs/dir.html).
 
 ### PatternFly
 

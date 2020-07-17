@@ -1,0 +1,13 @@
+info:
+  contact:
+    email: onix@gatblau.org
+    name: gatblau
+    url: http://onix.gatblau.org/
+  description: The RESTful API for DbMan
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Onix DbMan
+  version: 0.0.4
+paths: {}
+swagger: "2.0"

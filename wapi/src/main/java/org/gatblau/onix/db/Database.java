@@ -20,13 +20,13 @@ project, to be licensed under the same terms as the rest of the code.
 package org.gatblau.onix.db;
 
 import org.gatblau.onix.FileUtil;
+import org.gatblau.onix.conf.Config;
 import org.gatblau.onix.scripts.ScriptSource;
 import org.gatblau.onix.scripts.ScriptSourceFactory;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Service;
@@ -34,51 +34,26 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.io.InputStream;
 import java.sql.*;
-import java.sql.Date;
 import java.util.*;
 
 @Service
 @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
 class Database {
     Logger log = LoggerFactory.getLogger(Database.class);
-
     private PreparedStatement stmt;
-
     private final ScriptSource script;
-
     private final DataSourceFactory ds;
-
     private final FileUtil file;
-
-    @Value("${database.server.url}")
-    private String dbServerUrl;
-
-    @Value("${database.name}")
-    private String dbName;
-
-    @Value("${spring.datasource.username}")
-    private String dbUser;
-
-    @Value("${spring.datasource.password}")
-    private char[] dbPwd;
-
-    @Value("${database.admin.pwd}")
-    private char[] dbAdminPwd;
-
-    @Value("${database.auto.deploy}")
-    private boolean dbAutoDeploy;
-
-    @Value("${database.auto.upgrade}")
-    private boolean dbAutoUpgrade;
-
+    private final Config cfg;
     private Version version;
 
     @Autowired
-    public Database(ScriptSourceFactory selector, DataSourceFactory ds, FileUtil file) {
+    public Database(ScriptSourceFactory selector, DataSourceFactory ds, FileUtil file, Config cfg) {
         // switches to the configured script source
         this.script = selector.source;
         this.ds = ds;
         this.file = file;
+        this.cfg = cfg;
     }
 
     class Version {
@@ -189,19 +164,19 @@ class Database {
     }
 
     void createDb() throws SQLException {
-        String ap = new String(dbAdminPwd);
+        String ap = new String(cfg.getDbAdminPwd());
         Map<String, String> vars = new HashMap<>();
-        vars.put("<DB_NAME>", dbName);
-        vars.put("<DB_USER>", dbUser);
-        vars.put("<DB_PWD>", new String(dbPwd));
+        vars.put("<DB_NAME>", cfg.getDbName());
+        vars.put("<DB_USER>", cfg.getDbUser());
+        vars.put("<DB_PWD>", new String(cfg.getDbPwd()));
         // creates the database and db user as postgres user
-        log.info(String.format("Creating database '%s' and user '%s'.", dbName, dbUser));
-        runScriptFromResx(String.format("%s/postgres", dbServerUrl), "postgres", ap, "db/init/db_and_user.sql", vars);
+        log.info(String.format("Creating database '%s' and user '%s'.", cfg.getDbName(), cfg.getDbUser()));
+        runScriptFromResx(String.format("%s/postgres", cfg.getDbServerUrl()), "postgres", ap, "db/init/db_and_user.sql", vars);
         // creates the extensions in onix db as postgres user
-        log.info(String.format("Creating extensions in database '%s'.", dbName));
-        runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", ap, "db/init/extensions.sql", null);
-        log.info(String.format("Creating version control table in database '%s'.", dbName));
-        runScriptFromResx(String.format("%s/%s", dbServerUrl, dbName), "postgres", ap, "db/init/version_table.sql", null);
+        log.info(String.format("Creating extensions in database '%s'.", cfg.getDbName()));
+        runScriptFromResx(String.format("%s/%s", cfg.getDbServerUrl(), cfg.getDbName()), "postgres", ap, "db/init/extensions.sql", null);
+        log.info(String.format("Creating version control table in database '%s'.", cfg.getDbName()));
+        runScriptFromResx(String.format("%s/%s", cfg.getDbServerUrl(), cfg.getDbName()), "postgres", ap, "db/init/version_table.sql", null);
     }
 
     private void runScriptFromResx(String dbServerUrl, String user, String pwd, String script, Map<String, String> vars) throws SQLException {
@@ -217,7 +192,7 @@ class Database {
     }
 
     private void runScriptFromString(String adminPwd, String script, String targetDb) throws SQLException {
-        Connection conn = DriverManager.getConnection(String.format("%s/%s", dbServerUrl, targetDb), "postgres", adminPwd);
+        Connection conn = DriverManager.getConnection(String.format("%s/%s", cfg.getDbServerUrl(), targetDb), "postgres", adminPwd);
         Statement stmt = conn.createStatement();
         stmt.execute(script);
         stmt.close();
@@ -228,7 +203,7 @@ class Database {
         for (Map.Entry<String, String> script: scripts.entrySet()) {
             try {
                 log.info(String.format("Executing script '%s'.", script.getKey()));
-                runScriptFromString(adminPwd, script.getValue(), dbName);
+                runScriptFromString(adminPwd, script.getValue(), cfg.getDbName());
             } catch (SQLException e) {
                 throw new RuntimeException(String.format("Failed to apply script '%s': %s", script.getKey(), e.getMessage()), e);
             }
@@ -238,8 +213,8 @@ class Database {
     public void deployDb(int currentVersion, int targetVersion) throws SQLException {
         // creates a local variable pwd that should go out of scope at the end of the scope and
         // be GC by the JVM
-        String ap = new String(dbAdminPwd);
-        if (dbAutoDeploy) {
+        String ap = new String(cfg.getDbAdminPwd());
+        if (cfg.isDbAutoDeploy()) {
             Map<String, Map<String, String>> targetScripts = script.getDbScripts(Integer.toString(targetVersion));
             Map<String, String> targetSchemas = targetScripts.get("schemas");
             Map<String, String> targetFunctions = targetScripts.get("functions");
@@ -291,21 +266,21 @@ class Database {
         boolean exists = false;
         Connection conn = null;
         try {
-            conn = DriverManager.getConnection(String.format("%s/postgres", dbServerUrl), "postgres", new String(dbAdminPwd));
+            conn = DriverManager.getConnection(String.format("%s/postgres", cfg.getDbServerUrl()), "postgres", new String(cfg.getDbAdminPwd()));
             Statement stmt = conn.createStatement();
-            if (stmt.execute(String.format("SELECT 1 from pg_database WHERE datname='%s';", dbName))){
+            if (stmt.execute(String.format("SELECT 1 from pg_database WHERE datname='%s';", cfg.getDbName()))){
                 ResultSet set = stmt.getResultSet();
                 exists = set.next();
                 if (exists) {
-                    log.info(String.format("Check database %s exists: OK.", dbName));
+                    log.info(String.format("Check database %s exists: OK.", cfg.getDbName()));
                 } else {
-                    log.info(String.format("Database %s does not exist.", dbName));
+                    log.info(String.format("Database %s does not exist.", cfg.getDbName()));
                 }
             }
             stmt.close();
             conn.close();
         } catch (SQLException e) {
-            throw new RuntimeException(String.format("Check database %s exists: FAILED - ", dbName), e);
+            throw new RuntimeException(String.format("Check database %s exists: FAILED - ", cfg.getDbName()), e);
         }
         return exists;
     }
@@ -323,9 +298,9 @@ class Database {
             version = new Version();
             Connection conn = null;
             try {
-                conn = DriverManager.getConnection(String.format("%s/%s", dbServerUrl, dbName), "postgres", new String(dbAdminPwd));
+                conn = DriverManager.getConnection(String.format("%s/%s", cfg.getDbServerUrl(), cfg.getDbName()), "postgres", new String(cfg.getDbAdminPwd()));
                 Statement stmt = conn.createStatement();
-                if (stmt.execute(String.format("SELECT * from version ORDER BY time DESC LIMIT 1;", dbName))) {
+                if (stmt.execute(String.format("SELECT * from version ORDER BY time DESC LIMIT 1;"))) {
                     ResultSet set = stmt.getResultSet();
                     if (set.next()) {
                         version.app = set.getString("application_version");
@@ -377,15 +352,15 @@ class Database {
     void deleteDb() {
         try {
             // kills all existing connections and drops the database
-            runScriptFromString(new String(dbAdminPwd),
+            runScriptFromString(new String(cfg.getDbAdminPwd()),
                 String.format(
                     "SELECT pid, pg_terminate_backend(pid) \n" +
                     "FROM pg_stat_activity \n" +
                     "WHERE datname = '%s' AND pid <> pg_backend_pid();\n" +
                     "DROP DATABASE IF EXISTS %s;\n" +
-                    "DROP USER %s", dbName, dbName, dbUser), "postgres");
+                    "DROP USER %s", cfg.getDbName(), cfg.getDbName(), cfg.getDbUser()), "postgres");
         } catch (Exception e) {
-            log.warn(String.format("Failed to drop database '%s' after deployment failure: %s.", dbName, e.getMessage()));
+            log.warn(String.format("Failed to drop database '%s' after deployment failure: %s.", cfg.getDbName(), e.getMessage()));
         }
     }
 
@@ -406,7 +381,7 @@ class Database {
             while (set.next()){
                 dropStatement.append(String.format("DROP FUNCTION IF EXISTS %s;\n", set.getString("fx_name")));
             }
-            runScriptFromString(new String(dbAdminPwd), dropStatement.toString(), dbName);
+            runScriptFromString(new String(cfg.getDbAdminPwd()), dropStatement.toString(), cfg.getDbName());
         } catch (SQLException e) {
             e.printStackTrace();
         }

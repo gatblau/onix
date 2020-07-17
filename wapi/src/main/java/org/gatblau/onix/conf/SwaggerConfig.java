@@ -1,5 +1,5 @@
 /*
-Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ package org.gatblau.onix.conf;
 
 import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -43,8 +42,11 @@ import java.util.List;
 @Configuration
 @EnableSwagger2
 public class SwaggerConfig extends WebMvcConfigurationSupport {
-    @Value("${wapi.auth.mode}")
-    private String authMode;
+    private final Config cfg;
+
+    public SwaggerConfig(Config cfg) {
+        this.cfg = cfg;
+    }
 
     @Bean
     public Docket productApi() {
@@ -56,7 +58,7 @@ public class SwaggerConfig extends WebMvcConfigurationSupport {
         // if authentication mode is OpenId then
         // enables the Swagger UI authorize feature so that bearer tokens can be passed in the
         // request made by the UI as authorization header
-        if (authMode != null && authMode.toLowerCase().equals("oidc")) {
+        if (cfg.getAuthMode() != null && cfg.getAuthMode() == Config.AuthMode.OIDC) {
             docket
                 .securitySchemes(Arrays.asList(apiKey()))
                 .securityContexts(Arrays.asList(securityContext()));
