@@ -30,10 +30,11 @@ func InitialiseDbCmd() *DbCmd {
 	dbDeployCmd := NewDbDeployCmd()
 	dbUpgradeCmd := NewDbUpgradeCmd()
 	dbQueryCmd := NewDbQueryCmd()
+	dbQueriesCmd := NewDbQueriesCmd()
 	dbBackupCmd := NewDbBackupCmd()
 	dbRestoreCmd := NewDbRestoreCmd()
 	dbInfoCmd := NewDbInfoCmd()
-	dbCmd.cmd.AddCommand(dbVersionCmd.cmd, dbCreateCmd.cmd, dbDeployCmd.cmd, dbUpgradeCmd.cmd, dbQueryCmd.cmd, dbBackupCmd.cmd, dbRestoreCmd.cmd, dbInfoCmd.cmd)
+	dbCmd.cmd.AddCommand(dbVersionCmd.cmd, dbCreateCmd.cmd, dbDeployCmd.cmd, dbUpgradeCmd.cmd, dbQueryCmd.cmd, dbQueriesCmd.cmd, dbBackupCmd.cmd, dbRestoreCmd.cmd, dbInfoCmd.cmd)
 	return dbCmd
 }
 

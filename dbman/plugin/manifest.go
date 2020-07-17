@@ -9,7 +9,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/gatblau/oxc"
+	"gopkg.in/yaml.v3"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -103,21 +105,22 @@ func (c *Script) All() map[string]interface{} {
 // a merge variable for a script
 type Var struct {
 	// the name of the merge variable use as a placeholder for merging within the script
-	Name string `json:"name"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 	// the name of the variable to be merged from DbMan's current configuration set
 	// note: not used if omitted
-	FromConf string `json:"fromConf,omitempty"`
+	FromConf string `json:"fromConf,omitempty" yaml:"fromConf,omitempty"`
 	// the value of the variable, if it is to be merged directly
 	// note: not used if omitted
-	FromValue string `json:"fromValue,omitempty"`
+	FromValue string `json:"fromValue,omitempty" yaml:"fromValue,omitempty"`
 	// the name of the variable to be merged from the run context
 	// available values are dbVersion, appVersion, description
 	// note: this is primarily intended for updating the version tracking table
 	// not used if omitted
-	FromContext string `json:"fromContext,omitempty"`
+	FromContext string `json:"fromContext,omitempty" yaml:"fromContext,omitempty"`
 	// the name of the input parameter
 	// allows to pass query parameters via command line or query string
-	FromInput string `json:"fromValue,omitempty"`
+	FromInput string `json:"fromInput,omitempty" yaml:"fromInput,omitempty"`
 }
 
 func NewVersion(jsonString string) (*Version, error) {
@@ -153,14 +156,14 @@ type Query struct {
 	// the identifiable name for the query
 	Name string `json:"name"`
 	// the description for the query
-	Description string `json:"description"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 	// the name of the script file to be executed by the query
-	File string `json:"file"`
+	File string `json:"file,omitempty" yaml:"file,omitempty"`
 	// a list of variables to merge with the query
-	Vars []Var `json:"vars,omitempty"`
+	Vars []Var `json:"vars,omitempty" yaml:"vars,omitempty"`
 	// the content of the script file
 	// note: it is internal and automatically populated at runtime from the git repository
-	Content string `json:"content,omitempty"`
+	Content string `json:"content,omitempty" yaml:"content,omitempty"`
 }
 
 // creates a new query from a serialised json string
@@ -237,6 +240,41 @@ func (m *Manifest) GetQuery(queryName string) *Query {
 		}
 	}
 	return nil
+}
+
+// get a string containing query information in the manifest
+func (m *Manifest) GetQueriesInfo(format string, verbose bool) string {
+	// make a copy
+	queries := make([]Query, len(m.Queries))
+	if verbose {
+		queries = m.Queries
+	} else {
+		// clean unneeded info
+		for ix, query := range m.Queries {
+			queries[ix] = query
+			queries[ix].Content = ""
+			queries[ix].File = ""
+			queries[ix].Vars = nil
+		}
+	}
+	switch strings.ToLower(format) {
+	case "json":
+		{
+			bytes, err := json.Marshal(queries)
+			if err != nil {
+				return "!!! I cannot convert result into JSON\n"
+			}
+			return string(bytes)
+		}
+	default:
+		{
+			bytes, err := yaml.Marshal(queries)
+			if err != nil {
+				return "!!! I cannot convert result into YAML\n"
+			}
+			return string(bytes)
+		}
+	}
 }
 
 func (m *Manifest) GetCommands(commandNames []string) []Command {

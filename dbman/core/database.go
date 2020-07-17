@@ -6,13 +6,14 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	. "github.com/gatblau/onix/dbman/plugin"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
-	"log"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 func NewDatabase(cfg *Config) (*DatabaseProviderManager, error) {
@@ -43,17 +44,41 @@ func (db *DatabaseProviderManager) Provider() DatabaseProvider {
 
 // load a database provider plugin
 func getDbProvider(cfg *Config) (DatabaseProvider, *plugin.Client, error) {
+	// declare the database provider instance
+	var provider DatabasePlugin
+
 	// what database provider to use?
 	dbProvider := cfg.GetString(DbProvider)
+	// if the provider starts with _ then it is a native provider
+	if strings.HasPrefix(dbProvider, "_") {
+		switch strings.ToLower(dbProvider) {
+		// the PostgreSQL native db provider
+		case "_pgsql":
+			// create a plugin instance
+			provider = &PgSQLProvider{}
+		default:
+			// there is not any native provider implemented for the required name
+			return nil, nil, errors.New(fmt.Sprintf("!!! I do not support a native database provider called '%s'", dbProvider))
+		}
+		// retrieves the configuration
+		conf, _ := NewConf(cfg.ToString())
+		// passes the configuration to the provider
+		provider.Setup(conf)
+		// creates an instance of the plugin wrapper
+		d := &DatabasePluginDecorator{Plugin: provider}
+		// returns the wrapper
+		return d, nil, nil
+	}
 
-	// Create an hclog.Logger
+	// if the provider name does not start with _ then it is a plugin
+	// create an hclog.Logger
 	logger := hclog.New(&hclog.LoggerOptions{
 		Name:   "plugin",
 		Output: os.Stdout,
 		Level:  hclog.Error,
 	})
 
-	// We're a host! Start by launching the plugin process.
+	// start by launching the plugin process
 	client := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig: plugin.HandshakeConfig{
 			ProtocolVersion:  1,
@@ -68,22 +93,22 @@ func getDbProvider(cfg *Config) (DatabaseProvider, *plugin.Client, error) {
 	})
 	// defer client.Kill()
 
-	// Connect via RPC
+	// connect to the db plugin via RPC
 	rpcClient, err := client.Client()
 	if err != nil {
-		log.Fatal(err)
+		return nil, nil, errors.New(fmt.Sprintf("I cannot load db provider %s (%s)\n", dbProvider, err))
 	}
 
-	// Request the plugin
+	// request the plugin
 	raw, err := rpcClient.Dispense(dbProvider)
 	if err != nil {
-		log.Fatal(err)
+		return nil, nil, err
 	}
 
 	// We should have a DatabaseProvider now! This feels like a normal interface
 	// implementation but is in fact over an RPC connection.
 	db := raw.(DatabaseProvider)
 
-	// return
+	// return the provider
 	return db, client, nil
 }
