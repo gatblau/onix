@@ -30,21 +30,25 @@ func TestFetchReleasePlan(t *testing.T) {
 }
 
 func TestDbMan_GetReleaseInfo(t *testing.T) {
-	_, _ = dbman.GetReleaseInfo("0.0.4")
+	_, _, _ = dbman.GetReleaseInfo("0.0.4")
 }
 
 func TestDbMan_RunQuery(t *testing.T) {
-	// results, _, err := dbman.RunQuery("db-version", "0.0.4", []string{"0.0.4"})
-	// if err != nil {
-	// 	t.Error(err)
-	// 	t.Fail()
-	// }
-	// if len(results.Rows) == 0 {
-	// 	t.Error(err)
-	// 	t.Fail()
-	// }
-	// csv, _ := dbman.TableTo(results, "csv")
-	// print(csv)
+	newDb()
+	dbman.Create()
+	dbman.Deploy()
+	_, manifest, _ := dbman.GetReleaseInfo("0.0.4")
+	results, _, err := dbman.RunQuery(manifest, manifest.GetQuery("version-history"), nil)
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+	if len(results.Rows) == 0 {
+		t.Error(err)
+		t.Fail()
+	}
+	yaml := results.Sprint("yaml")
+	print(yaml)
 }
 
 func TestSaveConfig(t *testing.T) {

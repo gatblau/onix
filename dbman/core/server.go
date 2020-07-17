@@ -10,9 +10,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/go-openapi/runtime/middleware"
+	_ "github.com/gatblau/onix/dbman/docs" // documentation needed for swagger
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/swaggo/http-swagger" // http-swagger middleware
 	"net/http"
 	"os"
 	"os/signal"
@@ -50,8 +51,8 @@ func (s *Server) Serve() {
 	router.HandleFunc("/db/deploy", s.deployHandler).Methods("POST")
 	router.HandleFunc("/db/upgrade", s.upgradeHandler).Methods("POST")
 
-	// swagger-ui configuration
-	s.setupSwagger(router)
+	// swagger configuration
+	router.PathPrefix("/api").Handler(httpSwagger.WrapHandler)
 
 	if s.cfg.GetBool(HttpMetrics) {
 		// prometheus metrics
@@ -248,27 +249,6 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 		// Pass down the request to the next middleware (or final handler)
 		next.ServeHTTP(w, r)
 	})
-}
-
-// setups Swagger UI and serves the Swagger.yaml spec
-func (s *Server) setupSwagger(router *mux.Router) {
-	// intercepts calls to /api to render the swagger ui using redoc
-	router.Use(s.swaggerUiMiddleware)
-	// serves the swagger spec from /static route (required by swagger-ui)
-	// note: spec file is not embedded in binary but deployed within ./api folder
-	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./api/"))))
-	// this route is required by the middleware to trigger and render the swagger-ui
-	router.HandleFunc("/api", nil)
-}
-
-// serves the swagger-ui using redoc (https://github.com/Redocly/redoc)
-func (s *Server) swaggerUiMiddleware(next http.Handler) http.Handler {
-	return middleware.Redoc(middleware.RedocOpts{
-		BasePath: "/",
-		Path:     "api",                  // the path to swagger-ui
-		SpecURL:  "/static/swagger.yaml", // the path to the spec
-		Title:    "DbMan Docs",
-	}, next)
 }
 
 func (s *Server) get(key string) string {

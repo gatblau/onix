@@ -55,8 +55,8 @@ func (r *Parameter) SetTable(table Table) {
 }
 
 func (r *Parameter) GetTable() *Table {
-	if r.value["table"] != nil {
-		if m, ok := r.value["table"].(map[string]interface{}); ok {
+	if r.value["result"] != nil {
+		if m, ok := r.value["result"].(map[string]interface{}); ok {
 			// new table
 			t := &Table{}
 			// marshal the map to json

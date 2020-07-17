@@ -40,25 +40,25 @@ docker rm -f dbman
 echo "? starting a new database container"
 docker run --name oxdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=${DBPWD} "centos/postgresql-12-centos7"
 
-echo "? waiting for the database to start before proceeding"
-sleep 5
-
-echo "? launching DbMan container"
-docker run --name dbman -itd -p 8085:8085 --link oxdb \
-  -e OX_DBM_DB_HOST=oxdb \
-  -e OX_DBM_DB_ADMINPWD=${DBPWD} \
-  -e OX_DBM_HTTP_AUTHMODE=none \
-  -e OX_DBM_APPVERSION=0.0.4 \
-  "gatblau/dbman-snapshot"
-
-echo "? please wait for DbMan to become available"
-sleep 3
-
-echo "? creating the Onix database and user"
-curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1
-
-echo "? deploying the Onix database schemas and functions"
-curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy 2>&1
+#echo "? waiting for the database to start before proceeding"
+#sleep 5
+#
+#echo "? launching DbMan container"
+#docker run --name dbman -itd -p 8085:8085 --link oxdb \
+#  -e OX_DBM_DB_HOST=oxdb \
+#  -e OX_DBM_DB_ADMINPWD=${DBPWD} \
+#  -e OX_DBM_HTTP_AUTHMODE=none \
+#  -e OX_DBM_APPVERSION=0.0.4 \
+#  "gatblau/dbman-snapshot"
+#
+#echo "? please wait for DbMan to become available"
+#sleep 3
+#
+#echo "? creating the Onix database and user"
+#curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1
+#
+#echo "? deploying the Onix database schemas and functions"
+#curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy 2>&1
 
 #echo "? shutting down DbMan"
 #docker rm dbman -f

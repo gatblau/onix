@@ -36,7 +36,7 @@ func (list *ResultList) ToJSON() (*bytes.Reader, error) {
 	return GetJSONBytesReader(list)
 }
 
-// Check for errors in the result and the passed in error
+// CheckConfigSet for errors in the result and the passed in error
 func (r *Result) Check(err error) error {
 	if err != nil {
 		return err
