@@ -9,7 +9,12 @@ import (
 	. "github.com/gatblau/onix/dbman/plugin"
 )
 
-// entry point for the PGSQL plugin
+// the entry point for the PGSQL database plugin
+// this plugin is also implemented as a native DbMan provider (not as a plugin) but
+// offered here as an archetype of a database plugin to help understand how to create
+// other plugins
 func main() {
+	// launch the plugin process
+	// the plugin name must not start with "_" as it is reserved for native plugins
 	ServeDbPlugin("pgsql", new(PgSQLProvider))
 }

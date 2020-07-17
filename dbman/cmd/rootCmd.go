@@ -6,8 +6,10 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/gatblau/onix/dbman/core"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 type RootCmd struct {
@@ -32,7 +34,8 @@ func NewRootCmd() *RootCmd {
 func (c *RootCmd) initConfig() {
 	dm, err := core.NewDbMan()
 	if err != nil {
-		panic(err)
+		fmt.Println(err.Error())
+		os.Exit(-1)
 	}
 	core.DM = dm
 }

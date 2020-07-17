@@ -44,10 +44,12 @@ func NewDbMan() (*DbMan, error) {
 	// load the database provider
 	db, err := NewDatabase(cfg)
 	if err != nil {
-		return nil, err
-	}
-	if db.Provider() == nil {
-		return nil, errors.New("!!! database Provider plugin loading failed")
+		log := bytes.Buffer{}
+		log.WriteString(fmt.Sprintf("OOPS!!! %s - ", err))
+		log.WriteString("try one of the following solutions: ")
+		log.WriteString("(1) if using a native provider, check that the provider name is correct in DbMan's config file ")
+		log.WriteString("(2) if using a plugin, check that the plugin file exist in DbMan's directory and that the name is correct in DbMan's config file ")
+		return nil, errors.New(log.String())
 	}
 	// pass in DbMan's configuration to the database provider
 	result := NewParameterFromJSON(db.Provider().Setup(cfg.All()))

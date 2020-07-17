@@ -9,7 +9,7 @@ Plugins = "false"
 
 # configuration for the Onix Web API integration
 [Db]
-    Provider        = "pgsql"
+    Provider        = "_pgsql"
     Name            = "onix"
     Host            = "localhost"
     Port            = "5432"
@@ -17,7 +17,6 @@ Plugins = "false"
     Password        = "onix"
     AdminUsername   = "postgres"
     AdminPassword   = "onix"
-    ObjectsPattern  = "ox_*"
 
 # configuration of database scripts remote repository
 [Schema]
