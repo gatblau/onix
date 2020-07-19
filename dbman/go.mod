@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gatblau/oxc v0.0.0-20200518102735-38237e6a1005
+	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.5.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/mux v1.7.4
