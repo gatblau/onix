@@ -19,7 +19,7 @@ var doc = `{
         "description": "{{.Description}}",
         "title": "{{.Title}}",
         "contact": {
-            "name": "gatblau",
+            "name": "Gatblau",
             "url": "http://onix.gatblau.org/",
             "email": "onix@gatblau.org"
         },
@@ -31,7 +31,218 @@ var doc = `{
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {}
+    "paths": {
+        "/conf": {
+            "get": {
+                "description": "Lists all variables in DbMan's configuration.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Configuration"
+                ],
+                "summary": "Show DbMan's current configuration.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/conf/check": {
+            "get": {
+                "description": "Checks that the information in the current configuration set is ok to connect to backend services and the format of manifest is correct.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Configuration"
+                ],
+                "summary": "Validates the current DbMan's configuration.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/db/create": {
+            "post": {
+                "description": "When the database does not already exists, this operation executes the manifest commands required to create the new database.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Database"
+                ],
+                "summary": "Creates a new database",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/db/deploy": {
+            "post": {
+                "description": "When the database is empty, this operation executes the manifest commands required to deploy the  database schema and objects.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Database"
+                ],
+                "summary": "Deploys the schema and objects in an empty database.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/db/info/queries": {
+            "get": {
+                "description": "Lists all of the queries declared in the current release manifest.",
+                "produces": [
+                    "application/json",
+                    " application/yaml"
+                ],
+                "tags": [
+                    "Database"
+                ],
+                "summary": "Gets a list of available queries.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/db/info/server": {
+            "get": {
+                "description": "Gets specific information about the database server to which DbMan is configured to connect.",
+                "produces": [
+                    "application/json",
+                    " application/yaml"
+                ],
+                "tags": [
+                    "Database"
+                ],
+                "summary": "Retrieves database server information",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "json"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/db/upgrade": {
+            "post": {
+                "description": "This operation executes the manifest commands required to upgrade an existing database schema and objects to a new version. The target version is defined by DbMan's configuration value \"AppVersion\". This operation support rolling upgrades.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Database"
+                ],
+                "summary": "Upgrade a database to a specific version.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/ready": {
+            "get": {
+                "description": "Checks that DbMan is ready to accept calls",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "Check that DbMan is Ready",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
 }`
 
 type swaggerInfo struct {
@@ -50,7 +261,7 @@ var SwaggerInfo = swaggerInfo{
 	BasePath:    "",
 	Schemes:     []string{},
 	Title:       "Onix DbMan",
-	Description: "The RESTful API for DbMan",
+	Description: "Call DbMan's commands using HTTP operations from anywhere.",
 }
 
 type s struct{}

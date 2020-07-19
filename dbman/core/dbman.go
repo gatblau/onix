@@ -321,15 +321,31 @@ func (dm *DbMan) Upgrade() (log bytes.Buffer, err error, elapsed time.Duration) 
 	return log, nil, time.Since(start)
 }
 
-func (dm *DbMan) RunQuery(manifest *Manifest, query *Query, params []string) (*Table, time.Duration, error) {
+func (dm *DbMan) Query(name string, params []string) (*Table, time.Duration, error) {
 	start := time.Now()
-	// fetch the query content
-	query, err := dm.script.fetchQueryContent(dm.get(AppVersion), manifest.QueriesPath, *query, params)
+	// get the release manifest for the current application version
+	_, manifest, err := dm.GetReleaseInfo(dm.Cfg.GetString(AppVersion))
 	if err != nil {
-		return nil, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot fetch content for query: %v\n", query.Name))
+		return nil, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot fetch release information: %v\n", err))
+	}
+	// find the query definition in the manifest
+	query := manifest.GetQuery(name)
+	if query == nil {
+		return nil, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot find query: %v\n", name))
+	}
+	// check the arguments passed in match the query definition
+	expectedParams := len(query.Vars)
+	providedParams := len(params)
+	if expectedParams != providedParams {
+		return nil, time.Since(start), errors.New(fmt.Sprintf("!!! The query expected %v parameters but %v were provided\n", dm.varsToString(query.Vars), providedParams))
+	}
+	// fetch the query content
+	q, err := dm.script.fetchQueryContent(dm.get(AppVersion), manifest.QueriesPath, *query, params)
+	if err != nil {
+		return nil, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot fetch content for query: %v\n", q.Name))
 	}
 	// run the query on the plugin
-	r := dm.DbPlugin().RunQuery(query.ToString())
+	r := dm.DbPlugin().RunQuery(q.ToString())
 	// recreate plugin response into parameter
 	result := NewParameterFromJSON(r)
 	// return table and error
@@ -419,4 +435,15 @@ func (dm *DbMan) getVersion() (*Version, error) {
 	v := dm.DbPlugin().GetVersion()
 	result := NewParameterFromJSON(v)
 	return result.GetVersion(), result.Error()
+}
+
+func (dm *DbMan) varsToString(vars []Var) string {
+	buffer := bytes.Buffer{}
+	for i, v := range vars {
+		buffer.WriteString(v.Name)
+		if i < len(vars)-1 {
+			buffer.WriteString(",")
+		}
+	}
+	return buffer.String()
 }

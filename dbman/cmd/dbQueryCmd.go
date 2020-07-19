@@ -39,32 +39,13 @@ func (c *DbQueryCmd) Run(cmd *cobra.Command, args []string) {
 		fmt.Printf("!!! You forgot to tell me the name of the query you want to run\n")
 		return
 	}
-	// get the release manifest for the current application version
-	_, manifest, err := core.DM.GetReleaseInfo(core.DM.Cfg.GetString(core.AppVersion))
-	if err != nil {
-		fmt.Printf("!!! I cannot fetch release information: %v\n", err)
-		return
-	}
 	var params []string
 	queryName := args[0]
 	if len(args) > 1 {
 		params = args[1:]
 	}
-	// find the query definition in the manifest
-	query := manifest.GetQuery(queryName)
-	if query == nil {
-		fmt.Printf("!!! I cannot find query: %v\n", queryName)
-		return
-	}
-	// check the arguments passed in match the query definition
-	expectedParams := len(query.Vars)
-	providedParams := len(params)
-	if expectedParams != providedParams {
-		fmt.Printf("!!! The query expected %v parameters but %v were provided\n", varsToString(query.Vars), providedParams)
-		return
-	}
 	// execute the query
-	result, _, err := core.DM.RunQuery(manifest, query, params)
+	result, _, err := core.DM.Query(queryName, params)
 	if err != nil {
 		fmt.Printf("!!! I cannot run query '%s': %s\n", queryName, err)
 		return

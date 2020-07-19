@@ -70,10 +70,7 @@ delete-exited:
 
 # generate a swagger spec document from the source code
 swaggen:
-	swagger generate spec -b ./docs -o ./api/swagger.yaml
-
-swagserve:
-	swagger serve ./api/swagger.yaml
+	swag init -d ./core -g server.go
 
 # runs the swagger editor in a docker container
 swaggedit:

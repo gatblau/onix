@@ -9,16 +9,6 @@ import (
 	"github.com/gatblau/onix/dbman/cmd"
 )
 
-// @title Onix DbMan
-// @version 0.0.4
-// @description The RESTful API for DbMan
-
-// @contact.name gatblau
-// @contact.url http://onix.gatblau.org/
-// @contact.email onix@gatblau.org
-
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 func main() {
 	rootCmd := cmd.InitialiseRootCmd()
 
