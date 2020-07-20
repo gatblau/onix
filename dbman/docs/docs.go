@@ -190,6 +190,50 @@ var doc = `{
                 }
             }
         },
+        "/db/query/{name}": {
+            "get": {
+                "description": "Execute a query defined in the release manifest and return the result as a generic serializable table.",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml",
+                    " text/csv"
+                ],
+                "tags": [
+                    "Database"
+                ],
+                "summary": "Runs a query.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the name of the query as defined in the release manifest",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "a string of parameters to be passed to the query in the format 'key1=value1,...,keyN=valueN'",
+                        "name": "params",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "Table"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/db/upgrade": {
             "post": {
                 "description": "This operation executes the manifest commands required to upgrade an existing database schema and objects to a new version. The target version is defined by DbMan's configuration value \"AppVersion\". This operation support rolling upgrades.",

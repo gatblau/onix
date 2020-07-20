@@ -114,6 +114,36 @@ paths:
       summary: Retrieves database server information
       tags:
       - Database
+  /db/query/{name}:
+    get:
+      description: Execute a query defined in the release manifest and return the result as a generic serializable table.
+      parameters:
+      - description: the name of the query as defined in the release manifest
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: a string of parameters to be passed to the query in the format 'key1=value1,...,keyN=valueN'
+        in: query
+        name: params
+        type: string
+      produces:
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
+      - ' text/csv'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: Table
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Runs a query.
+      tags:
+      - Database
   /db/upgrade:
     post:
       description: This operation executes the manifest commands required to upgrade an existing database schema and objects to a new version. The target version is defined by DbMan's configuration value "AppVersion". This operation support rolling upgrades.

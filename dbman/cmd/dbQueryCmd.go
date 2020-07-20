@@ -11,6 +11,7 @@ import (
 	"github.com/gatblau/onix/dbman/core"
 	"github.com/gatblau/onix/dbman/plugin"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 type DbQueryCmd struct {
@@ -22,9 +23,10 @@ type DbQueryCmd struct {
 func NewDbQueryCmd() *DbQueryCmd {
 	c := &DbQueryCmd{
 		cmd: &cobra.Command{
-			Use:   "query [name] [args...]",
-			Short: "runs a database query",
-			Long:  ``,
+			Use:     "query [name] [args...]",
+			Short:   "runs a database query. args if nay, should be in the format key1=value1,key2=value2,...,keyN=valueN",
+			Long:    ``,
+			Example: "dbman db query db-version '<APP_VERSION>=0.0.4'",
 		},
 	}
 	c.cmd.Run = c.Run
@@ -34,15 +36,33 @@ func NewDbQueryCmd() *DbQueryCmd {
 }
 
 func (c *DbQueryCmd) Run(cmd *cobra.Command, args []string) {
+	var (
+		queryName string
+		params    = make(map[string]string)
+	)
 	// check the query name has been passed in
 	if len(args) == 0 {
 		fmt.Printf("!!! You forgot to tell me the name of the query you want to run\n")
 		return
 	}
-	var params []string
-	queryName := args[0]
-	if len(args) > 1 {
-		params = args[1:]
+	// get the query parameters
+	if len(args) < 3 {
+		queryName = args[0]
+		// check if we have parameters
+		if len(args) == 2 {
+			parts := strings.Split(args[1], ",")
+			for _, part := range parts {
+				subPart := strings.Split(part, "=")
+				if len(subPart) != 2 {
+					fmt.Printf("!!! I cannot break down query parameter '%s': format should be 'key=value'\n", subPart)
+					return
+				}
+				params[strings.Trim(subPart[0], " ")] = strings.Trim(subPart[1], " ")
+			}
+		}
+	} else {
+		fmt.Printf("!!! Too many parameters\n")
+		return
 	}
 	// execute the query
 	result, _, err := core.DM.Query(queryName, params)

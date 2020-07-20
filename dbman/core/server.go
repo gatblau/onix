@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	_ "github.com/gatblau/onix/dbman/docs" // documentation needed for swagger
@@ -60,6 +61,7 @@ func (s *Server) Serve() {
 	router.HandleFunc("/conf/check", s.checkConfigHandler).Methods("GET")
 	router.HandleFunc("/db/info/server", s.dbServerHandler).Methods("GET")
 	router.HandleFunc("/db/info/queries", s.queriesHandler).Methods("GET")
+	router.HandleFunc("/db/query/{name}", s.queryHandler).Methods("GET")
 	router.HandleFunc("/db/create", s.createHandler).Methods("POST")
 	router.HandleFunc("/db/deploy", s.deployHandler).Methods("POST")
 	router.HandleFunc("/db/upgrade", s.upgradeHandler).Methods("POST")
@@ -136,6 +138,46 @@ func (s *Server) queriesHandler(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 	s.write(writer, request, manifest.Queries)
+}
+
+// @Summary Runs a query.
+// @Description Execute a query defined in the release manifest and return the result as a generic serializable table.
+// @Tags Database
+// @Produce  application/json, application/yaml, application/xml, text/csv
+// @Success 200 {Table} a generic table
+// @Failure 500 {string} error message
+// @Param name path string true "the name of the query as defined in the release manifest"
+// @Param params query string false "a string of parameters to be passed to the query in the format 'key1=value1,...,keyN=valueN'"
+// @Router /db/query/{name} [get]
+func (s *Server) queryHandler(writer http.ResponseWriter, request *http.Request) {
+	// get request variables
+	vars := mux.Vars(request)
+	queryName := vars["name"]
+	// if no query name has been specified it cannot continue
+	if len(queryName) == 0 {
+		s.writeError(writer, errors.New(fmt.Sprintf("!!! I cannot run the query as a query name has not been provided\n")))
+		return
+	}
+	// now check the query has parameters
+	queryParams := request.URL.Query()["params"]
+	params := make(map[string]string)
+	if len(queryParams) > 0 {
+		parts := strings.Split(queryParams[0], ",")
+		for _, part := range parts {
+			subPart := strings.Split(part, "=")
+			if len(subPart) != 2 {
+				fmt.Printf("!!! I cannot break down query parameter '%s': format should be 'key=value'\n", subPart)
+				return
+			}
+			params[strings.Trim(subPart[0], " ")] = strings.Trim(subPart[1], " ")
+		}
+	}
+	table, _, err := DM.Query(queryName, params)
+	if err != nil {
+		s.writeError(writer, errors.New(fmt.Sprintf("!!! I cannot execute the query: %v\n", err)))
+		return
+	}
+	s.write(writer, request, *table)
 }
 
 // @Summary Creates a new database
@@ -328,7 +370,7 @@ func (s *Server) get(key string) string {
 }
 
 // writes the content of an object using the response writer in the format specified by the accept http header
-// supporting content negotiation
+// supporting content negotiation for json, yaml, xml and csv formats
 func (s *Server) write(w http.ResponseWriter, r *http.Request, obj interface{}) {
 	var (
 		bytes []byte
@@ -346,6 +388,11 @@ func (s *Server) write(w http.ResponseWriter, r *http.Request, obj interface{}) 
 		{
 			w.Header().Set("Content-Type", "application/yaml")
 			bytes, err = yaml.Marshal(obj)
+		}
+	case "application/xml":
+		{
+			w.Header().Set("Content-Type", "application/xml")
+			bytes, err = xml.Marshal(obj)
 		}
 	case "text/csv":
 		{
