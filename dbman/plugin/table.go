@@ -10,6 +10,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"gopkg.in/yaml.v3"
+	"html/template"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -102,8 +104,133 @@ func (table *Table) AsCSV() string {
 	return out[:len(out)-1]
 }
 
+// writes the table as an html page to the passed-in writer
+// writer: the output stream where the html representation of the table will be written
+// vars: the variables to merge when creating the html representation of the table
+func (table *Table) AsHTML(writer io.Writer, vars *HtmlTableVars) error {
+	t, err := template.New("report").Parse(htmlTableTemplate)
+	if err != nil {
+		return err
+	}
+	return t.Execute(writer, vars)
+}
+
 // print the table content with the specified format to the stdout
 //   - format: either JSON, YAML/YML or CSV
 func (table *Table) Print(format string) {
 	fmt.Println(table.Sprint(format))
+}
+
+// an html template to render a Table as an html page
+// merges the HtmlTableVars struct
+const htmlTableTemplate = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.Title}}</title>
+    <style>
+        body { font-family: Avenir }
+        #tableWrap {
+            display: grid;
+            /*grid-template-columns: auto auto auto auto auto;*/
+        }
+		#title { padding: 10px; font-size: x-large; font-weight: bold; }
+		#description { padding: 20px; font-style: italic; }
+		#dbman { padding: 20px; font-style: italic; float:right; }
+        div.cell { padding: 10px; }
+        div.head {
+            background: #0073ff;
+            color: #fff;
+            font-weight: bold;
+        }
+        div.alt {
+            background: #f2f2f2;
+        }
+        /* responsive transform */
+        @media screen and (max-width: 600px) {
+            #tableWrap {
+                grid-template-columns: 100%;
+            }
+            div.cell {
+                padding: 5px;
+            }
+        }
+    </style>
+    {{if .StyleURI}}
+    <object data="{{.StyleURI}}"/>
+    {{end}}
+</head>
+<body>
+    {{if .HeaderURI}}
+    <object data="{{.HeaderURI}}"/>
+    {{end}}
+    <div id="title">{{.Title}}</div>
+	{{if .Description}}
+	<div id="description">{{.Description}}</div>
+	{{end}}
+    <div id="tableWrap"></div>
+    <div id="dbman">Powered by <a href="http://onix.gatblau.org" target="_blank">Onix DbMan</a></div>
+    {{if .FooterURI}}
+    <object data="{{.FooterURI}}"/>
+    {{end}}
+    <script language="JavaScript">
+    let source;
+    const queryURI = '{{.QueryURI}}';
+    fetch(queryURI, {
+        headers: {'Accept': 'application/json'},
+    }).then(response => response.json())
+      .then(source => {
+        // write the table header
+        const theWrap = document.getElementById("tableWrap");
+        // dynamically set the number of columns
+        let cols = ""
+        for (let c = 0; c < source.header.length; c++) {
+            cols += "auto"
+            if (c < source.header.length - 1) {
+                cols += " "
+            }
+        }
+        theWrap.style.gridTemplateColumns = cols
+        let theCell = null;
+        for (let ix = 0; ix < source.header.length; ix++) {
+            theCell = document.createElement("div");
+            theCell.innerHTML = source.header[ix];
+            theCell.classList.add("cell");
+            theCell.classList.add("head");
+            theWrap.appendChild(theCell);
+        }
+		// write the table rows
+        let theRow = null;
+        let altRow = false;
+        for (let rowIx = 0; rowIx < source.row.length; rowIx++) {
+            for (let cellIx = 0; cellIx < source.header.length; cellIx++) {
+                theCell = document.createElement("div");
+                theCell.innerHTML = source.row[rowIx][cellIx];
+                theCell.classList.add("cell");
+                if (altRow) {
+                    theCell.classList.add("alt");
+                }
+                theWrap.appendChild(theCell);
+            }
+            altRow = !altRow;
+        }
+    })
+</script>
+</body>
+</html>`
+
+// provides merge data for htmlTableTemplate
+type HtmlTableVars struct {
+	// the table title
+	Title string
+	// the table description
+	Description string
+	// the URI of the query that retrieves the json table
+	QueryURI string
+	// the URI of a CSS stylesheet object to be embedded
+	StyleURI string
+	// the URI of a header html object to be embedded
+	HeaderURI string
+	// the URI of a footer html object to be embedded
+	FooterURI string
 }

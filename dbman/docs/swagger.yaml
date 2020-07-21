@@ -132,6 +132,8 @@ paths:
       - ' application/yaml'
       - ' application/xml'
       - ' text/csv'
+      - ' text/html'
+      - ' application/xhtml+xml'
       responses:
         "200":
           description: OK

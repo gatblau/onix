@@ -65,7 +65,7 @@ func (c *DbQueryCmd) Run(cmd *cobra.Command, args []string) {
 		return
 	}
 	// execute the query
-	result, _, err := core.DM.Query(queryName, params)
+	result, _, _, err := core.DM.Query(queryName, params)
 	if err != nil {
 		fmt.Printf("!!! I cannot run query '%s': %s\n", queryName, err)
 		return

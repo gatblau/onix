@@ -321,23 +321,23 @@ func (dm *DbMan) Upgrade() (log bytes.Buffer, err error, elapsed time.Duration) 
 	return log, nil, time.Since(start)
 }
 
-func (dm *DbMan) Query(name string, params map[string]string) (*Table, time.Duration, error) {
+func (dm *DbMan) Query(name string, params map[string]string) (*Table, *Query, time.Duration, error) {
 	start := time.Now()
 	// get the release manifest for the current application version
 	_, manifest, err := dm.GetReleaseInfo(dm.Cfg.GetString(AppVersion))
 	if err != nil {
-		return nil, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot fetch release information: %v\n", err))
+		return nil, nil, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot fetch release information: %v\n", err))
 	}
 	// find the query definition in the manifest
 	query := manifest.GetQuery(name)
 	if query == nil {
-		return nil, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot find query: %v\n", name))
+		return nil, nil, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot find query: %v\n", name))
 	}
 	// check the arguments passed in match the query definition
 	expectedParams := len(query.Vars)
 	providedParams := len(params)
 	if expectedParams != providedParams {
-		return nil, time.Since(start), errors.New(fmt.Sprintf("!!! The query expected '%v' parameters but '%v' were provided\n", dm.varsToString(query.Vars), dm.paramsToString(params)))
+		return nil, nil, time.Since(start), errors.New(fmt.Sprintf("!!! The query expected '%v' parameters but '%v' were provided\n", dm.varsToString(query.Vars), dm.paramsToString(params)))
 	}
 	// build the params
 	var paramList []string
@@ -350,7 +350,7 @@ func (dm *DbMan) Query(name string, params map[string]string) (*Table, time.Dura
 			// if the value is not in the input map
 			if !exist {
 				// return parameter required error
-				return nil, time.Since(start), errors.New(fmt.Sprintf("!!! The required query parameter '%v' has not been provided\n", v.Name))
+				return nil, nil, time.Since(start), errors.New(fmt.Sprintf("!!! The required query parameter '%v' has not been provided\n", v.Name))
 			}
 			// add the value to the values list
 			paramList = append(paramList, value)
@@ -359,14 +359,14 @@ func (dm *DbMan) Query(name string, params map[string]string) (*Table, time.Dura
 	// fetch the query content
 	q, err := dm.script.fetchQueryContent(dm.get(AppVersion), manifest.QueriesPath, *query, paramList)
 	if err != nil {
-		return nil, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot fetch content for query: %v\n", q.Name))
+		return nil, nil, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot fetch content for query: %v\n", q.Name))
 	}
 	// run the query on the plugin
 	r := dm.DbPlugin().RunQuery(q.ToString())
 	// recreate plugin response into parameter
 	result := NewParameterFromJSON(r)
 	// return table and error
-	return result.GetTable(), time.Since(start), result.Error()
+	return result.GetTable(), query, time.Since(start), result.Error()
 }
 
 func (dm *DbMan) CheckReady() (bool, error) {
