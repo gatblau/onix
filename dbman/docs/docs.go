@@ -197,7 +197,9 @@ var doc = `{
                     "application/json",
                     " application/yaml",
                     " application/xml",
-                    " text/csv"
+                    " text/csv",
+                    " text/html",
+                    " application/xhtml+xml"
                 ],
                 "tags": [
                     "Database"

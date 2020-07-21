@@ -143,7 +143,7 @@ func (s *Server) queriesHandler(writer http.ResponseWriter, request *http.Reques
 // @Summary Runs a query.
 // @Description Execute a query defined in the release manifest and return the result as a generic serializable table.
 // @Tags Database
-// @Produce  application/json, application/yaml, application/xml, text/csv
+// @Produce  application/json, application/yaml, application/xml, text/csv, text/html, application/xhtml+xml
 // @Success 200 {Table} a generic table
 // @Failure 500 {string} error message
 // @Param name path string true "the name of the query as defined in the release manifest"
@@ -172,12 +172,44 @@ func (s *Server) queryHandler(writer http.ResponseWriter, request *http.Request)
 			params[strings.Trim(subPart[0], " ")] = strings.Trim(subPart[1], " ")
 		}
 	}
-	table, _, err := DM.Query(queryName, params)
+	table, query, _, err := DM.Query(queryName, params)
 	if err != nil {
 		s.writeError(writer, errors.New(fmt.Sprintf("!!! I cannot execute the query: %v\n", err)))
 		return
 	}
-	s.write(writer, request, *table)
+	accept := request.Header.Get("Accept")
+	// if an html representation was requested as part of the accept http header
+	if strings.Index(accept, "text/html") != -1 || strings.Index(accept, "application/xhtml+xml") != -1 {
+		writer.Header().Set("Content-Type", "text/html")
+		// determines the http scheme
+		// assume http by default
+		var scheme = "http"
+		// if the http server has set the TLS value then changes the scheme to https
+		if request.TLS != nil {
+			scheme = "https"
+		}
+		uri := fmt.Sprintf("%s://%s%s", scheme, request.Host, request.URL.Path)
+		if len(request.URL.RawQuery) > 0 {
+			uri += fmt.Sprintf("?%s", request.URL.RawQuery)
+		}
+		// NOTE: query string is not passed to template!
+		err = table.AsHTML(writer, &plugin.HtmlTableVars{
+			Title:       query.Name,
+			Description: query.Description,
+			QueryURI:    uri,
+			StyleURI:    os.Getenv("DBM_STYLE_URI"),
+			HeaderURI:   os.Getenv("DBM_HEADER_URI"),
+			FooterURI:   os.Getenv("DBM_FOOTER_URI"),
+		})
+		if err != nil {
+			s.writeError(writer, errors.New(fmt.Sprintf("!!! I cannot execute the query: %v\n", err)))
+			return
+		}
+		return
+	} else {
+		// renders any other representations
+		s.write(writer, request, *table)
+	}
 }
 
 // @Summary Creates a new database
@@ -379,6 +411,8 @@ func (s *Server) write(w http.ResponseWriter, r *http.Request, obj interface{}) 
 	// gets the accept http header
 	accept := r.Header.Get("Accept")
 	switch accept {
+	case "*/*":
+		fallthrough
 	case "application/json":
 		{
 			w.Header().Set("Content-Type", "application/json")
