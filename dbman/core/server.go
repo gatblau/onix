@@ -192,14 +192,14 @@ func (s *Server) queryHandler(writer http.ResponseWriter, request *http.Request)
 		if len(request.URL.RawQuery) > 0 {
 			uri += fmt.Sprintf("?%s", request.URL.RawQuery)
 		}
-		// NOTE: query string is not passed to template!
+		theme := DM.getTheme(s.get(ThemeName))
 		err = table.AsHTML(writer, &plugin.HtmlTableVars{
 			Title:       query.Name,
 			Description: query.Description,
 			QueryURI:    uri,
-			StyleURI:    os.Getenv("DBM_STYLE_URI"),
-			HeaderURI:   os.Getenv("DBM_HEADER_URI"),
-			FooterURI:   os.Getenv("DBM_FOOTER_URI"),
+			Style:       theme.Style,
+			Header:      theme.Header,
+			Footer:      theme.Footer,
 		})
 		if err != nil {
 			s.writeError(writer, errors.New(fmt.Sprintf("!!! I cannot execute the query: %v\n", err)))

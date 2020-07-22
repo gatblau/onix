@@ -210,7 +210,7 @@ func (dm *DbMan) setDbVersion(appVer string, dbVersion string, description strin
 		AppVersion:  appVer,
 		DbVersion:   dbVersion,
 		Description: description,
-		Source:      fmt.Sprintf("%s/%s", dm.get(SchemaURI), path),
+		Source:      fmt.Sprintf("%s/%s", dm.get(RepoURI), path),
 	}
 	setVerResult := NewParameterFromJSON(dm.DbPlugin().SetVersion(input.ToString()))
 	if setVerResult.HasError() {
@@ -386,6 +386,10 @@ func (dm *DbMan) CheckReady() (bool, error) {
 func (dm *DbMan) Serve() {
 	server := NewServer(dm.Cfg)
 	server.Serve()
+}
+
+func (dm *DbMan) getTheme(name string) *Theme {
+	return NewTheme(name, dm.script)
 }
 
 func (dm *DbMan) runCommands(cmds []Command, manifest *Manifest) (log bytes.Buffer, err error) {

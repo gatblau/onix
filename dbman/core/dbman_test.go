@@ -1,7 +1,9 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/gatblau/onix/dbman/plugin"
 	"os/exec"
 	"testing"
 	"time"
@@ -33,23 +35,23 @@ func TestDbMan_GetReleaseInfo(t *testing.T) {
 	_, _, _ = dbman.GetReleaseInfo("0.0.4")
 }
 
-func TestDbMan_RunQuery(t *testing.T) {
-	newDb()
-	dbman.Create()
-	dbman.Deploy()
-	_, manifest, _ := dbman.GetReleaseInfo("0.0.4")
-	results, _, err := dbman.RunQuery(manifest, manifest.GetQuery("version-history"), nil)
-	if err != nil {
-		t.Error(err)
-		t.Fail()
-	}
-	if len(results.Rows) == 0 {
-		t.Error(err)
-		t.Fail()
-	}
-	yaml := results.Sprint("yaml")
-	print(yaml)
-}
+// func TestDbMan_RunQuery(t *testing.T) {
+// 	newDb()
+// 	dbman.Create()
+// 	dbman.Deploy()
+// 	_, manifest, _ := dbman.GetReleaseInfo("0.0.4")
+// 	results, _, _, err := dbman.Query(manifest, manifest.GetQuery("version-history"), nil)
+// 	if err != nil {
+// 		t.Error(err)
+// 		t.Fail()
+// 	}
+// 	if len(results.Rows) == 0 {
+// 		t.Error(err)
+// 		t.Fail()
+// 	}
+// 	yaml := results.Sprint("yaml")
+// 	print(yaml)
+// }
 
 func TestSaveConfig(t *testing.T) {
 	dbman.SetConfig("Schema.URI", "AAAA")
@@ -109,6 +111,24 @@ func TestDbMan_Upgrade(t *testing.T) {
 		t.Error(err)
 		t.Fail()
 	}
+}
+
+func TestDbMan_MergeTable(t *testing.T) {
+	table, _, _, err := dbman.Query("version-history", nil)
+	if err != nil {
+
+	}
+	theme := dbman.getTheme("basic")
+	writer := &bytes.Buffer{}
+	err = table.AsHTML(writer, &plugin.HtmlTableVars{
+		Title:       "query.Name",
+		Description: "query.Description",
+		QueryURI:    "query.uri",
+		Style:       theme.Style,
+		Header:      theme.Header,
+		Footer:      theme.Footer,
+	})
+	fmt.Print(err)
 }
 
 func newDb() {

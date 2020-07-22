@@ -10,11 +10,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"gopkg.in/yaml.v3"
-	"html/template"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 )
 
 // generic table used as a serializable result set for queries
@@ -155,14 +155,15 @@ const htmlTableTemplate = `<!DOCTYPE html>
                 padding: 5px;
             }
         }
+		{{if .Style}}
+		/* override base styles here */
+		{{.Style}}
+		{{end}}
     </style>
-    {{if .StyleURI}}
-    <object data="{{.StyleURI}}"/>
-    {{end}}
 </head>
 <body>
-    {{if .HeaderURI}}
-    <object data="{{.HeaderURI}}"/>
+    {{if .Header}}
+    {{.Header}}
     {{end}}
     <div id="title">{{.Title}}</div>
 	{{if .Description}}
@@ -170,8 +171,8 @@ const htmlTableTemplate = `<!DOCTYPE html>
 	{{end}}
     <div id="tableWrap"></div>
     <div id="dbman">Powered by <a href="http://onix.gatblau.org" target="_blank">Onix DbMan</a></div>
-    {{if .FooterURI}}
-    <object data="{{.FooterURI}}"/>
+    {{if .Footer}}
+    {{.Footer}}
     {{end}}
     <script language="JavaScript">
     let source;
@@ -227,10 +228,10 @@ type HtmlTableVars struct {
 	Description string
 	// the URI of the query that retrieves the json table
 	QueryURI string
-	// the URI of a CSS stylesheet object to be embedded
-	StyleURI string
-	// the URI of a header html object to be embedded
-	HeaderURI string
-	// the URI of a footer html object to be embedded
-	FooterURI string
+	// the content of the CSS stylesheet to embed
+	Style *string
+	// the content of the stylesheet to embed
+	Header *string
+	// the content of the footer to embed
+	Footer *string
 }
