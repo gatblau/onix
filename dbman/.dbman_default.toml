@@ -1,25 +1,21 @@
-# configuration for running DbMan in http mode
-Plugins = "false"
+AppVersion = "0.0.4"
+Theme = ""
 [Http]
-	Metrics     = "true"
-	AuthMode    = "basic"
-	Port        = "8085"
-	Username    = "admin"
-	Password    = "0n1x"
-
-# configuration for the Onix Web API integration
+	Metrics  = "true"
+	AuthMode = "basic"
+	Port     = "8085"
+	Username = "admin"
+	Password = "0n1x"
 [Db]
-    Provider        = "_pgsql"
-    Name            = "onix"
-    Host            = "localhost"
-    Port            = "5432"
-    Username        = "onix"
-    Password        = "onix"
-    AdminUsername   = "postgres"
-    AdminPassword   = "onix"
-
-# configuration of database scripts remote repository
-[Schema]
-    URI         = "https://raw.githubusercontent.com/gatblau/ox-db/master"
-    Username    = ""
-    Password    = ""
+    Provider      = "_pgsql"
+    Name          = "onix"
+    Host          = "localhost"
+    Port          = "5432"
+    Username      = "onix"
+    Password      = "onix"
+    AdminUsername = "postgres"
+    AdminPassword = "onix"
+[Repo]
+    URI      = "https://raw.githubusercontent.com/gatblau/ox-db/master"
+    Username = ""
+    Password = ""

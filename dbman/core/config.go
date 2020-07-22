@@ -17,15 +17,16 @@ import (
 
 const (
 	AppVersion       = "AppVersion"
+	ThemeName        = "Theme"
 	Plugins          = "Plugins"
 	HttpMetrics      = "Http.Metrics"
 	HttpAuthMode     = "Http.AuthMode"
 	HttpUsername     = "Http.Username"
 	HttpPassword     = "Http.Password"
 	HttpPort         = "Http.Port"
-	SchemaURI        = "Schema.URI"
-	SchemaUsername   = "Schema.Username"
-	SchemaPassword   = "Schema.Password"
+	RepoURI          = "Repo.URI"
+	RepoUsername     = "Repo.Username"
+	RepoPassword     = "Repo.Password"
 	DbProvider       = "Db.Provider"
 	DbHost           = "Db.Host"
 	DbPort           = "Db.Port"
@@ -107,7 +108,7 @@ func (c *Config) Load(path string, name string) error {
 	c.cfg.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	_ = c.cfg.BindEnv("AppVersion")
-	_ = c.cfg.BindEnv("Plugins")
+	_ = c.cfg.BindEnv("Theme")
 	_ = c.cfg.BindEnv("Http.Port")
 	_ = c.cfg.BindEnv("Http.AuthMode")
 	_ = c.cfg.BindEnv("Http.Username")
@@ -121,10 +122,9 @@ func (c *Config) Load(path string, name string) error {
 	_ = c.cfg.BindEnv("Db.Password")
 	_ = c.cfg.BindEnv("Db.AdminUsername")
 	_ = c.cfg.BindEnv("Db.AdminPassword")
-	_ = c.cfg.BindEnv("Db.ObjectsPattern")
-	_ = c.cfg.BindEnv("Schema.URI")
-	_ = c.cfg.BindEnv("Schema.Username")
-	_ = c.cfg.BindEnv("Schema.Password")
+	_ = c.cfg.BindEnv("Repo.URI")
+	_ = c.cfg.BindEnv("Repo.Username")
+	_ = c.cfg.BindEnv("Repo.Password")
 
 	return nil
 }
@@ -232,27 +232,25 @@ func (c *Config) GetString(key string) string {
 }
 
 // default config file content
-const cfgFile = `# configuration for running DbMan in http mode
-AppVersion = "0.0.4"
-Plugins = "false"
+const cfgFile = `AppVersion = "0.0.4"
+Theme = ""
 [Http]
-	Metrics = "true"
-	AuthMode    = "basic"
-	Port        = "8085"
-	Username    = "admin"
-	Password    = "0n1x"
+	Metrics  = "true"
+	AuthMode = "basic"
+	Port     = "8085"
+	Username = "admin"
+	Password = "0n1x"
 [Db]
-    Provider        = "pgsql"
-    Name            = "onix"
-    Host            = "localhost"
-    Port            = "5432"
-    Username        = "onix"
-    Password        = "onix"
-    AdminUsername   = "postgres"
-    AdminPassword   = "onix"
-    ObjectsPattern  = "ox_*"
-[Schema]
-    URI         = "https://raw.githubusercontent.com/gatblau/ox-db/master"
-    Username    = ""
-    Password    = ""
+    Provider      = "_pgsql"
+    Name          = "onix"
+    Host          = "localhost"
+    Port          = "5432"
+    Username      = "onix"
+    Password      = "onix"
+    AdminUsername = "postgres"
+    AdminPassword = "onix"
+[Repo]
+    URI      = "https://raw.githubusercontent.com/gatblau/ox-db/master"
+    Username = ""
+    Password = ""
 `

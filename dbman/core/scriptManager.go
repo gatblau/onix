@@ -35,7 +35,7 @@ func NewScriptManager(cfg *Config, client *oxc.Client) (*ScriptManager, error) {
 // new oxc configuration
 func NewOxClientConf(cfg *Config) *oxc.ClientConf {
 	return &oxc.ClientConf{
-		BaseURI:            cfg.GetString(SchemaURI),
+		BaseURI:            cfg.GetString(RepoURI),
 		InsecureSkipVerify: false,
 		AuthMode:           oxc.None,
 	}
@@ -44,7 +44,7 @@ func NewOxClientConf(cfg *Config) *oxc.ClientConf {
 // fetches the getReleaseInfo plan
 func (s *ScriptManager) fetchPlan() (*Plan, error) {
 	// get the base uri to retrieve scripts (includes credentials if set)
-	baseUri, err := s.getSchemaUri()
+	baseUri, err := s.getRepoUri()
 	if err != nil {
 		return nil, err
 	}
@@ -62,12 +62,49 @@ func (s *ScriptManager) fetchPlan() (*Plan, error) {
 	return p, err
 }
 
+// reads a file stored in the remote repository
+// path: the relative path to the file in the repository
+func (s *ScriptManager) FetchFile(path string) (*string, error) {
+	// get the base uri to retrieve scripts (includes credentials if set)
+	baseUri, err := s.getRepoUri()
+	if err != nil {
+		return nil, err
+	}
+	// builds a uri to the specific file
+	uri := fmt.Sprintf("%s%s", baseUri, path)
+	// fetch the file
+	response, err := s.client.Get(uri, s.addHttpHeaders)
+	// if the request was unsuccessful then return the error
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusOK {
+		bodyBytes, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return nil, err
+		}
+		result := string(bodyBytes)
+		// if the result is not an empty string
+		if len(strings.Trim(result, " ")) > 0 {
+			// return the result
+			return &result, nil
+		} else {
+			// otherwise return nil
+			return nil, nil
+		}
+	} else {
+		return nil, fmt.Errorf("!!! I cannot read file '%s': %s", path, err)
+	}
+}
+
 // fetchManifest a release manifest
 // - appVersion: the version of the application release to fetchManifest
 // - contentTypes: list of content type content to fetchManifest
 func (s *ScriptManager) fetchManifest(appVersion string) (*Info, *Manifest, error) {
 	// get the base uri to retrieve scripts (includes credentials if set)
-	baseUri, err := s.getSchemaUri()
+	baseUri, err := s.getRepoUri()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -93,7 +130,7 @@ func (s *ScriptManager) fetchManifest(appVersion string) (*Info, *Manifest, erro
 
 func (s *ScriptManager) fetchCommandContent(appVersion string, subPath string, command Command) (*Command, error) {
 	// get the base uri to retrieve scripts (includes credentials if set)
-	baseUri, err := s.getSchemaUri()
+	baseUri, err := s.getRepoUri()
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +149,7 @@ func (s *ScriptManager) fetchCommandContent(appVersion string, subPath string, c
 
 func (s *ScriptManager) fetchQueryContent(appVersion string, subPath string, query Query, params []string) (*Query, error) {
 	// get the base uri to retrieve scripts (includes credentials if set)
-	baseUri, err := s.getSchemaUri()
+	baseUri, err := s.getRepoUri()
 	if err != nil {
 		return nil, err
 	}
@@ -149,9 +186,9 @@ func (s *ScriptManager) addHttpHeaders(req *http.Request, payload oxc.Serializab
 	req.Header.Add("Cache-Control", `no-cache"`)
 	req.Header.Add("Pragma", "no-cache")
 	// if there is an access token defined
-	if len(s.get(SchemaUsername)) > 0 && len(s.get(SchemaPassword)) > 0 {
+	if len(s.get(RepoUsername)) > 0 && len(s.get(RepoPassword)) > 0 {
 		credentials := base64.StdEncoding.EncodeToString([]byte(
-			fmt.Sprintf("%s:%s", s.get(SchemaUsername), s.get(SchemaPassword))))
+			fmt.Sprintf("%s:%s", s.get(RepoUsername), s.get(RepoPassword))))
 		req.Header.Add("Authorization", credentials)
 	}
 	return nil
@@ -161,7 +198,7 @@ func (s *ScriptManager) get(key string) string {
 	return s.cfg.GetString(key)
 }
 
-// add the content form the remote repository to the passed-in scripts
+// add the content from the remote repository to the passed-in scripts
 func (s *ScriptManager) addScriptsContent(baseUri string, path string, scripts []Script) ([]Script, error) {
 	var result []Script
 	for _, script := range scripts {
@@ -180,6 +217,7 @@ func (s *ScriptManager) addScriptsContent(baseUri string, path string, scripts [
 	return result, nil
 }
 
+// add the content of the query from the remote repository
 func (s *ScriptManager) addQueryContent(baseUri string, path string, query Query, params []string) (Query, error) {
 	// retrieve content from the remote repository
 	content, err := s.getContent(baseUri, path, query.File)
@@ -256,18 +294,18 @@ func (s *ScriptManager) merge(script string, vars []Var, params []string) (strin
 	return script, nil
 }
 
-func (s ScriptManager) getSchemaUri() (string, error) {
-	uri := s.get(SchemaURI)
+func (s ScriptManager) getRepoUri() (string, error) {
+	uri := s.get(RepoURI)
 	if len(uri) == 0 {
-		return "", errors.New(fmt.Sprintf("!!! The SchemaURI is not defined"))
+		return "", errors.New(fmt.Sprintf("!!! The Repo.URI is not defined"))
 	}
 	if !strings.HasPrefix(strings.ToLower(uri), "http") {
-		return "", errors.New(fmt.Sprintf("!!! The SchemaURI must be an http(s) address"))
+		return "", errors.New(fmt.Sprintf("!!! The Repo.URI must be an http(s) address"))
 	}
 	// if the username and password have been set
-	if len(s.get(SchemaUsername)) > 0 && len(s.get(SchemaPassword)) > 0 {
+	if len(s.get(RepoUsername)) > 0 && len(s.get(RepoPassword)) > 0 {
 		uriParts := strings.Split(uri, "//")
-		return fmt.Sprintf("%s//%s:%s@%s", uriParts[0], s.get(SchemaUsername), s.get(SchemaPassword), uriParts[1]), nil
+		return fmt.Sprintf("%s//%s:%s@%s", uriParts[0], s.get(RepoUsername), s.get(RepoPassword), uriParts[1]), nil
 	}
 	return uri, nil
 }
