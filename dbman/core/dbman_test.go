@@ -111,10 +111,17 @@ func TestDbMan_Upgrade(t *testing.T) {
 	}
 }
 
+func TestDbMan_QueryWithParam(t *testing.T) {
+	params := make(map[string]string)
+	params["appVersion"] = "delete * from version;"
+	_, _, _, err := DM.Query("db-version", params)
+	if err != nil {
+	}
+}
+
 func TestDbMan_MergeTable(t *testing.T) {
 	table, _, _, err := DM.Query("version-history", nil)
 	if err != nil {
-
 	}
 	theme := DM.getTheme("basic")
 	writer := &bytes.Buffer{}
