@@ -9,18 +9,16 @@ import (
 	"time"
 )
 
-var dbman *DbMan
-
 func init() {
 	dbm, err := NewDbMan()
 	if err != nil {
 		panic(err)
 	}
-	dbman = dbm
+	DM = dbm
 }
 
 func TestFetchReleasePlan(t *testing.T) {
-	plan, err := dbman.GetReleasePlan()
+	plan, err := DM.GetReleasePlan()
 	if err != nil {
 		t.Error(err)
 		t.Fail()
@@ -32,7 +30,7 @@ func TestFetchReleasePlan(t *testing.T) {
 }
 
 func TestDbMan_GetReleaseInfo(t *testing.T) {
-	_, _, _ = dbman.GetReleaseInfo("0.0.4")
+	_, _, _ = DM.GetReleaseInfo("0.0.4")
 }
 
 // func TestDbMan_RunQuery(t *testing.T) {
@@ -54,16 +52,16 @@ func TestDbMan_GetReleaseInfo(t *testing.T) {
 // }
 
 func TestSaveConfig(t *testing.T) {
-	dbman.SetConfig("Schema.URI", "AAAA")
-	dbman.SaveConfig()
+	DM.SetConfig("Schema.URI", "AAAA")
+	DM.SaveConfig()
 }
 
 func TestUseConfig(t *testing.T) {
-	dbman.UseConfigSet("", "myapp")
+	DM.UseConfigSet("", "myapp")
 }
 
 func TestDbMan_CheckConfigSet(t *testing.T) {
-	err := dbman.CheckConfigSet()
+	err := DM.CheckConfigSet()
 	if err != nil {
 		t.Error(err)
 		t.Fail()
@@ -71,17 +69,17 @@ func TestDbMan_CheckConfigSet(t *testing.T) {
 }
 
 func TestDbMan_Serve(t *testing.T) {
-	dbman.Serve()
+	DM.Serve()
 }
 
 func TestDbMan_Create_Deploy(t *testing.T) {
-	output, err, _ := dbman.Create()
+	output, err, _ := DM.Create()
 	fmt.Print(output.String())
 	if err != nil {
 		t.Error(err)
 		t.Fail()
 	}
-	output, err, _ = dbman.Deploy()
+	output, err, _ = DM.Deploy()
 	fmt.Print(output.String())
 	if err != nil {
 		t.Error(err)
@@ -91,21 +89,21 @@ func TestDbMan_Create_Deploy(t *testing.T) {
 
 func TestDbMan_Upgrade(t *testing.T) {
 	newDb()
-	dbman.Cfg.Set("AppVersion", "0.0.1")
-	_, err, _ := dbman.Create()
+	DM.Cfg.Set("AppVersion", "0.0.1")
+	_, err, _ := DM.Create()
 	if err != nil {
 		t.Error(err)
 		t.Fail()
 		return
 	}
-	_, err, _ = dbman.Deploy()
+	_, err, _ = DM.Deploy()
 	if err != nil {
 		t.Error(err)
 		t.Fail()
 		return
 	}
-	dbman.Cfg.Set("AppVersion", "0.0.4")
-	output, err, _ := dbman.Upgrade()
+	DM.Cfg.Set("AppVersion", "0.0.4")
+	output, err, _ := DM.Upgrade()
 	fmt.Print(output.String())
 	if err != nil {
 		t.Error(err)
@@ -114,11 +112,11 @@ func TestDbMan_Upgrade(t *testing.T) {
 }
 
 func TestDbMan_MergeTable(t *testing.T) {
-	table, _, _, err := dbman.Query("version-history", nil)
+	table, _, _, err := DM.Query("version-history", nil)
 	if err != nil {
 
 	}
-	theme := dbman.getTheme("basic")
+	theme := DM.getTheme("basic")
 	writer := &bytes.Buffer{}
 	err = table.AsHTML(writer, &plugin.HtmlTableVars{
 		Title:       "query.Name",
