@@ -161,7 +161,7 @@ func (s *ScriptManager) fetchQueryContent(appVersion string, subPath string, que
 	}
 	query, err = s.addQueryContent(baseUri, fmt.Sprintf("%s/%s", release.Path, subPath), query, params)
 	if err != nil {
-		return nil, err
+		return &query, err
 	}
 	return &query, nil
 }
@@ -288,10 +288,21 @@ func (s *ScriptManager) merge(script string, vars []Var, params map[string]strin
 		if len(variable.FromInput) > 0 {
 			value = params[variable.FromInput]
 		}
+		// validate for suspicious values
+		if s.suspicious(value) {
+			return "", errors.New(fmt.Sprintf("!!! I found suspicious content for variable '%s'", variable.Name))
+		}
 		// merge the variable value
 		script = strings.Replace(script, fmt.Sprintf("{{%s}}", variable.Name), value, -1)
 	}
 	return script, nil
+}
+
+func (s *ScriptManager) suspicious(value string) bool {
+	// containing blank spaces
+	return len(strings.Split(value, " ")) > 1 ||
+		// containing line breaks
+		len(strings.Split(value, "\n")) > 1
 }
 
 func (s ScriptManager) getRepoUri() (string, error) {
