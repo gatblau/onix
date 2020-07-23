@@ -26,7 +26,7 @@ func NewDbQueryCmd() *DbQueryCmd {
 			Use:     "query [name] [args...]",
 			Short:   "runs a database query. args if nay, should be in the format key1=value1,key2=value2,...,keyN=valueN",
 			Long:    ``,
-			Example: "dbman db query db-version '<APP_VERSION>=0.0.4'",
+			Example: "dbman db query db-version 'appVersion=0.0.4'",
 		},
 	}
 	c.cmd.Run = c.Run
