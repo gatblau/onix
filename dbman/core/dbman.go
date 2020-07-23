@@ -339,25 +339,25 @@ func (dm *DbMan) Query(name string, params map[string]string) (*Table, *Query, t
 	if expectedParams != providedParams {
 		return nil, nil, time.Since(start), errors.New(fmt.Sprintf("!!! The query expected '%v' parameters but '%v' were provided\n", dm.varsToString(query.Vars), dm.paramsToString(params)))
 	}
-	// build the params
-	var paramList []string
-	// for each parameter in the query definition
-	for _, v := range query.Vars {
-		// if the parameter is expected from the input (CLI or HTTP request)
-		if len(v.FromInput) > 0 {
-			// extracts the parameter from the input map
-			value, exist := params[v.Name]
-			// if the value is not in the input map
-			if !exist {
-				// return parameter required error
-				return nil, nil, time.Since(start), errors.New(fmt.Sprintf("!!! The required query parameter '%v' has not been provided\n", v.Name))
-			}
-			// add the value to the values list
-			paramList = append(paramList, value)
-		}
-	}
+	// // build the params
+	// var paramMap map[string]string
+	// // for each parameter in the query definition
+	// for _, v := range query.Vars {
+	// 	// if the parameter is expected from the input (CLI or HTTP request)
+	// 	if len(v.FromInput) > 0 {
+	// 		// extracts the parameter from the input map
+	// 		value, exist := params[v.Name]
+	// 		// if the value is not in the input map
+	// 		if !exist {
+	// 			// return parameter required error
+	// 			return nil, nil, time.Since(start), errors.New(fmt.Sprintf("!!! The required query parameter '%v' has not been provided\n", v.Name))
+	// 		}
+	// 		// add the value to the values list
+	// 		paramMap[v.Name] = value
+	// 	}
+	// }
 	// fetch the query content
-	q, err := dm.script.fetchQueryContent(dm.get(AppVersion), manifest.QueriesPath, *query, paramList)
+	q, err := dm.script.fetchQueryContent(dm.get(AppVersion), manifest.QueriesPath, *query, params)
 	if err != nil {
 		return nil, nil, time.Since(start), errors.New(fmt.Sprintf("!!! I cannot fetch content for query: %v\n", q.Name))
 	}

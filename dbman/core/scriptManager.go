@@ -147,7 +147,7 @@ func (s *ScriptManager) fetchCommandContent(appVersion string, subPath string, c
 	return &command, nil
 }
 
-func (s *ScriptManager) fetchQueryContent(appVersion string, subPath string, query Query, params []string) (*Query, error) {
+func (s *ScriptManager) fetchQueryContent(appVersion string, subPath string, query Query, params map[string]string) (*Query, error) {
 	// get the base uri to retrieve scripts (includes credentials if set)
 	baseUri, err := s.getRepoUri()
 	if err != nil {
@@ -218,7 +218,7 @@ func (s *ScriptManager) addScriptsContent(baseUri string, path string, scripts [
 }
 
 // add the content of the query from the remote repository
-func (s *ScriptManager) addQueryContent(baseUri string, path string, query Query, params []string) (Query, error) {
+func (s *ScriptManager) addQueryContent(baseUri string, path string, query Query, params map[string]string) (Query, error) {
 	// retrieve content from the remote repository
 	content, err := s.getContent(baseUri, path, query.File)
 	if err != nil {
@@ -270,9 +270,9 @@ func (s *ScriptManager) getContent(baseUri string, path string, file string) (st
 }
 
 // merges the passed-in script with the values in of the script vars
-func (s *ScriptManager) merge(script string, vars []Var, params []string) (string, error) {
+func (s *ScriptManager) merge(script string, vars []Var, params map[string]string) (string, error) {
 	// merge vars if any
-	for ix, variable := range vars {
+	for _, variable := range vars {
 		var value string
 		// if variable is in configuration
 		if len(variable.FromConf) > 0 {
@@ -284,12 +284,12 @@ func (s *ScriptManager) merge(script string, vars []Var, params []string) (strin
 			// get the value from the manifest
 			value = variable.FromValue
 		} else
-		// if a variable has a value in the release
-		if len(params) > 0 {
-			value = params[ix]
+		// if a variable has a value passed-in as an input from the CLI or http URI
+		if len(variable.FromInput) > 0 {
+			value = params[variable.FromInput]
 		}
 		// merge the variable value
-		script = strings.Replace(script, variable.Name, value, -1)
+		script = strings.Replace(script, fmt.Sprintf("{{%s}}", variable.Name), value, -1)
 	}
 	return script, nil
 }
