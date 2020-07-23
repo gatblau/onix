@@ -20,14 +20,14 @@
 FROM golang as builder
 WORKDIR /app
 COPY . .
-RUN go get . && CGO_ENABLED=0 GOOS=linux go build -o webhook .
+RUN go get . && CGO_ENABLED=0 GOOS=linux go build -o alerts .
 
 # package stage: copy the binary into the deployment image
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 MAINTAINER gatblau <onix@gatblau.org>
-LABEL author="gatblau.org"
+LABEL author="gatblau"
 WORKDIR /app
-COPY --from=builder /app/webhook /app/config.toml ./
+COPY --from=builder /app/alerts /app/config.toml ./
 USER 20
-CMD ["./webhook"]
+CMD ["./alerts"]
 EXPOSE 8081/tcp
