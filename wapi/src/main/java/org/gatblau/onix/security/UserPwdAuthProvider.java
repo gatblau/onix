@@ -91,7 +91,7 @@ public class UserPwdAuthProvider implements AuthenticationProvider {
         // if the user failed the authentication 
         if (!authenticated) {
             // issues a bad credentials exception
-            throw new BadCredentialsException(String.format("Authentication failed for %s" + username));
+            throw new BadCredentialsException(String.format("Authentication failed for %s", username));
         }
 
         AbstractAuthenticationToken token = null;
