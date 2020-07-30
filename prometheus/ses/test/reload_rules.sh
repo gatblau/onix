@@ -1,0 +1,1 @@
+kill -HUP `pgrep prometheus`

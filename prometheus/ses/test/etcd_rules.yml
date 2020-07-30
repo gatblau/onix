@@ -1,0 +1,31 @@
+groups:
+  - name: openshift
+    rules:
+#      - alert: EtcdNoQuorum
+#        expr: (count(up{job="etcd"} == 0) - 1) > (count(up{job="etcd"}) / 2 - 1)
+#        for: 3m
+#        labels:
+#          severity: critical
+#        annotations:
+#          summary: The etcd cluster is in read-only mode
+#          description: The etcd cluster quorum has been lost
+      - alert: EtcdIsDown
+        expr: up{job="etcd"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          description: The etcd server is down
+          service: etcd
+          status: down
+          uri: "{{ $labels.instance }}"
+      - alert: EtcdIsUp
+        expr: up{job="etcd"} == 1
+        for: 1m
+        labels:
+          severity: info
+        annotations:
+          description: The etcd server is up
+          service: etcd
+          status: up
+          uri: "{{ $labels.instance }}"
