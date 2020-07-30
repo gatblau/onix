@@ -1,0 +1,18 @@
+---
+global:
+  scrape_interval: 15s
+rule_files:
+  - etcd_rules.yml
+scrape_configs:
+  - job_name: etcd
+    static_configs:
+      - targets:
+          - "127.0.0.1:2379"
+          - "127.0.0.1:22379"
+          - "127.0.0.1:32379"
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - localhost:9093
+...

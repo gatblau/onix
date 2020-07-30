@@ -1,0 +1,78 @@
+{
+  "receiver": "web-hook",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "resolved",
+      "labels": {
+        "alertname": "ErrorBudgetBurn",
+        "job": "apiserver",
+        "prometheus": "openshift-monitoring/k8s",
+        "severity": "critical"
+      },
+      "annotations": {},
+      "startsAt": "2020-06-02T11:32:19.85796458Z",
+      "endsAt": "2020-06-02T13:12:19.85796458Z",
+      "generatorURL": "https://prometheus-k8s-openshift-monitoring.apps.ocprestore.amosonline.io/graph?g0.expr=%28status_class_5xx%3Aapiserver_request_total%3Aratio_rate1h%7Bjob%3D%22apiserver%22%7D+%3E+%2814.4+%2A+0.01%29+and+status_class_5xx%3Aapiserver_request_total%3Aratio_rate5m%7Bjob%3D%22apiserver%22%7D+%3E+%2814.4+%2A+0.01%29%29+or+%28status_class_5xx%3Aapiserver_request_total%3Aratio_rate6h%7Bjob%3D%22apiserver%22%7D+%3E+%286+%2A+0.01%29+and+status_class_5xx%3Aapiserver_request_total%3Aratio_rate30m%7Bjob%3D%22apiserver%22%7D+%3E+%286+%2A+0.01%29%29&g0.tab=1",
+      "fingerprint": "8882cf244a0fb422"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "etcdMembersDown",
+        "job": "etcd",
+        "prometheus": "openshift-monitoring/k8s",
+        "severity": "critical"
+      },
+      "annotations": {
+        "message": "etcd cluster \"etcd\": members are down (1)."
+      },
+      "startsAt": "2020-06-02T11:28:15.353892501Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "https://prometheus-k8s-openshift-monitoring.apps.ocprestore.amosonline.io/graph?g0.expr=max+by%28job%29+%28sum+by%28job%29+%28up%7Bjob%3D~%22.%2Aetcd.%2A%22%7D+%3D%3D+bool+0%29+or+count+by%28job%2C+endpoint%29+%28sum+by%28job%2C+endpoint%2C+To%29+%28rate%28etcd_network_peer_sent_failures_total%7Bjob%3D~%22.%2Aetcd.%2A%22%7D%5B3m%5D%29%29+%3E+0.01%29%29+%3E+0&g0.tab=1",
+      "fingerprint": "676b50699fe8526e"
+    },
+    {
+      "status": "resolved",
+      "labels": {
+        "alertname": "KubeAPIErrorsHigh",
+        "prometheus": "openshift-monitoring/k8s",
+        "resource": "tuneds",
+        "severity": "critical",
+        "verb": "LIST"
+      },
+      "annotations": {
+        "message": "API server is returning errors for 100% of requests for LIST tuneds ."
+      },
+      "startsAt": "2020-06-02T10:52:50.907806203Z",
+      "endsAt": "2020-06-02T12:54:50.907806203Z",
+      "generatorURL": "https://prometheus-k8s-openshift-monitoring.apps.ocprestore.amosonline.io/graph?g0.expr=sum+by%28resource%2C+subresource%2C+verb%29+%28rate%28apiserver_request_total%7Bcode%3D~%225..%22%2Cjob%3D%22apiserver%22%7D%5B5m%5D%29%29+%2F+sum+by%28resource%2C+subresource%2C+verb%29+%28rate%28apiserver_request_total%7Bjob%3D%22apiserver%22%7D%5B5m%5D%29%29+%3E+0.1&g0.tab=1",
+      "fingerprint": "fc3871018af58e58"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "etcdInsufficientMembers",
+        "job": "etcd",
+        "prometheus": "openshift-monitoring/k8s",
+        "severity": "critical"
+      },
+      "annotations": {
+        "message": "etcd cluster \"etcd\": insufficient members (1)."
+      },
+      "startsAt": "2020-06-02T13:37:15.353892501Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "https://prometheus-k8s-openshift-monitoring.apps.ocprestore.amosonline.io/graph?g0.expr=sum+by%28job%29+%28up%7Bjob%3D~%22.%2Aetcd.%2A%22%7D+%3D%3D+bool+1%29+%3C+%28%28count+by%28job%29+%28up%7Bjob%3D~%22.%2Aetcd.%2A%22%7D%29+%2B+1%29+%2F+2%29&g0.tab=1",
+      "fingerprint": "521b79f936994ab3"
+    }
+  ],
+  "groupLabels": {},
+  "commonLabels": {
+    "prometheus": "openshift-monitoring/k8s",
+    "severity": "critical"
+  },
+  "commonAnnotations": {},
+  "externalURL": "https://alertmanager-main-openshift-monitoring.apps.ocprestore.amosonline.io",
+  "version": "4",
+  "groupKey": "{}/{severity=\"critical\"}:{}"
+}

@@ -1,0 +1,81 @@
+{
+  "receiver": "onix-webhook",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "EtcdIsDown",
+        "instance": "127.0.0.1:22379",
+        "job": "etcd",
+        "severity": "critical"
+      },
+      "annotations": {
+        "description": "The etcd server is down",
+        "instance": "127.0.0.1:22379",
+        "service": "etcd",
+        "status": "down"
+      },
+      "startsAt": "2020-07-28T14:20:22.095063475Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://Andress-MacBook-Pro-2.local:9090/graph?g0.expr=up%7Bjob%3D%22etcd%22%7D+%3D%3D+0\u0026g0.tab=1",
+      "fingerprint": "ea1276fe81d36bb6"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "EtcdIsDown",
+        "instance": "127.0.0.1:2379",
+        "job": "etcd",
+        "severity": "critical"
+      },
+      "annotations": {
+        "description": "The etcd server is down",
+        "instance": "127.0.0.1:2379",
+        "service": "etcd",
+        "status": "down"
+      },
+      "startsAt": "2020-07-28T14:20:22.095063475Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://localhost:9090/graph?g0.expr=up%7Bjob%3D%22etcd%22%7D+%3D%3D+0\u0026g0.tab=1",
+      "fingerprint": "c8a85fdb1e32a446"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "EtcdIsDown",
+        "instance": "127.0.0.1:32379",
+        "job": "etcd",
+        "severity": "critical"
+      },
+      "annotations": {
+        "description": "The etcd server is down",
+        "instance": "127.0.0.1:32379",
+        "service": "etcd",
+        "status": "down"
+      },
+      "startsAt": "2020-07-28T14:20:22.095063475Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://Andress-MacBook-Pro-2.local:9090/graph?g0.expr=up%7Bjob%3D%22etcd%22%7D+%3D%3D+0\u0026g0.tab=1",
+      "fingerprint": "8338c6a4138f2bc9"
+    }
+  ],
+  "groupLabels": {
+    "job": "etcd"
+  },
+  "commonLabels": {
+    "alertname": "EtcdIsDown",
+    "job": "etcd",
+    "severity": "critical"
+  },
+  "commonAnnotations": {
+    "description": "The etcd server is down",
+    "service": "etcd",
+    "status": "down"
+  },
+  "externalURL": "http://Andress-MacBook-Pro-2.local:9093",
+  "version": "4",
+  "groupKey": "{}:{job=\"etcd\"}",
+  "truncatedAlerts": 0
+}
+

@@ -1,0 +1,22 @@
+global:
+  resolve_timeout: "5m"
+receivers:
+  - name: 'onix-webhook'
+    webhook_configs:
+      - url: http://localhost:8888/alerts
+        send_resolved: true
+        http_config:
+          basic_auth:
+            username: 'admin'
+            password: '0n1x'
+route:
+  group_by:
+    - "job"
+  group_interval: "5m"
+  group_wait: "30s"
+  receiver: "onix-webhook"
+  repeat_interval: "3h"
+  routes:
+    - receiver: onix-webhook
+      match:
+        alertname: EtcdIsUp, EtcdIsDown
