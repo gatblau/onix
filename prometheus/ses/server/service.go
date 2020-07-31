@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gatblau/oxc"
 	"github.com/gorilla/mux"
@@ -28,6 +29,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sort"
 	"strings"
 	"time"
 )
@@ -177,8 +179,11 @@ func (s *SeS) svcHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	// sort the incoming alerts by StartsAt time
+	alerts := NewTimeSortedAlerts(payload.Alerts)
+	sort.Sort(alerts)
 
-	for _, alert := range payload.Alerts {
+	for _, alert := range alerts {
 		ok, service := s.contain(alert.Annotations, "service")
 		if !ok {
 			http.Error(w, fmt.Sprintf("cannot find 'service' annotation in alert '%s'", alert), http.StatusBadRequest)
@@ -210,7 +215,6 @@ func (s *SeS) svcHandler(w http.ResponseWriter, r *http.Request) {
 				"status":      status,
 				"description": description,
 				"uri":         uri,
-				"time":        alert.StartsAt.String(),
 			},
 		})
 		if err != nil {
@@ -275,4 +279,51 @@ func (s *SeS) contain(values template.KV, key string) (bool, string) {
 		}
 	}
 	return false, ""
+}
+
+// process the received
+func (s *SeS) processAlerts(data template.Alerts) error {
+	// sort the incoming alerts by StartsAt time
+	alerts := NewTimeSortedAlerts(data)
+	sort.Sort(alerts)
+
+	for _, alert := range alerts {
+		ok, service := s.contain(alert.Annotations, "service")
+		if !ok {
+			return errors.New(fmt.Sprintf("cannot find 'service' annotation in alert '%s'", alert))
+		}
+		ok, status := s.contain(alert.Annotations, "status")
+		if !ok {
+			return errors.New(fmt.Sprintf("cannot find 'status' annotation in alert '%s'", alert))
+		}
+		ok, uri := s.contain(alert.Annotations, "uri")
+		if !ok {
+			return errors.New(fmt.Sprintf("cannot find 'uri' annotation in alert '%s'", alert))
+		}
+		ok, description := s.contain(alert.Annotations, "description")
+		if !ok {
+			return errors.New(fmt.Sprintf("cannot find 'description' annotation in alert '%s'", alert))
+		}
+		log.Info().Msgf("service: %s:%s is %s", service, uri, status)
+		result, err := s.ox.PutItem(&oxc.Item{
+			Key:         fmt.Sprintf("%s_%s", service, strings.Replace(strings.Replace(uri, ":", "_", -1), ".", "_", -1)),
+			Name:        fmt.Sprintf("%s Service", service),
+			Description: description,
+			Type:        SeSServiceItemType,
+			Attribute: map[string]interface{}{
+				"name":        service,
+				"status":      status,
+				"description": description,
+				"uri":         uri,
+				"time":        alert.StartsAt.String(),
+			},
+		})
+		if err != nil {
+			return err
+		}
+		if result.Error {
+			return errors.New(fmt.Sprintf("cannot update service status: %s", result.Message))
+		}
+	}
+	return nil
 }

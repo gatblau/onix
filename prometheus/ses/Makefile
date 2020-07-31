@@ -21,7 +21,7 @@ BUILD_FOLDER=build
 REPO_NAME=gatblau
 
 # the name of the webhook binary file
-BINARY_NAME=alerts
+BINARY_NAME=ses
 
 # the name of the go command to use to build the binary
 GO_CMD = go

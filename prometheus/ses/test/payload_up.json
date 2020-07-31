@@ -14,7 +14,8 @@
         "description": "The etcd server is up",
         "instance": "127.0.0.1:22379",
         "service": "etcd",
-        "status": "up"
+        "status": "up",
+        "time": "2020-07-28T14:23:22.095063475Z"
       },
       "startsAt": "2020-07-28T14:23:22.095063475Z",
       "endsAt": "0001-01-01T00:00:00Z",
@@ -33,7 +34,8 @@
         "description": "The etcd server is up",
         "instance": "127.0.0.1:2379",
         "service": "etcd",
-        "status": "up"
+        "status": "up",
+        "time": "2020-07-27T14:23:22.095063475Z"
       },
       "startsAt": "2020-07-28T14:23:22.095063475Z",
       "endsAt": "0001-01-01T00:00:00Z",
@@ -52,7 +54,8 @@
         "description": "The etcd server is up",
         "instance": "127.0.0.1:32379",
         "service": "etcd",
-        "status": "up"
+        "status": "up",
+        "time": "2006-01-02T15:04:05.999999999Z07:00"
       },
       "startsAt": "2020-07-28T14:23:22.095063475Z",
       "endsAt": "0001-01-01T00:00:00Z",
