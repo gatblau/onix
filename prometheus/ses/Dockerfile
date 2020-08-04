@@ -1,5 +1,5 @@
 #
-#    Onix Config Manager - Alert Manager Webhook Receiver for Onix
+#    Onix Config Manager - Alert Manager Webhook Receiver for Onix - SeS
 #    Copyright (c) 2018-2020 by www.gatblau.org
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,14 +20,14 @@
 FROM golang as builder
 WORKDIR /app
 COPY . .
-RUN go get . && CGO_ENABLED=0 GOOS=linux go build -o alerts .
+RUN go get . && CGO_ENABLED=0 GOOS=linux go build -o ses .
 
 # package stage: copy the binary into the deployment image
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 MAINTAINER gatblau <onix@gatblau.org>
 LABEL author="gatblau"
 WORKDIR /app
-COPY --from=builder /app/alerts /app/config.toml ./
+COPY --from=builder /app/ses /app/config.toml ./
 USER 20
-CMD ["./alerts"]
-EXPOSE 8081/tcp
+CMD ["./ses"]
+EXPOSE 8888/tcp

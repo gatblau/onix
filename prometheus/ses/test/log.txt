@@ -1,0 +1,48 @@
+{"level":"info","time":"2020-08-04T16:04:53+01:00","message":"Loading configuration."}
+{"level":"trace","time":"2020-08-04T16:04:53+01:00","message":"SeS listening on :8888"}
+{"level":"trace","time":"2020-08-04T16:04:53+01:00","message":"SeS model found in Onix."}
+{"level":"trace","time":"2020-08-04T16:16:52+01:00","message":"[::1]:54604 POST /alerts\n"}
+{"level":"info","time":"2020-08-04T16:16:52+01:00","message":"recording event: service etcd:127.0.0.1:22379 is up"}
+{"level":"info","time":"2020-08-04T16:16:52+01:00","message":"recording event: service etcd:127.0.0.1:2379 is up"}
+{"level":"info","time":"2020-08-04T16:16:52+01:00","message":"recording event: service etcd:127.0.0.1:32379 is up"}
+{"level":"info","time":"2020-08-04T16:16:52+01:00","message":"recording event: service etcd:127.0.0.1:32379 is down"}
+{"level":"trace","time":"2020-08-04T16:21:52+01:00","message":"[::1]:55930 POST /alerts\n"}
+{"level":"trace","time":"2020-08-04T16:21:52+01:00","message":"discarding event: service etcd:127.0.0.1:22379 is up"}
+{"level":"trace","time":"2020-08-04T16:21:52+01:00","message":"discarding event: service etcd:127.0.0.1:2379 is up"}
+{"level":"trace","time":"2020-08-04T16:21:52+01:00","message":"discarding event: service etcd:127.0.0.1:32379 is up"}
+{"level":"trace","time":"2020-08-04T16:21:52+01:00","message":"discarding event: service etcd:127.0.0.1:32379 is down"}
+{"level":"info","time":"2020-08-04T16:21:52+01:00","message":"recording event: service etcd:127.0.0.1:22379 is down"}
+{"level":"trace","time":"2020-08-04T16:31:52+01:00","message":"[::1]:58123 POST /alerts\n"}
+{"level":"trace","time":"2020-08-04T16:31:52+01:00","message":"discarding event: service etcd:127.0.0.1:2379 is up"}
+{"level":"trace","time":"2020-08-04T16:31:52+01:00","message":"discarding event: service etcd:127.0.0.1:32379 is down"}
+{"level":"trace","time":"2020-08-04T16:31:52+01:00","message":"discarding event: service etcd:127.0.0.1:22379 is down"}
+{"level":"info","time":"2020-08-04T16:31:52+01:00","message":"recording event: service etcd:127.0.0.1:22379 is up"}
+{"level":"info","time":"2020-08-04T16:31:52+01:00","message":"recording event: service etcd:127.0.0.1:32379 is up"}
+{"level":"trace","time":"2020-08-04T18:56:29+01:00","message":"[::1]:60107 POST /alerts\n"}
+{"level":"trace","time":"2020-08-04T18:56:29+01:00","message":"discarding event: service etcd:127.0.0.1:2379 is up"}
+{"level":"trace","time":"2020-08-04T18:56:29+01:00","message":"discarding event: service etcd:127.0.0.1:32379 is down"}
+{"level":"trace","time":"2020-08-04T18:56:29+01:00","message":"discarding event: service etcd:127.0.0.1:22379 is down"}
+{"level":"trace","time":"2020-08-04T18:56:29+01:00","message":"discarding event: service etcd:127.0.0.1:22379 is up"}
+{"level":"trace","time":"2020-08-04T18:56:29+01:00","message":"discarding event: service etcd:127.0.0.1:32379 is up"}
+{"level":"trace","time":"2020-08-04T18:56:59+01:00","message":"[::1]:60107 POST /alerts\n"}
+{"level":"info","time":"2020-08-04T18:56:59+01:00","message":"recording event: service etcd:127.0.0.1:32379 is down"}
+{"level":"trace","time":"2020-08-04T19:01:59+01:00","message":"[::1]:61688 POST /alerts\n"}
+{"level":"trace","time":"2020-08-04T19:01:59+01:00","message":"discarding event: service etcd:127.0.0.1:32379 is down"}
+{"level":"trace","time":"2020-08-04T19:01:59+01:00","message":"discarding event: service etcd:127.0.0.1:22379 is up"}
+{"level":"trace","time":"2020-08-04T19:01:59+01:00","message":"discarding event: service etcd:127.0.0.1:2379 is up"}
+{"level":"info","time":"2020-08-04T19:01:59+01:00","message":"recording event: service etcd:127.0.0.1:32379 is up"}
+{"level":"trace","time":"2020-08-04T19:06:59+01:00","message":"[::1]:62885 POST /alerts\n"}
+{"level":"trace","time":"2020-08-04T19:06:59+01:00","message":"discarding event: service etcd:127.0.0.1:22379 is up"}
+{"level":"trace","time":"2020-08-04T19:06:59+01:00","message":"discarding event: service etcd:127.0.0.1:2379 is up"}
+{"level":"trace","time":"2020-08-04T19:06:59+01:00","message":"discarding event: service etcd:127.0.0.1:32379 is up"}
+{"level":"info","time":"2020-08-04T19:06:59+01:00","message":"recording event: service etcd:127.0.0.1:22379 is down"}
+{"level":"info","time":"2020-08-04T19:06:59+01:00","message":"recording event: service etcd:127.0.0.1:2379 is down"}
+{"level":"info","time":"2020-08-04T19:06:59+01:00","message":"recording event: service etcd:127.0.0.1:32379 is down"}
+{"level":"trace","time":"2020-08-04T19:11:59+01:00","message":"[::1]:64001 POST /alerts\n"}
+{"level":"trace","time":"2020-08-04T19:11:59+01:00","message":"discarding event: service etcd:127.0.0.1:22379 is down"}
+{"level":"trace","time":"2020-08-04T19:11:59+01:00","message":"discarding event: service etcd:127.0.0.1:2379 is down"}
+{"level":"trace","time":"2020-08-04T19:11:59+01:00","message":"discarding event: service etcd:127.0.0.1:32379 is down"}
+{"level":"info","time":"2020-08-04T19:11:59+01:00","message":"recording event: service etcd:127.0.0.1:22379 is up"}
+{"level":"info","time":"2020-08-04T19:11:59+01:00","message":"recording event: service etcd:127.0.0.1:2379 is up"}
+{"level":"info","time":"2020-08-04T19:11:59+01:00","message":"recording event: service etcd:127.0.0.1:32379 is up"}
+^C{"level":"info","time":"2020-08-04T19:48:01+01:00","message":"shutting down SeS"}

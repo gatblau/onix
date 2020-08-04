@@ -5,4 +5,4 @@
 /test/data
 /test/alertmanager
 /test/infra*
-/test/ses
+ses

@@ -35,6 +35,8 @@ const (
 	SeSServiceItemTypeAttrStatus      = "SES_SERVICE_ATTR_STATUS"
 	SeSServiceItemTypeAttrURI         = "SES_SERVICE_ATTR_URI"
 	SeSServiceItemTypeAttrDescription = "SES_SERVICE_ATTR_DESCRIPTION"
+	SeSServiceItemTypeAttrTime        = "SES_SERVICE_ATTR_TIME"
+	SeSServiceItemTypeAttrPlatform    = "SES_SERVICE_ATTR_PLATFORM"
 )
 
 // creates a new instance of the SeS model
@@ -151,6 +153,22 @@ func (m *SeSModel) getModelData() *GraphData {
 				Key:         SeSServiceItemTypeAttrDescription,
 				Name:        "description",
 				Description: "The description of the service status.",
+				Type:        "string",
+				ItemTypeKey: SeSServiceItemType,
+				Required:    true,
+			},
+			ItemTypeAttribute{
+				Key:         SeSServiceItemTypeAttrTime,
+				Name:        "time",
+				Description: "The time of the event.",
+				Type:        "date",
+				ItemTypeKey: SeSServiceItemType,
+				Required:    true,
+			},
+			ItemTypeAttribute{
+				Key:         SeSServiceItemTypeAttrPlatform,
+				Name:        "platform",
+				Description: "The platform for the event.",
 				Type:        "string",
 				ItemTypeKey: SeSServiceItemType,
 				Required:    true,

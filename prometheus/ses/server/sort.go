@@ -16,7 +16,9 @@
 package server
 
 import (
+	"fmt"
 	"github.com/prometheus/alertmanager/template"
+	"strings"
 )
 
 // type to sort alert by StartsAt time (implement sort interface)
@@ -40,4 +42,19 @@ func (a TimeSortedAlerts) Less(i, j int) bool {
 
 func (a TimeSortedAlerts) Swap(i, j int) {
 	a[i], a[j] = a[j], a[i]
+}
+
+// check if the passed-in map contains the specified key and returns its value
+func kValue(values template.KV, key string) (bool, string) {
+	for k, v := range values {
+		if strings.ToLower(key) == strings.ToLower(k) {
+			return true, v
+		}
+	}
+	return false, ""
+}
+
+// get the service unique natural key
+func key(platform string, service string, uri string) string {
+	return fmt.Sprintf("%s_%s_%s", platform, service, strings.Replace(strings.Replace(uri, ":", "_", -1), ".", "_", -1))
 }
