@@ -14,18 +14,18 @@ groups:
         for: 1m
         labels:
           severity: critical
-        annotations:
           description: The etcd server is down
           service: etcd
           status: down
           uri: "{{ $labels.instance }}"
+          platform: "p01-dev"
       - alert: EtcdIsUp
         expr: up{job="etcd"} == 1
         for: 1m
         labels:
           severity: info
-        annotations:
           description: The etcd server is up
           service: etcd
           status: up
           uri: "{{ $labels.instance }}"
+          platform: "p01-dev"
