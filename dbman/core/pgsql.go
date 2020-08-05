@@ -169,8 +169,12 @@ func (db *PgSQLProvider) RunQuery(query *Query) (*Table, error) {
 		if len(header) == 0 {
 			// for each field in the result set
 			for _, desc := range result.FieldDescriptions() {
+				headerName := string(desc.Name)
+				if headerName == "?column?" { // the query jas not defined a column name
+					headerName = "undefined"
+				}
 				// add a new header
-				header = append(header, string(desc.Name))
+				header = append(header, headerName)
 			}
 		}
 		// create a new row
@@ -197,7 +201,9 @@ func (db *PgSQLProvider) RunQuery(query *Query) (*Table, error) {
 				row = append(row, t)
 			} else {
 				valueType := reflect.TypeOf(value)
-				row = append(row, fmt.Sprintf("unsupported type '%s.%s'", valueType.PkgPath(), valueType.Name()))
+				if valueType != nil {
+					row = append(row, fmt.Sprintf("unsupported type '%s.%s'", valueType.PkgPath(), valueType.Name()))
+				}
 			}
 		}
 		// add the row to the row set
