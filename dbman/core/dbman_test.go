@@ -113,8 +113,8 @@ func TestDbMan_Upgrade(t *testing.T) {
 
 func TestDbMan_QueryWithParam(t *testing.T) {
 	params := make(map[string]string)
-	params["appVersion"] = "delete * from version;"
-	_, _, _, err := DM.Query("db-version", params)
+	params["svc"] = "etcd"
+	_, _, _, err := DM.Query("svc-down-instance", params)
 	if err != nil {
 	}
 }
