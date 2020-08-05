@@ -12,7 +12,9 @@ import (
 	"fmt"
 	. "github.com/gatblau/onix/dbman/plugin"
 	"github.com/jackc/pgconn"
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -185,11 +187,17 @@ func (db *PgSQLProvider) RunQuery(query *Query) (*Table, error) {
 			if v, ok := value.(string); ok {
 				// append the value to the row slice
 				row = append(row, v)
-			}
+			} else
 			// in the case of time values
 			if v, ok := value.(time.Time); ok {
 				// append the string representation of the value to the row slice
 				row = append(row, v.String())
+			} else if v, ok := value.(pgtype.Interval); ok {
+				t := db.toTime(v.Microseconds)
+				row = append(row, t)
+			} else {
+				valueType := reflect.TypeOf(value)
+				row = append(row, fmt.Sprintf("unsupported type '%s.%s'", valueType.PkgPath(), valueType.Name()))
 			}
 		}
 		// add the row to the row set
@@ -435,4 +443,13 @@ func (db *PgSQLProvider) label(textTrue string, textFalse string, use bool) stri
 
 func (db *PgSQLProvider) get(key string) (string, bool) {
 	return db.cfg.GetString(key)
+}
+
+// converts microseconds into HH:mm:SS.ms
+func (db *PgSQLProvider) toTime(microseconds int64) string {
+	milliseconds := (microseconds / 1000) % 1000
+	seconds := (((microseconds / 1000) - milliseconds) / 1000) % 60
+	minutes := (((((microseconds / 1000) - milliseconds) / 1000) - seconds) / 60) % 60
+	hours := ((((((microseconds / 1000) - milliseconds) / 1000) - seconds) / 60) - minutes) / 60
+	return fmt.Sprintf("%02v:%02v:%02v.%03v", hours, minutes, seconds, milliseconds)
 }
