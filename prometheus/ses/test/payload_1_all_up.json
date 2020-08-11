@@ -5,17 +5,19 @@
     {
       "status": "firing",
       "labels": {
-        "alertname": "EtcdIsUp",
+        "alertname": "Etcd_Node_Up",
         "description": "The etcd server is up",
         "instance": "127.0.0.1:22379",
         "job": "etcd",
         "platform": "p01-dev",
         "service": "etcd",
+        "facet": "node",
         "severity": "info",
-        "status": "up",
-        "uri": "127.0.0.1:22379"
+        "status": "up"
       },
-      "annotations": {},
+      "annotations": {
+        "location": "127.0.0.1:22379"
+      },
       "startsAt": "2020-08-04T09:50:22.095063475Z",
       "endsAt": "0001-01-01T00:00:00Z",
       "generatorURL": "http://Host-Pro-2.local:9090/graph?g0.expr=up%7Bjob%3D%22etcd%22%7D+%3D%3D+1\u0026g0.tab=1",
@@ -24,17 +26,19 @@
     {
       "status": "firing",
       "labels": {
-        "alertname": "EtcdIsUp",
+        "alertname": "Etcd_Node_Up",
         "description": "The etcd server is up",
         "instance": "127.0.0.1:2379",
         "job": "etcd",
         "platform": "p01-dev",
         "service": "etcd",
+        "facet": "node",
         "severity": "info",
-        "status": "up",
-        "uri": "127.0.0.1:2379"
+        "status": "up"
       },
-      "annotations": {},
+      "annotations": {
+        "location": "127.0.0.1:2379"
+      },
       "startsAt": "2020-08-04T09:50:22.095063475Z",
       "endsAt": "0001-01-01T00:00:00Z",
       "generatorURL": "http://Host-Pro-2.local:9090/graph?g0.expr=up%7Bjob%3D%22etcd%22%7D+%3D%3D+1\u0026g0.tab=1",
@@ -43,17 +47,19 @@
     {
       "status": "firing",
       "labels": {
-        "alertname": "EtcdIsUp",
+        "alertname": "Etcd_Node_Up",
         "description": "The etcd server is up",
         "instance": "127.0.0.1:32379",
         "job": "etcd",
         "platform": "p01-dev",
         "service": "etcd",
+        "facet": "node",
         "severity": "info",
-        "status": "up",
-        "uri": "127.0.0.1:32379"
+        "status": "up"
       },
-      "annotations": {},
+      "annotations": {
+        "location": "127.0.0.1:32379"
+      },
       "startsAt": "2020-08-04T09:50:22.095063475Z",
       "endsAt": "0001-01-01T00:00:00Z",
       "generatorURL": "http://Host-Pro-2.local:9090/graph?g0.expr=up%7Bjob%3D%22etcd%22%7D+%3D%3D+1\u0026g0.tab=1",
@@ -64,11 +70,12 @@
     "job": "etcd"
   },
   "commonLabels": {
-    "alertname": "EtcdIsUp",
+    "alertname": "Etcd_Node_Up",
     "description": "The etcd server is up",
     "job": "etcd",
     "platform": "p01-dev",
     "service": "etcd",
+    "facet": "node",
     "severity": "info",
     "status": "up"
   },

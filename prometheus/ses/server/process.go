@@ -42,9 +42,20 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 	// loops through tha alerts
 	for _, alert := range alerts {
 		// extract values from the alert
-		platform, service, status, description, uri, err := values(alert)
+		v, err := values(alert)
+		// if the alert did not have all required information
+		if err != nil {
+			// stops any processing
+			return err
+		}
+		location := v["location"]
+		// if the alert does not have a specific location
+		if len(location) == 0 {
+			// fill the blank
+			location = "_"
+		}
 		// build the natural key for the service item
-		serviceKey := key(platform, service, uri)
+		serviceKey := key(v["platform"], v["service"], v["facet"], location)
 		// check if there is a previous record of the service item in the tracking map
 		serviceItem := items[serviceKey]
 		// if the item is not in the map
@@ -79,25 +90,26 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 		// 1) there is not a record of the event in Onix; or
 		// 2) the event registered in Onix has a status that is different from the status in the received alert; and
 		// 3) the received alert has occurred after the last event registered in Onix
-		shouldRegisterEvent = (serviceItem == nil || (serviceItem != nil && serviceItem.Attribute["status"].(string) != status)) && startsAt.Before(alert.StartsAt)
+		shouldRegisterEvent = (serviceItem == nil || (serviceItem != nil && serviceItem.Attribute["status"].(string) != v["status"])) && startsAt.Before(alert.StartsAt)
 
 		// if the item already recorded occurred before the current alert
 		// or the no item recorded yet (startsAt = beginning of time)
 		if shouldRegisterEvent {
 			// then record the new alert
-			log.Info().Msgf("recording event: service %s:%s is %s", service, uri, status)
+			log.Info().Msgf("recording event => %s:%s:%s:%s", v["service"], v["facet"], location, v["status"])
 			serviceItem = &oxc.Item{
 				Key:         serviceKey,
-				Name:        fmt.Sprintf("%s Service", service),
-				Description: description,
+				Name:        fmt.Sprintf("%s Service", v["service"]),
+				Description: v["description"],
 				Type:        SeSServiceItemType,
 				Attribute: map[string]interface{}{
-					"name":        service,
-					"status":      status,
-					"description": description,
-					"uri":         uri,
+					"service":     v["service"],
+					"status":      v["status"],
+					"description": v["description"],
+					"location":    v["location"],
 					"time":        alert.StartsAt,
-					"platform":    platform,
+					"platform":    v["platform"],
+					"facet":       v["facet"],
 				},
 			}
 			result, err := put(serviceItem)
@@ -110,34 +122,48 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 			// update the internal cache
 			items[serviceKey] = serviceItem
 		} else {
-			log.Trace().Msgf("discarding event: service %s:%s is %s", service, uri, status)
+			log.Trace().Msgf("discarding event => %s:%s:%s:%s", v["service"], v["facet"], location, v["status"])
 		}
 	}
 	return nil
 }
 
 // extract values from the alert
-func values(alert template.Alert) (platform string, service string, status string, description string, uri string, err error) {
-	var ok bool
-	ok, platform = kValue(alert.Labels, "platform")
+func values(alert template.Alert) (values map[string]string, err error) {
+	var (
+		ok     bool
+		result = make(map[string]string)
+	)
+	ok, result["platform"] = kValue(alert.Labels, "platform")
 	if !ok {
-		return platform, "", "", "", "", errors.New(fmt.Sprintf("cannot find 'platform' annotation in alert '%s'", alert))
+		return result, errors.New(fmt.Sprintf("cannot find 'platform' annotation in alert '%s'", alert))
 	}
-	ok, service = kValue(alert.Labels, "service")
+	ok, result["service"] = kValue(alert.Labels, "service")
 	if !ok {
-		return platform, service, "", "", "", errors.New(fmt.Sprintf("cannot find 'service' annotation in alert '%s'", alert))
+		return result, errors.New(fmt.Sprintf("cannot find 'service' annotation in alert '%s'", alert))
 	}
-	ok, status = kValue(alert.Labels, "status")
+	ok, result["status"] = kValue(alert.Labels, "status")
 	if !ok {
-		return platform, "", "", "", "", errors.New(fmt.Sprintf("cannot find 'status' annotation in alert '%s'", alert))
+		return result, errors.New(fmt.Sprintf("cannot find 'status' annotation in alert '%s'", alert))
 	}
-	ok, uri = kValue(alert.Labels, "uri")
+	ok, result["description"] = kValue(alert.Labels, "description")
 	if !ok {
-		return "", "", "", "", "", errors.New(fmt.Sprintf("cannot find 'uri' annotation in alert '%s'", alert))
+		return result, errors.New(fmt.Sprintf("cannot find 'description' annotation in alert '%s'", alert))
 	}
-	ok, description = kValue(alert.Labels, "description")
+	ok, result["facet"] = kValue(alert.Labels, "facet")
 	if !ok {
-		return "", "", "", "", "", errors.New(fmt.Sprintf("cannot find 'description' annotation in alert '%s'", alert))
+		return result, errors.New(fmt.Sprintf("cannot find 'facet' annotation in alert '%s'", alert))
 	}
-	return platform, service, status, description, uri, nil
+	// add any annotations
+	for key, value := range alert.Annotations {
+		// if the annotation key is not a label (e.g. not in the result map already)
+		if result[key] == "" {
+			// add the annotation value
+			result[key] = value
+		} else {
+			// skip and issue a warning
+			log.Warn().Msgf("skipping annotation '%s' as a label with such name was found", key)
+		}
+	}
+	return result, nil
 }

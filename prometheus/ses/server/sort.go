@@ -55,6 +55,6 @@ func kValue(values template.KV, key string) (bool, string) {
 }
 
 // get the service unique natural key
-func key(platform string, service string, uri string) string {
-	return fmt.Sprintf("%s_%s_%s", platform, service, strings.Replace(strings.Replace(uri, ":", "_", -1), ".", "_", -1))
+func key(platform string, service string, facet string, location string) string {
+	return fmt.Sprintf("%s_%s_%s_%s", platform, service, facet, strings.Replace(strings.Replace(location, ":", "_", -1), ".", "_", -1))
 }

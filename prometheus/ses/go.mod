@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/gatblau/oxc v0.0.0-20200730082448-abcbcac27a59
 	github.com/gorilla/mux v1.7.3
+	github.com/mattn/goreman v0.3.5 // indirect
 	github.com/prometheus/alertmanager v0.21.0
 	github.com/prometheus/client_golang v1.6.0
 	github.com/rs/zerolog v1.18.0
