@@ -33,10 +33,11 @@ const (
 	SeSServiceItemType                = "SES_SERVICE"
 	SeSServiceItemTypeAttrName        = "SES_SERVICE_ATTR_NAME"
 	SeSServiceItemTypeAttrStatus      = "SES_SERVICE_ATTR_STATUS"
-	SeSServiceItemTypeAttrURI         = "SES_SERVICE_ATTR_URI"
+	SeSServiceItemTypeAttrLocation    = "SES_SERVICE_ATTR_LOCATION"
 	SeSServiceItemTypeAttrDescription = "SES_SERVICE_ATTR_DESCRIPTION"
 	SeSServiceItemTypeAttrTime        = "SES_SERVICE_ATTR_TIME"
 	SeSServiceItemTypeAttrPlatform    = "SES_SERVICE_ATTR_PLATFORM"
+	SeSServiceItemTypeAttrFacet       = "SES_SERVICE_ATTR_FACET"
 )
 
 // creates a new instance of the SeS model
@@ -127,8 +128,8 @@ func (m *SeSModel) getModelData() *GraphData {
 		ItemTypeAttributes: []ItemTypeAttribute{
 			ItemTypeAttribute{
 				Key:         SeSServiceItemTypeAttrName,
-				Name:        "name",
-				Description: "The name of the service.",
+				Name:        "service",
+				Description: "The name of the service for which events are recorded.",
 				Type:        "string",
 				ItemTypeKey: SeSServiceItemType,
 				Required:    true,
@@ -142,12 +143,12 @@ func (m *SeSModel) getModelData() *GraphData {
 				Required:    true,
 			},
 			ItemTypeAttribute{
-				Key:         SeSServiceItemTypeAttrURI,
-				Name:        "uri",
-				Description: "The URI of the service.",
+				Key:         SeSServiceItemTypeAttrLocation,
+				Name:        "location",
+				Description: "The location of the service, typically a URI.",
 				Type:        "string",
 				ItemTypeKey: SeSServiceItemType,
-				Required:    true,
+				Required:    false,
 			},
 			ItemTypeAttribute{
 				Key:         SeSServiceItemTypeAttrDescription,
@@ -169,6 +170,14 @@ func (m *SeSModel) getModelData() *GraphData {
 				Key:         SeSServiceItemTypeAttrPlatform,
 				Name:        "platform",
 				Description: "The platform for the event.",
+				Type:        "string",
+				ItemTypeKey: SeSServiceItemType,
+				Required:    true,
+			},
+			ItemTypeAttribute{
+				Key:         SeSServiceItemTypeAttrFacet,
+				Name:        "facet",
+				Description: "The aspect of the service this event relates to (e.g. category)",
 				Type:        "string",
 				ItemTypeKey: SeSServiceItemType,
 				Required:    true,

@@ -1,7 +1,7 @@
 global:
   resolve_timeout: "5m"
 receivers:
-  - name: 'onix-webhook'
+  - name: 'onix-ses'
     webhook_configs:
       - url: http://localhost:8888/alerts
         send_resolved: true
@@ -11,12 +11,12 @@ receivers:
             password: '0n1x'
 route:
   group_by:
-    - "job"
+    - "service"
   group_interval: "5m"
   group_wait: "30s"
-  receiver: "onix-webhook"
+  receiver: "onix-ses"
   repeat_interval: "3h"
   routes:
-    - receiver: onix-webhook
+    - receiver: onix-ses
       match:
-        alertname: EtcdIsUp, EtcdIsDown
+        alertname: Etcd_Node_Up, Etcd_Node_Down, Etcd_Quorum_Down, Etcd_Quorum_Up

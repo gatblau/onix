@@ -1,31 +1,47 @@
 groups:
   - name: openshift
     rules:
-#      - alert: EtcdNoQuorum
-#        expr: (count(up{job="etcd"} == 0) - 1) > (count(up{job="etcd"}) / 2 - 1)
-#        for: 3m
-#        labels:
-#          severity: critical
-#        annotations:
-#          summary: The etcd cluster is in read-only mode
-#          description: The etcd cluster quorum has been lost
-      - alert: EtcdIsDown
+      - alert: Etcd_Quorum_Down
+        expr: ((sum(up{job="etcd"} == 1)) < ((sum(up{job="etcd"} == 0) + (sum(up{job="etcd"} == 1)) / 2)))
+        for: 1m
+        labels:
+          severity: critical
+          description: The etcd cluster quorum has been lost, the etcd cluster is in read-only mode
+          service: etcd
+          facet: quorum
+          status: down
+          platform: "p01-dev"
+      - alert: Etcd_Quorum_Up
+        expr: ((sum(up{job="etcd"} == 1)) > ((sum(up{job="etcd"} == 0) + (sum(up{job="etcd"} == 1)) / 2)))
+        for: 1m
+        labels:
+          severity: info
+          description: The etcd cluster has quorum
+          service: etcd
+          facet: quorum
+          status: up
+          platform: "p01-dev"
+      - alert: Etcd_Node_Down
         expr: up{job="etcd"} == 0
         for: 1m
         labels:
           severity: critical
-          description: The etcd server is down
+          description: The etcd application is not responding
           service: etcd
+          facet: node
           status: down
-          uri: "{{ $labels.instance }}"
           platform: "p01-dev"
-      - alert: EtcdIsUp
+        annotations:
+          location: "{{ $labels.instance }}"
+      - alert: Etcd_Node_Up
         expr: up{job="etcd"} == 1
         for: 1m
         labels:
           severity: info
-          description: The etcd server is up
+          description: The etcd application is up & running
           service: etcd
+          facet: node
           status: up
-          uri: "{{ $labels.instance }}"
           platform: "p01-dev"
+        annotations:
+          location: "{{ $labels.instance }}"

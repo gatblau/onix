@@ -6,3 +6,5 @@
 /test/alertmanager
 /test/infra*
 ses
+/test/promtool
+/test/log.txt
