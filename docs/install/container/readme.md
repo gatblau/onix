@@ -32,4 +32,5 @@ To destroy the containers:
 docker rm -f oxdb
 docker rm -f ox
 docker rm -f oxku
+docker rm -f dbman
 ```

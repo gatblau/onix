@@ -232,7 +232,7 @@ objects:
         - annotations:
           from:
             kind: DockerImage
-            name: centos/postgresql-10-centos7
+            name: centos/postgresql-12-centos7
           importPolicy:
             scheduled: true
           name: latest
@@ -571,6 +571,8 @@ objects:
         weight: 100
       wildcardPolicy: None
 
+  #####################################################################
+  # Onix Web Console
   - apiVersion: apps.openshift.io/v1
     kind: DeploymentConfig
     metadata:

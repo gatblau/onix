@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-#    Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+#    Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -21,9 +21,8 @@ docker-compose up -d
 echo "please wait for the Web API to become available"
 sleep 10
 
-echo "deploying database schemas"
-curl localhost:8080/ready
+echo "? creating the database"
+curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1
 
-echo 
-echo "Web API ready to use @ localhost:8080"
-echo "Ox Kube ready to use @ localhost:8000"
+echo "? deploying the schemas and functions"
+curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy 2>&1
