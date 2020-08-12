@@ -1495,44 +1495,18 @@ public class PgSqlRepository implements DbRepository {
         if (ready == null) {
             ready = new JSONObject();
             Database.Version v;
-            boolean freshInstall = false;
-            int currentVersion, targetVersion = 0;
+            // if db not created, then if auto-deploy=true try and create db and deploy schemas
+            if (!db.exists()) {
+                throw new RuntimeException("Onix is not ready: no database has been found");
+            }
             try {
-                // if db not created, then if auto-deploy=true try and create db and deploy schemas
-                if (!db.exists()) {
-                    freshInstall = true;
-                    db.createDb();
-                }
                 // tries and gets the version information from the database
                 v = db.getVersion();
-                // if the schemas have not been deployed (no info found), prepares for a
-                // fresh install by making the current version 0, otherwise the current version is
-                // the one in the database
-                currentVersion = (v.app == null) ? 0 : Integer.parseInt(v.db);
-                // the target version comes from the manifest, and is the one required by the application
-                targetVersion = db.getTargetDbVersion();
-                if (currentVersion == targetVersion) {
-                    // nothing to do
-                } else if (currentVersion < targetVersion) {
-                    // deploys the schemas/functions
-                    db.deployDb(currentVersion, targetVersion);
-                    // gets the deployed version
-                    v = db.getVersion(true);
-                } else {
-                    // the db is newer than the app, the app must stop
-                    throw new RuntimeException("The application is too old for this database: upgrade the application to a newer version.");
-                }
-            } catch (Exception ex) {
-                // only if this is a failed fresh installation can delete db to go back to a clean state
-                if (freshInstall) {
-                    // if the process of deploying a brand new db failed, then remove the database
-                    db.deleteDb();
-                }
-                throw new RuntimeException(ex.getMessage(), ex);
+            } catch (Exception e) {
+                throw new RuntimeException("Onix is not ready: cannot retrieve database version");
             }
-            ready.put("status", "ready");
-            ready.put("appVersion", v.app);
-            ready.put("dbVersion", v.db);
+            ready.put("app_version", v.app);
+            ready.put("db_version", v.db);
         }
         return ready;
     }

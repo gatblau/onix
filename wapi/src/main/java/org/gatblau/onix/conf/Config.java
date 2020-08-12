@@ -155,12 +155,6 @@ public class Config implements Serializable {
     @Value("${database.admin.pwd}")
     private char[] dbAdminPwd;
 
-    @Value("${database.auto.deploy}")
-    private boolean dbAutoDeploy;
-
-    @Value("${database.auto.upgrade}")
-    private boolean dbAutoUpgrade;
-
     public long getSmtpPwdResetTokenExpirySecs() {
         return smtpPwdResetTokenExpirySecs;
     }
@@ -327,13 +321,5 @@ public class Config implements Serializable {
 
     public char[] getDbAdminPwd() {
         return dbAdminPwd;
-    }
-
-    public boolean isDbAutoDeploy() {
-        return dbAutoDeploy;
-    }
-
-    public boolean isDbAutoUpgrade() {
-        return dbAutoUpgrade;
     }
 }

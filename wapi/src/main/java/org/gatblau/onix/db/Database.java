@@ -21,8 +21,6 @@ package org.gatblau.onix.db;
 
 import org.gatblau.onix.FileUtil;
 import org.gatblau.onix.conf.Config;
-import org.gatblau.onix.scripts.ScriptSource;
-import org.gatblau.onix.scripts.ScriptSourceFactory;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,16 +39,13 @@ import java.util.*;
 class Database {
     Logger log = LoggerFactory.getLogger(Database.class);
     private PreparedStatement stmt;
-    private final ScriptSource script;
     private final DataSourceFactory ds;
     private final FileUtil file;
     private final Config cfg;
     private Version version;
 
     @Autowired
-    public Database(ScriptSourceFactory selector, DataSourceFactory ds, FileUtil file, Config cfg) {
-        // switches to the configured script source
-        this.script = selector.source;
+    public Database(DataSourceFactory ds, FileUtil file, Config cfg) {
         this.ds = ds;
         this.file = file;
         this.cfg = cfg;
@@ -210,54 +205,6 @@ class Database {
         }
     }
 
-    public void deployDb(int currentVersion, int targetVersion) throws SQLException {
-        // creates a local variable pwd that should go out of scope at the end of the scope and
-        // be GC by the JVM
-        String ap = new String(cfg.getDbAdminPwd());
-        if (cfg.isDbAutoDeploy()) {
-            Map<String, Map<String, String>> targetScripts = script.getDbScripts(Integer.toString(targetVersion));
-            Map<String, String> targetSchemas = targetScripts.get("schemas");
-            Map<String, String> targetFunctions = targetScripts.get("functions");
-
-            // if it is not an upgrade, but a fresh installation
-            if (currentVersion < 1) {
-                // deploy the schemas
-                deployScripts(targetSchemas, ap);
-                log.info("Database schemas successfully created.");
-            } else {
-                log.info("Initiating database upgrade.");
-                // it is an upgrade
-                // drop all current database functions
-                dropFunctions();
-                log.info("Dropped existing database functions.");
-                // loop through upgrade versions and execute upgrade scripts
-                for (int version = currentVersion + 1; version <= targetVersion; version++) {
-                    // retrieve the relevant db scripts to be deployed before doing anything else
-                    // gets the db version is supposed to apply to the app version
-                    Map<String, Map<String, String>> scripts = script.getDbScripts(Integer.toString(version));
-                    Map<String, String> upgradeScripts = scripts.get("upgrade");
-                    deployScripts(upgradeScripts, ap);
-                    log.info(String.format("Database upgraded to version %s.", version));
-                }
-            }
-
-            // now can deploy the functions for the target version
-            deployScripts(targetFunctions, ap);
-            log.info("Database functions deployed.");
-
-            // updates the version table
-            setVersion(script.getAppVersion(), script.appManifest.get("db").toString(), "Database automatically deployed by Onix", script.getSource());
-
-            // resets the version in memory
-            version = null;
-        } else {
-            throw new RuntimeException(String.format(
-                    "Database does not exists.\n" +
-                    "Database automatic deployment is disabled.\n" +
-                    "Deploy database manually or enable auto deployment in the configuration."));
-        }
-    }
-
     /**
      * determines if the onix database exists
      * @return true if the onix database exists, otherwise false
@@ -303,8 +250,8 @@ class Database {
                 if (stmt.execute(String.format("SELECT * from version ORDER BY time DESC LIMIT 1;"))) {
                     ResultSet set = stmt.getResultSet();
                     if (set.next()) {
-                        version.app = set.getString("application_version");
-                        version.db = set.getString("database_version");
+                        version.app = set.getString("appversion");
+                        version.db = set.getString("dbversion");
                     }
                 }
                 stmt.close();
@@ -314,17 +261,6 @@ class Database {
             }
         }
         return version;
-    }
-
-    /**
-     * determines whether the db should be upgraded based on the app version running
-     * @return if 0, then should not upgrade
-     * if 1, then it should upgrade db
-     * if -1 then it should upgrade app, can't run on the current db version
-     */
-    public int getTargetDbVersion() {
-        JSONObject appManifest = script.getAppManifest();
-        return Integer.parseInt(appManifest.get("db").toString()); // the db version required by the app
     }
 
     private void setVersion(String appVer, String dbVer, String desc, String scriptSrc) {
