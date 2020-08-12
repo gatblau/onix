@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -199,6 +200,9 @@ func (db *PgSQLProvider) RunQuery(query *Query) (*Table, error) {
 			} else if v, ok := value.(pgtype.Interval); ok {
 				t := db.toTime(v.Microseconds)
 				row = append(row, t)
+			} else if v, ok := value.(int32); ok {
+				n := strconv.Itoa(int(v))
+				row = append(row, n)
 			} else {
 				valueType := reflect.TypeOf(value)
 				if valueType != nil {
