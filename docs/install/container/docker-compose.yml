@@ -12,15 +12,16 @@
 #    Contributors to this project, hereby assign copyright in this code to the project,
 #    to be licensed under the same terms as the rest of the code.
 #
-#   Docker Compose file to get the ONIX CMDB up and running
+#   Docker Compose file to get the ONIX configuration manager up and running
 #   use as follows:
 #     docker-compose up -d | docker-compose down, stop, start
-#     NOTE: after start need to call the readyness probe to deploy the database!
+#     NOTE: after start need to call the dbman service endpoints /db/create and /db/deploy respectively
+#      to deploy the database!
 #
 version: '3'
 services:
   oxdb:
-    image: centos/postgresql-10-centos7
+    image: centos/postgresql-12-centos7
     container_name: oxdb
     restart: always
     environment:
@@ -41,30 +42,44 @@ services:
       - WAPI_ADMIN_PWD=${ADMIN_PWD}
     ports:
       - "8080:8080"
-  oxkube:
-    image: gatblau/oxkube-snapshot
+  dbman:
+    image: gatblau/dbman-snapshot
     depends_on:
-      - onix
-    container_name: oxku
-    restart: always
+      - oxdb
+    container_name: dbman
+      restart: always
     environment:
-      - OXKU_ID=kube-01
-      - OXKU_ONIX_URL=${WAPI_URI}
-      - OXKU_CONSUMERS_CONSUMER=webhook
-      - OXKU_LOGINLEVEL=${LOGIN_LEVEL}
-      - OXKU_ONIX_AUTHMODE=${AUTH_MODE}
-      - OXKU_ONIX_USER=${ADMIN_USER}
-      - OXKU_ONIX_PASSWORD=${ADMIN_PWD}
+      - OX_DBM_DB_HOST=oxdb
+      - OX_DBM_DB_ADMINPWD=${PG_ADMIN_PASSWORD}
+      - OX_DBM_HTTP_AUTHMODE=${DBMAN_AUTH_MODE}
+      - OX_DBM_APPVERSION=${DBMAN_APP_VERSION}
     ports:
-      - "8000:8000"
-  oxwc:
-    image: gatblau/oxwc-snapshot
-    depends_on:
-      - onix
-    container_name: oxwc
-    restart: always
-    environment:
-      - WC_OX_WAPI_URI=${WAPI_URI}
-      - WC_OX_WAPI_AUTH_MODE=${AUTH_MODE}
-    ports:
-      - "3000:3000"
+      - "8085:8085"
+#  uncomment if required
+#  oxkube:
+#    image: gatblau/oxkube-snapshot
+#    depends_on:
+#      - onix
+#    container_name: oxku
+#    restart: always
+#    environment:
+#      - OXKU_ID=kube-01
+#      - OXKU_ONIX_URL=${WAPI_URI}
+#      - OXKU_CONSUMERS_CONSUMER=webhook
+#      - OXKU_LOGINLEVEL=${LOGIN_LEVEL}
+#      - OXKU_ONIX_AUTHMODE=${AUTH_MODE}
+#      - OXKU_ONIX_USER=${ADMIN_USER}
+#      - OXKU_ONIX_PASSWORD=${ADMIN_PWD}
+#    ports:
+#      - "8000:8000"
+#  oxwc:
+#    image: gatblau/oxwc-snapshot
+#    depends_on:
+#      - onix
+#    container_name: oxwc
+#    restart: always
+#    environment:
+#      - WC_OX_WAPI_URI=${WAPI_URI}
+#      - WC_OX_WAPI_AUTH_MODE=${AUTH_MODE}
+#    ports:
+#      - "3000:3000"

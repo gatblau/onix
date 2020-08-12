@@ -40,46 +40,22 @@ docker rm -f dbman
 echo "? starting a new database container"
 docker run --name oxdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=${DBPWD} "centos/postgresql-12-centos7"
 
-#echo "? waiting for the database to start before proceeding"
-#sleep 5
-#
-#echo "? launching DbMan container"
-#docker run --name dbman -itd -p 8085:8085 --link oxdb \
-#  -e OX_DBM_DB_HOST=oxdb \
-#  -e OX_DBM_DB_ADMINPWD=${DBPWD} \
-#  -e OX_DBM_HTTP_AUTHMODE=none \
-#  -e OX_DBM_APPVERSION=0.0.4 \
-#  "gatblau/dbman-snapshot"
-#
-#echo "? please wait for DbMan to become available"
-#sleep 3
-#
-#echo "? creating the Onix database and user"
-#curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1
-#
-#echo "? deploying the Onix database schemas and functions"
-#curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy 2>&1
+echo "? waiting for the database to start before proceeding"
+sleep 5
 
-#echo "? shutting down DbMan"
-#docker rm dbman -f
+echo "? launching DbMan"
+docker run --name dbman -itd -p 8085:8085 --link oxdb \
+  -e OX_DBM_DB_HOST=oxdb \
+  -e OX_DBM_DB_ADMINPWD=${DBPWD} \
+  -e OX_DBM_HTTP_AUTHMODE=none \
+  -e OX_DBM_APPVERSION=0.0.4 \
+  "gatblau/dbman-snapshot"
 
-# below uses psql instead of dbman
-#command -v psql >/dev/null 2>&1 || { echo >&2 "psql is required but it's not installed. Aborting."; exit 1; }
-#export PGPASSWORD=onix
-#SPATH=${HOME}"/go/src/github.com/gatblau/onix/wapi/src/main/resources/db/install/4"
-#psql -h ${HOST} -U postgres -c "CREATE DATABASE "${DB}";"
-#psql -h ${HOST} -U postgres -c "CREATE USER "${DBUSER}" WITH PASSWORD '"${DBPWD}"';"
-#psql -h ${HOST} -U postgres ${DB} -c "CREATE EXTENSION IF NOT EXISTS hstore;"
-#psql -h ${HOST} -U postgres ${DB} -c "CREATE EXTENSION IF NOT EXISTS intarray;"
-#psql -h ${HOST} -U ${DBUSER} ${DB} -f "${SPATH}/tables.sql"
-#psql -h ${HOST} -U ${DBUSER} ${DB} -f "${SPATH}/json.sql"
-#psql -h ${HOST} -U ${DBUSER} ${DB} -f "${SPATH}/validation.sql"
-#psql -h ${HOST} -U ${DBUSER} ${DB} -f "${SPATH}/set.sql"
-#psql -h ${HOST} -U ${DBUSER} ${DB} -f "${SPATH}/get.sql"
-#psql -h ${HOST} -U ${DBUSER} ${DB} -f "${SPATH}/delete.sql"
-#psql -h ${HOST} -U ${DBUSER} ${DB} -f "${SPATH}/queries.sql"
-#psql -h ${HOST} -U ${DBUSER} ${DB} -f "${SPATH}/tree.sql"
-#psql -h ${HOST} -U ${DBUSER} ${DB} -f "${SPATH}/tags.sql"
-#psql -h ${HOST} -U ${DBUSER} ${DB} -f "${SPATH}/keyman.sql"
+echo "? please wait for DbMan to become available"
+sleep 3
 
+echo "? creating the database"
+curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1
 
+echo "? deploying the schemas and functions"
+curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy 2>&1

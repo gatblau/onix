@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-#    Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+#    Onix Config Manager - Copyright (c) 2018-2020 by www.gatblau.org
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -30,13 +30,22 @@ fi
 
 echo try and delete existing Onix containers
 docker rm -f oxdb
+docker rm -f dbman
 docker rm -f ox
 docker rm -f oxku
 
 echo creates the Onix database
 docker run --name oxdb -it -d -p 5432:5432 \
     -e POSTGRESQL_ADMIN_PASSWORD=onix \
-    "centos/postgresql-10-centos7"
+    "centos/postgresql-12-centos7"
+
+echo creates DbMan
+docker run --name dbman -itd -p 8085:8085 --link oxdb \
+  -e OX_DBM_DB_HOST=oxdb \
+  -e OX_DBM_DB_ADMINPWD=onix \
+  -e OX_DBM_HTTP_AUTHMODE=none \
+  -e OX_DBM_APPVERSION=0.0.4 \
+  "gatblau/dbman-snapshot"
 
 echo creates the Onix Web API
 docker run --name ox -it -d -p 8080:8080 --link oxdb \
@@ -47,29 +56,32 @@ docker run --name ox -it -d -p 8080:8080 --link oxdb \
     -e WAPI_ADMIN_PWD=0n1x \
     "gatblau/onix-snapshot"
 
-echo create the Onix Kubernetes agent
-docker run --name oxku -it -d -p 8000:8000 --link ox \
-    -e OXKU_ID=kube-01 \
-    -e OXKU_ONIX_URL=http://ox:8080 \
-    -e OXKU_CONSUMERS_CONSUMER=webhook \
-    -e OXKU_LOGINLEVEL=Trace \
-    -e OXKU_ONIX_AUTHMODE=basic \
-    -e OXKU_ONIX_USER=basic \
-    -e OXKU_ONIX_PASSWORD=0n1x \
-    "gatblau/oxkube-snapshot"
+sleep 5
 
-echo create the Onix Web Console
-docker run --name oxwc -it -d -p 3000:3000 --link ox \
-    -e WC_OX_WAPI_URI=http://onix:8080 \
-    -e WC_OX_WAPI_AUTH_MODE=basic \
-    "gatblau/oxwc-snapshot"
+# uncomment below to deploy additional services
 
-echo "please wait for the Web API to become available"
-sleep 10
+#echo create the Onix Kubernetes agent
+#docker run --name oxku -it -d -p 8000:8000 --link ox \
+#    -e OXKU_ID=kube-01 \
+#    -e OXKU_ONIX_URL=http://ox:8080 \
+#    -e OXKU_CONSUMERS_CONSUMER=webhook \
+#    -e OXKU_LOGINLEVEL=Trace \
+#    -e OXKU_ONIX_AUTHMODE=basic \
+#    -e OXKU_ONIX_USER=basic \
+#    -e OXKU_ONIX_PASSWORD=0n1x \
+#    "gatblau/oxkube-snapshot"
+#
+#echo create the Onix Web Console
+#docker run --name oxwc -it -d -p 3000:3000 --link ox \
+#    -e WC_OX_WAPI_URI=http://onix:8080 \
+#    -e WC_OX_WAPI_AUTH_MODE=basic \
+#    "gatblau/oxwc-snapshot"
+#
+#echo "please wait for the Web API to become available"
+#sleep 10
 
-echo "deploying database schemas"
-curl localhost:8080/ready
+echo "? creating the database"
+curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1
 
-echo 
-echo "Web API ready to use @ localhost:8080"
-echo "Ox Kube ready to use @ localhost:8000"
+echo "? deploying the schemas and functions"
+curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy 2>&1
