@@ -2,8 +2,8 @@ groups:
   - name: openshift
     rules:
       - alert: Etcd_Quorum_Down
-        expr: ((sum(up{job="etcd"} == 1)) < ((sum(up{job="etcd"} == 0) + (sum(up{job="etcd"} == 1)) / 2)))
-        for: 1m
+        expr: sum(up{job=~".*etcd.*"} == bool 1) by (job) < ((count(up{job=~".*etcd.*"}) by (job) + 1) / 2)
+        for: 3m
         labels:
           severity: critical
           description: The etcd cluster quorum has been lost, the etcd cluster is in read-only mode
@@ -12,8 +12,8 @@ groups:
           status: down
           platform: "p01-dev"
       - alert: Etcd_Quorum_Up
-        expr: ((sum(up{job="etcd"} == 1)) > ((sum(up{job="etcd"} == 0) + (sum(up{job="etcd"} == 1)) / 2)))
-        for: 1m
+        expr: sum(up{job=~".*etcd.*"} == bool 1) by (job) > ((count(up{job=~".*etcd.*"}) by (job) + 1) / 2)
+        for: 3m
         labels:
           severity: info
           description: The etcd cluster has quorum
