@@ -47,7 +47,7 @@ services:
     depends_on:
       - oxdb
     container_name: dbman
-      restart: always
+    restart: always
     environment:
       - OX_DBM_DB_HOST=oxdb
       - OX_DBM_DB_ADMINPWD=${PG_ADMIN_PASSWORD}
