@@ -1,7 +1,9 @@
 module.exports = {
   someSidebar: {
     'Onix': [
-      {type:'doc', id:'onix_intro'}
+      {type:'doc', id:'onix_intro'},
+      {type:'doc', id:'onix_arc'},
+      {type:'doc', id:'onix_usecases'}
     ],
     'Getting Started': [
       {type:'doc', id:'started_install'},

@@ -2,6 +2,8 @@
 id: concept_roles
 title: Roles
 ---
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
 A role is a group of [privileges](/onix/docs/concept_roles#privileges) that can be assigned to [users](/onix/docs/concept_users) to *create*, *list* and/or *delete* configuration data within 
 a [partition](/onix/docs/concept_roles#partitions).
 Partitions and privileges are explained below.
@@ -36,7 +38,7 @@ In order to facilitate getting started and to provide the simplest access contro
 The following figure shows the two types of partitions (i.e. reference and instance) as well as the data entities to which
 they apply:
 
-![partitions](/onix/img/concept_partitions.png)
+<img alt="Partitions" src={useBaseUrl('img/concept_partitions.png')} />
 
 ## Administrator roles
 
@@ -65,5 +67,5 @@ There are three types of operations for which a User can be granted privileged:
 | READ | allows users to list data. |
 | DELETE | allows users to delete data. |
 
-![fro users to partitions](/onix/img/concept_users_to_parts.png)
+<img alt="From Users to Partitions" src={useBaseUrl('img/concept_users_to_parts.png')} />
 

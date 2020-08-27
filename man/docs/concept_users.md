@@ -2,6 +2,8 @@
 id: concept_users
 title: Users
 ---
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
 Anyone who wants to use Onix requires an account, so that they can be identified and allocated privileges to create,
 update, list and delete configuration data.
 
@@ -190,7 +192,7 @@ The picture below show how Onix obtains a list of roles in the case of:
  and verifies its signature. After a successful authentication, it retrieves the roles in the token (i.e. claims). Then, 
  the list of roles is passed to the data service, which uses them to decide what operation(s) the user is allowed.
 
-![user roles](/onix/img/concept_users.png)
+<img alt="User Roles" src={useBaseUrl('img/concept_users.png')} />
 
 External users are typically held in a [Directory Service](https://en.wikipedia.org/wiki/Directory_service) where memberships are represented by linking users with groups.
 An [OpenId Server](https://openid.net/developers/certified/) connected to the directory service can retrieve membership 
