@@ -3,7 +3,7 @@ module.exports = {
   tagline: 'A reactive configuration manager for the cloud.',
   url: 'https://gatblau.github.io',
   baseUrl: '/onix/',
-  favicon: 'img/favicon.png',
+  favicon: 'img/favicon.ico',
   organizationName: 'gatblau', // Usually your GitHub org/user name.
   projectName: 'onix', // Usually your repo name.
   themeConfig: {
@@ -13,9 +13,9 @@ module.exports = {
         alt: 'Onix',
         src: 'img/logo.png',
       },
-      links: [
+      items: [
         {
-          to: 'docs/concept_users',
+          to: 'docs/onix_intro',
           activeBasePath: 'docs',
           label: 'Docs',
           position: 'left',
@@ -75,7 +75,7 @@ module.exports = {
         //   ],
         // },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Gatblau`,
+      copyright: `Copyright © ${new Date().getFullYear()} gatblau.org`,
     },
   },
   presets: [

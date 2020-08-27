@@ -2,6 +2,8 @@
 id: concept_db
 title: Database
 ---
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
 Anything in the world we observe can be thought of being a "configuration" and can be recorded in one way or another.
 
 Onix has a flexible database designed to record any configuration. This page explains how the Onix database is structured 
@@ -27,7 +29,8 @@ The arrangement itself is made of a combination of items and the links between t
 what graph theory calls a [graph structure](https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)). 
 The Onix logotype is a depiction of a 
 graph structure as shown below: 
-<img src="/onix/img/logo.png" width="200"/><img src="/onix/img/graph.png" width="200"/>
+
+<img src={useBaseUrl('img/logo.png')} width="200"/><img src={useBaseUrl('img/graph.png')} width="200"/>
 
 ## Models
 
@@ -77,7 +80,7 @@ The actual items and links are depictions of different humans belonging in diffe
 
 The following figure shows the entities in the Onix database and their relations:
 
-![Onix Database](/onix/img/database.png)
+<img alt="Onix Database" src={useBaseUrl('img/database.png')} />
 
 ### Item Types
 
