@@ -27,7 +27,7 @@ import org.gatblau.onix.Lib;
 import org.gatblau.onix.Mailer;
 import org.gatblau.onix.conf.Config;
 import org.gatblau.onix.data.*;
-import org.gatblau.onix.event.EventManager;
+import org.gatblau.onix.event.MQTTEventManager;
 import org.gatblau.onix.security.Jwt;
 import org.gatblau.onix.security.PwdBasedEncryptor;
 import org.json.simple.JSONObject;
@@ -41,7 +41,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.JwtClaimAccessor;
 import org.springframework.stereotype.Service;
 
-import javax.jms.JMSException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
@@ -53,7 +52,7 @@ import java.util.*;
 public class PgSqlRepository implements DbRepository {
     private final Lib util;
     private final Database db;
-    private final EventManager events;
+    private final MQTTEventManager events;
     private final Config cfg;
     private JSONObject ready;
     private final Logger log = LogManager.getLogger();
@@ -61,7 +60,7 @@ public class PgSqlRepository implements DbRepository {
     private final Jwt jwt;
     private final Mailer mailer;
 
-    public PgSqlRepository(Lib util, Database db, EventManager events, Config cfg, PwdBasedEncryptor pbe, Jwt jwt, Mailer mailer) {
+    public PgSqlRepository(Lib util, Database db, MQTTEventManager events, Config cfg, PwdBasedEncryptor pbe, Jwt jwt, Mailer mailer) {
         this.util = util;
         this.db = db;
         this.events = events;
@@ -124,15 +123,18 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(16, role); // role_key_param
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_item"));
 
+            // add the key to the item object
+            item.setKey(key);
+
             // if the item has changed and notifications are enabled for the item type
             if (result.isChanged() && itemType.getNotifyChange() != 'N') {
                 // check that the event service is active
                 if (events.isReady()) {
                     try {
-                        events.send(itemType.getNotifyChange(), item);
-                    } catch(JMSException je) {
-                        // logs the error: could not send the message
-                        log.atError().log(String.format("unable to send change notification for item '%s': code='%s', message='%s'", je.getErrorCode(), je.getMessage()));
+                        events.notify(itemType.getNotifyChange(), result.getOperation().charAt(0), item);
+                    } catch(Exception je) {
+                        // logs the error: could not notify the message
+                        log.atError().log(String.format("unable to notify change notification for item '%s': '%s'", je.getMessage()));
                     }
                 } else {
                     // if the events service is meant to be working

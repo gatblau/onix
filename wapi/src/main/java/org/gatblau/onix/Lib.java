@@ -409,6 +409,9 @@ public class Lib implements InitializingBean {
     }
 
     public byte[] encryptTxt(String txt) {
+        if (txt == null) {
+            txt = "";
+        }
         return crypto.encrypt(txt);
     }
 
