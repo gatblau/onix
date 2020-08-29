@@ -111,6 +111,9 @@ public class ItemData implements Serializable {
             allowEmptyValue = true
     )
     public Integer getStatus() {
+        if (status == null) {
+            status = 0;
+        }
         return Integer.valueOf(status);
     }
 

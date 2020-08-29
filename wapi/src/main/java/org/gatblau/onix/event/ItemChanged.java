@@ -23,31 +23,36 @@ import org.gatblau.onix.data.ItemData;
 class ItemChanged {
     private final ItemData item;
     private final char notifyType;
+    private final char changeType;
 
-    ItemChanged(char notifyType, ItemData item) {
+    ItemChanged(char notifyType, char changeType, ItemData item) {
         this.item = item;
         this.notifyType = notifyType;
+        this. changeType = changeType;
     }
 
     @Override
     public String toString() {
         switch (notifyType) {
-            case 'T':
-                return String.format("key=%s" , item.getKey());
             case 'I':
-                return String.format("changed");
+                return String.format("I%s_%s_%s" , notifyType, item.getKey(), changeType);
+            case 'T':
+                return String.format("I%s_%s_%s" , notifyType, item.getType(), changeType);
             default:
                 throw new RuntimeException(String.format("notify type '%s' not recognised", notifyType));
         }
-
     }
 
-    String getTopicName() {
+    public byte[] getBytes() {
+        return toString().getBytes();
+    }
+
+    public String getTopicName() {
         switch (notifyType) {
             case 'T':
-                return String.format("ITEM_TYPE_%s" , item.getType().toUpperCase());
+                return String.format("I%s_%s" , notifyType, item.getType().toUpperCase());
             case 'I':
-                return String.format("ITEM_INSTANCE_%s" , item.getType().toUpperCase());
+                return String.format("I%s_%s" , notifyType, item.getKey().toUpperCase());
             default:
                 throw new RuntimeException(String.format("notify type '%s' not recognised", notifyType));
         }
