@@ -94,7 +94,15 @@ public class PgSqlRepository implements DbRepository {
             // this approach although not as efficient in terms of database calls, it does not compromise on the encryption
             // approach used
             ItemData existing = getItem(key, false, role);
-            encValuesChanged = existing != null && (!existing.getTxt().equals(item.getTxt())) && (!existing.getMeta().equals(item.getMeta()));
+            if (item.getTxt() == null) {
+                item.setTxt("");
+            }
+            if (item.getMeta() == null) {
+                item.setMeta(new JSONObject());
+            }
+            if (existing != null) {
+                encValuesChanged = !item.getTxt().equals(existing.getTxt()) || (!item.getMeta().equals(existing.getMeta()));
+            }
         }
         ResultSet set = null;
         try {
@@ -2611,10 +2619,10 @@ public class PgSqlRepository implements DbRepository {
     }
 
     private void checkItemEncryptedFields(ItemData item) throws ParseException, IOException {
-        if (item.isMetaEnc()) {
+        if (item.isMetaEnc() && item.getMeta() != null) {
             item.setMeta(util.toJSON(util.decryptTxt(Base64.getDecoder().decode(util.unwrapJSON(item.getMeta())), item.getEncKeyIx())));
         }
-        if (item.isTxtEnc()) {
+        if (item.isTxtEnc() && item.getTxt() != null) {
             item.setTxt(new String(util.decryptTxt(Base64.getDecoder().decode(item.getTxt()), item.getEncKeyIx()), StandardCharsets.UTF_8));
         }
     }

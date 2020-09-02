@@ -108,7 +108,7 @@ public class MQTTEventManager implements EventManager {
                 msg.setRetained(false);
                 // publish the message
                 publisher.publish(itemChanged.getTopicName(), msg);
-                log.atInfo().log("message '%s' sent to topic '%s' ", itemChanged.toString(), itemChanged.getTopicName());
+                log.atInfo().log(String.format("message '%s' sent to topic '%s'", itemChanged.toString(), itemChanged.getTopicName()));
             } else {
                 log.atWarn().log("broker service not ready to publish the message, the message will be discarded");
             }
