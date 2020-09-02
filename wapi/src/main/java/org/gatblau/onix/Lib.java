@@ -168,6 +168,13 @@ public class Lib implements InitializingBean {
             item.setTxt(set.getString("txt"));
             item.setTxtEnc(set.getBoolean("txt_enc"));
             item.setEncKeyIx(set.getShort("enc_key_ix"));
+
+            if (item.getMeta() == null) {
+                item.setMeta(new JSONObject());
+            }
+            if (item.getTxt() == null) {
+                item.setTxt("");
+            }
         }
         return item;
     }
