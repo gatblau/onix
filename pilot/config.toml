@@ -24,8 +24,8 @@ AppKey = ""
 
 # application to manage
 [App]
-    Key = "TEST_APP_01"
-    CfgFile = "/Users/andresalos/go/src/github.com/gatblau/onix/pilot/test/haproxy.cfg"
-    ReloadCmd = "kill -SIGUSR2 6445"
+    Key = ""
+    CfgFile = ""
+    ReloadCmd = ""
     ReloadURI = ""
     ReadyURI = ""
