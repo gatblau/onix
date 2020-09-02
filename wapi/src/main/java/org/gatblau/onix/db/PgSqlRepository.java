@@ -76,6 +76,7 @@ public class PgSqlRepository implements DbRepository {
 
     @Override
     public synchronized Result createOrUpdateItem(String key, ItemData item, String[] role) {
+        boolean encValuesChanged = false;
         // gets the type first to check for encryption requirements
         ItemTypeData itemType = getItemType(item.getType(), role);
         Result result = new Result(String.format("Item:%s", key));
@@ -83,6 +84,17 @@ public class PgSqlRepository implements DbRepository {
             result.setError(true);
             result.setMessage(String.format("Item Type %s does not exist when trying to create item %s.", item.getType(), key));
             return result;
+        }
+        // if encryption is in place
+        if (itemType.getEncryptMeta() || itemType.getEncryptTxt()) {
+            // NOTE: due to the nature of the encryption used, there is no way for the database to know if the client is passing
+            // the same or a different value for txt and / or meta fields as the IV is always different
+            // therefore it is necessary to have an extra round trip to the database to fetch the existing item, decrypt it
+            // and determine if the values have changed
+            // this approach although not as efficient in terms of database calls, it does not compromise on the encryption
+            // approach used
+            ItemData existing = getItem(key, false, role);
+            encValuesChanged = existing != null && (!existing.getTxt().equals(item.getTxt())) && (!existing.getMeta().equals(item.getMeta()));
         }
         ResultSet set = null;
         try {
@@ -94,9 +106,15 @@ public class PgSqlRepository implements DbRepository {
             if (!itemType.getEncryptMeta()) {
                 db.setString(4, util.toJSONString(item.getMeta())); // meta_param
             } else {
-                // encrypts meta value
-                // encrypts and populates meta_param
-                db.setString(4, util.wrapJSON(Base64.getEncoder().encodeToString(util.encryptTxt(util.toJSONString(item.getMeta()))))); // meta_param
+                // if the encrypted value has changed
+                if (encValuesChanged) {
+                    // encrypts meta value
+                    // encrypts and populates meta_param
+                    db.setString(4, util.wrapJSON(Base64.getEncoder().encodeToString(util.encryptTxt(util.toJSONString(item.getMeta()))))); // meta_param
+                } else {
+                    // if no change then set parameter to null so db function does not alter its value
+                    db.setString(4, null);
+                }
             }
             db.setBoolean(5, itemType.getEncryptMeta());
             // if is not supposed to encrypt txt
@@ -104,8 +122,14 @@ public class PgSqlRepository implements DbRepository {
                 // populates txt_param
                 db.setString(6, item.getTxt()); // txt_param
             } else {
-                // encrypts and populates txt_param
-                db.setString(6, Base64.getEncoder().encodeToString(util.encryptTxt(item.getTxt()))); // txt_param
+                // if the encrypted value has changed
+                if (encValuesChanged) {
+                    // encrypts and populates txt_param
+                    db.setString(6, Base64.getEncoder().encodeToString(util.encryptTxt(item.getTxt()))); // txt_param
+                } else {
+                    // if no change then set parameter to null so db function does not alter its value
+                    db.setString(6, null);
+                }
             }
             db.setBoolean(7, itemType.getEncryptTxt());
             if (itemType.getEncryptMeta() || itemType.getEncryptTxt()) {
