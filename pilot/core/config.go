@@ -18,7 +18,6 @@ import (
 
 const (
 	LogLevel = "LogLevel"
-	AppKey   = "AppKey"
 )
 
 // pilot configuration
@@ -68,7 +67,6 @@ func NewConfig() (*Config, error) {
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	_ = v.BindEnv(LogLevel)
-	_ = v.BindEnv(AppKey)
 
 	_ = v.BindEnv("Onix.URL")
 	_ = v.BindEnv("Onix.AuthMode")
