@@ -1,9 +1,6 @@
 # verbosity of logging (Trace, Debug, Warning, Info, Error, Fatal, Panic)
 LogLevel = "Trace"
 
-# the key to identify the application to attach
-AppKey = ""
-
 # configuration for the Onix Web API integration
 [Onix]
     URL = "http://localhost:8080"
@@ -20,7 +17,7 @@ AppKey = ""
     Server = "tcp://127.0.0.1:1883"
     Username = ""
     Password = ""
-    InsecureSkipVerify = false
+    InsecureSkipVerify = true
 
 # application to manage
 [App]
