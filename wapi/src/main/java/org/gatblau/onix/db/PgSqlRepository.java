@@ -85,25 +85,8 @@ public class PgSqlRepository implements DbRepository {
             result.setMessage(String.format("Item Type %s does not exist when trying to create item %s.", item.getType(), key));
             return result;
         }
-        // if encryption is in place
-        if (itemType.getEncryptMeta() || itemType.getEncryptTxt()) {
-            // NOTE: due to the nature of the encryption used, there is no way for the database to know if the client is passing
-            // the same or a different value for txt and / or meta fields as the IV is always different
-            // therefore it is necessary to have an extra round trip to the database to fetch the existing item, decrypt it
-            // and determine if the values have changed
-            // this approach although not as efficient in terms of database calls, it does not compromise on the encryption
-            // approach used
-            ItemData existing = getItem(key, false, role);
-            if (item.getTxt() == null) {
-                item.setTxt("");
-            }
-            if (item.getMeta() == null) {
-                item.setMeta(new JSONObject());
-            }
-            if (existing != null) {
-                encValuesChanged = !item.getTxt().equals(existing.getTxt()) || (!item.getMeta().equals(existing.getMeta()));
-            }
-        }
+        // did encrypted properties change?
+        encValuesChanged = isEncValuesChanged(key, item, role, itemType);
         ResultSet set = null;
         try {
             db.prepare(getSetItemSQL());
@@ -184,6 +167,37 @@ public class PgSqlRepository implements DbRepository {
             db.close();
         }
         return result;
+    }
+
+    /*
+      check if the txt or meta properties have changed
+     */
+    private boolean isEncValuesChanged(String key, ItemData item, String[] role, ItemTypeData itemType) {
+        boolean encValuesChanged = false;
+        // if encryption is in place
+        if (itemType.getEncryptMeta() || itemType.getEncryptTxt()) {
+            // NOTE: due to the nature of the encryption used, there is no way for the database to know if the client is passing
+            // the same or a different value for txt and / or meta fields as the IV is always different
+            // therefore it is necessary to have an extra round trip to the database to fetch the existing item, decrypt it
+            // and determine if the values have changed
+            // this approach although not as efficient in terms of database calls, it does not compromise on the encryption
+            // approach used
+            ItemData existing = getItem(key, false, role);
+            if (item.getTxt() == null) {
+                item.setTxt("");
+            }
+            if (item.getMeta() == null) {
+                item.setMeta(new JSONObject());
+            }
+            // update trigger
+            if (existing != null) {
+                encValuesChanged = !item.getTxt().equals(existing.getTxt()) || (!item.getMeta().equals(existing.getMeta()));
+            } else {
+                // insert trigger
+                encValuesChanged = item.getTxt().length() > 0 || !item.getMeta().isEmpty();
+            }
+        }
+        return encValuesChanged;
     }
 
     @Override
