@@ -32,7 +32,9 @@ type Config struct {
 	// a command to reload the app configuration
 	ReloadCmd string
 	// a URI of the endpoint to call to reload the configuration
-	ReloadURI string
+	ReloadURI     string
+	ReloadURIUser string
+	ReloadURIPwd  string
 	// a URI to check the application is ready after reloading the configuration
 	ReadyURI string
 	// the viper instance
@@ -86,6 +88,8 @@ func NewConfig() (*Config, error) {
 	_ = v.BindEnv("App.CfgFile")
 	_ = v.BindEnv("App.ReloadCmd")
 	_ = v.BindEnv("App.ReloadURI")
+	_ = v.BindEnv("App.ReloadURIUser")
+	_ = v.BindEnv("App.ReloadURIPwd")
 	_ = v.BindEnv("App.ReadyURI")
 
 	// creates a config struct and populate it with values
@@ -131,6 +135,8 @@ func NewConfig() (*Config, error) {
 	c.CfgFile = v.GetString("App.CfgFile")
 	c.ReloadCmd = v.GetString("App.ReloadCmd")
 	c.ReloadURI = v.GetString("App.ReloadURI")
+	c.ReloadURIUser = v.GetString("App.ReloadURIUser")
+	c.ReloadURIPwd = v.GetString("App.ReloadURIPwd")
 	c.ReadyURI = v.GetString("App.ReadyURI")
 	return c, nil
 }
