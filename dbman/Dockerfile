@@ -28,10 +28,9 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal
 LABEL author="gatblau"
 LABEL maintainer="onix@gatblau.org"
 WORKDIR /app
-COPY --from=builder /app/dbman /app/dbman-db-* ./
-COPY --from=builder /app/.dbman.toml /app/.dbman_default.toml ./
-#COPY --from=builder /app/api/swagger.yaml ./api/
-#RUN rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && microdnf update -y && rm -rf /var/cache/yum && microdnf install postgresql12 && microdnf clean all
+COPY --from=builder /app/dbman /app/dbman-db-* /app/.dbman.toml /app/.dbman_default.toml ./
+# if running on docker config files need to be in root folder
+COPY --from=builder /app/.dbman.toml /app/.dbman_default.toml /
 USER 25
 CMD ["/app/dbman", "serve"]
 EXPOSE 8085/tcp
