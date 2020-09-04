@@ -58,6 +58,7 @@ func NewPilot() (*Pilot, error) {
 	return pilot, nil
 }
 
+// launch pilot in host mode
 func (p *Pilot) Host() {
 	h, err := NewHostInfo()
 	if err != nil {
@@ -67,34 +68,50 @@ func (p *Pilot) Host() {
 	log.Info().Msgf(h.String())
 }
 
+// launches pilot in Init Container mode
 func (p *Pilot) InitC() {
-	p.fetchCfg()
+	if ok, cfg := p.fetch(); ok {
+		// if a configuration file is defined
+		if len(p.Cfg.CfgFile) > 0 {
+			// save the configuration to the file
+			p.save(cfg)
+		}
+	}
 }
 
+// launches pilot in sidecar mode
 func (p *Pilot) Sidecar() {
 	// creates a channel to pass a SIGINT (ctrl+C) kernel signal with buffer capacity 1
 	stop := make(chan os.Signal, 1)
-
 	// sends any SIGINT signal to the stop channel
 	signal.Notify(stop, os.Interrupt)
-
 	log.Info().Msgf("pilot sidecar launching\n")
-	// attempt to fetch the application configuration in the first place
-	if p.fetchCfg() {
-		p.reload()
-	}
+	// refresh the application configuration
+	p.refreshCfg()
 	// subscribe to configuration change notifications
 	p.subscribe()
-
 	// waits for the SIGINT signal to be raised (pkill -2)
 	<-stop
 }
 
-func (p *Pilot) onNotification(mqtt.Client, mqtt.Message) {
-	// implement locking
-	if p.fetchCfg() {
-		p.reload()
+// fetch and save or post configuration
+func (p *Pilot) refreshCfg() {
+	// attempt to fetch the application configuration in the first place
+	if ok, cfg := p.fetch(); ok {
+		// if a configuration file is defined
+		if len(p.Cfg.CfgFile) > 0 {
+			// save the configuration to the file
+			p.save(cfg)
+		}
+		// reload the configuration
+		p.reload(cfg)
 	}
+}
+
+// refresh the application configuration when a change notification is received
+func (p *Pilot) onNotification(mqtt.Client, mqtt.Message) {
+	// refresh the configuration
+	p.refreshCfg()
 	// give it some time to reload
 	time.Sleep(2 * time.Second)
 	// check if app is ok after reload
