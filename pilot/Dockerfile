@@ -22,7 +22,9 @@ RUN go get . && CGO_ENABLED=0 GOOS=linux go build -o pilot .
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 LABEL author="gatblau"
 LABEL maintainer="onix@gatblau.org"
+ENV UID 25
+ENV GID 25
 WORKDIR /app
 COPY --from=builder /app/pilot /app/config.toml ./
-USER 25
+USER UID:GID
 CMD ["/app/pilot", "sidecar"]
