@@ -17,6 +17,7 @@ FROM golang as builder
 WORKDIR /app
 COPY . .
 RUN go get . && CGO_ENABLED=0 GOOS=linux go build -o pilot .
+
 # package stage: copy the binary into the deployment image
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 LABEL author="gatblau"

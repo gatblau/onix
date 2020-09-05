@@ -134,7 +134,11 @@ func (p *Pilot) postConfig(cfg string) {
 	if err != nil {
 		log.Error().Msgf("failed to create http request for reload URI: %s", err)
 	}
-	// if a user name is provided then add basic authentication token
+	// if a content type is defined
+	if len(p.Cfg.ReloadURIContentType) > 0 {
+		req.Header.Add("Content-Type", p.Cfg.ReloadURIContentType)
+	}
+	// if a user name is provided then add basic authentication token and content type
 	if len(p.Cfg.ReloadURIUser) > 0 {
 		req.Header.Add("Authorization", p.basicToken(p.Cfg.ReloadURIUser, p.Cfg.ReloadURIPwd))
 	}
