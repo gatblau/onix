@@ -22,9 +22,24 @@ RUN go get . && CGO_ENABLED=0 GOOS=linux go build -o pilot .
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 LABEL author="gatblau"
 LABEL maintainer="onix@gatblau.org"
-ENV UID 25
-ENV GID 25
+# Ensure patched and cleaned
+RUN \
+  microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y && \
+  microdnf install shadow-utils.x86_64
+# Add user/group
+ARG UNAME=pilot
+ENV UID=1000
+ENV GID=1000
+RUN \
+  groupadd -g $GID -o $UNAME && \
+  useradd -M -u $UID -g $GID $UNAME
+# Clean up
+RUN \
+  rm -rf /var/cache/yum && \
+  microdnf clean all
+# Drop to unpriveleged user
+USER $UNAME
+# Final app work
 WORKDIR /app
 COPY --from=builder /app/pilot /app/config.toml ./
-USER UID:GID
 CMD ["/app/pilot", "sidecar"]
