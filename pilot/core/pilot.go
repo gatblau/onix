@@ -10,6 +10,7 @@ package core
 import (
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/fsnotify/fsnotify"
 	"github.com/gatblau/oxc"
 	"github.com/rs/zerolog/log"
 	"os"
@@ -28,6 +29,10 @@ type Pilot struct {
 	Ox *oxc.Client
 	// event manager
 	EM *oxc.EventManager
+	// config file watcher
+	W *fsnotify.Watcher
+	// the last known config file MD5 checksum
+	Checksum [16]byte
 }
 
 func NewPilot() (*Pilot, error) {
@@ -55,6 +60,10 @@ func NewPilot() (*Pilot, error) {
 		return nil, err
 	}
 	pilot.EM = em
+
+	// initialises a configuration file watcher
+	pilot.createWatcher()
+
 	return pilot, nil
 }
 
@@ -66,17 +75,6 @@ func (p *Pilot) Host() {
 		return
 	}
 	log.Info().Msgf(h.String())
-}
-
-// launches pilot in Init Container mode
-func (p *Pilot) InitC() {
-	if ok, cfg := p.fetch(); ok {
-		// if a configuration file is defined
-		if len(p.Cfg.CfgFile) > 0 {
-			// save the configuration to the file
-			p.save(cfg)
-		}
-	}
 }
 
 // launches pilot in sidecar mode
@@ -92,6 +90,8 @@ func (p *Pilot) Sidecar() {
 	p.subscribe()
 	// waits for the SIGINT signal to be raised (pkill -2)
 	<-stop
+	// close all pilot resources
+	p.bye()
 }
 
 // fetch and save or post configuration
@@ -116,4 +116,13 @@ func (p *Pilot) onNotification(mqtt.Client, mqtt.Message) {
 	time.Sleep(2 * time.Second)
 	// check if app is ok after reload
 	p.checkRestore()
+}
+
+// dispose pilot resources
+func (p *Pilot) bye() {
+	// if a file watcher has been defined
+	if p.W != nil {
+		// removes all watches and closes the events channel
+		p.W.Close()
+	}
 }

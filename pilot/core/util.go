@@ -2,8 +2,10 @@ package core
 
 import (
 	"bytes"
+	"crypto/md5"
 	"encoding/base64"
 	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"github.com/gatblau/oxc"
 	"github.com/google/renameio"
 	"github.com/rs/zerolog/log"
@@ -62,6 +64,8 @@ func (p *Pilot) fetch() (bool, string) {
 		log.Info().Msgf("application configuration retrieved successfully\n")
 	}
 	if item != nil {
+		// compute the configuration file MD5 checksum
+		p.Checksum = checksum(item.Txt)
 		return true, item.Txt
 	}
 	return false, ""
@@ -163,4 +167,57 @@ func copyFile(src, dest string) error {
 		return err
 	}
 	return renameio.WriteFile(dest, data, 0644)
+}
+
+// compute an MD5 checksum for the specified string
+func checksum(txt string) [16]byte {
+	return md5.Sum([]byte(txt))
+}
+
+// initialises a watcher for application configuration file changes
+func (p *Pilot) createWatcher() {
+	// set the config file watcher if a config file has been defined
+	if len(p.Cfg.CfgFile) > 0 {
+		log.Info().Msgf("monitoring configuration file '%s' for unsolicited changes", p.Cfg.CfgFile)
+		watcher, err := fsnotify.NewWatcher()
+		if err != nil {
+			log.Error().Msgf("cannot create a watcher for file '%s': %s", p.Cfg.CfgFile, err)
+		}
+		// launch go routine to watch for file changes
+		go func() {
+			for {
+				select {
+				case event, ok := <-watcher.Events:
+					if !ok {
+						return
+					}
+					log.Warn().Msgf("configuration file event: '%s'", event)
+					if event.Op&fsnotify.Write == fsnotify.Write {
+						// check that the modified file checksum matches the original
+						content, err := ioutil.ReadFile(p.Cfg.CfgFile)
+						if err != nil {
+							log.Error().Msgf("cannot read modified configuration file: %s", err)
+						}
+						// if the files are different
+						if p.Checksum != checksum(string(content)) {
+							log.Warn().Msgf("modified file has unauthorised content, proceeding to revoke any changes")
+							p.refreshCfg()
+							log.Info().Msgf("configuration file changes successfully revoked")
+						}
+					}
+				case err, ok := <-watcher.Errors:
+					if !ok {
+						return
+					}
+					log.Error().Msgf("file watcher error: %s", err)
+				}
+			}
+		}()
+		// add the file watcher
+		err = watcher.Add(p.Cfg.CfgFile)
+		if err != nil {
+			log.Error().Msgf("failed to add configuration file watcher: %s", err)
+		}
+		p.W = watcher
+	}
 }

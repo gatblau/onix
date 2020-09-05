@@ -2,5 +2,5 @@
   "name": "TEST_APP_01",
   "description": "some malarkey",
   "type": "U_APPLICATION",
-  "txt": "\nglobal\n   maxconn 256\n   master-worker\n\ndefaults\n   mode http\n   timeout connect 5000ms\n   timeout client 50000ms\n   timeout server 50000ms\n\nlisten http-in\n   bind *:80\n   server server1 127.0.0.1:8080 maxconn 32\n"
+  "txt": "global\n   maxconn 256\n   master-worker\n\ndefaults\n   mode http\n   timeout connect 5000ms\n   timeout client 50000ms\n   timeout server 50000ms\n\nlisten http-in\n   bind *:80\n   server server1 127.0.0.1:8085 maxconn 32\n"
 }
