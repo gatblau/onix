@@ -27,10 +27,19 @@ RUN cd ./plugin/pgsql && \
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 LABEL author="gatblau"
 LABEL maintainer="onix@gatblau.org"
+ARG UNAME=dbman
+ENV UID=1000
+ENV GID=1000
+RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y && \
+    microdnf install shadow-utils.x86_64 && \
+    groupadd -g $GID -o $UNAME && \
+    useradd -M -u $UID -g $GID $UNAME && \
+    rm -rf /var/cache/yum && \
+    microdnf clean all
 WORKDIR /app
 COPY --from=builder /app/dbman /app/dbman-db-* /app/.dbman.toml /app/.dbman_default.toml ./
 # if running on docker config files need to be in root folder
 COPY --from=builder /app/.dbman.toml /app/.dbman_default.toml /
-USER 25
+USER $UNAME
 CMD ["/app/dbman", "serve"]
 EXPOSE 8085/tcp
