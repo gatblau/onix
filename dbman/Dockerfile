@@ -37,9 +37,8 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
     rm -rf /var/cache/yum && \
     microdnf clean all
 WORKDIR /app
-COPY --from=builder /app/dbman /app/dbman-db-* /app/.dbman.toml /app/.dbman_default.toml ./
-# if running on docker config files need to be in root folder
-COPY --from=builder /app/.dbman.toml /app/.dbman_default.toml /
+COPY --from=builder /app/dbman /app/dbman-db-* ./
+COPY --from=builder /app/.dbman.toml /app/.dbman_default.toml /home/dbman/
 USER $UNAME
 CMD ["/app/dbman", "serve"]
 EXPOSE 8085/tcp
