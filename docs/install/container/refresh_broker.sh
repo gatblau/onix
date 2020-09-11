@@ -21,9 +21,5 @@
 docker rm -f oxmsg
 
 docker run --name oxmsg -it -d \
-  -e ARTEMIS_USERNAME=amqpadmin \
-  -e ARTEMIS_PASSWORD=amqppassw0rd \
-  -p 8161:8161 \
-  -p 61616:61616 \
-  -p 5672:5672 \
-  vromero/activemq-artemis
+  -p 1883:1883 \
+  gatblau/mosquitto
