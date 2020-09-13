@@ -22,8 +22,8 @@ func NewHostCtlCmd() *HostCtlCmd {
 	c := &HostCtlCmd{
 		cmd: &cobra.Command{
 			Use:   "host",
-			Short: "launches pilot in Host Control mode",
-			Long:  `pilot registers the host, listens for configuration manager events and syncs configuration data for applications running on the host`,
+			Short: "launch pilot in host mode",
+			Long:  `hosts register virtual or physical hosts with the configuration database and manage running processes in the host`,
 		},
 	}
 	c.cmd.Run = c.Run
@@ -31,11 +31,10 @@ func NewHostCtlCmd() *HostCtlCmd {
 }
 
 func (c *HostCtlCmd) Run(cmd *cobra.Command, args []string) {
-	pilot, err := NewPilot()
+	host, err := NewHost()
 	if err != nil {
-		fmt.Printf("cannot launch pilot: %v", err)
+		fmt.Printf("cannot launch pilot host: %v", err)
 		os.Exit(-1)
 	}
-	P = pilot
-	P.Host()
+	host.Start()
 }

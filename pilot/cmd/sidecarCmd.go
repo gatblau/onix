@@ -22,8 +22,8 @@ func NewSideCarCmd() *SideCarCmd {
 	c := &SideCarCmd{
 		cmd: &cobra.Command{
 			Use:   "sidecar",
-			Short: "launches pilot in sidecar mode",
-			Long:  `pilot registers the workload, listens for configuration manager events and syncs configuration data for applications running on the host`,
+			Short: "launch pilot in sidecar mode",
+			Long:  `sidecars synchronise configuration files for applications following changes in the configuration database and protect local configurations from being updated by unauthorised parties`,
 		},
 	}
 	c.cmd.Run = c.Run
@@ -31,11 +31,10 @@ func NewSideCarCmd() *SideCarCmd {
 }
 
 func (c *SideCarCmd) Run(cmd *cobra.Command, args []string) {
-	pilot, err := NewPilot()
+	sidecar, err := NewSidecar()
 	if err != nil {
-		fmt.Printf("Cannot launch pilot: %v", err)
+		fmt.Printf("cannot launch pilot sidecar: %v", err)
 		os.Exit(-1)
 	}
-	P = pilot
-	P.Sidecar()
+	sidecar.Start()
 }
