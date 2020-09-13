@@ -9,9 +9,6 @@
 # Springboot uberjar files to improve startup times
 # The release image copy the prepared app files from the builder image
 
-# NOTE: see https://access.redhat.com/solutions/4643601
-# dnf checks for subsciptions even if not needed (not using RHEL repos)
-
 # compile stage: build Pilot
 FROM golang as builder
 WORKDIR /app
@@ -22,24 +19,16 @@ RUN go get . && CGO_ENABLED=0 GOOS=linux go build -o pilot .
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 LABEL author="gatblau"
 LABEL maintainer="onix@gatblau.org"
-# Ensure patched and cleaned
-RUN \
-  microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y && \
-  microdnf install shadow-utils.x86_64
-# Add user/group
 ARG UNAME=pilot
 ENV UID=1000
 ENV GID=1000
-RUN \
-  groupadd -g $GID -o $UNAME && \
-  useradd -M -u $UID -g $GID $UNAME
-# Clean up
-RUN \
-  rm -rf /var/cache/yum && \
-  microdnf clean all
-# Drop to unpriveleged user
+RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y && \
+    microdnf install shadow-utils.x86_64 && \
+    groupadd -g $GID -o $UNAME && \
+    useradd -M -u $UID -g $GID $UNAME && \
+    rm -rf /var/cache/yum && \
+    microdnf clean all
 USER $UNAME
-# Final app work
 WORKDIR /app
 COPY --from=builder /app/pilot /app/config.toml ./
 CMD ["/app/pilot", "sidecar"]
