@@ -3,7 +3,7 @@ LogLevel = "Trace"
 
 # configuration for the Onix Web API integration
 [Onix]
-    URL = "http://localhost:8080"
+    URL = "http://127.0.0.1:8080"
     AuthMode = "basic"
     Username = "admin"
     Password = "0n1x"
@@ -25,7 +25,7 @@ LogLevel = "Trace"
     CfgFile = ""
     ReloadCmd = ""
     ReloadURI = ""
-    ReloadURIContentType = ""
+    ReloadURIContentType = "text/plain"
     ReloadURIUser = ""
     ReloadURIPwd = ""
     ReadyURI = ""

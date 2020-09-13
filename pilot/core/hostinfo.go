@@ -10,7 +10,7 @@ package core
 import (
 	"encoding/json"
 	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/host"
+	hostUtil "github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
 	"math"
 	"strings"
@@ -37,7 +37,7 @@ type HostInfo struct {
 
 func NewHostInfo() (*HostInfo, error) {
 	info := new(HostInfo)
-	i, err := host.Info()
+	i, err := hostUtil.Info()
 	if err != nil {
 		return nil, err
 	}
