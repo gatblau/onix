@@ -8,6 +8,27 @@ This folder contains scripts to facilitate testing of Prometheus rules and confi
 | [alertmanager.yml](alertmanager.yml) | AlertManager configuration file. |
 | [Procfile](Procfile) | [Goreman](https://github.com/mattn/goreman) uses the Heroku Procfile to launch all required processes. |
 
+## Setting up SeS locally
+
+In order to set up SeS locally for configuration testing follow the steps below:
+
+### Download required subsystems
+
+```bash
+# download prometheus, alertmanager and etcd
+$ sh download.sh
+```
+
+### Run subsystems
+```bash
+# install goreman - needs go installed
+$ go get github.com/mattn/goreman
+
+# run Procfile launching prometheus, alertmanager and etcd cluster
+$ goreman start
+```
+
+
 Once *etcd, prometheus and alertmanager* are downloaded run the following command to start them up:
 ```bash
 $ goreman start
