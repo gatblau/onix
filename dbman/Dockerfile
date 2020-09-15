@@ -37,8 +37,13 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
     rm -rf /var/cache/yum && \
     microdnf clean all
 WORKDIR /app
-COPY --from=builder /app/dbman /app/dbman-db-* ./
+# copy dbman binaries
+COPY --from=builder /app/dbman /app/dbman-db-* /app/
+# copy config files to user home
+# 1. if running in podman or docker user home is "/home/dbman/"
 COPY --from=builder /app/.dbman.toml /app/.dbman_default.toml /home/dbman/
+# 2. if running in openshift user home is "/"
+COPY --from=builder /app/.dbman.toml /app/.dbman_default.toml /
 USER $UNAME
 CMD ["/app/dbman", "serve"]
 EXPOSE 8085/tcp
