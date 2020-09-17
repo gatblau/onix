@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.gatblau</groupId>
@@ -11,7 +10,8 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.3.3.RELEASE</version>
+        <version>2.3.4.RELEASE</version>
+        <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
     <properties>
@@ -21,7 +21,7 @@
         <maven.build.timestamp.format>ddMMyy-HHmmss</maven.build.timestamp.format>
         <version.number>${maven.build.timestamp}</version.number>
         <docker.image.prefix>gatblau</docker.image.prefix>
-        <spring.boot.version>2.3.3.RELEASE</spring.boot.version>
+        <spring.boot.version>2.3.4.RELEASE</spring.boot.version>
         <!--
         <version.number>${git.commit.id.describe-short}.${build.time}</version.number>
         -->
@@ -366,6 +366,10 @@
     </build>
 
     <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2/</url>
+        </repository>
         <repository>
             <id>Eclipse Paho Repo</id>
             <url>https://repo.eclipse.org/content/repositories/paho-releases/</url>

@@ -24,11 +24,8 @@ public class TestBase implements InitializingBean {
     @LocalServerPort
     protected int port;
 
-    @Value("${wapi.admin.user}")
-    private String adminUsername;
-
-    @Value("${wapi.admin.pwd}")
-    private String adminPassword;
+    private String adminUsername = "admin";
+    private String adminPassword = "0n1x";
 
     protected RestTemplate client;
 
