@@ -18,8 +18,8 @@
 echo "starting Onix with docker compose"
 docker-compose up -d
 
-echo "please wait for the Web API to become available"
-sleep 10
+echo "please wait..."
+sleep 3
 
 echo "? creating the database"
 curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1

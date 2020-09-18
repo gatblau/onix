@@ -28,17 +28,13 @@
 command -v docker >/dev/null 2>&1 || { echo >&2 "docker is required but it's not installed. Aborting."; exit 1; }
 
 APP_VER="0.0.4"
-HOST=localhost
-PORT=5432
-DB=onix
-DBUSER=onix
 DBPWD=onix
 
 docker rm -f oxdb
 docker rm -f dbman
 
 echo "? starting a new database container"
-docker run --name oxdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=${DBPWD} "centos/postgresql-12-centos7"
+docker run --name oxdb -it -d -p 5432:5432 -e POSTGRESQL_ADMIN_PASSWORD=${DBPWD} "centos/postgresql-12-centos8"
 
 echo "? waiting for the database to start before proceeding"
 sleep 5
@@ -48,7 +44,7 @@ docker run --name dbman -itd -p 8085:8085 --link oxdb \
   -e OX_DBM_DB_HOST=oxdb \
   -e OX_DBM_DB_ADMINPWD=${DBPWD} \
   -e OX_DBM_HTTP_AUTHMODE=none \
-  -e OX_DBM_APPVERSION=0.0.4 \
+  -e OX_DBM_APPVERSION=${APP_VER} \
   "gatblau/dbman-snapshot"
 
 echo "? please wait for DbMan to become available"
