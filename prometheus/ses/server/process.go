@@ -130,29 +130,27 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 
 // extract values from the alert
 func values(alert template.Alert) (values map[string]string, err error) {
-	var (
-		ok     bool
-		result = make(map[string]string)
-	)
-	ok, result["platform"] = kValue(alert.Labels, "platform")
-	if !ok {
-		return result, errors.New(fmt.Sprintf("cannot find 'platform' annotation in alert '%s'", alert))
+	var result = make(map[string]string)
+
+	err, result["platform"] = kValue(alert.Labels, "platform")
+	if err != nil {
+		return result, err
 	}
-	ok, result["service"] = kValue(alert.Labels, "service")
-	if !ok {
-		return result, errors.New(fmt.Sprintf("cannot find 'service' annotation in alert '%s'", alert))
+	err, result["service"] = kValue(alert.Labels, "service")
+	if err != nil {
+		return result, err
 	}
-	ok, result["status"] = kValue(alert.Labels, "status")
-	if !ok {
-		return result, errors.New(fmt.Sprintf("cannot find 'status' annotation in alert '%s'", alert))
+	err, result["status"] = kValue(alert.Labels, "status")
+	if err != nil {
+		return result, err
 	}
-	ok, result["description"] = kValue(alert.Labels, "description")
-	if !ok {
-		return result, errors.New(fmt.Sprintf("cannot find 'description' annotation in alert '%s'", alert))
+	err, result["description"] = kValue(alert.Labels, "description")
+	if err != nil {
+		return result, err
 	}
-	ok, result["facet"] = kValue(alert.Labels, "facet")
-	if !ok {
-		return result, errors.New(fmt.Sprintf("cannot find 'facet' annotation in alert '%s'", alert))
+	err, result["facet"] = kValue(alert.Labels, "facet")
+	if err != nil {
+		return result, err
 	}
 	// add any annotations
 	for key, value := range alert.Annotations {

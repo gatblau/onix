@@ -16,6 +16,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"github.com/prometheus/alertmanager/template"
 	"strings"
@@ -45,13 +46,31 @@ func (a TimeSortedAlerts) Swap(i, j int) {
 }
 
 // check if the passed-in map contains the specified key and returns its value
-func kValue(values template.KV, key string) (bool, string) {
+func kValue(values template.KV, key string) (error, string) {
+	value := ""
+	found := false
+	// loop through the alert values
 	for k, v := range values {
+		// if it finds the required key
 		if strings.ToLower(key) == strings.ToLower(k) {
-			return true, v
+			// assign the value of the key
+			value = v
+			// set the found flag
+			found = true
+			// exit the loop
+			break
 		}
 	}
-	return false, ""
+	// if a key was found but with no value
+	if found && len(value) == 0 {
+		return errors.New(fmt.Sprintf("annotation '%s' has no value, check the Prometheus rule has the correct label", key)), value
+	}
+	// if the key was not found
+	if !found {
+		return errors.New(fmt.Sprintf("cannot find '%s' annotation in alert", key)), value
+	}
+	// we have a value
+	return nil, value
 }
 
 // get the service unique natural key
