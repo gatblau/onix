@@ -1,5 +1,5 @@
 #
-#    Onix Config Manager - Copyright (c) 2018-2019 by www.gatblau.org
+#    Onix CMDB - Copyright (c) 2018-2020 by www.gatblau.org
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -12,26 +12,42 @@
 #    Contributors to this project, hereby assign copyright in this code to the project,
 #    to be licensed under the same terms as the rest of the code.
 #
-#   Docker Compose file to get the ONIX configuration manager up and running
+#   Docker Compose file to get the ONIX CMDB up and running
 #   use as follows:
 #     docker-compose up -d | docker-compose down, stop, start
-#     NOTE: after start need to call the dbman service endpoints /db/create and /db/deploy respectively
-#      to deploy the database!
+#     NOTE: after start need to call the readyness probe to deploy the database!
 #
 version: '3'
 services:
   oxdb:
-    image: centos/postgresql-12-centos7
+    image: centos/postgresql-12-centos8
     container_name: oxdb
     restart: always
     environment:
       - POSTGRESQL_ADMIN_PASSWORD=${PG_ADMIN_PASSWORD}
     ports:
       - "5432:5432"
+  dbman:
+    image: gatblau/dbman-snapshot
+    depends_on:
+      - oxdb
+    container_name: dbman
+    restart: always
+    environment:
+      - OX_DBM_DB_HOST=oxdb
+      - OX_DBM_DB_USERNAME=${DBMAN_USER}
+      - OX_DBM_DB_PASSWORD=${DBMAN_PWD}
+      - OX_DBM_DB_ADMINUSERNAME=${DBMAN_ADMIN_USER}
+      - OX_DBM_DB_ADMINPASSWORD=${DBMAN_ADMIN_PWD}
+      - OX_DBM_HTTP_AUTHMODE=${DBMAN_AUTH_MODE}
+      - OX_DBM_APPVERSION=${DBMAN_APP_VERSION}
+    ports:
+      - "8085:8085"
   onix:
     image: gatblau/onix-snapshot
     depends_on:
       - oxdb
+      - dbman
     container_name: ox
     restart: always
     environment:
@@ -42,20 +58,6 @@ services:
       - WAPI_ADMIN_PWD=${ADMIN_PWD}
     ports:
       - "8080:8080"
-  dbman:
-    image: gatblau/dbman-snapshot
-    depends_on:
-      - oxdb
-    container_name: dbman
-    restart: always
-    environment:
-      - OX_DBM_DB_HOST=oxdb
-      - OX_DBM_DB_ADMINPWD=${PG_ADMIN_PASSWORD}
-      - OX_DBM_HTTP_AUTHMODE=${DBMAN_AUTH_MODE}
-      - OX_DBM_APPVERSION=${DBMAN_APP_VERSION}
-    ports:
-      - "8085:8085"
-#  uncomment if required
 #  oxkube:
 #    image: gatblau/oxkube-snapshot
 #    depends_on:
