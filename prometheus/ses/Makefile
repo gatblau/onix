@@ -43,6 +43,7 @@ build:
 
 # build the terra docker image
 snapshot-image:
+	docker pull registry.access.redhat.com/ubi8/ubi-minimal
 	docker build -t $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version) .
 	docker tag $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version) $(REPO_NAME)/$(BINARY_NAME)-snapshot:latest
 

@@ -26,8 +26,17 @@ RUN go get . && CGO_ENABLED=0 GOOS=linux go build -o ses .
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 MAINTAINER gatblau <onix@gatblau.org>
 LABEL author="gatblau"
+ARG UNAME=ses
+ENV UID=1000
+ENV GID=1000
+RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y && \
+    microdnf install shadow-utils.x86_64 && \
+    groupadd -g $GID -o $UNAME && \
+    useradd -M -u $UID -g $GID $UNAME && \
+    rm -rf /var/cache/yum && \
+    microdnf clean all
+USER $UNAME
 WORKDIR /app
 COPY --from=builder /app/ses /app/config.toml ./
-USER 20
 CMD ["./ses"]
 EXPOSE 8888/tcp

@@ -23,6 +23,8 @@ import (
 	"github.com/gatblau/oxc"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/alertmanager/template"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 	"net/http"
@@ -31,6 +33,12 @@ import (
 	"strings"
 	"time"
 )
+
+// custom prometheus metric to monitor bad requests
+var badRequestCount = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "ses_bad_requests_total",
+	Help: "The total number of bad requests",
+})
 
 // the Service Status web server
 type SeS struct {
@@ -182,6 +190,19 @@ func (s *SeS) svcHandler(w http.ResponseWriter, r *http.Request) {
 	err = processAlerts(payload.Alerts, s.ox.GetItem, s.ox.PutItem)
 	if err != nil {
 		log.Error().Msgf("cannot process alerts: %s", err)
+		// if the log level is not set to debug, then advice how alert content can be dumped to output
+		if !s.conf.debugLevel() {
+			log.Info().Msg("set log level to 'Debug' to see the failed alerts content")
+		} else {
+			bytes, err := json.Marshal(payload)
+			if err != nil {
+				log.Error().Msgf("cannot dump alerts to output for debugging: %s", err)
+			}
+			log.Debug().Msgf("alert payload was: '%s'", string(bytes))
+		}
+		// increments the bad requests count
+		badRequestCount.Inc()
+		// set the response to bad request
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

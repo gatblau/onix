@@ -1,0 +1,26 @@
+# the SeS service instance Id for logging identification purposes
+Id = "OnixServiceStatus"
+
+# verbosity of logging (Trace, Debug, Warning, Info, Error, Fatal, Panic)
+LogLevel = "Trace"
+
+# enables metrics
+Metrics = "true"
+
+# configuration for SeS Http Service
+AuthMode    = "basic"
+Path        = "alerts"
+Port        = "8888"
+Username    = "admin"
+Password    = "0n1x"
+
+# configuration for the Onix Web API integration
+[Onix]
+    URL         = "http://localhost:8080"
+    AuthMode    = "basic"
+    Username    = "admin"
+    Password    = "0n1x"
+    ClientId    = ""
+	AppSecret   = ""
+	TokenURI    = ""
+	InsecureSkipVerify = true

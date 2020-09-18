@@ -17,6 +17,7 @@ package server
 
 import (
 	"github.com/gatblau/oxc"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"strings"
@@ -98,5 +99,19 @@ func NewConfig() (*Config, error) {
 	c.Ox.SetAuthMode(v.GetString("Onix.AuthMode"))
 	c.Ox.InsecureSkipVerify = v.GetBool("Onix.InsecureSkipVerify")
 
+	// set the log level
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	logLevel, err := zerolog.ParseLevel(strings.ToLower(c.LogLevel))
+	if err != nil {
+		log.Warn().Msg(err.Error())
+		log.Info().Msg("defaulting log level to INFO")
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	}
+	zerolog.SetGlobalLevel(logLevel)
+
 	return c, nil
+}
+
+func (c *Config) debugLevel() bool {
+	return strings.ToLower(c.LogLevel) == "debug"
 }
