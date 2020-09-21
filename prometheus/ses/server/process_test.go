@@ -29,6 +29,20 @@ import (
 // store for configuration items
 var itemCache map[string]*oxc.Item
 
+func TestProcess2(t *testing.T) {
+	// initialises the item map
+	itemCache = make(map[string]*oxc.Item)
+	alerts, err := load("alerts.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = processAlerts(alerts.Alerts, get, put)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+}
+
 func TestProcess(t *testing.T) {
 	// initialises the item map
 	itemCache = make(map[string]*oxc.Item)
@@ -140,4 +154,13 @@ func checkItems(upCount int, downCount int) error {
 		return errors.New(fmt.Sprintf("Down events: expected %v, instead got %v", downCount, down))
 	}
 	return nil
+}
+
+// load events from a file
+func load(file string) (template.Data, error) {
+	// defines a variable to read incoming payloads
+	var payload template.Data
+	// unmarshal 1st state: all etcds are up
+	err := unmarshal(&payload, file)
+	return payload, err
 }

@@ -8,7 +8,7 @@ LogLevel = "Trace"
 Metrics = "true"
 
 # configuration for SeS Http Service
-AuthMode    = "basic"
+AuthMode    = "none"
 Path        = "alerts"
 Port        = "8888"
 Username    = "admin"
