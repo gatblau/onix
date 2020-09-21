@@ -37,6 +37,7 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 	// sort the incoming alerts by StartsAt time
 	alerts := NewTimeSortedAlerts(data)
 	sort.Sort(alerts)
+	log.Debug().Msgf("* alerts have been sorted")
 	// creates a map to keep track of existing items and values
 	items := make(map[string]*oxc.Item)
 	// loops through tha alerts
@@ -48,6 +49,12 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 			// stops any processing
 			return err
 		}
+		// write debug info about successful data extraction
+		log.Debug().Msgf("* extracted values for alert with fingerprint '%s'", alert.Fingerprint)
+		log.Debug().Msgf("* platform value = '%s'", v["platform"])
+		log.Debug().Msgf("* service value = '%s'", v["service"])
+		log.Debug().Msgf("* facet value = '%s'", v["facet"])
+
 		location := v["location"]
 		// if the alert does not have a specific location
 		if len(location) == 0 {
@@ -56,6 +63,8 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 		}
 		// build the natural key for the service item
 		serviceKey := key(v["platform"], v["service"], v["facet"], location)
+		log.Debug().Msgf("* service key '%s' created", serviceKey)
+
 		// check if there is a previous record of the service item in the tracking map
 		serviceItem := items[serviceKey]
 		// if the item is not in the map
@@ -67,6 +76,9 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 				// add it to the tracking map
 				items[serviceKey] = serviceItem
 			}
+			if err != nil {
+				log.Debug().Msgf("fail to fetch information for item with key '%s': '%s'", serviceItem, err)
+			}
 		}
 		var startsAt time.Time
 		var shouldRegisterEvent bool
@@ -76,13 +88,12 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 			// extract the event time
 			if startsAtStr, ok := serviceItem.Attribute["time"].(string); ok {
 				startsAt, err = time.Parse(time.RFC3339Nano, startsAtStr)
+				if err != nil {
+					log.Warn().Msgf("failed to parse startsAt time '%s': %s", startsAtStr, err)
+				}
 			} else if startsAt, ok = serviceItem.Attribute["time"].(time.Time); !ok {
 				// cannot parse time!
 				log.Warn().Msgf("failed to parse startsAt time for event %s", serviceKey)
-			}
-			if err != nil {
-				// discard the startsAt time
-				log.Warn().Msgf("failed to parse startsAt time: %s", err)
 			}
 		}
 
@@ -91,6 +102,7 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 		// 2) the event registered in Onix has a status that is different from the status in the received alert; and
 		// 3) the received alert has occurred after the last event registered in Onix
 		shouldRegisterEvent = (serviceItem == nil || (serviceItem != nil && serviceItem.Attribute["status"].(string) != v["status"])) && startsAt.Before(alert.StartsAt)
+		log.Debug().Msgf("* event for item '%s' should be registered?: %s", serviceKey, shouldRegisterEvent)
 
 		// if the item already recorded occurred before the current alert
 		// or the no item recorded yet (startsAt = beginning of time)

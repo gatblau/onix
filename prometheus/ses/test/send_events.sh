@@ -1,0 +1,1 @@
+curl -H "Content-Type: application/json" --request POST --data @alerts.json http://localhost:8888/alerts
