@@ -77,7 +77,7 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 				items[serviceKey] = serviceItem
 			}
 			if err != nil {
-				log.Debug().Msgf("fail to fetch information for item with key '%s': '%s'", serviceItem, err)
+				log.Debug().Msgf("* fail to fetch information for item with key '%s': '%s'", serviceKey, err)
 			}
 		}
 		var startsAt time.Time
@@ -126,10 +126,10 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 			}
 			result, err := put(serviceItem)
 			if err != nil {
-				return err
+				return errors.New(fmt.Sprintf("Onix http put failed with error: %s", err))
 			}
 			if result.Error {
-				return errors.New(fmt.Sprintf("cannot update service status: %s", result.Message))
+				return errors.New(fmt.Sprintf("Onix http put failed with result: %s", result.Message))
 			}
 			// update the internal cache
 			items[serviceKey] = serviceItem
