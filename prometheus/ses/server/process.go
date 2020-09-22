@@ -125,11 +125,12 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 				},
 			}
 			result, err := put(serviceItem)
-			if err != nil {
-				return errors.New(fmt.Sprintf("Onix http put failed with error: %s", err))
+			// do we have a business error?
+			if result != nil && result.Error {
+				return errors.New(fmt.Sprintf("Onix http put failed: %s", result.Message))
 			}
-			if result.Error {
-				return errors.New(fmt.Sprintf("Onix http put failed with result: %s", result.Message))
+			if err != nil {
+				return errors.New(fmt.Sprintf("Onix http put failed: %s", err))
 			}
 			// update the internal cache
 			items[serviceKey] = serviceItem
