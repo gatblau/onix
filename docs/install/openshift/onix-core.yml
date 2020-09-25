@@ -1,0 +1,965 @@
+---
+apiVersion: v1
+kind: Template
+metadata:
+  name: onixcore
+  annotations:
+    description: "Deploys Onix Core components on Openshift"
+parameters:
+## ONIX DB
+  - name: POSTGRESQL_ADMIN_PASSWORD
+    value: onix
+    displayName: POSTGRESQL ADMIN PASSWORD
+    description: postgresql database admin password
+    required: true
+  - name: VOLUME_CAPACITY
+    value: 5Gi
+    displayName: POSTGRES STORAGE CAPACITY
+    description: postgresql database storage capacity in Gi
+    required: true
+  - name: OX_DB_HOST
+    value: oxdb
+    displayName: ONIX DB HOST
+    description: host name of onix db, this will be the OpenShift service resource name of onix db application, default service name os oxdb
+    required: true      
+ ## DB MAN   
+  - name: OX_DBM_DB_ADMIN_PWD
+    value: onix
+    displayName: OXNIX DB ADMIN PASSWORD
+    description: onix database admin password
+    required: true
+  - name: OX_DBM_HTTP_AUTHMODE
+    value: basic
+    displayName: ONIX DBMAN HTTP AUTHENTICATION MODE
+    description: onix dbamn http authentication mode
+    required: true
+  - name: OX_DBM_APPVERSION
+    value: 0.0.4
+    displayName: OXNIX DBMAN APPLICATION VERSION
+    description: onix dbman application version
+    required: true
+  - name: OX_DBM_HTTP_USERNAME
+    value: onix
+    displayName: OXNIX DBMAN USER NAME
+    description: onix dbman user name while accessing DBMAN through http
+    required: true
+  - name: OX_DBM_HTTP_PASSWORD
+    value: 0n1x
+    displayName: OXNIX DBMAN HTTP PASSWORD
+    description: onix dbman admin password while accessing DBAMN through http
+    required: true
+##ONIX
+  - name: WAPI_EVENTS_ENABLED
+    value: 'false'
+    displayName: WAPI EVENTS ENABLED
+    description: Whether web api events to be enabled or not
+    required: true
+  - name: WAPI_EVENTS_SERVER_HOST
+    value: oxmsg
+    displayName: WAPI EVENTS SERVER HOST
+    description: Host name of web api event server
+    required: true
+  - name: WAPI_EVENTS_SERVER_PORT
+    value: "1833"
+    displayName: WAPI EVENTS SERVER PORT
+    description: Port number at which web api event will be received
+    required: true
+  - name: WAPI_EVENTS_SERVER_USER
+    value: admin
+    displayName: WAPI EVENTS USER NAME
+    description: User name for web api events
+    required: true
+  - name: WAPI_EVENTS_SERVER_PWD
+    value: 'jdwX4HXCZGWTTD45'
+    displayName: WAPI EVENTS SERVER PASSWORD
+    description: Password for web api events
+    required: true      
+## SES
+  - name: OXSES_USERNAME
+    value: admin
+    displayName: SES USER NAME
+    description: User name to connect to SES endpoint
+    required: true
+  - name: OXSES_PASSWORD
+    value: 0n1x
+    displayName: SES PASSWORD
+    description: Password to connect to SES endpoint
+    required: true
+  - name: OXSES_ONIX_URL
+    value: http://ox:8080
+    displayName: ONIX URL ENDPOINT
+    description: Url end point to connect to ONIX
+    required: true 
+  - name: OXSES_ONIX_USERNAME
+    value: admin
+    displayName: ONIX USER NAME
+    description: User name that will be used by SES to connect to ONIX
+    required: true
+  - name: OXSES_ONIX_PASSWORD
+    value: 0n1x
+    displayName: ONIX PASSWORD
+    description: Password that will be used by SES to connect to ONIX
+    required: true
+  - name: OXSES_LOGLEVEL
+    value: Debug
+    displayName: ONIX SES LOG LEVEL
+    description: Log level to be used
+    required: true
+## PGADMIN
+  - name: PGADMIN_DEFAULT_EMAIL
+    value: admin@amos.com
+    displayName: PD ADMIN user id as EMAIL ID 
+    description: This is user id which will be used to login to pgAdmin4 console
+    required: true
+  - name: PGADMIN_DEFAULT_PASSWORD
+    value: PgAdm1n!
+    displayName: PG ADMIN PASSWORD
+    description: Password to login to pgAdmin console
+    required: true            
+objects:
+## ONIX DB
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: postgresql-admin-pwd
+      labels:
+        prodgroup: amos-sla-config  
+    type: Opaque
+    stringData:
+      pwd: "${POSTGRESQL_ADMIN_PASSWORD}"
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: oxdb
+      annotations:
+        appname: oxdb
+        prodgroup: amos
+      labels:
+        app: oxdb
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: oxdb
+        app.kubernetes.io/instance: oxdb
+        app.kubernetes.io/part-of: onix
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: "${VOLUME_CAPACITY}"
+
+  - kind: DeploymentConfig
+    apiVersion: apps.openshift.io/v1
+    metadata:
+      annotations:
+        appname: oxdb
+        prodgroup: amos
+      name: oxdb
+      labels:
+        app: oxdb
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: oxdb
+        app.kubernetes.io/instance: oxdb
+        app.kubernetes.io/part-of: onix
+    spec:
+      strategy:
+        type: Rolling
+        rollingParams:
+          updatePeriodSeconds: 1
+          intervalSeconds: 1
+          timeoutSeconds: 600
+          maxUnavailable: 25%
+          maxSurge: 25%
+        resources: {}
+        activeDeadlineSeconds: 21600
+      triggers:
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - oxdb
+            from:
+              kind: ImageStreamTag
+              name: 'oxdb:latest'
+        - type: ConfigChange
+      replicas: 1
+      revisionHistoryLimit: 10
+      test: false
+      selector:
+        app: oxdb
+        deploymentconfig: oxdb
+      template:
+        metadata:
+          creationTimestamp: null
+          labels:
+            app: oxdb
+            prodgroup: amos-sla-config
+            deploymentconfig: oxdb
+        spec:
+          containers:
+            - name: oxdb
+              ports:
+                - containerPort: 5432
+                  protocol: TCP
+              env:
+                - name: POSTGRESQL_ADMIN_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: pwd
+                      name: postgresql-admin-pwd                    
+              resources: {}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+              - mountPath: "/var/lib/pgsql/data"
+                name: oxdb-data
+          restartPolicy: Always
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          nodeSelector:
+            nodetype: nonimagesigning
+          securityContext: {}
+          schedulerName: default-scheduler
+          volumes:
+            - name: oxdb-data
+              persistentVolumeClaim:
+                claimName: oxdb         
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: oxdb
+      labels:
+        app: oxdb
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: oxdb
+        app.kubernetes.io/instance: oxdb
+        app.kubernetes.io/name: ''
+        app.kubernetes.io/part-of: onix
+        app.openshift.io/runtime: ''
+        app.openshift.io/runtime-version: latest
+    spec:
+      ports:
+        - name: 5432-tcp
+          protocol: TCP
+          port: 5432
+          targetPort: 5432
+      selector:
+        app: oxdb
+        deploymentconfig: oxdb
+      sessionAffinity: None
+
+  - kind: ImageStream
+    apiVersion: image.openshift.io/v1
+    metadata:
+      name: oxdb
+      labels:
+        app: oxdb
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: oxdb
+        app.kubernetes.io/instance: oxdb
+        app.kubernetes.io/part-of: onix
+    spec:
+      lookupPolicy:
+        local: true
+      tags:
+        - name: latest
+          annotations: null
+          from:
+            kind: DockerImage
+            name: 'docker.io/centos/postgresql-12-centos8:latest'
+          generation: 2
+          importPolicy: {}
+          referencePolicy:
+            type: Source
+
+##  DB MAN      
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: onix-dbman-admin-pwd
+      labels:
+        prodgroup: amos-sla-config        
+    type: Opaque
+    stringData:
+      pwd: "${OX_DBM_DB_ADMIN_PWD}"
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: onix-dbman-http-admin-pwd
+      labels:
+        prodgroup: amos-sla-config        
+    type: Opaque
+    stringData:
+      pwd: "${OX_DBM_HTTP_PASSWORD}"
+
+  - kind: DeploymentConfig
+    apiVersion: apps.openshift.io/v1
+    metadata:
+      annotations:
+        appname: dbman
+        prodgroup: amos
+      name: dbman
+      labels:
+        app: dbman
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: dbman
+        app.kubernetes.io/instance: dbman
+        app.kubernetes.io/part-of: onix
+    spec:
+      strategy:
+        type: Rolling
+        rollingParams:
+          updatePeriodSeconds: 1
+          intervalSeconds: 1
+          timeoutSeconds: 600
+          maxUnavailable: 25%
+          maxSurge: 25%
+        resources: {}
+        activeDeadlineSeconds: 21600
+      triggers:
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - dbman
+            from:
+              kind: ImageStreamTag
+              name: 'dbman:latest'
+        - type: ConfigChange
+      replicas: 1
+      revisionHistoryLimit: 10
+      test: false
+      selector:
+        app: dbman
+        deploymentconfig: dbman
+      template:
+        metadata:
+          creationTimestamp: null
+          labels:
+            app: dbman
+            prodgroup: amos-sla-config
+            deploymentconfig: dbman
+        spec:
+          containers:
+            - name: dbman
+              ports:
+                - containerPort: 8085
+                  protocol: TCP
+              env:
+                - name: OX_DBM_DB_ADMINPWD
+                  valueFrom:
+                    secretKeyRef:
+                      key: pwd
+                      name: onix-dbman-admin-pwd
+                - name: OX_DBM_DB_HOST
+                  value: "${OX_DB_HOST}"
+                - name: OX_DBM_HTTP_AUTHMODE
+                  value: "${OX_DBM_HTTP_AUTHMODE}"
+                - name: OX_DBM_APPVERSION
+                  value: "${OX_DBM_APPVERSION}"
+                - name: OX_DBM_HTTP_USERNAME
+                  value: "${OX_DBM_HTTP_USERNAME}"
+                - name: OX_DBM_HTTP_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: pwd
+                      name: onix-dbman-http-admin-pwd
+              resources: {}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              imagePullPolicy: IfNotPresent
+          restartPolicy: Always
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          nodeSelector:
+            nodetype: nonimagesigning
+          securityContext: {}
+          schedulerName: default-scheduler
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: dbman
+      labels:
+        app: dbman
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: dbman
+        app.kubernetes.io/instance: dbman
+        app.kubernetes.io/name: ''
+        app.kubernetes.io/part-of: onix
+        app.openshift.io/runtime: ''
+        app.openshift.io/runtime-version: latest
+    spec:
+      ports:
+        - name: 8085-tcp
+          protocol: TCP
+          port: 8085
+          targetPort: 8085
+      selector:
+        app: dbman
+        deploymentconfig: dbman
+      sessionAffinity: None
+  - kind: Route
+    apiVersion: route.openshift.io/v1
+    metadata:
+      name: dbman
+      labels:
+        app: dbman
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: dbman
+        app.kubernetes.io/instance: dbman
+        app.kubernetes.io/name: ''
+        app.kubernetes.io/part-of: onix
+        app.openshift.io/runtime: ''
+        app.openshift.io/runtime-version: latest
+      annotations:
+        openshift.io/host.generated: 'true'
+    spec:    
+      to:
+        kind: Service
+        name: dbman
+        weight: 100
+      port:
+        targetPort: 8085-tcp
+
+  - kind: ImageStream
+    apiVersion: image.openshift.io/v1
+    metadata:
+      name: dbman
+      labels:
+        app: dbman
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: dbman
+        app.kubernetes.io/instance: dbman
+        app.kubernetes.io/part-of: onix
+    spec:
+      lookupPolicy:
+        local: true
+      tags:
+        - name: latest
+          annotations: null
+          from:
+            kind: DockerImage
+            name: 'docker.io/gatblau/dbman-snapshot:latest'
+          importPolicy:
+            scheduled: true
+          referencePolicy:
+            type: Source
+
+##ONIX
+  - kind: DeploymentConfig
+    apiVersion: apps.openshift.io/v1
+    metadata:
+      name: ox
+      labels:
+        app: ox
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: ox
+        app.kubernetes.io/instance: ox
+        app.kubernetes.io/part-of: onix
+    spec:
+      strategy:
+        type: Rolling
+        rollingParams:
+          updatePeriodSeconds: 1
+          intervalSeconds: 1
+          timeoutSeconds: 600
+          maxUnavailable: 25%
+          maxSurge: 25%
+        resources: {}
+        activeDeadlineSeconds: 21600
+      triggers:
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - ox
+            from:
+              kind: ImageStreamTag
+              name: 'ox:latest'
+        - type: ConfigChange
+      replicas: 1
+      revisionHistoryLimit: 10
+      test: false
+      selector:
+        app: ox
+        deploymentconfig: ox
+      template:
+        metadata:
+          creationTimestamp: null
+          labels:
+            app: ox
+            prodgroup: amos-sla-config
+            deploymentconfig: ox
+        spec:
+          containers:
+            - name: ox
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+              env:
+                - name: DB_HOST
+                  value: "${OX_DB_HOST}"
+                - name: WAPI_EVENTS_ENABLED
+                  value: "${WAPI_EVENTS_ENABLED}"
+                - name: WAPI_EVENTS_SERVER_HOST
+                  value: "${WAPI_EVENTS_SERVER_HOST}"
+                - name: WAPI_EVENTS_SERVER_PORT
+                  value: "${WAPI_EVENTS_SERVER_PORT}"
+                - name: WAPI_EVENTS_SERVER_USER
+                  value: "${WAPI_EVENTS_SERVER_USER}"
+                - name: WAPI_EVENTS_SERVER_PWD
+                  value: "${WAPI_EVENTS_SERVER_PWD}"
+              resources: {}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              imagePullPolicy: IfNotPresent
+          restartPolicy: Always
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          nodeSelector:
+            nodetype: nonimagesigning
+          securityContext: {}
+          schedulerName: default-scheduler
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: ox
+      labels:
+        app: ox
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: ox
+        app.kubernetes.io/instance: ox
+        app.kubernetes.io/name: ''
+        app.kubernetes.io/part-of: onix
+        app.openshift.io/runtime: ''
+        app.openshift.io/runtime-version: latest
+    spec:
+      ports:
+        - name: 8080-tcp
+          protocol: TCP
+          port: 8080
+          targetPort: 8080
+      selector:
+        app: ox
+        deploymentconfig: ox
+      sessionAffinity: None
+  - kind: Route
+    apiVersion: route.openshift.io/v1
+    metadata:
+      name: ox
+      labels:
+        app: ox
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: ox
+        app.kubernetes.io/instance: ox
+        app.kubernetes.io/name: ''
+        app.kubernetes.io/part-of: onix
+        app.openshift.io/runtime: ''
+        app.openshift.io/runtime-version: latest
+    spec:
+      to:
+        kind: Service
+        name: ox
+        weight: 100
+      port:
+        targetPort: 8080-tcp
+      wildcardPolicy: None
+
+  - kind: ImageStream
+    apiVersion: image.openshift.io/v1
+    metadata:
+      name: ox
+      labels:
+        app: ox
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: ox
+        app.kubernetes.io/instance: ox
+        app.kubernetes.io/part-of: onix
+    spec:
+      lookupPolicy:
+        local: true
+      tags:
+        - name: latest
+          annotations: null
+          from:
+            kind: DockerImage
+            name: 'docker.io/gatblau/onix-snapshot:latest'
+          importPolicy:
+            scheduled: true
+          referencePolicy:
+            type: Source
+
+## SES
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: oxses-password
+      labels:
+        prodgroup: amos-sla-config        
+    type: Opaque
+    stringData:
+      pwd: "${OXSES_PASSWORD}"
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: oxses-onix-password
+      labels:
+        prodgroup: amos-sla-config  
+    type: Opaque
+    stringData:
+      pwd: "${OXSES_ONIX_PASSWORD}"
+
+  - kind: DeploymentConfig
+    apiVersion: apps.openshift.io/v1
+    metadata:
+      name: ses
+      labels:
+        app: ses
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: ses
+        app.kubernetes.io/instance: ses
+        app.kubernetes.io/part-of: onix
+    spec:
+      strategy:
+        type: Rolling
+        rollingParams:
+          updatePeriodSeconds: 1
+          intervalSeconds: 1
+          timeoutSeconds: 600
+          maxUnavailable: 25%
+          maxSurge: 25%
+        resources: {}
+        activeDeadlineSeconds: 21600
+      triggers:
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - ses
+            from:
+              kind: ImageStreamTag
+              name: 'ses:latest'
+        - type: ConfigChange
+      replicas: 1
+      revisionHistoryLimit: 10
+      test: false
+      selector:
+        app: ses
+        deploymentconfig: ses
+      template:
+        metadata:
+          creationTimestamp: null
+          labels:
+            app: ses
+            prodgroup: amos-sla-config
+            deploymentconfig: ses
+        spec:
+          containers:
+            - name: ses
+              ports:
+                - containerPort: 8888
+                  protocol: TCP
+              env:
+                - name: OXSES_USERNAME
+                  value: "${OXSES_USERNAME}"
+                - name: OXSES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: pwd
+                      name: oxses-password                    
+                - name: OXSES_ONIX_URL
+                  value: "${OXSES_ONIX_URL}"
+                - name: OXSES_ONIX_USERNAME
+                  value: "${OXSES_ONIX_USERNAME}"
+                - name: OXSES_ONIX_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: pwd
+                      name: oxses-onix-password                  
+              resources: {}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              imagePullPolicy: IfNotPresent
+          restartPolicy: Always
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          nodeSelector:
+            nodetype: nonimagesigning
+          securityContext: {}
+          schedulerName: default-scheduler
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: ses
+      labels:
+        app: ses
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: ses
+        app.kubernetes.io/instance: ses
+        app.kubernetes.io/name: ''
+        app.kubernetes.io/part-of: onix
+        app.openshift.io/runtime: ''
+        app.openshift.io/runtime-version: latest
+    spec:
+      ports:
+        - name: 8888-tcp
+          protocol: TCP
+          port: 8888
+          targetPort: 8888
+      selector:
+        app: ses
+        deploymentconfig: ses
+      sessionAffinity: None
+  - kind: Route
+    apiVersion: route.openshift.io/v1
+    metadata:
+      name: ses
+      labels:
+        app: ses
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: ses
+        app.kubernetes.io/instance: ses
+        app.kubernetes.io/name: ''
+        app.kubernetes.io/part-of: onix
+        app.openshift.io/runtime: ''
+        app.openshift.io/runtime-version: latest
+      annotations:
+        openshift.io/host.generated: 'true'
+    spec:
+      to:
+        kind: Service
+        name: ses
+        weight: 100
+      port:
+        targetPort: 8888-tcp
+      wildcardPolicy: None
+
+  - kind: ImageStream
+    apiVersion: image.openshift.io/v1
+    metadata:
+      name: ses
+      labels:
+        app: ses
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: ses
+        app.kubernetes.io/instance: ses
+        app.kubernetes.io/part-of: onix
+    spec:
+      lookupPolicy:
+        local: true
+      tags:
+        - name: latest
+          annotations: null
+          from:
+            kind: DockerImage
+            name: 'docker.io/gatblau/ses-snapshot:latest'
+          importPolicy:
+            scheduled: true
+          referencePolicy:
+            type: Source
+## PGADMIN4
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: pgadmin-password
+      labels:
+        prodgroup: amos-sla-config
+    type: Opaque
+    stringData:
+      pwd: "${PGADMIN_DEFAULT_PASSWORD}"
+
+  - kind: DeploymentConfig
+    apiVersion: apps.openshift.io/v1
+    metadata:
+      name: pgadmin4
+      labels:
+        app: pgadmin4
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: pgadmin4
+        app.kubernetes.io/instance: pgadmin4
+        app.kubernetes.io/part-of: onix
+    spec:
+      strategy:
+        type: Rolling
+        rollingParams:
+          updatePeriodSeconds: 1
+          intervalSeconds: 1
+          timeoutSeconds: 600
+          maxUnavailable: 25%
+          maxSurge: 25%
+        resources: {}
+        activeDeadlineSeconds: 21600
+      triggers:
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - pgadmin4
+            from:
+              kind: ImageStreamTag
+              name: 'pgadmin4:latest'
+        - type: ConfigChange
+      replicas: 1
+      revisionHistoryLimit: 10
+      test: false
+      selector:
+        app: pgadmin4
+        deploymentconfig: pgadmin4
+      template:
+        metadata:
+          creationTimestamp: null
+          labels:
+            app: pgadmin4
+            prodgroup: amos-sla-config
+            deploymentconfig: pgadmin4
+          annotations:
+            openshift.io/generated-by: OpenShiftWebConsole
+        spec:
+          volumes:
+            - name: pgadmin4-1
+              emptyDir: {}
+            - name: pgadmin-config
+              configMap:
+                name: pgadmin
+                defaultMode: 436
+          containers:
+            - resources: {}
+              terminationMessagePath: /dev/termination-log
+              name: pgadmin4
+              env:
+                - name: PGADMIN_DEFAULT_EMAIL
+                  value: "${PGADMIN_DEFAULT_EMAIL}"
+                - name: PGADMIN_DEFAULT_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: pwd
+                      name: pgadmin-password                    
+              ports:
+                - containerPort: 443
+                  protocol: TCP
+                - containerPort: 80
+                  protocol: TCP
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - name: pgadmin4-1
+                  mountPath: /var/lib/pgadmin
+                - name: pgadmin-config
+                  mountPath: /pgadmin4/config_local.py
+                  subPath: config_local.py
+                - name: pgadmin-config
+                  mountPath: /pgadmin4/servers.json
+                  subPath: servers.json
+              terminationMessagePolicy: File
+          restartPolicy: Always
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          nodeSelector:
+            nodetype: nonimagesigning
+          securityContext: {}
+          schedulerName: default-scheduler
+
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: pgadmin4
+      labels:
+        app: pgadmin4
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: pgadmin4
+        app.kubernetes.io/instance: pgadmin4
+        app.kubernetes.io/name: ''
+        app.kubernetes.io/part-of: onix
+        app.openshift.io/runtime: ''
+        app.openshift.io/runtime-version: latest
+    spec:
+      ports:
+        - name: 80-tcp
+          protocol: TCP
+          port: 80
+          targetPort: 80
+      selector:
+        app: pgadmin4
+        deploymentconfig: pgadmin4
+      sessionAffinity: None
+
+  - kind: Route
+    apiVersion: route.openshift.io/v1
+    metadata:
+      name: pgadmin4
+      labels:
+        app: pgadmin4
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: pgadmin4
+        app.kubernetes.io/instance: pgadmin4
+        app.kubernetes.io/name: ''
+        app.kubernetes.io/part-of: onix
+        app.openshift.io/runtime: ''
+        app.openshift.io/runtime-version: latest
+      annotations:
+        openshift.io/host.generated: 'true'
+    spec:
+      to:
+        kind: Service
+        name: pgadmin4
+        weight: 100
+      port:
+        targetPort: 80-tcp
+      wildcardPolicy: None
+
+  - kind: ConfigMap
+    apiVersion: v1
+    metadata:
+      name: pgadmin
+      labels:
+        app: pgadmin-app
+        prodgroup: amos-sla-config
+    data:
+      config_local.py: |-
+        import os
+        _BASEDIR = '/var/lib/pgadmin/data'
+        LOG_FILE = os.path.join(_BASEDIR, 'logfile')
+        SQLITE_PATH = os.path.join(_BASEDIR, 'sqlite.db')
+        STORAGE_DIR = os.path.join(_BASEDIR, 'storage')
+        SESSION_DB_PATH = os.path.join(_BASEDIR, 'sessions')
+      servers.json: |-
+        {
+          "Servers": {
+            "1": {
+              "Name": "postgresql",
+              "Group": "Servers",
+              "Host": "postgresql",
+              "Port": 5432,
+              "MaintenanceDB": "postgres",
+              "Username": "dbuser",
+              "SSLMode": "prefer",
+              "SSLCompression": 0,
+              "Timeout": 0,
+              "UseSSHTunnel": 0,
+              "TunnelPort": "22",
+              "TunnelAuthentication": 0
+            }
+          }
+        }
+
+  - kind: ImageStream
+    apiVersion: image.openshift.io/v1
+    metadata:
+      name: pgadmin4
+      labels:
+        app: pgadmin4
+        prodgroup: amos-sla-config
+        app.kubernetes.io/component: pgadmin4
+        app.kubernetes.io/instance: pgadmin4
+        app.kubernetes.io/part-of: onix
+    spec:
+      lookupPolicy:
+        local: true
+      tags:
+        - name: latest
+          from:
+            kind: DockerImage
+            name: 'docker.io/dpage/pgadmin4:latest'
+          importPolicy:
+            scheduled: true
+          referencePolicy:
+            type: Source
