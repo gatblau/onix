@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Onix Configuration Proto Application</title>
+    <link rel="stylesheet" href="css/patternfly.css">
+    <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="text/javascript" src="js/script.js"></script>
+</head>
+<body>
+<img class="pf-c-brand" src="img/proto.png" alt="Onix Prototype Demo App" width="35%"/>
+<div class="pf-l-grid pf-m-gutter">
+    <div class="pf-l-grid__item pf-m-4-col pf-c-code-editor pf-m-read-only">
+        <div class="pf-c-code-editor__header">
+            <div role="list" class="pf-c-code-editor__controls">
+                <button class="pf-c-button pf-m-control" type="button" aria-label="copy to clipboard">
+                    <i class="fas fa-copy" aria-hidden="true"></i>
+                </button>
+                <button class="pf-c-button pf-m-control" type="button" aria-label="download events">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="pf-c-button pf-m-control" type="button" aria-label="clear events" id="clear">
+                    <i class="fas fa-archive"></i>
+                </button>
+            </div>
+            <div class="pf-c-code-editor__tab">
+                <span class="pf-c-code-editor__tab-icon">
+                  <i class="fas fa-bolt"></i>
+                </span>
+                <span class="pf-c-code-editor__tab-text">App Events</span>
+            </div>
+        </div>
+        <div class="pf-c-code-editor__main">
+            <div class="pf-c-code-editor__code terminal">
+                <pre class="pf-c-code-editor__code-pre" id="log"></pre>
+            </div>
+        </div>
+    </div>
+    <div class="pf-l-grid__item pf-m-4-col pf-c-code-editor pf-m-read-only">
+        <div class="pf-c-code-editor__header">
+            <div role="list" class="pf-c-code-editor__controls">
+                <button class="pf-c-button pf-m-control" type="button" aria-label="Copy to clipboard">
+                    <i class="fas fa-copy" aria-hidden="true"></i>
+                </button>
+                <button class="pf-c-button pf-m-control" type="button" aria-label="Download code">
+                    <i class="fas fa-download"></i>
+                </button>
+            </div>
+            <div class="pf-c-code-editor__tab">
+                <span class="pf-c-code-editor__tab-icon">
+                  <i class="fas fa-file-alt"></i>
+                </span>
+                <span class="pf-c-code-editor__tab-text">App Config Files</span>
+            </div>
+        </div>
+        <div class="pf-c-code-editor__main files">
+            <div class="pf-c-code-editor__code">
+                <pre class="pf-c-code-editor__code-pre"></pre>
+            </div>
+        </div>
+    </div>
+    <div class="pf-l-grid__item pf-m-4-col pf-c-code-editor pf-m-read-only">
+        <div class="pf-c-code-editor__header">
+            <div role="list" class="pf-c-code-editor__controls">
+                <button class="pf-c-button pf-m-control" type="button" aria-label="Copy to clipboard">
+                    <i class="fas fa-copy" aria-hidden="true"></i>
+                </button>
+                <button class="pf-c-button pf-m-control" type="button" aria-label="Download code">
+                    <i class="fas fa-download"></i>
+                </button>
+            </div>
+            <div class="pf-c-code-editor__tab">
+                <span class="pf-c-code-editor__tab-icon">
+                  <i class="fas fa-file-code"></i>
+                </span>
+                <span class="pf-c-code-editor__tab-text">App Environment Variables</span>
+            </div>
+        </div>
+        <div class="pf-c-code-editor__main files">
+            <div class="pf-c-code-editor__code">
+                <pre class="pf-c-code-editor__code-pre"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+

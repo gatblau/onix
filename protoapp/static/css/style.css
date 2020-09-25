@@ -1,0 +1,9 @@
+.terminal {
+    background-color: #151515;
+    color: #F0F0F0;
+    height: 400px;
+    overflow: scroll;
+}
+.files {
+    height: 400px;
+}
