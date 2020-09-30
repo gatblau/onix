@@ -1,5 +1,5 @@
 /*
-*    Onix ProtoTip - Demo Application for reactive config management
+*    Onix ProtoApp - Demo Application for reactive config management
 *    Copyright (c) 2020 by www.gatblau.org
 *
 *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 )
 
@@ -41,16 +43,19 @@ var (
 	done = make(chan bool)
 	// a channel to send messages to the client via web sockets
 	msg = make(chan message)
-
+	// create a WebSocket connection by upgrading the original HTTP one
 	upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
+	// used to lock access to the Stdout whilst peeking
+	lock sync.Mutex
 )
 
+// a WebSocket message
 type message struct {
-	mtype int
-	body  string
+	Type int      `json:"type"`
+	Body []string `json:"body"`
 }
 
 type server struct {
@@ -75,7 +80,7 @@ func (svr *server) listen(handler http.Handler) {
 
 	// creates a channel to pass a SIGINT (ctrl+C) kernel signal with buffer capacity 1
 	stop := make(chan os.Signal, 1)
-	quit := make(chan bool)
+	hangup := make(chan os.Signal, 1)
 
 	// runs the HTTP server asynchronously
 	go func() {
@@ -85,34 +90,30 @@ func (svr *server) listen(handler http.Handler) {
 			log.Info().Msgf("stopping the server: %v", err)
 		}
 	}()
+	// load application configuration
+	svr.LoadCfg()
 
-	// loop to send WebSocket messages to the client
-	go func(quitCh chan bool, msgCh chan message) {
-	Loop:
-		for {
-			select {
-			case <-quitCh:
-				log.Info().Msg("closing message channel")
-				close(msgCh)
-				break Loop
-			default:
-				m := &message{
-					mtype: 0,
-					body:  "Ping!",
-				}
-				msgCh <- *m
-				time.Sleep(3 * time.Second)
-			}
-		}
-		// signal the routine is done
-		log.Info().Msg("message generator routine finishing")
-	}(quit, msg)
-
-	// sends any SIGINT signal to the stop channel
+	// sends any interrupt signal (SIGINT) to the stop channel
 	signal.Notify(stop, os.Interrupt)
+	// sends any hang-up signal (SIGHUP) to the hangup channel
+	signal.Notify(hangup, syscall.SIGHUP)
 
-	// waits for the SIGINT signal to be raised (pkill -2)
-	<-stop
+Loop:
+	for {
+		select {
+		case <-hangup:
+			sendMsg(0, []string{"reloading configuration"})
+			svr.LoadCfg()
+		case <-stop:
+			sendMsg(0, []string{"shutting down server"})
+			time.Sleep(2 * time.Second)
+			svr.Stop(server)
+			break Loop
+		}
+	}
+}
+
+func (svr *server) Stop(server *http.Server) {
 	log.Info().Msg("interrupt signal received")
 
 	// gets a context with some delay to shutdown
@@ -152,33 +153,6 @@ func (svr *server) Start() {
 	svr.listen(r)
 }
 
-// sends messages to the browser using web sockets
-// ws: the websocket connection
-// msg: the channel containing the messages to send
-func send(ws *websocket.Conn, msg <-chan message) {
-Loop:
-	for {
-		select {
-		// receive a new message to be sent to the browser
-		case m, more := <-msg:
-			if more {
-				// send message
-				err := ws.WriteMessage(websocket.TextMessage, []byte(m.body))
-				if err != nil {
-					log.Error().Msgf("cannot write message to websocket: %v, closing connection", err)
-					ws.Close()
-					break Loop
-				}
-			} else {
-				// closes the websocket
-				log.Info().Msgf("closing WebSocket connection")
-				ws.SetWriteDeadline(time.Now().Add(writeWait))
-				ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-				time.Sleep(closeGracePeriod)
-				ws.Close()
-				break Loop
-			}
-		}
-	}
-	log.Info().Msg("message sender loop finishing")
+func (svr *server) LoadCfg() {
+	sendMsg(2, getEnv())
 }
