@@ -99,11 +99,15 @@ func peekStdout(f func()) string {
 
 // send a WebSocket message to the client
 func sendMsg(msgType int, msgValue []string) {
+	// create the message structure
 	m := &message{
 		Type: msgType,
 		Body: msgValue,
 	}
-	msg <- *m
+	// send the message to all the channels / websocket connections
+	for _, conn := range pool {
+		conn.msg <- *m
+	}
 }
 
 // convert the message into a json []byte

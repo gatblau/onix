@@ -6,4 +6,10 @@
 }
 .files {
     height: 400px;
+    overflow: scroll;
+}
+.environ {
+    height: 400px;
+    overflow: scroll;
+    white-space: nowrap;
 }

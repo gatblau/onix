@@ -41,8 +41,9 @@ var (
 	port = 3000
 	// a channel to indicate the web socket send channel should close
 	done = make(chan bool)
-	// a channel to send messages to the client via web sockets
-	msg = make(chan message)
+	// a pool of websocket connections
+	pool = make([]*connection, 0)
+
 	// create a WebSocket connection by upgrading the original HTTP one
 	upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
@@ -56,6 +57,14 @@ var (
 type message struct {
 	Type int      `json:"type"`
 	Body []string `json:"body"`
+}
+
+// a connection to a WbeSocket client
+type connection struct {
+	// the channel to send messages to the client
+	msg chan message
+	// the websocket connection to the client
+	ws *websocket.Conn
 }
 
 type server struct {
@@ -90,8 +99,6 @@ func (svr *server) listen(handler http.Handler) {
 			log.Info().Msgf("stopping the server: %v", err)
 		}
 	}()
-	// load application configuration
-	svr.LoadCfg()
 
 	// sends any interrupt signal (SIGINT) to the stop channel
 	signal.Notify(stop, os.Interrupt)
@@ -129,7 +136,7 @@ func (svr *server) Stop(server *http.Server) {
 }
 
 // http handler for the websocket connection
-func serveWs(w http.ResponseWriter, r *http.Request) {
+func (svr *server) serveWs(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msgf("opening WebSocket connection")
 	// get a WebSocket connection
 	ws, err := upgrader.Upgrade(w, r, nil)
@@ -140,14 +147,32 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Info().Msgf("launching message sender")
+
+	// create a channel to send messages
+	messageCh := make(chan message)
+
+	// create the connection info reference
+	conn := &connection{
+		msg: messageCh,
+		ws:  ws,
+	}
+
+	// add the connection info to the pool
+	pool = append(pool, conn)
+
 	// launch the subroutine to send WebSocket messages to the client
-	go send(ws, msg)
+	// note: there are as many subroutines as web socket connections
+	go send(ws, messageCh)
+
+	// send configuration to the clients
+	sendMsg(0, []string{"loading configuration"})
+	svr.LoadCfg()
 }
 
 // starts the server
 func (svr *server) Start() {
 	r := mux.NewRouter()
-	r.HandleFunc("/ws", serveWs)
+	r.HandleFunc("/ws", svr.serveWs)
 	// NOTE: add always as last handler!
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	svr.listen(r)
