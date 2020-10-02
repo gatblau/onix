@@ -1,6 +1,6 @@
 <img src="static/img/probe.svg" width="150" height="150" align="right">
 
-# Probare - An application configuration prototype
+# Probare - Test Application for Configuration Changes
 
 Probare is a generic web application that is designed to demonstrate changes made to its configuration by Onix.
 
