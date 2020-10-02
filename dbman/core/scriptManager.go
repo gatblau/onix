@@ -50,7 +50,7 @@ func (s *ScriptManager) fetchPlan() (*Plan, error) {
 	}
 	response, err := s.client.Get(fmt.Sprintf("%s/plan.json", baseUri), s.addHttpHeaders)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(fmt.Sprintf("! cannot retrieve release plan: %v", err))
 	}
 	p := &Plan{}
 	p, err = p.decode(response)
