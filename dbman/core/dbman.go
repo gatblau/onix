@@ -151,7 +151,9 @@ func (dm *DbMan) Create() (log bytes.Buffer, err error, elapsed time.Duration) {
 		// if there is a version
 		if v != nil {
 			// there is already a database and cannot continue
-			return log, errors.New(fmt.Sprintf("!!! I have found an existing database version %v, which is for application version %v", v.DbVersion, v.AppVersion)), time.Since(start)
+			return log, errors.New(fmt.Sprintf("!!! I have found an existing database version %v, which is for application version %v.\n"+
+				"I cannot create the database because the database is already there!\n"+
+				"If you meant to run this command then ensure there is not any database.", v.DbVersion, v.AppVersion)), time.Since(start)
 		}
 	}
 	// fetch the release manifest for appVersion
