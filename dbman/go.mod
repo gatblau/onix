@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/gatblau/oxc v0.0.0-20200518102735-38237e6a1005
+	github.com/gatblau/oxc v0.0.0-20201002225610-c6a7c98363fa
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.5.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
@@ -15,6 +15,7 @@ require (
 	github.com/jackc/pgconn v1.6.1
 	github.com/jackc/pgtype v1.4.0
 	github.com/jackc/pgx/v4 v4.7.1
+	github.com/labstack/gommon v0.3.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/prometheus/client_golang v1.7.0
@@ -29,8 +30,8 @@ require (
 	github.com/swaggo/http-swagger v0.0.0-20200308142732-58ac5e232fba
 	github.com/swaggo/swag v1.6.7
 	github.com/tidwall/pretty v1.0.1 // indirect
+	github.com/valyala/fasttemplate v1.1.0 // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
-	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
 	golang.org/x/sys v0.0.0-20200620081246-981b61492c35 // indirect
 	golang.org/x/tools v0.0.0-20200717024301-6ddee64345a6 // indirect
 	google.golang.org/protobuf v1.24.0 // indirect
