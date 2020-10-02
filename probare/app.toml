@@ -1,0 +1,6 @@
+[Log]
+    Level = "trace"
+
+[Banner]
+    Type = "success"
+    Message = "hello probare"

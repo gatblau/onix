@@ -1,5 +1,5 @@
 /*
-*    Onix ProtoApp - Demo Application for reactive config management
+*    Onix Probare - Demo Application for reactive config management
 *    Copyright (c) 2020 by www.gatblau.org
 *
 *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,10 +15,9 @@
  */
 package main
 
-import "github.com/gatblau/onix/protoapp/core"
+import "github.com/gatblau/onix/probare/core"
 
 func main() {
 	server := core.NewServer()
 	server.Start()
-
 }

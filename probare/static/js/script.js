@@ -11,12 +11,28 @@ function write(parent, message) {
     }
 }
 
+function getBannerClass(type) {
+    switch (type) {
+        case "":
+            return "pf-c-banner";
+        case "info":
+            return "pf-c-banner pf-m-info";
+        case "danger":
+            return "pf-c-banner pf-m-danger";
+        case "success":
+            return "pf-c-banner pf-m-success";
+        case "warning":
+            return "pf-c-banner pf-m-warning";
+    }
+}
+
 window.onload = function () {
     let conn;
     let log = document.getElementById("log");
     let cfgfile = document.getElementById("cfgfile");
     let vars = document.getElementById("env");
     let clear = document.getElementById("clear")
+    let banner = document.getElementById("banner")
 
     // clear terminal window
     clear.onclick = function() { log.innerHTML = "" }
@@ -25,10 +41,10 @@ window.onload = function () {
         // creates a new WebSocket connection
         conn = new WebSocket("ws://" + document.location.host + "/ws");
         conn.onopen = function(event) {
-            write(log, { type:2, body: ["Connection established."]});
+            write(log, { type:2, body: ["connected to the server"]});
         }
         conn.onclose = function (evt) {
-            write(log, { type:2, body: ["Connection closed."]});
+            write(log, { type:2, body: ["lost connection to the server"]});
         };
         conn.onmessage = function (evt) {
             // parse the message string into a JSON object
@@ -40,11 +56,20 @@ window.onload = function () {
             }
             // the message contain one or more configuration files
             if (message.type == 1) {
+                cfgfile.innerHTML = ""
                 write(cfgfile, message)
             }
             // the message has environment variables
             if (message.type == 2) {
+                vars.innerHTML = ""
                 write(vars, message)
+            }
+            // control message
+            if (message.type == 3) {
+                // set the banner class
+                banner.className = getBannerClass(message.body[0]);
+                // set the banner message
+                banner.innerHTML = message.body[1];
             }
         };
         conn.onerror = function (evt) {
