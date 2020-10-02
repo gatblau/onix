@@ -1,5 +1,5 @@
 /*
-*    Onix ProtoApp - Demo Application for reactive config management
+*    Onix Probare - Demo Application for reactive config management
 *    Copyright (c) 2020 by www.gatblau.org
 *
 *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,21 @@ import (
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
+	"strings"
 	"time"
+)
+
+type MessageType int
+
+const (
+	// terminal log
+	Terminal MessageType = iota
+	// config file
+	File
+	// env vars
+	Vars
+	// control UI
+	Control
 )
 
 // get all application specific environment variables
@@ -31,9 +45,10 @@ func getEnv() []string {
 	var result = make([]string, 0)
 	env := os.Environ()
 	for _, envVar := range env {
-		// if strings.HasPrefix(envVar, "OXAPP_") {
-		result = append(result, envVar)
-		// }
+		// filters out any variable that is not prefixed
+		if strings.HasPrefix(envVar, "PROBARE_") {
+			result = append(result, envVar)
+		}
 	}
 	return result
 }
@@ -98,7 +113,7 @@ func peekStdout(f func()) string {
 }
 
 // send a WebSocket message to the client
-func sendMsg(msgType int, msgValue []string) {
+func sendMsg(msgType MessageType, msgValue []string) {
 	// create the message structure
 	m := &message{
 		Type: msgType,
@@ -108,6 +123,7 @@ func sendMsg(msgType int, msgValue []string) {
 	for _, conn := range pool {
 		conn.msg <- *m
 	}
+	log.Info().Msgf("sending websocket message of type %v to %v clients", msgType, len(pool))
 }
 
 // convert the message into a json []byte

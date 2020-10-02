@@ -1,5 +1,5 @@
 /*
-*    Onix ProtoApp - Demo Application for reactive config management
+*    Onix Probare - Demo Application for reactive config management
 *    Copyright (c) 2020 by www.gatblau.org
 *
 *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,18 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -55,8 +59,8 @@ var (
 
 // a WebSocket message
 type message struct {
-	Type int      `json:"type"`
-	Body []string `json:"body"`
+	Type MessageType `json:"type"`
+	Body []string    `json:"body"`
 }
 
 // a connection to a WbeSocket client
@@ -68,12 +72,26 @@ type connection struct {
 }
 
 type server struct {
-	start time.Time
+	start       time.Time
+	appConf     *config
+	secretsConf *config
 }
 
 func NewServer() *server {
+	appConf, err := NewConfig("app", AppBinds)
+	if err != nil {
+		log.Fatal().Msg(err.Error())
+		os.Exit(-1)
+	}
+	secretsConf, err := NewConfig("secrets", SecretsBinds)
+	if err != nil {
+		log.Fatal().Msg(err.Error())
+		os.Exit(-1)
+	}
 	return &server{
-		start: time.Now(),
+		start:       time.Now(),
+		appConf:     appConf,
+		secretsConf: secretsConf,
 	}
 }
 
@@ -109,11 +127,11 @@ Loop:
 	for {
 		select {
 		case <-hangup:
-			sendMsg(0, []string{"reloading configuration"})
-			svr.LoadCfg()
+			sendMsg(Terminal, []string{"SIGHUP signal received"})
+			svr.LoadCfg(nil, nil)
 		case <-stop:
-			sendMsg(0, []string{"shutting down server"})
-			time.Sleep(2 * time.Second)
+			sendMsg(Terminal, []string{"SIGINT signal received"})
+			time.Sleep(500 * time.Millisecond)
 			svr.Stop(server)
 			break Loop
 		}
@@ -121,7 +139,7 @@ Loop:
 }
 
 func (svr *server) Stop(server *http.Server) {
-	log.Info().Msg("interrupt signal received")
+	sendMsg(Terminal, []string{"shutting down application"})
 
 	// gets a context with some delay to shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -165,19 +183,88 @@ func (svr *server) serveWs(w http.ResponseWriter, r *http.Request) {
 	go send(ws, messageCh)
 
 	// send configuration to the clients
-	sendMsg(0, []string{"loading configuration"})
-	svr.LoadCfg()
+	svr.LoadCfg(nil, nil)
+}
+
+// http handler for reload configuration
+func (svr *server) loadConf(w http.ResponseWriter, r *http.Request) {
+	sendMsg(Terminal, []string{"received request to reload configuration via HTTP"})
+	// get the conf file name (without extension)
+	vars := mux.Vars(r)
+	filename := vars["name"]
+
+	// if the http method is a GET then load the configuration from the default sources
+	if r.Method == "GET" {
+		switch strings.ToLower(filename) {
+		case "app":
+			svr.LoadCfg(nil, nil)
+		case "secrets":
+			svr.LoadCfg(nil, nil)
+		}
+		w.WriteHeader(http.StatusOK)
+	} else if r.Method == "POST" {
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Error().Msgf("error reading body: %v", err)
+			http.Error(w, "can't read body", http.StatusBadRequest)
+			return
+		}
+		// load configuration from payload
+		switch strings.ToLower(filename) {
+		case "app":
+			svr.LoadCfg(bytes.NewReader(body), nil)
+		case "secrets":
+			svr.LoadCfg(nil, bytes.NewReader(body))
+		}
+		w.WriteHeader(http.StatusCreated)
+		return
+	}
 }
 
 // starts the server
 func (svr *server) Start() {
 	r := mux.NewRouter()
+	// load the specified configuration file
+	r.HandleFunc("/cfg/{name}", svr.loadConf)
+	// create a new websocket connection
 	r.HandleFunc("/ws", svr.serveWs)
 	// NOTE: add always as last handler!
+	// serves all static content
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	svr.listen(r)
 }
 
-func (svr *server) LoadCfg() {
-	sendMsg(2, getEnv())
+func (svr *server) LoadCfg(app io.Reader, secrets io.Reader) {
+	sendMsg(0, []string{"loading configuration"})
+	err := svr.appConf.Load(app)
+	if err != nil {
+		sendMsg(Terminal, []string{fmt.Sprintf("cannot reload application configuration: %s", err)})
+	}
+	err = svr.secretsConf.Load(secrets)
+	if err != nil {
+		sendMsg(Terminal, []string{fmt.Sprintf("cannot reload secrets: %s", err)})
+	}
+	appBytes, err := svr.appConf.GetContent()
+	if err != nil {
+		sendMsg(Terminal, []string{fmt.Sprintf("cannot read application configuration: %s", err)})
+	}
+	secretsBytes, err := svr.appConf.GetContent()
+	if err != nil {
+		sendMsg(Terminal, []string{fmt.Sprintf("cannot read secrets: %s", err)})
+	}
+	files := []string{
+		"app.toml",
+		"--------",
+		string(appBytes),
+		"<EOF>",
+		"secrets.toml",
+		"------------",
+		string(secretsBytes),
+		"<EOF>",
+	}
+	// update the clients UI
+	sendMsg(File, files)
+	sendMsg(Vars, getEnv())
+	// send banner config values
+	sendMsg(Control, []string{svr.appConf.GetString("Banner.Type"), svr.appConf.GetString("Banner.Message")})
 }
