@@ -16,10 +16,10 @@
 package core
 
 import (
+	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-	"io"
 	"io/ioutil"
 	"strings"
 )
@@ -30,6 +30,8 @@ var (
 )
 
 type config struct {
+	// the configuration string content
+	content string
 	// the viper instance
 	store *viper.Viper
 	// the name of the configuration file
@@ -52,7 +54,7 @@ func NewConfig(filename string, binds []string) (*config, error) {
 	}
 
 	// load the configuration
-	err := c.Load(nil)
+	err := c.Load("")
 
 	return c, err
 }
@@ -61,12 +63,23 @@ func (c *config) GetString(key string) string {
 	return c.store.GetString(key)
 }
 
-func (c *config) GetContent() ([]byte, error) {
+// get the configuration file content
+// if no reader is passed then it reads from the file system otherwise uses the reader
+func (c *config) GetFileContent() ([]byte, error) {
 	return ioutil.ReadFile(c.store.ConfigFileUsed())
 }
 
-func (c *config) Load(r io.Reader) error {
-	if r == nil {
+func (c *config) Load(cfg string) error {
+	if len(cfg) > 0 {
+		c.content = cfg
+	} else {
+		fileContent, err := c.GetFileContent()
+		if err != nil {
+			sendMsg(Terminal, []string{fmt.Sprintf("failed to load configuration from file: %v", err)})
+		}
+		c.content = string(fileContent)
+	}
+	if len(cfg) == 0 {
 		// reads the configuration file
 		err := c.store.ReadInConfig()
 		if err != nil { // handle errors reading the config file
@@ -75,7 +88,7 @@ func (c *config) Load(r io.Reader) error {
 		}
 	} else {
 		// reads from the reader
-		err := c.store.ReadConfig(r)
+		err := c.store.ReadConfig(strings.NewReader(cfg))
 		if err != nil { // handle errors reading the config file
 			log.Error().Msgf("cannot read config from reader %s: %s.toml \n", c.filename, err)
 			return err

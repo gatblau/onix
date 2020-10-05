@@ -16,13 +16,11 @@
 package core
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -128,7 +126,7 @@ Loop:
 		select {
 		case <-hangup:
 			sendMsg(Terminal, []string{"SIGHUP signal received"})
-			svr.LoadCfg(nil, nil)
+			svr.LoadCfg("", "")
 		case <-stop:
 			sendMsg(Terminal, []string{"SIGINT signal received"})
 			time.Sleep(500 * time.Millisecond)
@@ -183,7 +181,7 @@ func (svr *server) serveWs(w http.ResponseWriter, r *http.Request) {
 	go send(ws, messageCh)
 
 	// send configuration to the clients
-	svr.LoadCfg(nil, nil)
+	svr.LoadCfg("", "")
 }
 
 // http handler for reload configuration
@@ -197,9 +195,9 @@ func (svr *server) loadConf(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		switch strings.ToLower(filename) {
 		case "app":
-			svr.LoadCfg(nil, nil)
+			svr.LoadCfg("", "")
 		case "secrets":
-			svr.LoadCfg(nil, nil)
+			svr.LoadCfg("", "")
 		}
 		w.WriteHeader(http.StatusOK)
 	} else if r.Method == "POST" {
@@ -212,9 +210,9 @@ func (svr *server) loadConf(w http.ResponseWriter, r *http.Request) {
 		// load configuration from payload
 		switch strings.ToLower(filename) {
 		case "app":
-			svr.LoadCfg(bytes.NewReader(body), nil)
+			svr.LoadCfg(string(body), svr.secretsConf.content)
 		case "secrets":
-			svr.LoadCfg(nil, bytes.NewReader(body))
+			svr.LoadCfg(svr.appConf.content, string(body))
 		}
 		w.WriteHeader(http.StatusCreated)
 		return
@@ -234,35 +232,27 @@ func (svr *server) Start() {
 	svr.listen(r)
 }
 
-func (svr *server) LoadCfg(app io.Reader, secrets io.Reader) {
+func (svr *server) LoadCfg(appCfg string, secretsCfg string) {
 	sendMsg(0, []string{"loading configuration"})
-	err := svr.appConf.Load(app)
+	err := svr.appConf.Load(appCfg)
 	if err != nil {
 		sendMsg(Terminal, []string{fmt.Sprintf("cannot reload application configuration: %s", err)})
 	}
-	err = svr.secretsConf.Load(secrets)
+	err = svr.secretsConf.Load(secretsCfg)
 	if err != nil {
 		sendMsg(Terminal, []string{fmt.Sprintf("cannot reload secrets: %s", err)})
-	}
-	appBytes, err := svr.appConf.GetContent()
-	if err != nil {
-		sendMsg(Terminal, []string{fmt.Sprintf("cannot read application configuration: %s", err)})
-	}
-	secretsBytes, err := svr.appConf.GetContent()
-	if err != nil {
-		sendMsg(Terminal, []string{fmt.Sprintf("cannot read secrets: %s", err)})
 	}
 	files := []string{
 		"app.toml",
 		"--------",
-		string(appBytes),
+		svr.appConf.content,
 		"<EOF>",
 		"secrets.toml",
 		"------------",
-		string(secretsBytes),
+		svr.secretsConf.content,
 		"<EOF>",
 	}
-	// update the clients UI
+	// update the clients UIxx
 	sendMsg(File, files)
 	sendMsg(Vars, getEnv())
 	// send banner config values
