@@ -67,6 +67,17 @@ Loop:
 				err := ws.WriteMessage(websocket.TextMessage, marshal(m))
 				if err != nil {
 					log.Error().Msgf("cannot write message to websocket: %v, closing connection", err)
+					// find the connection to remove from the pool
+					var ix = 0
+					for i, c := range pool {
+						if c.ws == ws {
+							ix = i
+							break
+						}
+					}
+					// remove the connection from the pool
+					pool = remove(pool, ix)
+					// close the connection
 					ws.Close()
 					break Loop
 				}
@@ -82,6 +93,11 @@ Loop:
 		}
 	}
 	log.Info().Msg("message sender loop finishing")
+}
+
+func remove(s []*connection, i int) []*connection {
+	s[len(s)-1], s[i] = s[i], s[len(s)-1]
+	return s[:len(s)-1]
 }
 
 // calls the specified function and returns the Stdout of its execution

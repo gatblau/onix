@@ -54,7 +54,7 @@ func NewConfig(filename string, binds []string) (*config, error) {
 	}
 
 	// load the configuration
-	err := c.Load("")
+	err := c.LoadFromFile()
 
 	return c, err
 }
@@ -69,13 +69,18 @@ func (c *config) GetFileContent() ([]byte, error) {
 	return ioutil.ReadFile(c.store.ConfigFileUsed())
 }
 
+func (c *config) LoadFromFile() error {
+	sendMsg(Terminal, []string{fmt.Sprintf("reloading '%s' configuration from file", c.filename)})
+	return c.Load("")
+}
+
 func (c *config) Load(cfg string) error {
 	if len(cfg) > 0 {
 		c.content = cfg
 	} else {
 		fileContent, err := c.GetFileContent()
 		if err != nil {
-			sendMsg(Terminal, []string{fmt.Sprintf("failed to load configuration from file: %v", err)})
+			sendMsg(Terminal, []string{fmt.Sprintf("failed to load '%s' configuration from file: %v", c.filename, err)})
 		}
 		c.content = string(fileContent)
 	}

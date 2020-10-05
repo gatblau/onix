@@ -14,15 +14,15 @@ function write(parent, message) {
 function getBannerClass(type) {
     switch (type) {
         case "":
-            return "pf-c-banner";
+            return "pf-c-banner banner-font-size";
         case "info":
-            return "pf-c-banner pf-m-info";
+            return "pf-c-banner pf-m-info banner-font-size";
         case "danger":
-            return "pf-c-banner pf-m-danger";
+            return "pf-c-banner pf-m-danger banner-font-size";
         case "success":
-            return "pf-c-banner pf-m-success";
+            return "pf-c-banner pf-m-success banner-font-size";
         case "warning":
-            return "pf-c-banner pf-m-warning";
+            return "pf-c-banner pf-m-warning banner-font-size";
     }
 }
 

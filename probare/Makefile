@@ -57,6 +57,10 @@ snapshot-push:
 snapshot-run:
 	docker run -it --rm --name probare -p 3000:3000 $(REPO_NAME)/$(BINARY_NAME)-snapshot:latest
 
+# generate a swagger spec document from the source code
+swaggen:
+	swag init -d ./core -g server.go
+
 # deletes dangling
 clean:
 	docker rmi $(DANGLING_IMGS) -f
