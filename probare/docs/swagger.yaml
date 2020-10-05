@@ -1,0 +1,85 @@
+info:
+  contact:
+    email: onix@gatblau.org
+    name: Gatblau
+    url: http://onix.gatblau.org/
+  description: Test application configuration reload using different approaches.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Onix Probare
+  version: 0.0.4
+paths:
+  /cfg/{name}:
+    get:
+      description: Return the content configuration file
+      parameters:
+      - description: the name of the configuration file without extension (i.e. app or secrets)
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get the content of the specified configuration file
+      tags:
+      - Application Configuration
+    put:
+      consumes:
+      - text/plain
+      description: Updates the configuration file specified by name with the content in the http payload
+      parameters:
+      - description: the name of the configuration file without extension (i.e. app or secrets)
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: the content of the configuration file
+        in: body
+        name: content
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Updates the configuration file specified by name
+      tags:
+      - Application Configuration
+  /cfg/{name}/reload:
+    get:
+      description: Reloads the configuration file by name (excluding extension)
+      parameters:
+      - description: the name of the configuration file without extension (i.e. app or secrets)
+        in: path
+        name: name
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Reloads configuration files
+      tags:
+      - Application Configuration
+swagger: "2.0"

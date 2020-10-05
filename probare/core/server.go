@@ -15,12 +15,23 @@
  */
 package core
 
+// @title Onix Probare
+// @version 0.0.4
+// @description Test application configuration reload using different approaches.
+// @contact.name Gatblau
+// @contact.url http://onix.gatblau.org/
+// @contact.email onix@gatblau.org
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
 import (
 	"context"
 	"fmt"
+	_ "github.com/gatblau/onix/probare/docs" // documentation needed for swagger
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -116,6 +127,9 @@ func (svr *server) listen(handler http.Handler) {
 		}
 	}()
 
+	// load the initial configuration
+	svr.LoadCfg("", "")
+
 	// sends any interrupt signal (SIGINT) to the stop channel
 	signal.Notify(stop, os.Interrupt)
 	// sends any hang-up signal (SIGHUP) to the hangup channel
@@ -126,6 +140,8 @@ Loop:
 		select {
 		case <-hangup:
 			sendMsg(Terminal, []string{"SIGHUP signal received"})
+			sendMsg(Terminal, []string{fmt.Sprintf("reloading '%s' configuration from file", svr.appConf.filename)})
+			sendMsg(Terminal, []string{fmt.Sprintf("reloading '%s' configuration from file", svr.secretsConf.filename)})
 			svr.LoadCfg("", "")
 		case <-stop:
 			sendMsg(Terminal, []string{"SIGINT signal received"})
@@ -149,6 +165,49 @@ func (svr *server) Stop(server *http.Server) {
 	if err := server.Shutdown(ctx); err != nil {
 		log.Error().Msgf("shutting down due to an error: %v", err)
 	}
+}
+
+// starts the server
+func (svr *server) Start() {
+	r := mux.NewRouter()
+	// load the specified configuration file
+	r.HandleFunc("/cfg/{name}/reload", svr.loadConfFromFile).Methods("GET")
+	r.HandleFunc("/cfg/{name}", svr.loadConfFromPayload).Methods("PUT")
+	r.HandleFunc("/cfg/{name}", svr.getConfContent).Methods("GET")
+	// create a new websocket connection
+	r.HandleFunc("/ws", svr.serveWs)
+	// swagger configuration
+	r.PathPrefix("/api").Handler(httpSwagger.WrapHandler)
+	// NOTE: add always as last handler!
+	// serves all static content
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
+	svr.listen(r)
+}
+
+func (svr *server) LoadCfg(appCfg string, secretsCfg string) {
+	err := svr.appConf.Load(appCfg)
+	if err != nil {
+		sendMsg(Terminal, []string{fmt.Sprintf("cannot reload application configuration: %s", err)})
+	}
+	err = svr.secretsConf.Load(secretsCfg)
+	if err != nil {
+		sendMsg(Terminal, []string{fmt.Sprintf("cannot reload secrets: %s", err)})
+	}
+	files := []string{
+		"app.toml",
+		"--------",
+		svr.appConf.content,
+		"<EOF>",
+		"secrets.toml",
+		"------------",
+		svr.secretsConf.content,
+		"<EOF>",
+	}
+	// update the clients UIxx
+	sendMsg(File, files)
+	sendMsg(Vars, getEnv())
+	// send banner config values
+	sendMsg(Control, []string{svr.appConf.GetString("Banner.Type"), svr.appConf.GetString("Banner.Message")})
 }
 
 // http handler for the websocket connection
@@ -181,80 +240,98 @@ func (svr *server) serveWs(w http.ResponseWriter, r *http.Request) {
 	go send(ws, messageCh)
 
 	// send configuration to the clients
+	sendMsg(Terminal, []string{fmt.Sprintf("loading '%s' configuration from file", svr.appConf.filename)})
+	sendMsg(Terminal, []string{fmt.Sprintf("loading '%s' configuration from file", svr.secretsConf.filename)})
 	svr.LoadCfg("", "")
 }
 
-// http handler for reload configuration
-func (svr *server) loadConf(w http.ResponseWriter, r *http.Request) {
-	sendMsg(Terminal, []string{"received request to reload configuration via HTTP"})
+// @Summary Reloads configuration files
+// @Description Reloads the configuration file by name (excluding extension)
+// @Tags Application Configuration
+// @Success 200 {string} configuration file reloaded
+// @Failure 500 {string} error message
+// @Param name path string true "the name of the configuration file without extension (i.e. app or secrets)"
+// @Router /cfg/{name}/reload [get]
+func (svr *server) loadConfFromFile(w http.ResponseWriter, r *http.Request) {
 	// get the conf file name (without extension)
 	vars := mux.Vars(r)
 	filename := vars["name"]
+	sendMsg(Terminal, []string{fmt.Sprintf("received request to reload '%s' configuration file", filename)})
 
-	// if the http method is a GET then load the configuration from the default sources
-	if r.Method == "GET" {
-		switch strings.ToLower(filename) {
-		case "app":
-			svr.LoadCfg("", "")
-		case "secrets":
-			svr.LoadCfg("", "")
-		}
-		w.WriteHeader(http.StatusOK)
-	} else if r.Method == "POST" {
-		body, err := ioutil.ReadAll(r.Body)
+	switch strings.ToLower(filename) {
+	case "app":
+		sendMsg(Terminal, []string{fmt.Sprintf("reloading '%s' configuration from file", svr.appConf.filename)})
+		svr.LoadCfg("", svr.secretsConf.content)
+	case "secrets":
+		sendMsg(Terminal, []string{fmt.Sprintf("reloading '%s' configuration from file", svr.secretsConf.filename)})
+		svr.LoadCfg(svr.appConf.content, "")
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// @Summary Get the content of the specified configuration file
+// @Description Return the content configuration file
+// @Tags Application Configuration
+// @Produce plain
+// @Success 200 {string} configuration file reloaded
+// @Failure 500 {string} error message
+// @Param name path string true "the name of the configuration file without extension (i.e. app or secrets)"
+// @Router /cfg/{name} [get]
+func (svr *server) getConfContent(w http.ResponseWriter, r *http.Request) {
+	// get the conf file name (without extension)
+	vars := mux.Vars(r)
+	filename := vars["name"]
+	sendMsg(Terminal, []string{fmt.Sprintf("received request to disclose '%s' configuration content", filename)})
+	switch strings.ToLower(filename) {
+	case "app":
+		_, err := w.Write([]byte(svr.appConf.content))
 		if err != nil {
-			log.Error().Msgf("error reading body: %v", err)
-			http.Error(w, "can't read body", http.StatusBadRequest)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
 			return
 		}
-		// load configuration from payload
-		switch strings.ToLower(filename) {
-		case "app":
-			svr.LoadCfg(string(body), svr.secretsConf.content)
-		case "secrets":
-			svr.LoadCfg(svr.appConf.content, string(body))
+		w.WriteHeader(http.StatusOK)
+	case "secrets":
+		_, err := w.Write([]byte(svr.secretsConf.content))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
 		}
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// @Summary Updates the configuration file specified by name
+// @Description Updates the configuration file specified by name with the content in the http payload
+// @Tags Application Configuration
+// @Accept plain
+// @Success 204 {string} configuration file reloaded
+// @Failure 500 {string} error message
+// @Param name path string true "the name of the configuration file without extension (i.e. app or secrets)"
+// @Param content body string true "the content of the configuration file"
+// @Router /cfg/{name} [put]
+func (svr *server) loadConfFromPayload(w http.ResponseWriter, r *http.Request) {
+	// get the conf file name (without extension)
+	vars := mux.Vars(r)
+	filename := vars["name"]
+	sendMsg(Terminal, []string{fmt.Sprintf("received new '%s' configuration payload", filename)})
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Error().Msgf("error reading body: %v", err)
+		http.Error(w, "can't read body", http.StatusBadRequest)
 		return
 	}
-}
-
-// starts the server
-func (svr *server) Start() {
-	r := mux.NewRouter()
-	// load the specified configuration file
-	r.HandleFunc("/cfg/{name}", svr.loadConf)
-	// create a new websocket connection
-	r.HandleFunc("/ws", svr.serveWs)
-	// NOTE: add always as last handler!
-	// serves all static content
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
-	svr.listen(r)
-}
-
-func (svr *server) LoadCfg(appCfg string, secretsCfg string) {
-	sendMsg(0, []string{"loading configuration"})
-	err := svr.appConf.Load(appCfg)
-	if err != nil {
-		sendMsg(Terminal, []string{fmt.Sprintf("cannot reload application configuration: %s", err)})
+	// load configuration from payload
+	switch strings.ToLower(filename) {
+	case "app":
+		sendMsg(Terminal, []string{fmt.Sprintf("reloading '%s' configuration from payload", svr.appConf.filename)})
+		svr.LoadCfg(string(body), svr.secretsConf.content)
+	case "secrets":
+		sendMsg(Terminal, []string{fmt.Sprintf("reloading '%s' configuration from payload", svr.secretsConf.filename)})
+		svr.LoadCfg(svr.appConf.content, string(body))
 	}
-	err = svr.secretsConf.Load(secretsCfg)
-	if err != nil {
-		sendMsg(Terminal, []string{fmt.Sprintf("cannot reload secrets: %s", err)})
-	}
-	files := []string{
-		"app.toml",
-		"--------",
-		svr.appConf.content,
-		"<EOF>",
-		"secrets.toml",
-		"------------",
-		svr.secretsConf.content,
-		"<EOF>",
-	}
-	// update the clients UIxx
-	sendMsg(File, files)
-	sendMsg(Vars, getEnv())
-	// send banner config values
-	sendMsg(Control, []string{svr.appConf.GetString("Banner.Type"), svr.appConf.GetString("Banner.Message")})
+	w.WriteHeader(http.StatusNoContent)
+	return
 }

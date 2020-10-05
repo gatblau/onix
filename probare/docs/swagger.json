@@ -1,0 +1,128 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Test application configuration reload using different approaches.",
+        "title": "Onix Probare",
+        "contact": {
+            "name": "Gatblau",
+            "url": "http://onix.gatblau.org/",
+            "email": "onix@gatblau.org"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "0.0.4"
+    },
+    "paths": {
+        "/cfg/{name}": {
+            "get": {
+                "description": "Return the content configuration file",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Application Configuration"
+                ],
+                "summary": "Get the content of the specified configuration file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the name of the configuration file without extension (i.e. app or secrets)",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updates the configuration file specified by name with the content in the http payload",
+                "consumes": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Application Configuration"
+                ],
+                "summary": "Updates the configuration file specified by name",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the name of the configuration file without extension (i.e. app or secrets)",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "the content of the configuration file",
+                        "name": "content",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/cfg/{name}/reload": {
+            "get": {
+                "description": "Reloads the configuration file by name (excluding extension)",
+                "tags": [
+                    "Application Configuration"
+                ],
+                "summary": "Reloads configuration files",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the name of the configuration file without extension (i.e. app or secrets)",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -13,3 +13,6 @@
     overflow: scroll;
     white-space: nowrap;
 }
+.banner-font-size {
+    font-size: large;
+}
