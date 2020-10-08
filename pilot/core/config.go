@@ -35,7 +35,7 @@ type Config struct {
 	ReloadURI            string
 	ReloadURIUser        string
 	ReloadURIPwd         string
-        ReloadURIContentType string
+	ReloadURIContentType string
 	// a URI to check the application is ready after reloading the configuration
 	ReadyURI string
 	// the viper instance
