@@ -79,3 +79,35 @@ func copyFile(src, dest string) error {
 func checksum(txt string) [16]byte {
 	return md5.Sum([]byte(txt))
 }
+
+// cmdToRun := "/path/to/someCommand"
+// args := []string{"someCommand", "arg1"}
+// starts a process
+func startProc(cmd string, args []string) (*os.Process, error) {
+	procAttr := new(os.ProcAttr)
+	procAttr.Files = []*os.File{os.Stdin, os.Stdout, os.Stderr}
+	return os.StartProcess(cmd, args, procAttr)
+}
+
+// launch a command with a specified timeout period
+func startCmd(cmd *exec.Cmd, timeoutSecs time.Duration) error {
+	// execute the command asynchronously
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("executing %s failed: %s", cmd, err)
+	}
+	done := make(chan error)
+	// launch a go routine to wait for the command to execute
+	go func() {
+		// send a message to the done channel if completed or error
+		done <- cmd.Wait()
+	}()
+	// wait for the done channel
+	select {
+	case <-done:
+		// command completed
+	case <-time.After(timeoutSecs * time.Second):
+		// command timed out after 6 secs
+		return fmt.Errorf("executing '%s' timed out", cmd)
+	}
+	return nil
+}
