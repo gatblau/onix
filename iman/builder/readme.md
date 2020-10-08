@@ -1,12 +1,10 @@
 # Image Manager Builder
 
-The image the Image Manager uses to build container images from:
-
-  1. Application package
-  2. Base Image
-  3. Build Artefacts
+The builder image that the Image Manager uses to rebuild images.
 
 ## Building the builder image
+
+Use the [Makefile](./Makefile):
 
 ```sh
 $ make set-version
