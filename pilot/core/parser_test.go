@@ -61,7 +61,7 @@ ContentType = "application/txt"
 	"type": "file",
 	"path": "/cfg/secrets",
 	"trigger": "put",
-	"content_type": "application/txt"
+	"contentType": "application/txt"
 }
 +++
 User = "gatblau"
