@@ -44,14 +44,6 @@ type appCfg struct {
 	fMatter *frontMatter
 }
 
-// pilot configuration stored in Onix along with the application configuration
-type frontMatter struct {
-	Type        string `json:"type"`
-	Path        string `json:"path"`
-	Trigger     string `json:"trigger"`
-	ContentType string `json:"contentType"`
-}
-
 // different types of markers to facilitate parsing of application configuration
 // and extraction of front matter
 type tokenType int
@@ -132,6 +124,9 @@ func (p *parser) parse(content string) ([]*appCfg, error) {
 		fm, err := unmarshallFrontMatter(frontMatterStr, tokens[i].Type)
 		if err != nil {
 			return nil, err
+		}
+		if ok, err := fm.valid(); !ok {
+			return nil, errors.New(fmt.Sprintf("%v; parsing after '+++' marker number %v", err, i+1))
 		}
 		cfg.fMatter = &fm
 
