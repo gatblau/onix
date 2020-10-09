@@ -17,6 +17,7 @@ func TestParserOK(t *testing.T) {
 	p := new(parser)
 	l, err := p.parse(confWellFormed)
 	if err != nil || len(l) != 2 {
+		t.Error(err)
 		t.Fail()
 	}
 }
@@ -47,7 +48,7 @@ Path = "app.toml"
 Trigger = "signal:SIGHUP"
 
 # if type=http and trigger=post/put the content type to be passed in the request
-ContentType = "application/txt"
+ContentType = "text/plain"
 +++
 [Log]
     Level = "trace"
@@ -61,7 +62,7 @@ ContentType = "application/txt"
 	"type": "file",
 	"path": "/cfg/secrets",
 	"trigger": "put",
-	"contentType": "application/txt"
+	"contentType": "text/plain"
 }
 +++
 User = "gatblau"
@@ -73,7 +74,7 @@ Pwd = "FMy2nNzh"
 Type = "file"
 Path = "app.toml"
 Trigger = "signal:SIGHUP"
-ContentType = "application/txt"
+ContentType = "application/json"
 +++
 dxsdxdxsdx
 +++
