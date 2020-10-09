@@ -43,11 +43,18 @@ services:
       - OX_DBM_APPVERSION=${DBMAN_APP_VERSION}
     ports:
       - "8085:8085"
+  oxmsg:
+    image: gatblau/mosquitto
+    container_name: oxmsg
+    restart: always
+    ports:
+      - "1883:1883"
   onix:
     image: gatblau/onix-snapshot
     depends_on:
       - oxdb
       - dbman
+      - oxmsg
     container_name: ox
     restart: always
     environment:
@@ -56,6 +63,9 @@ services:
       - WAPI_AUTH_MODE=${AUTH_MODE}
       - WAPI_ADMIN_USER=${ADMIN_USER}
       - WAPI_ADMIN_PWD=${ADMIN_PWD}
+      - WAPI_EVENTS_ENABLED=${BROKER_ENABLED}
+      - WAPI_EVENTS_SERVER_HOST=oxmsg
+      - WAPI_EVENTS_SERVER_PORT=${BROKER_PORT}
     ports:
       - "8080:8080"
 #  oxkube:
