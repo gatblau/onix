@@ -56,38 +56,30 @@ func getEnv() []string {
 // sends messages to the browser using web sockets
 // ws: the websocket connection
 // msg: the channel containing the messages to send
-func send(ws *websocket.Conn, msg <-chan message) {
+func send(conn *connection) {
 Loop:
 	for {
 		select {
 		// receive a new message to be sent to the browser
-		case m, more := <-msg:
+		case m, more := <-conn.msg:
 			if more {
 				// send message
-				err := ws.WriteMessage(websocket.TextMessage, marshal(m))
+				err := conn.ws.WriteMessage(websocket.TextMessage, marshal(m))
 				if err != nil {
 					log.Error().Msgf("cannot write message to websocket: %v, closing connection", err)
-					// find the connection to remove from the pool
-					var ix = 0
-					for i, c := range pool {
-						if c.ws == ws {
-							ix = i
-							break
-						}
-					}
-					// remove the connection from the pool
-					pool = remove(pool, ix)
+					// invalidate the connection
+					conn.valid = false
 					// close the connection
-					ws.Close()
+					conn.ws.Close()
 					break Loop
 				}
 			} else {
 				// closes the websocket
 				log.Info().Msgf("closing WebSocket connection")
-				ws.SetWriteDeadline(time.Now().Add(writeWait))
-				ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+				conn.ws.SetWriteDeadline(time.Now().Add(writeWait))
+				conn.ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 				time.Sleep(closeGracePeriod)
-				ws.Close()
+				conn.ws.Close()
 				break Loop
 			}
 		}
@@ -136,10 +128,9 @@ func sendMsg(msgType MessageType, msgValue []string) {
 		Body: msgValue,
 	}
 	// send the message to all the channels / websocket connections
-	for _, conn := range pool {
-		conn.msg <- *m
-	}
-	log.Info().Msgf("sending websocket message of type %v to %v clients", msgType, len(pool))
+	pool.send(m)
+
+	log.Info().Msgf("sending websocket message of type %v to %v clients", msgType, pool.len())
 }
 
 // convert the message into a json []byte
