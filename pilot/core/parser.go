@@ -41,7 +41,7 @@ type appCfg struct {
 	// the application configuration
 	config string
 	// the application configuration metadata (front matter)
-	fMatter *frontMatter
+	meta *frontMatter
 }
 
 // different types of markers to facilitate parsing of application configuration
@@ -128,7 +128,7 @@ func (p *parser) parse(content string) ([]*appCfg, error) {
 		if ok, err := fm.valid(); !ok {
 			return nil, errors.New(fmt.Sprintf("%v; parsing after '+++' marker number %v", err, i+1))
 		}
-		cfg.fMatter = &fm
+		cfg.meta = &fm
 
 		// gets the configuration
 		var eof int
