@@ -169,7 +169,7 @@ func (svr *server) listen(handler http.Handler) {
 
 	// runs the HTTP server asynchronously
 	go func() {
-		log.Info().Msgf("Onix ProtoApp is listening on :%v", port)
+		log.Info().Msgf("Probare is listening on :%v", port)
 		log.Info().Msgf("it took %v to start", time.Since(svr.start))
 		if err := server.ListenAndServe(); err != nil {
 			log.Info().Msgf("stopping the server: %v", err)
@@ -196,7 +196,6 @@ Loop:
 			svr.LoadCfg("", "")
 		case sig := <-stop:
 			sendMsg(Terminal, []string{fmt.Sprintf("%s signal received", sig)})
-			time.Sleep(500 * time.Millisecond)
 			svr.Stop(server)
 			break Loop
 		}
