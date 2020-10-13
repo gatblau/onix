@@ -30,6 +30,7 @@ import (
 	_ "github.com/gatblau/onix/probare/docs" // documentation needed for swagger
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"io/ioutil"
@@ -55,7 +56,7 @@ var (
 	// a channel to indicate the web socket send channel should close
 	done = make(chan bool)
 	// a pool of websocket connections
-	pool = make([]*connection, 0)
+	pool = NewConnectionPool()
 
 	// create a WebSocket connection by upgrading the original HTTP one
 	upgrader = websocket.Upgrader{
@@ -72,12 +73,60 @@ type message struct {
 	Body []string    `json:"body"`
 }
 
+type connectionPool struct {
+	connections []*connection
+}
+
+func NewConnectionPool() *connectionPool {
+	return &connectionPool{
+		connections: make([]*connection, 0),
+	}
+}
+
+func (pool *connectionPool) len() int {
+	return len(pool.connections)
+}
+
+func (pool *connectionPool) add(c *connection) {
+	pool.connections = append(pool.connections, c)
+}
+
+func (pool *connectionPool) removeInvalid() {
+	for {
+		ix := -1
+		for i, conn := range pool.connections {
+			if !conn.valid {
+				ix = i
+				break
+			}
+		}
+		if ix != -1 {
+			pool.connections = remove(pool.connections, ix)
+		} else {
+			break
+		}
+	}
+}
+
+func (pool *connectionPool) send(m *message) {
+	// loop through the connections in the pool and send the message
+	for _, conn := range pool.connections {
+		if conn.valid {
+			conn.msg <- *m
+		}
+	}
+	// remove any invalid connections after an attempt has been made to send messages
+	pool.removeInvalid()
+}
+
 // a connection to a WbeSocket client
 type connection struct {
 	// the channel to send messages to the client
 	msg chan message
 	// the websocket connection to the client
 	ws *websocket.Conn
+	// is the connection valid?
+	valid bool
 }
 
 type server struct {
@@ -132,6 +181,8 @@ func (svr *server) listen(handler http.Handler) {
 
 	// sends any interrupt signal (SIGINT) to the stop channel
 	signal.Notify(stop, os.Interrupt)
+	// sends any termination signal (SIGTERM) to the stop channel
+	signal.Notify(stop, syscall.SIGTERM)
 	// sends any hang-up signal (SIGHUP) to the hangup channel
 	signal.Notify(hangup, syscall.SIGHUP)
 
@@ -143,8 +194,8 @@ Loop:
 			sendMsg(Terminal, []string{fmt.Sprintf("reloading '%s' configuration from file", svr.appConf.filename)})
 			sendMsg(Terminal, []string{fmt.Sprintf("reloading '%s' configuration from file", svr.secretsConf.filename)})
 			svr.LoadCfg("", "")
-		case <-stop:
-			sendMsg(Terminal, []string{"SIGINT signal received"})
+		case sig := <-stop:
+			sendMsg(Terminal, []string{fmt.Sprintf("%s signal received", sig)})
 			time.Sleep(500 * time.Millisecond)
 			svr.Stop(server)
 			break Loop
@@ -178,6 +229,8 @@ func (svr *server) Start() {
 	r.HandleFunc("/ws", svr.serveWs)
 	// swagger configuration
 	r.PathPrefix("/api").Handler(httpSwagger.WrapHandler)
+	// prometheus metrics
+	r.Handle("/metrics", promhttp.Handler())
 	// NOTE: add always as last handler!
 	// serves all static content
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
@@ -228,16 +281,17 @@ func (svr *server) serveWs(w http.ResponseWriter, r *http.Request) {
 
 	// create the connection info reference
 	conn := &connection{
-		msg: messageCh,
-		ws:  ws,
+		msg:   messageCh,
+		ws:    ws,
+		valid: true,
 	}
 
 	// add the connection info to the pool
-	pool = append(pool, conn)
+	pool.add(conn)
 
 	// launch the subroutine to send WebSocket messages to the client
 	// note: there are as many subroutines as web socket connections
-	go send(ws, messageCh)
+	go send(conn)
 
 	// send configuration to the clients
 	sendMsg(Terminal, []string{fmt.Sprintf("loading '%s' configuration from file", svr.appConf.filename)})

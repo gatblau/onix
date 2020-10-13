@@ -43,6 +43,10 @@ build:
 	$(GO_CMD) fmt
 	export GOROOT=/usr/local/go; export GOPATH=$HOME/go; $(GO_CMD) build -o $(BINARY_NAME) -v
 
+build-linux:
+	$(GO_CMD) fmt
+    export GOPATH=$(HOME)/go; export GOOS=linux; export GOARCH=amd64; $(GO_CMD) build -o $(BINARY_NAME)_linux -v
+
 # build the dbman docker image
 snapshot-image:
 	docker pull registry.access.redhat.com/ubi8/ubi-minimal
