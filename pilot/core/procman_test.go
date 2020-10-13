@@ -14,14 +14,14 @@ import (
 	"time"
 )
 
-func TestLaunchApp(t *testing.T) {
+func TestLaunchAndStopApp(t *testing.T) {
 	ps := new(procMan)
 	homeDir, err := home()
 	check(t, err)
 	err = ps.start(fmt.Sprintf("%s/go/src/github.com/gatblau/onix/probare", homeDir), "probare", []string{})
 	check(t, err)
-	time.Sleep(10 * time.Second)
-	err = ps.stop()
+	time.Sleep(1 * time.Second)
+	err = ps.stop(5 * time.Second)
 	check(t, err)
 }
 

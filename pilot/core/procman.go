@@ -65,7 +65,7 @@ type procState struct {
 }
 
 // attempts to stop the process gracefully
-func (proc *procMan) askToStop() (*os.ProcessState, error) {
+func (proc *procMan) requestStop(timeOut time.Duration) (*os.ProcessState, error) {
 	if proc.process != nil {
 		log.Info().Msgf("pilot is sending termination request signal")
 		err := proc.process.Signal(syscall.SIGTERM)
@@ -93,8 +93,8 @@ func (proc *procMan) askToStop() (*os.ProcessState, error) {
 			proc.status = stopped
 			// return the process state and / or any error
 			return r.state, r.err
-		// if the wait is longer than 5 seconds
-		case <-time.After(5 * time.Second):
+		// if the wait is longer than the specified timeOut
+		case <-time.After(timeOut):
 			log.Info().Msgf("pilot timed out waiting for process termination")
 			// wait no longer and return an error
 			return nil, errors.New("process did not respond to termination request")
@@ -103,11 +103,14 @@ func (proc *procMan) askToStop() (*os.ProcessState, error) {
 	return nil, errors.New("process does not exist")
 }
 
-func (proc *procMan) stop() error {
+// tries to stop the process gracefully but if it does not respond,
+// then brutally kill it
+func (proc *procMan) stop(timeOut time.Duration) error {
 	// ask to stop the process politely ;)
-	_, err := proc.askToStop()
-	// pass back any error
+	_, err := proc.requestStop(timeOut)
+	// if it did not stop (have an error)
 	if err != nil {
+		// kill the process
 		err := proc.kill()
 		if err != nil {
 			return err
