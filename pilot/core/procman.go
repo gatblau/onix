@@ -10,8 +10,6 @@ package core
 import (
 	"errors"
 	"fmt"
-	"github.com/rs/zerolog/log"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"syscall"
@@ -22,6 +20,7 @@ import (
 type procMan struct {
 	pid          int
 	process      *os.Process
+	path         string
 	cmd          string
 	args         []string
 	status       procStatus
@@ -36,25 +35,34 @@ func (proc *procMan) start(path string, cmd string, args []string) error {
 		Files: []*os.File{os.Stdin, os.Stdout, os.Stderr},
 	}
 	// create the arguments for the subprocess prepending the command name as the first argument
-	args = append([]string{cmd}, args...)
-	p, err := os.StartProcess(fmt.Sprintf("%s/%s", path, cmd), args, procAttr)
+	logger.Info().Msgf("launching application %s", cmd)
+	p, err := os.StartProcess(fmt.Sprintf("%s/%s", path, cmd), append([]string{cmd}, args...), procAttr)
 	if err != nil {
 		return err
 	}
 	proc.process = p
 	proc.pid = proc.process.Pid
-	// err = utils.WriteFile(proc.Pidfile, []byte(strconv.Itoa(proc.pid)))
-	// if err != nil {
-	// 	return err
-	// }
+	proc.path = path
 	proc.cmd = cmd
 	proc.args = args
 	proc.startTime = time.Now().Unix()
 	proc.status = started
+	logger.Info().Msgf("application %s launched successfully", cmd)
 	return nil
 }
 
-func (proc *procMan) restart() error {
+// restart a process
+func (proc *procMan) restart(timeOut time.Duration) error {
+	// stops the application
+	err := proc.stop(timeOut)
+	if err != nil {
+		return err
+	}
+	// starts the application
+	err = proc.start(proc.path, proc.cmd, proc.args)
+	if err != nil {
+		return err
+	}
 	proc.restartCount++
 	return nil
 }
@@ -67,7 +75,7 @@ type procState struct {
 // attempts to stop the process gracefully
 func (proc *procMan) requestStop(timeOut time.Duration) (*os.ProcessState, error) {
 	if proc.process != nil {
-		log.Info().Msgf("pilot is sending termination request signal")
+		logger.Info().Msgf("pilot is sending termination request signal")
 		err := proc.process.Signal(syscall.SIGTERM)
 		if err != nil {
 			return nil, err
@@ -77,7 +85,7 @@ func (proc *procMan) requestStop(timeOut time.Duration) (*os.ProcessState, error
 		result := make(chan *procState)
 		// launch a routine to wait for the process to finish
 		go func(result chan *procState) {
-			log.Info().Msgf("pilot is waiting for the process to finish")
+			logger.Info().Msgf("pilot is waiting for the process to finish")
 			// wait for the process to finish
 			state, err := proc.process.Wait()
 			// send the result back through the channel
@@ -89,13 +97,13 @@ func (proc *procMan) requestStop(timeOut time.Duration) (*os.ProcessState, error
 		select {
 		// the process exited successfully
 		case r := <-result:
-			log.Info().Msgf("process successfully terminated, state is %v", r.state)
+			logger.Info().Msgf("application %s successfully terminated, state is %v", proc.cmd, r.state)
 			proc.status = stopped
 			// return the process state and / or any error
 			return r.state, r.err
 		// if the wait is longer than the specified timeOut
 		case <-time.After(timeOut):
-			log.Info().Msgf("pilot timed out waiting for process termination")
+			logger.Info().Msgf(fmt.Sprintf("process did not terminate after %s, pilot will not wait any longer", timeOut))
 			// wait no longer and return an error
 			return nil, errors.New("process did not respond to termination request")
 		}
@@ -127,7 +135,7 @@ func (proc *procMan) stop(timeOut time.Duration) error {
 // terminate a process immediately
 func (proc *procMan) kill() error {
 	if proc.process != nil {
-		log.Info().Msgf("pilot is killing the process PID=%v", proc.pid)
+		logger.Info().Msgf("pilot is killing the process PID=%v", proc.pid)
 		err := proc.process.Signal(syscall.SIGKILL)
 		if err != nil {
 			return err
@@ -139,7 +147,7 @@ func (proc *procMan) kill() error {
 		proc.startTime = 0
 		proc.restartCount = 0
 		proc.status = stopped
-		log.Info().Msgf("process has been killed successfully")
+		logger.Info().Msgf("process has been killed successfully")
 		return nil
 	}
 	return errors.New("process does not exist")
@@ -188,18 +196,4 @@ func (proc *procMan) format(endTime int64) string {
 		return fmt.Sprintf("%sM", strconv.Itoa(int(diff/month)))
 	}
 	return fmt.Sprintf("%sy", strconv.Itoa(int(diff/year)))
-}
-
-// delete a file
-func (proc *procMan) delete(filepath string) error {
-	_, err := os.Stat(filepath)
-	if err != nil {
-		return err
-	}
-	err = os.Remove(filepath)
-	return err
-}
-
-func (proc *procMan) writePid(filepath string, b []byte) error {
-	return ioutil.WriteFile(filepath, b, 0660)
 }
