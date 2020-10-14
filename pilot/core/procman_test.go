@@ -8,23 +8,65 @@
 package core
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"os/user"
 	"testing"
 	"time"
 )
 
-func TestLaunchAndStopApp(t *testing.T) {
+var (
+	homeDir    string
+	appCmdArgs []string
+)
+
+const (
+	appDir = "%s/go/src/github.com/gatblau/onix/probare"
+	appCmd = "probare"
+)
+
+func init() {
+	// determines the home directory
+	hd, err := home()
+	if err != nil {
+		panic(err)
+	}
+	homeDir = hd
+	// check the app to launch is there
+	fqn := fmt.Sprintf("%s/%s", fmt.Sprintf(appDir, homeDir), appCmd)
+	if _, err := os.Stat(fqn); os.IsNotExist(err) {
+		panic(errors.New(fmt.Sprintf("%s application is needed in path %s", appCmd, fqn)))
+	}
+}
+
+func TestTerminateApp(t *testing.T) {
 	ps := new(procMan)
-	homeDir, err := home()
+	// start the app process
+	err := ps.start(fmt.Sprintf(appDir, homeDir), appCmd, appCmdArgs)
 	check(t, err)
-	err = ps.start(fmt.Sprintf("%s/go/src/github.com/gatblau/onix/probare", homeDir), "probare", []string{})
-	check(t, err)
+	// give the app time to fully start up
 	time.Sleep(1 * time.Second)
-	err = ps.stop(5 * time.Second)
+	// request termination within 3 seconds
+	err = ps.stop(3 * time.Second)
 	check(t, err)
 }
 
+func TestRestartApp(t *testing.T) {
+	ps := new(procMan)
+	// start the app process
+	err := ps.start(fmt.Sprintf(appDir, homeDir), appCmd, appCmdArgs)
+	check(t, err)
+	// give the app time to fully start up
+	time.Sleep(1 * time.Second)
+	// request restart with termination within 3 seconds
+	err = ps.restart(3 * time.Second)
+	check(t, err)
+	// request termination within 1 second
+	err = ps.stop(1 * time.Second)
+}
+
+// generic check for error
 func check(t *testing.T, err error) {
 	if err != nil {
 		t.Error(err)
@@ -32,6 +74,7 @@ func check(t *testing.T, err error) {
 	}
 }
 
+// get the user home
 func home() (string, error) {
 	usr, err := user.Current()
 	if err != nil {
