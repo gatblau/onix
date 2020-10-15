@@ -17,7 +17,6 @@ package core
 
 import (
 	"fmt"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -110,19 +109,6 @@ func (c *config) Load(cfg string) error {
 	// binds the specified Viper keys to ENV variables
 	for _, bind := range c.binds {
 		_ = c.store.BindEnv(bind)
-	}
-
-	// set the log level
-	logLevel := c.GetString("Log.Level")
-	if len(logLevel) > 0 {
-		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-		level, err := zerolog.ParseLevel(strings.ToLower(logLevel))
-		if err != nil {
-			log.Warn().Msg(err.Error())
-			log.Info().Msg("defaulting log level to INFO")
-			zerolog.SetGlobalLevel(zerolog.InfoLevel)
-		}
-		zerolog.SetGlobalLevel(level)
 	}
 	return nil
 }
