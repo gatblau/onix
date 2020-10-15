@@ -1,5 +1,5 @@
 [Log]
-    Level = "trace"
+    Level = "info"
 
 [Banner]
     Type = "success"

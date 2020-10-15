@@ -129,8 +129,9 @@ func sendMsg(msgType MessageType, msgValue []string) {
 	}
 	// send the message to all the channels / websocket connections
 	pool.send(m)
-
-	log.Info().Msgf("sending websocket message of type %v to %v clients", msgType, pool.len())
+	if pool.len() > 0 {
+		log.Trace().Msgf("sending websocket message of type %v to %v clients", msgType, pool.len())
+	}
 }
 
 // convert the message into a json []byte
