@@ -29,17 +29,32 @@ import java.io.Serializable;
 @Service
 public class Config implements Serializable {
 
+    public boolean isSwaggerEnabled() {
+        return swaggerEnabled;
+    }
+
+    public void setSwaggerEnabled(boolean swaggerEnabled) {
+        this.swaggerEnabled = swaggerEnabled;
+    }
+
+    public boolean isCsrfEnabled() {
+        return csrfEnabled;
+    }
+
     public enum AuthMode {
         Basic,
         OIDC,
         None,
     }
-    
+
+    @Value("${wapi.swagger.enabled}")
+    private boolean swaggerEnabled;
+
+    @Value("${wapi.csrf.enabled}")
+    private boolean csrfEnabled;
+
     @Value("${wapi.auth.mode}")
     private String authMode;
-
-    @Value("${WAPI_CSRF_ENABLED:false}")
-    private boolean csrfEnabled;
     
     @Value("${spring.datasource.username}")
     private String dbuser;
@@ -245,10 +260,6 @@ public class Config implements Serializable {
             default:
                 return AuthMode.Basic;
         }
-    }
-
-    public boolean isCsrfEnabled() {
-        return csrfEnabled;
     }
 
     public String getJwtSecret() {

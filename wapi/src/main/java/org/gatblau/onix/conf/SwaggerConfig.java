@@ -20,7 +20,6 @@ project, to be licensed under the same terms as the rest of the code.
 package org.gatblau.onix.conf;
 
 import io.swagger.annotations.Api;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -36,16 +35,18 @@ import springfox.documentation.spi.service.contexts.SecurityContext;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Configuration
 @EnableSwagger2
 public class SwaggerConfig extends WebMvcConfigurationSupport {
     private final Config cfg;
+    private final Info info;
 
-    public SwaggerConfig(Config cfg) {
+    public SwaggerConfig(Config cfg, Info info) {
         this.cfg = cfg;
+        this.info = info;
     }
 
     @Bean
@@ -54,23 +55,21 @@ public class SwaggerConfig extends WebMvcConfigurationSupport {
                 .select()
                 .apis(RequestHandlerSelectors.withClassAnnotation(Api.class))
                 .paths(PathSelectors.any())
-                .build().apiInfo(apiInfo());
+                .build().apiInfo(apiInfo())
+                .enable(cfg.isSwaggerEnabled());
         // if authentication mode is OpenId then
         // enables the Swagger UI authorize feature so that bearer tokens can be passed in the
         // request made by the UI as authorization header
         if (cfg.getAuthMode() != null && cfg.getAuthMode() == Config.AuthMode.OIDC) {
             docket
-                .securitySchemes(Arrays.asList(apiKey()))
-                .securityContexts(Arrays.asList(securityContext()));
+                .securitySchemes(Collections.singletonList(apiKey()))
+                .securityContexts(Collections.singletonList(securityContext()));
         }
         return docket;
     }
 
-    @Autowired
-    private Info info;
-
     private ApiInfo apiInfo() {
-        ApiInfo apiInfo = new ApiInfo(
+        return new ApiInfo(
             "Onix Web API",
             "RESTful Web API for the ONIX Configuration Manager.",
             info.toString(),
@@ -78,16 +77,17 @@ public class SwaggerConfig extends WebMvcConfigurationSupport {
             "gatblau.org",
             "Apache LICENSE-2.0",
             "https://www.apache.org/licenses/LICENSE-2.0");
-        return apiInfo;
     }
 
     @Override
     protected void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("swagger-ui.html")
-                .addResourceLocations("classpath:/META-INF/resources/");
+        if (cfg.isSwaggerEnabled()) {
+            registry.addResourceHandler("swagger-ui.html")
+                    .addResourceLocations("classpath:/META-INF/resources/");
 
-        registry.addResourceHandler("/webjars/**")
-                .addResourceLocations("classpath:/META-INF/resources/webjars/");
+            registry.addResourceHandler("/webjars/**")
+                    .addResourceLocations("classpath:/META-INF/resources/webjars/");
+        }
     }
 
     private ApiKey apiKey() {
@@ -106,6 +106,6 @@ public class SwaggerConfig extends WebMvcConfigurationSupport {
         AuthorizationScope authorizationScope = new AuthorizationScope("global", "accessEverything");
         AuthorizationScope[] authorizationScopes = new AuthorizationScope[1];
         authorizationScopes[0] = authorizationScope;
-        return Arrays.asList(new SecurityReference("apiKey", authorizationScopes));
+        return Collections.singletonList(new SecurityReference("apiKey", authorizationScopes));
     }
 }
