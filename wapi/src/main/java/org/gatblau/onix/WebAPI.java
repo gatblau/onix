@@ -35,6 +35,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
@@ -101,6 +102,15 @@ public class WebAPI {
     @RequestMapping(value = "/ready", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<JSONObject> ready() {
         return ResponseEntity.ok(data.checkReady());
+    }
+
+    /*
+        redirects to swagger-ui.html
+     */
+    @RequestMapping("/api")
+    public void swaggerRedirect(HttpServletResponse response) {
+        response.setHeader("Location", "/swagger-ui.html");
+        response.setStatus(302);
     }
 
     /*
@@ -318,8 +328,8 @@ public class WebAPI {
         Map<String, String> attributes = new HashMap<>();
         if (attrs != null) {
             String[] attrsPairs = attrs.split("[|]"); // separate key value pairs using pipes in the query string
-            for (int i=0; i<attrsPairs.length; i++){
-                String[] slice = attrsPairs[i].split(",");
+            for (String attrsPair : attrsPairs) {
+                String[] slice = attrsPair.split(",");
                 attributes.put(slice[0], slice[1]);
             }
         }
