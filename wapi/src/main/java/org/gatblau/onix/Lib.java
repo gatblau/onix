@@ -492,9 +492,7 @@ public class Lib implements InitializingBean {
             for (int i = 0; i < password.length(); i++) {
                 char x = password.charAt(i);
                 if (Character.isLetter(x)) {
-                    if (String.valueOf(x).matches("(?=.*[~!@#$%^&*()_-]).*")){
-                        specialCount++;
-                    } else if (Character.isUpperCase(x)){
+                    if (Character.isUpperCase(x)){
                         upperCount++;
                     } else if (Character.isLowerCase(x)) {
                         lowerCount++;
@@ -502,18 +500,22 @@ public class Lib implements InitializingBean {
                 } else if (Character.isDigit(x)) {
                     // note: must check for digit before upper and lower cases
                     digitCount++;
+                } else {
+                    if (String.valueOf(x).matches("(?=.*[~!@#$%^&*()_-]).*")){
+                        specialCount++;
+                    }
                 }
             }
-            if (upperCount <= cfg.getPwdUpper()) {
+            if (upperCount < cfg.getPwdUpper()) {
                 return String.format("Password must have at least %s upper case characters", cfg.getPwdUpper());
             }
-            if (lowerCount <= cfg.getPwdLower()) {
+            if (lowerCount < cfg.getPwdLower()) {
                 return String.format("Password must have at least %s lower case characters", cfg.getPwdUpper());
             }
-            if (digitCount <= cfg.getPwdDigits()) {
+            if (digitCount < cfg.getPwdDigits()) {
                 return String.format("Password must have at least %s digits", cfg.getPwdDigits());
             }
-            if (specialCount <= cfg.getPwdSpecialChars()) {
+            if (specialCount < cfg.getPwdSpecialChars()) {
                 return String.format("Password must have at least %s special characters", cfg.getPwdSpecialChars());
             }
         } else {
