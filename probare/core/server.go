@@ -31,6 +31,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"io/ioutil"
@@ -73,62 +74,6 @@ type message struct {
 	Body []string    `json:"body"`
 }
 
-type connectionPool struct {
-	connections []*connection
-}
-
-func NewConnectionPool() *connectionPool {
-	return &connectionPool{
-		connections: make([]*connection, 0),
-	}
-}
-
-func (pool *connectionPool) len() int {
-	return len(pool.connections)
-}
-
-func (pool *connectionPool) add(c *connection) {
-	pool.connections = append(pool.connections, c)
-}
-
-func (pool *connectionPool) removeInvalid() {
-	for {
-		ix := -1
-		for i, conn := range pool.connections {
-			if !conn.valid {
-				ix = i
-				break
-			}
-		}
-		if ix != -1 {
-			pool.connections = remove(pool.connections, ix)
-		} else {
-			break
-		}
-	}
-}
-
-func (pool *connectionPool) send(m *message) {
-	// loop through the connections in the pool and send the message
-	for _, conn := range pool.connections {
-		if conn.valid {
-			conn.msg <- *m
-		}
-	}
-	// remove any invalid connections after an attempt has been made to send messages
-	pool.removeInvalid()
-}
-
-// a connection to a WbeSocket client
-type connection struct {
-	// the channel to send messages to the client
-	msg chan message
-	// the websocket connection to the client
-	ws *websocket.Conn
-	// is the connection valid?
-	valid bool
-}
-
 type server struct {
 	start       time.Time
 	appConf     *config
@@ -163,6 +108,12 @@ func (svr *server) listen(handler http.Handler) {
 		Handler:      handler,
 	}
 
+	// load the initial configuration
+	svr.LoadCfg("", "")
+
+	// set the log level
+	svr.initLogger()
+
 	// creates a channel to pass a SIGINT (ctrl+C) kernel signal with buffer capacity 1
 	stop := make(chan os.Signal, 1)
 	hangup := make(chan os.Signal, 1)
@@ -175,9 +126,6 @@ func (svr *server) listen(handler http.Handler) {
 			log.Info().Msgf("stopping the server: %v", err)
 		}
 	}()
-
-	// load the initial configuration
-	svr.LoadCfg("", "")
 
 	// sends any interrupt signal (SIGINT) to the stop channel
 	signal.Notify(stop, os.Interrupt)
@@ -200,6 +148,22 @@ Loop:
 			break Loop
 		}
 	}
+}
+
+func (svr *server) initLogger() {
+	logLevel := svr.appConf.GetString("Log.Level")
+	if len(logLevel) > 0 {
+		level, err := zerolog.ParseLevel(strings.ToLower(logLevel))
+		if err != nil {
+			log.Warn().Msg(err.Error())
+			log.Info().Msg("defaulting log level to INFO")
+			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		}
+		zerolog.SetGlobalLevel(level)
+	} else {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	}
+	zerolog.TimeFieldFormat = "2006-01-02T15:04:05Z07:00"
 }
 
 func (svr *server) Stop(server *http.Server) {
