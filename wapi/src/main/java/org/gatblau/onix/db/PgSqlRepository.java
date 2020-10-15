@@ -2490,6 +2490,29 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public synchronized Result updatePwd(String key, PwdUpdateData pwdUpdateData, String[] role) {
+        Result result = new Result(String.format("pwd_update:%s", key));
+        // if the user is not in the ADMIN role then it cannot proceed
+        if (!Arrays.asList(role).contains("ADMIN")) {
+            result.setError(true);
+            result.setMessage("the request must be done by the ADMIN role");
+            return result;
+        }
+        // query the user
+        UserData user = getUser(key, role);
+        if (user == null) {
+            // the user is not in the database, so cannot proceed
+            result.setMessage(String.format("attempt to change password failed for '%s', user does not exist", key));
+            return result;
+        }
+        // update the password
+        user.setPwd(pwdUpdateData.getPwd());
+        // persist changes
+        result = createOrUpdateUser(user.getKey(), user, false, role);
+        return result;
+    }
+
+    @Override
     public String getGetUserSQL() {
         return "SELECT * FROM ox_user(" +
                 "?::character varying," + // key_param

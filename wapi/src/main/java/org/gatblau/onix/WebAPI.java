@@ -303,7 +303,7 @@ public class WebAPI {
                 name = "top",
                 value = "The maximum number of items to retrieve.",
                 required = false,
-                example = "12-03-18",
+                example = "35",
                 defaultValue = "100"
             )
             @RequestParam(value = "top", required = false, defaultValue = "100")
@@ -1816,6 +1816,32 @@ public class WebAPI {
         JSONObject response = new JSONObject();
         response.put("secret", jwt.newSecret());
         return ResponseEntity.ok(response);
+    }
+
+    @ApiOperation(
+            value = "Updates a local user's password.",
+            notes = "Use this operation when the system ADMIN role wants to change the password of a local user.\n" +
+                    "It should be used ONLY by a user with the System ADMIN role, otherwise the operation will fail.\n" +
+                    "NOTE: as opposed to this operation, requesting the reset of a local user's password is the recommended \n" +
+                    "approach as it lets the user to set their own credential.",
+            response = JSONObject.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful request.", response = JSONObject.class)}
+    )
+    @RequestMapping(value = "/user/{key}/pwd", method = RequestMethod.PUT, produces = "application/json")
+    public ResponseEntity<Result> updatePwd(
+            @PathVariable("key") String key,
+            @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+            HttpServletRequest request, // required to check on http headers
+            Authentication authentication // required to authenticate user
+    ) {
+        // check the request integrity and de-serialise the payload
+        Tuple<ResponseEntity<Result>, PwdUpdateData> req = readRequest(request, payloadStr, PwdUpdateData.class);
+        // if the data integrity check or de-serialisation fails, returns
+        if (req.Response != null) { return req.Response; }
+        // now ready to process the request
+        Result result = data.updatePwd(key, req.Payload, getRole(authentication));
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
 
     @ApiOperation(

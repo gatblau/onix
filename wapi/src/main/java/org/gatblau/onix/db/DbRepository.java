@@ -184,6 +184,7 @@ public interface DbRepository {
     UserDataList getUsers(String[] role);
     Result changePassword(String email, PwdResetData pwdResetData);
     Result requestPwdReset(String email);
+    Result updatePwd(String key, PwdUpdateData payload, String[] role);
     
     String getSetUserSQL();
     String getGetUserSQL();
