@@ -6,6 +6,16 @@ Contributions are **welcome**.
 
 Contributions should be done via Pull Requests on [Github](https://github.com/gatblau/onix).
 
+Code changes without tests will not be accepted
+
+Follow this process:
+
+- Fork it
+- Create your feature branch (git checkout -b my-new-feature)
+- Commit your changes (git commit -am 'Added some feature')
+- Push to the branch (git push origin my-new-feature)
+- Create new Pull Request
+
 ---
 
 ## Pull Requests Guidelines
