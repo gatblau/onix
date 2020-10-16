@@ -17,7 +17,8 @@ func main() {
 	port := flag.String("p", "8080", "Specify port. Default is 8080")
 	flag.Parse()
 	r := mux.NewRouter()
-	r.Handle("/", promhttp.Handler()).Methods("GET")
+	r.HandleFunc("/", liveHandler).Methods("GET")
+	r.Handle("/metrics", promhttp.Handler()).Methods("GET")
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%s", *port),
 		WriteTimeout: 5 * time.Second,
@@ -39,5 +40,13 @@ func main() {
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
 		fmt.Printf("? I am shutting down due to an error: %v\n", err)
+	}
+}
+
+// a liveliness probe to prove the http service is listening
+func liveHandler(w http.ResponseWriter, r *http.Request) {
+	_, err := w.Write([]byte("OK"))
+	if err != nil {
+		fmt.Printf("!!! I cannot write response: %v", err)
 	}
 }
