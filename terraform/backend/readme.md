@@ -1,4 +1,4 @@
-# Terra - Terraform HTTP Backend for Onix
+# Terra - Terraform HTTP Backend for Onix <img src="../../docs/pics/ox.png" width="200" height="200" align="right">
 
 A "backend" in Terraform stores (and retrieves) state and determines how an operation such as apply should be executed. It is an abstraction which enables non-local state storage, remote execution, etc.
 

@@ -1,4 +1,4 @@
-# Onix Terraform Provider <img src="../docs/pics/ox.png" width="200" height="200" align="right">
+# Onix Terraform Provider <img src="../../docs/pics/ox.png" width="200" height="200" align="right">
 
 The Terraform provider for Onix allows Terraform to interact with Onix Web API.
 

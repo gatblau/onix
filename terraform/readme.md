@@ -1,4 +1,4 @@
-# Onix Terraform Integration
+# Onix Terraform Integration <img src="../docs/pics/ox.png" width="200" height="200" align="right">
 
 Onix provides two ways of integrating with Terraform as discussed below.
 
