@@ -33,13 +33,19 @@ test:
 # use this function to test changes to the terraform provider (integration test)
 install:
 	go fmt
-	terraform fmt
+	#terraform fmt
 #	commented line below produces a static binary
 #	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export GOOS=darwin; export GOARCH=amd64; export CGO_ENABLED=0; go build -o terraform.d/plugins/darwin_amd64/$(BINARY_NAME) -v -a -ldflags '-extldflags "-static"'
 	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export CGO_ENABLED=0; export GOOS=darwin; export GOARCH=amd64; go build -o terraform.d/plugins/darwin_amd64/$(BINARY_NAME) -v
 	chmod 755 terraform.d/plugins/darwin_amd64/$(BINARY_NAME)
 	export TF_LOG=DEBUG
-	terraform init
+#	terraform init
+
+install-linux:
+	go fmt
+	go build -o terraform.d/plugins/linux_amd64/$(BINARY_NAME) -v
+	chmod 755 terraform.d/plugins/linux_amd64/$(BINARY_NAME)
+	export TF_LOG=DEBUG
 
 # build the terraform provider in the current platform
 build:
