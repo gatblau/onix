@@ -1,2 +1,10 @@
 pilot
 .vagrant/
+probare
+.terraform
+terraform*
+/static
+/test
+app.toml
+secrets.toml
+.env

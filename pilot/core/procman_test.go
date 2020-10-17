@@ -41,7 +41,7 @@ func init() {
 }
 
 func TestTerminateApp(t *testing.T) {
-	ps := new(procMan)
+	ps := NewProcessManager()
 	// start the app process
 	err := ps.start(fmt.Sprintf(appDir, homeDir), appCmd, appCmdArgs)
 	check(t, err)
@@ -53,7 +53,7 @@ func TestTerminateApp(t *testing.T) {
 }
 
 func TestRestartApp(t *testing.T) {
-	ps := new(procMan)
+	ps := NewProcessManager()
 	// start the app process
 	err := ps.start(fmt.Sprintf(appDir, homeDir), appCmd, appCmdArgs)
 	check(t, err)
@@ -70,7 +70,7 @@ func TestRestartApp(t *testing.T) {
 func check(t *testing.T, err error) {
 	if err != nil {
 		t.Error(err)
-		t.Fail()
+		t.FailNow()
 	}
 }
 

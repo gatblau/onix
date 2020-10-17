@@ -36,12 +36,8 @@ var (
 type parser struct {
 }
 
-// a distinct piece of application configuration
-type appCfg struct {
-	// the application configuration
-	config string
-	// the application configuration metadata (front matter)
-	meta *frontMatter
+func NewParser() *parser {
+	return &parser{}
 }
 
 // different types of markers to facilitate parsing of application configuration
@@ -74,19 +70,20 @@ func (p *parser) tokenize(content string) ([]token, error) {
 	tokens := make([]token, 0)
 	lines := strings.Split(content, "\n")
 	for lineNo, line := range lines {
-		if strings.HasPrefix(strings.ToLower(line), tomlMarker) {
+		l := strings.ToLower(strings.TrimLeft(line, " "))
+		if strings.HasPrefix(l, tomlMarker) {
 			token := &token{
 				Type:   Toml,
 				LineNo: lineNo,
 			}
 			tokens = append(tokens, *token)
-		} else if strings.HasPrefix(strings.ToLower(line), jsonMarker) {
+		} else if strings.HasPrefix(l, jsonMarker) {
 			token := &token{
 				Type:   Json,
 				LineNo: lineNo,
 			}
 			tokens = append(tokens, *token)
-		} else if strings.HasPrefix(strings.ToLower(line), yamlMarker) {
+		} else if strings.HasPrefix(l, yamlMarker) {
 			token := &token{
 				Type:   Yaml,
 				LineNo: lineNo,
@@ -129,6 +126,8 @@ func (p *parser) parse(content string) ([]*appCfg, error) {
 			return nil, errors.New(fmt.Sprintf("%v; parsing after '+++' marker number %v", err, i+1))
 		}
 		cfg.meta = &fm
+		cfg.confType = fm.typeVal()
+		cfg.reloadTrigger = fm.triggerVal()
 
 		// gets the configuration
 		var eof int
@@ -141,7 +140,7 @@ func (p *parser) parse(content string) ([]*appCfg, error) {
 			// front matter block to determine the end of the previous configuration
 			eof = tokens[i+2].LineNo - 1
 		}
-		configStr := sliceToStr(lines[tokens[i+1].LineNo:eof])
+		configStr := sliceToStr(lines[tokens[i+1].LineNo+1 : eof])
 		cfg.config = configStr
 
 		confList = append(confList, cfg)
