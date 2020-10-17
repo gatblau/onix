@@ -9,11 +9,8 @@ package core
 
 import (
 	"bytes"
-	"crypto/md5"
 	"encoding/base64"
 	"fmt"
-	"github.com/google/renameio"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -58,26 +55,6 @@ func execute(cmd string) (string, error) {
 // creates a new Basic Authentication Token
 func basicToken(user string, pwd string) string {
 	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
-}
-
-// copy a file from a source to a destination
-func copyFile(src, dest string) error {
-	srcContent, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer srcContent.Close()
-
-	data, err := ioutil.ReadAll(srcContent)
-	if err != nil {
-		return err
-	}
-	return renameio.WriteFile(dest, data, 0644)
-}
-
-// compute an MD5 checksum for the specified string
-func checksum(txt string) [16]byte {
-	return md5.Sum([]byte(txt))
 }
 
 // cmdToRun := "/path/to/someCommand"

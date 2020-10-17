@@ -31,10 +31,10 @@ func NewSideCarCmd() *SideCarCmd {
 }
 
 func (c *SideCarCmd) Run(cmd *cobra.Command, args []string) {
-	sidecar, err := NewSidecar()
+	pilot, err := NewPilot(Sidecar, "", nil)
 	if err != nil {
 		fmt.Printf("cannot launch pilot sidecar: %v", err)
 		os.Exit(-1)
 	}
-	sidecar.Start()
+	pilot.Start()
 }

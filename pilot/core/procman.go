@@ -28,6 +28,10 @@ type procMan struct {
 	startTime    int64
 }
 
+func NewProcessManager() *procMan {
+	return &procMan{}
+}
+
 // start a process
 func (proc *procMan) start(path string, cmd string, args []string) error {
 	procAttr := &os.ProcAttr{

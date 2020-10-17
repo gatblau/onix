@@ -14,7 +14,7 @@ type fileman struct {
 }
 
 // create a new file manager instance
-func NewFileManager(r *pilot) *fileman {
+func NewFileManager() *fileman {
 	return &fileman{
 		files: make([]*file, 0),
 	}

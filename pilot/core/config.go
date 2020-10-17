@@ -9,16 +9,25 @@ package core
 
 import (
 	"crypto/tls"
+	"fmt"
 	"github.com/gatblau/oxc"
+	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 )
 
 const (
 	LogLevel = "LogLevel"
 )
+
+// create a logger with added contextual info
+// to differentiate pilot logging from application logging
+var logger = log.With().Str("agent", "pilot").Logger()
 
 // pilot configuration
 type Config struct {
@@ -27,80 +36,102 @@ type Config struct {
 	OxConf *oxc.ClientConf
 	// message broker config
 	EmConf *oxc.EventConfig
-	// app conf file path
-	CfgFile string
-	// a command to reload the app configuration
-	ReloadCmd string
-	// a URI of the endpoint to call to reload the configuration
-	ReloadURI            string
-	ReloadURIUser        string
-	ReloadURIPwd         string
-	ReloadURIContentType string
-	// a URI to check the application is ready after reloading the configuration
-	ReadyURI string
 	// the viper instance
 	store *viper.Viper
+	// path to the current executable
+	path string
 }
 
-func (c *Config) GetString(key string) string {
-	return c.store.GetString(key)
+type ConfigKey int
+
+func (k ConfigKey) String() string {
+	switch k {
+	case PilotAppKey:
+		return "PILOT_APP_KEY"
+	case PilotLogLevel:
+		return "PILOT_LOG_LEVEL"
+	case PilotOxWapiUrl:
+		return "PILOT_OX_WAPI_URL"
+	case PilotOxWapiAuthMode:
+		return "PILOT_OX_WAPI_AUTHMODE"
+	case PilotOxWapiUsername:
+		return "PILOT_OX_WAPI_USERNAME"
+	case PilotOxWapiPassword:
+		return "PILOT_OX_WAPI_PASSWORD"
+	case PilotOxWapiClientId:
+		return "PILOT_OX_WAPI_CLIENT_ID"
+	case PilotOxWapiAppSecret:
+		return "PILOT_OX_WAPI_APP_SECRET"
+	case PilotOxWapiTokenUri:
+		return "PILOT_OX_WAPI_TOKEN_URI"
+	case PilotOxWapiInsecureSkipVerify:
+		return "PILOT_OX_WAPI_INSECURESKIPVERIFY"
+	case PilotOxBrokerUrl:
+		return "PILOT_OX_BROKER_URL"
+	case PilotOxBrokerUsername:
+		return "PILOT_OX_BROKER_USERNAME"
+	case PilotOxBrokerPassword:
+		return "PILOT_OX_BROKER_PASSWORD"
+	case PilotOxBrokerInsecureSkipVerify:
+		return "PILOT_OX_BROKER_INSECURESKIPVERIFY"
+	}
+	return ""
 }
 
-func NewConfig() (*Config, error) {
-	log.Info().Msg("Loading configuration.")
+const (
+	PilotAppKey ConfigKey = iota
+	PilotLogLevel
+	PilotOxWapiUrl
+	PilotOxWapiAuthMode
+	PilotOxWapiUsername
+	PilotOxWapiPassword
+	PilotOxWapiClientId
+	PilotOxWapiAppSecret
+	PilotOxWapiTokenUri
+	PilotOxWapiInsecureSkipVerify
+	PilotOxBrokerUrl
+	PilotOxBrokerUsername
+	PilotOxBrokerPassword
+	PilotOxBrokerInsecureSkipVerify
+)
 
-	// use viper to load configuration data
-	v := viper.New()
-	v.SetConfigName("config")
-	v.SetConfigType("toml")
-	v.AddConfigPath(".")
+func (c *Config) Get(key ConfigKey) string {
+	return os.Getenv(key.String())
+}
 
-	// reads the configuration file
-	err := v.ReadInConfig()
-	if err != nil { // handle errors reading the config file
-		log.Error().Msgf("Fatal error config file: %s \n", err)
-		return nil, err
+func (c *Config) GetBool(key ConfigKey) bool {
+	b, _ := strconv.ParseBool(c.Get(key))
+	return b
+}
+
+func (c *Config) Load() error {
+	logger.Info().Msg("Loading configuration.")
+
+	// set the file path to where pilot is running
+	c.path = currentPath()
+
+	// load configuration from .env file if exist
+	if _, err := os.Stat(fmt.Sprintf("%s/.env", c.path)); err == nil {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal().Msg(err.Error())
+		}
+	} else {
+		envPath := os.Getenv("PILOT_ENV_PATH")
+		if len(envPath) > 0 {
+			path := fmt.Sprintf("%s/.env", envPath)
+			if _, err := os.Stat(path); err == nil {
+				err := godotenv.Load(path)
+				if err != nil {
+					log.Fatal().Msg(err.Error())
+				}
+			}
+		}
 	}
 
-	// binds all environment variables to make it container friendly
-	v.AutomaticEnv()
-	v.SetEnvPrefix("OXP") // prefixes all env vars
-
-	// replace character to support environment variable format
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	_ = v.BindEnv(LogLevel)
-
-	_ = v.BindEnv("Onix.URL")
-	_ = v.BindEnv("Onix.AuthMode")
-	_ = v.BindEnv("Onix.Username")
-	_ = v.BindEnv("Onix.Password")
-	_ = v.BindEnv("Onix.ClientId")
-	_ = v.BindEnv("Onix.AppSecret")
-	_ = v.BindEnv("Onix.TokenURI")
-	_ = v.BindEnv("Onix.InsecureSkipVerify")
-
-	_ = v.BindEnv("Broker.Server")
-	_ = v.BindEnv("Broker.Username")
-	_ = v.BindEnv("Broker.Password")
-	_ = v.BindEnv("Broker.InsecureSkipVerify")
-
-	_ = v.BindEnv("App.Key")
-	_ = v.BindEnv("App.CfgFile")
-	_ = v.BindEnv("App.ReloadCmd")
-	_ = v.BindEnv("App.ReloadURI")
-	_ = v.BindEnv("App.ReloadURIUser")
-	_ = v.BindEnv("App.ReloadURIPwd")
-	_ = v.BindEnv("App.ReloadURIContentType")
-	_ = v.BindEnv("App.ReadyURI")
-
-	// creates a config struct and populate it with values
-	c := new(Config)
-	c.store = v
-
 	// log level
-	c.LogLevel = v.GetString("LogLevel")
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	c.LogLevel = c.Get(PilotLogLevel)
+
 	logLevel, err := zerolog.ParseLevel(strings.ToLower(c.LogLevel))
 	if err != nil {
 		log.Warn().Msg(err.Error())
@@ -108,38 +139,41 @@ func NewConfig() (*Config, error) {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 	zerolog.SetGlobalLevel(logLevel)
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
 	// Ox client config
 	oxcfg := &oxc.ClientConf{
-		BaseURI:            v.GetString("Onix.URL"),
-		Username:           v.GetString("Onix.Username"),
-		Password:           v.GetString("Onix.Password"),
-		ClientId:           v.GetString("Onix.ClientId"),
-		AppSecret:          v.GetString("Onix.AppSecret"),
-		TokenURI:           v.GetString("Onix.TokenURI"),
-		InsecureSkipVerify: v.GetBool("Onix.InsecureSkipVerify"),
+		BaseURI:            c.Get(PilotOxWapiUrl),
+		Username:           c.Get(PilotOxWapiUsername),
+		Password:           c.Get(PilotOxWapiPassword),
+		ClientId:           c.Get(PilotOxWapiClientId),
+		AppSecret:          c.Get(PilotOxWapiAppSecret),
+		TokenURI:           c.Get(PilotOxWapiTokenUri),
+		InsecureSkipVerify: c.GetBool(PilotOxWapiInsecureSkipVerify),
 	}
-	oxcfg.SetAuthMode(v.GetString("Onix.AuthMode"))
+	oxcfg.SetAuthMode(c.Get(PilotOxWapiAuthMode))
 
 	// event manager config
 	emcfg := &oxc.EventConfig{
-		Server:             v.GetString("Broker.Server"),
-		ItemInstance:       v.GetString("App.Key"),
+		Server:             c.Get(PilotOxBrokerUrl),
+		ItemInstance:       c.Get(PilotAppKey),
 		Qos:                2,
-		Username:           v.GetString("Broker.Username"),
-		Password:           v.GetString("Broker.Password"),
-		InsecureSkipVerify: v.GetBool("Broker.InsecureSkipVerify"),
+		Username:           c.Get(PilotOxBrokerUsername),
+		Password:           c.Get(PilotOxBrokerPassword),
+		InsecureSkipVerify: c.GetBool(PilotOxBrokerInsecureSkipVerify),
 		ClientAuthType:     tls.NoClientCert,
 		OnMsgReceived:      nil,
 	}
 	c.OxConf = oxcfg
 	c.EmConf = emcfg
-	c.CfgFile = v.GetString("App.CfgFile")
-	c.ReloadCmd = v.GetString("App.ReloadCmd")
-	c.ReloadURI = v.GetString("App.ReloadURI")
-	c.ReloadURIUser = v.GetString("App.ReloadURIUser")
-	c.ReloadURIPwd = v.GetString("App.ReloadURIPwd")
-	c.ReloadURIContentType = v.GetString("App.ReloadURIContentType")
-	c.ReadyURI = v.GetString("App.ReadyURI")
-	return c, nil
+
+	return nil
+}
+
+func currentPath() string {
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	return filepath.Dir(ex)
 }

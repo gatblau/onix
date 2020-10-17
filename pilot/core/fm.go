@@ -52,6 +52,16 @@ func (fm *frontMatter) valid() (bool, error) {
 	return true, nil
 }
 
+func (fm *frontMatter) typeVal() confType {
+	var t confType
+	return t.parse(fm.Type)
+}
+
+func (fm *frontMatter) triggerVal() trigger {
+	var t trigger
+	return t.parse(fm.Trigger)
+}
+
 // check a field is not empty
 func (fm *frontMatter) notEmpty(field string, value string) (bool, error) {
 	if len(value) == 0 {
