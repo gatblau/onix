@@ -12,9 +12,18 @@
 #    Contributors to this project, hereby assign copyright in this code to the project,
 #    to be licensed under the same terms as the rest of the code.
 #
+PROVIDER_VERSION=1.0.0
+PROVIDER_NAME=ox
+
+# the path where the ox terraform providers should be installed locally (terraform >= 0.13)
+# see knowledge article here: https://www.terraform.io/upgrade-guides/0-13.html#new-filesystem-layout-for-local-copies-of-providers
+TF_PATH=terraform.d/plugins/registry.terraform.io/hashicorp/$(PROVIDER_NAME)/$(PROVIDER_VERSION)
 
 # the name of the terraform provider for Onix
-BINARY_NAME=terraform-provider-ox_v1.0.0
+BINARY_NAME=terraform-provider-$(PROVIDER_NAME)_v$(PROVIDER_VERSION)
+
+DARWIN_PATH=$(TF_PATH)/darwin_amd64/$(BINARY_NAME)
+LINUX_PATH=$(TF_PATH)/linux_amd64/$(BINARY_NAME)
 
 # the name of the folder where the packaged binaries will be placed after the build
 BUILD_FOLDER=build
@@ -31,26 +40,18 @@ test:
 # compile, install and initialise the terraform provider for onix
 # in a local folder and execute the contents of the main.tf file (terraform apply)
 # use this function to test changes to the terraform provider (integration test)
-install:
-	go fmt
-	#terraform fmt
-#	commented line below produces a static binary
-#	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export GOOS=darwin; export GOARCH=amd64; export CGO_ENABLED=0; go build -o terraform.d/plugins/darwin_amd64/$(BINARY_NAME) -v -a -ldflags '-extldflags "-static"'
-	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export CGO_ENABLED=0; export GOOS=darwin; export GOARCH=amd64; go build -o terraform.d/plugins/darwin_amd64/$(BINARY_NAME) -v
-	chmod 755 terraform.d/plugins/darwin_amd64/$(BINARY_NAME)
-	export TF_LOG=DEBUG
-#	terraform init
+install-darwin:
+	go fmt && go build -o $(DARWIN_PATH) -v && chmod 755 $(DARWIN_PATH) && export TF_LOG=DEBUG
+	terraform init
 
 install-linux:
-	go fmt
-	go build -o terraform.d/plugins/linux_amd64/$(BINARY_NAME) -v
-	chmod 755 terraform.d/plugins/linux_amd64/$(BINARY_NAME)
-	export TF_LOG=DEBUG
+	go fmt && go build -o $(LINUX_PATH) -v && chmod 755 $(LINUX_PATH) && export TF_LOG=DEBUG
+	terraform init
 
 # build the terraform provider in the current platform
 build:
 	go fmt
-	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; go build -o $(BINARY_NAME) -v
+	go build -o $(BINARY_NAME) -v
 
 # package the terraform provider for all platforms
 package:
@@ -61,15 +62,15 @@ package:
 
 # package the terraform provider for linux amd64 platform
 package_linux:
-	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export CGO_ENABLED=0; export GOOS=linux; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
+	export GOOS=linux; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
 	zip -mjT $(BUILD_FOLDER)/$(BINARY_NAME)_linux_amd64.zip $(BUILD_FOLDER)/$(BINARY_NAME)
 
 # package the terraform provider for MacOS
 package_darwin:
-	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export CGO_ENABLED=0; export GOOS=darwin; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
+	export GOOS=darwin; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
 	zip -mjT $(BUILD_FOLDER)/$(BINARY_NAME)_darwin_amd64.zip $(BUILD_FOLDER)/$(BINARY_NAME)
 
 # package the terraform provider for Windows
 package_windows:
-	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; export CGO_ENABLED=0; export GOOS=windows; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
+	export GOOS=windows; export GOARCH=amd64; go build -o $(BUILD_FOLDER)/$(BINARY_NAME) -v
 	zip -mjT $(BUILD_FOLDER)/$(BINARY_NAME)_windows_amd64.zip $(BUILD_FOLDER)/$(BINARY_NAME)
