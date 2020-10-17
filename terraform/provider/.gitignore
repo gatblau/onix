@@ -7,3 +7,4 @@ terraform-provider-ox
 terraform
 crash.log
 vendor
+.terraform.tfstate.lock.info

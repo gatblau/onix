@@ -49,10 +49,26 @@ if [ $RESULT -eq 0 ]; then
   exit 1
 fi
 
+echo "checking port 8085 is available for the Onix DbMan process"
+lsof -i:8085 | grep LISTEN
+RESULT=$?
+if [ $RESULT -eq 0 ]; then
+  echo port 8085 is in use, cannot continue: ensure there is no process using 8085/tcp port
+  exit 1
+fi
+
 echo creates the Onix database
 docker run --name oxdb -it -d -p 5432:5432 \
     -e POSTGRESQL_ADMIN_PASSWORD=onix \
-    "centos/postgresql-12-centos7"
+    "centos/postgresql-12-centos8"
+
+echo creates the Onix DbMan
+docker run --name dbman -itd -p 8085:8085 --link oxdb \
+  -e OX_DBM_DB_HOST=oxdb \
+  -e OX_DBM_DB_ADMINPWD=onix \
+  -e OX_DBM_HTTP_AUTHMODE=none \
+  -e OX_DBM_APPVERSION=0.0.4 \
+  "gatblau/dbman-snapshot"
 
 echo creates the Onix Web API
 docker run --name ox -it -d -p 8080:8080 --link oxdb \
@@ -70,7 +86,11 @@ until $(curl --output /dev/null --silent --head --fail http://localhost:8080); d
 done
 
 echo "deploying database schemas"
-curl localhost:8080/ready
+echo "? creating the database"
+curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1
+
+echo "? deploying the schemas and functions"
+curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy 2>&1
 
 echo 
 echo "Web API ready to use @ localhost:8080"

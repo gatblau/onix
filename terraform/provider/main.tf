@@ -1,12 +1,12 @@
-terraform {
-  backend "http" {
-    address = "http://localhost:8081/state/foo"
-    lock_address = "http://localhost:8081/state/foo"
-    unlock_address = "http://localhost:8081/state/foo"
-    username = "admin"
-    password = "0n1x"
-  }
-}
+//terraform {
+//  backend "http" {
+//    address        = "http://localhost:8081/state/foo"
+//    lock_address   = "http://localhost:8081/state/foo"
+//    unlock_address = "http://localhost:8081/state/foo"
+//    username       = "admin"
+//    password       = "0n1x"
+//  }
+//}
 
 provider "ox" {
   uri = "http://localhost:8080"
@@ -64,10 +64,9 @@ resource "ox_item_type" "Test_Item_Type" {
   name          = "Test Item Type"
   description   = "Test Item Type Description"
   model_key     = ox_model.Test_Model.key
-  notify_change = true
+  notify_change = "N"
   encrypt_txt   = true
   encrypt_meta  = false
-  managed       = true
 
   depends_on = [ox_model.Test_Model]
 }
@@ -79,7 +78,6 @@ resource "ox_item_type_attr" "Test_Item_Type_Attr_1" {
   item_type_key = ox_item_type.Test_Item_Type.key
   type          = "integer"
   def_value     = "2"
-  managed       = false
 
   depends_on = [ox_item_type.Test_Item_Type]
 }
@@ -91,7 +89,6 @@ resource "ox_item_type_attr" "Test_Item_Type_Attr_2" {
   item_type_key = ox_item_type.Test_Item_Type.key
   type          = "integer"
   def_value     = "1"
-  managed       = false
 
   depends_on = [ox_item_type_attr.Test_Item_Type_Attr_1]
 }
@@ -103,7 +100,6 @@ resource "ox_link_type" "Test_Link_Type" {
   model_key    = ox_model.Test_Model.key
   encrypt_meta = false
   encrypt_txt  = false
-  managed      = false
   depends_on   = [ox_item_type_attr.Test_Item_Type_Attr_2]
 }
 
@@ -113,7 +109,6 @@ resource "ox_link_type_attr" "Test_Link_Type_Attr_1" {
   description   = "Team Name"
   type          = "string"
   def_value     = "A-Team"
-  managed       = false
   link_type_key = ox_link_type.Test_Link_Type.key
 
   depends_on = [ox_link_type.Test_Link_Type]

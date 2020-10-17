@@ -32,11 +32,11 @@ func ItemTypeAttributeDataSource() *schema.Resource {
 			},
 			"description": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 			"type": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 			"def_value": &schema.Schema{
 				Type:     schema.TypeString,
