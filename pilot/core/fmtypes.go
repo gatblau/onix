@@ -75,7 +75,10 @@ func (t trigger) parse(value string) trigger {
 		return TriggerPut
 	default:
 		if strings.HasPrefix(value, "signal:") {
-			return TriggerSignal
+			s := value[7:]
+			if s == "SIGHUP" || s == "SIGUSR1" || s == "SIGUSR2" {
+				return TriggerSignal
+			}
 		}
 		return TriggerUnknown
 	}
