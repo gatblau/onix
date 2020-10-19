@@ -33,7 +33,7 @@ type getItem func(item *oxc.Item) (*oxc.Item, error)
 type putItem func(item *oxc.Item) (*oxc.Result, error)
 
 // process the received alerts
-func processAlerts(data template.Alerts, get getItem, put putItem) error {
+func processAlerts(data template.Alerts, get getItem, put putItem, partition string) error {
 	// sort the incoming alerts by StartsAt time
 	alerts := NewTimeSortedAlerts(data)
 	sort.Sort(alerts)
@@ -102,7 +102,7 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 		// 2) the event registered in Onix has a status that is different from the status in the received alert; and
 		// 3) the received alert has occurred after the last event registered in Onix
 		shouldRegisterEvent = (serviceItem == nil || (serviceItem != nil && serviceItem.Attribute["status"].(string) != v["status"])) && startsAt.Before(alert.StartsAt)
-		log.Debug().Msgf("* event for item '%s' should be registered?: %s", serviceKey, shouldRegisterEvent)
+		log.Debug().Msgf("* event for item '%s' should be registered?: %t", serviceKey, shouldRegisterEvent)
 
 		// if the item already recorded occurred before the current alert
 		// or the no item recorded yet (startsAt = beginning of time)
@@ -123,6 +123,7 @@ func processAlerts(data template.Alerts, get getItem, put putItem) error {
 					"platform":    v["platform"],
 					"facet":       v["facet"],
 				},
+				Partition: partition,
 			}
 			result, err := put(serviceItem)
 			// do we have a business error?

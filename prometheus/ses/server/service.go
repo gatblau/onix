@@ -92,7 +92,7 @@ func (s *SeS) Start() {
 	// registers web handlers
 	mux.HandleFunc("/live", s.liveHandler).Methods("GET")
 	mux.HandleFunc("/ready", s.readyHandler).Methods("GET")
-	mux.HandleFunc(fmt.Sprintf("/%s", s.conf.Path), s.svcHandler).Methods("POST")
+	mux.HandleFunc(fmt.Sprintf("/%s/{partition}", s.conf.Path), s.svcHandler).Methods("POST")
 	if s.conf.Metrics {
 		// prometheus metrics
 		mux.Handle("/metrics", promhttp.Handler())
@@ -177,6 +177,10 @@ func (s *SeS) svcHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// get the data partition from the url
+	vars := mux.Vars(r)
+	partition := vars["partition"]
+
 	// de-serialise the payload
 	var payload template.Data
 	err := json.NewDecoder(r.Body).Decode(&payload)
@@ -187,7 +191,7 @@ func (s *SeS) svcHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// process the alerts
-	err = processAlerts(payload.Alerts, s.ox.GetItem, s.ox.PutItem)
+	err = processAlerts(payload.Alerts, s.ox.GetItem, s.ox.PutItem, partition)
 	if err != nil {
 		log.Error().Msgf("cannot process alerts: %s", err)
 		// if the log level is not set to debug, then advice how alert content can be dumped to output

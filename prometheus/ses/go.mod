@@ -1,6 +1,6 @@
 module github.com/gatblau/onix/prometheus/ses
 
-go 1.13
+go 1.15
 
 require (
 	github.com/gatblau/oxc v0.0.0-20200917154917-69626cdf2dda

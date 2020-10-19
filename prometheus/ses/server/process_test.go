@@ -36,7 +36,7 @@ func TestProcess2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = processAlerts(alerts.Alerts, get, put)
+	err = processAlerts(alerts.Alerts, get, put, "INS")
 	if err != nil {
 		t.Error(err)
 		return
@@ -54,7 +54,7 @@ func TestProcess(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = processAlerts(payload.Alerts, get, put)
+	err = processAlerts(payload.Alerts, get, put, "INS")
 	if err != nil {
 		t.Error(err)
 		return
@@ -66,7 +66,7 @@ func TestProcess(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = processAlerts(payload.Alerts, get, put)
+	err = processAlerts(payload.Alerts, get, put, "INS")
 	if err != nil {
 		t.Error(err)
 		return
@@ -78,7 +78,7 @@ func TestProcess(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = processAlerts(payload.Alerts, get, put)
+	err = processAlerts(payload.Alerts, get, put, "INS")
 	if err != nil {
 		t.Error(err)
 		return
@@ -90,7 +90,7 @@ func TestProcess(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = processAlerts(payload.Alerts, get, put)
+	err = processAlerts(payload.Alerts, get, put, "INS")
 	if err != nil {
 		t.Error(err)
 		return
