@@ -19,20 +19,20 @@
 # securing builds: https://docs.openshift.com/container-platform/4.5/builds/securing-builds-by-strategy.html#securing-builds-by-strategy
 
 # pre-condition health check: all required environment variables have been provided!
-if [[ -z ${IMAGE_REGISTRY+x} ]]; then
-    echo "IMAGE_REGISTRY must be provided"
+if [[ -z ${PUSH_IMAGE_REGISTRY+x} ]]; then
+    echo "PUSH_IMAGE_REGISTRY must be provided"
     exit 1
 fi
-if [[ -z ${IMAGE_REPO+x} ]]; then
-    echo "IMAGE_REPO must be provided"
+if [[ -z ${PUSH_IMAGE_REPO+x} ]]; then
+    echo "PUSH_IMAGE_REPO must be provided"
     exit 1
 fi
-if [[ -z ${IMAGE_NAME+x} ]]; then
-    echo "IMAGE_NAME must be provided"
+if [[ -z ${PUSH_IMAGE_NAME+x} ]]; then
+    echo "PUSH_IMAGE_NAME must be provided"
     exit 1
 fi
-if [[ -z ${IMAGE_VERSION+x} ]]; then
-    echo "IMAGE_VERSION must be provided"
+if [[ -z ${PUSH_IMAGE_VERSION+x} ]]; then
+    echo "PUSH_IMAGE_VERSION must be provided"
     exit 1
 fi
 if [[ -z ${INIT_SCRIPT_URL+x} ]]; then
@@ -41,26 +41,54 @@ if [[ -z ${INIT_SCRIPT_URL+x} ]]; then
 fi
 
 # defines the container image fqn
-IMAGE_FQN="${IMAGE_REGISTRY}/${IMAGE_REPO}/${IMAGE_NAME}"
-
-# if the variable IS_SNAPSHOT is defined then add "snapshot" to the name
-if [[ ! -z ${IS_SNAPSHOT+x} ]]; then
-    IMAGE_FQN="${IMAGE_FQN}-snapshot"
-fi
+PUSH_IMAGE_FQN="${PUSH_IMAGE_REGISTRY}/${PUSH_IMAGE_REPO}/${PUSH_IMAGE_NAME}"
 
 # fetch the init script
-curl -o init.sh "${INIT_SCRIPT_URL}"
+# if an authentication token has been provided
+if [[ -z ${GIT_TOKEN+x} ]]; then
+  echo GIT_TOKEN not defined, retrieving init.sh without authenticating
+  wget "${INIT_SCRIPT_URL}" -O init.sh
+else
+  echo GIT_TOKEN defined, retrieving init.sh with token
+  wget --header="PRIVATE-TOKEN:${GIT_TOKEN}" "${INIT_SCRIPT_URL}" -O init.sh
+fi
 
 # run the script
+# NOTE: init script should check for its own environment variables
 sh init.sh
 
+# login to the pull image registry (the one containing base image)
+buildah login -u "${PULL_IMAGE_REGISTRY_UNAME}" -p "${PULL_IMAGE_REGISTRY_PWD}" "${PULL_IMAGE_REGISTRY}"
+
 # performs the build of the new image defined by Dockerfile downloaded by init.sh
-buildah --storage-driver vfs bud --isolation chroot -t "${IMAGE_FQN}:${IMAGE_VERSION}" .
+buildah --storage-driver vfs bud --isolation chroot -t "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}" .
 
-# buildah requires a slight modification to the push secret provided by the service
-# account in order to use it for pushing the image
-cp /var/run/secrets/openshift.io/push/.dockercfg /tmp
-(echo "{ \"auths\": " ; cat /var/run/secrets/openshift.io/push/.dockercfg ; echo "}") > /tmp/.dockercfg
+# if there is a request to add latest tag
+if [[ -z ${PUSH_IMAGE_TAG_LATEST+x} ]]; then
+  # tag the local image for docker.io
+  buildah tag "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}" "${PUSH_IMAGE_FQN}:latest"
+fi
 
-# push the new image to the target for the build
-buildah --storage-driver vfs push --tls-verify=false --authfile /tmp/.dockercfg "${IMAGE_FQN}:${IMAGE_VERSION}"
+# if credentials are provided to push the image to the push image registry
+if [[ -z ${PUSH_IMAGE_REGISTRY_UNAME+x} ]]; then
+  # push the new image to the registry using credentials
+  buildah --storage-driver vfs push --tls-verify=false --creds "${PUSH_IMAGE_REGISTRY_UNAME}:${PUSH_IMAGE_REGISTRY_PWD}" "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}"
+
+  # if required push the latest tag
+  if [[ -z ${PUSH_IMAGE_TAG_LATEST+x} ]]; then
+     buildah --storage-driver vfs push --tls-verify=false --creds "${PUSH_IMAGE_REGISTRY_UNAME}:${PUSH_IMAGE_REGISTRY_PWD}" "${PUSH_IMAGE_FQN}:latest"
+  fi
+else
+  # configure the push to use secrets in .dockercfg
+  # buildah requires a slight modification to the push secret provided by the service
+  # account in order to use it for pushing the image
+  cp /var/run/secrets/openshift.io/push/.dockercfg /tmp
+  (echo "{ \"auths\": " ; cat /var/run/secrets/openshift.io/push/.dockercfg ; echo "}") > /tmp/.dockercfg
+
+  # push the new image to the registry using secrets
+  buildah --storage-driver vfs push --tls-verify=false --authfile /tmp/.dockercfg "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}"
+  # if required push the latest tag
+  if [[ -z ${PUSH_IMAGE_TAG_LATEST+x} ]]; then
+    buildah --storage-driver vfs push --tls-verify=false --authfile /tmp/.dockercfg "${PUSH_IMAGE_FQN}:latest"
+  fi
+fi
