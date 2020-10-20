@@ -45,7 +45,7 @@ The builder image requires the following variables:
 | **PUSH_IMAGE_REGISTRY_PWD** | the password used to login to the new image registry | yes |
 | **PUSH_IMAGE_TAG_LATEST** | whether to tag the new image as latest | no |
 | **INIT_SCRIPT_URL** | the url for the init.sh script | yes |
-| **GIT_TOKEN** | an authentication token for the git repository where the build scripts are. If not specificed, the no authentication is used. | no |
+| **GIT_TOKEN** | an authentication token for the git repository where the build scripts are. | no. If not provided, then no authentication is used. |
 | **PULL_IMAGE_REGISTRY** | the registry where thw base image used for the build is | yes |
 | **PULL_IMAGE_REGISTRY_UNAME** | the username used to login to the base image registry | no. If not provided, then it is assumed that the base image is public |
 | **PULL_IMAGE_REGISTRY_PWD** | the password used to login to the base image registry | only if PULL_IMAGE_REGISTRY_UNAME is provided |
