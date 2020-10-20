@@ -34,6 +34,7 @@ public class UserData implements Serializable {
     private String pwd;
     private String salt;
     private String expires;
+    private boolean service;
     private String created;
     private String updated;
     private Integer version;
@@ -158,5 +159,13 @@ public class UserData implements Serializable {
 
     public void setExpires(String expires) {
         this.expires = expires;
+    }
+
+    public boolean isService() {
+        return service;
+    }
+
+    public void setService(boolean service) {
+        this.service = service;
     }
 }

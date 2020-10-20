@@ -2078,4 +2078,25 @@ public class Steps extends TestBase {
                 vars);
         util.put(RESPONSE, result);
     }
+
+    @Given("a user account natural key is known")
+    public void aUserAccountNaturalKeyIsKnown() {
+        util.put(USER_ONE_KEY, USER_ONE_KEY);
+    }
+
+    @Given("the user account does not exist in the database")
+    public void theUserAccountDoesNotExistInTheDatabase() {
+        util.put(USER_DELETE_URL, String.format("%suser/{key}", baseUrl));
+        delete(util.get(USER_DELETE_URL), util.get(USER_ONE_KEY));
+    }
+
+    @Given("the user account PUT URL by key is known")
+    public void theUserAccountPUTURLByKeyIsKnown() {
+        util.put(USER_PUT_URL, String.format("%suser/{key}", baseUrl));
+    }
+
+    @When("a PUT HTTP request to the user account endpoint with a new JSON payload is done")
+    public void aPUTHTTPRequestToTheUserAccountEndpointWithANewJSONPayloadIsDone() {
+        putResource("user", util.get(USER_ONE_KEY), "payload/create_user_1_payload.json");
+    }
 }
