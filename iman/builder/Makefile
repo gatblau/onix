@@ -38,7 +38,7 @@ set-version:
 
 # build the pilot docker image
 snapshot-image:
-	docker pull docker.io/centos:8
+	docker pull docker.io/centos:7
 	docker build -t $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version) .
 	docker tag $(REPO_NAME)/$(BINARY_NAME)-snapshot:$(shell cat ./version) $(REPO_NAME)/$(BINARY_NAME)-snapshot:latest
 
