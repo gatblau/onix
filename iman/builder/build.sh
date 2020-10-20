@@ -73,7 +73,13 @@ if [[ -z ${PULL_IMAGE_REGISTRY_UNAME+x} ]]; then
 fi
 
 # performs the build of the new image defined by Dockerfile downloaded by init.sh
-buildah --storage-driver vfs bud --isolation chroot -t "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}" .
+if [[ -n "${USE_OVERLAY_FS}" ]]; then
+  # Overlay storage is used to build outside K8S (e.g. on a VM)
+  buildah bud --isolation chroot -t "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}" .
+else
+  # VFS storage is the default option to build in K8S
+  buildah --storage-driver vfs bud --isolation chroot -t "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}" .
+fi
 
 # if there is a request to add latest tag
 if [[ "${PUSH_IMAGE_TAG_LATEST}" = true ]]; then
@@ -82,7 +88,7 @@ if [[ "${PUSH_IMAGE_TAG_LATEST}" = true ]]; then
 fi
 
 # if credentials are provided to push the image to the push image registry
-if [[ -z ${PUSH_IMAGE_REGISTRY_UNAME+x} ]]; then
+if [[ -n ${PUSH_IMAGE_REGISTRY_UNAME+x} ]]; then
   # push the new image to the registry using credentials
   buildah --storage-driver vfs push --tls-verify=false --creds "${PUSH_IMAGE_REGISTRY_UNAME}:${PUSH_IMAGE_REGISTRY_PWD}" "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}"
 
