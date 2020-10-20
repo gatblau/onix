@@ -49,4 +49,3 @@ The builder image requires the following variables:
 | **PULL_IMAGE_REGISTRY** | the registry where thw base image used for the build is | yes |
 | **PULL_IMAGE_REGISTRY_UNAME** | the username used to login to the base image registry | no. If not provided, then it is assumed that the base image is public |
 | **PULL_IMAGE_REGISTRY_PWD** | the password used to login to the base image registry | only if PULL_IMAGE_REGISTRY_UNAME is provided |
-| **USE_OVERLAY_FS** | tell buldah to use the overlay file system instead of VFS. Use this option to run the builder image outside K8S, for example on a Virtual Machine. If not set on a VM build, it will fail. | not set. Set it to any value to use OverlayFS. |

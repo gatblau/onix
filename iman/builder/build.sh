@@ -73,13 +73,7 @@ if [[ -z ${PULL_IMAGE_REGISTRY_UNAME+x} ]]; then
 fi
 
 # performs the build of the new image defined by Dockerfile downloaded by init.sh
-if [[ -n "${USE_OVERLAY_FS}" ]]; then
-  # Overlay storage is used to build outside K8S (e.g. on a VM)
-  buildah bud --isolation chroot -t "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}" .
-else
-  # VFS storage is the default option to build in K8S
-  buildah --storage-driver vfs bud --isolation chroot -t "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}" .
-fi
+buildah --storage-driver vfs bud --isolation chroot -t "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}" .
 
 # if there is a request to add latest tag
 if [[ "${PUSH_IMAGE_TAG_LATEST}" = true ]]; then
@@ -98,6 +92,11 @@ if [[ -n ${PUSH_IMAGE_REGISTRY_UNAME+x} ]]; then
   fi
 else
   # configure the push to use secrets in .dockercfg
+  if [[ ! -f /var/run/secrets/openshift.io/push/.dockercfg ]]; then
+    echo "the build requires a docker-registry secret to be configured, either create one or use push credentials by setting the PUSH_IMAGE_REGISTRY_UNAME and PUSH_IMAGE_REGISTRY_PWD variables"
+    exit 1
+  fi
+
   # buildah requires a slight modification to the push secret provided by the service
   # account in order to use it for pushing the image
   cp /var/run/secrets/openshift.io/push/.dockercfg /tmp
