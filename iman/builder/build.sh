@@ -57,14 +57,22 @@ fi
 # NOTE: init script should check for its own environment variables
 sh init.sh
 
-# login to the pull image registry (the one containing base image)
-buildah login -u "${PULL_IMAGE_REGISTRY_UNAME}" -p "${PULL_IMAGE_REGISTRY_PWD}" "${PULL_IMAGE_REGISTRY}"
+# login to the base image registry if a username is provided
+if [[ -z ${PULL_IMAGE_REGISTRY_UNAME+x} ]]; then
+  # must have a password too
+  if [[ -z ${PULL_IMAGE_REGISTRY_PWD+x} ]]; then
+    echo "PULL_IMAGE_REGISTRY_PWD must be provided"
+    exit 1
+  fi
+  # login to the pull image registry (the one containing base image)
+  buildah login -u "${PULL_IMAGE_REGISTRY_UNAME}" -p "${PULL_IMAGE_REGISTRY_PWD}" "${PULL_IMAGE_REGISTRY}"
+fi
 
 # performs the build of the new image defined by Dockerfile downloaded by init.sh
 buildah --storage-driver vfs bud --isolation chroot -t "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}" .
 
 # if there is a request to add latest tag
-if [[ -z ${PUSH_IMAGE_TAG_LATEST+x} ]]; then
+if [[ "${PUSH_IMAGE_TAG_LATEST}" = true ]]; then
   # tag the local image for docker.io
   buildah tag "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}" "${PUSH_IMAGE_FQN}:latest"
 fi
@@ -75,7 +83,7 @@ if [[ -z ${PUSH_IMAGE_REGISTRY_UNAME+x} ]]; then
   buildah --storage-driver vfs push --tls-verify=false --creds "${PUSH_IMAGE_REGISTRY_UNAME}:${PUSH_IMAGE_REGISTRY_PWD}" "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}"
 
   # if required push the latest tag
-  if [[ -z ${PUSH_IMAGE_TAG_LATEST+x} ]]; then
+  if [[ "${PUSH_IMAGE_TAG_LATEST}" = true ]]; then
      buildah --storage-driver vfs push --tls-verify=false --creds "${PUSH_IMAGE_REGISTRY_UNAME}:${PUSH_IMAGE_REGISTRY_PWD}" "${PUSH_IMAGE_FQN}:latest"
   fi
 else
@@ -88,7 +96,7 @@ else
   # push the new image to the registry using secrets
   buildah --storage-driver vfs push --tls-verify=false --authfile /tmp/.dockercfg "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}"
   # if required push the latest tag
-  if [[ -z ${PUSH_IMAGE_TAG_LATEST+x} ]]; then
+  if [[ "${PUSH_IMAGE_TAG_LATEST}" = true ]]; then
     buildah --storage-driver vfs push --tls-verify=false --authfile /tmp/.dockercfg "${PUSH_IMAGE_FQN}:latest"
   fi
 fi
