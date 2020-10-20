@@ -47,5 +47,5 @@ The builder image requires the following variables:
 | **INIT_SCRIPT_URL** | the url for the init.sh script | yes |
 | **GIT_TOKEN** | an authentication token for the git repository where the build scripts are. If not specificed, the no authentication is used. | no |
 | **PULL_IMAGE_REGISTRY** | the registry where thw base image used for the build is | yes |
-| **PULL_IMAGE_REGISTRY_UNAME** | the username used to login to the base image registry. If no provided the it assumes the base image is public | no |
+| **PULL_IMAGE_REGISTRY_UNAME** | the username used to login to the base image registry | no. If no provided the it assumes the base image is public |
 | **PULL_IMAGE_REGISTRY_PWD** | the password used to login to the base image registry | only if PULL_IMAGE_REGISTRY_UNAME is provided |
