@@ -15,19 +15,19 @@
 #
 
 # package stage: copy the binary into the deployment image
-FROM docker.io/centos:8
+FROM docker.io/centos:7
 MAINTAINER gatblau <onix@gatblau.org>
 LABEL author="gatblau"
 ARG UNAME=image-builder
 ENV UID=1000
 ENV GID=1000
-RUN dnf update -y && \
-    dnf install shadow-utils.x86_64 buildah -y && \
+RUN yum update -y && \
+    yum install buildah -y && \
     groupadd -g $GID -o $UNAME && \
     useradd -M -u $UID -g $GID $UNAME && \
     rm -rf /var/cache/yum && \
-    dnf clean all
+    yum clean all
 USER $UNAME
-WORKDIR /app
+WORKDIR /build
 COPY build.sh ./
-ENTRYPOINT ["/app/build.sh"]
+ENTRYPOINT ["/build/build.sh"]
