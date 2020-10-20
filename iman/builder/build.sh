@@ -19,27 +19,27 @@
 # securing builds: https://docs.openshift.com/container-platform/4.5/builds/securing-builds-by-strategy.html#securing-builds-by-strategy
 
 # pre-condition health check: all required environment variables have been provided!
-if [[ -z ${PUSH_IMAGE_REGISTRY+x} ]]; then
+if [[ -z "${PUSH_IMAGE_REGISTRY+x}" ]]; then
     echo "PUSH_IMAGE_REGISTRY must be provided"
     exit 1
 fi
-if [[ -z ${PUSH_IMAGE_REPO+x} ]]; then
+if [[ -z "${PUSH_IMAGE_REPO+x}" ]]; then
     echo "PUSH_IMAGE_REPO must be provided"
     exit 1
 fi
-if [[ -z ${PUSH_IMAGE_NAME+x} ]]; then
+if [[ -z "${PUSH_IMAGE_NAME+x}" ]]; then
     echo "PUSH_IMAGE_NAME must be provided"
     exit 1
 fi
-if [[ -z ${PUSH_IMAGE_VERSION+x} ]]; then
+if [[ -z "${PUSH_IMAGE_VERSION+x}" ]]; then
     echo "PUSH_IMAGE_VERSION must be provided"
     exit 1
 fi
-if [[ -z ${PULL_IMAGE_REGISTRY+x} ]]; then
+if [[ -z "${PULL_IMAGE_REGISTRY+x}" ]]; then
     echo "PULL_IMAGE_REGISTRY must be provided"
     exit 1
 fi
-if [[ -z ${INIT_SCRIPT_URL+x} ]]; then
+if [[ -z "${INIT_SCRIPT_URL+x}" ]]; then
     echo "INIT_SCRIPT_URL must be provided"
     exit 1
 fi
@@ -49,7 +49,7 @@ PUSH_IMAGE_FQN="${PUSH_IMAGE_REGISTRY}/${PUSH_IMAGE_REPO}/${PUSH_IMAGE_NAME}"
 
 # fetch the init script
 # if an authentication token has been provided
-if [[ -z ${GIT_TOKEN+x} ]]; then
+if [[ -z "${GIT_TOKEN+x}" ]]; then
   echo GIT_TOKEN not defined, retrieving init.sh without authenticating
   wget "${INIT_SCRIPT_URL}" -O init.sh
 else
@@ -61,10 +61,20 @@ fi
 # NOTE: init script should check for its own environment variables
 sh init.sh
 
+## get the execution status of the init.sh
+INIT_STATUS=$?
+
+## if status code greater than 0 (error) then exit
+if [[ -n "${INIT_STATUS}" && "${INIT_STATUS}" -gt 0 ]]; then
+  echo failed to execute init.sh script, verify the script runs without error
+  echo exiting build
+  exit 1
+fi
+
 # login to the base image registry if a username is provided
-if [[ -z ${PULL_IMAGE_REGISTRY_UNAME+x} ]]; then
+if [[ -n "${PULL_IMAGE_REGISTRY_UNAME}" ]]; then
   # must have a password too
-  if [[ -z ${PULL_IMAGE_REGISTRY_PWD+x} ]]; then
+  if [[ -z "${PULL_IMAGE_REGISTRY_PWD+x}" ]]; then
     echo "PULL_IMAGE_REGISTRY_PWD must be provided"
     exit 1
   fi
@@ -82,7 +92,12 @@ if [[ "${PUSH_IMAGE_TAG_LATEST}" = true ]]; then
 fi
 
 # if credentials are provided to push the image to the push image registry
-if [[ -n ${PUSH_IMAGE_REGISTRY_UNAME+x} ]]; then
+if [[ -n ${PUSH_IMAGE_REGISTRY_UNAME} ]]; then
+  # must have a password too
+  if [[ -z ${PUSH_IMAGE_REGISTRY_PWD+x} ]]; then
+    echo "PUSH_IMAGE_REGISTRY_PWD must be provided"
+    exit 1
+  fi
   # push the new image to the registry using credentials
   buildah --storage-driver vfs push --tls-verify=false --creds "${PUSH_IMAGE_REGISTRY_UNAME}:${PUSH_IMAGE_REGISTRY_PWD}" "${PUSH_IMAGE_FQN}:${PUSH_IMAGE_VERSION}"
 
