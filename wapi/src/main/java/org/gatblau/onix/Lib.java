@@ -192,6 +192,7 @@ public class Lib implements InitializingBean {
             user.setSalt(set.getString("salt"));
             user.setUpdated((updated != null) ? dateFormat.format(updated) : null);
             user.setExpires((expires != null) ? dateFormat.format(expires) : null);
+            user.setService(set.getBoolean("service"));
             user.setVersion(set.getInt("version"));
             user.setChangedBy(set.getString("changed_by"));
         }

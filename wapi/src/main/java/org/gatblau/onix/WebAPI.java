@@ -107,7 +107,7 @@ public class WebAPI {
     /*
         redirects to swagger-ui.html
      */
-    @RequestMapping("/api")
+    @RequestMapping(path = "/api", method = RequestMethod.GET)
     public void swaggerRedirect(HttpServletResponse response) {
         response.setHeader("Location", "/swagger-ui.html");
         response.setStatus(302);
