@@ -35,6 +35,10 @@ if [[ -z ${PUSH_IMAGE_VERSION+x} ]]; then
     echo "PUSH_IMAGE_VERSION must be provided"
     exit 1
 fi
+if [[ -z ${PULL_IMAGE_REGISTRY+x} ]]; then
+    echo "PULL_IMAGE_REGISTRY must be provided"
+    exit 1
+fi
 if [[ -z ${INIT_SCRIPT_URL+x} ]]; then
     echo "INIT_SCRIPT_URL must be provided"
     exit 1
