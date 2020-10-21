@@ -2319,6 +2319,7 @@ public class PgSqlRepository implements DbRepository {
         if (pwdResult != null) {
             // return a message 
             result.setMessage(String.format("password policy failed for '%s', %s", user.getEmail(), pwdResult));
+            result.setError(true);
             return result;
         }
         try {
