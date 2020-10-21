@@ -32,6 +32,7 @@ fi
 echo try and delete existing Onix containers
 docker rm -f oxdb
 docker rm -f ox
+docker rm -f dbman
 
 echo "checking port 8080 is available for the Onix Web API process"
 lsof -i:8080 | grep LISTEN
