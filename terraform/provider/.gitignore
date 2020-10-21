@@ -8,3 +8,4 @@ terraform
 crash.log
 vendor
 .terraform.tfstate.lock.info
+provider

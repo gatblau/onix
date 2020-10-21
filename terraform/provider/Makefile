@@ -24,6 +24,7 @@ BINARY_NAME=terraform-provider-$(PROVIDER_NAME)_v$(PROVIDER_VERSION)
 
 DARWIN_PATH=$(TF_PATH)/darwin_amd64/$(BINARY_NAME)
 LINUX_PATH=$(TF_PATH)/linux_amd64/$(BINARY_NAME)
+WINDOWS_PATH=$(TF_PATH)/windows_amd64/$(BINARY_NAME)
 
 # the name of the folder where the packaged binaries will be placed after the build
 BUILD_FOLDER=build
@@ -41,12 +42,16 @@ test:
 # in a local folder and execute the contents of the main.tf file (terraform apply)
 # use this function to test changes to the terraform provider (integration test)
 install-darwin:
-	go fmt && go build -o $(DARWIN_PATH) -v && chmod 755 $(DARWIN_PATH) && export TF_LOG=DEBUG
+	go fmt && export GOOS=darwin; go build -o $(DARWIN_PATH) -v && chmod 755 $(DARWIN_PATH) && export TF_LOG=DEBUG
 	terraform init
 
 install-linux:
-	go fmt && go build -o $(LINUX_PATH) -v && chmod 755 $(LINUX_PATH) && export TF_LOG=DEBUG
+	go fmt && export GOOS=linux; go build -o $(LINUX_PATH) -v && chmod 755 $(LINUX_PATH) && export TF_LOG=DEBUG
 	terraform init
+
+install-windows:
+	go fmt && export GOOS=windows; go build -o $(WINDOWS_PATH) -v && chmod 755 $(WINDOWS_PATH) && export TF_LOG=DEBUG
+	#terraform init
 
 # build the terraform provider in the current platform
 build:

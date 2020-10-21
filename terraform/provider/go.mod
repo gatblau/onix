@@ -6,7 +6,8 @@ require (
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/aws/aws-sdk-go v1.30.2 // indirect
 	github.com/fatih/color v1.9.0 // indirect
-	github.com/gatblau/oxc v0.0.0-20200412100037-ffc8f46a8fe0
+	github.com/gatblau/oxc v0.0.0-20201021102807-48791fe073d6
+	github.com/google/uuid v1.1.2 // indirect
 	github.com/hashicorp/go-getter v1.4.2-0.20200106182914-9813cbd4eb02 // indirect
 	github.com/hashicorp/go-hclog v0.12.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.0 // indirect
@@ -22,8 +23,9 @@ require (
 	github.com/mitchellh/mapstructure v1.2.2 // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/posener/complete v1.2.3 // indirect
-	github.com/rs/zerolog v1.18.0
+	github.com/rs/zerolog v1.20.0
 	github.com/ulikunitz/xz v0.5.7 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/zclconf/go-cty v1.3.1 // indirect
+	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect
 )
