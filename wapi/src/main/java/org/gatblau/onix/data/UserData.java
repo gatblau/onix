@@ -154,7 +154,8 @@ public class UserData implements Serializable {
     }
 
     public String getExpires() {
-        return expires;
+        // if expires is an empty string then return null
+        return (expires != null && expires.length() > 0) ? expires : null;
     }
 
     public void setExpires(String expires) {
