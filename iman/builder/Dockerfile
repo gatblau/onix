@@ -19,7 +19,7 @@ FROM docker.io/centos:7
 MAINTAINER gatblau <onix@gatblau.org>
 LABEL author="gatblau"
 RUN yum update -y && \
-    yum install buildah wget -y && \
+    yum install buildah wget unzip -y && \
     rm -rf /var/cache/yum && \
     yum clean all
 COPY build.sh /usr/bin
