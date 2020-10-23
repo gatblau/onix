@@ -108,7 +108,13 @@ if [[ -n ${PUSH_IMAGE_REGISTRY_UNAME} ]]; then
 else
   # configure the push to use secrets in .dockercfg
   if [[ ! -f /var/run/secrets/openshift.io/push/.dockercfg ]]; then
-    echo "the build requires a docker-registry secret to be configured, either create one or use push credentials by setting the PUSH_IMAGE_REGISTRY_UNAME and PUSH_IMAGE_REGISTRY_PWD variables"
+    echo "ATTENTION! this build has been configured to use a docker-registry secret
+the build process could not find .dockercfg in the container's file system, try the following:
+  - ensure 'output/to/kind: DockerImage' is set within your build configuration so that the secret is added to the container file system
+  - ensure you have configured a valid docker-registry secret
+  or:
+  - change the configuration to use push credentials instead
+    do this by setting the PUSH_IMAGE_REGISTRY_UNAME and PUSH_IMAGE_REGISTRY_PWD variables"
     exit 1
   fi
 
