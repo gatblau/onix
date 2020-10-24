@@ -11,5 +11,6 @@ import "testing"
 
 func TestPack(t *testing.T) {
 	p := NewBuilder()
-	p.Build("https://github.com/gatblau/boot", "")
+	// p.Build("https://github.com/gatblau/boot", "", "nexus.io/gatblau/boot")
+	p.Build("/Users/andresalos/test-pak/boot", "", "nexus.io/gatblau/boot")
 }

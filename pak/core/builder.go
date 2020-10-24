@@ -25,6 +25,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -66,10 +67,34 @@ func NewBuilder() *Builder {
 	return builder
 }
 
-func (b *Builder) Build(repoUrl string, gitToken string) {
+func (b *Builder) Build(from string, gitToken string, packageName string) {
+	var (
+		repo *git.Repository
+	)
 	// creates a temporary working directory
 	b.newWorkingDir()
-	repo := b.clone(repoUrl, gitToken)
+	// if "from" is an http url
+	if strings.HasPrefix(strings.ToLower(from), "http") {
+		// clone the remote repo
+		repo = b.cloneRepo(from, gitToken)
+	} else
+	// there is a local repo so copy it to the source folder and then open it
+	{
+		var path = from
+		// if a relative path is passed
+		if strings.HasPrefix(from, "./") || (!strings.HasPrefix(from, "/")) {
+			// turn it into an absolute path
+			absPath, err := filepath.Abs(from)
+			if err != nil {
+				log.Fatal(err)
+			}
+			path = absPath
+		}
+		// copy the folder to the source directory
+		b.copyFiles(path, b.sourceDir())
+		b.repoURI = path
+		repo = b.openRepo()
+	}
 	// set the package name
 	b.pakName(repo)
 	// remove any files in the .pakignore file
@@ -130,9 +155,9 @@ func (b *Builder) zipPackage() {
 	}
 }
 
-// clone a remote git repository, it only accepts a token if authentication is required
+// clones a remote git repository, it only accepts a token if authentication is required
 // if the token is not provided (empty string) then no authentication is used
-func (b *Builder) clone(repoUrl string, gitToken string) *git.Repository {
+func (b *Builder) cloneRepo(repoUrl string, gitToken string) *git.Repository {
 	b.repoURI = repoUrl
 	// clone the remote repository
 	opts := &git.CloneOptions{
@@ -152,6 +177,15 @@ func (b *Builder) clone(repoUrl string, gitToken string) *git.Repository {
 	repo, err := git.PlainClone(b.sourceDir(), false, opts)
 	if err != nil {
 		_ = os.RemoveAll(b.workingDir)
+		log.Fatal(err)
+	}
+	return repo
+}
+
+// opens a git repository from the given path
+func (b *Builder) openRepo() *git.Repository {
+	repo, err := git.PlainOpen(b.sourceDir())
+	if err != nil {
 		log.Fatal(err)
 	}
 	return repo
@@ -542,4 +576,66 @@ func (b *Builder) getFileContentType(f *os.File) (string, error) {
 		return "", err
 	}
 	return h.DetectContentType(buffer), nil
+}
+
+// copy a single file
+func (b *Builder) copyFile(src, dst string) error {
+	var err error
+	var srcfd *os.File
+	var dstfd *os.File
+	var srcinfo os.FileInfo
+
+	if srcfd, err = os.Open(src); err != nil {
+		return err
+	}
+	defer srcfd.Close()
+
+	if dstfd, err = os.Create(dst); err != nil {
+		return err
+	}
+	defer dstfd.Close()
+
+	if _, err = io.Copy(dstfd, srcfd); err != nil {
+		return err
+	}
+	if srcinfo, err = os.Stat(src); err != nil {
+		return err
+	}
+	return os.Chmod(dst, srcinfo.Mode())
+}
+
+// copy the files in a folder recursively
+func (b *Builder) copyFiles(src string, dst string) error {
+	var err error
+	var fds []os.FileInfo
+	var srcinfo os.FileInfo
+	if srcinfo, err = os.Stat(src); err != nil {
+		return err
+	}
+	if err = os.MkdirAll(dst, srcinfo.Mode()); err != nil {
+		return err
+	}
+	if fds, err = ioutil.ReadDir(src); err != nil {
+		return err
+	}
+	for _, fd := range fds {
+		srcfp := path.Join(src, fd.Name())
+		dstfp := path.Join(dst, fd.Name())
+
+		if fd.IsDir() {
+			if err = b.copyFiles(srcfp, dstfp); err != nil {
+				fmt.Println(err)
+			}
+		} else {
+			if err = b.copyFile(srcfp, dstfp); err != nil {
+				fmt.Println(err)
+			}
+		}
+	}
+	return nil
+}
+
+func (b *Builder) getPathLastSegment(path string) string {
+	segments := strings.Split(path, string(os.PathSeparator))
+	return segments[len(segments)-1]
 }
