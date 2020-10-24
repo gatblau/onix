@@ -12,18 +12,6 @@ import (
 )
 
 func main() {
-	// file, err := os.Open("file.txt")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer file.Close()
-	//
-	// hash := sha256.New()
-	// if _, err := io.Copy(hash, file); err != nil {
-	// 	log.Fatal(err)
-	// }
-	//
-	// fmt.Printf("%x", hash.Sum(nil))
 	rootCmd := cmd.InitialiseRootCmd()
 
 	// Execute adds all child commands to the root command and sets flags appropriately.

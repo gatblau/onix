@@ -16,10 +16,11 @@ import (
 
 // create a file seal
 type BuildCmd struct {
-	cmd    *cobra.Command
-	branch string
-	tag    string
-	packer *core.Builder
+	cmd      *cobra.Command
+	branch   string
+	tag      string
+	packer   *core.Builder
+	gitToken string
 }
 
 func NewBuildCmd() *BuildCmd {
@@ -34,6 +35,7 @@ func NewBuildCmd() *BuildCmd {
 	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.branch, "branch", "b", "", "the git branch to use")
 	c.cmd.Flags().StringVarP(&c.tag, "tag", "t", "", "the git tag to use")
+	c.cmd.Flags().StringVarP(&c.gitToken, "token", "k", "", "the git access token")
 	return c
 }
 
@@ -41,7 +43,7 @@ func (c *BuildCmd) Run(cmd *cobra.Command, args []string) {
 	// get the url of the remote git repository containing the source code
 	gitRepoUrl := args[0]
 	// execute the build
-	c.packer.Build(gitRepoUrl)
+	c.packer.Build(gitRepoUrl, c.gitToken)
 }
 
 // return the working path

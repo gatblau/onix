@@ -1,14 +1,27 @@
+/*
+  Onix Config Manager - Pak
+  Copyright (c) 2018-2020 by www.gatblau.org
+  Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
+  Contributors to this project, hereby assign copyright in this code to the project,
+  to be licensed under the same terms as the rest of the code.
+*/
 package core
 
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"github.com/gatblau/onix/pak/sign"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/google/uuid"
 	"io"
 	"io/ioutil"
 	"log"
+	h "net/http"
 	"os"
 	"os/exec"
 	"os/user"
@@ -19,96 +32,188 @@ import (
 )
 
 type Builder struct {
-	zipWriter            *zip.Writer
-	workingDir           string
-	pakFilename          string
-	cmds                 []string
-	labels               map[string]string
-	fileOrPathToBeZipped string
+	zipWriter   *zip.Writer
+	workingDir  string
+	pakFilename string
+	cmds        []string
+	labels      map[string]string
+	target      string
+	pType       string
+	repoURI     string
+	commit      string
+	signer      *sign.Signer
 }
 
 func NewBuilder() *Builder {
-	return &Builder{
+	// create the builder instance
+	builder := &Builder{
 		cmds:   []string{},
 		labels: make(map[string]string),
 	}
+	// check the registry directory is there
+	builder.checkRegistryDir()
+	// retrieve the signing key
+	bytes, err := ioutil.ReadFile(builder.inRegistryDirectory("keys/private.pem"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	// creates a signer
+	signer, err := sign.NewSigner(bytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+	builder.signer = signer
+	return builder
 }
 
-// the directory where the git cloned files are stored
-// from there they will be zipped
-// it is named "pak" so that when it is zipped a pak folder will always exists after unzipping
-func (p *Builder) sourceDir() string {
-	return fmt.Sprintf("%s/pak", p.workingDir)
-}
-
-func (p *Builder) Build(repoUrl string) {
+func (b *Builder) Build(repoUrl string, gitToken string) {
 	// creates a temporary working directory
-	p.newWorkingDir()
-	// clone the remote repository
-	repo, err := git.PlainClone(p.sourceDir(), false, &git.CloneOptions{
-		URL:      repoUrl,
-		Progress: os.Stdout,
-	})
-	if err != nil {
-		_ = os.RemoveAll(p.workingDir)
-		log.Fatal(err)
-	}
-	// load the pakfile
-	p.loadPakfile()
-	// run commands
-	p.run()
+	b.newWorkingDir()
+	repo := b.clone(repoUrl, gitToken)
 	// set the package name
-	p.pakName(repo)
-	// defines the destination (i.e. the *.pak file) within the working directory
-	dest := fmt.Sprintf("%s/%s.pak", p.workingDir, p.pakFilename)
-	// defines the source for zipping as specified in the Pakfile within the source directory
-	source := fmt.Sprintf("%s/%s", p.sourceDir(), p.fileOrPathToBeZipped)
-	// create the zip package
-	zipSource(source, dest)
+	b.pakName(repo)
+	// remove any files in the .pakignore file
+	b.removeIgnored()
+	// load the pakfile
+	b.loadPakfile()
+	// run commands
+	b.run()
+	// compress the target defined in the Pakfile
+	b.zipPackage()
+	// create seal
+	b.seal()
 	// cleanup all relevant folders and move package to target location
-	p.cleanUp()
+	b.cleanUp()
 }
 
-// cleanup all relevant folders and move package to target location
-func (p *Builder) cleanUp() {
-	// remove the zip folder
-	p.removeFromWD("pak")
-	// check the home dir exists
-	p.checkHomeDir()
-	// move the package to the user home
-	p.moveToHome(fmt.Sprintf("%s.pak", p.pakFilename))
-	// remove the working directory
-	err := os.RemoveAll(p.workingDir)
+// compress the target
+func (b *Builder) zipPackage() {
+	// defines the source for zipping as specified in the Pakfile within the source directory
+	source := fmt.Sprintf("%s/%s", b.sourceDir(), b.target)
+	// get the target source information
+	info, err := os.Stat(source)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// set the directory to empty
-	p.workingDir = ""
-}
-
-// move the specified filename from the working directory to the home directory (~/.pak/)
-func (p *Builder) moveToHome(filename string) {
-	err := os.Rename(fmt.Sprintf("%s/%s", p.workingDir, filename), fmt.Sprintf("%s/.pak/%s", p.homeDir(), filename))
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-// check the home directory exists and if not creates it
-func (p *Builder) checkHomeDir() {
-	// check the home directory exists
-	_, err := os.Stat(fmt.Sprintf("%s/.pak", p.homeDir()))
-	// if it does not
-	if os.IsNotExist(err) {
-		err = os.Mkdir(fmt.Sprintf("%s/.pak", p.homeDir()), os.ModePerm)
+	// if the target is a directory
+	if info.IsDir() {
+		// then zip it
+		zipSource(source, b.pakWDirFullFilename())
+	} else {
+		// if it is a file open it to check its type
+		file, err := os.Open(source)
 		if err != nil {
 			log.Fatal(err)
+		}
+		// find the content type
+		contentType, err := b.getFileContentType(file)
+		if err != nil {
+			log.Fatal(err)
+		}
+		// if the file is not a zip file
+		if contentType != "application/zip" {
+			// the zip it
+			zipSource(source, b.pakWDirFullFilename())
+			return
+		} else {
+			// find the file extension
+			ext := filepath.Ext(source)
+			// if the extension is not zip (e.g. jar files)
+			if ext != "zip" {
+				// rename the file to .zip
+				targetFile := fmt.Sprintf("%s.%s", source[:(len(source)-len(ext))], ext)
+				os.Rename(source, targetFile)
+				return
+			}
+			return
 		}
 	}
 }
 
+// clone a remote git repository, it only accepts a token if authentication is required
+// if the token is not provided (empty string) then no authentication is used
+func (b *Builder) clone(repoUrl string, gitToken string) *git.Repository {
+	b.repoURI = repoUrl
+	// clone the remote repository
+	opts := &git.CloneOptions{
+		URL:      repoUrl,
+		Progress: os.Stdout,
+	}
+	// if authentication token has been provided
+	if len(gitToken) > 0 {
+		// The intended use of a GitHub personal access token is in replace of your password
+		// because access tokens can easily be revoked.
+		// https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/
+		opts.Auth = &http.BasicAuth{
+			Username: "abc123", // yes, this can be anything except an empty string
+			Password: gitToken,
+		}
+	}
+	repo, err := git.PlainClone(b.sourceDir(), false, opts)
+	if err != nil {
+		_ = os.RemoveAll(b.workingDir)
+		log.Fatal(err)
+	}
+	return repo
+}
+
+// cleanup all relevant folders and move package to target location
+func (b *Builder) cleanUp() {
+	// remove the zip folder
+	b.removeFromWD("pak")
+	// move the package to the user home
+	b.moveToHome()
+	// remove the working directory
+	err := os.RemoveAll(b.workingDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// set the directory to empty
+	b.workingDir = ""
+}
+
+// move the specified filename from the working directory to the home directory (~/.pak/)
+func (b *Builder) moveToHome() {
+	// move the .pak file
+	err := os.Rename(b.pakWDirFullFilename(), b.pakRegDirFullFilename())
+	if err != nil {
+		log.Fatal(err)
+	}
+	// move the .seal file
+	err = os.Rename(b.sealWDirFullFilename(), b.sealRegDirFullFilename())
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// check the local registry directory exists and if not creates it
+func (b *Builder) checkRegistryDir() {
+	// check the home directory exists
+	_, err := os.Stat(fmt.Sprintf("%s/.pak", b.homeDir()))
+	// if it does not
+	if os.IsNotExist(err) {
+		err = os.Mkdir(fmt.Sprintf("%s/.pak", b.homeDir()), os.ModePerm)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	// check the keys directory exists
+	_, err = os.Stat(b.inRegistryDirectory("keys"))
+	// if it does not
+	if os.IsNotExist(err) {
+		// create a key pair
+		err = os.Mkdir(b.inRegistryDirectory("keys"), os.ModePerm)
+		if err != nil {
+			log.Fatal(err)
+		}
+		key := sign.NewKeyPair()
+		sign.SavePrivateKey(b.inRegistryDirectory("keys/private.pem"), key)
+		sign.SavePublicKey(b.inRegistryDirectory("keys/public.pem"), key.PublicKey)
+	}
+}
+
 // create a new working directory and return its path
-func (p *Builder) newWorkingDir() {
+func (b *Builder) newWorkingDir() {
 	basePath, _ := os.Getwd()
 	uid := uuid.New()
 	folder := strings.Replace(uid.String(), "-", "", -1)
@@ -118,29 +223,13 @@ func (p *Builder) newWorkingDir() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	p.workingDir = workingDirPath
+	b.workingDir = workingDirPath
 	// create a sub-folder to zip
-	err = os.Mkdir(p.sourceDir(), os.ModePerm)
+	err = os.Mkdir(b.sourceDir(), os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
-
-// zips a directory
-// func (p *Builder) pakFolder(folder string) error {
-// 	// construct the fqn for the zip file
-// 	pakFilename := fmt.Sprintf("%s/%s.pak", p.workingDir, p.pakFilename)
-// 	// create the zip file
-// 	file, err := os.Create(pakFilename)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer file.Close()
-// 	p.zipWriter = zip.NewWriter(file)
-// 	defer p.zipWriter.Close()
-// 	walker := p.walk
-// 	return filepath.Walk(folder, walker)
-// }
 
 // zip a file or a folder
 func zipSource(source, target string) error {
@@ -193,40 +282,8 @@ func zipSource(source, target string) error {
 	return err
 }
 
-// tree walker function for zip
-func (p *Builder) walk(path string, info os.FileInfo, err error) error {
-	fmt.Printf("compressing: %#v\n", path)
-	if err != nil {
-		return err
-	}
-	// if it is a directory return
-	if info.IsDir() {
-		return nil
-	}
-	// it is a file so open it
-	file, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	// ensure the file IO is closed eventually
-	defer file.Close()
-	// must use a relative path for it to work
-	relativePath := strings.TrimPrefix(path, fmt.Sprintf("%s/", p.workingDir))
-	// adds the file to the zip file
-	f, err := p.zipWriter.Create(relativePath)
-	if err != nil {
-		return err
-	}
-	// copy the zip content to file
-	_, err = io.Copy(f, file)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // construct a unique name for the package using the short HEAD commit hash and current time
-func (p *Builder) pakName(repo *git.Repository) {
+func (b *Builder) pakName(repo *git.Repository) {
 	ref, err := repo.Head()
 	if err != nil {
 		log.Fatal(err)
@@ -234,11 +291,12 @@ func (p *Builder) pakName(repo *git.Repository) {
 	// get the current time
 	t := time.Now()
 	timeStamp := fmt.Sprintf("%d%d%s%d%d%d%s", t.Day(), t.Month(), strconv.Itoa(t.Year())[:2], t.Hour(), t.Minute(), t.Second(), strconv.Itoa(t.Nanosecond())[:3])
-	p.pakFilename = fmt.Sprintf("%s-%s", timeStamp, ref.Hash().String()[:7])
+	b.pakFilename = fmt.Sprintf("%s-%s", timeStamp, ref.Hash().String()[:7])
+	b.commit = ref.Hash().String()
 }
 
 // gets the user home directory
-func (p *Builder) homeDir() string {
+func (b *Builder) homeDir() string {
 	usr, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
@@ -247,26 +305,29 @@ func (p *Builder) homeDir() string {
 }
 
 // remove from working directory
-func (p *Builder) removeFromWD(path string) {
-	err := os.RemoveAll(fmt.Sprintf("%s/%s", p.workingDir, path))
+func (b *Builder) removeFromWD(path string) {
+	err := os.RemoveAll(fmt.Sprintf("%s/%s", b.workingDir, path))
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func (p *Builder) removeIgnored() {
+// remove files in the source folder that are specified in the .pakignore file
+func (b *Builder) removeIgnored() {
 	// retrieve .pakignore
-	bytes, err := ioutil.ReadFile(fmt.Sprintf("%s/.pakignore", p.sourceDir()))
+	bytes, err := ioutil.ReadFile(b.inSourceDirectory(".pakignore"))
 	if err != nil {
 		// assume no .pakignore exists, do nothing
-		log.Printf(".packignore not found")
+		log.Printf(".pakignore not found")
 		return
 	}
 	// get the lines in the ignore file
 	lines := strings.Split(string(bytes), "\n")
+	// adds the .pakignore
+	lines = append(lines, ".pakignore")
 	// loop and remove the included files or folders
 	for _, line := range lines {
-		path := fmt.Sprintf("%s/%s", p.sourceDir(), line)
+		path := b.inSourceDirectory(line)
 		err := os.RemoveAll(path)
 		if err != nil {
 			log.Printf("failed to ignore file %s", path)
@@ -275,39 +336,43 @@ func (p *Builder) removeIgnored() {
 }
 
 // parse the Pakfile build instructions
-func (p *Builder) loadPakfile() {
+func (b *Builder) loadPakfile() {
 	// retrieve Pakfile
-	bytes, err := ioutil.ReadFile(fmt.Sprintf("%s/Pakfile", p.sourceDir()))
+	bytes, err := ioutil.ReadFile(fmt.Sprintf("%s/Pakfile", b.sourceDir()))
 	if err != nil {
 		log.Fatal(err)
 	}
 	// get the lines in the Pakfile
 	lines := strings.Split(string(bytes), "\n")
-	// loop load data
+	// loop load info
 	for _, line := range lines {
 		// add labels
 		if strings.HasPrefix(line, "LABEL ") {
 			value := line[6:]
 			parts := strings.Split(value, "=")
-			p.labels[strings.Trim(parts[0], " ")] = strings.Trim(strings.Trim(parts[1], " "), "\"")
+			b.labels[strings.Trim(parts[0], " ")] = strings.Trim(strings.Trim(parts[1], " "), "\"")
 		}
 		// add commands
 		if strings.HasPrefix(line, "RUN ") {
 			value := line[4:]
-			p.cmds = append(p.cmds, value)
+			b.cmds = append(b.cmds, value)
 		}
-		// add the output path
-		if strings.HasPrefix(line, "PATH ") {
-			p.fileOrPathToBeZipped = line[5:]
+		// add the name of the file or folder being zipped
+		if strings.HasPrefix(line, "TARGET ") {
+			b.target = line[7:]
+		}
+		// add the name of the file or folder being zipped
+		if strings.HasPrefix(line, "TYPE ") {
+			b.pType = line[5:]
 		}
 	}
 }
 
-func (p *Builder) run() {
-	for _, cmd := range p.cmds {
-		execute(cmd, p.sourceDir())
+func (b *Builder) run() {
+	for _, cmd := range b.cmds {
+		execute(cmd, b.sourceDir())
 	}
-	p.waitForFileExist(p.fileOrPathToBeZipped, 5*time.Second)
+	b.waitForFileExist(b.inSourceDirectory(b.target), 5*time.Second)
 }
 
 // executes a command
@@ -335,25 +400,146 @@ func execute(cmd string, dir string) {
 	}
 }
 
-// check if a relative path in the zip directory is a directory
-func (p *Builder) isDir(path string) bool {
-	info, err := os.Stat(path)
-	// if it does not
-	if os.IsNotExist(err) {
-		log.Fatal(err)
-	}
-	return info.IsDir()
-}
-
 // wait a time duration for a file to be created on the path
-func (p *Builder) waitForFileExist(path string, d time.Duration) {
+func (b *Builder) waitForFileExist(path string, d time.Duration) {
 	elapsed := 0
+	found := false
 	for {
 		_, err := os.Stat(path)
-		if !os.IsNotExist(err) || elapsed > 20 {
+		if !os.IsNotExist(err) {
+			found = true
+			break
+		}
+		if elapsed > 30 {
 			break
 		}
 		elapsed++
 		time.Sleep(500 * time.Millisecond)
 	}
+	if !found {
+		log.Fatal("error: target not found after command execution")
+	}
+}
+
+// return an absolute path using the working directory as base
+func (b *Builder) inWorkingDirectory(relativePath string) string {
+	return fmt.Sprintf("%s/%s", b.workingDir, relativePath)
+}
+
+// return an absolute path using the source directory as base
+func (b *Builder) inSourceDirectory(relativePath string) string {
+	return fmt.Sprintf("%s/%s", b.sourceDir(), relativePath)
+}
+
+// return an absolute path using the home directory as base
+func (b *Builder) inRegistryDirectory(relativePath string) string {
+	return fmt.Sprintf("%s/.pak/%s", b.homeDir(), relativePath)
+}
+
+// create the package seal
+func (b *Builder) seal() {
+	// prepare the seal info
+	info := &manifest{
+		Type:   b.pType,
+		Name:   fmt.Sprintf("%s.zip", b.pakFilename),
+		Labels: b.labels,
+		Source: b.repoURI,
+		Commit: b.commit,
+		Branch: "",
+		Tag:    "",
+		Target: b.target,
+		Time:   time.Now().Format(time.RFC850),
+	}
+	// take the hash of the zip file and seal info combined
+	sum := b.checksum(b.pakWDirFullFilename(), info)
+	// create a Base-64 encoded cryptographic signature
+	signature, err := b.signer.SignBase64(sum)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// construct the seal
+	s := &seal{
+		// the package
+		Manifest: info,
+		// the combined checksum of the seal info and the package
+		Digest: base64.StdEncoding.EncodeToString(sum),
+		// the crypto signature
+		Signature: signature,
+	}
+	// convert the seal to Json
+	dest, err := b.toJsonBytes(s)
+	// save the seal
+	err = ioutil.WriteFile(b.sealWDirFullFilename(), dest, os.ModePerm)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// convert the passed in parameter to a Json Byte Array
+func (b *Builder) toJsonBytes(s interface{}) ([]byte, error) {
+	// serialise the seal to json
+	source, err := json.Marshal(s)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// indent the json to make it readable
+	dest := new(bytes.Buffer)
+	json.Indent(dest, source, "", "  ")
+	return dest.Bytes(), err
+}
+
+// takes the combined checksum of the seal information and the compressed file
+func (b *Builder) checksum(path string, sealData *manifest) []byte {
+	// read the compressed file
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	// serialise the seal info to json
+	info, err := b.toJsonBytes(sealData)
+	if err != nil {
+		log.Fatal(err)
+	}
+	hash := sha256.New()
+	// copy the seal manifest into the hash
+	if _, err := io.Copy(hash, bytes.NewReader(info)); err != nil {
+		log.Fatal(err)
+	}
+	// copy the compressed file into the hash
+	if _, err := io.Copy(hash, file); err != nil {
+		log.Fatal(err)
+	}
+	return hash.Sum(nil)
+}
+
+func (b *Builder) sourceDir() string {
+	return fmt.Sprintf("%s/pak", b.workingDir)
+}
+
+func (b *Builder) sealWDirFullFilename() string {
+	return fmt.Sprintf("%s/%s_seal.json", b.workingDir, b.pakFilename)
+}
+
+func (b *Builder) pakWDirFullFilename() string {
+	return fmt.Sprintf("%s/%s.zip", b.workingDir, b.pakFilename)
+}
+
+func (b *Builder) sealRegDirFullFilename() string {
+	return fmt.Sprintf("%s/.pak/%s.json", b.homeDir(), b.pakFilename)
+}
+
+func (b *Builder) pakRegDirFullFilename() string {
+	return fmt.Sprintf("%s/.pak/%s.zip", b.homeDir(), b.pakFilename)
+}
+
+// detect the file content type
+func (b *Builder) getFileContentType(f *os.File) (string, error) {
+	// get the first 512 bytes to sniff the content type
+	buffer := make([]byte, 512)
+	_, err := f.Read(buffer)
+	if err != nil {
+		return "", err
+	}
+	return h.DetectContentType(buffer), nil
 }
