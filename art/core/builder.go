@@ -208,7 +208,7 @@ func (b *Builder) cleanUp() {
 	b.removeFromWD("pak")
 	// add the packages to the local registry
 	for _, profile := range b.buildFile.Profiles {
-		b.registry.add(b.workDirZipFilename(profile.Name), b.repoName)
+		b.registry.add(b.workDirZipFilename(profile.Name), b.repoName, profile.Name)
 	}
 	// remove the working directory
 	err := os.RemoveAll(b.workingDir)
