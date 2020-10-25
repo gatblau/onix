@@ -76,6 +76,15 @@ func (r *registry) load() {
 	if err != nil {
 		// then assume registry.json is not there: try and create it
 		r.save()
+	} else {
+		regBytes, err := ioutil.ReadFile(r.file())
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = json.Unmarshal(regBytes, r)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
