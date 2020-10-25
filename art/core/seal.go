@@ -1,5 +1,5 @@
 /*
-  Onix Config Manager - Pak
+  Onix Config Manager - Art
   Copyright (c) 2018-2020 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
@@ -31,6 +31,8 @@ type seal struct {
 type manifest struct {
 	// the package type
 	Type string `json:"type,omitempty"`
+	// the license associated to the package
+	License string `json:"license"`
 	// the name of the package file
 	Name string `json:"name"`
 	// the labels assigned to the package in the Pakfile

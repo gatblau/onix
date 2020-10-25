@@ -1,5 +1,5 @@
 /*
-  Onix Config Manager - Pak
+  Onix Config Manager - Art
   Copyright (c) 2018-2020 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
@@ -29,37 +29,35 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
+const cliName = "art"
+
 type Builder struct {
-	zipWriter   *zip.Writer
-	workingDir  string
-	pakFilename string
-	cmds        []string
-	labels      map[string]string
-	target      string
-	pType       string
-	repoURI     string
-	commit      string
-	signer      *sign.Signer
+	zipWriter    *zip.Writer
+	workingDir   string
+	uniqueIdName string
+	repoURI      string
+	commit       string
+	signer       *sign.Signer
+	tagName      string
+	buildFile    *BuildFile
 }
 
 func NewBuilder() *Builder {
 	// create the builder instance
-	builder := &Builder{
-		cmds:   []string{},
-		labels: make(map[string]string),
-	}
+	builder := new(Builder)
 	// check the registry directory is there
 	builder.checkRegistryDir()
 	// retrieve the signing key
-	bytes, err := ioutil.ReadFile(builder.inRegistryDirectory("keys/private.pem"))
+	privateKeyBytes, err := ioutil.ReadFile(builder.inRegistryDirectory("keys/private.pem"))
 	if err != nil {
 		log.Fatal(err)
 	}
 	// creates a signer
-	signer, err := sign.NewSigner(bytes)
+	signer, err := sign.NewSigner(privateKeyBytes)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -67,10 +65,30 @@ func NewBuilder() *Builder {
 	return builder
 }
 
-func (b *Builder) Build(from string, gitToken string, packageName string) {
+func (b *Builder) Build(from string, gitToken string, tagName string) {
+	// prepare the source ready for the build
+	repo := b.prepareSource(from, gitToken, tagName)
+	// set the unique identifier name for both the zip file and the seal file
+	b.setUniqueIdName(repo)
+	// remove any files in the .artignore file
+	b.removeIgnored()
+	// run commands
+	b.run()
+	// compress the target(s) defined in the package.yaml
+	for _, profile := range b.buildFile.Profiles {
+		b.zipPackage(profile.Target, profile.Name)
+		b.createSeal(profile)
+	}
+	// cleanup all relevant folders and move package to target location
+	b.cleanUp()
+}
+
+// either clone a remote git repo or copy a local one onto the source folder
+func (b *Builder) prepareSource(from string, gitToken string, tagName string) *git.Repository {
 	var (
 		repo *git.Repository
 	)
+	b.tagName = tagName
 	// creates a temporary working directory
 	b.newWorkingDir()
 	// if "from" is an http url
@@ -80,7 +98,7 @@ func (b *Builder) Build(from string, gitToken string, packageName string) {
 	} else
 	// there is a local repo so copy it to the source folder and then open it
 	{
-		var path = from
+		var localPath = from
 		// if a relative path is passed
 		if strings.HasPrefix(from, "./") || (!strings.HasPrefix(from, "/")) {
 			// turn it into an absolute path
@@ -88,33 +106,26 @@ func (b *Builder) Build(from string, gitToken string, packageName string) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			path = absPath
+			localPath = absPath
 		}
 		// copy the folder to the source directory
-		b.copyFiles(path, b.sourceDir())
-		b.repoURI = path
+		err := b.copyFiles(localPath, b.sourceDir())
+		if err != nil {
+			log.Fatal(err)
+		}
+		b.repoURI = localPath
 		repo = b.openRepo()
 	}
-	// set the package name
-	b.pakName(repo)
-	// remove any files in the .pakignore file
-	b.removeIgnored()
-	// load the pakfile
-	b.loadPakfile()
-	// run commands
-	b.run()
-	// compress the target defined in the Pakfile
-	b.zipPackage()
-	// create seal
-	b.seal()
-	// cleanup all relevant folders and move package to target location
-	b.cleanUp()
+	// read package.yaml
+	b.buildFile = LoadBuildFile(fmt.Sprintf("%s/package.yaml", b.sourceDir()))
+	return repo
 }
 
 // compress the target
-func (b *Builder) zipPackage() {
-	// defines the source for zipping as specified in the Pakfile within the source directory
-	source := fmt.Sprintf("%s/%s", b.sourceDir(), b.target)
+func (b *Builder) zipPackage(target string, profile string) {
+	var targetName = target
+	// defines the source for zipping as specified in the package.yaml within the source directory
+	source := fmt.Sprintf("%s/%s", b.sourceDir(), targetName)
 	// get the target source information
 	info, err := os.Stat(source)
 	if err != nil {
@@ -123,7 +134,10 @@ func (b *Builder) zipPackage() {
 	// if the target is a directory
 	if info.IsDir() {
 		// then zip it
-		zipSource(source, b.pakWDirFullFilename())
+		err := zipSource(source, b.workDirZipFilename(profile))
+		if err != nil {
+			log.Fatal(err)
+		}
 	} else {
 		// if it is a file open it to check its type
 		file, err := os.Open(source)
@@ -138,7 +152,10 @@ func (b *Builder) zipPackage() {
 		// if the file is not a zip file
 		if contentType != "application/zip" {
 			// the zip it
-			zipSource(source, b.pakWDirFullFilename())
+			err := zipSource(source, b.workDirZipFilename(profile))
+			if err != nil {
+				log.Fatal(err)
+			}
 			return
 		} else {
 			// find the file extension
@@ -147,7 +164,10 @@ func (b *Builder) zipPackage() {
 			if ext != "zip" {
 				// rename the file to .zip
 				targetFile := fmt.Sprintf("%s.%s", source[:(len(source)-len(ext))], ext)
-				os.Rename(source, targetFile)
+				err := os.Rename(source, targetFile)
+				if err != nil {
+					log.Fatal(err)
+				}
 				return
 			}
 			return
@@ -196,7 +216,9 @@ func (b *Builder) cleanUp() {
 	// remove the zip folder
 	b.removeFromWD("pak")
 	// move the package to the user home
-	b.moveToHome()
+	for _, profile := range b.buildFile.Profiles {
+		b.moveToHome(profile)
+	}
 	// remove the working directory
 	err := os.RemoveAll(b.workingDir)
 	if err != nil {
@@ -207,14 +229,14 @@ func (b *Builder) cleanUp() {
 }
 
 // move the specified filename from the working directory to the home directory (~/.pak/)
-func (b *Builder) moveToHome() {
+func (b *Builder) moveToHome(profile Profile) {
 	// move the .pak file
-	err := os.Rename(b.pakWDirFullFilename(), b.pakRegDirFullFilename())
+	err := os.Rename(b.workDirZipFilename(profile.Name), b.regDirZipFilename(profile.Name))
 	if err != nil {
 		log.Fatal(err)
 	}
 	// move the .seal file
-	err = os.Rename(b.sealWDirFullFilename(), b.sealRegDirFullFilename())
+	err = os.Rename(b.workDirJsonFilename(profile.Name), b.regDirJsonFilename(profile.Name))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -223,10 +245,10 @@ func (b *Builder) moveToHome() {
 // check the local registry directory exists and if not creates it
 func (b *Builder) checkRegistryDir() {
 	// check the home directory exists
-	_, err := os.Stat(fmt.Sprintf("%s/.pak", b.homeDir()))
+	_, err := os.Stat(b.registryDirectory())
 	// if it does not
 	if os.IsNotExist(err) {
-		err = os.Mkdir(fmt.Sprintf("%s/.pak", b.homeDir()), os.ModePerm)
+		err = os.Mkdir(b.registryDirectory(), os.ModePerm)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -271,9 +293,19 @@ func zipSource(source, target string) error {
 	if err != nil {
 		return err
 	}
-	defer zipfile.Close()
+	defer func() {
+		err := zipfile.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 	archive := zip.NewWriter(zipfile)
-	defer archive.Close()
+	defer func() {
+		err := archive.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 	info, err := os.Stat(source)
 	if err != nil {
 		return nil
@@ -282,7 +314,7 @@ func zipSource(source, target string) error {
 	if info.IsDir() {
 		baseDir = filepath.Base(source)
 	}
-	filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -309,7 +341,12 @@ func zipSource(source, target string) error {
 		if err != nil {
 			return err
 		}
-		defer file.Close()
+		defer func() {
+			err := file.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}()
 		_, err = io.Copy(writer, file)
 		return err
 	})
@@ -317,15 +354,15 @@ func zipSource(source, target string) error {
 }
 
 // construct a unique name for the package using the short HEAD commit hash and current time
-func (b *Builder) pakName(repo *git.Repository) {
+func (b *Builder) setUniqueIdName(repo *git.Repository) {
 	ref, err := repo.Head()
 	if err != nil {
 		log.Fatal(err)
 	}
 	// get the current time
 	t := time.Now()
-	timeStamp := fmt.Sprintf("%d%d%s%d%d%d%s", t.Day(), t.Month(), strconv.Itoa(t.Year())[:2], t.Hour(), t.Minute(), t.Second(), strconv.Itoa(t.Nanosecond())[:3])
-	b.pakFilename = fmt.Sprintf("%s-%s", timeStamp, ref.Hash().String()[:7])
+	timeStamp := fmt.Sprintf("%02d%02d%02s%02d%02d%02d%s", t.Day(), t.Month(), strconv.Itoa(t.Year())[:2], t.Hour(), t.Minute(), t.Second(), strconv.Itoa(t.Nanosecond())[:3])
+	b.uniqueIdName = fmt.Sprintf("%s-%s", timeStamp, ref.Hash().String()[:7])
 	b.commit = ref.Hash().String()
 }
 
@@ -346,81 +383,59 @@ func (b *Builder) removeFromWD(path string) {
 	}
 }
 
-// remove files in the source folder that are specified in the .pakignore file
+// remove files in the source folder that are specified in the .artignore file
 func (b *Builder) removeIgnored() {
-	// retrieve .pakignore
-	bytes, err := ioutil.ReadFile(b.inSourceDirectory(".pakignore"))
+	ignoreFilename := ".artignore"
+	// retrieve the ignore file
+	ignoreFileBytes, err := ioutil.ReadFile(b.inSourceDirectory(ignoreFilename))
 	if err != nil {
-		// assume no .pakignore exists, do nothing
-		log.Printf(".pakignore not found")
+		// assume no ignore file exists, do nothing
+		log.Printf("%s not found", ignoreFilename)
 		return
 	}
 	// get the lines in the ignore file
-	lines := strings.Split(string(bytes), "\n")
-	// adds the .pakignore
-	lines = append(lines, ".pakignore")
+	lines := strings.Split(string(ignoreFileBytes), "\n")
+	// adds the .ignore file
+	lines = append(lines, ignoreFilename)
 	// loop and remove the included files or folders
 	for _, line := range lines {
-		path := b.inSourceDirectory(line)
-		err := os.RemoveAll(path)
+		sourcePath := b.inSourceDirectory(line)
+		err := os.RemoveAll(sourcePath)
 		if err != nil {
-			log.Printf("failed to ignore file %s", path)
+			log.Printf("failed to ignore file %s", sourcePath)
 		}
 	}
 }
 
-// parse the Pakfile build instructions
-func (b *Builder) loadPakfile() {
-	// retrieve Pakfile
-	bytes, err := ioutil.ReadFile(fmt.Sprintf("%s/Pakfile", b.sourceDir()))
-	if err != nil {
-		log.Fatal(err)
-	}
-	// get the lines in the Pakfile
-	lines := strings.Split(string(bytes), "\n")
-	// loop load info
-	for _, line := range lines {
-		// add labels
-		if strings.HasPrefix(line, "LABEL ") {
-			value := line[6:]
-			parts := strings.Split(value, "=")
-			b.labels[strings.Trim(parts[0], " ")] = strings.Trim(strings.Trim(parts[1], " "), "\"")
-		}
-		// add commands
-		if strings.HasPrefix(line, "RUN ") {
-			value := line[4:]
-			b.cmds = append(b.cmds, value)
-		}
-		// add the name of the file or folder being zipped
-		if strings.HasPrefix(line, "TARGET ") {
-			b.target = line[7:]
-		}
-		// add the name of the file or folder being zipped
-		if strings.HasPrefix(line, "TYPE ") {
-			b.pType = line[5:]
-		}
-	}
-}
-
+// execute all commands in all profiles in sequence
 func (b *Builder) run() {
-	for _, cmd := range b.cmds {
-		execute(cmd, b.sourceDir())
+	// construct an environment with the vars at build file level
+	env := append(os.Environ(), b.buildFile.getEnv()...)
+	// for each build profile
+	for _, profile := range b.buildFile.Profiles {
+		// for each run statement in the profile
+		for _, cmd := range profile.Run {
+			// combine the current environment with the profile environment
+			profileEnv := append(env, profile.getEnv()...)
+			// execute the statement
+			execute(cmd, b.sourceDir(), profileEnv)
+		}
+		// wait for the target to be created in the file system
+		b.waitForTargetToBeCreated(b.inSourceDirectory(profile.Target))
 	}
-	b.waitForFileExist(b.inSourceDirectory(b.target), 5*time.Second)
 }
 
-// executes a command
-func execute(cmd string, dir string) {
+// executes a single command with arguments
+func execute(cmd string, dir string, env []string) {
 	strArr := strings.Split(cmd, " ")
 	var c *exec.Cmd
 	if len(strArr) == 1 {
-		//nolint:gosec
 		c = exec.Command(strArr[0])
 	} else {
-		//nolint:gosec
 		c = exec.Command(strArr[0], strArr[1:]...)
 	}
 	c.Dir = dir
+	c.Env = env
 	var stdout, stderr bytes.Buffer
 	c.Stdout = &stdout
 	c.Stderr = &stderr
@@ -430,12 +445,43 @@ func execute(cmd string, dir string) {
 	}
 	err := c.Wait()
 	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			// The program has exited with an exit code != 0
+			// This works on both Unix and Windows. Although package
+			// syscall is generally platform dependent, WaitStatus is
+			// defined for both Unix and Windows and in both cases has
+			// an ExitStatus() method with the same signature.
+			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+				log.Fatal(exitMsg(status.ExitStatus()))
+			}
+		} else {
+			log.Fatalf("cmd.Wait: %v", err)
+		}
 		log.Fatal(err)
 	}
 }
 
-// wait a time duration for a file to be created on the path
-func (b *Builder) waitForFileExist(path string, d time.Duration) {
+func exitMsg(exitCode int) string {
+	switch exitCode {
+	case 1:
+		return "exit code 1 - general error"
+	case 2:
+		return "exit code 2 - misuse of shell built-ins"
+	case 126:
+		return "exit code 126 - command invoked cannot execute"
+	case 127:
+		return "exit code 127 - command not found"
+	case 128:
+		return "exit code 128 - invalid argument to exit"
+	case 130:
+		return "exit code 130 - script terminated by CTRL-C"
+	default:
+		return fmt.Sprintf("exist code %d", exitCode)
+	}
+}
+
+// wait a time duration for a file or folder to be created on the path
+func (b *Builder) waitForTargetToBeCreated(path string) {
 	elapsed := 0
 	found := false
 	for {
@@ -467,25 +513,35 @@ func (b *Builder) inSourceDirectory(relativePath string) string {
 
 // return an absolute path using the home directory as base
 func (b *Builder) inRegistryDirectory(relativePath string) string {
-	return fmt.Sprintf("%s/.pak/%s", b.homeDir(), relativePath)
+	return fmt.Sprintf("%s/%s", b.registryDirectory(), relativePath)
 }
 
 // create the package seal
-func (b *Builder) seal() {
+func (b *Builder) createSeal(profile Profile) {
+	filename := b.uniqueIdName
+	// work out the zip filename
+	// if we have a defined name in the profile
+	if len(profile.Name) > 0 {
+		// append the profile name to the unique Id name
+		filename = fmt.Sprintf("%s-%s", b.uniqueIdName, profile.Name)
+	}
+	// merge the labels in the profile with the ones at the build file level
+	labels := b.mergeMaps(b.buildFile.Labels, profile.Labels)
 	// prepare the seal info
 	info := &manifest{
-		Type:   b.pType,
-		Name:   fmt.Sprintf("%s.zip", b.pakFilename),
-		Labels: b.labels,
-		Source: b.repoURI,
-		Commit: b.commit,
-		Branch: "",
-		Tag:    "",
-		Target: b.target,
-		Time:   time.Now().Format(time.RFC850),
+		Type:    b.buildFile.Type,
+		License: b.buildFile.License,
+		Name:    fmt.Sprintf("%s.zip", filename),
+		Labels:  labels,
+		Source:  b.repoURI,
+		Commit:  b.commit,
+		Branch:  "",
+		Tag:     "",
+		Target:  profile.Target,
+		Time:    time.Now().Format(time.RFC850),
 	}
 	// take the hash of the zip file and seal info combined
-	sum := b.checksum(b.pakWDirFullFilename(), info)
+	sum := b.checksum(b.workDirZipFilename(profile.Name), info)
 	// create a Base-64 encoded cryptographic signature
 	signature, err := b.signer.SignBase64(sum)
 	if err != nil {
@@ -501,16 +557,16 @@ func (b *Builder) seal() {
 		Signature: signature,
 	}
 	// convert the seal to Json
-	dest, err := b.toJsonBytes(s)
+	dest := b.toJsonBytes(s)
 	// save the seal
-	err = ioutil.WriteFile(b.sealWDirFullFilename(), dest, os.ModePerm)
+	err = ioutil.WriteFile(b.workDirJsonFilename(profile.Name), dest, os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 // convert the passed in parameter to a Json Byte Array
-func (b *Builder) toJsonBytes(s interface{}) ([]byte, error) {
+func (b *Builder) toJsonBytes(s interface{}) []byte {
 	// serialise the seal to json
 	source, err := json.Marshal(s)
 	if err != nil {
@@ -518,8 +574,11 @@ func (b *Builder) toJsonBytes(s interface{}) ([]byte, error) {
 	}
 	// indent the json to make it readable
 	dest := new(bytes.Buffer)
-	json.Indent(dest, source, "", "  ")
-	return dest.Bytes(), err
+	err = json.Indent(dest, source, "", "  ")
+	if err != nil {
+		log.Fatal(err)
+	}
+	return dest.Bytes()
 }
 
 // takes the combined checksum of the seal information and the compressed file
@@ -529,12 +588,14 @@ func (b *Builder) checksum(path string, sealData *manifest) []byte {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer file.Close()
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 	// serialise the seal info to json
-	info, err := b.toJsonBytes(sealData)
-	if err != nil {
-		log.Fatal(err)
-	}
+	info := b.toJsonBytes(sealData)
 	hash := sha256.New()
 	// copy the seal manifest into the hash
 	if _, err := io.Copy(hash, bytes.NewReader(info)); err != nil {
@@ -548,23 +609,45 @@ func (b *Builder) checksum(path string, sealData *manifest) []byte {
 }
 
 func (b *Builder) sourceDir() string {
-	return fmt.Sprintf("%s/pak", b.workingDir)
+	return fmt.Sprintf("%s/%s", b.workingDir, cliName)
 }
 
-func (b *Builder) sealWDirFullFilename() string {
-	return fmt.Sprintf("%s/%s_seal.json", b.workingDir, b.pakFilename)
+// the fully qualified name of the json seal in the working directory
+func (b *Builder) workDirJsonFilename(profileName string) string {
+	if len(profileName) > 0 {
+		return fmt.Sprintf("%s/%s-%s.json", b.workingDir, b.uniqueIdName, profileName)
+	}
+	return fmt.Sprintf("%s/%s.json", b.workingDir, b.uniqueIdName)
 }
 
-func (b *Builder) pakWDirFullFilename() string {
-	return fmt.Sprintf("%s/%s.zip", b.workingDir, b.pakFilename)
+// the fully qualified name of the zip file in the working directory
+// if a profile name is passed in then it is appended to the name
+func (b *Builder) workDirZipFilename(profileName string) string {
+	if len(profileName) > 0 {
+		return fmt.Sprintf("%s/%s-%s.zip", b.workingDir, b.uniqueIdName, profileName)
+	}
+	return fmt.Sprintf("%s/%s.zip", b.workingDir, b.uniqueIdName)
 }
 
-func (b *Builder) sealRegDirFullFilename() string {
-	return fmt.Sprintf("%s/.pak/%s.json", b.homeDir(), b.pakFilename)
+// the fully qualified name of the json seal file in the local registry
+func (b *Builder) regDirJsonFilename(profileName string) string {
+	if len(profileName) > 0 {
+		return fmt.Sprintf("%s/%s-%s.json", b.registryDirectory(), b.uniqueIdName, profileName)
+	}
+	return fmt.Sprintf("%s/%s.json", b.registryDirectory(), b.uniqueIdName)
 }
 
-func (b *Builder) pakRegDirFullFilename() string {
-	return fmt.Sprintf("%s/.pak/%s.zip", b.homeDir(), b.pakFilename)
+// the fully qualified name of the zip file in the local registry
+func (b *Builder) regDirZipFilename(profileName string) string {
+	if len(profileName) > 0 {
+		return fmt.Sprintf("%s/%s-%s.zip", b.registryDirectory(), b.uniqueIdName, profileName)
+	}
+	return fmt.Sprintf("%s/%s.zip", b.registryDirectory(), b.uniqueIdName)
+}
+
+// return the art registry directory
+func (b *Builder) registryDirectory() string {
+	return fmt.Sprintf("%s/.%s", b.homeDir(), cliName)
 }
 
 // detect the file content type
@@ -581,27 +664,37 @@ func (b *Builder) getFileContentType(f *os.File) (string, error) {
 // copy a single file
 func (b *Builder) copyFile(src, dst string) error {
 	var err error
-	var srcfd *os.File
-	var dstfd *os.File
-	var srcinfo os.FileInfo
+	var srcFd *os.File
+	var dstFd *os.File
+	var srcInfo os.FileInfo
 
-	if srcfd, err = os.Open(src); err != nil {
+	if srcFd, err = os.Open(src); err != nil {
 		return err
 	}
-	defer srcfd.Close()
+	defer func() {
+		err := srcFd.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
-	if dstfd, err = os.Create(dst); err != nil {
+	if dstFd, err = os.Create(dst); err != nil {
 		return err
 	}
-	defer dstfd.Close()
+	defer func() {
+		err := dstFd.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
-	if _, err = io.Copy(dstfd, srcfd); err != nil {
+	if _, err = io.Copy(dstFd, srcFd); err != nil {
 		return err
 	}
-	if srcinfo, err = os.Stat(src); err != nil {
+	if srcInfo, err = os.Stat(src); err != nil {
 		return err
 	}
-	return os.Chmod(dst, srcinfo.Mode())
+	return os.Chmod(dst, srcInfo.Mode())
 }
 
 // copy the files in a folder recursively
@@ -621,7 +714,6 @@ func (b *Builder) copyFiles(src string, dst string) error {
 	for _, fd := range fds {
 		srcfp := path.Join(src, fd.Name())
 		dstfp := path.Join(dst, fd.Name())
-
 		if fd.IsDir() {
 			if err = b.copyFiles(srcfp, dstfp); err != nil {
 				fmt.Println(err)
@@ -638,4 +730,16 @@ func (b *Builder) copyFiles(src string, dst string) error {
 func (b *Builder) getPathLastSegment(path string) string {
 	segments := strings.Split(path, string(os.PathSeparator))
 	return segments[len(segments)-1]
+}
+
+// merge two or more maps
+// the latter map overrides the former if duplicate keys exist across the two maps
+func (b *Builder) mergeMaps(ms ...map[string]string) map[string]string {
+	res := map[string]string{}
+	for _, m := range ms {
+		for k, v := range m {
+			res[k] = v
+		}
+	}
+	return res
 }
