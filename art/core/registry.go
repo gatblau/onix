@@ -100,18 +100,15 @@ func (r *registry) file() string {
 
 // save the state of the registry
 func (r *registry) save() {
-	regBytes, err := json.Marshal(r)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = ioutil.WriteFile(r.file(), regBytes, os.ModePerm)
+	regBytes := toJsonBytes(r)
+	err := ioutil.WriteFile(r.file(), regBytes, os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 // add the file and seal to the registry
-func (r *registry) add(filename string, name string) {
+func (r *registry) add(filename, nameTag, profile string) {
 	// gets the full base name (with extension)
 	basename := filepath.Base(filename)
 	// gets the basename directory only
@@ -124,6 +121,38 @@ func (r *registry) add(filename string, name string) {
 	if basenameExt != ".zip" {
 		log.Fatal(errors.New(fmt.Sprintf("the registry can only accept zip files, the extension provided was %s", basenameExt)))
 	}
+	var (
+		repoName    string
+		packageTags []string
+	)
+	// work out the tag to use
+	tagMarks := strings.Count(nameTag, ":")
+	switch tagMarks {
+	case 0:
+		var latestTag = "latest"
+		if len(profile) > 0 {
+			latestTag = fmt.Sprintf("%s-%s", latestTag, profile)
+		}
+		// add latest tag
+		packageTags = []string{
+			latestTag,
+			basenameNoExt,
+		}
+		// the repo name is the nameTag
+		repoName = nameTag
+		// TODO: check if another artifact already has the latest tag and untag it
+	case 1:
+		// extract the tag from the nameTag
+		packageTags = []string{
+			nameTag[strings.LastIndex(nameTag, ":"):],
+			basenameNoExt,
+		}
+		// the repo name is the nameTag without the tag
+		repoName = nameTag[:strings.LastIndex(nameTag, ":")]
+	default:
+		// any other number is an error
+		log.Fatal(errors.New(fmt.Sprintf("the package name-tag cannot contain more than 1 colon. found %d colons", tagMarks)))
+	}
 	// move the zip file to the registry folder
 	err := os.Rename(filename, fmt.Sprintf("%s/%s", r.path(), basename))
 	if err != nil {
@@ -135,7 +164,7 @@ func (r *registry) add(filename string, name string) {
 		log.Fatal(err)
 	}
 	// does the artefact exist?
-	if repo, exists := r.repo(name); exists {
+	if repo, exists := r.repo(repoName); exists {
 		// does the reference exists in the artefact?
 		if _, artefactExists := repo.artefact(basenameNoExt); artefactExists {
 			log.Fatal(fmt.Sprintf("cannot add duplicate artefact %s to registry", basenameNoExt))
@@ -143,7 +172,7 @@ func (r *registry) add(filename string, name string) {
 			// creates the reference
 			art := &artefact{
 				Name: basenameNoExt,
-				Tags: nil,
+				Tags: packageTags,
 			}
 			// adds the reference to the artefact
 			arts := append(repo.Artefacts, art)
@@ -152,11 +181,11 @@ func (r *registry) add(filename string, name string) {
 	} else {
 		// creates a new artefact
 		repos := append(r.Repositories, &repository{
-			Name: name,
+			Name: nameTag,
 			Artefacts: []*artefact{
 				{
 					Name: basenameNoExt,
-					Tags: nil,
+					Tags: packageTags,
 				},
 			},
 		})
