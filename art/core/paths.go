@@ -7,5 +7,18 @@
 */
 package core
 
-type localTags struct {
+import (
+	"log"
+	"os/user"
+)
+
+const cliName = "art"
+
+// gets the user home directory
+func homeDir() string {
+	usr, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return usr.HomeDir
 }
