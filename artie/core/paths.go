@@ -12,7 +12,7 @@ import (
 	"os/user"
 )
 
-const cliName = "art"
+const cliName = "artie"
 
 // gets the user home directory
 func homeDir() string {

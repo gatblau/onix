@@ -13,13 +13,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"math"
-	h "net/http"
+	"mime/multipart"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -171,7 +171,7 @@ func findContentType(f *os.File) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return h.DetectContentType(buffer), nil
+	return http.DetectContentType(buffer), nil
 }
 
 // executes a single command with arguments
@@ -321,14 +321,14 @@ func copyFiles(src string, dst string) error {
 func removeElement(a []string, value string) []string {
 	i := -1
 	// find the value to remove
-	for ix := 0; ix < len(a); i++ {
+	for ix := 0; ix < len(a); ix++ {
 		if a[ix] == value {
 			i = ix
 			break
 		}
 	}
 	if i == -1 {
-		log.Fatal(errors.New(fmt.Sprintf("cannot find element with value %s to remove", value)))
+		return a
 	}
 	// Remove the element at index i from a.
 	a[i] = a[len(a)-1] // Copy last element to index i.
@@ -381,17 +381,101 @@ func toElapsedLabel(rfc850time string) string {
 	years := months / 12
 
 	if math.Trunc(years) > 0 {
-		return fmt.Sprintf("%f years ago", math.Trunc(years))
+		return fmt.Sprintf("%d %s ago", int64(years), plural(int64(years), "year"))
 	} else if math.Trunc(months) > 0 {
-		return fmt.Sprintf("%f monts ago", math.Trunc(months))
+		return fmt.Sprintf("%d %s ago", int64(months), plural(int64(months), "month"))
 	} else if math.Trunc(weeks) > 0 {
-		return fmt.Sprintf("%f weeks ago", math.Trunc(weeks))
+		return fmt.Sprintf("%d %s ago", int64(weeks), plural(int64(weeks), "week"))
 	} else if math.Trunc(days) > 0 {
-		return fmt.Sprintf("%f days ago", math.Trunc(days))
+		return fmt.Sprintf("%d %s ago", int64(days), plural(int64(days), "day"))
 	} else if math.Trunc(hours) > 0 {
-		return fmt.Sprintf("%f hours ago", math.Trunc(hours))
+		return fmt.Sprintf("%d %s ago", int64(hours), plural(int64(hours), "hour"))
 	} else if math.Trunc(minutes) > 0 {
-		return fmt.Sprintf("%f minutes ago", math.Trunc(minutes))
+		return fmt.Sprintf("%d %s ago", int64(minutes), plural(int64(minutes), "minute"))
 	}
-	return fmt.Sprintf("%f seconds ago", math.Trunc(seconds))
+	return fmt.Sprintf("%d %s ago", int64(seconds), plural(int64(seconds), "second"))
+}
+
+// turn label into plural if value is greater than one
+func plural(value int64, label string) string {
+	if value > 1 {
+		return fmt.Sprintf("%ss", label)
+	}
+	return label
+}
+
+// upload an artefact to Nexus 3
+func nexus3Upload(client *http.Client, remoteUrl, remoteFolder, localFolder, fileNoExtension string) error {
+	// prepare the reader instances to encode
+	values := map[string]io.Reader{
+		"raw.directory": strings.NewReader(remoteFolder),
+		// the json filename
+		"raw.asset1.filename": strings.NewReader(fmt.Sprintf("%s.json", fileNoExtension)),
+		// the json file (seal)
+		"raw.asset1": mustOpen(fmt.Sprintf("%s/%s.json;type=application/json", localFolder, fileNoExtension)),
+		// the zip filename
+		"raw.asset2.filename": strings.NewReader(fmt.Sprintf("%s.zip", fileNoExtension)),
+		// the zip file (artefact)
+		"raw.asset2": mustOpen(fmt.Sprintf("%s/%s.zip;type=application/zip", localFolder, fileNoExtension)),
+	}
+	return upload(client, remoteUrl, values)
+}
+
+// upload content to an http endpoint
+func upload(client *http.Client, url string, values map[string]io.Reader) (err error) {
+	// Prepare a form that you will submit to that URL.
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	for key, r := range values {
+		var fw io.Writer
+		if x, ok := r.(io.Closer); ok {
+			defer x.Close()
+		}
+		// add a file
+		if x, ok := r.(*os.File); ok {
+			if fw, err = w.CreateFormFile(key, x.Name()); err != nil {
+				return
+			}
+		} else {
+			// add other fields
+			if fw, err = w.CreateFormField(key); err != nil {
+				return
+			}
+		}
+		if _, err = io.Copy(fw, r); err != nil {
+			return err
+		}
+	}
+	// don't forget to close the multipart writer.
+	// If you don't close it, your request will be missing the terminating boundary.
+	w.Close()
+
+	// Now that you have a form, you can submit it to your handler.
+	req, err := http.NewRequest("POST", url, &b)
+	if err != nil {
+		return
+	}
+	// Don't forget to set the content type, this will contain the boundary.
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Header.Set("accept", "application/json")
+
+	// Submit the request
+	res, err := client.Do(req)
+	if err != nil {
+		return
+	}
+
+	// Check the response
+	if res.StatusCode != http.StatusOK {
+		err = fmt.Errorf("bad status: %s", res.Status)
+	}
+	return
+}
+
+func mustOpen(f string) *os.File {
+	r, err := os.Open(f)
+	if err != nil {
+		panic(err)
+	}
+	return r
 }

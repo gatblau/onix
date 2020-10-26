@@ -32,9 +32,9 @@ type Builder struct {
 	repoURI      string
 	commit       string
 	signer       *sign.Signer
-	repoName     string
+	repoName     Named
 	buildFile    *BuildFile
-	localRepo    *Repository
+	localRepo    *LocalRegistry
 }
 
 func NewBuilder() *Builder {
@@ -86,7 +86,11 @@ func (b *Builder) prepareSource(from string, gitToken string, tagName string) *g
 	var (
 		repo *git.Repository
 	)
-	b.repoName = tagName
+	named, err := ParseNormalizedNamed(tagName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	b.repoName = named
 	// creates a temporary working directory
 	b.newWorkingDir()
 	// if "from" is an http url
@@ -173,7 +177,7 @@ func (b *Builder) zipPackage(target string) {
 	}
 }
 
-// clones a remote git Repository, it only accepts a token if authentication is required
+// clones a remote git LocalRegistry, it only accepts a token if authentication is required
 // if the token is not provided (empty string) then no authentication is used
 func (b *Builder) cloneRepo(repoUrl string, gitToken string) *git.Repository {
 	b.repoURI = repoUrl
@@ -200,7 +204,7 @@ func (b *Builder) cloneRepo(repoUrl string, gitToken string) *git.Repository {
 	return repo
 }
 
-// opens a git Repository from the given path
+// opens a git LocalRegistry from the given path
 func (b *Builder) openRepo() *git.Repository {
 	repo, err := git.PlainOpen(b.sourceDir())
 	if err != nil {

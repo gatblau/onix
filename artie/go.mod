@@ -7,6 +7,7 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/hil v0.0.0-20200423225030-a18a1cd20038
 	github.com/imdario/mergo v0.3.11 // indirect
+	github.com/opencontainers/go-digest v1.0.0
 	github.com/spf13/cobra v1.1.0
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897 // indirect
 	golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0 // indirect

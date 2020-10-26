@@ -9,6 +9,7 @@ func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
 	buildCmd := NewBuildCmd()
 	artefactsCmd := NewArtefactsCmd()
-	rootCmd.Command.AddCommand(buildCmd.cmd, artefactsCmd.cmd)
+	pushCmd := NewPushCmd()
+	rootCmd.Command.AddCommand(buildCmd.cmd, artefactsCmd.cmd, pushCmd.cmd)
 	return rootCmd
 }

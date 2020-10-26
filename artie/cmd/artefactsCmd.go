@@ -15,7 +15,7 @@ import (
 // list local artefacts
 type ArtefactsCmd struct {
 	cmd  *cobra.Command
-	repo *core.Repository
+	repo *core.LocalRegistry
 }
 
 func NewArtefactsCmd() *ArtefactsCmd {

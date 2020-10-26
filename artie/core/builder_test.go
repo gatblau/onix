@@ -7,10 +7,12 @@
 */
 package core
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestPack(t *testing.T) {
 	p := NewBuilder()
-	p.Build("https://github.com/gatblau/boot", "", "nexus.io/gatblau/boot:linux-01", "linux")
+	p.Build("https://github.com/gatblau/boot", "", "localhost:8081/gatblau/boot", "")
 	//p.Build("/Users/andresalos/test-pak/boot", "", "nexus.io/gatblau/boot")
 }
