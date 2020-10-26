@@ -1,5 +1,5 @@
 /*
-  Onix Config Manager - Art
+  Onix Config Manager - Artie
   Copyright (c) 2018-2020 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
@@ -10,8 +10,9 @@ package core
 import (
 	"archive/zip"
 	"encoding/base64"
+	"errors"
 	"fmt"
-	"github.com/gatblau/onix/pak/sign"
+	"github.com/gatblau/onix/artie/sign"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/google/uuid"
@@ -33,13 +34,13 @@ type Builder struct {
 	signer       *sign.Signer
 	repoName     string
 	buildFile    *BuildFile
-	registry     *registry
+	localRepo    *repository
 }
 
 func NewBuilder() *Builder {
 	// create the builder instance
 	builder := new(Builder)
-	// check the registry directory is there
+	// check the localRepo directory is there
 	builder.checkRegistryDir()
 	// retrieve the signing key
 	privateKeyBytes, err := ioutil.ReadFile(builder.inRegistryDirectory("keys/private.pem"))
@@ -52,24 +53,30 @@ func NewBuilder() *Builder {
 		log.Fatal(err)
 	}
 	builder.signer = signer
-	builder.registry = NewRegistry()
+	builder.localRepo = NewRepository()
 	return builder
 }
 
-func (b *Builder) Build(from string, gitToken string, repoName string) {
+// build the artefact
+// from: the source to build, either http based git repository or local system git repository
+// gitToken: if provided it is used to clone a remote repository that has authentication enabled
+// artefactName: the full name of the artefact to be built including the tag
+// profileName: the name of the profile to be built. If empty then the default profile is built. If no default profile exists, the first profile is built.
+func (b *Builder) Build(from, gitToken, artefactName, profileName string) {
 	// prepare the source ready for the build
-	repo := b.prepareSource(from, gitToken, repoName)
+	repo := b.prepareSource(from, gitToken, artefactName)
 	// set the unique identifier name for both the zip file and the seal file
 	b.setUniqueIdName(repo)
-	// remove any files in the .artignore file
-	b.removeIgnored()
 	// run commands
-	b.run()
-	// compress the target(s) defined in the package.yaml
-	for _, profile := range b.buildFile.Profiles {
-		b.zipPackage(profile.Target, profile.Name)
-		b.createSeal(profile)
-	}
+	buildProfile := b.run(profileName)
+	// remove any files in the .buildignore file
+	b.removeIgnored()
+	// compress the target defined in the build.yaml' profile
+	b.zipPackage(buildProfile.Target)
+	// creates a seal
+	s := b.createSeal(buildProfile)
+	// add the artefact to the local repo
+	b.localRepo.add(b.workDirZipFilename(), b.repoName, s)
 	// cleanup all relevant folders and move package to target location
 	b.cleanUp()
 }
@@ -100,22 +107,22 @@ func (b *Builder) prepareSource(from string, gitToken string, tagName string) *g
 			localPath = absPath
 		}
 		// copy the folder to the source directory
-		err := b.copyFiles(localPath, b.sourceDir())
+		err := copyFiles(localPath, b.sourceDir())
 		if err != nil {
 			log.Fatal(err)
 		}
 		b.repoURI = localPath
 		repo = b.openRepo()
 	}
-	// read package.yaml
-	b.buildFile = LoadBuildFile(fmt.Sprintf("%s/package.yaml", b.sourceDir()))
+	// read build.yaml
+	b.buildFile = LoadBuildFile(fmt.Sprintf("%s/build.yaml", b.sourceDir()))
 	return repo
 }
 
 // compress the target
-func (b *Builder) zipPackage(target string, profile string) {
+func (b *Builder) zipPackage(target string) {
 	var targetName = target
-	// defines the source for zipping as specified in the package.yaml within the source directory
+	// defines the source for zipping as specified in the build.yaml within the source directory
 	source := fmt.Sprintf("%s/%s", b.sourceDir(), targetName)
 	// get the target source information
 	info, err := os.Stat(source)
@@ -125,7 +132,7 @@ func (b *Builder) zipPackage(target string, profile string) {
 	// if the target is a directory
 	if info.IsDir() {
 		// then zip it
-		err := zipSource(source, b.workDirZipFilename(profile))
+		err := zipSource(source, b.workDirZipFilename())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -143,7 +150,7 @@ func (b *Builder) zipPackage(target string, profile string) {
 		// if the file is not a zip file
 		if contentType != "application/zip" {
 			// the zip it
-			err := zipSource(source, b.workDirZipFilename(profile))
+			err := zipSource(source, b.workDirZipFilename())
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -205,11 +212,7 @@ func (b *Builder) openRepo() *git.Repository {
 // cleanup all relevant folders and move package to target location
 func (b *Builder) cleanUp() {
 	// remove the zip folder
-	b.removeFromWD("pak")
-	// add the packages to the local registry
-	for _, profile := range b.buildFile.Profiles {
-		b.registry.add(b.workDirZipFilename(profile.Name), b.repoName, profile.Name)
-	}
+	b.removeFromWD("art")
 	// remove the working directory
 	err := os.RemoveAll(b.workingDir)
 	if err != nil {
@@ -219,13 +222,13 @@ func (b *Builder) cleanUp() {
 	b.workingDir = ""
 }
 
-// check the local registry directory exists and if not creates it
+// check the local localRepo directory exists and if not creates it
 func (b *Builder) checkRegistryDir() {
 	// check the home directory exists
-	_, err := os.Stat(b.registry.path())
+	_, err := os.Stat(b.localRepo.path())
 	// if it does not
 	if os.IsNotExist(err) {
-		err = os.Mkdir(b.registry.path(), os.ModePerm)
+		err = os.Mkdir(b.localRepo.path(), os.ModePerm)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -273,7 +276,7 @@ func (b *Builder) setUniqueIdName(repo *git.Repository) {
 	// get the current time
 	t := time.Now()
 	timeStamp := fmt.Sprintf("%02d%02d%02s%02d%02d%02d%s", t.Day(), t.Month(), strconv.Itoa(t.Year())[:2], t.Hour(), t.Minute(), t.Second(), strconv.Itoa(t.Nanosecond())[:3])
-	b.uniqueIdName = fmt.Sprintf("%s-%s", timeStamp, ref.Hash().String()[:7])
+	b.uniqueIdName = fmt.Sprintf("%s-%s", timeStamp, ref.Hash().String()[:10])
 	b.commit = ref.Hash().String()
 }
 
@@ -285,9 +288,9 @@ func (b *Builder) removeFromWD(path string) {
 	}
 }
 
-// remove files in the source folder that are specified in the .artignore file
+// remove files in the source folder that are specified in the .buildignore file
 func (b *Builder) removeIgnored() {
-	ignoreFilename := ".artignore"
+	ignoreFilename := ".buildignore"
 	// retrieve the ignore file
 	ignoreFileBytes, err := ioutil.ReadFile(b.inSourceDirectory(ignoreFilename))
 	if err != nil {
@@ -309,22 +312,43 @@ func (b *Builder) removeIgnored() {
 	}
 }
 
-// execute all commands in all profiles in sequence
-func (b *Builder) run() {
+// execute all commands in the specified profile
+// if not profile is specified, it uses the default profile
+// if a default profile has not been defined, then uses the first profile in the build file
+// returns the profile used
+func (b *Builder) run(profileName string) *Profile {
 	// construct an environment with the vars at build file level
 	env := append(os.Environ(), b.buildFile.getEnv()...)
 	// for each build profile
 	for _, profile := range b.buildFile.Profiles {
-		// for each run statement in the profile
-		for _, cmd := range profile.Run {
-			// combine the current environment with the profile environment
-			profileEnv := append(env, profile.getEnv()...)
-			// execute the statement
-			execute(cmd, b.sourceDir(), profileEnv)
+		// if a profile name has been provided then build it
+		if len(profileName) > 0 && profile.Name == profileName {
+			// for each run statement in the profile
+			for _, cmd := range profile.Run {
+				// combine the current environment with the profile environment
+				profileEnv := append(env, profile.getEnv()...)
+				// execute the statement
+				execute(cmd, b.sourceDir(), profileEnv)
+			}
+			// wait for the target to be created in the file system
+			waitForTargetToBeCreated(b.inSourceDirectory(profile.Target))
+			return &profile
 		}
-		// wait for the target to be created in the file system
-		waitForTargetToBeCreated(b.inSourceDirectory(profile.Target))
+		// if the profile has not been provided
+		if len(profileName) == 0 {
+			// check if a default profile has been set
+			defaultProfile := b.buildFile.defaultProfile()
+			// use the default profile
+			if defaultProfile != nil {
+				return b.run(defaultProfile.Name)
+			} else {
+				// there is no default profile defined so use the first profile
+				return b.run(b.buildFile.Profiles[0].Name)
+			}
+		}
 	}
+	log.Fatal(errors.New("no profile was found suitable"))
+	return nil
 }
 
 // return an absolute path using the working directory as base
@@ -339,25 +363,25 @@ func (b *Builder) inSourceDirectory(relativePath string) string {
 
 // return an absolute path using the home directory as base
 func (b *Builder) inRegistryDirectory(relativePath string) string {
-	return fmt.Sprintf("%s/%s", b.registry.path(), relativePath)
+	return fmt.Sprintf("%s/%s", b.localRepo.path(), relativePath)
 }
 
 // create the package seal
-func (b *Builder) createSeal(profile Profile) {
+func (b *Builder) createSeal(profile *Profile) *seal {
 	filename := b.uniqueIdName
-	// work out the zip filename
-	// if we have a defined name in the profile
-	if len(profile.Name) > 0 {
-		// append the profile name to the unique Id name
-		filename = fmt.Sprintf("%s-%s", b.uniqueIdName, profile.Name)
-	}
 	// merge the labels in the profile with the ones at the build file level
 	labels := mergeMaps(b.buildFile.Labels, profile.Labels)
+	// gets the size of the artefact
+	zipInfo, err := os.Stat(b.workDirZipFilename())
+	if err != nil {
+		log.Fatal(err)
+	}
 	// prepare the seal info
 	info := &manifest{
 		Type:    b.buildFile.Type,
 		License: b.buildFile.License,
-		Name:    fmt.Sprintf("%s.zip", filename),
+		Ref:     filename,
+		Profile: profile.Name,
 		Labels:  labels,
 		Source:  b.repoURI,
 		Commit:  b.commit,
@@ -365,9 +389,10 @@ func (b *Builder) createSeal(profile Profile) {
 		Tag:     "",
 		Target:  profile.Target,
 		Time:    time.Now().Format(time.RFC850),
+		Size:    bytesToLabel(zipInfo.Size()),
 	}
 	// take the hash of the zip file and seal info combined
-	sum := checksum(b.workDirZipFilename(profile.Name), info)
+	sum := checksum(b.workDirZipFilename(), info)
 	// create a Base-64 encoded cryptographic signature
 	signature, err := b.signer.SignBase64(sum)
 	if err != nil {
@@ -385,10 +410,11 @@ func (b *Builder) createSeal(profile Profile) {
 	// convert the seal to Json
 	dest := toJsonBytes(s)
 	// save the seal
-	err = ioutil.WriteFile(b.workDirJsonFilename(profile.Name), dest, os.ModePerm)
+	err = ioutil.WriteFile(b.workDirJsonFilename(), dest, os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 	}
+	return s
 }
 
 func (b *Builder) sourceDir() string {
@@ -396,34 +422,27 @@ func (b *Builder) sourceDir() string {
 }
 
 // the fully qualified name of the json seal in the working directory
-func (b *Builder) workDirJsonFilename(profileName string) string {
-	if len(profileName) > 0 {
-		return fmt.Sprintf("%s/%s-%s.json", b.workingDir, b.uniqueIdName, profileName)
-	}
+func (b *Builder) workDirJsonFilename() string {
 	return fmt.Sprintf("%s/%s.json", b.workingDir, b.uniqueIdName)
 }
 
 // the fully qualified name of the zip file in the working directory
-// if a profile name is passed in then it is appended to the name
-func (b *Builder) workDirZipFilename(profileName string) string {
-	if len(profileName) > 0 {
-		return fmt.Sprintf("%s/%s-%s.zip", b.workingDir, b.uniqueIdName, profileName)
-	}
+func (b *Builder) workDirZipFilename() string {
 	return fmt.Sprintf("%s/%s.zip", b.workingDir, b.uniqueIdName)
 }
 
-// the fully qualified name of the json seal file in the local registry
+// the fully qualified name of the json seal file in the local localRepo
 func (b *Builder) regDirJsonFilename(profileName string) string {
 	if len(profileName) > 0 {
-		return fmt.Sprintf("%s/%s-%s.json", b.registry.path(), b.uniqueIdName, profileName)
+		return fmt.Sprintf("%s/%s-%s.json", b.localRepo.path(), b.uniqueIdName, profileName)
 	}
-	return fmt.Sprintf("%s/%s.json", b.registry.path(), b.uniqueIdName)
+	return fmt.Sprintf("%s/%s.json", b.localRepo.path(), b.uniqueIdName)
 }
 
-// the fully qualified name of the zip file in the local registry
+// the fully qualified name of the zip file in the local localRepo
 func (b *Builder) regDirZipFilename(profileName string) string {
 	if len(profileName) > 0 {
-		return fmt.Sprintf("%s/%s-%s.zip", b.registry.path(), b.uniqueIdName, profileName)
+		return fmt.Sprintf("%s/%s-%s.zip", b.localRepo.path(), b.uniqueIdName, profileName)
 	}
-	return fmt.Sprintf("%s/%s.zip", b.registry.path(), b.uniqueIdName)
+	return fmt.Sprintf("%s/%s.zip", b.localRepo.path(), b.uniqueIdName)
 }

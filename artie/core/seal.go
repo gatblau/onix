@@ -1,5 +1,5 @@
 /*
-  Onix Config Manager - Art
+  Onix Config Manager - Artie
   Copyright (c) 2018-2020 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
@@ -34,7 +34,9 @@ type manifest struct {
 	// the license associated to the package
 	License string `json:"license"`
 	// the name of the package file
-	Name string `json:"name"`
+	Ref string `json:"ref"`
+	// the build profile used
+	Profile string `json:"profile"`
 	// the labels assigned to the package in the Pakfile
 	Labels map[string]string `json:"labels,omitempty"`
 	// the URI of the package source
@@ -51,4 +53,6 @@ type manifest struct {
 	Target string `json:"target,omitempty"`
 	// the timestamp
 	Time string `json:"time"`
+	// the size of the artefact
+	Size string `json:"size"`
 }

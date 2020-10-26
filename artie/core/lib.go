@@ -1,5 +1,5 @@
 /*
-  Onix Config Manager - Art
+  Onix Config Manager - Artie
   Copyright (c) 2018-2020 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
@@ -11,16 +11,20 @@ import (
 	"archive/zip"
 	"bytes"
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
+	"math"
 	h "net/http"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -79,6 +83,18 @@ func checksum(path string, sealData *manifest) []byte {
 		log.Fatal(err)
 	}
 	return hash.Sum(nil)
+}
+
+// the artefact id calculated as the hex encoded SHA-256 digest of the artefact seal
+func artefactId(seal *seal) string {
+	// serialise the seal info to json
+	info := toJsonBytes(seal)
+	hash := sha256.New()
+	// copy the seal manifest into the hash
+	if _, err := io.Copy(hash, bytes.NewReader(info)); err != nil {
+		log.Fatal(err)
+	}
+	return hex.EncodeToString(hash.Sum(nil))
 }
 
 // zip a file or a folder
@@ -272,7 +288,7 @@ func copyFile(src, dst string) error {
 }
 
 // copy the files in a folder recursively
-func (b *Builder) copyFiles(src string, dst string) error {
+func copyFiles(src string, dst string) error {
 	var err error
 	var fds []os.FileInfo
 	var srcInfo os.FileInfo
@@ -289,7 +305,7 @@ func (b *Builder) copyFiles(src string, dst string) error {
 		srcFp := path.Join(src, fd.Name())
 		dstFp := path.Join(dst, fd.Name())
 		if fd.IsDir() {
-			if err = b.copyFiles(srcFp, dstFp); err != nil {
+			if err = copyFiles(srcFp, dstFp); err != nil {
 				fmt.Println(err)
 			}
 		} else {
@@ -299,4 +315,52 @@ func (b *Builder) copyFiles(src string, dst string) error {
 		}
 	}
 	return nil
+}
+
+// remove an element in a slice
+func removeElement(a []string, value string) []string {
+	i := -1
+	// find the value to remove
+	for ix := 0; ix < len(a); i++ {
+		if a[ix] == value {
+			i = ix
+			break
+		}
+	}
+	if i == -1 {
+		log.Fatal(errors.New(fmt.Sprintf("cannot find element with value %s to remove", value)))
+	}
+	// Remove the element at index i from a.
+	a[i] = a[len(a)-1] // Copy last element to index i.
+	a[len(a)-1] = ""   // Erase last element (write zero value).
+	a = a[:len(a)-1]   // Truncate slice.
+	return a
+}
+
+func round(val float64, roundOn float64, places int) (newVal float64) {
+	var round float64
+	pow := math.Pow(10, float64(places))
+	digit := pow * val
+	_, div := math.Modf(digit)
+	if div >= roundOn {
+		round = math.Ceil(digit)
+	} else {
+		round = math.Floor(digit)
+	}
+	newVal = round / pow
+	return
+}
+
+func bytesToLabel(size int64) string {
+	var suffixes [5]string
+	suffixes[0] = "B"
+	suffixes[1] = "KB"
+	suffixes[2] = "MB"
+	suffixes[3] = "GB"
+	suffixes[4] = "TB"
+
+	base := math.Log(float64(size)) / math.Log(1024)
+	getSize := round(math.Pow(1024, base-math.Floor(base)), .5, 2)
+	getSuffix := suffixes[int(math.Floor(base))]
+	return strconv.FormatFloat(getSize, 'f', -1, 64) + " " + string(getSuffix)
 }
