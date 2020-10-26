@@ -337,6 +337,20 @@ func removeElement(a []string, value string) []string {
 	return a
 }
 
+// converts a byte count into a pretty label
+func bytesToLabel(size int64) string {
+	var suffixes [5]string
+	suffixes[0] = "B"
+	suffixes[1] = "KB"
+	suffixes[2] = "MB"
+	suffixes[3] = "GB"
+	suffixes[4] = "TB"
+	base := math.Log(float64(size)) / math.Log(1024)
+	getSize := round(math.Pow(1024, base-math.Floor(base)), .5, 2)
+	getSuffix := suffixes[int(math.Floor(base))]
+	return strconv.FormatFloat(getSize, 'f', -1, 64) + string(getSuffix)
+}
+
 func round(val float64, roundOn float64, places int) (newVal float64) {
 	var round float64
 	pow := math.Pow(10, float64(places))
@@ -351,16 +365,33 @@ func round(val float64, roundOn float64, places int) (newVal float64) {
 	return
 }
 
-func bytesToLabel(size int64) string {
-	var suffixes [5]string
-	suffixes[0] = "B"
-	suffixes[1] = "KB"
-	suffixes[2] = "MB"
-	suffixes[3] = "GB"
-	suffixes[4] = "TB"
+// returns the elapsed time until now in human friendly format
+func toElapsedLabel(rfc850time string) string {
+	created, err := time.Parse(time.RFC850, rfc850time)
+	if err != nil {
+		log.Fatal(err)
+	}
+	elapsed := time.Since(created)
+	seconds := elapsed.Seconds()
+	minutes := elapsed.Minutes()
+	hours := elapsed.Hours()
+	days := hours / 24
+	weeks := days / 7
+	months := weeks / 4
+	years := months / 12
 
-	base := math.Log(float64(size)) / math.Log(1024)
-	getSize := round(math.Pow(1024, base-math.Floor(base)), .5, 2)
-	getSuffix := suffixes[int(math.Floor(base))]
-	return strconv.FormatFloat(getSize, 'f', -1, 64) + " " + string(getSuffix)
+	if math.Trunc(years) > 0 {
+		return fmt.Sprintf("%f years ago", math.Trunc(years))
+	} else if math.Trunc(months) > 0 {
+		return fmt.Sprintf("%f monts ago", math.Trunc(months))
+	} else if math.Trunc(weeks) > 0 {
+		return fmt.Sprintf("%f weeks ago", math.Trunc(weeks))
+	} else if math.Trunc(days) > 0 {
+		return fmt.Sprintf("%f days ago", math.Trunc(days))
+	} else if math.Trunc(hours) > 0 {
+		return fmt.Sprintf("%f hours ago", math.Trunc(hours))
+	} else if math.Trunc(minutes) > 0 {
+		return fmt.Sprintf("%f minutes ago", math.Trunc(minutes))
+	}
+	return fmt.Sprintf("%f seconds ago", math.Trunc(seconds))
 }

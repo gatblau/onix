@@ -8,6 +8,7 @@ package cmd
 func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
 	buildCmd := NewBuildCmd()
-	rootCmd.Command.AddCommand(buildCmd.cmd)
+	artefactsCmd := NewArtefactsCmd()
+	rootCmd.Command.AddCommand(buildCmd.cmd, artefactsCmd.cmd)
 	return rootCmd
 }

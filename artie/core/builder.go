@@ -34,7 +34,7 @@ type Builder struct {
 	signer       *sign.Signer
 	repoName     string
 	buildFile    *BuildFile
-	localRepo    *repository
+	localRepo    *Repository
 }
 
 func NewBuilder() *Builder {
@@ -173,7 +173,7 @@ func (b *Builder) zipPackage(target string) {
 	}
 }
 
-// clones a remote git repository, it only accepts a token if authentication is required
+// clones a remote git Repository, it only accepts a token if authentication is required
 // if the token is not provided (empty string) then no authentication is used
 func (b *Builder) cloneRepo(repoUrl string, gitToken string) *git.Repository {
 	b.repoURI = repoUrl
@@ -200,7 +200,7 @@ func (b *Builder) cloneRepo(repoUrl string, gitToken string) *git.Repository {
 	return repo
 }
 
-// opens a git repository from the given path
+// opens a git Repository from the given path
 func (b *Builder) openRepo() *git.Repository {
 	repo, err := git.PlainOpen(b.sourceDir())
 	if err != nil {
