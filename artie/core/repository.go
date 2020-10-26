@@ -17,16 +17,17 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"text/tabwriter"
 )
 
-// a repository in the localRepo
-type repository struct {
+// a Repository in the localRepo
+type Repository struct {
 	// the reference name of the artefact corresponding to different builds
 	Artefacts []*artefact `json:"artefacts"`
 }
 
-// return the artefact that matches the specified name tag or nil if not found in the repository
-func (r *repository) artefact(artefactName string) (*artefact, bool) {
+// return the artefact that matches the specified name tag or nil if not found in the Repository
+func (r *Repository) artefact(artefactName string) (*artefact, bool) {
 	for _, artefact := range r.Artefacts {
 		for _, tag := range artefact.Tags {
 			if tag == artefactName {
@@ -44,11 +45,15 @@ type artefact struct {
 	File string `json:"file"`
 	// the list of Tags associated with the artefact
 	Tags []string `json:"tags"`
+	// the size
+	Size string `json:"size"`
+	// the creation time
+	Created string `json:"created"`
 }
 
 // create a localRepo management structure
-func NewRepository() *repository {
-	r := &repository{
+func NewRepository() *Repository {
+	r := &Repository{
 		Artefacts: []*artefact{},
 	}
 	// load localRepo
@@ -56,18 +61,18 @@ func NewRepository() *repository {
 	return r
 }
 
-// the local path to the local repository
-func (r *repository) path() string {
+// the local path to the local Repository
+func (r *Repository) path() string {
 	return fmt.Sprintf("%s/.%s", homeDir(), cliName)
 }
 
-// return the repository full file name
-func (r *repository) file() string {
+// return the Repository full file name
+func (r *Repository) file() string {
 	return fmt.Sprintf("%s/repository.json", r.path())
 }
 
-// save the state of the repository
-func (r *repository) save() {
+// save the state of the Repository
+func (r *Repository) save() {
 	regBytes := toJsonBytes(r)
 	err := ioutil.WriteFile(r.file(), regBytes, os.ModePerm)
 	if err != nil {
@@ -75,8 +80,8 @@ func (r *repository) save() {
 	}
 }
 
-// load the content of the repository
-func (r *repository) load() {
+// load the content of the Repository
+func (r *Repository) load() {
 	// check if localRepo file exist
 	_, err := os.Stat(r.file())
 	if err != nil {
@@ -94,8 +99,8 @@ func (r *repository) load() {
 	}
 }
 
-// add the artefact and seal to the repository
-func (r *repository) add(filename, artefactName string, s *seal) {
+// add the artefact and seal to the Repository
+func (r *Repository) add(filename, artefactName string, s *seal) {
 	// gets the full base name (with extension)
 	basename := filepath.Base(filename)
 	// gets the basename directory only
@@ -139,11 +144,36 @@ func (r *repository) add(filename, artefactName string, s *seal) {
 	}
 	// creates a new artefact
 	artefacts := append(r.Artefacts, &artefact{
-		Id:   artefactId(s),
-		File: fmt.Sprintf("%s.zip", basenameNoExt),
-		Tags: []string{artefactName},
+		Id:      artefactId(s),
+		File:    fmt.Sprintf("%s.zip", basenameNoExt),
+		Tags:    []string{artefactName},
+		Size:    s.Manifest.Size,
+		Created: s.Manifest.Time,
 	})
 	r.Artefacts = artefacts
 	// persist the changes
 	r.save()
+}
+
+// List packages to stdout
+func (r *Repository) List() {
+	// get a table writer for the stdout
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 10, ' ', 0)
+	// print the header row
+	fmt.Fprintln(w, "REPOSITORY\tTAG\tARTEFACT ID\tCREATED\tSIZE")
+	// repository, tag, artefact id, created, size
+	for _, a := range r.Artefacts {
+		// calculate elapsed time
+
+		for _, tag := range a.Tags {
+			fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s",
+				tag[:strings.LastIndex(tag, ":")],
+				tag[strings.LastIndex(tag, ":")+1:],
+				a.Id[:12],
+				toElapsedLabel(a.Created),
+				a.Size),
+			)
+		}
+	}
+	w.Flush()
 }
