@@ -1,4 +1,4 @@
-module github.com/gatblau/onix/pak
+module github.com/gatblau/onix/artie
 
 go 1.15
 

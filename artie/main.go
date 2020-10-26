@@ -1,5 +1,5 @@
 /*
-  Onix Config Manager - Art
+  Onix Config Manager - Artie
   Copyright (c) 2018-2020 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
@@ -8,7 +8,7 @@
 package main
 
 import (
-	"github.com/gatblau/onix/pak/cmd"
+	"github.com/gatblau/onix/artie/cmd"
 )
 
 func main() {

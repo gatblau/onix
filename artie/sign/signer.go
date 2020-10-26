@@ -1,5 +1,5 @@
 /*
-  Onix Config Manager - Art
+  Onix Config Manager - Artie
   Copyright (c) 2018-2020 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
@@ -11,45 +11,46 @@ package sign
 
 import (
 	"crypto"
+	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/hex"
 )
 
-type Verifier struct {
-	Key *rsa.PublicKey
+type Signer struct {
+	Key *rsa.PrivateKey
 }
 
-func NewVerifier(pemKey []byte) (*Verifier, error) {
-	key, err := parsePublicKey(pemKey)
+func NewSigner(pemKey []byte) (*Signer, error) {
+	key, err := parsePrivateKey(pemKey)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Verifier{key}, nil
+	return &Signer{key}, nil
 }
 
-func (v *Verifier) Verify(data, sig []byte) error {
+func (s *Signer) Sign(data []byte) ([]byte, error) {
 	hash := crypto.SHA1
 	h := hash.New()
 	h.Write(data)
 	hashed := h.Sum(nil)
 
-	return rsa.VerifyPKCS1v15(v.Key, hash, hashed, sig)
+	return rsa.SignPKCS1v15(rand.Reader, s.Key, hash, hashed)
 }
 
-func (v *Verifier) VerifyHex(data []byte, sigHex string) error {
-	sig, err := hex.DecodeString(sigHex)
+func (s *Signer) SignHex(data []byte) (string, error) {
+	sig, err := s.Sign(data)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return v.Verify(data, sig)
+	return hex.EncodeToString(sig), nil
 }
 
-func (v *Verifier) VerifyBase64(data []byte, sig64 string) error {
-	sig, err := base64.StdEncoding.DecodeString(sig64)
+func (s *Signer) SignBase64(data []byte) (string, error) {
+	sig, err := s.Sign(data)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return v.Verify(data, sig)
+	return base64.StdEncoding.EncodeToString(sig), nil
 }
