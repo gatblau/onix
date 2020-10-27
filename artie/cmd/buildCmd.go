@@ -8,7 +8,7 @@
 package cmd
 
 import (
-	"github.com/gatblau/onix/artie/core"
+	"github.com/gatblau/onix/artie/build"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +18,7 @@ type BuildCmd struct {
 	branch       string
 	gitTag       string
 	artefactName string
-	builder      *core.Builder
+	builder      *build.Builder
 	gitToken     string
 	from         string
 	fromPath     string
@@ -32,7 +32,7 @@ func NewBuildCmd() *BuildCmd {
 			Short: "build a package",
 			Long:  ``,
 		},
-		builder: core.NewBuilder(),
+		builder: build.NewBuilder(),
 	}
 	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.branch, "branch", "b", "", "the git branch to use")

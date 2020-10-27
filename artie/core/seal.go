@@ -7,12 +7,12 @@
 */
 package core
 
-// the digital seal for a package
-// the seal contains information to determine if the package or its metadata has been compromised
-// and therefore the seal is broken
-type seal struct {
+// the digital Seal for a package
+// the Seal contains information to determine if the package or its metadata has been compromised
+// and therefore the Seal is broken
+type Seal struct {
 	// the package metadata
-	Manifest *manifest `json:"manifest"`
+	Manifest *Manifest `json:"manifest"`
 	// the combined checksum of the package and its metadata
 	Digest string `json:"digest"`
 	// the cryptographic signature for:
@@ -28,7 +28,7 @@ type seal struct {
 	Signature string `json:"signature,omitempty"`
 }
 
-type manifest struct {
+type Manifest struct {
 	// the package type
 	Type string `json:"type,omitempty"`
 	// the license associated to the package

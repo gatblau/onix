@@ -12,10 +12,10 @@ import (
 	"os/user"
 )
 
-const cliName = "artie"
+const CliName = "artie"
 
 // gets the user home directory
-func homeDir() string {
+func HomeDir() string {
 	usr, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
