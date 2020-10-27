@@ -5,9 +5,13 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package remote
+package registry
 
-// the interface implemented by a remote directory
-type Directory interface {
-	CreateRepository(name string)
+import "github.com/gatblau/onix/artie/core"
+
+// the interface implemented by a local registry
+// creds = user[:pwd]
+type Local interface {
+	Push(name core.Named, remote Remote, creds string)
+	Pull(name core.Named, remote Remote)
 }

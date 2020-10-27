@@ -8,37 +8,47 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/gatblau/onix/artie/core"
+	"github.com/gatblau/onix/artie/registry"
 	"github.com/spf13/cobra"
 	"log"
 )
 
 // list local artefacts
 type PushCmd struct {
-	cmd  *cobra.Command
-	repo *core.LocalRegistry
+	cmd         *cobra.Command
+	local       *registry.FileRegistry
+	remote      registry.Remote
+	credentials string
 }
 
 func NewPushCmd() *PushCmd {
 	c := &PushCmd{
 		cmd: &cobra.Command{
-			Use:   "artie push [OPTIONS] NAME[:TAG]",
+			Use:   "push [OPTIONS] NAME[:TAG]",
 			Short: "Push an artifact to a registry",
 			Long:  ``,
 		},
-		repo: core.NewRepository(),
+		local:  registry.NewFileRegistry(),
+		remote: registry.NewNexus3Registry(),
 	}
 	c.cmd.Run = c.Run
+	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
 	return c
 }
 
 func (b *PushCmd) Run(cmd *cobra.Command, args []string) {
+	// check an artefact name has been provided
+	if len(args) == 0 {
+		log.Fatal("name of the artefact to push is required")
+	}
+	// get the name of the artefact to push
 	nameTag := args[0]
+	// validate the name
 	named, err := core.ParseNormalizedNamed(nameTag)
 	if err != nil {
 		log.Fatal(err)
 	}
-	b.repo.GetArtefactsByRepo(named.String())
-	log.Print(fmt.Sprintf("found artefact %s in local registry", named))
+	// attempt upload to remote repository
+	b.local.Push(named, b.remote, b.credentials)
 }

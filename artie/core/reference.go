@@ -145,9 +145,9 @@ type Canonical interface {
 	Digest() digest.Digest
 }
 
-// namedRepository is a reference to a repository with a name.
-// A namedRepository has both domain and path components.
-type namedRepository interface {
+// NamedRepository is a reference to a repository with a name.
+// A NamedRepository has both domain and path components.
+type NamedRepository interface {
 	Named
 	Domain() string
 	Path() string
@@ -155,7 +155,7 @@ type namedRepository interface {
 
 // Domain returns the domain part of the Named reference
 func Domain(named Named) string {
-	if r, ok := named.(namedRepository); ok {
+	if r, ok := named.(NamedRepository); ok {
 		return r.Domain()
 	}
 	domain, _ := splitDomain(named.Name())
@@ -164,7 +164,7 @@ func Domain(named Named) string {
 
 // Path returns the name without the domain part of the Named reference
 func Path(named Named) (name string) {
-	if r, ok := named.(namedRepository); ok {
+	if r, ok := named.(NamedRepository); ok {
 		return r.Path()
 	}
 	_, path := splitDomain(named.Name())
@@ -210,7 +210,7 @@ func Parse(s string) (Reference, error) {
 	}
 
 	ref := reference{
-		namedRepository: repo,
+		NamedRepository: repo,
 		tag:             matches[2],
 	}
 	if matches[3] != "" {
@@ -240,15 +240,15 @@ func getBestReferenceType(ref reference) Reference {
 	if ref.tag == "" {
 		if ref.digest != "" {
 			return canonicalReference{
-				namedRepository: ref.namedRepository,
+				NamedRepository: ref.NamedRepository,
 				digest:          ref.digest,
 			}
 		}
-		return ref.namedRepository
+		return ref.NamedRepository
 	}
 	if ref.digest == "" {
 		return taggedReference{
-			namedRepository: ref.namedRepository,
+			NamedRepository: ref.NamedRepository,
 			tag:             ref.tag,
 		}
 	}
@@ -257,7 +257,7 @@ func getBestReferenceType(ref reference) Reference {
 }
 
 type reference struct {
-	namedRepository
+	NamedRepository
 	tag    string
 	digest digest.Digest
 }
@@ -309,7 +309,7 @@ func (d digestReference) Digest() digest.Digest {
 }
 
 type taggedReference struct {
-	namedRepository
+	NamedRepository
 	tag string
 }
 
@@ -322,7 +322,7 @@ func (t taggedReference) Tag() string {
 }
 
 type canonicalReference struct {
-	namedRepository
+	NamedRepository
 	digest digest.Digest
 }
 

@@ -8,14 +8,14 @@
 package cmd
 
 import (
-	"github.com/gatblau/onix/artie/core"
+	"github.com/gatblau/onix/artie/registry"
 	"github.com/spf13/cobra"
 )
 
 // list local artefacts
 type ArtefactsCmd struct {
-	cmd  *cobra.Command
-	repo *core.LocalRegistry
+	cmd   *cobra.Command
+	local *registry.FileRegistry
 }
 
 func NewArtefactsCmd() *ArtefactsCmd {
@@ -25,12 +25,12 @@ func NewArtefactsCmd() *ArtefactsCmd {
 			Short: "list artefacts",
 			Long:  ``,
 		},
-		repo: core.NewRepository(),
+		local: registry.NewFileRegistry(),
 	}
 	c.cmd.Run = c.Run
 	return c
 }
 
 func (b *ArtefactsCmd) Run(cmd *cobra.Command, args []string) {
-	b.repo.List()
+	b.local.List()
 }

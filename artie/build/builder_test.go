@@ -5,11 +5,14 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package remote
+package build
 
-type NexusDirectory struct {
-}
+import (
+	"testing"
+)
 
-func (r *NexusDirectory) CreateRepository(name string) {
-
+func TestBuild(t *testing.T) {
+	p := NewBuilder()
+	p.Build("https://github.com/gatblau/boot", "", "localhost:8081/gatblau/boot", "")
+	//p.Build("/Users/andresalos/test-pak/boot", "", "nexus.io/gatblau/boot")
 }

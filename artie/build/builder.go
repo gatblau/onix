@@ -5,13 +5,15 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package core
+package build
 
 import (
 	"archive/zip"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/gatblau/onix/artie/core"
+	"github.com/gatblau/onix/artie/registry"
 	"github.com/gatblau/onix/artie/sign"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -32,9 +34,9 @@ type Builder struct {
 	repoURI      string
 	commit       string
 	signer       *sign.Signer
-	repoName     Named
+	repoName     core.Named
 	buildFile    *BuildFile
-	localRepo    *LocalRegistry
+	localReg     *registry.FileRegistry
 }
 
 func NewBuilder() *Builder {
@@ -53,7 +55,7 @@ func NewBuilder() *Builder {
 		log.Fatal(err)
 	}
 	builder.signer = signer
-	builder.localRepo = NewRepository()
+	builder.localReg = registry.NewFileRegistry()
 	return builder
 }
 
@@ -76,7 +78,7 @@ func (b *Builder) Build(from, gitToken, artefactName, profileName string) {
 	// creates a seal
 	s := b.createSeal(buildProfile)
 	// add the artefact to the local repo
-	b.localRepo.add(b.workDirZipFilename(), b.repoName, s)
+	b.localReg.Add(b.workDirZipFilename(), b.repoName, s)
 	// cleanup all relevant folders and move package to target location
 	b.cleanUp()
 }
@@ -86,7 +88,7 @@ func (b *Builder) prepareSource(from string, gitToken string, tagName string) *g
 	var (
 		repo *git.Repository
 	)
-	named, err := ParseNormalizedNamed(tagName)
+	named, err := core.ParseNormalizedNamed(tagName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -226,13 +228,13 @@ func (b *Builder) cleanUp() {
 	b.workingDir = ""
 }
 
-// check the local localRepo directory exists and if not creates it
+// check the local localReg directory exists and if not creates it
 func (b *Builder) checkRegistryDir() {
 	// check the home directory exists
-	_, err := os.Stat(b.localRepo.path())
+	_, err := os.Stat(b.localReg.Path())
 	// if it does not
 	if os.IsNotExist(err) {
-		err = os.Mkdir(b.localRepo.path(), os.ModePerm)
+		err = os.Mkdir(b.localReg.Path(), os.ModePerm)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -367,11 +369,11 @@ func (b *Builder) inSourceDirectory(relativePath string) string {
 
 // return an absolute path using the home directory as base
 func (b *Builder) inRegistryDirectory(relativePath string) string {
-	return fmt.Sprintf("%s/%s", b.localRepo.path(), relativePath)
+	return fmt.Sprintf("%s/%s", b.localReg.Path(), relativePath)
 }
 
-// create the package seal
-func (b *Builder) createSeal(profile *Profile) *seal {
+// create the package Seal
+func (b *Builder) createSeal(profile *Profile) *core.Seal {
 	filename := b.uniqueIdName
 	// merge the labels in the profile with the ones at the build file level
 	labels := mergeMaps(b.buildFile.Labels, profile.Labels)
@@ -381,7 +383,7 @@ func (b *Builder) createSeal(profile *Profile) *seal {
 		log.Fatal(err)
 	}
 	// prepare the seal info
-	info := &manifest{
+	info := &core.Manifest{
 		Type:    b.buildFile.Type,
 		License: b.buildFile.License,
 		Ref:     filename,
@@ -403,7 +405,7 @@ func (b *Builder) createSeal(profile *Profile) *seal {
 		log.Fatal(err)
 	}
 	// construct the seal
-	s := &seal{
+	s := &core.Seal{
 		// the package
 		Manifest: info,
 		// the combined checksum of the seal info and the package
@@ -412,7 +414,7 @@ func (b *Builder) createSeal(profile *Profile) *seal {
 		Signature: signature,
 	}
 	// convert the seal to Json
-	dest := toJsonBytes(s)
+	dest := core.ToJsonBytes(s)
 	// save the seal
 	err = ioutil.WriteFile(b.workDirJsonFilename(), dest, os.ModePerm)
 	if err != nil {
@@ -422,10 +424,10 @@ func (b *Builder) createSeal(profile *Profile) *seal {
 }
 
 func (b *Builder) sourceDir() string {
-	return fmt.Sprintf("%s/%s", b.workingDir, cliName)
+	return fmt.Sprintf("%s/%s", b.workingDir, core.CliName)
 }
 
-// the fully qualified name of the json seal in the working directory
+// the fully qualified name of the json Seal in the working directory
 func (b *Builder) workDirJsonFilename() string {
 	return fmt.Sprintf("%s/%s.json", b.workingDir, b.uniqueIdName)
 }
@@ -435,18 +437,18 @@ func (b *Builder) workDirZipFilename() string {
 	return fmt.Sprintf("%s/%s.zip", b.workingDir, b.uniqueIdName)
 }
 
-// the fully qualified name of the json seal file in the local localRepo
+// the fully qualified name of the json Seal file in the local localReg
 func (b *Builder) regDirJsonFilename(profileName string) string {
 	if len(profileName) > 0 {
-		return fmt.Sprintf("%s/%s-%s.json", b.localRepo.path(), b.uniqueIdName, profileName)
+		return fmt.Sprintf("%s/%s-%s.json", b.localReg.Path(), b.uniqueIdName, profileName)
 	}
-	return fmt.Sprintf("%s/%s.json", b.localRepo.path(), b.uniqueIdName)
+	return fmt.Sprintf("%s/%s.json", b.localReg.Path(), b.uniqueIdName)
 }
 
-// the fully qualified name of the zip file in the local localRepo
+// the fully qualified name of the zip file in the local localReg
 func (b *Builder) regDirZipFilename(profileName string) string {
 	if len(profileName) > 0 {
-		return fmt.Sprintf("%s/%s-%s.zip", b.localRepo.path(), b.uniqueIdName, profileName)
+		return fmt.Sprintf("%s/%s-%s.zip", b.localReg.Path(), b.uniqueIdName, profileName)
 	}
-	return fmt.Sprintf("%s/%s.zip", b.localRepo.path(), b.uniqueIdName)
+	return fmt.Sprintf("%s/%s.zip", b.localReg.Path(), b.uniqueIdName)
 }
