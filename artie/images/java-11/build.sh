@@ -1,0 +1,1 @@
+docker build -t gatblau/artie:java-11 .
