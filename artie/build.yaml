@@ -1,0 +1,32 @@
+---
+type: native
+license: Apache Version 2
+labels:
+  author: gatblau
+  application: artie
+  description: build, package, sign and publish application artefacts in a standard format as if they were docker images.
+  architecture: amd64
+env:
+  CGO_ENABLED: 0
+  GOARCH: amd64
+profiles:
+  - name: linux
+    default: true
+    labels:
+      platform: linux
+    env:
+      GOOS: linux
+    run:
+      - go fmt
+      - go build -o artie -v
+    target: artie
+  - name: darwin
+    labels:
+      platform: darwin
+    env:
+      GOOS: darwin
+    run:
+      - go fmt
+      - go build -o artie -v
+    target: artie
+...
