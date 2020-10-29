@@ -34,7 +34,7 @@ type Builder struct {
 	repoURI      string
 	commit       string
 	signer       *sign.Signer
-	repoName     core.Named
+	repoName     *core.ArtieName
 	buildFile    *BuildFile
 	localReg     *registry.FileRegistry
 }
@@ -64,17 +64,17 @@ func NewBuilder() *Builder {
 // gitToken: if provided it is used to clone a remote repository that has authentication enabled
 // artefactName: the full name of the artefact to be built including the tag
 // profileName: the name of the profile to be built. If empty then the default profile is built. If no default profile exists, the first profile is built.
-func (b *Builder) Build(from, gitToken, artefactName, profileName string) {
+func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, profileName string) {
 	// prepare the source ready for the build
-	repo := b.prepareSource(from, gitToken, artefactName)
+	repo := b.prepareSource(from, fromPath, gitToken, name)
 	// set the unique identifier name for both the zip file and the seal file
 	b.setUniqueIdName(repo)
 	// run commands
-	buildProfile := b.run(profileName)
+	buildProfile := b.run(profileName, fromPath)
 	// remove any files in the .buildignore file
 	b.removeIgnored()
 	// compress the target defined in the build.yaml' profile
-	b.zipPackage(buildProfile.Target)
+	b.zipPackage(buildProfile.Target, fromPath)
 	// creates a seal
 	s := b.createSeal(buildProfile)
 	// add the artefact to the local repo
@@ -84,15 +84,11 @@ func (b *Builder) Build(from, gitToken, artefactName, profileName string) {
 }
 
 // either clone a remote git repo or copy a local one onto the source folder
-func (b *Builder) prepareSource(from string, gitToken string, tagName string) *git.Repository {
+func (b *Builder) prepareSource(from string, fromPath string, gitToken string, tagName *core.ArtieName) *git.Repository {
 	var (
 		repo *git.Repository
 	)
-	named, err := core.ParseNormalizedNamed(tagName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	b.repoName = named
+	b.repoName = tagName
 	// creates a temporary working directory
 	b.newWorkingDir()
 	// if "from" is an http url
@@ -120,16 +116,26 @@ func (b *Builder) prepareSource(from string, gitToken string, tagName string) *g
 		b.repoURI = localPath
 		repo = b.openRepo()
 	}
+	loadFrom := b.sourceDir()
+	// if a sub-folder was specified
+	if len(fromPath) > 0 {
+		// add it to the path
+		loadFrom = filepath.Join(loadFrom, fromPath)
+	}
 	// read build.yaml
-	b.buildFile = LoadBuildFile(fmt.Sprintf("%s/build.yaml", b.sourceDir()))
+	b.buildFile = LoadBuildFile(fmt.Sprintf("%s/build.yaml", loadFrom))
 	return repo
 }
 
 // compress the target
-func (b *Builder) zipPackage(target string) {
+func (b *Builder) zipPackage(target, fromPath string) {
 	var targetName = target
 	// defines the source for zipping as specified in the build.yaml within the source directory
-	source := fmt.Sprintf("%s/%s", b.sourceDir(), targetName)
+	source := filepath.Join(b.sourceDir(), targetName)
+	// if a sub-project folder exist then add it to the path
+	if len(fromPath) > 0 {
+		source = filepath.Join(source, fromPath)
+	}
 	// get the target source information
 	info, err := os.Stat(source)
 	if err != nil {
@@ -165,10 +171,9 @@ func (b *Builder) zipPackage(target string) {
 			// find the file extension
 			ext := filepath.Ext(source)
 			// if the extension is not zip (e.g. jar files)
-			if ext != "zip" {
+			if ext != ".zip" {
 				// rename the file to .zip
-				targetFile := fmt.Sprintf("%s.%s", source[:(len(source)-len(ext))], ext)
-				err := os.Rename(source, targetFile)
+				err := os.Rename(source, b.workDirZipFilename())
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -322,7 +327,13 @@ func (b *Builder) removeIgnored() {
 // if not profile is specified, it uses the default profile
 // if a default profile has not been defined, then uses the first profile in the build file
 // returns the profile used
-func (b *Builder) run(profileName string) *Profile {
+func (b *Builder) run(profileName string, fromPath string) *Profile {
+	// set the command execution directory
+	execDir := b.sourceDir()
+	// check if there is a sub-folder specified
+	if len(fromPath) > 0 {
+		execDir = filepath.Join(b.sourceDir(), fromPath)
+	}
 	// construct an environment with the vars at build file level
 	env := append(os.Environ(), b.buildFile.getEnv()...)
 	// for each build profile
@@ -334,7 +345,7 @@ func (b *Builder) run(profileName string) *Profile {
 				// combine the current environment with the profile environment
 				profileEnv := append(env, profile.getEnv()...)
 				// execute the statement
-				execute(cmd, b.sourceDir(), profileEnv)
+				execute(cmd, execDir, profileEnv)
 			}
 			// wait for the target to be created in the file system
 			waitForTargetToBeCreated(b.inSourceDirectory(profile.Target))
@@ -346,10 +357,10 @@ func (b *Builder) run(profileName string) *Profile {
 			defaultProfile := b.buildFile.defaultProfile()
 			// use the default profile
 			if defaultProfile != nil {
-				return b.run(defaultProfile.Name)
+				return b.run(defaultProfile.Name, fromPath)
 			} else {
 				// there is no default profile defined so use the first profile
-				return b.run(b.buildFile.Profiles[0].Name)
+				return b.run(b.buildFile.Profiles[0].Name, fromPath)
 			}
 		}
 	}
@@ -409,7 +420,7 @@ func (b *Builder) createSeal(profile *Profile) *core.Seal {
 		// the package
 		Manifest: info,
 		// the combined checksum of the seal info and the package
-		Digest: base64.StdEncoding.EncodeToString(sum),
+		Digest: fmt.Sprintf("sha256:%s", base64.StdEncoding.EncodeToString(sum)),
 		// the crypto signature
 		Signature: signature,
 	}
@@ -435,20 +446,4 @@ func (b *Builder) workDirJsonFilename() string {
 // the fully qualified name of the zip file in the working directory
 func (b *Builder) workDirZipFilename() string {
 	return fmt.Sprintf("%s/%s.zip", b.workingDir, b.uniqueIdName)
-}
-
-// the fully qualified name of the json Seal file in the local localReg
-func (b *Builder) regDirJsonFilename(profileName string) string {
-	if len(profileName) > 0 {
-		return fmt.Sprintf("%s/%s-%s.json", b.localReg.Path(), b.uniqueIdName, profileName)
-	}
-	return fmt.Sprintf("%s/%s.json", b.localReg.Path(), b.uniqueIdName)
-}
-
-// the fully qualified name of the zip file in the local localReg
-func (b *Builder) regDirZipFilename(profileName string) string {
-	if len(profileName) > 0 {
-		return fmt.Sprintf("%s/%s-%s.zip", b.localReg.Path(), b.uniqueIdName, profileName)
-	}
-	return fmt.Sprintf("%s/%s.zip", b.localReg.Path(), b.uniqueIdName)
 }

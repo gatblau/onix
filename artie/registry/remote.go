@@ -25,7 +25,7 @@ type Remote interface {
 	// delete a repository
 	DeleteRepository()
 	// upload an artefact
-	UploadArtefact(client *http.Client, name core.Named, localPath string, fileReference string, credentials string) error
+	UploadArtefact(client *http.Client, name *core.ArtieName, localPath string, fileReference string, credentials string) error
 	// download an artefact
 	DownloadArtefact()
 }
@@ -77,10 +77,10 @@ func upload(client *http.Client, url string, values map[string]io.Reader, user s
 	}
 
 	// Check the response
-	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("bad status: %s", res.Status)
+	if res.StatusCode > 299 {
+		return fmt.Errorf("failed to push, the remote server responded with status code %d: %s", res.StatusCode, res.Status)
 	}
-	return
+	return nil
 }
 
 func mustOpen(f string) *os.File {

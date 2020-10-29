@@ -32,10 +32,10 @@ type FileRegistry struct {
 }
 
 // return all the artefacts within the same repository
-func (r *FileRegistry) GetArtefactsByRepo(repoName string) ([]*artefact, bool) {
+func (r *FileRegistry) GetArtefactsByName(name *core.ArtieName) ([]*artefact, bool) {
 	var artefacts = make([]*artefact, 0)
 	for _, artefact := range r.Artefacts {
-		if artefact.Repository == repoName {
+		if artefact.Repository == name.FullyQualifiedRepository() {
 			artefacts = append(artefacts, artefact)
 		}
 	}
@@ -45,12 +45,20 @@ func (r *FileRegistry) GetArtefactsByRepo(repoName string) ([]*artefact, bool) {
 	return nil, false
 }
 
-// return the artefact that matches the specified name:tag or nil if not found in the FileRegistry
-func (r *FileRegistry) GetArtefactByName(artefactName string) *artefact {
+// return the artefact that matches the specified:
+// - domain/repo/name:tag or
+// - artefact id substring or
+// nil if not found in the FileRegistry
+func (r *FileRegistry) GetArtefact(name *core.ArtieName) *artefact {
 	for _, artefact := range r.Artefacts {
+		// try and match against the artefact ID substring
+		if strings.Contains(artefact.Id, name.Name) {
+			return artefact
+		}
+		// if no luck use the tags
 		for _, tag := range artefact.Tags {
-			if (tag != "latest" && fmt.Sprintf("%s:%s", artefact.Repository, tag) == artefactName) ||
-				(tag == "latest" && artefact.Repository == artefactName) {
+			// try and match against the full URI
+			if fmt.Sprintf("%s:%s", artefact.Repository, tag) == name.String() {
 				return artefact
 			}
 		}
@@ -61,6 +69,8 @@ func (r *FileRegistry) GetArtefactByName(artefactName string) *artefact {
 type artefact struct {
 	// a unique identifier for the artefact calculated as the checksum of the complete seal
 	Id string `json:"id"`
+	// the type of application in the artefact
+	Type string `json:"type"`
 	// the artefact repository (name without without tag)
 	Repository string `json:"repository"`
 	// the artefact actual file name
@@ -122,19 +132,7 @@ func (r *FileRegistry) load() {
 }
 
 // Add the artefact and seal to the FileRegistry
-func (r *FileRegistry) Add(filename string, artefactName core.Named, s *core.Seal) {
-	var repo core.NamedRepository
-	if namedRepo, ok := artefactName.(core.NamedRepository); ok {
-		repo = namedRepo
-	} else {
-		log.Fatal(errors.New("artefact name not supported"))
-	}
-	// tag by default is latest
-	tag := "latest"
-	// if a tag has been provided then us it
-	if tagged, ok := artefactName.(core.Tagged); ok {
-		tag = tagged.Tag()
-	}
+func (r *FileRegistry) Add(filename string, name *core.ArtieName, s *core.Seal) {
 	// gets the full base name (with extension)
 	basename := filepath.Base(filename)
 	// gets the basename directory only
@@ -148,28 +146,26 @@ func (r *FileRegistry) Add(filename string, artefactName core.Named, s *core.Sea
 		log.Fatal(errors.New(fmt.Sprintf("the localRepo can only accept zip files, the extension provided was %s", basenameExt)))
 	}
 	// move the zip file to the localRepo folder
-	err := os.Rename(filename, fmt.Sprintf("%s/%s", r.Path(), basename))
+	// err := os.Rename(filename, fmt.Sprintf("%s/%s", r.Path(), basename))
+	err := RenameFile(filename, fmt.Sprintf("%s/%s", r.Path(), basename), false)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// now move the seal file to the localRepo folder
-	err = os.Rename(fmt.Sprintf("%s/%s.json", basenameDir, basenameNoExt), fmt.Sprintf("%s/%s.json", r.Path(), basenameNoExt))
+	// err = os.Rename(fmt.Sprintf("%s/%s.json", basenameDir, basenameNoExt), fmt.Sprintf("%s/%s.json", r.Path(), basenameNoExt))
+	err = RenameFile(fmt.Sprintf("%s/%s.json", basenameDir, basenameNoExt), fmt.Sprintf("%s/%s.json", r.Path(), basenameNoExt), false)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// if the artefact already exists in the repository
-	if artefs, exists := r.GetArtefactsByRepo(artefactName.Name()); exists {
-		// then it has to untag it, leaving a dangling artefact
-		for _, artef := range artefs {
-			artef.Tags = core.RemoveElement(artef.Tags, tag)
-		}
-	}
+	// untag artefact artefact (if any)
+	r.unTag(name, name.Tag)
 	// creates a new artefact
 	artefacts := append(r.Artefacts, &artefact{
 		Id:         core.ArtefactId(s),
-		Repository: repo.Name(),
+		Type:       s.Manifest.Type,
+		Repository: name.FullyQualifiedName(),
 		FileRef:    basenameNoExt,
-		Tags:       []string{tag},
+		Tags:       []string{name.Tag},
 		Size:       s.Manifest.Size,
 		Created:    s.Manifest.Time,
 	})
@@ -178,29 +174,92 @@ func (r *FileRegistry) Add(filename string, artefactName core.Named, s *core.Sea
 	r.save()
 }
 
-// List packages to stdout
+// removeArtefactByRepository the specified artefact from the slice
+func (r *FileRegistry) removeArtefactByRepository(a []*artefact, name *core.ArtieName) []*artefact {
+	i := -1
+	// find the value to remove
+	for ix := 0; ix < len(a); ix++ {
+		if a[ix].Repository == name.FullyQualifiedName() {
+			i = ix
+			break
+		}
+	}
+	if i == -1 {
+		return a
+	}
+	// Remove the element at index i from a.
+	a[i] = a[len(a)-1] // Copy last element to index i.
+	a[len(a)-1] = nil  // Erase last element (write zero value).
+	a = a[:len(a)-1]   // Truncate slice.
+	return a
+}
+
+func (r *FileRegistry) removeArtefactById(a []*artefact, id string) []*artefact {
+	i := -1
+	// find the value to remove
+	for ix := 0; ix < len(a); ix++ {
+		if strings.Contains(a[ix].Id, id) {
+			i = ix
+			break
+		}
+	}
+	if i == -1 {
+		return a
+	}
+	// Remove the element at index i from a.
+	a[i] = a[len(a)-1] // Copy last element to index i.
+	a[len(a)-1] = nil  // Erase last element (write zero value).
+	a = a[:len(a)-1]   // Truncate slice.
+	return a
+}
+
+// remove a given tag from an artefact
+func (r *FileRegistry) unTag(name *core.ArtieName, tag string) {
+	artie := r.GetArtefact(name)
+	if artie != nil {
+		artie.Tags = core.RemoveElement(artie.Tags, tag)
+	}
+}
+
+// remove all tags from the specified artefact
+func (r *FileRegistry) unTagAll(name *core.ArtieName) {
+	if artefs, exists := r.GetArtefactsByName(name); exists {
+		// then it has to untag it, leaving a dangling artefact
+		for _, artef := range artefs {
+			for _, tag := range artef.Tags {
+				artef.Tags = core.RemoveElement(artef.Tags, tag)
+			}
+		}
+	}
+	// persist changes
+	r.save()
+}
+
+// List artefacts to stdout
 func (r *FileRegistry) List() {
 	// get a table writer for the stdout
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 10, ' ', 0)
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 12, ' ', 0)
 	// print the header row
-	fmt.Fprintln(w, "REPOSITORY\tTAG\tARTEFACT ID\tCREATED\tSIZE")
+	fmt.Fprintln(w, "REPOSITORY\tTAG\tARTEFACT ID\tARTEFACT TYPE\tCREATED\tSIZE")
 	// repository, tag, artefact id, created, size
 	for _, a := range r.Artefacts {
 		// if the artefact is dangling (no tags)
 		if len(a.Tags) == 0 {
-			fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s",
+			fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s",
 				a.Repository,
 				"<none>",
-				a.Id[:12],
+				a.Id[7:19],
+				a.Type,
 				toElapsedLabel(a.Created),
 				a.Size),
 			)
 		}
 		for _, tag := range a.Tags {
-			fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s",
+			fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s",
 				a.Repository,
 				tag,
-				a.Id[:12],
+				a.Id[7:19],
+				a.Type,
 				toElapsedLabel(a.Created),
 				a.Size),
 			)
@@ -209,9 +268,20 @@ func (r *FileRegistry) List() {
 	w.Flush()
 }
 
-func (r *FileRegistry) Push(name core.Named, remote Remote, credentials string) {
+// list (quiet) artefact IDs only
+func (r *FileRegistry) ListQ() {
+	// get a table writer for the stdout
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 10, ' ', 0)
+	// repository, tag, artefact id, created, size
+	for _, a := range r.Artefacts {
+		fmt.Fprintln(w, fmt.Sprintf("%s", a.Id[7:19]))
+	}
+	w.Flush()
+}
+
+func (r *FileRegistry) Push(name *core.ArtieName, remote Remote, credentials string) {
 	// fetch the artefact info from the local registry
-	artie := r.GetArtefactByName(name.String())
+	artie := r.GetArtefact(name)
 	if artie == nil {
 		log.Fatal(errors.New(fmt.Sprintf("artefact %s not found in the local registry", name)))
 	}
@@ -224,10 +294,60 @@ func (r *FileRegistry) Push(name core.Named, remote Remote, credentials string) 
 		},
 	}
 	// execute the upload
-	remote.UploadArtefact(client, name, r.Path(), artie.FileRef, credentials)
+	err := remote.UploadArtefact(client, name, r.Path(), artie.FileRef, credentials)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("pushed %s\n", name.String())
 }
 
-func (r *FileRegistry) Pull(name core.Named, remote Remote) {
+func (r *FileRegistry) Remove(names []*core.ArtieName) {
+	for _, name := range names {
+		// try and get the artefact by complete URI or id ref
+		artie := r.GetArtefact(name)
+		if artie == nil {
+			fmt.Printf("name %s not found\n", name.Name)
+			continue
+		}
+		// try to remove it using full name
+		// remove the specified tag
+		length := len(artie.Tags)
+		artie.Tags = core.RemoveElement(artie.Tags, name.Tag)
+		// if the tag was successfully deleted
+		if len(artie.Tags) < length {
+			// if there are no tags left at the end then remove the artefact
+			if len(artie.Tags) == 0 {
+				r.Artefacts = r.removeArtefactByRepository(r.Artefacts, name)
+				r.removeFiles(artie)
+			}
+			// persist changes
+			r.save()
+			log.Print(artie.Id)
+		} else {
+			// attempt to remove by Id (stored in the Name)
+			r.Artefacts = r.removeArtefactById(r.Artefacts, name.Name)
+			r.removeFiles(artie)
+			r.save()
+			log.Print(artie.Id)
+		}
+	}
+}
+
+// remove the files associated with an artefact
+func (r *FileRegistry) removeFiles(artie *artefact) {
+	// remove the zip file
+	err := os.Remove(fmt.Sprintf("%s/%s.zip", r.Path(), artie.FileRef))
+	if err != nil {
+		log.Fatal(err)
+	}
+	// remove the json file
+	err = os.Remove(fmt.Sprintf("%s/%s.json", r.Path(), artie.FileRef))
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (r *FileRegistry) Pull(name *core.ArtieName, remote Remote) {
 }
 
 // returns the elapsed time until now in human friendly format
@@ -267,4 +387,14 @@ func plural(value int64, label string) string {
 		return fmt.Sprintf("%ss", label)
 	}
 	return label
+}
+
+// the fully qualified name of the json Seal file in the local localReg
+func (r *FileRegistry) regDirJsonFilename(uniqueIdName string) string {
+	return fmt.Sprintf("%s/%s.json", r.Path(), uniqueIdName)
+}
+
+// the fully qualified name of the zip file in the local localReg
+func (r *FileRegistry) regDirZipFilename(uniqueIdName string) string {
+	return fmt.Sprintf("%s/%s.zip", r.Path(), uniqueIdName)
 }
