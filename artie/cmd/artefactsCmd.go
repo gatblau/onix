@@ -16,6 +16,7 @@ import (
 type ArtefactsCmd struct {
 	cmd   *cobra.Command
 	local *registry.FileRegistry
+	quiet *bool
 }
 
 func NewArtefactsCmd() *ArtefactsCmd {
@@ -27,10 +28,15 @@ func NewArtefactsCmd() *ArtefactsCmd {
 		},
 		local: registry.NewFileRegistry(),
 	}
+	c.quiet = c.cmd.Flags().BoolP("quiet", "q", false, "only show numeric IDs")
 	c.cmd.Run = c.Run
 	return c
 }
 
 func (b *ArtefactsCmd) Run(cmd *cobra.Command, args []string) {
-	b.local.List()
+	if *b.quiet {
+		b.local.ListQ()
+	} else {
+		b.local.List()
+	}
 }

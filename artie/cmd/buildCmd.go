@@ -9,6 +9,7 @@ package cmd
 
 import (
 	"github.com/gatblau/onix/artie/build"
+	"github.com/gatblau/onix/artie/core"
 	"github.com/spf13/cobra"
 )
 
@@ -35,8 +36,8 @@ func NewBuildCmd() *BuildCmd {
 		builder: build.NewBuilder(),
 	}
 	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.branch, "branch", "b", "", "the git branch to use")
-	c.cmd.Flags().StringVarP(&c.gitTag, "gitTag", "l", "", "the git tag to use")
+	// c.cmd.Flags().StringVarP(&c.branch, "branch", "b", "", "the git branch to use")
+	// c.cmd.Flags().StringVarP(&c.gitTag, "gitTag", "l", "", "the git tag to use")
 	c.cmd.Flags().StringVarP(&c.gitToken, "token", "k", "", "the git access token")
 	c.cmd.Flags().StringVarP(&c.artefactName, "artefactName", "t", "", "name and optionally a tag in the 'name:tag' format")
 	c.cmd.Flags().StringVarP(&c.fromPath, "path", "f", "", "the path within the git repository where the root of the source to package is")
@@ -46,5 +47,5 @@ func NewBuildCmd() *BuildCmd {
 
 func (b *BuildCmd) Run(cmd *cobra.Command, args []string) {
 	b.from = args[0]
-	b.builder.Build(b.from, b.gitToken, b.artefactName, b.profile)
+	b.builder.Build(b.from, b.fromPath, b.gitToken, core.ParseName(b.artefactName), b.profile)
 }

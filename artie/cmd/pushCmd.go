@@ -45,10 +45,7 @@ func (b *PushCmd) Run(cmd *cobra.Command, args []string) {
 	// get the name of the artefact to push
 	nameTag := args[0]
 	// validate the name
-	named, err := core.ParseNormalizedNamed(nameTag)
-	if err != nil {
-		log.Fatal(err)
-	}
+	named := core.ParseName(nameTag)
 	// attempt upload to remote repository
 	b.local.Push(named, b.remote, b.credentials)
 }

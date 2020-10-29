@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 )
@@ -54,5 +55,5 @@ func ArtefactId(seal *Seal) string {
 	if _, err := io.Copy(hash, bytes.NewReader(info)); err != nil {
 		log.Fatal(err)
 	}
-	return hex.EncodeToString(hash.Sum(nil))
+	return fmt.Sprintf("sha256:%s", hex.EncodeToString(hash.Sum(nil)))
 }

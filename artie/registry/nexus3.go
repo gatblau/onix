@@ -29,14 +29,10 @@ func (r *Nexus3Registry) CreateRepository() {}
 func (r *Nexus3Registry) DeleteRepository() {}
 
 // Upload an artefact
-func (r *Nexus3Registry) UploadArtefact(client *http.Client, name core.Named, localPath string, fileReference string, credentials string) error {
-	namedRepo, ok := name.(core.NamedRepository)
-	if !ok {
-		log.Fatal("no named repository")
-	}
+func (r *Nexus3Registry) UploadArtefact(client *http.Client, name *core.ArtieName, localPath string, fileReference string, credentials string) error {
 	// prepare the reader instances to encode
 	values := map[string]io.Reader{
-		"raw.directory": strings.NewReader(namedRepo.Path()),
+		"raw.directory": strings.NewReader(name.Path()),
 		// the json filename
 		"raw.asset1.filename": strings.NewReader(fmt.Sprintf("%s.json", fileReference)),
 		// the json file (seal)
@@ -50,12 +46,8 @@ func (r *Nexus3Registry) UploadArtefact(client *http.Client, name core.Named, lo
 	return upload(client, r.uploadURI(name), values, user, pwd)
 }
 
-func (r *Nexus3Registry) uploadURI(name core.Named) string {
-	repo, ok := name.(core.NamedRepository)
-	if !ok {
-		log.Fatal("no named repository")
-	}
-	return fmt.Sprintf("http://%s/service/rest/v1/components?repository=%s", repo.Domain(), repo.Path()[:strings.LastIndex(repo.Path(), "/")])
+func (r *Nexus3Registry) uploadURI(name *core.ArtieName) string {
+	return fmt.Sprintf("http://%s/service/rest/v1/components?repository=artie", name.Domain)
 }
 
 func (r *Nexus3Registry) DownloadArtefact() {}
