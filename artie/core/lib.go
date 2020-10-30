@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
+	"strings"
 )
 
 // convert the passed in parameter to a Json Byte Array
@@ -56,4 +58,25 @@ func ArtefactId(seal *Seal) string {
 		log.Fatal(err)
 	}
 	return fmt.Sprintf("sha256:%s", hex.EncodeToString(hash.Sum(nil)))
+}
+
+func CheckErr(err error, msg string, a ...interface{}) {
+	if err != nil {
+		fmt.Printf("error: %s - %s\n", fmt.Sprintf(msg, a), err)
+		os.Exit(1)
+	}
+}
+
+func RaiseErr(msg string, a ...interface{}) {
+	fmt.Printf("error: %s\n", fmt.Sprintf(msg, a))
+	os.Exit(1)
+}
+
+func Msg(msg string, a ...interface{}) {
+	if len(a) > 0 {
+		fmt.Printf("artie: %s\n", fmt.Sprintf(msg, a...))
+	} else {
+		fmt.Printf("artie: %s\n", msg)
+	}
+	fmt.Printf("%s\n", strings.Repeat("-", 80))
 }
