@@ -3,3 +3,6 @@ build-linux:
 
 build-darwin:
 	go fmt && export GOOS=darwin; go build .
+
+build-windows:
+	go fmt && export GOOS=windows; go build .

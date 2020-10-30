@@ -95,12 +95,12 @@ func NewFileRegistry() *FileRegistry {
 
 // the local Path to the local FileRegistry
 func (r *FileRegistry) Path() string {
-	return fmt.Sprintf("%s/.%s", core.HomeDir(), core.CliName)
+	return core.RegistryPath()
 }
 
 // return the FileRegistry full file name
 func (r *FileRegistry) file() string {
-	return fmt.Sprintf("%s/repository.json", r.Path())
+	return filepath.Join(r.Path(), "repository.json")
 }
 
 // save the state of the FileRegistry

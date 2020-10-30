@@ -15,6 +15,6 @@ import (
 func TestBuild(t *testing.T) {
 	p := NewBuilder()
 	// p.Build("https://github.com/gatblau/boot", "", core.ParseName("boot"), "")
-	p.Build("https://github.com/gatblau/onix", "artie", "", core.ParseName("localhos:8081/gatblau/artie"), "")
-	//p.Build("/Users/andresalos/test-pak/boot", "", "nexus.io/gatblau/boot")
+	// p.Build("https://github.com/gatblau/onix", "artie", "", core.ParseName("localhost:8081/gatblau/artie"), "")
+	p.Build("/Users/andresalos/artie-test/boot", "", "", core.ParseName("localhost:8081/gatblau/boot"), "")
 }

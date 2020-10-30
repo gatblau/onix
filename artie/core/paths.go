@@ -8,8 +8,10 @@
 package core
 
 import (
+	"fmt"
 	"log"
 	"os/user"
+	"path/filepath"
 )
 
 const CliName = "artie"
@@ -21,4 +23,9 @@ func HomeDir() string {
 		log.Fatal(err)
 	}
 	return usr.HomeDir
+}
+
+// gets the root path of the local registry
+func RegistryPath() string {
+	return filepath.Join(HomeDir(), fmt.Sprintf(".%s", CliName))
 }
