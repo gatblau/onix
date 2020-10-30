@@ -105,11 +105,9 @@ func (r *FileRegistry) file() string {
 
 // save the state of the FileRegistry
 func (r *FileRegistry) save() {
+	core.Msg("updating local registry metadata")
 	regBytes := core.ToJsonBytes(r)
-	err := ioutil.WriteFile(r.file(), regBytes, os.ModePerm)
-	if err != nil {
-		log.Fatal(err)
-	}
+	core.CheckErr(ioutil.WriteFile(r.file(), regBytes, os.ModePerm), "fail to update local registry metadata")
 }
 
 // load the content of the FileRegistry
@@ -133,6 +131,7 @@ func (r *FileRegistry) load() {
 
 // Add the artefact and seal to the FileRegistry
 func (r *FileRegistry) Add(filename string, name *core.ArtieName, s *core.Seal) {
+	core.Msg("adding artefact to local registry: %s", name)
 	// gets the full base name (with extension)
 	basename := filepath.Base(filename)
 	// gets the basename directory only
@@ -146,17 +145,9 @@ func (r *FileRegistry) Add(filename string, name *core.ArtieName, s *core.Seal) 
 		log.Fatal(errors.New(fmt.Sprintf("the localRepo can only accept zip files, the extension provided was %s", basenameExt)))
 	}
 	// move the zip file to the localRepo folder
-	// err := os.Rename(filename, fmt.Sprintf("%s/%s", r.Path(), basename))
-	err := RenameFile(filename, fmt.Sprintf("%s/%s", r.Path(), basename), false)
-	if err != nil {
-		log.Fatal(err)
-	}
+	core.CheckErr(RenameFile(filename, filepath.Join(r.Path(), basename), false), "failed to move artefact zip file to the local registry")
 	// now move the seal file to the localRepo folder
-	// err = os.Rename(fmt.Sprintf("%s/%s.json", basenameDir, basenameNoExt), fmt.Sprintf("%s/%s.json", r.Path(), basenameNoExt))
-	err = RenameFile(fmt.Sprintf("%s/%s.json", basenameDir, basenameNoExt), fmt.Sprintf("%s/%s.json", r.Path(), basenameNoExt), false)
-	if err != nil {
-		log.Fatal(err)
-	}
+	core.CheckErr(RenameFile(filepath.Join(basenameDir, fmt.Sprintf("%s.json", basenameNoExt)), filepath.Join(r.Path(), fmt.Sprintf("%s.json", basenameNoExt)), false), "failed to move artefact seal file to the local registry")
 	// untag artefact artefact (if any)
 	r.unTag(name, name.Tag)
 	// creates a new artefact
@@ -217,6 +208,7 @@ func (r *FileRegistry) removeArtefactById(a []*artefact, id string) []*artefact 
 func (r *FileRegistry) unTag(name *core.ArtieName, tag string) {
 	artie := r.GetArtefact(name)
 	if artie != nil {
+		core.Msg("untagging %s", name)
 		artie.Tags = core.RemoveElement(artie.Tags, tag)
 	}
 }

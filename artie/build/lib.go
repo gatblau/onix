@@ -168,6 +168,7 @@ func exitMsg(exitCode int) string {
 
 // wait a time duration for a file or folder to be created on the path
 func waitForTargetToBeCreated(path string) {
+	core.Msg("waiting for run commands target to be created")
 	elapsed := 0
 	found := false
 	for {
@@ -183,7 +184,7 @@ func waitForTargetToBeCreated(path string) {
 		time.Sleep(500 * time.Millisecond)
 	}
 	if !found {
-		log.Fatal("error: target not found after command execution")
+		core.RaiseErr("target '%s' not found after command execution", path)
 	}
 }
 

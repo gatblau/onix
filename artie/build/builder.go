@@ -10,7 +10,6 @@ package build
 import (
 	"archive/zip"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"github.com/gatblau/onix/artie/core"
 	"github.com/gatblau/onix/artie/registry"
@@ -94,6 +93,7 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 	// if "from" is an http url
 	if strings.HasPrefix(strings.ToLower(from), "http") {
 		// clone the remote repo
+		core.Msg("preparing to clone remote repository '%s'", from)
 		repo = b.cloneRepo(from, gitToken)
 	} else
 	// there is a local repo so copy it to the source folder and then open it
@@ -109,6 +109,7 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 			localPath = absPath
 		}
 		// copy the folder to the source directory
+		core.Msg("preparing to copy local repository '%s'", from)
 		err := copyFiles(localPath, b.sourceDir())
 		if err != nil {
 			log.Fatal(err)
@@ -123,12 +124,14 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 		loadFrom = filepath.Join(loadFrom, fromPath)
 	}
 	// read build.yaml
-	b.buildFile = LoadBuildFile(fmt.Sprintf("%s/build.yaml", loadFrom))
+	core.Msg("loading build instructions")
+	b.buildFile = LoadBuildFile(filepath.Join(loadFrom, "build.yaml"))
 	return repo
 }
 
 // compress the target
 func (b *Builder) zipPackage(target, fromPath string) {
+	core.Msg("compressing target '%s'", target)
 	var targetName = target
 	// defines the source for zipping as specified in the build.yaml within the source directory
 	source := filepath.Join(b.sourceDir(), targetName)
@@ -138,45 +141,35 @@ func (b *Builder) zipPackage(target, fromPath string) {
 	}
 	// get the target source information
 	info, err := os.Stat(source)
-	if err != nil {
-		log.Fatal(err)
-	}
+	core.CheckErr(err, "failed to retrieve target to compress: '%s'", source)
 	// if the target is a directory
 	if info.IsDir() {
 		// then zip it
-		err := zipSource(source, b.workDirZipFilename())
-		if err != nil {
-			log.Fatal(err)
-		}
+		core.Msg("compressing folder")
+		core.CheckErr(zipSource(source, b.workDirZipFilename()), "failed to compress folder")
 	} else {
 		// if it is a file open it to check its type
+		core.Msg("checking type of file target: '%s'", source)
 		file, err := os.Open(source)
-		if err != nil {
-			log.Fatal(err)
-		}
+		core.CheckErr(err, "failed to open target: %s", source)
 		// find the content type
 		contentType, err := findContentType(file)
-		if err != nil {
-			log.Fatal(err)
-		}
+		core.CheckErr(err, "failed to find target content type")
 		// if the file is not a zip file
 		if contentType != "application/zip" {
+			core.Msg("target is not a zip file, proceeding to compress it")
 			// the zip it
-			err := zipSource(source, b.workDirZipFilename())
-			if err != nil {
-				log.Fatal(err)
-			}
+			core.CheckErr(zipSource(source, b.workDirZipFilename()), "failed to compress file target")
 			return
 		} else {
+			core.Msg("cannot compress file target, already compressed. checking target file extension")
 			// find the file extension
 			ext := filepath.Ext(source)
 			// if the extension is not zip (e.g. jar files)
 			if ext != ".zip" {
+				core.Msg("renaming file target to .zip extension")
 				// rename the file to .zip
-				err := os.Rename(source, b.workDirZipFilename())
-				if err != nil {
-					log.Fatal(err)
-				}
+				core.CheckErr(os.Rename(source, b.workDirZipFilename()), "failed to rename file target to .zip extension")
 				return
 			}
 			return
@@ -222,13 +215,11 @@ func (b *Builder) openRepo() *git.Repository {
 
 // cleanup all relevant folders and move package to target location
 func (b *Builder) cleanUp() {
+	core.Msg("cleaning up temporary build directory")
 	// remove the zip folder
 	b.removeFromWD("art")
 	// remove the working directory
-	err := os.RemoveAll(b.workingDir)
-	if err != nil {
-		log.Fatal(err)
-	}
+	core.CheckErr(os.RemoveAll(b.workingDir), "failed to remove temporary build directory")
 	// set the directory to empty
 	b.workingDir = ""
 }
@@ -290,6 +281,7 @@ func (b *Builder) setUniqueIdName(repo *git.Repository) {
 	timeStamp := fmt.Sprintf("%02d%02d%02s%02d%02d%02d%s", t.Day(), t.Month(), strconv.Itoa(t.Year())[:2], t.Hour(), t.Minute(), t.Second(), strconv.Itoa(t.Nanosecond())[:3])
 	b.uniqueIdName = fmt.Sprintf("%s-%s", timeStamp, ref.Hash().String()[:10])
 	b.commit = ref.Hash().String()
+	core.Msg("creating artefact filename reference '%s'", b.uniqueIdName)
 }
 
 // remove from working directory
@@ -307,7 +299,7 @@ func (b *Builder) removeIgnored() {
 	ignoreFileBytes, err := ioutil.ReadFile(b.inSourceDirectory(ignoreFilename))
 	if err != nil {
 		// assume no ignore file exists, do nothing
-		log.Printf("%s not found", ignoreFilename)
+		core.Msg("nothing to remove, %s file not found in project", ignoreFilename)
 		return
 	}
 	// get the lines in the ignore file
@@ -317,10 +309,8 @@ func (b *Builder) removeIgnored() {
 	// loop and remove the included files or folders
 	for _, line := range lines {
 		sourcePath := b.inSourceDirectory(line)
-		err := os.RemoveAll(sourcePath)
-		if err != nil {
-			log.Printf("failed to ignore file %s", sourcePath)
-		}
+		core.Msg("removing path '%s'", sourcePath)
+		core.CheckErr(os.RemoveAll(sourcePath), "failed to ignore file %s", sourcePath)
 	}
 }
 
@@ -329,6 +319,7 @@ func (b *Builder) removeIgnored() {
 // if a default profile has not been defined, then uses the first profile in the build file
 // returns the profile used
 func (b *Builder) run(profileName string, fromPath string) *Profile {
+	core.Msg("preparing to execute build commands")
 	// set the command execution directory
 	execDir := b.sourceDir()
 	// check if there is a sub-folder specified
@@ -341,6 +332,7 @@ func (b *Builder) run(profileName string, fromPath string) *Profile {
 	for _, profile := range b.buildFile.Profiles {
 		// if a profile name has been provided then build it
 		if len(profileName) > 0 && profile.Name == profileName {
+			core.Msg("building profile '%s'", profileName)
 			// for each run statement in the profile
 			for _, cmd := range profile.Run {
 				// combine the current environment with the profile environment
@@ -358,14 +350,15 @@ func (b *Builder) run(profileName string, fromPath string) *Profile {
 			defaultProfile := b.buildFile.defaultProfile()
 			// use the default profile
 			if defaultProfile != nil {
+				core.Msg("building the default profile '%s'", defaultProfile.Name)
 				return b.run(defaultProfile.Name, fromPath)
 			} else {
+				core.Msg("building the first profile in the build file: '%s'", b.buildFile.Profiles[0].Name)
 				// there is no default profile defined so use the first profile
 				return b.run(b.buildFile.Profiles[0].Name, fromPath)
 			}
 		}
 	}
-	log.Fatal(errors.New("no profile was found suitable"))
 	return nil
 }
 
@@ -386,6 +379,7 @@ func (b *Builder) inRegistryDirectory(relativePath string) string {
 
 // create the package Seal
 func (b *Builder) createSeal(profile *Profile) *core.Seal {
+	core.Msg("creating artefact seal")
 	filename := b.uniqueIdName
 	// merge the labels in the profile with the ones at the build file level
 	labels := mergeMaps(b.buildFile.Labels, profile.Labels)
@@ -409,13 +403,12 @@ func (b *Builder) createSeal(profile *Profile) *core.Seal {
 		Time:    time.Now().Format(time.RFC850),
 		Size:    bytesToLabel(zipInfo.Size()),
 	}
+	core.Msg("creating artefact cryptographic signature")
 	// take the hash of the zip file and seal info combined
 	sum := checksum(b.workDirZipFilename(), info)
 	// create a Base-64 encoded cryptographic signature
 	signature, err := b.signer.SignBase64(sum)
-	if err != nil {
-		log.Fatal(err)
-	}
+	core.CheckErr(err, "failed to create cryptographic signature")
 	// construct the seal
 	s := &core.Seal{
 		// the package
@@ -428,10 +421,7 @@ func (b *Builder) createSeal(profile *Profile) *core.Seal {
 	// convert the seal to Json
 	dest := core.ToJsonBytes(s)
 	// save the seal
-	err = ioutil.WriteFile(b.workDirJsonFilename(), dest, os.ModePerm)
-	if err != nil {
-		log.Fatal(err)
-	}
+	core.CheckErr(ioutil.WriteFile(b.workDirJsonFilename(), dest, os.ModePerm), "failed to write artefact seal file")
 	return s
 }
 
