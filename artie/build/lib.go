@@ -9,8 +9,10 @@ package build
 
 import (
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"github.com/gatblau/onix/artie/core"
 	"io"
@@ -142,42 +144,6 @@ func findContentType(f *os.File) (string, error) {
 		return "", err
 	}
 	return http.DetectContentType(buffer), nil
-}
-
-// executes a single command with arguments
-func execute(cmd string, dir string, env []string) {
-	strArr := strings.Split(cmd, " ")
-	var c *exec.Cmd
-	if len(strArr) == 1 {
-		c = exec.Command(strArr[0])
-	} else {
-		c = exec.Command(strArr[0], strArr[1:]...)
-	}
-	c.Dir = dir
-	c.Env = env
-	var stdout, stderr bytes.Buffer
-	c.Stdout = &stdout
-	c.Stderr = &stderr
-	log.Printf("executing: %s\n", strings.Join(c.Args, " "))
-	if err := c.Start(); err != nil {
-		log.Fatal(err)
-	}
-	err := c.Wait()
-	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			// The program has exited with an exit code != 0
-			// This works on both Unix and Windows. Although package
-			// syscall is generally platform dependent, WaitStatus is
-			// defined for both Unix and Windows and in both cases has
-			// an ExitStatus() method with the same signature.
-			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-				log.Fatal(exitMsg(status.ExitStatus()))
-			}
-		} else {
-			log.Fatalf("cmd.Wait: %v", err)
-		}
-		log.Fatal(err)
-	}
 }
 
 // gets the error message for a shell exit status
@@ -313,4 +279,67 @@ func round(val float64, roundOn float64, places int) (newVal float64) {
 	}
 	newVal = round / pow
 	return
+}
+
+func execute(cmd string, dir string, env []string) (err error) {
+	if cmd == "" {
+		return errors.New("no command provided")
+	}
+
+	cmdArr := strings.Split(cmd, " ")
+	name := cmdArr[0]
+
+	var args []string
+	if len(cmdArr) > 1 {
+		args = cmdArr[1:]
+	}
+
+	command := exec.Command(name, args...)
+	command.Dir = dir
+	command.Env = env
+
+	stdout, err := command.StdoutPipe()
+	if err != nil {
+		log.Printf("failed creating command stdoutpipe: %s", err)
+		return err
+	}
+	defer stdout.Close()
+	stdoutReader := bufio.NewReader(stdout)
+
+	stderr, err := command.StderrPipe()
+	if err != nil {
+		log.Printf("failed creating command stderrpipe: %s", err)
+		return err
+	}
+	defer stderr.Close()
+	stderrReader := bufio.NewReader(stderr)
+
+	if err := command.Start(); err != nil {
+		log.Printf("failed starting command: %s", err)
+		return err
+	}
+
+	go handleReader(stdoutReader)
+	go handleReader(stderrReader)
+
+	if err := command.Wait(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+				log.Printf("exit status: %d", status.ExitStatus())
+				return err
+			}
+		}
+		return err
+	}
+	return nil
+}
+
+func handleReader(reader *bufio.Reader) {
+	for {
+		str, err := reader.ReadString('\n')
+		if err != nil {
+			break
+		}
+		fmt.Print(str)
+	}
 }

@@ -261,18 +261,19 @@ func (b *Builder) checkRegistryDir() {
 
 // create a new working directory and return its path
 func (b *Builder) newWorkingDir() {
-	basePath, _ := os.Getwd()
+	// the working directory will be a build folder within the registry directory
+	basePath := filepath.Join(core.RegistryPath(), "build")
 	uid := uuid.New()
-	folder := strings.Replace(uid.String(), "-", "", -1)
-	workingDirPath := fmt.Sprintf("%s/.%s", basePath, folder)
+	folder := strings.Replace(uid.String(), "-", "", -1)[:12]
+	workingDirPath := filepath.Join(basePath, folder)
 	// creates a temporary working directory
-	err := os.Mkdir(workingDirPath, os.ModePerm)
+	err := os.MkdirAll(workingDirPath, os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 	}
 	b.workingDir = workingDirPath
 	// create a sub-folder to zip
-	err = os.Mkdir(b.sourceDir(), os.ModePerm)
+	err = os.MkdirAll(b.sourceDir(), os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -370,17 +371,17 @@ func (b *Builder) run(profileName string, fromPath string) *Profile {
 
 // return an absolute path using the working directory as base
 func (b *Builder) inWorkingDirectory(relativePath string) string {
-	return fmt.Sprintf("%s/%s", b.workingDir, relativePath)
+	return filepath.Join(b.workingDir, relativePath)
 }
 
 // return an absolute path using the source directory as base
 func (b *Builder) inSourceDirectory(relativePath string) string {
-	return fmt.Sprintf("%s/%s", b.sourceDir(), relativePath)
+	return filepath.Join(b.sourceDir(), relativePath)
 }
 
 // return an absolute path using the home directory as base
 func (b *Builder) inRegistryDirectory(relativePath string) string {
-	return fmt.Sprintf("%s/%s", b.localReg.Path(), relativePath)
+	return filepath.Join(b.localReg.Path(), relativePath)
 }
 
 // create the package Seal
@@ -435,15 +436,15 @@ func (b *Builder) createSeal(profile *Profile) *core.Seal {
 }
 
 func (b *Builder) sourceDir() string {
-	return fmt.Sprintf("%s/%s", b.workingDir, core.CliName)
+	return filepath.Join(b.workingDir, core.CliName)
 }
 
 // the fully qualified name of the json Seal in the working directory
 func (b *Builder) workDirJsonFilename() string {
-	return fmt.Sprintf("%s/%s.json", b.workingDir, b.uniqueIdName)
+	return filepath.Join(b.workingDir, fmt.Sprintf("%s.json", b.uniqueIdName))
 }
 
 // the fully qualified name of the zip file in the working directory
 func (b *Builder) workDirZipFilename() string {
-	return fmt.Sprintf("%s/%s.zip", b.workingDir, b.uniqueIdName)
+	return filepath.Join(b.workingDir, fmt.Sprintf("%s.zip", b.uniqueIdName))
 }
