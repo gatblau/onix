@@ -14,5 +14,5 @@ func TestUpload(t *testing.T) {
 
 func TestRemove(t *testing.T) {
 	l := NewFileRegistry()
-	l.Remove([]*core.ArtieName{core.ParseName("localhost:8081/gatblau/boot:v32")})
+	l.Remove([]*core.ArtieName{core.ParseName("874484")})
 }

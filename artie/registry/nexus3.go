@@ -32,7 +32,7 @@ func (r *Nexus3Registry) DeleteRepository() {}
 func (r *Nexus3Registry) UploadArtefact(client *http.Client, name *core.ArtieName, localPath string, fileReference string, credentials string) error {
 	// prepare the reader instances to encode
 	values := map[string]io.Reader{
-		"raw.directory": strings.NewReader(name.Path()),
+		"raw.directory": strings.NewReader(name.Repository()),
 		// the json filename
 		"raw.asset1.filename": strings.NewReader(fmt.Sprintf("%s.json", fileReference)),
 		// the json file (seal)

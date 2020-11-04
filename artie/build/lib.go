@@ -24,6 +24,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -295,6 +296,19 @@ func execute(cmd string, dir string, env []string) (err error) {
 		args = cmdArr[1:]
 	}
 
+	// env variable regex
+	evExpression := regexp.MustCompile("\\$\\{(.*?)\\}")
+	// check if the args have env variables and if so merge them
+	for ix, arg := range args {
+		matches := evExpression.FindStringSubmatch(arg)
+		if len(matches) == 2 {
+			value := os.Getenv(matches[1])
+			if len(value) == 0 {
+				core.RaiseErr("environment variable '%s' is not defined", matches[1])
+			}
+			args[ix] = strings.Replace(arg, matches[1], value, -1)
+		}
+	}
 	command := exec.Command(name, args...)
 	command.Dir = dir
 	command.Env = env
