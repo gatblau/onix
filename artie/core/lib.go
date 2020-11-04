@@ -9,7 +9,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strings"
 )
 
 // convert the passed in parameter to a Json Byte Array
@@ -68,15 +67,14 @@ func CheckErr(err error, msg string, a ...interface{}) {
 }
 
 func RaiseErr(msg string, a ...interface{}) {
-	fmt.Printf("error: %s\n", fmt.Sprintf(msg, a))
+	fmt.Printf("error: %s\n", fmt.Sprintf(msg, a...))
 	os.Exit(1)
 }
 
 func Msg(msg string, a ...interface{}) {
 	if len(a) > 0 {
-		fmt.Printf("artie: %s\n", fmt.Sprintf(msg, a...))
+		fmt.Printf("info: %s\n", fmt.Sprintf(msg, a...))
 	} else {
-		fmt.Printf("artie: %s\n", msg)
+		fmt.Printf("info: %s\n", msg)
 	}
-	fmt.Printf("%s\n", strings.Repeat("-", 80))
 }

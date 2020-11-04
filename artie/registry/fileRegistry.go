@@ -27,16 +27,37 @@ import (
 
 // the default local registry implemented as a file system
 type FileRegistry struct {
-	// the reference name of the artefact corresponding to different builds
-	Artefacts []*artefact `json:"artefacts"`
+	Repositories []*repository `json:"repositories"`
+}
+
+// find the repository specified by name
+func (r *FileRegistry) findRepository(name *core.ArtieName) *repository {
+	// find repository using artefact name
+	for _, repository := range r.Repositories {
+		if repository.Repository == name.FullyQualifiedName() {
+			return repository
+		}
+	}
+	// find repository using artefact Id
+	for _, repository := range r.Repositories {
+		for _, artie := range repository.Artefacts {
+			if strings.Contains(artie.Id, name.Name) {
+				return repository
+			}
+		}
+	}
+	return nil
 }
 
 // return all the artefacts within the same repository
 func (r *FileRegistry) GetArtefactsByName(name *core.ArtieName) ([]*artefact, bool) {
 	var artefacts = make([]*artefact, 0)
-	for _, artefact := range r.Artefacts {
-		if artefact.Repository == name.FullyQualifiedRepository() {
-			artefacts = append(artefacts, artefact)
+	for _, repository := range r.Repositories {
+		if repository.Repository == name.FullyQualifiedName() {
+			for _, artefact := range repository.Artefacts {
+				artefacts = append(artefacts, artefact)
+			}
+			break
 		}
 	}
 	if len(artefacts) > 0 {
@@ -46,24 +67,45 @@ func (r *FileRegistry) GetArtefactsByName(name *core.ArtieName) ([]*artefact, bo
 }
 
 // return the artefact that matches the specified:
-// - domain/repo/name:tag or
+// - domain/group/name:tag or
 // - artefact id substring or
 // nil if not found in the FileRegistry
 func (r *FileRegistry) GetArtefact(name *core.ArtieName) *artefact {
-	for _, artefact := range r.Artefacts {
-		// try and match against the artefact ID substring
-		if strings.Contains(artefact.Id, name.Name) {
-			return artefact
+	// first gets the repository the artefact is in
+	for _, repository := range r.Repositories {
+		if repository.Repository == name.FullyQualifiedName() {
+			// try and get it by id first
+			for _, artefact := range repository.Artefacts {
+				for _, tag := range artefact.Tags {
+					// try and match against the full URI
+					if tag == name.Tag {
+						return artefact
+					}
+				}
+			}
+			break
 		}
-		// if no luck use the tags
-		for _, tag := range artefact.Tags {
-			// try and match against the full URI
-			if fmt.Sprintf("%s:%s", artefact.Repository, tag) == name.String() {
-				return artefact
+		// go through the artefacts in the repository and check for Id matches
+		artefactsFound := make([]*artefact, 0)
+		for _, artefact := range repository.Artefacts {
+			// try and match against the artefact ID substring
+			if strings.Contains(artefact.Id, name.Name) {
+				artefactsFound = append(artefactsFound, artefact)
 			}
 		}
+		if len(artefactsFound) > 1 {
+			core.RaiseErr("artefact Id hint provided is not sufficiently long to pin point the artifact, %d were found", len(artefactsFound))
+		}
+		return artefactsFound[0]
 	}
 	return nil
+}
+
+type repository struct {
+	// the artefact repository (name without without tag)
+	Repository string `json:"repository"`
+	// the reference name of the artefact corresponding to different builds
+	Artefacts []*artefact `json:"artefacts"`
 }
 
 type artefact struct {
@@ -71,8 +113,6 @@ type artefact struct {
 	Id string `json:"id"`
 	// the type of application in the artefact
 	Type string `json:"type"`
-	// the artefact repository (name without without tag)
-	Repository string `json:"repository"`
 	// the artefact actual file name
 	FileRef string `json:"file_ref"`
 	// the list of Tags associated with the artefact
@@ -86,7 +126,7 @@ type artefact struct {
 // create a localRepo management structure
 func NewFileRegistry() *FileRegistry {
 	r := &FileRegistry{
-		Artefacts: []*artefact{},
+		Repositories: []*repository{},
 	}
 	// load local registry
 	r.load()
@@ -150,27 +190,35 @@ func (r *FileRegistry) Add(filename string, name *core.ArtieName, s *core.Seal) 
 	core.CheckErr(RenameFile(filepath.Join(basenameDir, fmt.Sprintf("%s.json", basenameNoExt)), filepath.Join(r.Path(), fmt.Sprintf("%s.json", basenameNoExt)), false), "failed to move artefact seal file to the local registry")
 	// untag artefact artefact (if any)
 	r.unTag(name, name.Tag)
+	// find the repository
+	repo := r.findRepository(name)
+	// if the repo does not exist the creates it
+	if repo == nil {
+		repo = &repository{
+			Repository: name.FullyQualifiedName(),
+			Artefacts:  make([]*artefact, 0),
+		}
+		r.Repositories = append(r.Repositories, repo)
+	}
 	// creates a new artefact
-	artefacts := append(r.Artefacts, &artefact{
-		Id:         core.ArtefactId(s),
-		Type:       s.Manifest.Type,
-		Repository: name.FullyQualifiedName(),
-		FileRef:    basenameNoExt,
-		Tags:       []string{name.Tag},
-		Size:       s.Manifest.Size,
-		Created:    s.Manifest.Time,
+	artefacts := append(repo.Artefacts, &artefact{
+		Id:      core.ArtefactId(s),
+		Type:    s.Manifest.Type,
+		FileRef: basenameNoExt,
+		Tags:    []string{name.Tag},
+		Size:    s.Manifest.Size,
+		Created: s.Manifest.Time,
 	})
-	r.Artefacts = artefacts
+	repo.Artefacts = artefacts
 	// persist the changes
 	r.save()
 }
 
-// removeArtefactByRepository the specified artefact from the slice
-func (r *FileRegistry) removeArtefactByRepository(a []*artefact, name *core.ArtieName) []*artefact {
+func (r *FileRegistry) removeArtefactById(a []*artefact, id string) []*artefact {
 	i := -1
 	// find the value to remove
 	for ix := 0; ix < len(a); ix++ {
-		if a[ix].Repository == name.FullyQualifiedName() {
+		if strings.Contains(a[ix].Id, id) {
 			i = ix
 			break
 		}
@@ -185,13 +233,15 @@ func (r *FileRegistry) removeArtefactByRepository(a []*artefact, name *core.Arti
 	return a
 }
 
-func (r *FileRegistry) removeArtefactById(a []*artefact, id string) []*artefact {
+func (r *FileRegistry) removeArtefactByTag(a []*artefact, tag string) []*artefact {
 	i := -1
-	// find the value to remove
+	// find an artefact with the specified tag
 	for ix := 0; ix < len(a); ix++ {
-		if strings.Contains(a[ix].Id, id) {
-			i = ix
-			break
+		for _, t := range a[ix].Tags {
+			if t == tag {
+				i = ix
+				break
+			}
 		}
 	}
 	if i == -1 {
@@ -232,32 +282,38 @@ func (r *FileRegistry) List() {
 	// get a table writer for the stdout
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 12, ' ', 0)
 	// print the header row
-	fmt.Fprintln(w, "REPOSITORY\tTAG\tARTEFACT ID\tARTEFACT TYPE\tCREATED\tSIZE")
+	_, err := fmt.Fprintln(w, "REPOSITORY\tTAG\tARTEFACT ID\tARTEFACT TYPE\tCREATED\tSIZE")
+	core.CheckErr(err, "failed to write table header")
 	// repository, tag, artefact id, created, size
-	for _, a := range r.Artefacts {
-		// if the artefact is dangling (no tags)
-		if len(a.Tags) == 0 {
-			fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s",
-				a.Repository,
-				"<none>",
-				a.Id[7:19],
-				a.Type,
-				toElapsedLabel(a.Created),
-				a.Size),
-			)
-		}
-		for _, tag := range a.Tags {
-			fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s",
-				a.Repository,
-				tag,
-				a.Id[7:19],
-				a.Type,
-				toElapsedLabel(a.Created),
-				a.Size),
-			)
+	for _, repo := range r.Repositories {
+		for _, a := range repo.Artefacts {
+			// if the artefact is dangling (no tags)
+			if len(a.Tags) == 0 {
+				_, err := fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s",
+					repo.Repository,
+					"<none>",
+					a.Id[7:19],
+					a.Type,
+					toElapsedLabel(a.Created),
+					a.Size),
+				)
+				core.CheckErr(err, "failed to write output")
+			}
+			for _, tag := range a.Tags {
+				_, err := fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s",
+					repo.Repository,
+					tag,
+					a.Id[7:19],
+					a.Type,
+					toElapsedLabel(a.Created),
+					a.Size),
+				)
+				core.CheckErr(err, "failed to write output")
+			}
 		}
 	}
-	w.Flush()
+	err = w.Flush()
+	core.CheckErr(err, "failed to flush output")
 }
 
 // list (quiet) artefact IDs only
@@ -265,10 +321,14 @@ func (r *FileRegistry) ListQ() {
 	// get a table writer for the stdout
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 10, ' ', 0)
 	// repository, tag, artefact id, created, size
-	for _, a := range r.Artefacts {
-		fmt.Fprintln(w, fmt.Sprintf("%s", a.Id[7:19]))
+	for _, repo := range r.Repositories {
+		for _, a := range repo.Artefacts {
+			_, err := fmt.Fprintln(w, fmt.Sprintf("%s", a.Id[7:19]))
+			core.CheckErr(err, "failed to write artefact Id")
+		}
 	}
-	w.Flush()
+	err := w.Flush()
+	core.CheckErr(err, "failed to flush output")
 }
 
 func (r *FileRegistry) Push(name *core.ArtieName, remote Remote, credentials string) {
@@ -304,12 +364,13 @@ func (r *FileRegistry) Remove(names []*core.ArtieName) {
 		// try to remove it using full name
 		// remove the specified tag
 		length := len(artie.Tags)
-		artie.Tags = core.RemoveElement(artie.Tags, name.Tag)
+		r.unTag(name, name.Tag)
 		// if the tag was successfully deleted
 		if len(artie.Tags) < length {
 			// if there are no tags left at the end then remove the artefact
 			if len(artie.Tags) == 0 {
-				r.Artefacts = r.removeArtefactByRepository(r.Artefacts, name)
+				repo := r.findRepository(name)
+				repo.Artefacts = r.removeArtefactByTag(repo.Artefacts, name.Tag)
 				r.removeFiles(artie)
 			}
 			// persist changes
@@ -317,7 +378,8 @@ func (r *FileRegistry) Remove(names []*core.ArtieName) {
 			log.Print(artie.Id)
 		} else {
 			// attempt to remove by Id (stored in the Name)
-			r.Artefacts = r.removeArtefactById(r.Artefacts, name.Name)
+			repo := r.findRepository(name)
+			repo.Artefacts = r.removeArtefactById(repo.Artefacts, name.Name)
 			r.removeFiles(artie)
 			r.save()
 			log.Print(artie.Id)
