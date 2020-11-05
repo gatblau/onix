@@ -20,7 +20,8 @@ ENV ARTIE_HOME /usr/bin
 ENV PATH $MAVEN_HOME/bin:$PATH
 
 RUN dnf install -y java-11-openjdk-devel && \
-    dnf install -y wget
+    dnf install -y wget && \
+    dnf install -y git unzip
 
 RUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz && \
     tar -zxvf apache-maven-$MAVEN_VERSION-bin.tar.gz && \
