@@ -329,8 +329,7 @@ func execute(cmd string, dir string, env []string) (err error) {
 	if err := command.Wait(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-				log.Printf("exit status: %d", status.ExitStatus())
-				return err
+				core.RaiseErr("exit status: %d", status.ExitStatus())
 			}
 		}
 		return err
