@@ -296,19 +296,8 @@ func execute(cmd string, dir string, env []string) (err error) {
 		args = cmdArr[1:]
 	}
 
-	// env variable regex
-	evExpression := regexp.MustCompile("\\$\\{(.*?)\\}")
-	// check if the args have env variables and if so merge them
-	for ix, arg := range args {
-		matches := evExpression.FindStringSubmatch(arg)
-		if len(matches) == 2 {
-			value := os.Getenv(matches[1])
-			if len(value) == 0 {
-				core.RaiseErr("environment variable '%s' is not defined", matches[1])
-			}
-			args[ix] = strings.Replace(arg, matches[1], value, -1)
-		}
-	}
+	mergeEnvironmentVars(args)
+
 	command := exec.Command(name, args...)
 	command.Dir = dir
 	command.Env = env
@@ -356,5 +345,31 @@ func handleReader(reader *bufio.Reader) {
 			break
 		}
 		fmt.Print(str)
+	}
+}
+
+// merges environment variables in the arguments
+func mergeEnvironmentVars(args []string) {
+	// env variable regex
+	evExpression := regexp.MustCompile("\\$\\{(.*?)\\}")
+	// check if the args have env variables and if so merge them
+	for ix, arg := range args {
+		// find all environment variables in the argument
+		matches := evExpression.FindAllString(arg, -1)
+		// if we have matches
+		if matches != nil {
+			for _, match := range matches {
+				// get the name of the environment variable i.e. the name part in "${name}"
+				name := match[2 : len(match)-1]
+				// get the value of the variable
+				value := os.Getenv(name)
+				// if not value exist then error
+				if len(value) == 0 {
+					core.RaiseErr("environment variable '%s' is not defined", name)
+				}
+				// merges the variable
+				args[ix] = strings.Replace(arg, match, value, -1)
+			}
+		}
 	}
 }
