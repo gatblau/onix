@@ -338,7 +338,8 @@ func (b *Builder) run(profileName string, fromPath string) *Profile {
 				// combine the current environment with the profile environment
 				profileEnv := append(env, profile.getEnv()...)
 				// execute the statement
-				execute(cmd, execDir, profileEnv)
+				err := execute(cmd, execDir, profileEnv)
+				core.CheckErr(err, "cannot execute command: %s", cmd)
 			}
 			// wait for the target to be created in the file system
 			waitForTargetToBeCreated(b.inSourceDirectory(profile.Target))
@@ -359,6 +360,9 @@ func (b *Builder) run(profileName string, fromPath string) *Profile {
 			}
 		}
 	}
+	// if we got to this point then a specific profile was requested but not defined
+	// so cannot continue
+	core.RaiseErr("the requested profile '%s' is not defined in artie's build configuration", profileName)
 	return nil
 }
 
