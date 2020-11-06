@@ -24,7 +24,7 @@ func NewRmCmd() *RmCmd {
 	c := &RmCmd{
 		cmd: &cobra.Command{
 			Use:   "rm ARTEFACT [ARTEFACT...]",
-			Short: "Removes one or more artefacts from the local registry",
+			Short: "removes one or more artefacts from the local artefact store",
 			Long:  ``,
 		},
 		local: registry.NewFileRegistry(),

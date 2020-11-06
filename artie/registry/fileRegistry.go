@@ -71,6 +71,9 @@ func (r *FileRegistry) GetArtefactsByName(name *core.ArtieName) ([]*artefact, bo
 // - artefact id substring or
 // nil if not found in the FileRegistry
 func (r *FileRegistry) GetArtefact(name *core.ArtieName) *artefact {
+	// go through the artefacts in the repository and check for Id matches
+	artefactsFound := make([]*artefact, 0)
+
 	// first gets the repository the artefact is in
 	for _, repository := range r.Repositories {
 		if repository.Repository == name.FullyQualifiedName() {
@@ -85,8 +88,6 @@ func (r *FileRegistry) GetArtefact(name *core.ArtieName) *artefact {
 			}
 			break
 		}
-		// go through the artefacts in the repository and check for Id matches
-		artefactsFound := make([]*artefact, 0)
 		for _, artefact := range repository.Artefacts {
 			// try and match against the artefact ID substring
 			if strings.Contains(artefact.Id, name.Name) {
@@ -96,9 +97,11 @@ func (r *FileRegistry) GetArtefact(name *core.ArtieName) *artefact {
 		if len(artefactsFound) > 1 {
 			core.RaiseErr("artefact Id hint provided is not sufficiently long to pin point the artifact, %d were found", len(artefactsFound))
 		}
-		return artefactsFound[0]
 	}
-	return nil
+	if len(artefactsFound) == 0 {
+		return nil
+	}
+	return artefactsFound[0]
 }
 
 type repository struct {
@@ -121,6 +124,15 @@ type artefact struct {
 	Size string `json:"size"`
 	// the creation time
 	Created string `json:"created"`
+}
+
+func (a artefact) HasTag(tag string) bool {
+	for _, t := range a.Tags {
+		if t == tag {
+			return true
+		}
+	}
+	return false
 }
 
 // create a localRepo management structure
@@ -233,15 +245,13 @@ func (r *FileRegistry) removeArtefactById(a []*artefact, id string) []*artefact 
 	return a
 }
 
-func (r *FileRegistry) removeArtefactByTag(a []*artefact, tag string) []*artefact {
+func (r *FileRegistry) removeRepoByName(a []*repository, name *core.ArtieName) []*repository {
 	i := -1
 	// find an artefact with the specified tag
 	for ix := 0; ix < len(a); ix++ {
-		for _, t := range a[ix].Tags {
-			if t == tag {
-				i = ix
-				break
-			}
+		if a[ix].Repository == name.FullyQualifiedName() {
+			i = ix
+			break
 		}
 	}
 	if i == -1 {
@@ -260,6 +270,85 @@ func (r *FileRegistry) unTag(name *core.ArtieName, tag string) {
 	if artie != nil {
 		core.Msg("untagging %s", name)
 		artie.Tags = core.RemoveElement(artie.Tags, tag)
+	}
+}
+
+// remove a given tag from an artefact
+func (r *FileRegistry) Tag(sourceName *core.ArtieName, targetName *core.ArtieName) {
+	sourceArtie := r.GetArtefact(sourceName)
+	if sourceArtie == nil {
+		core.RaiseErr("source artefact %s does not exit", sourceName)
+	}
+	if targetName.IsInTheSameRepositoryAs(sourceName) {
+		if !sourceArtie.HasTag(targetName.Tag) {
+			core.Msg("tagging %s", sourceName)
+			sourceArtie.Tags = append(sourceArtie.Tags, targetName.Tag)
+			r.save()
+			return
+		} else {
+			core.Msg("already tagged")
+			return
+		}
+	} else {
+		targetRepository := r.findRepository(targetName)
+		newArtie := *sourceArtie
+		// if the target artefact repository does not exist then create it
+		if targetRepository == nil {
+			core.Msg("tagging %s", sourceName)
+			newArtie.Tags = []string{targetName.Tag}
+			r.Repositories = append(r.Repositories, &repository{
+				Repository: targetName.FullyQualifiedName(),
+				Artefacts: []*artefact{
+					&artefact{
+						Id:      sourceArtie.Id,
+						Type:    sourceArtie.Type,
+						FileRef: sourceArtie.FileRef,
+						Tags:    []string{targetName.Tag},
+						Size:    sourceArtie.Size,
+						Created: sourceArtie.Created,
+					},
+				},
+			})
+			r.save()
+			return
+		} else {
+			targetArtie := r.GetArtefact(targetName)
+			// if the artefact exists in the repository
+			if targetArtie != nil {
+				// check if the tag already exists
+				for _, tag := range targetArtie.Tags {
+					if tag == targetName.Tag {
+						core.Msg("already tagged")
+					} else {
+						// add the tag to the existing artefact
+						targetArtie.Tags = append(targetArtie.Tags, targetName.Tag)
+					}
+				}
+			} else {
+				// check that an artefact with the Id of the source exists
+				for _, a := range targetRepository.Artefacts {
+					// if the target repository already contains the artefact Id
+					if a.Id == sourceArtie.Id {
+						// add a tag
+						a.Tags = append(a.Tags, targetName.Tag)
+						r.save()
+						return
+					}
+				}
+				// add a new artefact metadata in the existing repository
+				targetRepository.Artefacts = append(targetRepository.Artefacts,
+					&artefact{
+						Id:      sourceArtie.Id,
+						Type:    sourceArtie.Type,
+						FileRef: sourceArtie.FileRef,
+						Tags:    []string{targetName.Tag},
+						Size:    sourceArtie.Size,
+						Created: sourceArtie.Created,
+					})
+				r.save()
+				return
+			}
+		}
 	}
 }
 
@@ -367,11 +456,24 @@ func (r *FileRegistry) Remove(names []*core.ArtieName) {
 		r.unTag(name, name.Tag)
 		// if the tag was successfully deleted
 		if len(artie.Tags) < length {
-			// if there are no tags left at the end then remove the artefact
+			// if there are no tags left at the end then remove the repository
 			if len(artie.Tags) == 0 {
-				repo := r.findRepository(name)
-				repo.Artefacts = r.removeArtefactByTag(repo.Artefacts, name.Tag)
-				r.removeFiles(artie)
+				r.Repositories = r.removeRepoByName(r.Repositories, name)
+				// only remove the files if there are no other repositories containing the same artefact!
+				found := false
+			Loop:
+				for _, repo := range r.Repositories {
+					for _, art := range repo.Artefacts {
+						if art.Id == artie.Id {
+							found = true
+							break Loop
+						}
+					}
+				}
+				// no other repo contains the artefact so safe to remove the files
+				if !found {
+					r.removeFiles(artie)
+				}
 			}
 			// persist changes
 			r.save()

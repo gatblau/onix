@@ -26,7 +26,7 @@ func NewPushCmd() *PushCmd {
 	c := &PushCmd{
 		cmd: &cobra.Command{
 			Use:   "push [OPTIONS] NAME[:TAG]",
-			Short: "Push an artifact to a registry",
+			Short: "uploads an artefact to a remote artefact store",
 			Long:  ``,
 		},
 		local:  registry.NewFileRegistry(),
