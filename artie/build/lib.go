@@ -151,17 +151,17 @@ func findContentType(f *os.File) (string, error) {
 func exitMsg(exitCode int) string {
 	switch exitCode {
 	case 1:
-		return "exit code 1 - general error"
+		return "exited with code 1 - general error"
 	case 2:
-		return "exit code 2 - misuse of shell built-ins"
+		return "exited with code 2 - misuse of shell built-ins"
 	case 126:
-		return "exit code 126 - command invoked cannot execute"
+		return "exited with code 126 - command invoked cannot execute"
 	case 127:
-		return "exit code 127 - command not found"
+		return "exited with code 127 - command not found"
 	case 128:
-		return "exit code 128 - invalid argument to exit"
+		return "exited with code 128 - invalid argument to exit"
 	case 130:
-		return "exit code 130 - script terminated by CTRL-C"
+		return "exited with code 130 - script terminated by CTRL-C"
 	default:
 		return fmt.Sprintf("exist code %d", exitCode)
 	}
@@ -319,7 +319,6 @@ func execute(cmd string, dir string, env []string) (err error) {
 	stderrReader := bufio.NewReader(stderr)
 
 	if err := command.Start(); err != nil {
-		log.Printf("failed starting command: %s", err)
 		return err
 	}
 
@@ -329,7 +328,7 @@ func execute(cmd string, dir string, env []string) (err error) {
 	if err := command.Wait(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-				core.RaiseErr("exit status: %d", status.ExitStatus())
+				core.RaiseErr(exitMsg(status.ExitStatus()))
 			}
 		}
 		return err

@@ -1,7 +1,6 @@
 package core
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -14,6 +13,10 @@ type ArtieName struct {
 	Group  string
 	Name   string
 	Tag    string
+}
+
+func (a *ArtieName) IsInTheSameRepositoryAs(name *ArtieName) bool {
+	return a.FullyQualifiedName() == name.FullyQualifiedName()
 }
 
 func (a *ArtieName) String() string {
@@ -42,17 +45,31 @@ func ParseName(name string) *ArtieName {
 		}
 	}
 	if len(components) == 1 {
-		n.Name = components[0]
-	}
-	if len(components) == 2 {
-		log.Fatal(errors.New("invalid artefact URI"))
-	}
-	if len(components) == 3 {
+		parts := strings.Split(components[0], ":")
+		if len(parts) == 2 {
+			n.Name = parts[0]
+			n.Tag = parts[1]
+		} else {
+			n.Name = components[0]
+		}
+	} else if len(components) == 2 {
+		parts := strings.Split(components[1], ":")
+		n.Group = components[0]
+		if len(parts) == 2 {
+			n.Name = parts[0]
+			n.Tag = parts[1]
+		} else {
+			n.Name = components[1]
+		}
+	} else if len(components) == 3 {
 		n.Domain = components[0]
 		n.Group = components[1]
 		parts := strings.Split(components[2], ":")
-		if len(parts) == 2 {
+		switch len(parts) {
+		case 2:
 			n.Tag = parts[1]
+		case 1:
+			n.Tag = "latest"
 		}
 		n.Name = parts[0]
 	}
