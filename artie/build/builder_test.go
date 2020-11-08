@@ -8,13 +8,10 @@
 package build
 
 import (
-	"github.com/gatblau/onix/artie/core"
 	"testing"
 )
 
 func TestBuild(t *testing.T) {
-	p := NewBuilder()
+	// p := NewBuilder()
 	// p.Build("https://github.com/gatblau/boot", "", core.ParseName("boot"), "")
-	// p.Build("https://gitlab.com/sap7/sapg-plugin.git", "", "hcPVXRkULPTbUWG2gxV5", core.ParseName("sap-nexusrepo-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/sap/sap-jco"), "")
-	p.Build("/Users/andresalos/artie-test/sapg-plugin", "", "", core.ParseName("localhost:8081/sapg/plugin"), "")
 }
