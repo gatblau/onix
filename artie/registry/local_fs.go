@@ -8,7 +8,6 @@
 package registry
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,7 +15,6 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -26,12 +24,12 @@ import (
 )
 
 // the default local registry implemented as a file system
-type FileRegistry struct {
+type LocalAPI struct {
 	Repositories []*repository `json:"repositories"`
 }
 
 // find the repository specified by name
-func (r *FileRegistry) findRepository(name *core.ArtieName) *repository {
+func (r *LocalAPI) findRepository(name *core.ArtieName) *repository {
 	// find repository using artefact name
 	for _, repository := range r.Repositories {
 		if repository.Repository == name.FullyQualifiedName() {
@@ -50,7 +48,7 @@ func (r *FileRegistry) findRepository(name *core.ArtieName) *repository {
 }
 
 // return all the artefacts within the same repository
-func (r *FileRegistry) GetArtefactsByName(name *core.ArtieName) ([]*artefact, bool) {
+func (r *LocalAPI) GetArtefactsByName(name *core.ArtieName) ([]*artefact, bool) {
 	var artefacts = make([]*artefact, 0)
 	for _, repository := range r.Repositories {
 		if repository.Repository == name.FullyQualifiedName() {
@@ -69,8 +67,8 @@ func (r *FileRegistry) GetArtefactsByName(name *core.ArtieName) ([]*artefact, bo
 // return the artefact that matches the specified:
 // - domain/group/name:tag or
 // - artefact id substring or
-// nil if not found in the FileRegistry
-func (r *FileRegistry) GetArtefact(name *core.ArtieName) *artefact {
+// nil if not found in the LocalAPI
+func (r *LocalAPI) GetArtefact(name *core.ArtieName) *artefact {
 	// go through the artefacts in the repository and check for Id matches
 	artefactsFound := make([]*artefact, 0)
 
@@ -136,8 +134,8 @@ func (a artefact) HasTag(tag string) bool {
 }
 
 // create a localRepo management structure
-func NewFileRegistry() *FileRegistry {
-	r := &FileRegistry{
+func NewLocalAPI() *LocalAPI {
+	r := &LocalAPI{
 		Repositories: []*repository{},
 	}
 	// load local registry
@@ -145,25 +143,25 @@ func NewFileRegistry() *FileRegistry {
 	return r
 }
 
-// the local Path to the local FileRegistry
-func (r *FileRegistry) Path() string {
+// the local Path to the local LocalAPI
+func (r *LocalAPI) Path() string {
 	return core.RegistryPath()
 }
 
-// return the FileRegistry full file name
-func (r *FileRegistry) file() string {
+// return the LocalAPI full file name
+func (r *LocalAPI) file() string {
 	return filepath.Join(r.Path(), "repository.json")
 }
 
-// save the state of the FileRegistry
-func (r *FileRegistry) save() {
+// save the state of the LocalAPI
+func (r *LocalAPI) save() {
 	core.Msg("updating local registry metadata")
 	regBytes := core.ToJsonBytes(r)
 	core.CheckErr(ioutil.WriteFile(r.file(), regBytes, os.ModePerm), "fail to update local registry metadata")
 }
 
-// load the content of the FileRegistry
-func (r *FileRegistry) load() {
+// load the content of the LocalAPI
+func (r *LocalAPI) load() {
 	// check if localRepo file exist
 	_, err := os.Stat(r.file())
 	if err != nil {
@@ -181,8 +179,8 @@ func (r *FileRegistry) load() {
 	}
 }
 
-// Add the artefact and seal to the FileRegistry
-func (r *FileRegistry) Add(filename string, name *core.ArtieName, s *core.Seal) {
+// Add the artefact and seal to the LocalAPI
+func (r *LocalAPI) Add(filename string, name *core.ArtieName, s *core.Seal) {
 	core.Msg("adding artefact to local registry: %s", name)
 	// gets the full base name (with extension)
 	basename := filepath.Base(filename)
@@ -226,7 +224,7 @@ func (r *FileRegistry) Add(filename string, name *core.ArtieName, s *core.Seal) 
 	r.save()
 }
 
-func (r *FileRegistry) removeArtefactById(a []*artefact, id string) []*artefact {
+func (r *LocalAPI) removeArtefactById(a []*artefact, id string) []*artefact {
 	i := -1
 	// find the value to remove
 	for ix := 0; ix < len(a); ix++ {
@@ -245,7 +243,7 @@ func (r *FileRegistry) removeArtefactById(a []*artefact, id string) []*artefact 
 	return a
 }
 
-func (r *FileRegistry) removeRepoByName(a []*repository, name *core.ArtieName) []*repository {
+func (r *LocalAPI) removeRepoByName(a []*repository, name *core.ArtieName) []*repository {
 	i := -1
 	// find an artefact with the specified tag
 	for ix := 0; ix < len(a); ix++ {
@@ -265,7 +263,7 @@ func (r *FileRegistry) removeRepoByName(a []*repository, name *core.ArtieName) [
 }
 
 // remove a given tag from an artefact
-func (r *FileRegistry) unTag(name *core.ArtieName, tag string) {
+func (r *LocalAPI) unTag(name *core.ArtieName, tag string) {
 	artie := r.GetArtefact(name)
 	if artie != nil {
 		core.Msg("untagging %s", name)
@@ -274,7 +272,7 @@ func (r *FileRegistry) unTag(name *core.ArtieName, tag string) {
 }
 
 // remove a given tag from an artefact
-func (r *FileRegistry) Tag(sourceName *core.ArtieName, targetName *core.ArtieName) {
+func (r *LocalAPI) Tag(sourceName *core.ArtieName, targetName *core.ArtieName) {
 	sourceArtie := r.GetArtefact(sourceName)
 	if sourceArtie == nil {
 		core.RaiseErr("source artefact %s does not exit", sourceName)
@@ -353,7 +351,7 @@ func (r *FileRegistry) Tag(sourceName *core.ArtieName, targetName *core.ArtieNam
 }
 
 // remove all tags from the specified artefact
-func (r *FileRegistry) unTagAll(name *core.ArtieName) {
+func (r *LocalAPI) unTagAll(name *core.ArtieName) {
 	if artefs, exists := r.GetArtefactsByName(name); exists {
 		// then it has to untag it, leaving a dangling artefact
 		for _, artef := range artefs {
@@ -367,7 +365,7 @@ func (r *FileRegistry) unTagAll(name *core.ArtieName) {
 }
 
 // List artefacts to stdout
-func (r *FileRegistry) List() {
+func (r *LocalAPI) List() {
 	// get a table writer for the stdout
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 12, ' ', 0)
 	// print the header row
@@ -406,7 +404,7 @@ func (r *FileRegistry) List() {
 }
 
 // list (quiet) artefact IDs only
-func (r *FileRegistry) ListQ() {
+func (r *LocalAPI) ListQ() {
 	// get a table writer for the stdout
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 10, ' ', 0)
 	// repository, tag, artefact id, created, size
@@ -420,29 +418,23 @@ func (r *FileRegistry) ListQ() {
 	core.CheckErr(err, "failed to flush output")
 }
 
-func (r *FileRegistry) Push(name *core.ArtieName, remote Remote, credentials string) {
+func (r *LocalAPI) Push(name *core.ArtieName, remote Remote, credentials string) {
 	// fetch the artefact info from the local registry
 	artie := r.GetArtefact(name)
 	if artie == nil {
 		log.Fatal(errors.New(fmt.Sprintf("artefact %s not found in the local registry", name)))
 	}
-	// set up an http client
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
+	zipfile := mustOpen(fmt.Sprintf("%s/%s.zip", r.Path(), artie.FileRef))
+	jsonfile := mustOpen(fmt.Sprintf("%s/%s.json", r.Path(), artie.FileRef))
+	time.Sleep(1 * time.Second)
 	// execute the upload
-	err := remote.UploadArtefact(client, name, r.Path(), artie.FileRef, credentials)
-	if err != nil {
-		log.Fatal(err)
-	}
+	uname, pwd := core.UserPwd(credentials)
+	err := remote.UploadArtefact(name, artie.FileRef, zipfile, jsonfile, uname, pwd)
+	core.CheckErr(err, "cannot push artefact")
 	fmt.Printf("pushed %s\n", name.String())
 }
 
-func (r *FileRegistry) Remove(names []*core.ArtieName) {
+func (r *LocalAPI) Remove(names []*core.ArtieName) {
 	for _, name := range names {
 		// try and get the artefact by complete URI or id ref
 		artie := r.GetArtefact(name)
@@ -490,7 +482,7 @@ func (r *FileRegistry) Remove(names []*core.ArtieName) {
 }
 
 // remove the files associated with an artefact
-func (r *FileRegistry) removeFiles(artie *artefact) {
+func (r *LocalAPI) removeFiles(artie *artefact) {
 	// remove the zip file
 	err := os.Remove(fmt.Sprintf("%s/%s.zip", r.Path(), artie.FileRef))
 	if err != nil {
@@ -503,7 +495,7 @@ func (r *FileRegistry) removeFiles(artie *artefact) {
 	}
 }
 
-func (r *FileRegistry) Pull(name *core.ArtieName, remote Remote) {
+func (r *LocalAPI) Pull(name *core.ArtieName, remote Remote) {
 }
 
 // returns the elapsed time until now in human friendly format
@@ -546,11 +538,11 @@ func plural(value int64, label string) string {
 }
 
 // the fully qualified name of the json Seal file in the local localReg
-func (r *FileRegistry) regDirJsonFilename(uniqueIdName string) string {
+func (r *LocalAPI) regDirJsonFilename(uniqueIdName string) string {
 	return fmt.Sprintf("%s/%s.json", r.Path(), uniqueIdName)
 }
 
 // the fully qualified name of the zip file in the local localReg
-func (r *FileRegistry) regDirZipFilename(uniqueIdName string) string {
+func (r *LocalAPI) regDirZipFilename(uniqueIdName string) string {
 	return fmt.Sprintf("%s/%s.zip", r.Path(), uniqueIdName)
 }

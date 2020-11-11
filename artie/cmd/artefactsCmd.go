@@ -15,7 +15,7 @@ import (
 // list local artefacts
 type ArtefactsCmd struct {
 	cmd   *cobra.Command
-	local *registry.FileRegistry
+	local *registry.LocalAPI
 	quiet *bool
 }
 
@@ -26,7 +26,7 @@ func NewArtefactsCmd() *ArtefactsCmd {
 			Short: "list artefacts",
 			Long:  ``,
 		},
-		local: registry.NewFileRegistry(),
+		local: registry.NewLocalAPI(),
 	}
 	c.quiet = c.cmd.Flags().BoolP("quiet", "q", false, "only show numeric IDs")
 	c.cmd.Run = c.Run

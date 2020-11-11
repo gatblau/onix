@@ -17,9 +17,9 @@ import (
 // list local artefacts
 type PushCmd struct {
 	cmd         *cobra.Command
-	local       *registry.FileRegistry
-	remote      registry.Remote
+	local       *registry.LocalAPI
 	credentials string
+	tls         *bool
 }
 
 func NewPushCmd() *PushCmd {
@@ -29,15 +29,18 @@ func NewPushCmd() *PushCmd {
 			Short: "uploads an artefact to a remote artefact store",
 			Long:  ``,
 		},
-		local:  registry.NewFileRegistry(),
-		remote: registry.NewNexus3Registry(),
+		local: registry.NewLocalAPI(),
 	}
 	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
+	c.tls = c.cmd.Flags().BoolP("tls", "t", true, "use -t=false or --tls=false to disable https for a backend; i.e. use plain http")
 	return c
 }
 
-func (b *PushCmd) Run(cmd *cobra.Command, args []string) {
+func (c *PushCmd) Run(cmd *cobra.Command, args []string) {
+	if !*c.tls {
+		log.Printf("info: Transport Level Security is disabled\n")
+	}
 	// check an artefact name has been provided
 	if len(args) == 0 {
 		log.Fatal("name of the artefact to push is required")
@@ -45,7 +48,7 @@ func (b *PushCmd) Run(cmd *cobra.Command, args []string) {
 	// get the name of the artefact to push
 	nameTag := args[0]
 	// validate the name
-	named := core.ParseName(nameTag)
+	artie := core.ParseName(nameTag)
 	// attempt upload to remote repository
-	b.local.Push(named, b.remote, b.credentials)
+	c.local.Push(artie, registry.NewRemoteAPI(*c.tls), c.credentials)
 }

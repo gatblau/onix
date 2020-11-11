@@ -1,0 +1,67 @@
+info:
+  contact:
+    email: onix@gatblau.org
+    name: gatblau
+    url: http://onix.gatblau.org/
+  description: Artie's HTTP API for artefact backends.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: 'Artie: the generic artefact manager API'
+  version: 0.0.4
+paths:
+  /:
+    get:
+      description: |-
+        Checks that Artie's HTTP server is listening on the required port.
+        Use a liveliness probe.
+        It does not guarantee the server is ready to accept calls.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Check that Artie's HTTP API is live
+      tags:
+      - General
+  /artefact:
+    post:
+      description: uploads the artefact file and its seal to the pre-configured backend (e.g. Nexus, etc)
+      parameters:
+      - description: the artefact file reference
+        in: formData
+        name: artefact.fileRef
+        required: true
+        type: string
+      - description: the artefact repository
+        in: formData
+        name: artefact.repository
+        required: true
+        type: string
+      - description: the artefact file part of the multipart message
+        in: formData
+        name: artefact.file
+        required: true
+        type: file
+      - description: the seal file part of the multipart message
+        in: formData
+        name: seal.file
+        required: true
+        type: file
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "423":
+          description: Locked
+          schema:
+            type: string
+      summary: Push an artefact to the configured backend
+      tags:
+      - Artefacts
+swagger: "2.0"
