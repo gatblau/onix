@@ -35,7 +35,7 @@ type Builder struct {
 	signer       *sign.Signer
 	repoName     *core.ArtieName
 	buildFile    *BuildFile
-	localReg     *registry.FileRegistry
+	localReg     *registry.LocalAPI
 }
 
 func NewBuilder() *Builder {
@@ -54,7 +54,7 @@ func NewBuilder() *Builder {
 		log.Fatal(err)
 	}
 	builder.signer = signer
-	builder.localReg = registry.NewFileRegistry()
+	builder.localReg = registry.NewLocalAPI()
 	return builder
 }
 
@@ -409,7 +409,7 @@ func (b *Builder) createSeal(profile *Profile) *core.Seal {
 	}
 	core.Msg("creating artefact cryptographic signature")
 	// take the hash of the zip file and seal info combined
-	sum := checksum(b.workDirZipFilename(), info)
+	sum := core.SealChecksum(b.workDirZipFilename(), info)
 	// create a Base-64 encoded cryptographic signature
 	signature, err := b.signer.SignBase64(sum)
 	core.CheckErr(err, "failed to create cryptographic signature")

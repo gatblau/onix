@@ -15,6 +15,7 @@ func InitialiseRootCmd() *RootCmd {
 	rmCmd := NewRmCmd()
 	tagCmd := NewTagCmd()
 	serveCmd := NewServeCmd()
-	rootCmd.Command.AddCommand(buildCmd.cmd, artefactsCmd.cmd, pushCmd.cmd, rmCmd.cmd, tagCmd.cmd, serveCmd.cmd)
+	versionCmd := NewVersionCmd()
+	rootCmd.Command.AddCommand(buildCmd.cmd, artefactsCmd.cmd, pushCmd.cmd, rmCmd.cmd, tagCmd.cmd, serveCmd.cmd, versionCmd.cmd)
 	return rootCmd
 }

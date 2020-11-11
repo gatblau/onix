@@ -17,7 +17,7 @@ import (
 // list local artefacts
 type RmCmd struct {
 	cmd   *cobra.Command
-	local *registry.FileRegistry
+	local *registry.LocalAPI
 }
 
 func NewRmCmd() *RmCmd {
@@ -27,7 +27,7 @@ func NewRmCmd() *RmCmd {
 			Short: "removes one or more artefacts from the local artefact store",
 			Long:  ``,
 		},
-		local: registry.NewFileRegistry(),
+		local: registry.NewLocalAPI(),
 	}
 	c.cmd.Run = c.Run
 	return c

@@ -33,6 +33,6 @@ func (c *TagCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) != 2 {
 		core.RaiseErr("source and target artefact tags are required")
 	}
-	l := registry.NewFileRegistry()
+	l := registry.NewLocalAPI()
 	l.Tag(core.ParseName(args[0]), core.ParseName(args[1]))
 }

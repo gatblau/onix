@@ -5,14 +5,11 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package build
+package server
 
-import (
-	"github.com/gatblau/onix/artie/core"
-	"testing"
-)
+import "testing"
 
-func TestBuild(t *testing.T) {
-	p := NewBuilder()
-	p.Build("https://github.com/gatblau/boot", "", "", core.ParseName("boot"), "")
+func TestPush(t *testing.T) {
+	s := NewServer()
+	s.Serve()
 }

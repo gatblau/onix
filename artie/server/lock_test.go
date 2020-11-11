@@ -5,14 +5,31 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package build
+package server
 
 import (
 	"github.com/gatblau/onix/artie/core"
 	"testing"
 )
 
-func TestBuild(t *testing.T) {
-	p := NewBuilder()
-	p.Build("https://github.com/gatblau/boot", "", "", core.ParseName("boot"), "")
+func TestLock(t *testing.T) {
+	repoName := core.ParseName("gatblau/boot").Repository()
+	lock := new(lock)
+	lock.ensurePath()
+	locked, err := lock.acquire(repoName)
+	if err != nil {
+		t.Fatal(err)
+		t.FailNow()
+	}
+	if locked < 0 {
+		t.FailNow()
+	}
+	unlocked, err := lock.release(repoName)
+	if err != nil {
+		t.Fatal(err)
+		t.FailNow()
+	}
+	if unlocked < 1 {
+		t.FailNow()
+	}
 }

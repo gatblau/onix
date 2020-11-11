@@ -8,26 +8,28 @@
 package cmd
 
 import (
-	"github.com/gatblau/onix/artie/server"
+	"fmt"
+	"github.com/gatblau/onix/artie/docs"
 	"github.com/spf13/cobra"
 )
 
-type ServeCmd struct {
+// list local artefacts
+type VersionCmd struct {
 	cmd *cobra.Command
 }
 
-func NewServeCmd() *ServeCmd {
-	c := &ServeCmd{
+func NewVersionCmd() *VersionCmd {
+	c := &VersionCmd{
 		cmd: &cobra.Command{
-			Use:     "serve",
-			Short:   "runs artie's http api in front of a backend (artefact store)",
-			Example: `artie serve`,
-		}}
+			Use:   "version",
+			Short: "show the current version",
+			Long:  ``,
+		},
+	}
 	c.cmd.Run = c.Run
 	return c
 }
 
-func (c *ServeCmd) Run(cmd *cobra.Command, args []string) {
-	s := new(server.Server)
-	s.Serve()
+func (b *VersionCmd) Run(cmd *cobra.Command, args []string) {
+	fmt.Printf("build: %s\n", docs.Version)
 }

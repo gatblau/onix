@@ -10,8 +10,6 @@ package build
 import (
 	"archive/zip"
 	"bufio"
-	"bytes"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"github.com/gatblau/onix/artie/core"
@@ -41,33 +39,6 @@ func mergeMaps(ms ...map[string]string) map[string]string {
 		}
 	}
 	return res
-}
-
-// takes the combined checksum of the Seal information and the compressed file
-func checksum(path string, sealData *core.Manifest) []byte {
-	// read the compressed file
-	file, err := os.Open(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-	// serialise the seal info to json
-	info := core.ToJsonBytes(sealData)
-	hash := sha256.New()
-	// copy the seal manifest into the hash
-	if _, err := io.Copy(hash, bytes.NewReader(info)); err != nil {
-		log.Fatal(err)
-	}
-	// copy the compressed file into the hash
-	if _, err := io.Copy(hash, file); err != nil {
-		log.Fatal(err)
-	}
-	return hash.Sum(nil)
 }
 
 // zip a file or a folder

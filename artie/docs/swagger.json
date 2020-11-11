@@ -1,0 +1,95 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Artie's HTTP API for artefact backends.",
+        "title": "Artie: the generic artefact manager API",
+        "contact": {
+            "name": "gatblau",
+            "url": "http://onix.gatblau.org/",
+            "email": "onix@gatblau.org"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "0.0.4"
+    },
+    "paths": {
+        "/": {
+            "get": {
+                "description": "Checks that Artie's HTTP server is listening on the required port.\nUse a liveliness probe.\nIt does not guarantee the server is ready to accept calls.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "Check that Artie's HTTP API is live",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/artefact": {
+            "post": {
+                "description": "uploads the artefact file and its seal to the pre-configured backend (e.g. Nexus, etc)",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Artefacts"
+                ],
+                "summary": "Push an artefact to the configured backend",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the artefact file reference",
+                        "name": "artefact.fileRef",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the artefact repository",
+                        "name": "artefact.repository",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "the artefact file part of the multipart message",
+                        "name": "artefact.file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "the seal file part of the multipart message",
+                        "name": "seal.file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
