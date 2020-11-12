@@ -19,7 +19,6 @@ type BuildCmd struct {
 	branch       string
 	gitTag       string
 	artefactName string
-	builder      *build.Builder
 	gitToken     string
 	from         string
 	fromPath     string
@@ -33,7 +32,6 @@ func NewBuildCmd() *BuildCmd {
 			Short: "build a package",
 			Long:  ``,
 		},
-		builder: build.NewBuilder(),
 	}
 	c.cmd.Run = c.Run
 	// c.cmd.Flags().StringVarP(&c.branch, "branch", "b", "", "the git branch to use")
@@ -47,5 +45,6 @@ func NewBuildCmd() *BuildCmd {
 
 func (b *BuildCmd) Run(cmd *cobra.Command, args []string) {
 	b.from = args[0]
-	b.builder.Build(b.from, b.fromPath, b.gitToken, core.ParseName(b.artefactName), b.profile)
+	builder := build.NewBuilder()
+	builder.Build(b.from, b.fromPath, b.gitToken, core.ParseName(b.artefactName), b.profile)
 }

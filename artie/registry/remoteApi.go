@@ -54,20 +54,20 @@ func (r *RemoteApi) UploadArtefact(name *core.ArtieName, artefactRef string, zip
 
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
-	err := r.addField(writer, "artefact.repository", name.Repository())
-	core.CheckErr(err, "cannot add field artefact.repository")
-	err = r.addField(writer, "artefact.fileRef", artefactRef)
-	core.CheckErr(err, "cannot add field artefact.fileRef")
-	err = r.addFile(writer, "seal.file", fmt.Sprintf("%s.json", artefactRef), jsonFile)
+	// err := r.addField(writer, "artefact.repository", name.Repository())
+	// core.CheckErr(err, "cannot add field artefact.repository")
+	// err = r.addField(writer, "artefact.fileRef", artefactRef)
+	// core.CheckErr(err, "cannot add field artefact.fileRef")
+	err := r.addFile(writer, "artefact-seal", fmt.Sprintf("%s.json", artefactRef), jsonFile)
 	core.CheckErr(err, "cannot add seal file")
-	err = r.addFile(writer, "artefact.file", fmt.Sprintf("%s.zip", artefactRef), zipfile)
+	err = r.addFile(writer, "artefact-file", fmt.Sprintf("%s.zip", artefactRef), zipfile)
 	core.CheckErr(err, "cannot add artefact file")
 	// don't forget to close the multipart writer.
 	// If you don't close it, your request will be missing the terminating boundary.
 	writer.Close()
 
 	// Now that you have a form, you can submit it to your handler.
-	req, err := http.NewRequest("POST", r.uploadURI(name), &b)
+	req, err := http.NewRequest("POST", r.uploadURI(name, artefactRef), &b)
 	core.CheckErr(err, "cannot create http request")
 	// Don't forget to set the content type, this will contain the boundary.
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -90,12 +90,13 @@ func (r *RemoteApi) DownloadArtefact() {
 	panic("implement me")
 }
 
-func (r *RemoteApi) uploadURI(name *core.ArtieName) string {
+func (r *RemoteApi) uploadURI(name *core.ArtieName, artefactRef string) string {
 	scheme := "http"
 	if r.https {
 		scheme = fmt.Sprintf("%ss", scheme)
 	}
-	return fmt.Sprintf("%s://%s/artefact", scheme, name.Domain)
+	// {scheme}://{domain}/artefact/{repository-group}/{repository-name}/{artefact-ref}
+	return fmt.Sprintf("%s://%s/registry/%s/%s/%s", scheme, name.Domain, name.Group, name.Name, artefactRef)
 }
 
 // add a field to a multipart form

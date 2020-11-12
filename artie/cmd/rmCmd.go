@@ -16,8 +16,7 @@ import (
 
 // list local artefacts
 type RmCmd struct {
-	cmd   *cobra.Command
-	local *registry.LocalAPI
+	cmd *cobra.Command
 }
 
 func NewRmCmd() *RmCmd {
@@ -27,7 +26,6 @@ func NewRmCmd() *RmCmd {
 			Short: "removes one or more artefacts from the local artefact store",
 			Long:  ``,
 		},
-		local: registry.NewLocalAPI(),
 	}
 	c.cmd.Run = c.Run
 	return c
@@ -38,8 +36,10 @@ func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) == 0 {
 		log.Fatal("missing name(s) of the artefact(s) to remove")
 	}
+	//  create a local registry
+	local := registry.NewLocalAPI()
 	// get the name(s) of the artefact(s) to remove
-	c.local.Remove(c.toArtURIs(args))
+	local.Remove(c.toArtURIs(args))
 }
 
 func (c *RmCmd) toArtURIs(args []string) []*core.ArtieName {

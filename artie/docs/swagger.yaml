@@ -26,28 +26,33 @@ paths:
       summary: Check that Artie's HTTP API is live
       tags:
       - General
-  /artefact:
+  /registry/{repository-group}/{repository-name}/{artefact-ref}:
     post:
       description: uploads the artefact file and its seal to the pre-configured backend (e.g. Nexus, etc)
       parameters:
-      - description: the artefact file reference
-        in: formData
-        name: artefact.fileRef
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
         required: true
         type: string
-      - description: the artefact repository
-        in: formData
-        name: artefact.repository
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the artefact reference name
+        in: path
+        name: artefact-ref
         required: true
         type: string
       - description: the artefact file part of the multipart message
         in: formData
-        name: artefact.file
+        name: artefact-file
         required: true
         type: file
       - description: the seal file part of the multipart message
         in: formData
-        name: seal.file
+        name: artefact-seal
         required: true
         type: file
       produces:
