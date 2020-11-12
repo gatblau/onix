@@ -16,13 +16,14 @@ import (
 )
 
 const (
-	VarMetricsEnabled = "OXA_METRICS_ENABLED"
-	VarSwaggerEnabled = "OXA_SWAGGER_ENABLED"
-	VarHTTPPort       = "OXA_HTTP_PORT"
-	VarHTTPUname      = "OXA_HTTP_UNAME"
-	VarHTTPPwd        = "OXA_HTTP_PWD"
-	VarBackendType    = "OXA_HTTP_BACKEND"
-	VarBackendDomain  = "OXA_HTTP_BACKEND_DOMAIN"
+	VarMetricsEnabled  = "OXA_METRICS_ENABLED"
+	VarSwaggerEnabled  = "OXA_SWAGGER_ENABLED"
+	VarHTTPPort        = "OXA_HTTP_PORT"
+	VarHTTPUname       = "OXA_HTTP_UNAME"
+	VarHTTPPwd         = "OXA_HTTP_PWD"
+	VarBackendType     = "OXA_HTTP_BACKEND"
+	VarBackendDomain   = "OXA_HTTP_BACKEND_DOMAIN"
+	VarHTTPUploadLimit = "OXA_HTTP_UPLOAD_LIMIT"
 )
 
 type Backend int
@@ -95,6 +96,12 @@ func (c *ServerConfig) HttpPort() string {
 
 func (c *ServerConfig) HttpUser() string {
 	return c.getString(VarHTTPUname, "admin")
+}
+
+func (c *ServerConfig) HttpUploadLimit() int64 {
+	limit, err := strconv.ParseInt(c.getString(VarHTTPUploadLimit, "30"), 0, 0)
+	CheckErr(err, "invalid upload limit specified", err)
+	return limit
 }
 
 func (c *ServerConfig) BackendDomain() string {

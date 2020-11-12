@@ -52,7 +52,7 @@ var doc = `{
                 }
             }
         },
-        "/artefact": {
+        "/registry/{repository-group}/{repository-name}/{artefact-ref}": {
             "post": {
                 "description": "uploads the artefact file and its seal to the pre-configured backend (e.g. Nexus, etc)",
                 "produces": [
@@ -65,29 +65,36 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "the artefact file reference",
-                        "name": "artefact.fileRef",
-                        "in": "formData",
+                        "description": "the artefact repository group name",
+                        "name": "repository-group",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "the artefact repository",
-                        "name": "artefact.repository",
-                        "in": "formData",
+                        "description": "the artefact repository name",
+                        "name": "repository-name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the artefact reference name",
+                        "name": "artefact-ref",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "file",
                         "description": "the artefact file part of the multipart message",
-                        "name": "artefact.file",
+                        "name": "artefact-file",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "file",
                         "description": "the seal file part of the multipart message",
-                        "name": "seal.file",
+                        "name": "artefact-seal",
                         "in": "formData",
                         "required": true
                     }

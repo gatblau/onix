@@ -17,7 +17,6 @@ import (
 // list local artefacts
 type PushCmd struct {
 	cmd         *cobra.Command
-	local       *registry.LocalAPI
 	credentials string
 	tls         *bool
 }
@@ -29,7 +28,6 @@ func NewPushCmd() *PushCmd {
 			Short: "uploads an artefact to a remote artefact store",
 			Long:  ``,
 		},
-		local: registry.NewLocalAPI(),
 	}
 	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
@@ -49,6 +47,8 @@ func (c *PushCmd) Run(cmd *cobra.Command, args []string) {
 	nameTag := args[0]
 	// validate the name
 	artie := core.ParseName(nameTag)
+	// create a local registry
+	local := registry.NewLocalAPI()
 	// attempt upload to remote repository
-	c.local.Push(artie, registry.NewRemoteAPI(*c.tls), c.credentials)
+	local.Push(artie, registry.NewRemoteAPI(*c.tls), c.credentials)
 }

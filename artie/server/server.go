@@ -76,7 +76,7 @@ func (s *Server) Serve() {
 	}
 
 	// push artefacts
-	router.HandleFunc("/artefact", s.uploadHandler).Methods("POST")
+	router.HandleFunc("/registry/{repository-group}/{repository-name}/{artefact-ref}", s.uploadHandler).Methods("POST")
 
 	fmt.Printf("? using %s backend @ %s\n", s.conf.Backend(), s.conf.BackendDomain())
 
@@ -105,59 +105,44 @@ func (s *Server) liveHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce  plain
 // @Success 204 {string} artefact has been uploaded successfully. the server has nothing to respond.
 // @Failure 423 {string} the artefact is locked (pessimistic locking)
-// @Router /artefact [post]
-// @Param artefact.fileRef formData string true "the artefact file reference"
-// @Param artefact.repository formData string true "the artefact repository"
-// @Param artefact.file formData file true "the artefact file part of the multipart message"
-// @Param seal.file formData file true "the seal file part of the multipart message"
+// @Router /registry/{repository-group}/{repository-name}/{artefact-ref} [post]
+// @Param repository-group path string true "the artefact repository group name"
+// @Param repository-name path string true "the artefact repository name"
+// @Param artefact-ref path string true "the artefact reference name"
+// @Param artefact-file formData file true "the artefact file part of the multipart message"
+// @Param artefact-seal formData file true "the seal file part of the multipart message"
 func (s *Server) uploadHandler(w http.ResponseWriter, r *http.Request) {
-	// file limit 50 MB
-	r.ParseMultipartForm(50 << 20)
-	artefactRef := r.FormValue("artefact.fileRef")
-	repositoryName := r.FormValue("artefact.repository")
-	zipfile, _, err := r.FormFile("artefact.file")
+	// get request variables
+	vars := mux.Vars(r)
+	repoGroup := vars["repository-group"]
+	repoName := vars["repository-name"]
+	artefactRef := vars["artefact-ref"]
+
+	// file upload limit in MB
+	r.ParseMultipartForm(s.conf.HttpUploadLimit() << 20)
+	zipfile, _, err := r.FormFile("artefact-file")
 	if err != nil {
 		log.Printf("error retrieving artefact file: %s", err)
 		s.writeError(w, err)
 	}
-	jsonFile, _, err := r.FormFile("seal.file")
+	jsonFile, _, err := r.FormFile("artefact-seal")
 	if err != nil {
 		log.Printf("error retrieving seal file: %s", err)
 		s.writeError(w, err)
 		return
 	}
 	// try and upload checking the resource is not locked
-	isLocked := s.upload(w, repositoryName, artefactRef, zipfile, jsonFile)
+	repoPath := fmt.Sprintf("%s/%s", repoGroup, repoName)
+	isLocked := s.upload(w, repoPath, artefactRef, zipfile, jsonFile)
 	// if the resource was locked
 	if isLocked {
 		// try again
-		isLocked = s.upload(w, repositoryName, artefactRef, zipfile, jsonFile)
+		isLocked = s.upload(w, repoPath, artefactRef, zipfile, jsonFile)
 		// if locked again error
 		w.WriteHeader(http.StatusLocked)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
 }
-
-// // @Summary Check that Artie's HTTP API is Ready
-// // @Description Checks that the HTTP API is ready to accept calls
-// // @Tags General
-// // @Produce  plain
-// // @Success 200 {string} OK
-// // @Failure 500 {string} error message
-// // @Router /ready [get]
-// func (s *Server) readyHandler(w http.ResponseWriter, r *http.Request) {
-// 	ready, err := checkReady()
-// 	if !ready {
-// 		fmt.Printf("! I am not ready: %v", err)
-// 		w.WriteHeader(http.StatusInternalServerError)
-// 		_, err := w.Write([]byte(err.Error()))
-// 		if err != nil {
-// 		}
-// 	} else {
-// 		_, _ = w.Write([]byte("OK"))
-// 	}
-// }
 
 func (s *Server) listen(handler http.Handler) {
 	// creates an http server listening on the specified TCP port
