@@ -43,7 +43,7 @@ func mergeMaps(ms ...map[string]string) map[string]string {
 }
 
 // zip a file or a folder
-func zipSource(source, target string) error {
+func zipSource(source, target string, excludeSource []string) error {
 	zipfile, err := os.Create(target)
 	if err != nil {
 		return err
@@ -73,6 +73,10 @@ func zipSource(source, target string) error {
 		if err != nil {
 			return err
 		}
+		// do not add to the zip file excluded sources
+		if contains(source, excludeSource) {
+			return nil
+		}
 		header, err := zip.FileInfoHeader(info)
 		if err != nil {
 			return err
@@ -100,6 +104,7 @@ func zipSource(source, target string) error {
 			err := file.Close()
 			if err != nil {
 				log.Fatal(err)
+				runtime.Goexit()
 			}
 		}()
 		_, err = io.Copy(writer, file)
@@ -342,4 +347,13 @@ func mergeEnvironmentVars(args []string) {
 			}
 		}
 	}
+}
+
+func contains(value string, list []string) bool {
+	for _, v := range list {
+		if v == value {
+			return true
+		}
+	}
+	return false
 }
