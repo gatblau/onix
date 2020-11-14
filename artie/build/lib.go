@@ -23,6 +23,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -174,9 +175,9 @@ func copyFile(src, dst string) error {
 		err := srcFd.Close()
 		if err != nil {
 			log.Fatal(err)
+			runtime.Goexit()
 		}
 	}()
-
 	if dstFd, err = os.Create(dst); err != nil {
 		return err
 	}
@@ -184,9 +185,9 @@ func copyFile(src, dst string) error {
 		err := dstFd.Close()
 		if err != nil {
 			log.Fatal(err)
+			runtime.Goexit()
 		}
 	}()
-
 	if _, err = io.Copy(dstFd, srcFd); err != nil {
 		return err
 	}

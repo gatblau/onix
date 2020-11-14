@@ -1,4 +1,4 @@
 artie
 !build
-version.go
+docs/version.go
 output

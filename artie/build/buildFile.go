@@ -56,7 +56,7 @@ type Profile struct {
 	// the name of the profile
 	Name string `yaml:"name"`
 	// whether this is the default profile
-	Default bool `yaml:default`
+	Default bool `yaml:"default"`
 	// a set of labels associated with the profile
 	Labels map[string]string `yaml:"labels"`
 	// a set of environment variables required by the run commands

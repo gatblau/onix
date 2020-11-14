@@ -23,6 +23,7 @@ type BuildCmd struct {
 	from         string
 	fromPath     string
 	profile      string
+	copySource   *bool
 }
 
 func NewBuildCmd() *BuildCmd {
@@ -40,11 +41,12 @@ func NewBuildCmd() *BuildCmd {
 	c.cmd.Flags().StringVarP(&c.artefactName, "artefactName", "t", "", "name and optionally a tag in the 'name:tag' format")
 	c.cmd.Flags().StringVarP(&c.fromPath, "path", "f", "", "the path within the git repository where the root of the source to package is")
 	c.cmd.Flags().StringVarP(&c.profile, "profile", "p", "", "the build profile to use. if not provided, the default profile defined in the build file is used. if no default profile is found, then the first profile in the build file is used.")
+	c.copySource = c.cmd.Flags().BoolP("copy", "c", false, "indicates if a copy should be made of the project files before building the artefact. it is only applicable if the source is in the file system. ")
 	return c
 }
 
 func (b *BuildCmd) Run(cmd *cobra.Command, args []string) {
 	b.from = args[0]
 	builder := build.NewBuilder()
-	builder.Build(b.from, b.fromPath, b.gitToken, core.ParseName(b.artefactName), b.profile)
+	builder.Build(b.from, b.fromPath, b.gitToken, core.ParseName(b.artefactName), b.profile, *b.copySource)
 }

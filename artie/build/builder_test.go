@@ -14,5 +14,10 @@ import (
 
 func TestBuild(t *testing.T) {
 	p := NewBuilder()
-	p.Build("https://github.com/gatblau/boot", "", "", core.ParseName("boot"), "")
+	p.Build("/Users/andresalos/go/src/github.com/gatblau/onix", "artie", "", core.ParseName("gatblau/artie"), "", false)
+}
+
+func TestRun(t *testing.T) {
+	p := NewBuilder()
+	p.Run("test-run", "/Users/andresalos/go/src/github.com/gatblau/onix/artie")
 }
