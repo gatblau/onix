@@ -27,15 +27,17 @@ import (
 )
 
 type Builder struct {
-	zipWriter    *zip.Writer
-	workingDir   string
-	uniqueIdName string
-	repoURI      string
-	commit       string
-	signer       *sign.Signer
-	repoName     *core.ArtieName
-	buildFile    *BuildFile
-	localReg     *registry.LocalAPI
+	zipWriter        *zip.Writer
+	workingDir       string
+	uniqueIdName     string
+	repoURI          string
+	commit           string
+	signer           *sign.Signer
+	repoName         *core.ArtieName
+	buildFile        *BuildFile
+	localReg         *registry.LocalAPI
+	shouldCopySource bool
+	loadFrom         string
 }
 
 func NewBuilder() *Builder {
@@ -63,17 +65,27 @@ func NewBuilder() *Builder {
 // gitToken: if provided it is used to clone a remote repository that has authentication enabled
 // artefactName: the full name of the artefact to be built including the tag
 // profileName: the name of the profile to be built. If empty then the default profile is built. If no default profile exists, the first profile is built.
-func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, profileName string) {
+// copy: indicates whether a copy should be made of the project files before packaging (only valid for from location in the file system)
+func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, profileName string, copy bool) {
 	// prepare the source ready for the build
-	repo := b.prepareSource(from, fromPath, gitToken, name)
+	repo := b.prepareSource(from, fromPath, gitToken, name, copy)
 	// set the unique identifier name for both the zip file and the seal file
 	b.setUniqueIdName(repo)
 	// run commands
-	buildProfile := b.run(profileName, fromPath)
+	// set the command execution directory
+	execDir := b.loadFrom
+	buildProfile := b.run(profileName, execDir)
+	// check if a profile target exist, otherwise it cannot package
+	if len(buildProfile.Target) == 0 {
+		core.RaiseErr("profile '%s' target not specified, cannot continue", buildProfile.Name)
+	}
+	// wait for the target to be created in the file system
+	targetPath := filepath.Join(b.loadFrom, buildProfile.Target)
+	waitForTargetToBeCreated(targetPath)
 	// remove any files in the .buildignore file
-	b.removeIgnored()
+	// b.removeIgnored()
 	// compress the target defined in the build.yaml' profile
-	b.zipPackage(buildProfile.Target, fromPath)
+	b.zipPackage(targetPath)
 	// creates a seal
 	s := b.createSeal(buildProfile)
 	// add the artefact to the local repo
@@ -82,21 +94,45 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, p
 	b.cleanUp()
 }
 
+// only run the commands in the build file
+func (b *Builder) Run(profile string, path string) {
+	var localPath = path
+	// if a relative path is passed
+	if strings.HasPrefix(path, "http") {
+		core.RaiseErr("the path must not be an http resource")
+	}
+	if strings.HasPrefix(path, "./") || (!strings.HasPrefix(path, "/")) {
+		// turn it into an absolute path
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		localPath = absPath
+	}
+	core.Msg("loading build instructions")
+	b.buildFile = LoadBuildFile(filepath.Join(localPath, "build.yaml"))
+	b.run(profile, localPath)
+}
+
 // either clone a remote git repo or copy a local one onto the source folder
-func (b *Builder) prepareSource(from string, fromPath string, gitToken string, tagName *core.ArtieName) *git.Repository {
-	var (
-		repo *git.Repository
-	)
+func (b *Builder) prepareSource(from string, fromPath string, gitToken string, tagName *core.ArtieName, copy bool) *git.Repository {
+	var repo *git.Repository
 	b.repoName = tagName
-	// creates a temporary working directory
-	b.newWorkingDir()
 	// if "from" is an http url
 	if strings.HasPrefix(strings.ToLower(from), "http") {
+		// creates a temporary working directory
+		b.newWorkingDir()
+		b.loadFrom = b.sourceDir()
+		// if a sub-folder was specified
+		if len(fromPath) > 0 {
+			// add it to the path
+			b.loadFrom = filepath.Join(b.loadFrom, fromPath)
+		}
 		// clone the remote repo
 		core.Msg("preparing to clone remote repository '%s'", from)
 		repo = b.cloneRepo(from, gitToken)
 	} else
-	// there is a local repo so copy it to the source folder and then open it
+	// there is a local repo instead of a downloadable url
 	{
 		var localPath = from
 		// if a relative path is passed
@@ -108,50 +144,56 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 			}
 			localPath = absPath
 		}
-		// copy the folder to the source directory
-		core.Msg("preparing to copy local repository '%s'", from)
-		err := copyFiles(localPath, b.sourceDir())
-		if err != nil {
-			log.Fatal(err)
+		// if the user requested a copy of the project before building it
+		if copy {
+			// creates a temporary working directory to copy
+			b.newWorkingDir()
+			b.loadFrom = b.sourceDir()
+			// if a sub-folder was specified
+			if len(fromPath) > 0 {
+				// add it to the path
+				b.loadFrom = filepath.Join(b.loadFrom, fromPath)
+			}
+			// copy the folder to the source directory
+			core.Msg("preparing to copy local repository '%s'", from)
+			err := copyFiles(from, b.sourceDir())
+			if err != nil {
+				log.Fatal(err)
+			}
+			b.repoURI = localPath
+		} else {
+			// the working directory is the current directory
+			b.loadFrom = localPath
+			// if a sub-folder was specified
+			if len(fromPath) > 0 {
+				// add it to the path
+				b.loadFrom = filepath.Join(b.loadFrom, fromPath)
+			}
 		}
-		b.repoURI = localPath
-		repo = b.openRepo()
-	}
-	loadFrom := b.sourceDir()
-	// if a sub-folder was specified
-	if len(fromPath) > 0 {
-		// add it to the path
-		loadFrom = filepath.Join(loadFrom, fromPath)
+		repo = b.openRepo(localPath)
 	}
 	// read build.yaml
 	core.Msg("loading build instructions")
-	b.buildFile = LoadBuildFile(filepath.Join(loadFrom, "build.yaml"))
+	b.buildFile = LoadBuildFile(filepath.Join(b.loadFrom, "build.yaml"))
 	return repo
 }
 
 // compress the target
-func (b *Builder) zipPackage(target, fromPath string) {
-	core.Msg("compressing target '%s'", target)
-	var targetName = target
-	// defines the source for zipping as specified in the build.yaml within the source directory
-	source := filepath.Join(b.sourceDir(), targetName)
-	// if a sub-project folder exist then add it to the path
-	if len(fromPath) > 0 {
-		source = filepath.Join(source, fromPath)
-	}
+func (b *Builder) zipPackage(targetPath string) {
+	core.Msg("compressing target '%s'", targetPath)
 	// get the target source information
-	info, err := os.Stat(source)
-	core.CheckErr(err, "failed to retrieve target to compress: '%s'", source)
+	info, err := os.Stat(targetPath)
+	core.CheckErr(err, "failed to retrieve target to compress: '%s'", targetPath)
 	// if the target is a directory
 	if info.IsDir() {
 		// then zip it
 		core.Msg("compressing folder")
-		core.CheckErr(zipSource(source, b.workDirZipFilename()), "failed to compress folder")
+		core.CheckErr(zipSource(targetPath, b.workDirZipFilename()), "failed to compress folder")
 	} else {
 		// if it is a file open it to check its type
-		core.Msg("checking type of file target: '%s'", source)
-		file, err := os.Open(source)
-		core.CheckErr(err, "failed to open target: %s", source)
+		core.Msg("checking type of file target: '%s'", targetPath)
+		file, err := os.Open(targetPath)
+		core.CheckErr(err, "failed to open target: %s", targetPath)
 		// find the content type
 		contentType, err := findContentType(file)
 		core.CheckErr(err, "failed to find target content type")
@@ -159,17 +201,17 @@ func (b *Builder) zipPackage(target, fromPath string) {
 		if contentType != "application/zip" {
 			core.Msg("target is not a zip file, proceeding to compress it")
 			// the zip it
-			core.CheckErr(zipSource(source, b.workDirZipFilename()), "failed to compress file target")
+			core.CheckErr(zipSource(targetPath, b.workDirZipFilename()), "failed to compress file target")
 			return
 		} else {
 			core.Msg("cannot compress file target, already compressed. checking target file extension")
 			// find the file extension
-			ext := filepath.Ext(source)
+			ext := filepath.Ext(targetPath)
 			// if the extension is not zip (e.g. jar files)
 			if ext != ".zip" {
 				core.Msg("renaming file target to .zip extension")
 				// rename the file to .zip
-				core.CheckErr(os.Rename(source, b.workDirZipFilename()), "failed to rename file target to .zip extension")
+				core.CheckErr(os.Rename(targetPath, b.workDirZipFilename()), "failed to rename file target to .zip extension")
 				return
 			}
 			return
@@ -205,8 +247,8 @@ func (b *Builder) cloneRepo(repoUrl string, gitToken string) *git.Repository {
 }
 
 // opens a git LocalRegistry from the given path
-func (b *Builder) openRepo() *git.Repository {
-	repo, err := git.PlainOpen(b.sourceDir())
+func (b *Builder) openRepo(path string) *git.Repository {
+	repo, err := git.PlainOpen(path)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -216,8 +258,6 @@ func (b *Builder) openRepo() *git.Repository {
 // cleanup all relevant folders and move package to target location
 func (b *Builder) cleanUp() {
 	core.Msg("cleaning up temporary build directory")
-	// remove the zip folder
-	b.removeFromWD("art")
 	// remove the working directory
 	core.CheckErr(os.RemoveAll(b.workingDir), "failed to remove temporary build directory")
 	// set the directory to empty
@@ -284,14 +324,6 @@ func (b *Builder) setUniqueIdName(repo *git.Repository) {
 	core.Msg("creating artefact filename reference '%s'", b.uniqueIdName)
 }
 
-// remove from working directory
-func (b *Builder) removeFromWD(path string) {
-	err := os.RemoveAll(fmt.Sprintf("%s/%s", b.workingDir, path))
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 // remove files in the source folder that are specified in the .buildignore file
 func (b *Builder) removeIgnored() {
 	ignoreFilename := ".buildignore"
@@ -318,14 +350,8 @@ func (b *Builder) removeIgnored() {
 // if not profile is specified, it uses the default profile
 // if a default profile has not been defined, then uses the first profile in the build file
 // returns the profile used
-func (b *Builder) run(profileName string, fromPath string) *Profile {
+func (b *Builder) run(profileName string, execDir string) *Profile {
 	core.Msg("preparing to execute build commands")
-	// set the command execution directory
-	execDir := b.sourceDir()
-	// check if there is a sub-folder specified
-	if len(fromPath) > 0 {
-		execDir = filepath.Join(b.sourceDir(), fromPath)
-	}
 	// construct an environment with the vars at build file level
 	env := append(os.Environ(), b.buildFile.getEnv()...)
 	// for each build profile
@@ -341,8 +367,6 @@ func (b *Builder) run(profileName string, fromPath string) *Profile {
 				err := execute(cmd, execDir, profileEnv)
 				core.CheckErr(err, "cannot execute command: %s", cmd)
 			}
-			// wait for the target to be created in the file system
-			waitForTargetToBeCreated(b.inSourceDirectory(profile.Target))
 			return &profile
 		}
 		// if the profile has not been provided
@@ -352,11 +376,11 @@ func (b *Builder) run(profileName string, fromPath string) *Profile {
 			// use the default profile
 			if defaultProfile != nil {
 				core.Msg("building the default profile '%s'", defaultProfile.Name)
-				return b.run(defaultProfile.Name, fromPath)
+				return b.run(defaultProfile.Name, execDir)
 			} else {
 				core.Msg("building the first profile in the build file: '%s'", b.buildFile.Profiles[0].Name)
 				// there is no default profile defined so use the first profile
-				return b.run(b.buildFile.Profiles[0].Name, fromPath)
+				return b.run(b.buildFile.Profiles[0].Name, execDir)
 			}
 		}
 	}
@@ -441,4 +465,11 @@ func (b *Builder) workDirJsonFilename() string {
 // the fully qualified name of the zip file in the working directory
 func (b *Builder) workDirZipFilename() string {
 	return filepath.Join(b.workingDir, fmt.Sprintf("%s.zip", b.uniqueIdName))
+}
+
+// determine if the from location is a file system path
+func (b *Builder) copySource(from string, profile *Profile) bool {
+	// location is in the file system and no target is specified for the profile
+	// should only run commands where the source is
+	return !(!strings.HasPrefix(from, "http") && len(profile.Target) == 0)
 }

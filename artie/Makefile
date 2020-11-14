@@ -29,6 +29,7 @@ APP_NAME = $(BINARY_NAME)-linux-$(TAG)
 DANGLING_IMGS = $(shell docker images -f dangling=true -q)
 
 build-linux:
+	printf "package docs\nconst Version=\"%s\"" "$(TAG)" >> ./docs/version.go
 	go fmt && export GOOS=linux; $(GO_CMD) build -o $(BUILD_FOLDER)/$(BINARY_NAME)-linux-$(TAG) -v
 
 build-darwin:
