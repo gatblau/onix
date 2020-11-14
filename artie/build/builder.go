@@ -82,8 +82,6 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, p
 	// wait for the target to be created in the file system
 	targetPath := filepath.Join(b.loadFrom, buildProfile.Target)
 	waitForTargetToBeCreated(targetPath)
-	// remove any files in the .buildignore file
-	// b.removeIgnored()
 	// compress the target defined in the build.yaml' profile
 	b.zipPackage(targetPath)
 	// creates a seal
@@ -180,6 +178,7 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 
 // compress the target
 func (b *Builder) zipPackage(targetPath string) {
+	ignored := b.getIgnored()
 	core.Msg("compressing target '%s'", targetPath)
 	// get the target source information
 	info, err := os.Stat(targetPath)
@@ -188,7 +187,7 @@ func (b *Builder) zipPackage(targetPath string) {
 	if info.IsDir() {
 		// then zip it
 		core.Msg("compressing folder")
-		core.CheckErr(zipSource(targetPath, b.workDirZipFilename()), "failed to compress folder")
+		core.CheckErr(zipSource(targetPath, b.workDirZipFilename(), ignored), "failed to compress folder")
 	} else {
 		// if it is a file open it to check its type
 		core.Msg("checking type of file target: '%s'", targetPath)
@@ -201,7 +200,7 @@ func (b *Builder) zipPackage(targetPath string) {
 		if contentType != "application/zip" {
 			core.Msg("target is not a zip file, proceeding to compress it")
 			// the zip it
-			core.CheckErr(zipSource(targetPath, b.workDirZipFilename()), "failed to compress file target")
+			core.CheckErr(zipSource(targetPath, b.workDirZipFilename(), ignored), "failed to compress file target")
 			return
 		} else {
 			core.Msg("cannot compress file target, already compressed. checking target file extension")
@@ -325,25 +324,31 @@ func (b *Builder) setUniqueIdName(repo *git.Repository) {
 }
 
 // remove files in the source folder that are specified in the .buildignore file
-func (b *Builder) removeIgnored() {
+func (b *Builder) getIgnored() []string {
 	ignoreFilename := ".buildignore"
 	// retrieve the ignore file
-	ignoreFileBytes, err := ioutil.ReadFile(b.inSourceDirectory(ignoreFilename))
+	ignoreFileBytes, err := ioutil.ReadFile(filepath.Join(b.loadFrom, ".buildignore"))
 	if err != nil {
 		// assume no ignore file exists, do nothing
 		core.Msg("nothing to remove, %s file not found in project", ignoreFilename)
-		return
+		return []string{}
 	}
 	// get the lines in the ignore file
 	lines := strings.Split(string(ignoreFileBytes), "\n")
 	// adds the .ignore file
 	lines = append(lines, ignoreFilename)
-	// loop and remove the included files or folders
+	// turns relative paths into absolute paths
+	var output []string
 	for _, line := range lines {
-		sourcePath := b.inSourceDirectory(line)
-		core.Msg("removing path '%s'", sourcePath)
-		core.CheckErr(os.RemoveAll(sourcePath), "failed to ignore file %s", sourcePath)
+		if !filepath.IsAbs(line) {
+			line, err = filepath.Abs(line)
+			if err != nil {
+				core.RaiseErr("cannot convert relation path to absolute path: %s", err)
+			}
+		}
+		output = append(output, line)
 	}
+	return output
 }
 
 // execute all commands in the specified profile
