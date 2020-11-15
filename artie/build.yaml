@@ -4,11 +4,14 @@ license: Apache Version 2
 labels:
   author: gatblau
   application: artie
-  description: build, package, sign and publish application artefacts in a standard format as if they were docker images.
+  description: build, package, sign and publish application artefacts in a generic format as if they were docker images.
   architecture: amd64
 env:
   CGO_ENABLED: 0
   GOARCH: amd64
+  REPO_NAME: quay.io/gatblau
+  BINARY_NAME: artie
+  APP_VERSION: 0.0.4
 profiles:
   - name: linux
     default: true
@@ -29,4 +32,20 @@ profiles:
       - go fmt
       - go build -o artie -v
     target: artie
+functions:
+  - name: build-linux
+    description: builds the artie binary file for the linux platform
+    env:
+      GOOS: linux
+    run:
+      - sh version.sh ${APP_VERSION}-${ART_REF}
+      - go fmt
+      - go build -o output/artie-linux-${APP_VERSION}-${ART_REF} -v
+  - name: snapshot-image
+    description: creates an artie linux container image for the snapshot repository
+    run:
+      - $(build-linux)
+      - docker pull registry.access.redhat.com/ubi8/ubi-minimal
+      - docker build --build-arg APP_NAME=artie-linux-${APP_VERSION}-${ART_REF} -t ${REPO_NAME}/${BINARY_NAME}-snapshot:${APP_VERSION}-${ART_REF} .
+      - docker tag ${REPO_NAME}/${BINARY_NAME}-snapshot:${APP_VERSION}-${ART_REF} ${REPO_NAME}/${BINARY_NAME}-snapshot:latest
 ...

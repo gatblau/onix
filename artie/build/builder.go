@@ -32,6 +32,7 @@ type Builder struct {
 	uniqueIdName     string
 	repoURI          string
 	commit           string
+	from             string
 	signer           *sign.Signer
 	repoName         *core.ArtieName
 	buildFile        *BuildFile
@@ -67,6 +68,7 @@ func NewBuilder() *Builder {
 // profileName: the name of the profile to be built. If empty then the default profile is built. If no default profile exists, the first profile is built.
 // copy: indicates whether a copy should be made of the project files before packaging (only valid for from location in the file system)
 func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, profileName string, copy bool) {
+	b.from = from
 	// prepare the source ready for the build
 	repo := b.prepareSource(from, fromPath, gitToken, name, copy)
 	// set the unique identifier name for both the zip file and the seal file
@@ -74,7 +76,7 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, p
 	// run commands
 	// set the command execution directory
 	execDir := b.loadFrom
-	buildProfile := b.run(profileName, execDir)
+	buildProfile := b.runProfile(profileName, execDir)
 	// check if a profile target exist, otherwise it cannot package
 	if len(buildProfile.Target) == 0 {
 		core.RaiseErr("profile '%s' target not specified, cannot continue", buildProfile.Name)
@@ -92,8 +94,12 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, p
 	b.cleanUp()
 }
 
-// only run the commands in the build file
-func (b *Builder) Run(profile string, path string) {
+// execute the specified function
+func (b *Builder) Run(function string, path string) {
+	// if no path is specified use .
+	if len(path) == 0 {
+		path = "."
+	}
 	var localPath = path
 	// if a relative path is passed
 	if strings.HasPrefix(path, "http") {
@@ -109,7 +115,7 @@ func (b *Builder) Run(profile string, path string) {
 	}
 	core.Msg("loading build instructions")
 	b.buildFile = LoadBuildFile(filepath.Join(localPath, "build.yaml"))
-	b.run(profile, localPath)
+	b.runFunction(function, localPath)
 }
 
 // either clone a remote git repo or copy a local one onto the source folder
@@ -351,14 +357,61 @@ func (b *Builder) getIgnored() []string {
 	return output
 }
 
+// run a specified function
+func (b *Builder) runFunction(function string, path string) {
+	// gets the function to run
+	fx := b.buildFile.fx(function)
+	if fx == nil {
+		core.RaiseErr("function %s does not exist in the build file", function)
+		return
+	}
+	// make build specific vars available within the function
+	if len(b.uniqueIdName) == 0 {
+		var gitRoot = path
+		_, err := os.Stat(filepath.Join(gitRoot, ".git"))
+		if os.IsNotExist(err) {
+			parent := filepath.Dir(path)
+			_, err = os.Stat(filepath.Join(filepath.Dir(path), ".git"))
+			if os.IsNotExist(err) {
+				core.CheckErr(err, "cannot find .git repository file")
+			}
+			gitRoot = parent
+		}
+		b.setUniqueIdName(b.openRepo(gitRoot))
+	}
+	if len(b.from) == 0 {
+		b.from = path
+	}
+	// add the build file level environment variables
+	env := NewEnVarFromSlice(os.Environ())
+	env = env.append(b.buildFile.getEnv())
+	// for each run statement in the function
+	for _, cmd := range fx.Run {
+		// combine the current environment with the function environment
+		buildEnv := env.append(fx.getEnv())
+		// add build specific variables
+		buildEnv = buildEnv.append(b.getBuildEnv())
+		// if the statement has a function call
+		if ok, fx := hasFunction(cmd); ok {
+			// executes the function
+			b.runFunction(fx, path)
+		} else {
+			// execute the statement
+			err := execute(cmd, path, buildEnv)
+			core.CheckErr(err, "cannot execute command: %s", cmd)
+		}
+	}
+}
+
 // execute all commands in the specified profile
 // if not profile is specified, it uses the default profile
 // if a default profile has not been defined, then uses the first profile in the build file
 // returns the profile used
-func (b *Builder) run(profileName string, execDir string) *Profile {
+func (b *Builder) runProfile(profileName string, execDir string) *Profile {
 	core.Msg("preparing to execute build commands")
 	// construct an environment with the vars at build file level
-	env := append(os.Environ(), b.buildFile.getEnv()...)
+	env := NewEnVarFromSlice(os.Environ())
+	env = env.append(b.buildFile.getEnv())
 	// for each build profile
 	for _, profile := range b.buildFile.Profiles {
 		// if a profile name has been provided then build it
@@ -367,9 +420,11 @@ func (b *Builder) run(profileName string, execDir string) *Profile {
 			// for each run statement in the profile
 			for _, cmd := range profile.Run {
 				// combine the current environment with the profile environment
-				profileEnv := append(env, profile.getEnv()...)
+				buildEnv := env.append(profile.getEnv())
+				// add build specific variables
+				buildEnv = buildEnv.append(b.getBuildEnv())
 				// execute the statement
-				err := execute(cmd, execDir, profileEnv)
+				err := execute(cmd, execDir, buildEnv)
 				core.CheckErr(err, "cannot execute command: %s", cmd)
 			}
 			return &profile
@@ -381,11 +436,11 @@ func (b *Builder) run(profileName string, execDir string) *Profile {
 			// use the default profile
 			if defaultProfile != nil {
 				core.Msg("building the default profile '%s'", defaultProfile.Name)
-				return b.run(defaultProfile.Name, execDir)
+				return b.runProfile(defaultProfile.Name, execDir)
 			} else {
 				core.Msg("building the first profile in the build file: '%s'", b.buildFile.Profiles[0].Name)
 				// there is no default profile defined so use the first profile
-				return b.run(b.buildFile.Profiles[0].Name, execDir)
+				return b.runProfile(b.buildFile.Profiles[0].Name, execDir)
 			}
 		}
 	}
@@ -478,3 +533,23 @@ func (b *Builder) copySource(from string, profile *Profile) bool {
 	// should only run commands where the source is
 	return !(!strings.HasPrefix(from, "http") && len(profile.Target) == 0)
 }
+
+// prepares build specific environment variables
+func (b *Builder) getBuildEnv() map[string]string {
+	var env = make(map[string]string)
+	env["ART_REF"] = b.uniqueIdName
+	env["ART_BUILD_PATH"] = b.loadFrom
+	env["ART_GIT_COMMIT"] = b.commit
+	env["ART_WORK_DIR"] = b.workingDir
+	env["ART_FROM_URI"] = b.from
+	return env
+}
+
+// func (b *Builder) setBuildVars() {
+// 	vars := b.getBuildEnv()
+// 	for _, v := range vars {
+// 		kv := strings.Split(v, "=")
+// 		err := os.Setenv(kv[0], kv[1])
+// 		core.CheckErr(err, "failed to set build environment variable")
+// 	}
+// }

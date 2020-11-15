@@ -19,5 +19,5 @@ func TestBuild(t *testing.T) {
 
 func TestRun(t *testing.T) {
 	p := NewBuilder()
-	p.Run("test-run", "/Users/andresalos/go/src/github.com/gatblau/onix/artie")
+	p.Run("snapshot-image", "/Users/andresalos/go/src/github.com/gatblau/onix/artie")
 }

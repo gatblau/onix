@@ -227,11 +227,9 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 func (s *Server) upload(w http.ResponseWriter, repositoryName string, artefactRef string, zipfile multipart.File, jsonFile multipart.File) (isLocked bool) {
 	locked, err := s.lock.acquire(repositoryName)
 	if err != nil {
-		if err != nil {
-			log.Printf("error trying to release lock: %s", err)
-			s.writeError(w, err)
-			return true
-		}
+		log.Printf("cannot acquire lock as it already exists: %s", err)
+		s.writeError(w, err)
+		return true
 	}
 	if locked > 0 {
 		artieName := core.ParseName(repositoryName)

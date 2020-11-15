@@ -42,9 +42,8 @@ func (l *lock) acquire(repository string) (int, error) {
 // releases the lock for the specified repository
 func (l *lock) release(repository string) (int, error) {
 	lockName := l.name(repository)
-	_, err := os.Stat(lockName)
 	// if the lock exists
-	if !os.IsNotExist(err) {
+	if l.fileExists(lockName) {
 		// delete the lock file
 		err := os.Remove(lockName)
 		// if it failed to delete the lock file
@@ -54,6 +53,16 @@ func (l *lock) release(repository string) (int, error) {
 		}
 	}
 	return 1, nil
+}
+
+// fileExists checks if a file exists and is not a directory before we
+// try using it to prevent further errors.
+func (l *lock) fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
 
 // returns the name of the lock for a repository
@@ -80,7 +89,6 @@ func (l *lock) tryRelease(repository string, lockLifespanInSeconds time.Duration
 			return fmt.Errorf("cannot release lock: %s", msg)
 		}
 	}
-	return fmt.Errorf("could not release lock")
 }
 
 // the path where lock files are written
@@ -93,7 +101,8 @@ func (l *lock) ensurePath() {
 	_, err := os.Stat(l.path())
 	if err != nil {
 		if os.IsNotExist(err) {
-			os.MkdirAll(l.path(), os.ModePerm)
+			err = os.MkdirAll(l.path(), os.ModePerm)
+			core.CheckErr(err, "cannot create locks path")
 		}
 	}
 }
