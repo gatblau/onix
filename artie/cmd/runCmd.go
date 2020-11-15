@@ -21,8 +21,8 @@ type RunCmd struct {
 func NewRunCmd() *RunCmd {
 	c := &RunCmd{
 		cmd: &cobra.Command{
-			Use:   "run [profile name] [project path]",
-			Short: "runs the build commands specified in the project's build.yaml file",
+			Use:   "run [function name] [project path]",
+			Short: "runs the function commands specified in the project's build.yaml file",
 			Long:  ``,
 		},
 	}
@@ -31,11 +31,14 @@ func NewRunCmd() *RunCmd {
 }
 
 func (r *RunCmd) Run(cmd *cobra.Command, args []string) {
-	if len(args) != 2 {
-		core.RaiseErr("2 arguments are required: profile name and project path")
+	if len(args) < 1 {
+		core.RaiseErr("At least function name is required")
 	}
-	profile := args[0]
-	path := args[1]
+	var function = args[0]
+	var path = "."
+	if len(args) > 1 {
+		path = args[1]
+	}
 	builder := build.NewBuilder()
-	builder.Run(profile, path)
+	builder.Run(function, path)
 }

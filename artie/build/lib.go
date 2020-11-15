@@ -260,7 +260,7 @@ func round(val float64, roundOn float64, places int) (newVal float64) {
 	return
 }
 
-func execute(cmd string, dir string, env []string) (err error) {
+func execute(cmd string, dir string, env *envar) (err error) {
 	if cmd == "" {
 		return errors.New("no command provided")
 	}
@@ -273,11 +273,11 @@ func execute(cmd string, dir string, env []string) (err error) {
 		args = cmdArr[1:]
 	}
 
-	mergeEnvironmentVars(args)
+	args = mergeEnvironmentVars(args, env.vars)
 
 	command := exec.Command(name, args...)
 	command.Dir = dir
-	command.Env = env
+	command.Env = env.slice()
 
 	stdout, err := command.StdoutPipe()
 	if err != nil {
@@ -324,11 +324,13 @@ func handleReader(reader *bufio.Reader) {
 }
 
 // merges environment variables in the arguments
-func mergeEnvironmentVars(args []string) {
+func mergeEnvironmentVars(args []string, env map[string]string) []string {
+	var result = make([]string, len(args))
 	// env variable regex
 	evExpression := regexp.MustCompile("\\$\\{(.*?)\\}")
 	// check if the args have env variables and if so merge them
 	for ix, arg := range args {
+		result[ix] = arg
 		// find all environment variables in the argument
 		matches := evExpression.FindAllString(arg, -1)
 		// if we have matches
@@ -337,16 +339,17 @@ func mergeEnvironmentVars(args []string) {
 				// get the name of the environment variable i.e. the name part in "${name}"
 				name := match[2 : len(match)-1]
 				// get the value of the variable
-				value := os.Getenv(name)
+				value := env[name]
 				// if not value exist then error
 				if len(value) == 0 {
 					core.RaiseErr("environment variable '%s' is not defined", name)
 				}
 				// merges the variable
-				args[ix] = strings.Replace(arg, match, value, -1)
+				result[ix] = strings.Replace(result[ix], match, value, -1)
 			}
 		}
 	}
+	return result
 }
 
 func contains(value string, list []string) bool {
@@ -356,4 +359,17 @@ func contains(value string, list []string) bool {
 		}
 	}
 	return false
+}
+
+func hasFunction(value string) (bool, string) {
+	// env variable regex
+	evExpression := regexp.MustCompile("\\$\\((.*?)\\)")
+	matches := evExpression.FindAllString(value, 1)
+	// if we have matches
+	if matches != nil {
+		// get the name of the function i.e. the name part in "$(name)"
+		name := matches[0][2 : len(matches[0])-1]
+		return true, name
+	}
+	return false, ""
 }

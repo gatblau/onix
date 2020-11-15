@@ -13,18 +13,11 @@
 #   Contributors to this project, hereby assign copyright in this code to the project,
 #   to be licensed under the same terms as the rest of the code.
 #
-VERSION=$1
+TAG=$1
 if [ $# -eq 0 ]; then
-    echo "An image version is required for Onix Artie. Provide it as a parameter."
-    echo "Usage is: sh version.sh [APP VERSION] - e.g. sh version.sh v1.0.0"
+    echo "A tag is required for Onix Artie. Provide it as a parameter."
+    echo "Usage is: sh version.sh [TAG] - e.g. sh version.sh my-tag"
     exit 1
 fi
-
 rm ./docs/version.go
-
-# creates a TAG for the newly built docker images
-DATE=$(date '+%d%m%y%H%M%S')
-HASH=$(git rev-parse --short HEAD)
-TAG="${VERSION}-${DATE}-${HASH}"
-
 printf "package docs\nconst Version=\"%s\"" "${TAG}" >> ./docs/version.go

@@ -8,7 +8,6 @@
 package build
 
 import (
-	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
@@ -31,15 +30,12 @@ type BuildFile struct {
 	Labels map[string]string `yaml:"labels"`
 	// a list of build configurations in the form of labels, commands to run and environment variables
 	Profiles []Profile `yaml:"profiles"`
+	// a list of functions containing a list of commands to execute
+	Functions []Function `yaml:"functions"`
 }
 
-func (b *BuildFile) getEnv() []string {
-	var vars []string
-	// adds the environment variables defined in the profile
-	for key, value := range b.Env {
-		vars = append(vars, fmt.Sprintf("%s=%s", key, value))
-	}
-	return vars
+func (b *BuildFile) getEnv() map[string]string {
+	return b.Env
 }
 
 // return the default profile if exists
@@ -47,6 +43,16 @@ func (b *BuildFile) defaultProfile() *Profile {
 	for _, profile := range b.Profiles {
 		if profile.Default {
 			return &profile
+		}
+	}
+	return nil
+}
+
+// return the function in the build file specified by its name
+func (b *BuildFile) fx(name string) *Function {
+	for _, fx := range b.Functions {
+		if fx.Name == name {
+			return &fx
 		}
 	}
 	return nil
@@ -69,13 +75,8 @@ type Profile struct {
 }
 
 // gets a slice of string with each element containing key=value
-func (p *Profile) getEnv() []string {
-	var vars []string
-	// adds the environment variables defined in the profile
-	for key, value := range p.Env {
-		vars = append(vars, fmt.Sprintf("%s=%s", key, value))
-	}
-	return vars
+func (p *Profile) getEnv() map[string]string {
+	return p.Env
 }
 
 func LoadBuildFile(path string) *BuildFile {
@@ -89,4 +90,20 @@ func LoadBuildFile(path string) *BuildFile {
 		log.Fatal(err)
 	}
 	return buildFile
+}
+
+type Function struct {
+	// the name of the function
+	Name string `yaml:"name"`
+	// the description for the function
+	Description string `yaml:"description"`
+	// a set of environment variables required by the run commands
+	Env map[string]string `yaml:"env"`
+	// the commands to be executed by the function
+	Run []string `yaml:"run"`
+}
+
+// gets a slice of string with each element containing key=value
+func (p *Function) getEnv() map[string]string {
+	return p.Env
 }
