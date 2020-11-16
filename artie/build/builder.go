@@ -39,6 +39,7 @@ type Builder struct {
 	localReg         *registry.LocalAPI
 	shouldCopySource bool
 	loadFrom         string
+	env              *envar
 }
 
 func NewBuilder() *Builder {
@@ -81,8 +82,10 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, p
 	if len(buildProfile.Target) == 0 {
 		core.RaiseErr("profile '%s' target not specified, cannot continue", buildProfile.Name)
 	}
+	// merge env with target
+	mergedTarget := mergeEnvironmentVars([]string{buildProfile.Target}, b.env.vars)
 	// wait for the target to be created in the file system
-	targetPath := filepath.Join(b.loadFrom, buildProfile.Target)
+	targetPath := filepath.Join(b.loadFrom, mergedTarget[0])
 	waitForTargetToBeCreated(targetPath)
 	// compress the target defined in the build.yaml' profile
 	b.zipPackage(targetPath)
@@ -383,12 +386,12 @@ func (b *Builder) runFunction(function string, path string) {
 	// add the build file level environment variables
 	env := NewEnVarFromSlice(os.Environ())
 	env = env.append(b.buildFile.getEnv())
+	// combine the current environment with the function environment
+	buildEnv := env.append(fx.getEnv())
+	// add build specific variables
+	buildEnv = buildEnv.append(b.getBuildEnv())
 	// for each run statement in the function
 	for _, cmd := range fx.Run {
-		// combine the current environment with the function environment
-		buildEnv := env.append(fx.getEnv())
-		// add build specific variables
-		buildEnv = buildEnv.append(b.getBuildEnv())
 		// if the statement has a function call
 		if ok, expr, shell := hasShell(cmd); ok {
 			out, err := executeWithOutput(shell, path, buildEnv)
@@ -423,15 +426,31 @@ func (b *Builder) runProfile(profileName string, execDir string) *Profile {
 		// if a profile name has been provided then build it
 		if len(profileName) > 0 && profile.Name == profileName {
 			core.Msg("building profile '%s'", profileName)
+			// combine the current environment with the profile environment
+			buildEnv := env.append(profile.getEnv())
+			// add build specific variables
+			buildEnv = buildEnv.append(b.getBuildEnv())
+			// stores the build environment
+			b.env = buildEnv
 			// for each run statement in the profile
 			for _, cmd := range profile.Run {
-				// combine the current environment with the profile environment
-				buildEnv := env.append(profile.getEnv())
-				// add build specific variables
-				buildEnv = buildEnv.append(b.getBuildEnv())
 				// execute the statement
-				err := execute(cmd, execDir, buildEnv)
-				core.CheckErr(err, "cannot execute command: %s", cmd)
+				if ok, expr, shell := hasShell(cmd); ok {
+					out, err := executeWithOutput(shell, execDir, buildEnv)
+					core.CheckErr(err, "cannot execute subshell command: %s", cmd)
+					// merges the output of the subshell in the original command
+					cmd = strings.Replace(cmd, expr, out, -1)
+					// execute the statement
+					err = execute(cmd, execDir, buildEnv)
+					core.CheckErr(err, "cannot execute command: %s", cmd)
+				} else if ok, fx := hasFunction(cmd); ok {
+					// executes the function
+					b.runFunction(fx, execDir)
+				} else {
+					// execute the statement
+					err := execute(cmd, execDir, buildEnv)
+					core.CheckErr(err, "cannot execute command: %s", cmd)
+				}
 			}
 			return &profile
 		}

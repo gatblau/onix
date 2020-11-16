@@ -1,3 +1,4 @@
+# Artie's Build File
 ---
 type: native
 license: Apache Version 2
@@ -20,9 +21,8 @@ profiles:
     env:
       GOOS: linux
     run:
-      - go fmt
-      - go build -o artie -v
-    target: artie
+      - $(build-linux)
+    target: output/artie-linux-${APP_VERSION}-${ART_REF}
   - name: darwin
     labels:
       platform: darwin
