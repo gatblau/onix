@@ -315,9 +315,9 @@ func execute(cmd string, dir string, env *envar) (err error) {
 }
 
 // executes a command and returns ist output
-func executeWithOutput(cmd string, dir string, env *envar) ([]byte, error) {
+func executeWithOutput(cmd string, dir string, env *envar) (string, error) {
 	if cmd == "" {
-		return nil, errors.New("no command provided")
+		return "", errors.New("no command provided")
 	}
 
 	cmdArr := strings.Split(cmd, " ")
@@ -334,7 +334,11 @@ func executeWithOutput(cmd string, dir string, env *envar) ([]byte, error) {
 	command.Dir = dir
 	command.Env = env.slice()
 
-	return command.Output()
+	result, err := command.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimRight(string(result), "\n"), nil
 }
 
 func handleReader(reader *bufio.Reader) {

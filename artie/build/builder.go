@@ -113,7 +113,6 @@ func (b *Builder) Run(function string, path string) {
 		}
 		localPath = absPath
 	}
-	core.Msg("loading build instructions")
 	b.buildFile = LoadBuildFile(filepath.Join(localPath, "build.yaml"))
 	b.runFunction(function, localPath)
 }
@@ -326,7 +325,6 @@ func (b *Builder) setUniqueIdName(repo *git.Repository) {
 	timeStamp := fmt.Sprintf("%02d%02d%02s%02d%02d%02d%s", t.Day(), t.Month(), strconv.Itoa(t.Year())[:2], t.Hour(), t.Minute(), t.Second(), strconv.Itoa(t.Nanosecond())[:3])
 	b.uniqueIdName = fmt.Sprintf("%s-%s", timeStamp, ref.Hash().String()[:10])
 	b.commit = ref.Hash().String()
-	core.Msg("creating artefact filename reference '%s'", b.uniqueIdName)
 }
 
 // remove files in the source folder that are specified in the .buildignore file
@@ -396,15 +394,18 @@ func (b *Builder) runFunction(function string, path string) {
 			out, err := executeWithOutput(shell, path, buildEnv)
 			core.CheckErr(err, "cannot execute subshell command: %s", cmd)
 			// merges the output of the subshell in the original command
-			cmd = strings.Replace(cmd, expr, string(out), -1)
+			cmd = strings.Replace(cmd, expr, out, -1)
+			// execute the statement
+			err = execute(cmd, path, buildEnv)
+			core.CheckErr(err, "cannot execute command: %s", cmd)
 		} else if ok, fx := hasFunction(cmd); ok {
 			// executes the function
 			b.runFunction(fx, path)
-			return
+		} else {
+			// execute the statement
+			err := execute(cmd, path, buildEnv)
+			core.CheckErr(err, "cannot execute command: %s", cmd)
 		}
-		// execute the statement
-		err := execute(cmd, path, buildEnv)
-		core.CheckErr(err, "cannot execute command: %s", cmd)
 	}
 }
 
