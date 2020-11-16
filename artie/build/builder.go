@@ -392,14 +392,19 @@ func (b *Builder) runFunction(function string, path string) {
 		// add build specific variables
 		buildEnv = buildEnv.append(b.getBuildEnv())
 		// if the statement has a function call
-		if ok, fx := hasFunction(cmd); ok {
+		if ok, expr, shell := hasShell(cmd); ok {
+			out, err := executeWithOutput(shell, path, buildEnv)
+			core.CheckErr(err, "cannot execute subshell command: %s", cmd)
+			// merges the output of the subshell in the original command
+			cmd = strings.Replace(cmd, expr, string(out), -1)
+		} else if ok, fx := hasFunction(cmd); ok {
 			// executes the function
 			b.runFunction(fx, path)
-		} else {
-			// execute the statement
-			err := execute(cmd, path, buildEnv)
-			core.CheckErr(err, "cannot execute command: %s", cmd)
+			return
 		}
+		// execute the statement
+		err := execute(cmd, path, buildEnv)
+		core.CheckErr(err, "cannot execute command: %s", cmd)
 	}
 }
 

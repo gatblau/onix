@@ -103,7 +103,7 @@ func zipSource(source, target string, excludeSource []string) error {
 		defer func() {
 			err := file.Close()
 			if err != nil {
-				log.Fatal(err)
+				log.Print(err)
 				runtime.Goexit()
 			}
 		}()
@@ -179,7 +179,7 @@ func copyFile(src, dst string) error {
 	defer func() {
 		err := srcFd.Close()
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 			runtime.Goexit()
 		}
 	}()
@@ -189,7 +189,7 @@ func copyFile(src, dst string) error {
 	defer func() {
 		err := dstFd.Close()
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 			runtime.Goexit()
 		}
 	}()
@@ -243,7 +243,7 @@ func bytesToLabel(size int64) string {
 	base := math.Log(float64(size)) / math.Log(1024)
 	getSize := round(math.Pow(1024, base-math.Floor(base)), .5, 2)
 	getSuffix := suffixes[int(math.Floor(base))]
-	return strconv.FormatFloat(getSize, 'f', -1, 64) + string(getSuffix)
+	return strconv.FormatFloat(getSize, 'f', -1, 64) + getSuffix
 }
 
 func round(val float64, roundOn float64, places int) (newVal float64) {
@@ -260,6 +260,7 @@ func round(val float64, roundOn float64, places int) (newVal float64) {
 	return
 }
 
+// executes a command and sends output and error streams to stdout and stderr
 func execute(cmd string, dir string, env *envar) (err error) {
 	if cmd == "" {
 		return errors.New("no command provided")
@@ -284,7 +285,7 @@ func execute(cmd string, dir string, env *envar) (err error) {
 		log.Printf("failed creating command stdoutpipe: %s", err)
 		return err
 	}
-	defer stdout.Close()
+	defer func() { _ = stdout.Close() }()
 	stdoutReader := bufio.NewReader(stdout)
 
 	stderr, err := command.StderrPipe()
@@ -292,7 +293,7 @@ func execute(cmd string, dir string, env *envar) (err error) {
 		log.Printf("failed creating command stderrpipe: %s", err)
 		return err
 	}
-	defer stderr.Close()
+	defer func() { _ = stderr.Close() }()
 	stderrReader := bufio.NewReader(stderr)
 
 	if err := command.Start(); err != nil {
@@ -313,6 +314,29 @@ func execute(cmd string, dir string, env *envar) (err error) {
 	return nil
 }
 
+// executes a command and returns ist output
+func executeWithOutput(cmd string, dir string, env *envar) ([]byte, error) {
+	if cmd == "" {
+		return nil, errors.New("no command provided")
+	}
+
+	cmdArr := strings.Split(cmd, " ")
+	name := cmdArr[0]
+
+	var args []string
+	if len(cmdArr) > 1 {
+		args = cmdArr[1:]
+	}
+
+	args = mergeEnvironmentVars(args, env.vars)
+
+	command := exec.Command(name, args...)
+	command.Dir = dir
+	command.Env = env.slice()
+
+	return command.Output()
+}
+
 func handleReader(reader *bufio.Reader) {
 	for {
 		str, err := reader.ReadString('\n')
@@ -327,7 +351,7 @@ func handleReader(reader *bufio.Reader) {
 func mergeEnvironmentVars(args []string, env map[string]string) []string {
 	var result = make([]string, len(args))
 	// env variable regex
-	evExpression := regexp.MustCompile("\\$\\{(.*?)\\}")
+	evExpression := regexp.MustCompile("\\${(.*?)}")
 	// check if the args have env variables and if so merge them
 	for ix, arg := range args {
 		result[ix] = arg
@@ -362,14 +386,28 @@ func contains(value string, list []string) bool {
 }
 
 func hasFunction(value string) (bool, string) {
-	// env variable regex
-	evExpression := regexp.MustCompile("\\$\\((.*?)\\)")
-	matches := evExpression.FindAllString(value, 1)
+	matches := regexp.MustCompile("\\$\\((.*?)\\)").FindAllString(value, 1)
+	if matches != nil {
+		return true, matches[0][2 : len(matches[0])-1]
+	}
+	return false, ""
+}
+
+func hasShell(value string) (bool, string, string) {
+	matches := regexp.MustCompile("\\$\\(\\((.*?)\\)\\)").FindAllString(value, 1)
+	if matches != nil {
+		return true, matches[0], matches[0][3 : len(matches[0])-2]
+	}
+	return false, "", ""
+}
+
+func hasSubString(value string, regex *regexp.Regexp) (bool, string) {
+	matches := regex.FindAllString(value, 1)
 	// if we have matches
 	if matches != nil {
 		// get the name of the function i.e. the name part in "$(name)"
-		name := matches[0][2 : len(matches[0])-1]
-		return true, name
+		value := matches[0][2 : len(matches[0])-1]
+		return true, value
 	}
 	return false, ""
 }

@@ -48,4 +48,9 @@ functions:
       - docker pull registry.access.redhat.com/ubi8/ubi-minimal
       - docker build --build-arg APP_NAME=artie-linux-${APP_VERSION}-${ART_REF} -t ${REPO_NAME}/${BINARY_NAME}-snapshot:${APP_VERSION}-${ART_REF} .
       - docker tag ${REPO_NAME}/${BINARY_NAME}-snapshot:${APP_VERSION}-${ART_REF} ${REPO_NAME}/${BINARY_NAME}-snapshot:latest
+  - name: snapshot-push
+    description:
+    run:
+      - docker push ${REPO_NAME}/${BINARY_NAME}-snapshot:$((cat ./version))
+      - docker push ${REPO_NAME}/${BINARY_NAME}-snapshot:latest
 ...
