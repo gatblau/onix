@@ -16,11 +16,12 @@ ENV APP=$APP_NAME
 RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y && \
     microdnf install shadow-utils.x86_64 && \
     groupadd -g $GID -o $UNAME && \
+    # -M create the user with no /home
     useradd -M -u $UID -g $GID $UNAME && \
     rm -rf /var/cache/yum && \
     microdnf clean all && \
-    mkdir -p /home/$UNAME/.artie/locks && \
-    chown $UNAME /home/$UNAME/.artie/locks
+    mkdir -p /.artie/locks && \
+    chown $UNAME /.artie/locks
 WORKDIR /app
 COPY output/$APP_NAME /app/$APP_NAME
 USER $UNAME
