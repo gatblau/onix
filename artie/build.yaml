@@ -1,4 +1,6 @@
 # Artie's Build File
+# It contains the instructions to build artie using itself
+# No need for make, can run on windows, linux or mac providing the commands in the profiles or functions are compatible
 ---
 type: native
 license: Apache Version 2
