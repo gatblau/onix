@@ -37,7 +37,7 @@ func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 		log.Fatal("missing name(s) of the artefact(s) to remove")
 	}
 	//  create a local registry
-	local := registry.NewLocalAPI()
+	local := registry.NewLocalRegistry()
 	// get the name(s) of the artefact(s) to remove
 	local.Remove(c.toArtURIs(args))
 }

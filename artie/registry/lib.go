@@ -130,8 +130,8 @@ func upload(client *http.Client, url string, values map[string]io.Reader, user s
 	return nil
 }
 
-func mustOpen(f string) *os.File {
-	r, err := os.Open(f)
+func openFile(path string) *os.File {
+	r, err := os.Open(path)
 	if err != nil {
 		panic(err)
 	}

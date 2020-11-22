@@ -48,7 +48,7 @@ func (c *PushCmd) Run(cmd *cobra.Command, args []string) {
 	// validate the name
 	artie := core.ParseName(nameTag)
 	// create a local registry
-	local := registry.NewLocalAPI()
+	local := registry.NewLocalRegistry()
 	// attempt upload to remote repository
-	local.Push(artie, registry.NewRemoteAPI(*c.tls), c.credentials)
+	local.Push(artie, c.credentials, *c.tls)
 }

@@ -36,7 +36,7 @@ type Builder struct {
 	signer           *sign.Signer
 	repoName         *core.ArtieName
 	buildFile        *BuildFile
-	localReg         *registry.LocalAPI
+	localReg         *registry.LocalRegistry
 	shouldCopySource bool
 	loadFrom         string
 	env              *envar
@@ -58,7 +58,7 @@ func NewBuilder() *Builder {
 		log.Fatal(err)
 	}
 	builder.signer = signer
-	builder.localReg = registry.NewLocalAPI()
+	builder.localReg = registry.NewLocalRegistry()
 	return builder
 }
 

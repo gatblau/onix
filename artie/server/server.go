@@ -18,6 +18,10 @@ package server
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
+	"encoding/xml"
+	"errors"
 	"fmt"
 	"github.com/gatblau/onix/artie/core"
 	_ "github.com/gatblau/onix/artie/docs" // documentation needed for swagger
@@ -25,8 +29,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/swaggo/http-swagger" // http-swagger middleware
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"log"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"os/signal"
@@ -75,8 +80,15 @@ func (s *Server) Serve() {
 		router.Handle("/metrics", promhttp.Handler()).Methods("GET")
 	}
 
-	// push artefacts
-	router.HandleFunc("/registry/{repository-group}/{repository-name}/{artefact-ref}", s.uploadHandler).Methods("POST")
+	// push an artefact using a tag
+	router.HandleFunc("/artefact/{repository-group}/{repository-name}/tag/{artefact-tag}", s.artefactUploadHandler).Methods("POST")
+
+	// update artefact information by id
+	router.HandleFunc("/artefact/{repository-group}/{repository-name}/id/{artefact-id}", s.artefactInfoUpdateHandler).Methods("PUT")
+	router.HandleFunc("/artefact/{repository-group}/{repository-name}/id/{artefact-id}", s.artefactInfoGetHandler).Methods("GET")
+
+	// get repository information
+	router.HandleFunc("/repository/{repository-group}/{repository-name}", s.repositoryInfoHandler).Methods("GET")
 
 	fmt.Printf("? using %s backend @ %s\n", s.conf.Backend(), s.conf.BackendDomain())
 
@@ -92,7 +104,7 @@ func (s *Server) Serve() {
 // @Produce  plain
 // @Success 200 {string} OK
 // @Router / [get]
-func (s *Server) liveHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) liveHandler(w http.ResponseWriter, _ *http.Request) {
 	_, err := w.Write([]byte("OK"))
 	if err != nil {
 		fmt.Printf("!!! I cannot write response: %v", err)
@@ -105,41 +117,203 @@ func (s *Server) liveHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce  plain
 // @Success 204 {string} artefact has been uploaded successfully. the server has nothing to respond.
 // @Failure 423 {string} the artefact is locked (pessimistic locking)
-// @Router /registry/{repository-group}/{repository-name}/{artefact-ref} [post]
+// @Router /artefact/{repository-group}/{repository-name}/tag/{artefact-tag} [post]
 // @Param repository-group path string true "the artefact repository group name"
 // @Param repository-name path string true "the artefact repository name"
-// @Param artefact-ref path string true "the artefact reference name"
+// @Param tag path string true "the artefact reference name"
+// @Param artefact-meta formData string true "the artefact metadata in JSON base64 encoded string format"
 // @Param artefact-file formData file true "the artefact file part of the multipart message"
 // @Param artefact-seal formData file true "the seal file part of the multipart message"
-func (s *Server) uploadHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) artefactUploadHandler(w http.ResponseWriter, r *http.Request) {
 	// get request variables
 	vars := mux.Vars(r)
 	repoGroup := vars["repository-group"]
 	repoName := vars["repository-name"]
-	artefactRef := vars["artefact-ref"]
-
+	artefactTag := vars["artefact-tag"]
+	// constructs the artefact name
+	name := core.ParseName(fmt.Sprintf("%s/%s:%s", repoGroup, repoName, artefactTag))
 	// file upload limit in MB
-	r.ParseMultipartForm(s.conf.HttpUploadLimit() << 20)
-	zipfile, _, err := r.FormFile("artefact-file")
+	err := r.ParseMultipartForm(s.conf.HttpUploadLimit() << 20)
 	if err != nil {
-		log.Printf("error retrieving artefact file: %s", err)
-		s.writeError(w, err)
+		s.writeError(w, fmt.Errorf("error parsing multipart form: %s", err), http.StatusBadRequest)
+		return
+	}
+	info := r.FormValue("artefact-meta")
+	meta, err := base64.StdEncoding.DecodeString(info)
+	if err != nil {
+		core.CheckErr(err, "failed to base64 decode artefact information")
 	}
 	jsonFile, _, err := r.FormFile("artefact-seal")
 	if err != nil {
-		log.Printf("error retrieving seal file: %s", err)
-		s.writeError(w, err)
+		s.writeError(w, fmt.Errorf("error retrieving seal file: %s", err), http.StatusBadRequest)
+		return
+	}
+	zipFile, _, err := r.FormFile("artefact-file")
+	if err != nil {
+		s.writeError(w, fmt.Errorf("error retrieving artefact zip file: %s", err), http.StatusBadRequest)
+		return
+	}
+	// convert the meta file into an artefact
+	artefactMeta := new(registry.Artefact)
+	err = json.Unmarshal(meta, artefactMeta)
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot unmashall artefact metadata: %s", err), http.StatusBadRequest)
 		return
 	}
 	// try and upload checking the resource is not locked
 	repoPath := fmt.Sprintf("%s/%s", repoGroup, repoName)
-	isLocked := s.upload(w, repoPath, artefactRef, zipfile, jsonFile)
-	// if the resource was locked
-	if isLocked {
-		// try again
-		isLocked = s.upload(w, repoPath, artefactRef, zipfile, jsonFile)
-		// if locked again error
-		w.WriteHeader(http.StatusLocked)
+	// get the backend to use
+	back := registry.GetBackend()
+	// retrieve the repository meta data
+	repo, err := back.GetRepositoryInfo(repoGroup, repoName, s.conf.HttpUser(), s.conf.HttpPwd())
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot retrieve repository information form the backend: %s", err), http.StatusInternalServerError)
+		return
+	}
+	// try to find the artefact being pushed in the remote backend
+	backendArtefact := repo.FindArtefact(artefactMeta.Id)
+	// if the artefact exists
+	if backendArtefact != nil {
+		// check the tag does not exist
+		if backendArtefact.HasTag(artefactTag) {
+			// artefact already exist
+			fmt.Printf("artefact already exist, nothing to push")
+			// returns ok but not created to indicate there is nothing to do
+			w.WriteHeader(http.StatusOK)
+		}
+		// if the tag does not exist then add the tag to the backend artefact
+		backendArtefact.Tags = append(backendArtefact.Tags, artefactTag)
+		// update the artefact information
+		if !repo.UpdateArtefact(backendArtefact) {
+			s.writeError(w, fmt.Errorf("cannot update repository information: %s", backendArtefact.Id), http.StatusInternalServerError)
+			return
+		}
+		err = back.UpdateArtefactInfo(name, backendArtefact, s.conf.HttpUser(), s.conf.HttpPwd())
+		if err != nil {
+			s.writeError(w, fmt.Errorf("cannot update artefact information in Nexus backend: %s", err), http.StatusInternalServerError)
+			return
+		}
+		// returns a 201 to indicate the metadata (tag) was added
+		w.WriteHeader(http.StatusCreated)
+		return
+	}
+	// if the artefact does not exist
+	// add it to the repository
+	repo.Artefacts = append(repo.Artefacts, artefactMeta)
+	// create a repository file
+	repoFile, err := core.ToJsonFile(repo)
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot create repository file: %s", err), http.StatusBadRequest)
+		return
+	}
+	// try and acquire a lock
+	locked, err := s.lock.acquire(repoPath)
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot acquire lock as it already exists: %s", err), http.StatusBadRequest)
+		return
+	}
+	if locked > 0 {
+		err = back.UploadArtefact(name, artefactMeta.FileRef, zipFile, jsonFile, repoFile, s.conf.HttpUser(), s.conf.HttpPwd())
+		_, e := s.lock.release(repoPath)
+		if err != nil {
+			log.Printf("error whilst pushing to %s backend: %s", s.conf.Backend(), err)
+			s.writeError(w, fmt.Errorf("error whilst pushing to %s backend: %s", s.conf.Backend(), err), http.StatusInternalServerError)
+			return
+		}
+		if e != nil {
+			s.writeError(w, fmt.Errorf("cannot release lock on repository: %s, %s", repoPath, err), http.StatusInternalServerError)
+			return
+		}
+		// returns a created code to indicate the artefact was added
+		w.WriteHeader(http.StatusCreated)
+	} else {
+		err := s.lock.tryRelease(repoPath, 15)
+		if err != nil {
+			s.writeError(w, fmt.Errorf("error trying to release lock: %s", err), http.StatusLocked)
+		}
+	}
+}
+
+// @Summary Get information about the artefacts in a repository
+// @Description gets meta data about artefacts in the specified repository
+// @Tags Artefacts
+// @Produce application/json, application/yaml, application/xml
+// @Success 200 {string} OK
+// @Router /repository/{repository-group}/{repository-name} [get]
+// @Param repository-group path string true "the artefact repository group name"
+// @Param repository-name path string true "the artefact repository name"
+func (s *Server) repositoryInfoHandler(w http.ResponseWriter, r *http.Request) {
+	// get request variables
+	vars := mux.Vars(r)
+	repoGroup := vars["repository-group"]
+	repoName := vars["repository-name"]
+	// retrieve repository metadata from the backend
+	repo, err := registry.GetBackend().GetRepositoryInfo(repoGroup, repoName, s.conf.HttpUser(), s.conf.HttpPwd())
+	if err != nil {
+		s.writeError(w, err, 500)
+		return
+	}
+	s.write(w, r, repo)
+}
+
+// @Summary Get information about the specified artefact
+// @Description gets meta data about the artefact identified by its id
+// @Tags Artefacts
+// @Produce application/json, application/yaml, application/xml
+// @Success 200 {string} OK
+// @Router /artefact/{repository-group}/{repository-name}/id/{artefact-id} [get]
+// @Param repository-group path string true "the artefact repository group name"
+// @Param repository-name path string true "the artefact repository name"
+//
+func (s *Server) artefactInfoGetHandler(w http.ResponseWriter, r *http.Request) {
+	// get request variables
+	vars := mux.Vars(r)
+	repoGroup := vars["repository-group"]
+	repoName := vars["repository-name"]
+	id := vars["artefact-id"]
+	// retrieve repository metadata from the backend
+	artie, err := registry.GetBackend().GetArtefactInfo(repoGroup, repoName, id, s.conf.HttpUser(), s.conf.HttpPwd())
+	if err != nil {
+		s.writeError(w, err, 500)
+		return
+	}
+	s.write(w, r, artie)
+}
+
+// @Summary Update information about the specified artefact
+// @Description updates meta data about the artefact identified by its id
+// @Tags Artefacts
+// @Success 200 {string} OK
+// @Router /artefact/{repository-group}/{repository-name}/id/{artefact-id} [put]
+// @Param repository-group path string true "the artefact repository group name"
+// @Param repository-name path string true "the artefact repository name"
+// @Param artefact-id path string true "the artefact unique identifier"
+// @Param artefact-info body registry.Artefact true "the artefact information to be updated"
+func (s *Server) artefactInfoUpdateHandler(w http.ResponseWriter, r *http.Request) {
+	// get request variables
+	vars := mux.Vars(r)
+	repoGroup := vars["repository-group"]
+	repoName := vars["repository-name"]
+	id := vars["artefact-id"]
+	name := core.ParseNameFromParts(s.conf.BackendDomain(), repoGroup, repoName, "")
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot retrieve artefact information from request body: %s", err), 500)
+		return
+	}
+	artie := new(registry.Artefact)
+	err = json.Unmarshal(body, artie)
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot unmarshal artefact information from request body: %s", err), 500)
+		return
+	}
+	if artie.Id != id {
+		s.writeError(w, fmt.Errorf("artefact Id in URI (%s) does not match the one provided in the payload (%s)", id, artie.Id), 500)
+		return
+	}
+	// updates the repository metadata in Nexus
+	if err = registry.GetBackend().UpdateArtefactInfo(name, artie, s.conf.HttpUser(), s.conf.HttpPwd()); err != nil {
+		s.writeError(w, fmt.Errorf("cannot update repository information in Nexus backend: %s", err), http.StatusInternalServerError)
 		return
 	}
 }
@@ -185,11 +359,9 @@ func (s *Server) listen(handler http.Handler) {
 	}
 }
 
-func (s *Server) writeError(w http.ResponseWriter, err error) {
-	_, err = w.Write([]byte(err.Error()))
-	if err != nil {
-		fmt.Printf("!!! I failed to write error to response: %v\n", err)
-	}
+func (s *Server) writeError(w http.ResponseWriter, err error, errorCode int) {
+	fmt.Printf(fmt.Sprintf("%s\n", err))
+	w.WriteHeader(errorCode)
 }
 
 // log http requests to stdout
@@ -224,31 +396,42 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (s *Server) upload(w http.ResponseWriter, repositoryName string, artefactRef string, zipfile multipart.File, jsonFile multipart.File) (isLocked bool) {
-	locked, err := s.lock.acquire(repositoryName)
+// writes the content of an object using the response writer in the format specified by the accept http header
+// supporting content negotiation for json, yaml, and xml formats
+func (s *Server) write(w http.ResponseWriter, r *http.Request, obj interface{}) {
+	var (
+		bs  []byte
+		err error
+	)
+	// gets the accept http header
+	accept := r.Header.Get("Accept")
+	switch accept {
+	case "*/*":
+		fallthrough
+	case "application/json":
+		{
+			w.Header().Set("Content-Type", "application/json")
+			bs, err = json.Marshal(obj)
+		}
+	case "application/yaml":
+		{
+			w.Header().Set("Content-Type", "application/yaml")
+			bs, err = yaml.Marshal(obj)
+		}
+	case "application/xml":
+		{
+			w.Header().Set("Content-Type", "application/xml")
+			bs, err = xml.Marshal(obj)
+		}
+	default:
+		err = errors.New(fmt.Sprintf("!!! I do not support the accept content type '%s'", accept))
+	}
 	if err != nil {
-		log.Printf("cannot acquire lock as it already exists: %s", err)
-		s.writeError(w, err)
-		return true
+		s.writeError(w, err, 500)
 	}
-	if locked > 0 {
-		artieName := core.ParseName(repositoryName)
-		backend := registry.NewBackendFactory().Get()
-		err := backend.UploadArtefact(artieName, artefactRef, zipfile, jsonFile, s.conf.HttpUser(), s.conf.HttpPwd())
-		s.lock.release(repositoryName)
-		if err != nil {
-			log.Printf("error whilst pushing to %s backend: %s", s.conf.Backend(), err)
-			s.writeError(w, err)
-		}
-		return false
-	} else {
-		err := s.lock.tryRelease(repositoryName, 15)
-		if err != nil {
-			log.Printf("error trying to release lock: %s", err)
-			s.writeError(w, err)
-			return true
-		}
+	_, err = w.Write(bs)
+	if err != nil {
+		log.Printf("error writing data to response: %s", err)
+		s.writeError(w, err, 500)
 	}
-	// if we are here it is because the resource was locked and a time out occurred
-	return true
 }

@@ -11,8 +11,6 @@ import "github.com/gatblau/onix/artie/core"
 
 // the interface implemented by a local registry
 // creds = user[:pwd]
-type Local interface {
-	Push(name *core.ArtieName, remote Remote, creds string)
-	Pull(name *core.ArtieName, remote Remote)
-	Remove(names []core.ArtieName)
+type Registry interface {
+	Push(name *core.ArtieName, remote Backend, credentials string)
 }

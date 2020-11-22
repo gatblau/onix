@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/go-uuid"
 	"io"
 	"log"
 	"os"
@@ -35,6 +36,48 @@ func ToJsonBytes(s interface{}) []byte {
 		log.Fatal(err)
 	}
 	return dest.Bytes()
+}
+
+func ToJsonFile(obj interface{}) (*os.File, error) {
+	// generate an internal random and transient name based on an Universally Unique Identifier
+	name, err := uuid.GenerateUUID()
+	if err != nil {
+		return nil, err
+	}
+	// marshals the object into Json bytes
+	b, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+	// create a transient temp file
+	file, err := os.Create(name)
+	if err != nil {
+		return nil, err
+	}
+	// write the bytes into it
+	_, err = file.Write(b)
+	if err != nil {
+		return nil, err
+	}
+	// closes the file
+	file.Close()
+	// open the created file
+	file = openFile(name)
+	if err != nil {
+		return nil, err
+	}
+	// remove the file from the file system
+	err = os.Remove(name)
+	// return the File object
+	return file, err
+}
+
+func openFile(path string) *os.File {
+	r, err := os.Open(path)
+	if err != nil {
+		panic(err)
+	}
+	return r
 }
 
 // remove an element in a slice
