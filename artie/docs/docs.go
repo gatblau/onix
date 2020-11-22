@@ -216,7 +216,7 @@ var doc = `{
                     " application/xml"
                 ],
                 "tags": [
-                    "Artefacts"
+                    "Repositories"
                 ],
                 "summary": "Get information about the artefacts in a repository",
                 "parameters": [
@@ -291,7 +291,7 @@ var SwaggerInfo = swaggerInfo{
 	Host:        "",
 	BasePath:    "",
 	Schemes:     []string{},
-	Title:       "Artie: the generic artefact manager API",
+	Title:       "Artie HTTP API",
 	Description: "Artie's HTTP API for artefact backends.",
 }
 

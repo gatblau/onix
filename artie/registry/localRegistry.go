@@ -399,7 +399,8 @@ func (r *LocalRegistry) Push(name *core.ArtieName, credentials string, useTLS bo
 	// fetch the artefact info from the local registry
 	artie := r.FindArtefact(name)
 	if artie == nil {
-		log.Fatal(errors.New(fmt.Sprintf("artefact %s not found in the local registry", name)))
+		fmt.Printf("artefact %s not found in the local registry\n", name)
+		return
 	}
 	// check the status of the artefact in the remote registry
 	remoteArt, err := api.GetArtefactInfo(name.Group, name.Name, artie.Id, uname, pwd)
@@ -409,19 +410,24 @@ func (r *LocalRegistry) Push(name *core.ArtieName, credentials string, useTLS bo
 		// check if the tag already exist in the remote repository
 		if remoteArt.HasTag(name.Tag) {
 			// nothing to do, returns
-			fmt.Printf("tag already exists, nothing to push")
+			fmt.Printf("tag already exists, nothing to push\n")
 			return
 		} else {
 			// the metadata has to be updated to include the new tag
 			remoteArt.Tags = append(remoteArt.Tags, name.Tag)
 			err = api.UpdateArtefactInfo(name, remoteArt, uname, pwd)
 			core.CheckErr(err, "cannot update remote artefact tags")
+			fmt.Printf("tag %s pushed\n", name.Tag)
+			return
 		}
 	}
 	zipfile := openFile(fmt.Sprintf("%s/%s.zip", r.Path(), artie.FileRef))
 	jsonfile := openFile(fmt.Sprintf("%s/%s.json", r.Path(), artie.FileRef))
+	// prepare the artefact to upload
+	artefact := artie
+	artefact.Tags = []string{name.Tag}
 	// execute the upload
-	err = api.UploadArtefact(name, artie.FileRef, zipfile, jsonfile, artie, uname, pwd)
+	err = api.UploadArtefact(name, artie.FileRef, zipfile, jsonfile, artefact, uname, pwd)
 	core.CheckErr(err, "cannot push artefact")
 	fmt.Printf("pushed %s\n", name.String())
 }

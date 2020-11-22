@@ -88,11 +88,11 @@ func (r *GenericApi) UploadArtefact(name *core.ArtieName, artefactRef string, zi
 }
 
 func (r *GenericApi) UpdateArtefactInfo(name *core.ArtieName, artefact *Artefact, user string, pwd string) error {
-	str, err := artefact.ToJson()
+	b, err := json.Marshal(artefact)
 	if err != nil {
 		return err
 	}
-	body := bytes.NewReader([]byte(str))
+	body := bytes.NewReader([]byte(b))
 	req, err := http.NewRequest("PUT", r.artefactIdURI(name.Group, name.Name, artefact.Id), body)
 	if err != nil {
 		return err

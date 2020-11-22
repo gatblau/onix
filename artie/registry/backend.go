@@ -21,7 +21,7 @@ type Backend interface {
 	// get artefact information
 	GetArtefactInfo(group, name, id, user, pwd string) (*Artefact, error)
 	// update artefact information
-	UpdateArtefactInfo(name *core.ArtieName, artefact *Artefact, user string, pwd string) error
+	UpdateArtefactInfo(group string, name string, artefact *Artefact, user string, pwd string) error
 }
 
 func GetBackend() Backend {

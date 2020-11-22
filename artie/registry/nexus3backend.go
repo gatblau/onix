@@ -41,9 +41,9 @@ func NewNexus3Backend(domain string) Backend {
 	}
 }
 
-func (r *Nexus3Backend) UpdateArtefactInfo(name *core.ArtieName, artefact *Artefact, user string, pwd string) error {
+func (r *Nexus3Backend) UpdateArtefactInfo(group, name string, artefact *Artefact, user string, pwd string) error {
 	// get the repository info
-	repo, err := r.GetRepositoryInfo(name.Group, name.Name, user, pwd)
+	repo, err := r.GetRepositoryInfo(group, name, user, pwd)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (r *Nexus3Backend) UpdateArtefactInfo(name *core.ArtieName, artefact *Artef
 	}
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
-	err = r.addField(writer, "raw.directory", name.Repository())
+	err = r.addField(writer, "raw.directory", fmt.Sprintf("%s/%s", group, name))
 	if err != nil {
 		return err
 	}
@@ -174,26 +174,6 @@ func (r *Nexus3Backend) GetArtefactInfo(group, name, id, user, pwd string) (*Art
 	}
 	return repo.FindArtefact(id), nil
 }
-
-// func (r *Nexus3Backend) UpdateRepositoryInfo(name *core.ArtieName, repo multipart.File, user string, pwd string) error {
-// 	defer repo.Close()
-// 	var b bytes.Buffer
-// 	writer := multipart.NewWriter(&b)
-// 	err := r.addField(writer, "raw.directory", name.Repository())
-// 	if err != nil {
-// 		return err
-// 	}
-// 	err = r.addField(writer, "raw.asset1.filename", "repository.json")
-// 	if err != nil {
-// 		return err
-// 	}
-// 	err = r.addFile(writer, "raw.asset1","repository.json", repo)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	writer.Close()
-// 	return r.postMultipart(b, writer, user, pwd)
-// }
 
 // add a field to a multipart form
 func (r *Nexus3Backend) addField(writer *multipart.Writer, fieldName, fieldValue string) error {

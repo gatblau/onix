@@ -7,7 +7,7 @@
 */
 package server
 
-// @title Artie: the generic artefact manager API
+// @title Artie HTTP API
 // @version 0.0.4
 // @description Artie's HTTP API for artefact backends.
 // @contact.name gatblau
@@ -180,6 +180,7 @@ func (s *Server) artefactUploadHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("artefact already exist, nothing to push")
 			// returns ok but not created to indicate there is nothing to do
 			w.WriteHeader(http.StatusOK)
+			return
 		}
 		// if the tag does not exist then add the tag to the backend artefact
 		backendArtefact.Tags = append(backendArtefact.Tags, artefactTag)
@@ -188,7 +189,7 @@ func (s *Server) artefactUploadHandler(w http.ResponseWriter, r *http.Request) {
 			s.writeError(w, fmt.Errorf("cannot update repository information: %s", backendArtefact.Id), http.StatusInternalServerError)
 			return
 		}
-		err = back.UpdateArtefactInfo(name, backendArtefact, s.conf.HttpUser(), s.conf.HttpPwd())
+		err = back.UpdateArtefactInfo(name.Group, name.Name, backendArtefact, s.conf.HttpUser(), s.conf.HttpPwd())
 		if err != nil {
 			s.writeError(w, fmt.Errorf("cannot update artefact information in Nexus backend: %s", err), http.StatusInternalServerError)
 			return
@@ -236,7 +237,7 @@ func (s *Server) artefactUploadHandler(w http.ResponseWriter, r *http.Request) {
 
 // @Summary Get information about the artefacts in a repository
 // @Description gets meta data about artefacts in the specified repository
-// @Tags Artefacts
+// @Tags Repositories
 // @Produce application/json, application/yaml, application/xml
 // @Success 200 {string} OK
 // @Router /repository/{repository-group}/{repository-name} [get]
@@ -264,7 +265,6 @@ func (s *Server) repositoryInfoHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /artefact/{repository-group}/{repository-name}/id/{artefact-id} [get]
 // @Param repository-group path string true "the artefact repository group name"
 // @Param repository-name path string true "the artefact repository name"
-//
 func (s *Server) artefactInfoGetHandler(w http.ResponseWriter, r *http.Request) {
 	// get request variables
 	vars := mux.Vars(r)
@@ -295,7 +295,6 @@ func (s *Server) artefactInfoUpdateHandler(w http.ResponseWriter, r *http.Reques
 	repoGroup := vars["repository-group"]
 	repoName := vars["repository-name"]
 	id := vars["artefact-id"]
-	name := core.ParseNameFromParts(s.conf.BackendDomain(), repoGroup, repoName, "")
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		s.writeError(w, fmt.Errorf("cannot retrieve artefact information from request body: %s", err), 500)
@@ -312,7 +311,7 @@ func (s *Server) artefactInfoUpdateHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	// updates the repository metadata in Nexus
-	if err = registry.GetBackend().UpdateArtefactInfo(name, artie, s.conf.HttpUser(), s.conf.HttpPwd()); err != nil {
+	if err = registry.GetBackend().UpdateArtefactInfo(repoGroup, repoName, artie, s.conf.HttpUser(), s.conf.HttpPwd()); err != nil {
 		s.writeError(w, fmt.Errorf("cannot update repository information in Nexus backend: %s", err), http.StatusInternalServerError)
 		return
 	}

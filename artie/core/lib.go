@@ -109,7 +109,7 @@ func ArtefactId(seal *Seal) string {
 	if _, err := io.Copy(hash, bytes.NewReader(info)); err != nil {
 		log.Fatal(err)
 	}
-	return fmt.Sprintf("sha256:%s", hex.EncodeToString(hash.Sum(nil)))
+	return hex.EncodeToString(hash.Sum(nil))
 }
 
 func CheckErr(err error, msg string, a ...interface{}) {

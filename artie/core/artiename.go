@@ -103,7 +103,3 @@ func ParseName(name string) *ArtieName {
 	}
 	return n
 }
-
-func ParseNameFromParts(domain, group, name, tag string) *ArtieName {
-	return ParseName(fmt.Sprintf("%s/%s/%s/%s", domain, group, name, tag))
-}
