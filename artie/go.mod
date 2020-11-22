@@ -9,6 +9,7 @@ require (
 	github.com/go-openapi/spec v0.19.12 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.8.0
+	github.com/hashicorp/go-uuid v1.0.1
 	github.com/hashicorp/hil v0.0.0-20200423225030-a18a1cd20038
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect

@@ -52,7 +52,92 @@ var doc = `{
                 }
             }
         },
-        "/registry/{repository-group}/{repository-name}/{artefact-ref}": {
+        "/artefact/{repository-group}/{repository-name}/id/{artefact-id}": {
+            "get": {
+                "description": "gets meta data about the artefact identified by its id",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Artefacts"
+                ],
+                "summary": "Get information about the specified artefact",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the artefact repository group name",
+                        "name": "repository-group",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the artefact repository name",
+                        "name": "repository-name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "updates meta data about the artefact identified by its id",
+                "tags": [
+                    "Artefacts"
+                ],
+                "summary": "Update information about the specified artefact",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the artefact repository group name",
+                        "name": "repository-group",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the artefact repository name",
+                        "name": "repository-name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the artefact unique identifier",
+                        "name": "artefact-id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "the artefact information to be updated",
+                        "name": "artefact-info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/registry.Artefact"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/artefact/{repository-group}/{repository-name}/tag/{artefact-tag}": {
             "post": {
                 "description": "uploads the artefact file and its seal to the pre-configured backend (e.g. Nexus, etc)",
                 "produces": [
@@ -80,8 +165,15 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "the artefact reference name",
-                        "name": "artefact-ref",
+                        "name": "tag",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the artefact metadata in JSON base64 encoded string format",
+                        "name": "artefact-meta",
+                        "in": "formData",
                         "required": true
                     },
                     {
@@ -112,6 +204,72 @@ var doc = `{
                             "type": "string"
                         }
                     }
+                }
+            }
+        },
+        "/repository/{repository-group}/{repository-name}": {
+            "get": {
+                "description": "gets meta data about artefacts in the specified repository",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Artefacts"
+                ],
+                "summary": "Get information about the artefacts in a repository",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the artefact repository group name",
+                        "name": "repository-group",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the artefact repository name",
+                        "name": "repository-name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "registry.Artefact": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "file_ref": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         }

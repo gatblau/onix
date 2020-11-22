@@ -13,15 +13,15 @@ import (
 )
 
 // list local artefacts
-type ArtefactsCmd struct {
+type ListCmd struct {
 	cmd   *cobra.Command
 	quiet *bool
 }
 
-func NewArtefactsCmd() *ArtefactsCmd {
-	c := &ArtefactsCmd{
+func NewListCmd() *ListCmd {
+	c := &ListCmd{
 		cmd: &cobra.Command{
-			Use:   "artefacts",
+			Use:   "list",
 			Short: "list artefacts",
 			Long:  ``,
 		},
@@ -31,8 +31,8 @@ func NewArtefactsCmd() *ArtefactsCmd {
 	return c
 }
 
-func (b *ArtefactsCmd) Run(cmd *cobra.Command, args []string) {
-	local := registry.NewLocalAPI()
+func (b *ListCmd) Run(cmd *cobra.Command, args []string) {
+	local := registry.NewLocalRegistry()
 	if *b.quiet {
 		local.ListQ()
 	} else {

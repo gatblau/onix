@@ -51,8 +51,12 @@ functions:
       - docker build --build-arg APP_NAME=artie-linux-${APP_VERSION}-${ART_REF} -t ${REPO_NAME}/${BINARY_NAME}-snapshot:${APP_VERSION}-${ART_REF} .
       - docker tag ${REPO_NAME}/${BINARY_NAME}-snapshot:${APP_VERSION}-${ART_REF} ${REPO_NAME}/${BINARY_NAME}-snapshot:latest
   - name: snapshot-push
-    description:
+    description: creates a container image for the snapshot repository
     run:
       - docker push ${REPO_NAME}/${BINARY_NAME}-snapshot:$((cat ./version))
       - docker push ${REPO_NAME}/${BINARY_NAME}-snapshot:latest
+  - name: swagen
+    description: generates/refreshes the OpenAPI specifications for Artie's HTTP API
+    run:
+      - swag init -d ./server -g server.go
 ...

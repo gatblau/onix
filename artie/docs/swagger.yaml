@@ -1,3 +1,21 @@
+definitions:
+  registry.Artefact:
+    properties:
+      created:
+        type: string
+      file_ref:
+        type: string
+      id:
+        type: string
+      size:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      type:
+        type: string
+    type: object
 info:
   contact:
     email: onix@gatblau.org
@@ -26,7 +44,65 @@ paths:
       summary: Check that Artie's HTTP API is live
       tags:
       - General
-  /registry/{repository-group}/{repository-name}/{artefact-ref}:
+  /artefact/{repository-group}/{repository-name}/id/{artefact-id}:
+    get:
+      description: gets meta data about the artefact identified by its id
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      produces:
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Get information about the specified artefact
+      tags:
+      - Artefacts
+    put:
+      description: updates meta data about the artefact identified by its id
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the artefact unique identifier
+        in: path
+        name: artefact-id
+        required: true
+        type: string
+      - description: the artefact information to be updated
+        in: body
+        name: artefact-info
+        required: true
+        schema:
+          $ref: '#/definitions/registry.Artefact'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Update information about the specified artefact
+      tags:
+      - Artefacts
+  /artefact/{repository-group}/{repository-name}/tag/{artefact-tag}:
     post:
       description: uploads the artefact file and its seal to the pre-configured backend (e.g. Nexus, etc)
       parameters:
@@ -42,7 +118,12 @@ paths:
         type: string
       - description: the artefact reference name
         in: path
-        name: artefact-ref
+        name: tag
+        required: true
+        type: string
+      - description: the artefact metadata in JSON base64 encoded string format
+        in: formData
+        name: artefact-meta
         required: true
         type: string
       - description: the artefact file part of the multipart message
@@ -67,6 +148,32 @@ paths:
           schema:
             type: string
       summary: Push an artefact to the configured backend
+      tags:
+      - Artefacts
+  /repository/{repository-group}/{repository-name}:
+    get:
+      description: gets meta data about artefacts in the specified repository
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      produces:
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Get information about the artefacts in a repository
       tags:
       - Artefacts
 swagger: "2.0"
