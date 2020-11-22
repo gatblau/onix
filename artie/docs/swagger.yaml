@@ -25,7 +25,7 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: 'Artie: the generic artefact manager API'
+  title: Artie HTTP API
   version: 0.0.4
 paths:
   /:
@@ -175,5 +175,5 @@ paths:
             type: string
       summary: Get information about the artefacts in a repository
       tags:
-      - Artefacts
+      - Repositories
 swagger: "2.0"
