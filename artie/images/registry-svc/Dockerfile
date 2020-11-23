@@ -23,7 +23,7 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
     mkdir -p /.artie/locks && \
     chown $UNAME /.artie/locks
 WORKDIR /app
-COPY output/$APP_NAME /app/$APP_NAME
+COPY ./images/bin/output/$APP_NAME /app/$APP_NAME
 USER $UNAME
 CMD ["sh", "-c", "/app/${APP} serve"]
 EXPOSE 8082/tcp

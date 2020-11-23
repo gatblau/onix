@@ -6,30 +6,38 @@
 #  Contributors to this project, hereby assign copyright in this code to the project,
 #  to be licensed under the same terms as the rest of the code.
 #
-FROM centos:8
+FROM centos:7
 
 LABEL author="gatblau"
 LABEL maintainer="onix@gatblau.org"
 LABEL builder-for=JAVA-11
 LABEL tools="maven,jdk11"
 
+ARG APP_NAME=artie
+ENV APP=$APP_NAME
 ENV MAVEN_VERSION 3.6.3
 ENV JAVA_HOME /usr/lib/jvm/jre-openjdk
 ENV MAVEN_HOME /usr/lib/mvn
 ENV ARTIE_HOME /usr/bin
 ENV PATH $MAVEN_HOME/bin:$PATH
 
-RUN dnf install -y java-11-openjdk-devel && \
-    dnf install -y wget && \
-    dnf install -y git unzip
+RUN yum update -y && \
+    yum install -y java-11-openjdk-devel && \
+    yum install -y wget && \
+    yum install -y git unzip && \
+    rm -rf /var/cache/yum && \
+    yum clean all
 
 RUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz && \
     tar -zxvf apache-maven-$MAVEN_VERSION-bin.tar.gz && \
     rm apache-maven-$MAVEN_VERSION-bin.tar.gz && \
     mv apache-maven-$MAVEN_VERSION $MAVEN_HOME
 
-COPY artie start.sh $ARTIE_HOME/
+COPY ./images/bin/output/$APP_NAME ./images/java-builder/start.sh $ARTIE_HOME/
 
-RUN chmod 777 $ARTIE_HOME/artie && chmod 777 $ARTIE_HOME/start.sh
+RUN ln -s $ARTIE_HOME/$APP_NAME /usr/bin/artie && \
+    chmod a+x $ARTIE_HOME/$APP_NAME && \
+    chmod a+x $ARTIE_HOME/artie && \
+    chmod a+x $ARTIE_HOME/start.sh
 
-CMD ["sh", "start.sh"]
+ENTRYPOINT ["sh", "start.sh"]
