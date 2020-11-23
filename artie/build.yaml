@@ -26,7 +26,7 @@ profiles:
       GOOS: linux
     run:
       - $(build-linux)
-    target: output/artie-linux-${APP_VERSION}-${ART_REF}
+    target: images/bin/output/artie-linux-${APP_VERSION}-${ART_REF}
   - name: darwin
     labels:
       platform: darwin
@@ -35,7 +35,7 @@ profiles:
     run:
       - go fmt
       - go build -o artie -v
-    target: artie
+    target: images/bin/output/artie-darwin-${APP_VERSION}-${ART_REF}
 functions:
   - name: build-linux
     description: builds the artie binary file for the linux platform
