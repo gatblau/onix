@@ -10,6 +10,7 @@ package registry
 import (
 	"github.com/gatblau/onix/artie/core"
 	"mime/multipart"
+	"os"
 )
 
 // the interface implemented by a backend
@@ -22,6 +23,8 @@ type Backend interface {
 	GetArtefactInfo(group, name, id, user, pwd string) (*Artefact, error)
 	// update artefact information
 	UpdateArtefactInfo(group string, name string, artefact *Artefact, user string, pwd string) error
+	// open a file for download
+	Download(repoGroup, repoName, fileName, user, pwd string) (*os.File, error)
 }
 
 func GetBackend() Backend {

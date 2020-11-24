@@ -10,6 +10,7 @@ package core
 import (
 	"fmt"
 	"log"
+	"os"
 	"os/user"
 	"path/filepath"
 )
@@ -28,4 +29,18 @@ func HomeDir() string {
 // gets the root path of the local registry
 func RegistryPath() string {
 	return filepath.Join(HomeDir(), fmt.Sprintf(".%s", CliName))
+}
+
+// temporary path for file operations
+func TmpPath() string {
+	return filepath.Join(RegistryPath(), "tmp")
+}
+
+func TmpExists() {
+	tmp := TmpPath()
+	// ensure tmp folder exists for temp file operations
+	_, err := os.Stat(tmp)
+	if os.IsNotExist(err) {
+		_ = os.MkdirAll(tmp, os.ModePerm)
+	}
 }
