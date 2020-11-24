@@ -3,6 +3,7 @@ package registry
 import (
 	"encoding/base64"
 	"encoding/json"
+	"github.com/gatblau/onix/artie/core"
 )
 
 type Repository struct {
@@ -37,6 +38,16 @@ func (r *Repository) UpdateArtefact(a *Artefact) bool {
 	return false
 }
 
+// determines if the repository contains an artefact with the specified tag
+func (r *Repository) GetTag(tag string) (*Artefact, bool) {
+	for _, artefact := range r.Artefacts {
+		if artefact.HasTag(tag) {
+			return artefact, true
+		}
+	}
+	return nil, false
+}
+
 type Artefact struct {
 	// a unique identifier for the artefact calculated as the checksum of the complete seal
 	Id string `json:"id"`
@@ -52,6 +63,7 @@ type Artefact struct {
 	Created string `json:"created"`
 }
 
+// determines if the artefact has the specified tag
 func (a Artefact) HasTag(tag string) bool {
 	for _, t := range a.Tags {
 		if t == tag {
@@ -59,6 +71,15 @@ func (a Artefact) HasTag(tag string) bool {
 		}
 	}
 	return false
+}
+
+// removes a specified tag
+// returns true if the tag was found and removed, otherwise false
+func (a Artefact) RemoveTag(tag string) bool {
+	before := len(a.Tags)
+	a.Tags = core.RemoveElement(a.Tags, tag)
+	after := len(a.Tags)
+	return before < after
 }
 
 func (a Artefact) ToJson() (string, error) {

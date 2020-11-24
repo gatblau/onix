@@ -21,7 +21,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"github.com/gatblau/onix/artie/core"
 	_ "github.com/gatblau/onix/artie/docs" // documentation needed for swagger
@@ -30,11 +29,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/swaggo/http-swagger" // http-swagger middleware
 	"gopkg.in/yaml.v2"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 )
 
@@ -70,7 +72,7 @@ func (s *Server) Serve() {
 
 	// swagger configuration
 	if s.conf.SwaggerEnabled() {
-		fmt.Printf("? Open API available at /api\n")
+		fmt.Printf("? Download API available at /api\n")
 		router.PathPrefix("/api").Handler(httpSwagger.WrapHandler)
 	}
 
@@ -89,6 +91,9 @@ func (s *Server) Serve() {
 
 	// get repository information
 	router.HandleFunc("/repository/{repository-group}/{repository-name}", s.repositoryInfoHandler).Methods("GET")
+
+	// files download
+	router.HandleFunc("/file/{repository-group}/{repository-name}/{filename}", s.fileDownloadHandler).Methods("GET")
 
 	fmt.Printf("? using %s backend @ %s\n", s.conf.Backend(), s.conf.BackendDomain())
 
@@ -109,6 +114,51 @@ func (s *Server) liveHandler(w http.ResponseWriter, _ *http.Request) {
 	if err != nil {
 		fmt.Printf("!!! I cannot write response: %v", err)
 	}
+}
+
+// @Summary Download a file from the registry
+// @Description
+// @Tags Files
+// @Produce octet-stream
+// @Router /file/{repository-group}/{repository-name}/{filename} [get]
+// @Param repository-group path string true "the artefact repository group name"
+// @Param repository-name path string true "the artefact repository name"
+// @Param filename path string true "the filename to download"
+// @Success 200 {file} artefact has been downloaded successfully
+// @Failure 500 {string} internal server error
+func (s *Server) fileDownloadHandler(w http.ResponseWriter, r *http.Request) {
+	// get request variables
+	vars := mux.Vars(r)
+	group := vars["repository-group"]
+	name := vars["repository-name"]
+	filename := vars["filename"]
+
+	// get the backend to use
+	back := registry.GetBackend()
+
+	file, _ := back.Download(group, name, filename, s.conf.HttpUser(), s.conf.HttpPwd())
+	defer file.Close()
+
+	fileHeader := make([]byte, 512)
+	file.Read(fileHeader)
+
+	fileStat, _ := file.Stat()
+
+	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+	w.Header().Set("Content-Type", http.DetectContentType(fileHeader))
+	w.Header().Set("Content-Length", strconv.FormatInt(fileStat.Size(), 10))
+
+	_, err := file.Seek(0, 0)
+	if err != nil {
+		fmt.Printf(err.Error())
+		return
+	}
+	_, err = io.Copy(w, file)
+	if err != nil {
+		fmt.Printf(err.Error())
+		return
+	}
+	return
 }
 
 // @Summary Push an artefact to the configured backend
@@ -238,6 +288,7 @@ func (s *Server) artefactUploadHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary Get information about the artefacts in a repository
 // @Description gets meta data about artefacts in the specified repository
 // @Tags Repositories
+// @Accept text/html, application/json, application/yaml, application/xml, application/xhtml+xml
 // @Produce application/json, application/yaml, application/xml
 // @Success 200 {string} OK
 // @Router /repository/{repository-group}/{repository-name} [get]
@@ -260,6 +311,7 @@ func (s *Server) repositoryInfoHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary Get information about the specified artefact
 // @Description gets meta data about the artefact identified by its id
 // @Tags Artefacts
+// @Accept text/html, application/json, application/yaml, application/xml, application/xhtml+xml
 // @Produce application/json, application/yaml, application/xml
 // @Success 200 {string} OK
 // @Router /artefact/{repository-group}/{repository-name}/id/{artefact-id} [get]
@@ -366,7 +418,12 @@ func (s *Server) writeError(w http.ResponseWriter, err error, errorCode int) {
 // log http requests to stdout
 func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestDump, err := httputil.DumpRequest(r, true)
+		if err != nil {
+			fmt.Println(err)
+		}
 		fmt.Printf("? I received an http request from: %s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+		fmt.Println(string(requestDump))
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 	})
@@ -408,6 +465,8 @@ func (s *Server) write(w http.ResponseWriter, r *http.Request, obj interface{}) 
 	case "*/*":
 		fallthrough
 	case "application/json":
+		fallthrough
+	default:
 		{
 			w.Header().Set("Content-Type", "application/json")
 			bs, err = json.Marshal(obj)
@@ -422,8 +481,6 @@ func (s *Server) write(w http.ResponseWriter, r *http.Request, obj interface{}) 
 			w.Header().Set("Content-Type", "application/xml")
 			bs, err = xml.Marshal(obj)
 		}
-	default:
-		err = errors.New(fmt.Sprintf("!!! I do not support the accept content type '%s'", accept))
 	}
 	if err != nil {
 		s.writeError(w, err, 500)

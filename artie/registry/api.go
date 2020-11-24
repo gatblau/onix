@@ -8,6 +8,7 @@
 package registry
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
@@ -17,21 +18,26 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
 
-// Artie's HTTP API
-type GenericApi struct {
+// Artie's HTTP Registry API
+type Api struct {
 	https  bool
 	domain string
 	client *http.Client
+	tmp    string
 }
 
-func NewGenericAPI(domain string, useTls bool) *GenericApi {
-	return &GenericApi{
+func NewGenericAPI(domain string, useTls bool) *Api {
+	core.TmpExists()
+	return &Api{
 		https:  useTls,
 		domain: domain,
+		tmp:    core.TmpPath(),
 		client: &http.Client{
 			Timeout: time.Second * 10,
 			Transport: &http.Transport{
@@ -43,7 +49,7 @@ func NewGenericAPI(domain string, useTls bool) *GenericApi {
 	}
 }
 
-func (r *GenericApi) UploadArtefact(name *core.ArtieName, artefactRef string, zipfile multipart.File, jsonFile multipart.File, metaInfo *Artefact, user string, pwd string) error {
+func (r *Api) UploadArtefact(name *core.ArtieName, artefactRef string, zipfile multipart.File, jsonFile multipart.File, metaInfo *Artefact, user string, pwd string) error {
 	// ensure files are properly closed
 	defer zipfile.Close()
 	defer jsonFile.Close()
@@ -87,7 +93,7 @@ func (r *GenericApi) UploadArtefact(name *core.ArtieName, artefactRef string, zi
 	return nil
 }
 
-func (r *GenericApi) UpdateArtefactInfo(name *core.ArtieName, artefact *Artefact, user string, pwd string) error {
+func (r *Api) UpdateArtefactInfo(name *core.ArtieName, artefact *Artefact, user string, pwd string) error {
 	b, err := json.Marshal(artefact)
 	if err != nil {
 		return err
@@ -111,7 +117,7 @@ func (r *GenericApi) UpdateArtefactInfo(name *core.ArtieName, artefact *Artefact
 	return nil
 }
 
-func (r *GenericApi) GetRepositoryInfo(group, name, user, pwd string) (*Repository, error) {
+func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, error) {
 	req, err := http.NewRequest("GET", r.repoURI(group, name), nil)
 	if err != nil {
 		return nil, err
@@ -126,16 +132,16 @@ func (r *GenericApi) GetRepositoryInfo(group, name, user, pwd string) (*Reposito
 		return nil, err
 	}
 	defer resp.Body.Close()
-	bytes, err := ioutil.ReadAll(resp.Body)
+	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 	repo := new(Repository)
-	err = json.Unmarshal(bytes, repo)
+	err = json.Unmarshal(b, repo)
 	return repo, err
 }
 
-func (r *GenericApi) GetArtefactInfo(group, name, id, user, pwd string) (*Artefact, error) {
+func (r *Api) GetArtefactInfo(group, name, id, user, pwd string) (*Artefact, error) {
 	req, err := http.NewRequest("GET", r.artefactIdURI(group, name, id), nil)
 	if err != nil {
 		return nil, err
@@ -150,24 +156,55 @@ func (r *GenericApi) GetArtefactInfo(group, name, id, user, pwd string) (*Artefa
 		return nil, err
 	}
 	defer resp.Body.Close()
-	bytes, err := ioutil.ReadAll(resp.Body)
+	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 	// if the body contains a nil response
-	if string(bytes) == "null" {
+	if string(b) == "null" {
 		return nil, nil
 	}
 	artefact := new(Artefact)
-	err = json.Unmarshal(bytes, artefact)
+	err = json.Unmarshal(b, artefact)
 	return artefact, err
 }
 
-func (r *GenericApi) DownloadArtefact() {
-	panic("implement me")
+func (r *Api) Download(group, name, filename, user, pwd string) (string, error) {
+	req, err := http.NewRequest("GET", r.fileURI(group, name, filename), nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("accept", "application/json")
+	if len(user) > 0 && len(pwd) > 0 {
+		req.Header.Add("authorization", basicToken(user, pwd))
+	}
+	// Submit the request
+	res, err := r.client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
+	// write response to a temp file
+	var b bytes.Buffer
+	out := bufio.NewWriter(&b)
+	_, err = io.Copy(out, res.Body)
+	if err != nil {
+		return "", err
+	}
+	err = out.Flush()
+	if err != nil {
+		return "", err
+	}
+	file, err := os.Create(filepath.Join(r.tmp, filename))
+	if err != nil {
+		return "", err
+	}
+	_, err = file.Write(b.Bytes())
+	file.Close()
+	return file.Name(), err
 }
 
-func (r *GenericApi) repoURI(group, name string) string {
+func (r *Api) repoURI(group, name string) string {
 	scheme := "http"
 	if r.https {
 		scheme = fmt.Sprintf("%ss", scheme)
@@ -176,25 +213,33 @@ func (r *GenericApi) repoURI(group, name string) string {
 	return fmt.Sprintf("%s://%s/repository/%s/%s", scheme, r.domain, group, name)
 }
 
-func (r *GenericApi) artefactURI(group, name string) string {
+func (r *Api) artefactURI(group, name string) string {
 	scheme := "http"
 	if r.https {
 		scheme = fmt.Sprintf("%ss", scheme)
 	}
-	// {scheme}://{domain}/registry/{repository-group}/{repository-name}/{tag}
+	// {scheme}://{domain}/artefact/{repository-group}/{repository-name}/{tag}
 	return fmt.Sprintf("%s://%s/artefact/%s/%s", scheme, r.domain, group, name)
 }
 
-func (r *GenericApi) artefactTagURI(group, name, tag string) string {
+func (r *Api) artefactTagURI(group, name, tag string) string {
 	return fmt.Sprintf("%s/tag/%s", r.artefactURI(group, name), tag)
 }
 
-func (r *GenericApi) artefactIdURI(group, name, id string) string {
+func (r *Api) artefactIdURI(group, name, id string) string {
 	return fmt.Sprintf("%s/id/%s", r.artefactURI(group, name), id)
 }
 
+func (r *Api) fileURI(group, name, filename string) string {
+	scheme := "http"
+	if r.https {
+		scheme = fmt.Sprintf("%ss", scheme)
+	}
+	return fmt.Sprintf("%s://%s/file/%s/%s/%s", scheme, r.domain, group, name, filename)
+}
+
 // add a field to a multipart form
-func (r *GenericApi) addField(writer *multipart.Writer, fieldName, fieldValue string) error {
+func (r *Api) addField(writer *multipart.Writer, fieldName, fieldValue string) error {
 	// create a writer with the mime header for the field
 	formWriter, err := writer.CreateFormField(fieldName)
 	if err != nil {
@@ -206,7 +251,7 @@ func (r *GenericApi) addField(writer *multipart.Writer, fieldName, fieldValue st
 }
 
 // add a file to a multipart form
-func (r *GenericApi) addFile(writer *multipart.Writer, fieldName, fileName string, file multipart.File) error {
+func (r *Api) addFile(writer *multipart.Writer, fieldName, fileName string, file multipart.File) error {
 	// create a writer with the mime header for the field
 	formWriter, err := writer.CreateFormFile(fieldName, fileName)
 	if err != nil {

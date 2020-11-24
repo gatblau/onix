@@ -8,6 +8,7 @@
 package registry
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
@@ -17,6 +18,8 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -25,11 +28,14 @@ import (
 type Nexus3Backend struct {
 	domain string
 	client *http.Client
+	tmp    string
 }
 
 func NewNexus3Backend(domain string) Backend {
+	core.TmpExists()
 	return &Nexus3Backend{
 		domain: domain,
+		tmp:    core.TmpPath(),
 		client: &http.Client{
 			Timeout: time.Second * 10,
 			Transport: &http.Transport{
@@ -39,6 +45,54 @@ func NewNexus3Backend(domain string) Backend {
 			},
 		},
 	}
+}
+
+func (r *Nexus3Backend) Download(repoGroup, repoName, fileName, user, pwd string) (*os.File, error) {
+	// get the file download URI
+	downloadURI := r.fileDownloadURI(repoGroup, repoName, fileName)
+	req, err := http.NewRequest("GET", downloadURI, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(user) > 0 && len(pwd) > 0 {
+		req.Header.Add("authorization", basicToken(user, pwd))
+	}
+	// Submit the request
+	res, err := r.client.Do(req)
+	// must close the body
+	defer res.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+	var b bytes.Buffer
+	out := bufio.NewWriter(&b)
+	// Write the body to file
+	_, err = io.Copy(out, res.Body)
+	if err != nil {
+		return nil, err
+	}
+	err = out.Flush()
+	if err != nil {
+		return nil, err
+	}
+	file, err := os.Create(filepath.Join(r.tmp, fileName))
+	if err != nil {
+		return nil, err
+	}
+	_, err = file.Write(b.Bytes())
+	if err != nil {
+		return nil, err
+	}
+	file.Close()
+	f, err := os.Open(file.Name())
+	if err != nil {
+		return nil, err
+	}
+	err = os.Remove(file.Name())
+	if err != nil {
+		return nil, err
+	}
+	return f, err
 }
 
 func (r *Nexus3Backend) UpdateArtefactInfo(group, name string, artefact *Artefact, user string, pwd string) error {
@@ -202,6 +256,10 @@ func (r *Nexus3Backend) addFile(writer *multipart.Writer, fieldName, fileName st
 
 func (r *Nexus3Backend) componentsURI() string {
 	return fmt.Sprintf("%s/service/rest/v1/components?repository=artie", r.domain)
+}
+
+func (r *Nexus3Backend) fileDownloadURI(group, name, filename string) string {
+	return fmt.Sprintf("%s/repository/artie/%s/%s/%s", r.domain, group, name, filename)
 }
 
 func (r *Nexus3Backend) downloadURI(repoGroup, repoName, filename string) string {

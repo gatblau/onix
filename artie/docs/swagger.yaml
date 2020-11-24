@@ -150,8 +150,46 @@ paths:
       summary: Push an artefact to the configured backend
       tags:
       - Artefacts
+  /file/{repository-group}/{repository-name}/{filename}:
+    get:
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the filename to download
+        in: path
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Download a file from the registry
+      tags:
+      - Files
   /repository/{repository-group}/{repository-name}:
     get:
+      consumes:
+      - text/html
+      - ' application/json'
+      - ' application/yaml'
+      - ' application/xml'
+      - ' application/xhtml+xml'
       description: gets meta data about artefacts in the specified repository
       parameters:
       - description: the artefact repository group name
