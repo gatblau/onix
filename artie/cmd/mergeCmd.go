@@ -1,0 +1,124 @@
+/*
+  Onix Config Manager - Artie
+  Copyright (c) 2018-2020 by www.gatblau.org
+  Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
+  Contributors to this project, hereby assign copyright in this code to the project,
+  to be licensed under the same terms as the rest of the code.
+*/
+package cmd
+
+import (
+	"github.com/spf13/cobra"
+	"io"
+	"io/ioutil"
+	"log"
+	"os"
+	"regexp"
+	"strings"
+)
+
+// merges environment variables into one or more files
+type MergeCmd struct {
+	cmd *cobra.Command
+}
+
+func NewMergeCmd() *MergeCmd {
+	c := &MergeCmd{
+		cmd: &cobra.Command{
+			Use:   "merge [files]",
+			Short: "merges environment variables in the specified files",
+			Long:  ``,
+		},
+	}
+	c.cmd.Run = c.Run
+	return c
+}
+
+func (c *MergeCmd) Run(cmd *cobra.Command, args []string) {
+	files := args
+	regex, err := regexp.Compile("\\${(?P<NAME>.*)}")
+	if err != nil {
+		log.Printf("cannot compile regex: %s\n", err)
+		return
+	}
+	if len(files) == 0 {
+		log.Printf("you must provide files to merge!\n")
+		return
+	}
+
+	// loop through the specified configuration files
+	for _, file := range files {
+		merged := false
+		// read the file content
+		bytes, err := ioutil.ReadFile(file)
+		if err != nil {
+			log.Printf("cannot read file %s: %s\n", file, err)
+			return
+		}
+		content := string(bytes)
+		// find all environment variable placeholders in the content
+		vars := regex.FindAll(bytes, 1000)
+		// loop though the found vars to merge
+		for _, v := range vars {
+			defValue := ""
+			// removes placeholder marks: ${...}
+			vname := strings.TrimSuffix(strings.TrimPrefix(string(v), "${"), "}")
+			// is a default value defined?
+			cut := strings.Index(vname, ":")
+			// split default value and var name
+			if cut > 0 {
+				// get the default value
+				defValue = vname[cut+1:]
+				// get the name of the var without the default value
+				vname = vname[0:cut]
+			}
+			// check the name of the env variable is not "PWD" as it can return the current directory in some OSs
+			if vname == "PWD" {
+				log.Printf("environment variable cannot be PWD, choose a different name\n")
+				return
+			}
+			// fetch the env variable value
+			ev := os.Getenv(vname)
+			// if the variable is not defined in the environment
+			if len(ev) == 0 {
+				// if no default value has been defined
+				if len(defValue) == 0 {
+					log.Printf("environment variable '%s' and/or default value not defined, skipping merging\n", vname)
+				} else {
+					// merge with the default value
+					content = strings.Replace(content, string(v), defValue, 1000)
+					merged = true
+					log.Printf("merged placeholder %s with default value '%s'\n", string(v), defValue)
+				}
+			} else {
+				// merge with the env variable value
+				content = strings.Replace(content, string(v), ev, 1000)
+				merged = true
+				log.Printf("merged placeholder %s with value '%s'\n", string(v), ev)
+			}
+		}
+		// if variables have been merged at all
+		if merged {
+			// override file with merged values
+			err = WriteToFile(file, content)
+			if err != nil {
+				log.Printf("cannot update config file: %s\n", err)
+			}
+		}
+	}
+}
+
+// checking for errors and syncing at the end.
+func WriteToFile(filename string, data string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = io.WriteString(file, data)
+	if err != nil {
+		return err
+	}
+	log.Printf("'%v' bytes written to file '%s'\n", len(data), filename)
+	return file.Sync()
+}
