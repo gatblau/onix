@@ -136,6 +136,13 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, err
 	if err != nil {
 		return nil, err
 	}
+	// if not response then return an empty repository
+	if len(b) == 0 {
+		return &Repository{
+			Repository: fmt.Sprintf("%s/%s", group, name),
+			Artefacts:  make([]*Artefact, 0),
+		}, nil
+	}
 	repo := new(Repository)
 	err = json.Unmarshal(b, repo)
 	return repo, err
@@ -156,13 +163,13 @@ func (r *Api) GetArtefactInfo(group, name, id, user, pwd string) (*Artefact, err
 		return nil, err
 	}
 	defer resp.Body.Close()
+	// if the artefact does not exist
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
-	}
-	// if the body contains a nil response
-	if string(b) == "null" {
-		return nil, nil
 	}
 	artefact := new(Artefact)
 	err = json.Unmarshal(b, artefact)

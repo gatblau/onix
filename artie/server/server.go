@@ -33,7 +33,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/http/httputil"
 	"os"
 	"os/signal"
 	"strconv"
@@ -326,7 +325,12 @@ func (s *Server) artefactInfoGetHandler(w http.ResponseWriter, r *http.Request) 
 	// retrieve repository metadata from the backend
 	artie, err := registry.GetBackend().GetArtefactInfo(repoGroup, repoName, id, s.conf.HttpUser(), s.conf.HttpPwd())
 	if err != nil {
-		s.writeError(w, err, 500)
+		s.writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	// if the artefact is not found send a not found error
+	if artie == nil {
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	s.write(w, r, artie)
@@ -418,12 +422,13 @@ func (s *Server) writeError(w http.ResponseWriter, err error, errorCode int) {
 // log http requests to stdout
 func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requestDump, err := httputil.DumpRequest(r, true)
-		if err != nil {
-			fmt.Println(err)
-		}
 		fmt.Printf("? I received an http request from: %s %s %s\n", r.RemoteAddr, r.Method, r.URL)
-		fmt.Println(string(requestDump))
+		// uncomment below to dump request payload to stdout
+		// requestDump, err := httputil.DumpRequest(r, true)
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
+		// fmt.Println(string(requestDump))
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 	})

@@ -25,7 +25,6 @@ func NewVerifier(pemKey []byte) (*Verifier, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return &Verifier{key}, nil
 }
 
@@ -34,7 +33,6 @@ func (v *Verifier) Verify(data, sig []byte) error {
 	h := hash.New()
 	h.Write(data)
 	hashed := h.Sum(nil)
-
 	return rsa.VerifyPKCS1v15(v.Key, hash, hashed, sig)
 }
 

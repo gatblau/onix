@@ -15,41 +15,49 @@ import (
 )
 
 // list local artefacts
-type PullCmd struct {
+type OpenCmd struct {
 	cmd         *cobra.Command
 	credentials string
 	tls         *bool
+	verify      *bool
 	path        string
+	pubPath     string
 }
 
-func NewPullCmd() *PullCmd {
-	c := &PullCmd{
+func NewOpenCmd() *OpenCmd {
+	c := &OpenCmd{
 		cmd: &cobra.Command{
-			Use:   "pull [OPTIONS] NAME[:TAG]",
-			Short: "downloads an artefact from the artefact registry",
+			Use:   "open NAME[:TAG] [path]",
+			Short: "opens an artefact in the specified path",
 			Long:  ``,
 		},
 	}
 	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
 	c.tls = c.cmd.Flags().BoolP("tls", "t", true, "-t=false or --tls=false to disable https for a backend; i.e. use plain http")
+	c.verify = c.cmd.Flags().BoolP("verify", "v", true, "-v=false or --verify=false to signature verification")
+	c.cmd.Flags().StringVarP(&c.pubPath, "pub", "p", "", "--pub=/path/to/public/key or -p=/path/to/public/key")
 	return c
 }
 
-func (c *PullCmd) Run(cmd *cobra.Command, args []string) {
+func (c *OpenCmd) Run(cmd *cobra.Command, args []string) {
 	if !*c.tls {
 		log.Printf("info: Transport Level Security is disabled\n")
 	}
 	// check an artefact name has been provided
-	if len(args) == 0 {
-		log.Fatal("name of the artefact to pull is required")
+	if len(args) < 1 {
+		log.Fatal("name of the artefact to open is required")
 	}
 	// get the name of the artefact to push
 	nameTag := args[0]
+	path := ""
+	if len(args) == 2 {
+		path = args[1]
+	}
 	// validate the name
 	artie := core.ParseName(nameTag)
 	// create a local registry
 	local := registry.NewLocalRegistry()
-	// attempt pull from remote registry
-	local.Pull(artie, c.credentials, *c.tls)
+	// attempt to open from local registry
+	local.Open(artie, c.credentials, *c.tls, path, c.pubPath, *c.verify)
 }
