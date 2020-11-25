@@ -65,7 +65,6 @@ functions:
   - name: build-registry-image
     description: creates an artie registry service image
     run:
-      - $(build-linux)
       - docker pull registry.access.redhat.com/ubi8/ubi-minimal
       - docker build -f ./images/registry-svc/Dockerfile --build-arg APP_NAME=artie-linux-${APP_VERSION}-${ART_REF} -t ${REPO_NAME}/${ARTIE_REGISTRY}-snapshot:${APP_VERSION}-${ART_REF} .
       - docker tag ${REPO_NAME}/${ARTIE_REGISTRY}-snapshot:${APP_VERSION}-${ART_REF} ${REPO_NAME}/${ARTIE_REGISTRY}-snapshot:latest
@@ -79,7 +78,6 @@ functions:
   - name: build-img-builder-image
     description: creates an artie image builder image
     run:
-      - $(build-linux)
       - docker pull docker.io/centos:7
       - docker build -f ./images/img-builder/Dockerfile --build-arg APP_NAME=artie-linux-${APP_VERSION}-${ART_REF} -t ${REPO_NAME}/${ARTIE_IMG_BUILDER}-snapshot:${APP_VERSION}-${ART_REF} .
       - docker tag ${REPO_NAME}/${ARTIE_IMG_BUILDER}-snapshot:${APP_VERSION}-${ART_REF} ${REPO_NAME}/${ARTIE_IMG_BUILDER}-snapshot:latest
@@ -93,7 +91,6 @@ functions:
   - name: build-java-builder-image
     description: creates an artie java builder image
     run:
-      - $(build-linux)
       - docker pull docker.io/centos:7
       - docker build -f ./images/java-builder/Dockerfile --build-arg APP_NAME=artie-linux-${APP_VERSION}-${ART_REF} -t ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:${APP_VERSION}-${ART_REF} .
       - docker tag ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:${APP_VERSION}-${ART_REF} ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:latest
@@ -104,6 +101,16 @@ functions:
       - docker push ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:$((cat ./version))
       - docker push ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:latest
 
+  - name: release-snapshot
+    description: build and push all container images
+    run:
+      - $(build-linux)
+      - $(build-registry-image)
+      - $(push-registry-image)
+      - $(build-img-builder-image)
+      - $(push-img-builder-image)
+      - $(build-java-builder-image)
+      - $(push-java-builder-image)
   - name: swagen
     description: generates/refreshes the OpenAPI specifications for Artie's HTTP API
     run:
