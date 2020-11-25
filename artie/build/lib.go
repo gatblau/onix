@@ -285,7 +285,9 @@ func execute(cmd string, dir string, env *envar) (err error) {
 		log.Printf("failed creating command stdoutpipe: %s", err)
 		return err
 	}
-	defer func() { _ = stdout.Close() }()
+	defer func() {
+		_ = stdout.Close()
+	}()
 	stdoutReader := bufio.NewReader(stdout)
 
 	stderr, err := command.StderrPipe()
@@ -293,7 +295,9 @@ func execute(cmd string, dir string, env *envar) (err error) {
 		log.Printf("failed creating command stderrpipe: %s", err)
 		return err
 	}
-	defer func() { _ = stderr.Close() }()
+	defer func() {
+		_ = stderr.Close()
+	}()
 	stderrReader := bufio.NewReader(stderr)
 
 	if err := command.Start(); err != nil {
@@ -403,15 +407,4 @@ func hasShell(value string) (bool, string, string) {
 		return true, matches[0], matches[0][3 : len(matches[0])-2]
 	}
 	return false, "", ""
-}
-
-func hasSubString(value string, regex *regexp.Regexp) (bool, string) {
-	matches := regex.FindAllString(value, 1)
-	// if we have matches
-	if matches != nil {
-		// get the name of the function i.e. the name part in "$(name)"
-		value := matches[0][2 : len(matches[0])-1]
-		return true, value
-	}
-	return false, ""
 }

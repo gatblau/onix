@@ -26,7 +26,6 @@ func NewSigner(pemKey []byte) (*Signer, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return &Signer{key}, nil
 }
 
@@ -35,7 +34,6 @@ func (s *Signer) Sign(data []byte) ([]byte, error) {
 	h := hash.New()
 	h.Write(data)
 	hashed := h.Sum(nil)
-
 	return rsa.SignPKCS1v15(rand.Reader, s.Key, hash, hashed)
 }
 

@@ -21,26 +21,22 @@ func parsePrivateKey(data []byte) (*rsa.PrivateKey, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return x509.ParsePKCS1PrivateKey(pemData)
 }
 
 func parsePublicKey(data []byte) (*rsa.PublicKey, error) {
-	pemData, err := pemParse(data, "PUBLIC KEY")
+	pemData, err := pemParse(data, "RSA PUBLIC KEY")
 	if err != nil {
 		return nil, err
 	}
-
 	keyInterface, err := x509.ParsePKIXPublicKey(pemData)
 	if err != nil {
 		return nil, err
 	}
-
 	pubKey, ok := keyInterface.(*rsa.PublicKey)
 	if !ok {
 		return nil, fmt.Errorf("could not cast parsed key to *rsa.PublickKey")
 	}
-
 	return pubKey, nil
 }
 

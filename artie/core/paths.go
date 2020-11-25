@@ -26,6 +26,14 @@ func HomeDir() string {
 	return usr.HomeDir
 }
 
+func WorkDir() string {
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return wd
+}
+
 // gets the root path of the local registry
 func RegistryPath() string {
 	return filepath.Join(HomeDir(), fmt.Sprintf(".%s", CliName))

@@ -37,15 +37,30 @@ profiles:
       - go build -o artie -v
     target: images/bin/output/artie-darwin-${APP_VERSION}-${ART_REF}
 functions:
+  - name: build
+    description: build artie binary in all configurations
+    run:
+      - rm -rf ./images/bin/output
+      - $(build-linux)
+      - $(build-windows)
+
   - name: build-linux
     description: builds the artie binary file for the linux platform
     env:
       GOOS: linux
     run:
-      - rm -rf ./images/bin/output
       - sh ./images/bin/version.sh ${APP_VERSION}-${ART_REF}
       - go fmt
       - go build -o images/bin/output/artie-linux-${APP_VERSION}-${ART_REF} -v
+
+  - name: build-windows
+    description: builds the artie binary file for the windows platform
+    env:
+      GOOS: windows
+    run:
+      - sh ./images/bin/version.sh ${APP_VERSION}-${ART_REF}
+      - go fmt
+      - go build -o images/bin/output/artie-windows-${APP_VERSION}-${ART_REF} -v
 
   - name: build-registry-image
     description: creates an artie registry service image

@@ -206,18 +206,20 @@ func (r *Nexus3Backend) GetRepositoryInfo(group, name, user, pwd string) (*Repos
 		return nil, err
 	}
 	// if the repository file does not exist
-	if !components.containsFile("repository.json") {
+	if !components.containsFile(group, name, "repository.json") {
 		// returns an empty repository
-		return new(Repository), nil
+		return &Repository{
+			Repository: fmt.Sprintf("%s/%s", group, name),
+			Artefacts:  make([]*Artefact, 0),
+		}, nil
 	}
 	// otherwise fetches the content and returns it
-	bytes, err := r.getFile(group, name, "repository.json", user, pwd)
+	b, err := r.getFile(group, name, "repository.json", user, pwd)
 	if err != nil {
 		return nil, err
 	}
 	repo := new(Repository)
-	repo.Repository = fmt.Sprintf("%s/%s", group, name)
-	err = json.Unmarshal(bytes, repo)
+	err = json.Unmarshal(b, repo)
 	return repo, err
 }
 
@@ -339,9 +341,9 @@ type components struct {
 }
 
 // determines if the file is in the nexus Repository
-func (c *components) containsFile(filename string) bool {
+func (c *components) containsFile(group, name, filename string) bool {
 	for _, item := range c.Items {
-		if strings.Contains(item.Name, filename) {
+		if item.Name == fmt.Sprintf("%s/%s/%s", group, name, filename) {
 			return true
 		}
 	}

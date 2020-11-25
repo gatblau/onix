@@ -19,6 +19,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -178,4 +179,8 @@ func UserPwd(creds string) (user, pwd string) {
 		log.Fatal(errors.New("credentials in incorrect format, they should be USER:PWD"))
 	}
 	return parts[0], parts[1]
+}
+
+func FilenameWithoutExtension(fn string) string {
+	return strings.TrimSuffix(fn, path.Ext(fn))
 }

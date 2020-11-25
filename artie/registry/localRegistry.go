@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gatblau/onix/artie/core"
+	"github.com/gatblau/onix/artie/sign"
 	"io/ioutil"
 	"log"
 	"math"
@@ -270,7 +271,7 @@ func (r *LocalRegistry) Tag(sourceName *core.ArtieName, targetName *core.ArtieNa
 			r.Repositories = append(r.Repositories, &Repository{
 				Repository: targetName.FullyQualifiedName(),
 				Artefacts: []*Artefact{
-					&Artefact{
+					{
 						Id:      sourceArtie.Id,
 						Type:    sourceArtie.Type,
 						FileRef: sourceArtie.FileRef,
@@ -446,7 +447,7 @@ func (r *LocalRegistry) Push(name *core.ArtieName, credentials string, useTLS bo
 	fmt.Printf("pushed %s\n", name.String())
 }
 
-func (r *LocalRegistry) Pull(name *core.ArtieName, credentials string, useTLS bool) {
+func (r *LocalRegistry) Pull(name *core.ArtieName, credentials string, useTLS bool) *Artefact {
 	// get a reference to the remote registry
 	api := r.api(name.Domain, useTLS)
 	// get registry credentials
@@ -499,6 +500,60 @@ func (r *LocalRegistry) Pull(name *core.ArtieName, credentials string, useTLS bo
 			fmt.Printf("artefact already exist, tag '%s' already exist, nothing to do\n", name.Tag)
 		}
 	}
+	return r.FindArtefact(name)
+}
+
+func (r *LocalRegistry) Open(name *core.ArtieName, credentials string, useTLS bool, targetPath string, certPath string, verify bool) {
+	var (
+		pubKeyPath = certPath
+		err        error
+	)
+	if len(targetPath) == 0 {
+		targetPath = core.WorkDir()
+	}
+	// fetch from local registry
+	artie := r.FindArtefact(name)
+	// if not found locally
+	if artie == nil {
+		// pull it
+		artie = r.Pull(name, credentials, useTLS)
+	}
+	// get the path to the public key
+	if len(pubKeyPath) > 0 {
+		if !path.IsAbs(pubKeyPath) {
+			pubKeyPath, err = filepath.Abs(pubKeyPath)
+			core.CheckErr(err, "cannot retrieve absolute path for public key")
+		}
+	} else {
+		pubKeyPath = path.Join(r.Path(), "keys/public.pem")
+	}
+	if verify {
+		// retrieve the verification key
+		pubKeyBytes, err := ioutil.ReadFile(pubKeyPath)
+		core.CheckErr(err, "cannot read public key")
+		// creates a verifier
+		verifier, err := sign.NewVerifier(pubKeyBytes)
+		core.CheckErr(err, "cannot create signature verifier")
+		// get the artefact seal
+		seal, err := r.getSeal(artie)
+		core.CheckErr(err, "cannot read artefact seal")
+		// get the location of the artefact
+		zipFilename := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef))
+		// get a slice to have the unencrypted signature
+		sum := core.SealChecksum(zipFilename, seal.Manifest)
+		// verify the signature
+		err = verifier.VerifyBase64(sum, seal.Signature)
+		core.CheckErr(err, "invalid digital signature")
+		// take the hash of the zip file and seal info combined
+		actualSum := core.SealChecksum(zipFilename, seal.Manifest)
+		// compare the actual checksum vs the one in the signature
+		if string(actualSum) != string(sum) {
+			core.RaiseErr("checksum verification failed, artefact has been tampered")
+		}
+	}
+	// now we are ready to open it
+	err = unzip(path.Join(r.Path(), fmt.Sprintf("%s.zip", artie.FileRef)), targetPath)
+	core.CheckErr(err, "cannot unzip package %s", fmt.Sprintf("%s.zip", artie.FileRef))
 }
 
 func (r *LocalRegistry) Remove(names []*core.ArtieName) {
@@ -639,4 +694,19 @@ func (r *LocalRegistry) artCoords(name *core.ArtieName, art *Artefact) (int, int
 		}
 	}
 	return -1, -1
+}
+
+func (r *LocalRegistry) getSeal(name *Artefact) (*core.Seal, error) {
+	sealFilename := path.Join(r.Path(), fmt.Sprintf("%s.json", name.FileRef))
+	sealFile, err := os.Open(sealFilename)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open seal file %s: %s", sealFilename, err)
+	}
+	sealBytes, err := ioutil.ReadAll(sealFile)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read seal file %s: %s", sealFilename, err)
+	}
+	seal := new(core.Seal)
+	err = json.Unmarshal(sealBytes, seal)
+	return seal, err
 }
