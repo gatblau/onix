@@ -66,8 +66,8 @@ functions:
     description: creates an artie registry service image
     run:
       - docker pull registry.access.redhat.com/ubi8/ubi-minimal
-      - docker build -f ./images/registry-svc/Dockerfile --build-arg APP_NAME=artie-linux-${APP_VERSION}-${ART_REF} -t ${REPO_NAME}/${ARTIE_REGISTRY}-snapshot:${APP_VERSION}-${ART_REF} .
-      - docker tag ${REPO_NAME}/${ARTIE_REGISTRY}-snapshot:${APP_VERSION}-${ART_REF} ${REPO_NAME}/${ARTIE_REGISTRY}-snapshot:latest
+      - docker build -f ./images/registry-svc/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_REGISTRY}-snapshot:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ARTIE_REGISTRY}-snapshot:$((cat ./version)) ${REPO_NAME}/${ARTIE_REGISTRY}-snapshot:latest
 
   - name: push-registry-image
     description: creates a container image for the snapshot repository
@@ -79,8 +79,8 @@ functions:
     description: creates an artie image builder image
     run:
       - docker pull docker.io/centos:7
-      - docker build -f ./images/img-builder/Dockerfile --build-arg APP_NAME=artie-linux-${APP_VERSION}-${ART_REF} -t ${REPO_NAME}/${ARTIE_IMG_BUILDER}-snapshot:${APP_VERSION}-${ART_REF} .
-      - docker tag ${REPO_NAME}/${ARTIE_IMG_BUILDER}-snapshot:${APP_VERSION}-${ART_REF} ${REPO_NAME}/${ARTIE_IMG_BUILDER}-snapshot:latest
+      - docker build -f ./images/img-builder/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_IMG_BUILDER}-snapshot:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ARTIE_IMG_BUILDER}-snapshot:$((cat ./version)) ${REPO_NAME}/${ARTIE_IMG_BUILDER}-snapshot:latest
 
   - name: push-img-builder-image
     description: pushes the image builder to the container registry
@@ -92,8 +92,8 @@ functions:
     description: creates an artie java builder image
     run:
       - docker pull docker.io/centos:7
-      - docker build -f ./images/java-builder/Dockerfile --build-arg APP_NAME=artie-linux-${APP_VERSION}-${ART_REF} -t ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:${APP_VERSION}-${ART_REF} .
-      - docker tag ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:${APP_VERSION}-${ART_REF} ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:latest
+      - docker build -f ./images/java-builder/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:$((cat ./version)) ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:latest
 
   - name: push-java-builder-image
     description: pushes the java builder to the container registry
