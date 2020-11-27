@@ -20,8 +20,8 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
     useradd -M -u $UID -g $GID $UNAME && \
     rm -rf /var/cache/yum && \
     microdnf clean all && \
-    mkdir -p /.artie/locks && chown $UNAME /.artie/locks && \
-    mkdir -p /.artie/tmp && chown $UNAME /.artie/tmp
+    mkdir -p /.artie/locks && chown $UNAME /.artie/locks && chmod ug+xwr /.artie/locks && \
+    mkdir -p /.artie/tmp && chown $UNAME /.artie/tmp && chmod ug+xwr /.artie/tmp
 WORKDIR /app
 COPY ./images/bin/output/$APP_NAME /app/$APP_NAME
 USER $UNAME
