@@ -55,4 +55,6 @@ type Manifest struct {
 	Time string `json:"time"`
 	// the size of the artefact
 	Size string `json:"size"`
+	// true if the target was zipped previous to packaging (e.g. jar files)
+	Zip bool `json:"zip"`
 }
