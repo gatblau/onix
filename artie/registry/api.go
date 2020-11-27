@@ -132,9 +132,20 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, err
 		return nil, err
 	}
 	defer resp.Body.Close()
+	switch resp.StatusCode {
+	case http.StatusNotFound:
+		// if repository is nil then the client is not talking to the proper artefact registry
+		return nil, fmt.Errorf("\"%s\" does not conform to the artefact registry api, are you sure the artefact domain is correct", r.domain)
+	case http.StatusForbidden:
+		return nil, fmt.Errorf("invalid credentials, access to the registry is forbidden")
+	}
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+	// if the result body is not in JSON format is likely that the domain of artefact does not exist
+	if !isJSON(string(b)) {
+		return nil, fmt.Errorf("the response body was in an incorrect format, which suggests \nthe artefact name/tag is pointing to a invalid domain: '%s', \nor the server responsed with a bogus payload", r.domain)
 	}
 	// if not response then return an empty repository
 	if len(b) == 0 {
@@ -163,9 +174,11 @@ func (r *Api) GetArtefactInfo(group, name, id, user, pwd string) (*Artefact, err
 		return nil, err
 	}
 	defer resp.Body.Close()
-	// if the artefact does not exist
-	if resp.StatusCode == http.StatusNotFound {
+	switch resp.StatusCode {
+	case http.StatusNotFound:
 		return nil, nil
+	case http.StatusForbidden:
+		return nil, fmt.Errorf("invalid credentials, access to the registry is forbidden")
 	}
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -191,6 +204,12 @@ func (r *Api) Download(group, name, filename, user, pwd string) (string, error) 
 		return "", err
 	}
 	defer res.Body.Close()
+	switch res.StatusCode {
+	case http.StatusNotFound:
+		return "", fmt.Errorf("file '%s' not found in registry", filename)
+	case http.StatusForbidden:
+		return "", fmt.Errorf("invalid credentials, access to the registry is forbidden")
+	}
 	// write response to a temp file
 	var b bytes.Buffer
 	out := bufio.NewWriter(&b)
