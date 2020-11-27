@@ -40,11 +40,13 @@ func ToJsonBytes(s interface{}) []byte {
 }
 
 func ToJsonFile(obj interface{}) (*os.File, error) {
-	// generate an internal random and transient name based on an Universally Unique Identifier
-	name, err := uuid.GenerateUUID()
+	// create an UUId
+	uuid, err := uuid.GenerateUUID()
 	if err != nil {
 		return nil, err
 	}
+	// generate an internal random and transient name based on the UUId
+	name := path.Join(TmpPath(), fmt.Sprintf("%s.json", uuid))
 	// marshals the object into Json bytes
 	b, err := json.Marshal(obj)
 	if err != nil {
