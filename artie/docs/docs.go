@@ -55,6 +55,13 @@ var doc = `{
         "/artefact/{repository-group}/{repository-name}/id/{artefact-id}": {
             "get": {
                 "description": "gets meta data about the artefact identified by its id",
+                "consumes": [
+                    "text/html",
+                    " application/json",
+                    " application/yaml",
+                    " application/xml",
+                    " application/xhtml+xml"
+                ],
                 "produces": [
                     "application/json",
                     " application/yaml",
@@ -346,8 +353,8 @@ var SwaggerInfo = swaggerInfo{
 	Host:        "",
 	BasePath:    "",
 	Schemes:     []string{},
-	Title:       "Artie HTTP API",
-	Description: "Artie's HTTP API for artefact backends.",
+	Title:       "Artie - Artefact Registry",
+	Description: "Application Artefacts Registry that supports generic packaging, signing and tagging.\nAllows to manage application artefacts in a similar way to linux container images.",
 }
 
 type s struct{}
