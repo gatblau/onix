@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Artie's HTTP API for artefact backends.",
-        "title": "Artie HTTP API",
+        "description": "Application Artefacts Registry that supports generic packaging, signing and tagging.\nAllows to manage application artefacts in a similar way to linux container images.",
+        "title": "Artie - Artefact Registry",
         "contact": {
             "name": "gatblau",
             "url": "http://onix.gatblau.org/",
@@ -38,6 +38,13 @@
         "/artefact/{repository-group}/{repository-name}/id/{artefact-id}": {
             "get": {
                 "description": "gets meta data about the artefact identified by its id",
+                "consumes": [
+                    "text/html",
+                    " application/json",
+                    " application/yaml",
+                    " application/xml",
+                    " application/xhtml+xml"
+                ],
                 "produces": [
                     "application/json",
                     " application/yaml",

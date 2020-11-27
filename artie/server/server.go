@@ -7,9 +7,10 @@
 */
 package server
 
-// @title Artie HTTP API
+// @title Artie - Artefact Registry
 // @version 0.0.4
-// @description Artie's HTTP API for artefact backends.
+// @description Application Artefacts Registry that supports generic packaging, signing and tagging.
+// @description Allows to manage application artefacts in a similar way to linux container images.
 // @contact.name gatblau
 // @contact.url http://onix.gatblau.org/
 // @contact.email onix@gatblau.org

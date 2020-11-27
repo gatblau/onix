@@ -21,11 +21,13 @@ info:
     email: onix@gatblau.org
     name: gatblau
     url: http://onix.gatblau.org/
-  description: Artie's HTTP API for artefact backends.
+  description: |-
+    Application Artefacts Registry that supports generic packaging, signing and tagging.
+    Allows to manage application artefacts in a similar way to linux container images.
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Artie HTTP API
+  title: Artie - Artefact Registry
   version: 0.0.4
 paths:
   /:
@@ -46,6 +48,12 @@ paths:
       - General
   /artefact/{repository-group}/{repository-name}/id/{artefact-id}:
     get:
+      consumes:
+      - text/html
+      - ' application/json'
+      - ' application/yaml'
+      - ' application/xml'
+      - ' application/xhtml+xml'
       description: gets meta data about the artefact identified by its id
       parameters:
       - description: the artefact repository group name
