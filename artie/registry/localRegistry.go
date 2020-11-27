@@ -510,6 +510,11 @@ func (r *LocalRegistry) Open(name *core.ArtieName, credentials string, useTLS bo
 	)
 	if len(targetPath) == 0 {
 		targetPath = core.WorkDir()
+	} else {
+		if !filepath.IsAbs(targetPath) {
+			targetPath, err = filepath.Abs(targetPath)
+			core.CheckErr(err, "cannot convert open path to absolute path")
+		}
 	}
 	// fetch from local registry
 	artie := r.FindArtefact(name)
@@ -527,6 +532,9 @@ func (r *LocalRegistry) Open(name *core.ArtieName, credentials string, useTLS bo
 	} else {
 		pubKeyPath = path.Join(r.Path(), "keys/public.pem")
 	}
+	// get the artefact seal
+	seal, err := r.getSeal(artie)
+	core.CheckErr(err, "cannot read artefact seal")
 	if verify {
 		// retrieve the verification key
 		pubKeyBytes, err := ioutil.ReadFile(pubKeyPath)
@@ -534,9 +542,6 @@ func (r *LocalRegistry) Open(name *core.ArtieName, credentials string, useTLS bo
 		// creates a verifier
 		verifier, err := sign.NewVerifier(pubKeyBytes)
 		core.CheckErr(err, "cannot create signature verifier")
-		// get the artefact seal
-		seal, err := r.getSeal(artie)
-		core.CheckErr(err, "cannot read artefact seal")
 		// get the location of the artefact
 		zipFilename := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef))
 		// get a slice to have the unencrypted signature
@@ -552,8 +557,23 @@ func (r *LocalRegistry) Open(name *core.ArtieName, credentials string, useTLS bo
 		}
 	}
 	// now we are ready to open it
-	err = unzip(path.Join(r.Path(), fmt.Sprintf("%s.zip", artie.FileRef)), targetPath)
-	core.CheckErr(err, "cannot unzip package %s", fmt.Sprintf("%s.zip", artie.FileRef))
+	// if the target was already compressed (e.g. jar file, etc) then it should not unzip it but rename it
+	// to ist original file extension
+	if seal.Manifest.Zip {
+		_, filename := filepath.Split(seal.Manifest.Target)
+		if _, err := os.Stat(targetPath); os.IsNotExist(err) {
+			err = os.MkdirAll(targetPath, os.ModePerm)
+			core.CheckErr(err, "cannot create path to open package: %s", targetPath)
+		}
+		src := path.Join(r.Path(), fmt.Sprintf("%s.zip", artie.FileRef))
+		dst := path.Join(targetPath, filename)
+		err := CopyFile(src, dst)
+		core.CheckErr(err, "cannot rename package %s", fmt.Sprintf("%s.zip", artie.FileRef))
+	} else {
+		// otherwise unzip the target
+		err = unzip(path.Join(r.Path(), fmt.Sprintf("%s.zip", artie.FileRef)), targetPath)
+		core.CheckErr(err, "cannot unzip package %s", fmt.Sprintf("%s.zip", artie.FileRef))
+	}
 }
 
 func (r *LocalRegistry) Remove(names []*core.ArtieName) {
