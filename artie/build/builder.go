@@ -40,6 +40,7 @@ type Builder struct {
 	shouldCopySource bool
 	loadFrom         string
 	env              *envar
+	zip              bool // if the target is already zipped before packaging (e.g. jar, zip files, etc)
 }
 
 func NewBuilder() *Builder {
@@ -206,11 +207,13 @@ func (b *Builder) zipPackage(targetPath string) {
 		core.CheckErr(err, "failed to find target content type")
 		// if the file is not a zip file
 		if contentType != "application/zip" {
+			b.zip = false
 			core.Msg("target is not a zip file, proceeding to compress it")
 			// the zip it
 			core.CheckErr(zipSource(targetPath, b.workDirZipFilename(), ignored), "failed to compress file target")
 			return
 		} else {
+			b.zip = true
 			core.Msg("cannot compress file target, already compressed. checking target file extension")
 			// find the file extension
 			ext := filepath.Ext(targetPath)
@@ -515,6 +518,7 @@ func (b *Builder) createSeal(profile *Profile) *core.Seal {
 		Target:  profile.Target,
 		Time:    time.Now().Format(time.RFC850),
 		Size:    bytesToLabel(zipInfo.Size()),
+		Zip:     b.zip,
 	}
 	core.Msg("creating artefact cryptographic signature")
 	// take the hash of the zip file and seal info combined
