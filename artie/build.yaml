@@ -60,7 +60,7 @@ functions:
     run:
       - sh ./images/bin/version.sh ${APP_VERSION}-${ART_REF}
       - go fmt
-      - go build -o images/bin/output/artie-windows-${APP_VERSION}-${ART_REF} -v
+      - go build -o images/bin/output/artie-windows-${APP_VERSION}-${ART_REF}.exe -v
 
   - name: build-registry-image
     description: creates an artie registry service image
