@@ -16,7 +16,7 @@ import (
 	"fmt"
 )
 
-func parsePrivateKey(data []byte) (*rsa.PrivateKey, error) {
+func ParsePrivateKey(data []byte) (*rsa.PrivateKey, error) {
 	pemData, err := pemParse(data, "RSA PRIVATE KEY")
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func parsePrivateKey(data []byte) (*rsa.PrivateKey, error) {
 	return x509.ParsePKCS1PrivateKey(pemData)
 }
 
-func parsePublicKey(data []byte) (*rsa.PublicKey, error) {
+func ParsePublicKey(data []byte) (*rsa.PublicKey, error) {
 	pemData, err := pemParse(data, "RSA PUBLIC KEY")
 	if err != nil {
 		return nil, err

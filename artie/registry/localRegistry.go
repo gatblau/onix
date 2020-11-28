@@ -8,6 +8,7 @@
 package registry
 
 import (
+	"crypto/rsa"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -529,25 +530,33 @@ func (r *LocalRegistry) Open(name *core.ArtieName, credentials string, useTLS bo
 			pubKeyPath, err = filepath.Abs(pubKeyPath)
 			core.CheckErr(err, "cannot retrieve absolute path for public key")
 		}
-	} else {
-		pubKeyPath = path.Join(r.Path(), "keys/public.pem")
 	}
 	// get the artefact seal
 	seal, err := r.getSeal(artie)
 	core.CheckErr(err, "cannot read artefact seal")
 	if verify {
-		// retrieve the verification key
-		pubKeyBytes, err := ioutil.ReadFile(pubKeyPath)
-		core.CheckErr(err, "cannot read public key")
+		var pubKey *rsa.PublicKey
+		if len(pubKeyPath) > 0 {
+			// retrieve the verification key from the specified location
+			pubKeyBytes, err := ioutil.ReadFile(pubKeyPath)
+			core.CheckErr(err, "cannot read public key")
+			pubKey, err = sign.ParsePublicKey(pubKeyBytes)
+			core.CheckErr(err, "cannot load public key")
+		} else {
+			// otherwise load it from the registry store
+			pub, err := sign.LoadPublicKey(name.Group, name.Name)
+			core.CheckErr(err, "cannot load public key")
+			pubKey = pub
+		}
 		// creates a verifier
-		verifier, err := sign.NewVerifier(pubKeyBytes)
+		verifier := new(sign.Verifier)
 		core.CheckErr(err, "cannot create signature verifier")
 		// get the location of the artefact
 		zipFilename := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef))
 		// get a slice to have the unencrypted signature
 		sum := core.SealChecksum(zipFilename, seal.Manifest)
 		// verify the signature
-		err = verifier.VerifyBase64(sum, seal.Signature)
+		err = verifier.VerifyBase64(pubKey, sum, seal.Signature)
 		core.CheckErr(err, "invalid digital signature")
 		// take the hash of the zip file and seal info combined
 		actualSum := core.SealChecksum(zipFilename, seal.Manifest)
