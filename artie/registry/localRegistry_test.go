@@ -35,7 +35,7 @@ func TestTag(t *testing.T) {
 func TestOpen2(t *testing.T) {
 	l := NewLocalRegistry()
 	// l.Tag(core.ParseName("boot"), core.ParseName("gatblau/boot:v1"))
-	l.Open(core.ParseName("localhost:8082/gatblau/boot"), "admin:admin", false, "", "", true)
+	l.Open(core.ParseName("gatblau/boot"), "admin:admin", false, "", "", true)
 }
 
 func TestOpen(t *testing.T) {

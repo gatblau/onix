@@ -13,25 +13,16 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"github.com/gatblau/onix/artie/core"
 	"os"
+	"path/filepath"
 )
 
 // generate a new RSA key pair
-func NewKeyPair() *rsa.PrivateKey {
+func NewKeyPair(size int) *rsa.PrivateKey {
 	reader := rand.Reader
-	bitSize := 2048
+	bitSize := size
 	key, err := rsa.GenerateKey(reader, bitSize)
-	checkError(err)
-	return key
-}
-
-// generate a new RSA Multi-Prime key pair
-// more efficient key-generation and decryption/signing operation
-// however, it might be easier to factor a multi-prime RSA public key than a dual-prime one
-func NewMultiPrimeKeyPair() *rsa.PrivateKey {
-	reader := rand.Reader
-	bitSize := 2048
-	key, err := rsa.GenerateMultiPrimeKey(reader, 16, bitSize)
 	checkError(err)
 	return key
 }
@@ -69,4 +60,39 @@ func checkError(err error) {
 		fmt.Println("Fatal error ", err.Error())
 		os.Exit(1)
 	}
+}
+
+// works out the fully qualified names of the private and public RSA keys
+func KeyNames(path, name string) (key string, pub string) {
+	if len(path) == 0 {
+		path = "."
+	}
+	if len(name) == 0 {
+		name = "id"
+	}
+	// if the path is relative then make it absolute
+	if !filepath.IsAbs(path) {
+		p, err := filepath.Abs(path)
+		core.CheckErr(err, "cannot return an absolute representation of path: '%s'", path)
+		path = p
+	}
+	// works out the private key name
+	keyName := filepath.Join(path, fmt.Sprintf("%s_rsa_key.pem", name))
+	// works out the public key name
+	pubName := filepath.Join(path, fmt.Sprintf("%s_rsa_pub.pem", name))
+	return keyName, pubName
+}
+
+// generates a private and public RSA keys for signing and verifying artefacts
+func GenerateKeys(path, name string, size int) {
+	if size > 4500 {
+		core.RaiseErr("maximum bit size 4500 exceeded")
+	}
+	if size == 0 {
+		size = 2048
+	}
+	keyFilename, pubFilename := KeyNames(path, name)
+	key := NewKeyPair(size)
+	SavePrivateKey(keyFilename, key)
+	SavePublicKey(pubFilename, key.PublicKey)
 }

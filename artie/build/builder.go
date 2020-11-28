@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -48,17 +49,7 @@ func NewBuilder() *Builder {
 	builder := new(Builder)
 	// check the localRepo directory is there
 	builder.checkRegistryDir()
-	// retrieve the signing key
-	privateKeyBytes, err := ioutil.ReadFile(builder.inRegistryDirectory("keys/private.pem"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	// creates a signer
-	signer, err := sign.NewSigner(privateKeyBytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-	builder.signer = signer
+	builder.signer = new(sign.Signer)
 	builder.localReg = registry.NewLocalRegistry()
 	return builder
 }
@@ -91,7 +82,7 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, p
 	// compress the target defined in the build.yaml' profile
 	b.zipPackage(targetPath)
 	// creates a seal
-	s := b.createSeal(buildProfile)
+	s := b.createSeal(name, buildProfile)
 	// add the artefact to the local repo
 	b.localReg.Add(b.workDirZipFilename(), b.repoName, s)
 	// cleanup all relevant folders and move package to target location
@@ -294,9 +285,7 @@ func (b *Builder) checkRegistryDir() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		key := sign.NewKeyPair()
-		sign.SavePrivateKey(b.inRegistryDirectory("keys/private.pem"), key)
-		sign.SavePublicKey(b.inRegistryDirectory("keys/public.pem"), key.PublicKey)
+		sign.GenerateKeys(path.Join(b.localReg.Path(), "keys"), "root", 2048)
 	}
 }
 
@@ -494,7 +483,7 @@ func (b *Builder) inRegistryDirectory(relativePath string) string {
 }
 
 // create the package Seal
-func (b *Builder) createSeal(profile *Profile) *core.Seal {
+func (b *Builder) createSeal(artie *core.ArtieName, profile *Profile) *core.Seal {
 	core.Msg("creating artefact seal")
 	filename := b.uniqueIdName
 	// merge the labels in the profile with the ones at the build file level
@@ -523,8 +512,11 @@ func (b *Builder) createSeal(profile *Profile) *core.Seal {
 	core.Msg("creating artefact cryptographic signature")
 	// take the hash of the zip file and seal info combined
 	sum := core.SealChecksum(b.workDirZipFilename(), info)
+	// load private key
+	pk, err := sign.LoadPrivateKey(artie.Group, artie.Name)
+	core.CheckErr(err, "cannot load signing key")
 	// create a Base-64 encoded cryptographic signature
-	signature, err := b.signer.SignBase64(sum)
+	signature, err := b.signer.SignBase64(pk, sum)
 	core.CheckErr(err, "failed to create cryptographic signature")
 	// construct the seal
 	s := &core.Seal{

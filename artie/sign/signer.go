@@ -15,40 +15,69 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
+	"github.com/gatblau/onix/artie/core"
+	"io/ioutil"
+	"path"
 )
 
 type Signer struct {
-	Key *rsa.PrivateKey
 }
 
-func NewSigner(pemKey []byte) (*Signer, error) {
-	key, err := parsePrivateKey(pemKey)
-	if err != nil {
-		return nil, err
-	}
-	return &Signer{key}, nil
-}
-
-func (s *Signer) Sign(data []byte) ([]byte, error) {
+func (s *Signer) Sign(key *rsa.PrivateKey, data []byte) ([]byte, error) {
 	hash := crypto.SHA1
 	h := hash.New()
 	h.Write(data)
 	hashed := h.Sum(nil)
-	return rsa.SignPKCS1v15(rand.Reader, s.Key, hash, hashed)
+	return rsa.SignPKCS1v15(rand.Reader, key, hash, hashed)
 }
 
-func (s *Signer) SignHex(data []byte) (string, error) {
-	sig, err := s.Sign(data)
+func (s *Signer) SignHex(key *rsa.PrivateKey, data []byte) (string, error) {
+	sig, err := s.Sign(key, data)
 	if err != nil {
 		return "", err
 	}
 	return hex.EncodeToString(sig), nil
 }
 
-func (s *Signer) SignBase64(data []byte) (string, error) {
-	sig, err := s.Sign(data)
+func (s *Signer) SignBase64(key *rsa.PrivateKey, data []byte) (string, error) {
+	sig, err := s.Sign(key, data)
 	if err != nil {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(sig), nil
+}
+
+func LoadPrivateKey(group, name string) (*rsa.PrivateKey, error) {
+	// first attempt to load the key from the registry/keys/group/name path
+	private, _ := KeyNames(path.Join(core.RegistryPath(), "keys"), fmt.Sprintf("%s_%s", group, name))
+	pemKey, err := ioutil.ReadFile(private)
+	if err != nil {
+		// if no luck, attempt to load the key from the registry/keys/group path
+		private, _ = KeyNames(path.Join(core.RegistryPath(), "keys"), group)
+		pemKey, err = ioutil.ReadFile(private)
+		if err != nil {
+			// final attempt to load the key from the registry/keys/ path
+			private, _ = KeyNames(path.Join(core.RegistryPath(), "keys"), "root")
+			pemKey, err = ioutil.ReadFile(private)
+		}
+	}
+	return ParsePrivateKey(pemKey)
+}
+
+func LoadPublicKey(group, name string) (*rsa.PublicKey, error) {
+	// first attempt to load the key from the registry/keys/group/name path
+	_, public := KeyNames(path.Join(core.RegistryPath(), "keys"), fmt.Sprintf("%s_%s", group, name))
+	pemKey, err := ioutil.ReadFile(public)
+	if err != nil {
+		// if no luck, attempt to load the key from the registry/keys/group path
+		_, public = KeyNames(path.Join(core.RegistryPath(), "keys"), group)
+		pemKey, err = ioutil.ReadFile(public)
+		if err != nil {
+			// final attempt to load the key from the registry/keys/ path
+			_, public = KeyNames(path.Join(core.RegistryPath(), "keys"), "root")
+			pemKey, err = ioutil.ReadFile(public)
+		}
+	}
+	return ParsePublicKey(pemKey)
 }
