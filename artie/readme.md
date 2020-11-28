@@ -1,5 +1,8 @@
 # ARTIE - One stop shop for building, packaging, signing, tagging and distributing any application package.
 
+Artie is part of Onix Configuration Manager build system, an effort to standardise the process of building and packaging software
+to run in container platforms, so that tasks such as automated patching of security vulnerabilities can be realised.
+
 Artie is a command line tool like docker that allows you to:
 
 - build any type of application (e.g. java, node/javascript, golang, etc)
