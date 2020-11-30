@@ -10,7 +10,7 @@ Artie is a command line tool like docker that allows you to:
 - automatically add metadata and digital signatures to the packages
 - tag artefacts as you do with container images
 - push and pull packages to and from artefact registries
-- open packages automatically verifying their digital signature and prompting for tampering
+- open packages automatically verifyclearing their digital signature and prompting for tampering
 - use it in linux, windows, and mac os
 - run it as an artefact registry which connects to backends such as Nexus, Artifactory, S3 and file systems.
 - facilitate creation of automation commands by creating complex command-based functions and calling functions within functions

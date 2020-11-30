@@ -14,7 +14,9 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/gatblau/onix/artie/core"
+	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 )
 
@@ -41,8 +43,8 @@ func SavePrivateKey(fileName string, key *rsa.PrivateKey) {
 }
 
 // save the public key to a pem file
-func SavePublicKey(fileName string, pubkey rsa.PublicKey) {
-	asn1Bytes, err := x509.MarshalPKIXPublicKey(&pubkey)
+func SavePublicKey(fileName string, pubkey *rsa.PublicKey) {
+	asn1Bytes, err := x509.MarshalPKIXPublicKey(pubkey)
 	checkError(err)
 	var pemkey = &pem.Block{
 		Type:  "RSA PUBLIC KEY",
@@ -63,12 +65,9 @@ func checkError(err error) {
 }
 
 // works out the fully qualified names of the private and public RSA keys
-func KeyNames(path, name string) (key string, pub string) {
+func KeyNames(path, prefix string) (key string, pub string) {
 	if len(path) == 0 {
 		path = "."
-	}
-	if len(name) == 0 {
-		name = "id"
 	}
 	// if the path is relative then make it absolute
 	if !filepath.IsAbs(path) {
@@ -77,10 +76,24 @@ func KeyNames(path, name string) (key string, pub string) {
 		path = p
 	}
 	// works out the private key name
-	keyName := filepath.Join(path, fmt.Sprintf("%s_rsa_key.pem", name))
+	keyName := filepath.Join(path, PrivateKeyName(prefix))
 	// works out the public key name
-	pubName := filepath.Join(path, fmt.Sprintf("%s_rsa_pub.pem", name))
+	pubName := filepath.Join(path, PublicKeyName(prefix))
 	return keyName, pubName
+}
+
+func PrivateKeyName(prefix string) string {
+	if len(prefix) == 0 {
+		prefix = "id"
+	}
+	return fmt.Sprintf("%s_rsa_key.pem", prefix)
+}
+
+func PublicKeyName(prefix string) string {
+	if len(prefix) == 0 {
+		prefix = "id"
+	}
+	return fmt.Sprintf("%s_rsa_pub.pem", prefix)
 }
 
 // generates a private and public RSA keys for signing and verifying artefacts
@@ -94,5 +107,39 @@ func GenerateKeys(path, name string, size int) {
 	keyFilename, pubFilename := KeyNames(path, name)
 	key := NewKeyPair(size)
 	SavePrivateKey(keyFilename, key)
-	SavePublicKey(pubFilename, key.PublicKey)
+	SavePublicKey(pubFilename, &key.PublicKey)
+}
+
+func LoadPrivateKey(group, name string) (*rsa.PrivateKey, error) {
+	// first attempt to load the key from the registry/keys/group/name path
+	private, _ := KeyNames(path.Join(core.RegistryPath(), "keys"), fmt.Sprintf("%s_%s", group, name))
+	pemKey, err := ioutil.ReadFile(private)
+	if err != nil {
+		// if no luck, attempt to load the key from the registry/keys/group path
+		private, _ = KeyNames(path.Join(core.RegistryPath(), "keys"), group)
+		pemKey, err = ioutil.ReadFile(private)
+		if err != nil {
+			// final attempt to load the key from the registry/keys/ path
+			private, _ = KeyNames(path.Join(core.RegistryPath(), "keys"), "root")
+			pemKey, err = ioutil.ReadFile(private)
+		}
+	}
+	return ParsePrivateKey(pemKey)
+}
+
+func LoadPublicKey(group, name string) (*rsa.PublicKey, error) {
+	// first attempt to load the key from the registry/keys/group/name path
+	_, public := KeyNames(path.Join(core.RegistryPath(), "keys"), fmt.Sprintf("%s_%s", group, name))
+	pemKey, err := ioutil.ReadFile(public)
+	if err != nil {
+		// if no luck, attempt to load the key from the registry/keys/group path
+		_, public = KeyNames(path.Join(core.RegistryPath(), "keys"), group)
+		pemKey, err = ioutil.ReadFile(public)
+		if err != nil {
+			// final attempt to load the key from the registry/keys/ path
+			_, public = KeyNames(path.Join(core.RegistryPath(), "keys"), "root")
+			pemKey, err = ioutil.ReadFile(public)
+		}
+	}
+	return ParsePublicKey(pemKey)
 }

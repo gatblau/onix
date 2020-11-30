@@ -20,10 +20,9 @@ func InitialiseRootCmd() *RootCmd {
 	mergeCmd := NewMergeCmd()
 	pullCmd := NewPullCmd()
 	openCmd := NewOpenCmd()
-	certCmd := NewCertCmd()
-	genCmd := NewCertGenCmd()
-	certCmd.cmd.AddCommand(genCmd.cmd)
-	rootCmd.Command.AddCommand(buildCmd.cmd,
+	certCmd := InitialiseCertCommand()
+	rootCmd.Cmd.AddCommand(
+		buildCmd.cmd,
 		artefactsCmd.cmd,
 		pushCmd.cmd,
 		rmCmd.cmd,
@@ -34,6 +33,15 @@ func InitialiseRootCmd() *RootCmd {
 		mergeCmd.cmd,
 		pullCmd.cmd,
 		openCmd.cmd,
-		certCmd.cmd)
+		certCmd.cmd,
+	)
 	return rootCmd
+}
+
+func InitialiseCertCommand() *CertCmd {
+	certCmd := NewCertCmd()
+	certGenCmd := NewCertGenCmd()
+	certImportCmd := NewCertImportCmd()
+	certCmd.cmd.AddCommand(certGenCmd.cmd, certImportCmd.cmd)
+	return certCmd
 }
