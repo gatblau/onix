@@ -42,6 +42,7 @@ func InitialiseCertCommand() *CertCmd {
 	certCmd := NewCertCmd()
 	certGenCmd := NewCertGenCmd()
 	certImportCmd := NewCertImportCmd()
-	certCmd.cmd.AddCommand(certGenCmd.cmd, certImportCmd.cmd)
+	certExportCmd := NewCertExportCmd()
+	certCmd.cmd.AddCommand(certGenCmd.cmd, certImportCmd.cmd, certExportCmd.cmd)
 	return certCmd
 }
