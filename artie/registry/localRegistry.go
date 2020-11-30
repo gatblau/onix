@@ -748,7 +748,7 @@ func (r *LocalRegistry) ImportKey(keyPath string, isPrivate bool, repoGroup stri
 	// load the key first
 	b, err := ioutil.ReadFile(keyPath)
 	core.CheckErr(err, "cannot load key from path '%s'", keyPath)
-	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup, err)
+	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
 	if isPrivate {
 		pk, err := sign.ParsePrivateKey(b)
 		core.CheckErr(err, "cannot parse private key '%s'", keyPath)
@@ -762,8 +762,25 @@ func (r *LocalRegistry) ImportKey(keyPath string, isPrivate bool, repoGroup stri
 	}
 }
 
+func (r *LocalRegistry) ExportKey(keyPath string, isPrivate bool, repoGroup string, repoName string) {
+	if !filepath.IsAbs(keyPath) {
+		keyPath, err := filepath.Abs(keyPath)
+		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
+	}
+	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
+	if isPrivate {
+		keyName := sign.PrivateKeyName(prefix)
+		err := CopyFile(path.Join(destPath, keyName), path.Join(keyPath, keyName))
+		core.CheckErr(err, "cannot export private key")
+	} else {
+		keyName := sign.PublicKeyName(prefix)
+		err := CopyFile(path.Join(destPath, keyName), path.Join(keyPath, keyName))
+		core.CheckErr(err, "cannot export public key")
+	}
+}
+
 // works out the destination folder and prefix for the key
-func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string, err error) (destPath string, prefix string) {
+func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string) (destPath string, prefix string) {
 	if len(repoName) > 0 {
 		// use the repo name location
 		destPath = path.Join(r.Path(), "keys", repoGroup, repoName)
@@ -777,7 +794,7 @@ func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string, 
 		destPath = path.Join(r.Path(), "keys")
 		prefix = ""
 	}
-	_, err = os.Stat(destPath)
+	_, err := os.Stat(destPath)
 	if os.IsNotExist(err) {
 		err = os.MkdirAll(destPath, os.ModePerm)
 		core.CheckErr(err, "cannot create private key destination '%s'", destPath)
