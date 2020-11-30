@@ -739,3 +739,48 @@ func (r *LocalRegistry) getSeal(name *Artefact) (*core.Seal, error) {
 	err = json.Unmarshal(sealBytes, seal)
 	return seal, err
 }
+
+func (r *LocalRegistry) ImportKey(keyPath string, isPrivate bool, repoGroup string, repoName string) {
+	if !filepath.IsAbs(keyPath) {
+		keyPath, err := filepath.Abs(keyPath)
+		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
+	}
+	// load the key first
+	b, err := ioutil.ReadFile(keyPath)
+	core.CheckErr(err, "cannot load key from path '%s'", keyPath)
+	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup, err)
+	if isPrivate {
+		pk, err := sign.ParsePrivateKey(b)
+		core.CheckErr(err, "cannot parse private key '%s'", keyPath)
+		fqdn := path.Join(destPath, sign.PrivateKeyName(prefix))
+		sign.SavePrivateKey(fqdn, pk)
+	} else {
+		pub, err := sign.ParsePublicKey(b)
+		core.CheckErr(err, "cannot parse private key '%s'", keyPath)
+		fqdn := path.Join(destPath, sign.PublicKeyName(prefix))
+		sign.SavePublicKey(fqdn, pub)
+	}
+}
+
+// works out the destination folder and prefix for the key
+func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string, err error) (destPath string, prefix string) {
+	if len(repoName) > 0 {
+		// use the repo name location
+		destPath = path.Join(r.Path(), "keys", repoGroup, repoName)
+		prefix = fmt.Sprintf("%s_%s", repoGroup, repoName)
+	} else if len(repoGroup) > 0 {
+		// use the repo group location
+		destPath = path.Join(r.Path(), "keys", repoGroup)
+		prefix = repoGroup
+	} else {
+		// use the registry root location
+		destPath = path.Join(r.Path(), "keys")
+		prefix = ""
+	}
+	_, err = os.Stat(destPath)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(destPath, os.ModePerm)
+		core.CheckErr(err, "cannot create private key destination '%s'", destPath)
+	}
+	return destPath, prefix
+}

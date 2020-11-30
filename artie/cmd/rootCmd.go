@@ -10,12 +10,12 @@ package cmd
 import "github.com/spf13/cobra"
 
 type RootCmd struct {
-	*cobra.Command
+	Cmd *cobra.Command
 }
 
 func NewRootCmd() *RootCmd {
 	c := &RootCmd{
-		&cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "artie",
 			Short: "build and create application artefacts as if they were container images",
 			Long:  ``,
