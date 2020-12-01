@@ -25,6 +25,7 @@ RUN yum update -y && \
     yum install -y java-11-openjdk-devel && \
     yum install -y wget && \
     yum install -y git unzip && \
+    groupadd -g $GID -o $UNAME && useradd -M -u $UID -g $GID $UNAME && \
     rm -rf /var/cache/yum && \
     yum clean all
 
@@ -36,8 +37,10 @@ RUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/ap
 COPY ./images/bin/output/$APP_NAME ./images/java-builder/start.sh $ARTIE_HOME/
 
 RUN ln -s $ARTIE_HOME/$APP_NAME /usr/bin/artie && \
-    chmod a+x $ARTIE_HOME/$APP_NAME && \
-    chmod a+x $ARTIE_HOME/artie && \
-    chmod a+x $ARTIE_HOME/start.sh
+    chmod ug+x $ARTIE_HOME/$APP_NAME && \
+    chmod ug+x $ARTIE_HOME/artie && \
+    chmod ug+x $ARTIE_HOME/start.sh
+
+USER $UNAME
 
 ENTRYPOINT ["sh", "start.sh"]

@@ -16,6 +16,7 @@ env:
   ARTIE_REGISTRY: artie-registry
   ARTIE_IMG_BUILDER: artie-img-builder
   ARTIE_JAVA_BUILDER: artie-java-builder
+  ARTIE_PYTHON_BUILDER: artie-python-builder
   APP_VERSION: 0.0.4
 profiles:
   - name: linux
@@ -100,6 +101,19 @@ functions:
     run:
       - docker push ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:$((cat ./version))
       - docker push ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:latest
+
+  - name: build-python-builder-image
+    description: creates an artie python builder image
+    run:
+      - docker pull registry.access.redhat.com/ubi8/ubi-minimal
+      - docker build -f ./images/py-builder/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}-snapshot:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}-snapshot:$((cat ./version)) ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}-snapshot:latest
+
+  - name: push-python-builder-image
+    description: pushes the python builder to the container registry
+    run:
+      - docker push ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}-snapshot:$((cat ./version))
+      - docker push ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}-snapshot:latest
 
   - name: release-snapshot
     description: build and push all container images
