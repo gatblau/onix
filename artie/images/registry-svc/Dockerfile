@@ -20,8 +20,12 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
     useradd -M -u $UID -g $GID $UNAME && \
     rm -rf /var/cache/yum && \
     microdnf clean all && \
-    mkdir -p /.artie/locks && chown $UNAME /.artie/locks && chmod ug+xwr /.artie/locks && \
-    mkdir -p /.artie/tmp && chown $UNAME /.artie/tmp && chmod ug+xwr /.artie/tmp
+    # pessimistic locking for metadata changes within a virtual repository
+    mkdir -p /.artie/locks && chown $UNAME /.artie/locks && chmod ug+wr /.artie/locks && \
+    # temprorary file operations folder
+    mkdir -p /.artie/tmp && chown $UNAME /.artie/tmp && chmod ug+wr /.artie/tmp && \
+    # web hooks configuration
+    mkdir -p /.artie/hooks && chown $UNAME /.artie/hooks && chmod ug+wr /.artie/hooks
 WORKDIR /app
 COPY ./images/bin/output/$APP_NAME /app/$APP_NAME
 USER $UNAME

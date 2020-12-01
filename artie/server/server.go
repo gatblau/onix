@@ -95,6 +95,13 @@ func (s *Server) Serve() {
 	// files download
 	router.HandleFunc("/file/{repository-group}/{repository-name}/{filename}", s.fileDownloadHandler).Methods("GET")
 
+	// create a webhook
+	router.HandleFunc("/webhook/{repository-group}/{repository-name}", s.webhookCreateHandler).Methods("POST")
+	// delete a webhook
+	router.HandleFunc("/webhook/{repository-group}/{repository-name}/{webhook-id}", s.webhookDeleteHandler).Methods("DELETE")
+	// retrieve webhooks
+	router.HandleFunc("/webhook/{repository-group}/{repository-name}", s.webhookGetHandler).Methods("GET")
+
 	fmt.Printf("? using %s backend @ %s\n", s.conf.Backend(), s.conf.BackendDomain())
 
 	// starts the server
@@ -374,6 +381,112 @@ func (s *Server) artefactInfoUpdateHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// @Summary creates a webhook configuration
+// @Description create the webhook configuration for a specified repository and url
+// @Tags Webhooks
+// @Accepts json
+// @Success 200 {string} returns the new webhook Id
+// @Failure 500 {string} internal error
+// @Router /webhook/{repository-group}/{repository-name} [post]
+// @Param repository-group path string true "the artefact repository group name"
+// @Param repository-name path string true "the artefact repository name"
+// @Param artefact-info body WebHookConfig true "the webhook configuration"
+func (s *Server) webhookCreateHandler(w http.ResponseWriter, r *http.Request) {
+	// get request variables
+	vars := mux.Vars(r)
+	repoGroup := vars["repository-group"]
+	repoName := vars["repository-name"]
+	// read the payload
+	body, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot read request payload: %s", err), http.StatusInternalServerError)
+		return
+	}
+	// unmarshal the payload
+	config := new(WebHookConfig)
+	err = json.Unmarshal(body, &config)
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot unmarshal request payload: %s", err), http.StatusInternalServerError)
+		return
+	}
+	// update the  group/name
+	config.Group = repoGroup
+	config.Name = repoName
+	// load existing configuration
+	wh := NewWebHooks()
+	err = wh.load()
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot load webhooks configuration: %s", err), http.StatusInternalServerError)
+		return
+	}
+	id, err := wh.Add(config)
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot add webhook configuration: %s", err), 500)
+		return
+	}
+	err = wh.save()
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot save webhook configuration: %s", err), 500)
+		return
+	}
+	// return the id
+	s.write(w, r, fmt.Sprintf("{ id:\"%s\" }", id))
+}
+
+// @Summary delete a webhook configuration by Id
+// @Description delete the specified webhook configuration
+// @Tags Webhooks
+// @Success 200 {string} successfully deleted
+// @Failure 500 {string} internal error
+// @Router /webhook/{repository-group}/{repository-name}/{webhook-id} [delete]
+// @Param repository-group path string true "the artefact repository group name"
+// @Param repository-name path string true "the artefact repository name"
+// @Param webhook-id path string true "the webhook unique identifier"
+func (s *Server) webhookDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	// get request variables
+	vars := mux.Vars(r)
+	repoGroup := vars["repository-group"]
+	repoName := vars["repository-name"]
+	whId := vars["webhook-id"]
+	wh := NewWebHooks()
+	err := wh.load()
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot load webhook configuration: %s", err), http.StatusInternalServerError)
+		return
+	}
+	if wh.Remove(repoGroup, repoName, whId) {
+		err := wh.save()
+		if err != nil {
+			s.writeError(w, fmt.Errorf("cannot update webhook configuration: %s", err), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+// @Summary get a list of webhooks
+// @Description get a list of webhook configurations for the specified repository
+// @Tags Webhooks
+// @Success 200 {string} successfully deleted
+// @Failure 500 {string} internal error
+// @Router /webhook/{repository-group}/{repository-name} [get]
+// @Param repository-group path string true "the artefact repository group name"
+// @Param repository-name path string true "the artefact repository name"
+func (s *Server) webhookGetHandler(w http.ResponseWriter, r *http.Request) {
+	// get request variables
+	vars := mux.Vars(r)
+	repoGroup := vars["repository-group"]
+	repoName := vars["repository-name"]
+	wh := NewWebHooks()
+	err := wh.load()
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot load webhook configuration: %s", err), http.StatusInternalServerError)
+		return
+	}
+	list := wh.GetList(repoGroup, repoName)
+	s.write(w, r, list)
+}
+
 func (s *Server) listen(handler http.Handler) {
 	// creates an http server listening on the specified TCP port
 	server := &http.Server{
@@ -423,7 +536,7 @@ func (s *Server) writeError(w http.ResponseWriter, err error, errorCode int) {
 // log http requests to stdout
 func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("? I received an http request from: %s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+		fmt.Printf("request from: %s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 		// uncomment below to dump request payload to stdout
 		// requestDump, err := httputil.DumpRequest(r, true)
 		// if err != nil {
@@ -442,7 +555,7 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 			// if no authorisation header is passed, then it prompts a client browser to authenticate
 			w.Header().Set("WWW-Authenticate", `Basic realm="onix/artie"`)
 			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Printf("? I have received an (unauthorised) http request from: '%v'\n", r.RemoteAddr)
+			fmt.Printf("? unauthorised http request from: '%v'\n", r.RemoteAddr)
 		} else {
 			// authenticate the request
 			requiredToken := s.conf.BasicToken()
