@@ -306,6 +306,137 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/webhook/{repository-group}/{repository-name}": {
+            "get": {
+                "description": "get a list of webhook configurations for the specified repository",
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "get a list of webhooks",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the artefact repository group name",
+                        "name": "repository-group",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the artefact repository name",
+                        "name": "repository-name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "create the webhook configuration for a specified repository and url",
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "creates a webhook configuration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the artefact repository group name",
+                        "name": "repository-group",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the artefact repository name",
+                        "name": "repository-name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "the webhook configuration",
+                        "name": "artefact-info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.WebHookConfig"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/webhook/{repository-group}/{repository-name}/{webhook-id}": {
+            "delete": {
+                "description": "delete the specified webhook configuration",
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "delete a webhook configuration by Id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the artefact repository group name",
+                        "name": "repository-group",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the artefact repository name",
+                        "name": "repository-name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the webhook unique identifier",
+                        "name": "webhook-id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -331,6 +462,42 @@ var doc = `{
                     }
                 },
                 "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.WebHookConfig": {
+            "type": "object",
+            "properties": {
+                "actions": {
+                    "description": "Actions that should trigger the webhook",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "group": {
+                    "description": "the repository Group for the webhook",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "the unique webhook identifier",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "the repository Name for the webhook",
+                    "type": "string"
+                },
+                "pwd": {
+                    "description": "the webhook URI password",
+                    "type": "string"
+                },
+                "uname": {
+                    "description": "the webhook URI user",
+                    "type": "string"
+                },
+                "uri": {
+                    "description": "the webhook URI",
                     "type": "string"
                 }
             }

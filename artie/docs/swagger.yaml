@@ -16,6 +16,32 @@ definitions:
       type:
         type: string
     type: object
+  server.WebHookConfig:
+    properties:
+      actions:
+        description: Actions that should trigger the webhook
+        items:
+          type: integer
+        type: array
+      group:
+        description: the repository Group for the webhook
+        type: string
+      id:
+        description: the unique webhook identifier
+        type: string
+      name:
+        description: the repository Name for the webhook
+        type: string
+      pwd:
+        description: the webhook URI password
+        type: string
+      uname:
+        description: the webhook URI user
+        type: string
+      uri:
+        description: the webhook URI
+        type: string
+    type: object
 info:
   contact:
     email: onix@gatblau.org
@@ -222,4 +248,92 @@ paths:
       summary: Get information about the artefacts in a repository
       tags:
       - Repositories
+  /webhook/{repository-group}/{repository-name}:
+    get:
+      description: get a list of webhook configurations for the specified repository
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: get a list of webhooks
+      tags:
+      - Webhooks
+    post:
+      description: create the webhook configuration for a specified repository and url
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the webhook configuration
+        in: body
+        name: artefact-info
+        required: true
+        schema:
+          $ref: '#/definitions/server.WebHookConfig'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: creates a webhook configuration
+      tags:
+      - Webhooks
+  /webhook/{repository-group}/{repository-name}/{webhook-id}:
+    delete:
+      description: delete the specified webhook configuration
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the webhook unique identifier
+        in: path
+        name: webhook-id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: delete a webhook configuration by Id
+      tags:
+      - Webhooks
 swagger: "2.0"
