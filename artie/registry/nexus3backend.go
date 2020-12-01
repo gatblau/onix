@@ -305,12 +305,16 @@ func (r *Nexus3Backend) getComponents(user, pwd string) (*components, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	bytes, err := ioutil.ReadAll(resp.Body)
+	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
+	// if the result body is not in JSON format is likely that the domain of the backend does not exist
+	if !isJSON(string(b)) {
+		return nil, fmt.Errorf("the response body was in an incorrect format, which suggests \nthe backend URI '%s' is not correct, \nor the server responsed with a bogus payload", r.domain)
+	}
 	comps := new(components)
-	err = json.Unmarshal(bytes, comps)
+	err = json.Unmarshal(b, comps)
 	return comps, err
 }
 
