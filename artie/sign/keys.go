@@ -112,11 +112,11 @@ func GenerateKeys(path, name string, size int) {
 
 func LoadPrivateKey(group, name string) (*rsa.PrivateKey, error) {
 	// first attempt to load the key from the registry/keys/group/name path
-	private, _ := KeyNames(path.Join(core.RegistryPath(), "keys"), fmt.Sprintf("%s_%s", group, name))
+	private, _ := KeyNames(path.Join(core.RegistryPath(), "keys", group, name), fmt.Sprintf("%s_%s", group, name))
 	pemKey, err := ioutil.ReadFile(private)
 	if err != nil {
 		// if no luck, attempt to load the key from the registry/keys/group path
-		private, _ = KeyNames(path.Join(core.RegistryPath(), "keys"), group)
+		private, _ = KeyNames(path.Join(core.RegistryPath(), "keys", group), group)
 		pemKey, err = ioutil.ReadFile(private)
 		if err != nil {
 			// final attempt to load the key from the registry/keys/ path
@@ -129,11 +129,11 @@ func LoadPrivateKey(group, name string) (*rsa.PrivateKey, error) {
 
 func LoadPublicKey(group, name string) (*rsa.PublicKey, error) {
 	// first attempt to load the key from the registry/keys/group/name path
-	_, public := KeyNames(path.Join(core.RegistryPath(), "keys"), fmt.Sprintf("%s_%s", group, name))
+	_, public := KeyNames(path.Join(core.RegistryPath(), "keys", group, name), fmt.Sprintf("%s_%s", group, name))
 	pemKey, err := ioutil.ReadFile(public)
 	if err != nil {
 		// if no luck, attempt to load the key from the registry/keys/group path
-		_, public = KeyNames(path.Join(core.RegistryPath(), "keys"), group)
+		_, public = KeyNames(path.Join(core.RegistryPath(), "keys", group), group)
 		pemKey, err = ioutil.ReadFile(public)
 		if err != nil {
 			// final attempt to load the key from the registry/keys/ path
