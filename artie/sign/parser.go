@@ -16,16 +16,16 @@ import (
 	"fmt"
 )
 
-func ParsePrivateKey(data []byte) (*rsa.PrivateKey, error) {
-	pemData, err := pemParse(data, "RSA PRIVATE KEY")
+func ParsePrivateKey(data []byte, location string) (*rsa.PrivateKey, error) {
+	pemData, err := pemParse(data, "RSA PRIVATE KEY", location)
 	if err != nil {
 		return nil, err
 	}
 	return x509.ParsePKCS1PrivateKey(pemData)
 }
 
-func ParsePublicKey(data []byte) (*rsa.PublicKey, error) {
-	pemData, err := pemParse(data, "RSA PUBLIC KEY")
+func ParsePublicKey(data []byte, location string) (*rsa.PublicKey, error) {
+	pemData, err := pemParse(data, "RSA PUBLIC KEY", location)
 	if err != nil {
 		return nil, err
 	}
@@ -40,10 +40,10 @@ func ParsePublicKey(data []byte) (*rsa.PublicKey, error) {
 	return pubKey, nil
 }
 
-func pemParse(data []byte, pemType string) ([]byte, error) {
+func pemParse(data []byte, pemType string, location string) ([]byte, error) {
 	block, _ := pem.Decode(data)
 	if block == nil {
-		return nil, fmt.Errorf("no PEM block found")
+		return nil, fmt.Errorf("cannot load RSA key from '%s', either not there or corrupted", location)
 	}
 	if pemType != "" && block.Type != pemType {
 		return nil, fmt.Errorf("public key's type is '%s', expected '%s'", block.Type, pemType)
