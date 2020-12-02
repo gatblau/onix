@@ -17,6 +17,7 @@ env:
   ARTIE_IMG_BUILDER: artie-img-builder
   ARTIE_JAVA_BUILDER: artie-java-builder
   ARTIE_PYTHON_BUILDER: artie-python-builder
+  ARTIE_NODE_BUILDER: artie-node-builder
   APP_VERSION: 0.0.4
 profiles:
   - name: linux
@@ -115,6 +116,19 @@ functions:
       - docker push ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}-snapshot:$((cat ./version))
       - docker push ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}-snapshot:latest
 
+  - name: build-node-builder-image
+    description: creates an artie node builder image
+    run:
+      - docker pull quay.io/gatblau/node:12-ubi8-min
+      - docker build -f ./images/node-builder/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_NODE_BUILDER}-snapshot:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ARTIE_NODE_BUILDER}-snapshot:$((cat ./version)) ${REPO_NAME}/${ARTIE_NODE_BUILDER}-snapshot:latest
+
+  - name: push-node-builder-image
+    description: pushes the node builder to the container registry
+    run:
+      - docker push ${REPO_NAME}/${ARTIE_NODE_BUILDER}-snapshot:$((cat ./version))
+      - docker push ${REPO_NAME}/${ARTIE_NODE_BUILDER}-snapshot:latest
+
   - name: release-snapshot
     description: build and push all container images
     run:
@@ -125,6 +139,11 @@ functions:
       - $(push-img-builder-image)
       - $(build-java-builder-image)
       - $(push-java-builder-image)
+      - $(build-python-builder-image)
+      - $(push-python-builder-image)
+      - $(build-node-builder-image)
+      - $(push-node-builder-image)
+
   - name: swagen
     description: generates/refreshes the OpenAPI specifications for Artie's HTTP API
     run:
