@@ -6,7 +6,7 @@ LABEL builder-for=PYTHON-36
 LABEL tools="python"
 
 ARG APP_NAME=artie
-ARG UNAME=python
+ARG UNAME=builder
 
 ENV UID=1000
 ENV GID=1000
@@ -20,12 +20,14 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
     rm -rf /var/cache/yum && \
     microdnf clean all
 
-COPY ./images/bin/output/$APP_NAME ./images/py-builder/start.sh $ARTIE_HOME/
+COPY ./images/bin/output/$APP_NAME ./images/start.sh $ARTIE_HOME/
 
 RUN ln -s $ARTIE_HOME/$APP_NAME $ARTIE_HOME/artie && \
     chmod ug+x $ARTIE_HOME/$APP_NAME && \
     chmod ug+x $ARTIE_HOME/artie && \
-    chmod ug+x $ARTIE_HOME/start.sh
+    chmod ug+x $ARTIE_HOME/start.sh && \
+    # folder below to mount keys in container
+    mkdir -p /keys
 
 USER $UNAME
 
