@@ -491,9 +491,9 @@ func (s *Server) listen(handler http.Handler) {
 	// creates an http server listening on the specified TCP port
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%s", s.conf.HttpPort()),
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
-		IdleTimeout:  time.Second * 60,
+		WriteTimeout: 180 * time.Second,
+		ReadTimeout:  180 * time.Second,
+		IdleTimeout:  time.Second * 180,
 		Handler:      handler,
 	}
 
