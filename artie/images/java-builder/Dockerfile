@@ -14,6 +14,10 @@ LABEL builder-for=JAVA-11
 LABEL tools="maven,jdk11"
 
 ARG APP_NAME=artie
+ARG UNAME=builder
+
+ENV UID=1000
+ENV GID=1000
 ENV APP=$APP_NAME
 ENV MAVEN_VERSION 3.6.3
 ENV JAVA_HOME /usr/lib/jvm/jre-openjdk
@@ -39,7 +43,9 @@ COPY ./images/bin/output/$APP_NAME ./images/java-builder/start.sh $ARTIE_HOME/
 RUN ln -s $ARTIE_HOME/$APP_NAME /usr/bin/artie && \
     chmod ug+x $ARTIE_HOME/$APP_NAME && \
     chmod ug+x $ARTIE_HOME/artie && \
-    chmod ug+x $ARTIE_HOME/start.sh
+    chmod ug+x $ARTIE_HOME/start.sh && \
+    # folder below to mount keys in container
+    mkdir -p /keys
 
 USER $UNAME
 
