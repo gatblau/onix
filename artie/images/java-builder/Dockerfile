@@ -38,7 +38,7 @@ RUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/ap
     rm apache-maven-$MAVEN_VERSION-bin.tar.gz && \
     mv apache-maven-$MAVEN_VERSION $MAVEN_HOME
 
-COPY ./images/bin/output/$APP_NAME ./images/java-builder/start.sh $ARTIE_HOME/
+COPY ./images/bin/output/$APP_NAME ./images/start.sh $ARTIE_HOME/
 
 RUN ln -s $ARTIE_HOME/$APP_NAME /usr/bin/artie && \
     chmod ug+x $ARTIE_HOME/$APP_NAME && \
