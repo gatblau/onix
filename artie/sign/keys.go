@@ -124,7 +124,7 @@ func LoadPrivateKey(group, name string) (*rsa.PrivateKey, error) {
 			pemKey, err = ioutil.ReadFile(private)
 		}
 	}
-	return ParsePrivateKey(pemKey)
+	return ParsePrivateKey(pemKey, private)
 }
 
 func LoadPublicKey(group, name string) (*rsa.PublicKey, error) {
@@ -141,5 +141,5 @@ func LoadPublicKey(group, name string) (*rsa.PublicKey, error) {
 			pemKey, err = ioutil.ReadFile(public)
 		}
 	}
-	return ParsePublicKey(pemKey)
+	return ParsePublicKey(pemKey, public)
 }
