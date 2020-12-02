@@ -20,7 +20,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -48,7 +47,6 @@ func NewBuilder() *Builder {
 	// create the builder instance
 	builder := new(Builder)
 	// check the localRepo directory is there
-	builder.checkRegistryDir()
 	builder.signer = new(sign.Signer)
 	builder.localReg = registry.NewLocalRegistry()
 	return builder
@@ -265,30 +263,6 @@ func (b *Builder) cleanUp() {
 	b.workingDir = ""
 }
 
-// check the local localReg directory exists and if not creates it
-func (b *Builder) checkRegistryDir() {
-	// check the home directory exists
-	_, err := os.Stat(b.localReg.Path())
-	// if it does not
-	if os.IsNotExist(err) {
-		err = os.Mkdir(b.localReg.Path(), os.ModePerm)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	// check the keys directory exists
-	_, err = os.Stat(b.inRegistryDirectory("keys"))
-	// if it does not
-	if os.IsNotExist(err) {
-		// create a key pair
-		err = os.Mkdir(b.inRegistryDirectory("keys"), os.ModePerm)
-		if err != nil {
-			log.Fatal(err)
-		}
-		sign.GenerateKeys(path.Join(b.localReg.Path(), "keys"), "root", 2048)
-	}
-}
-
 // create a new working directory and return its path
 func (b *Builder) newWorkingDir() {
 	// the working directory will be a build folder within the registry directory
@@ -475,11 +449,6 @@ func (b *Builder) inWorkingDirectory(relativePath string) string {
 // return an absolute path using the source directory as base
 func (b *Builder) inSourceDirectory(relativePath string) string {
 	return filepath.Join(b.sourceDir(), relativePath)
-}
-
-// return an absolute path using the home directory as base
-func (b *Builder) inRegistryDirectory(relativePath string) string {
-	return filepath.Join(b.localReg.Path(), relativePath)
 }
 
 // create the package Seal

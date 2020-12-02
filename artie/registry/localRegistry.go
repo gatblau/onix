@@ -113,9 +113,36 @@ func NewLocalRegistry() *LocalRegistry {
 	r := &LocalRegistry{
 		Repositories: []*Repository{},
 	}
+	// check the registry directory is in place
+	r.checkRegistryDir()
 	// load local registry
 	r.load()
 	return r
+}
+
+// check the local localReg directory exists and if not creates it
+func (r *LocalRegistry) checkRegistryDir() {
+	// check the home directory exists
+	_, err := os.Stat(r.Path())
+	// if it does not
+	if os.IsNotExist(err) {
+		err = os.Mkdir(r.Path(), os.ModePerm)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	keysPath := path.Join(r.Path(), "keys")
+	// check the keys directory exists
+	_, err = os.Stat(keysPath)
+	// if it does not
+	if os.IsNotExist(err) {
+		// create a key pair
+		err = os.Mkdir(keysPath, os.ModePerm)
+		if err != nil {
+			log.Fatal(err)
+		}
+		sign.GenerateKeys(keysPath, "root", 2048)
+	}
 }
 
 // the local Path to the local LocalRegistry
@@ -540,7 +567,7 @@ func (r *LocalRegistry) Open(name *core.ArtieName, credentials string, useTLS bo
 			// retrieve the verification key from the specified location
 			pubKeyBytes, err := ioutil.ReadFile(pubKeyPath)
 			core.CheckErr(err, "cannot read public key")
-			pubKey, err = sign.ParsePublicKey(pubKeyBytes)
+			pubKey, err = sign.ParsePublicKey(pubKeyBytes, pubKeyPath)
 			core.CheckErr(err, "cannot load public key")
 		} else {
 			// otherwise load it from the registry store
@@ -750,12 +777,12 @@ func (r *LocalRegistry) ImportKey(keyPath string, isPrivate bool, repoGroup stri
 	core.CheckErr(err, "cannot load key from path '%s'", keyPath)
 	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
 	if isPrivate {
-		pk, err := sign.ParsePrivateKey(b)
+		pk, err := sign.ParsePrivateKey(b, keyPath)
 		core.CheckErr(err, "cannot parse private key '%s'", keyPath)
 		fqdn := path.Join(destPath, sign.PrivateKeyName(prefix))
 		sign.SavePrivateKey(fqdn, pk)
 	} else {
-		pub, err := sign.ParsePublicKey(b)
+		pub, err := sign.ParsePublicKey(b, keyPath)
 		core.CheckErr(err, "cannot parse private key '%s'", keyPath)
 		fqdn := path.Join(destPath, sign.PublicKeyName(prefix))
 		sign.SavePublicKey(fqdn, pub)
@@ -792,7 +819,7 @@ func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string) 
 	} else {
 		// use the registry root location
 		destPath = path.Join(r.Path(), "keys")
-		prefix = ""
+		prefix = "root"
 	}
 	_, err := os.Stat(destPath)
 	if os.IsNotExist(err) {
