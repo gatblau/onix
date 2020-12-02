@@ -200,23 +200,36 @@ func (r *Nexus3Backend) postMultipart(b bytes.Buffer, writer *multipart.Writer, 
 }
 
 func (r *Nexus3Backend) GetRepositoryInfo(group, name, user, pwd string) (*Repository, error) {
-	// check the repository.json file exists in nexus
-	components, err := r.getComponents(user, pwd)
+	// NOTE: the commented out validation below is not working in some cases, as sometime the metadata in Nexus seems to get corrupted
+	// and although the files are uploaded successfully the components meta data is not being updated accordingly
+
+	// // check the repository.json file exists in nexus
+	// components, err := r.getComponents(user, pwd)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// // if the repository file does not exist
+	// if !components.containsFile(group, name, "repository.json") {
+	// 	// returns an empty repository
+	// 	return &Repository{
+	// 		Repository: fmt.Sprintf("%s/%s", group, name),
+	// 		Artefacts:  make([]*Artefact, 0),
+	// 	}, nil
+	// }
+
+	// otherwise fetches the content and returns it
+	b, err := r.getFile(group, name, "repository.json", user, pwd)
 	if err != nil {
 		return nil, err
 	}
-	// if the repository file does not exist
-	if !components.containsFile(group, name, "repository.json") {
+	// if the file is not in JSON format then
+	if !isJSON(string(b)) {
+		// assume file not found (404 HTML page)
 		// returns an empty repository
 		return &Repository{
 			Repository: fmt.Sprintf("%s/%s", group, name),
 			Artefacts:  make([]*Artefact, 0),
 		}, nil
-	}
-	// otherwise fetches the content and returns it
-	b, err := r.getFile(group, name, "repository.json", user, pwd)
-	if err != nil {
-		return nil, err
 	}
 	repo := new(Repository)
 	err = json.Unmarshal(b, repo)
@@ -228,7 +241,10 @@ func (r *Nexus3Backend) GetArtefactInfo(group, name, id, user, pwd string) (*Art
 	if err != nil {
 		return nil, err
 	}
-	return repo.FindArtefact(id), nil
+	if repo != nil {
+		return repo.FindArtefact(id), nil
+	}
+	return nil, nil
 }
 
 // add a field to a multipart form
