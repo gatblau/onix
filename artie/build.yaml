@@ -13,12 +13,17 @@ env:
   CGO_ENABLED: 0
   GOARCH: amd64
   REPO_NAME: quay.io/gatblau
-  ARTIE_REGISTRY: artie-registry
-  ARTIE_IMG_BUILDER: artie-img-builder
-  ARTIE_JAVA_BUILDER: artie-java-builder
-  ARTIE_PYTHON_BUILDER: artie-python-builder
-  ARTIE_NODE_BUILDER: artie-node-builder
+  ARTIE_REGISTRY: art-registry
+  ARTIE_IMG_BUILDER: art-buildah
+  ARTIE_JAVA_BUILDER: art-java
+  ARTIE_PYTHON_BUILDER: art-python
+  ARTIE_NODE_BUILDER: art-node
+  ARTIE_GO_BUILDER: art-go
   APP_VERSION: 0.0.4
+#  alpha: Alpha release, typically used for work-in-progress and experimentation
+#  beta: Beta release, typically one that is feature complete for the next planned release, but may contain known bugs.
+#  rc: Release candidate, typically a release that's potentially final (stable) unless significant bugs emerge.
+  LIFECYCLE_STAGE: alpha
 profiles:
   - name: linux
     default: true
@@ -28,16 +33,7 @@ profiles:
       GOOS: linux
     run:
       - $(build-linux)
-    target: images/bin/output/artie-linux-${APP_VERSION}-${ART_REF}
-  - name: darwin
-    labels:
-      platform: darwin
-    env:
-      GOOS: darwin
-    run:
-      - go fmt
-      - go build -o artie -v
-    target: images/bin/output/artie-darwin-${APP_VERSION}-${ART_REF}
+    target: images/bin/output/artie
 functions:
   - name: build
     description: build artie binary in all configurations
@@ -51,9 +47,9 @@ functions:
     env:
       GOOS: linux
     run:
-      - sh ./images/bin/version.sh ${APP_VERSION}-${ART_REF}
+      - sh ./images/bin/version.sh ${APP_VERSION}-${ART_REF}-${LIFECYCLE_STAGE}
       - go fmt
-      - go build -o images/bin/output/artie-linux-${APP_VERSION}-${ART_REF} -v
+      - go build -o images/bin/output/artie-linux-${APP_VERSION}-${ART_REF}-${LIFECYCLE_STAGE} -v
 
   - name: build-windows
     description: builds the artie binary file for the windows platform
@@ -62,87 +58,104 @@ functions:
     run:
       - sh ./images/bin/version.sh ${APP_VERSION}-${ART_REF}
       - go fmt
-      - go build -o images/bin/output/artie-windows-${APP_VERSION}-${ART_REF}.exe -v
+      - go build -o images/bin/output/artie-windows-${APP_VERSION}-${ART_REF}-${LIFECYCLE_STAGE}.exe -v
 
-  - name: build-registry-image
+  - name: build-art-registry
     description: creates an artie registry service image
     run:
-      - docker pull registry.access.redhat.com/ubi8/ubi-minimal
-      - docker build -f ./images/registry-svc/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_REGISTRY}-snapshot:$((cat ./version)) .
-      - docker tag ${REPO_NAME}/${ARTIE_REGISTRY}-snapshot:$((cat ./version)) ${REPO_NAME}/${ARTIE_REGISTRY}-snapshot:latest
+      - docker build -f ./images/art-registry/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_REGISTRY}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ARTIE_REGISTRY}:$((cat ./version)) ${REPO_NAME}/${ARTIE_REGISTRY}:latest
 
-  - name: push-registry-image
+  - name: push-art-registry
     description: creates a container image for the snapshot repository
     run:
-      - docker push ${REPO_NAME}/${ARTIE_REGISTRY}-snapshot:$((cat ./version))
-      - docker push ${REPO_NAME}/${ARTIE_REGISTRY}-snapshot:latest
+      - docker push ${REPO_NAME}/${ARTIE_REGISTRY}:$((cat ./version))
+      - docker push ${REPO_NAME}/${ARTIE_REGISTRY}:latest
 
-  - name: build-img-builder-image
+  - name: build-art-buildah
     description: creates an artie image builder image
     run:
-      - docker pull docker.io/centos:7
-      - docker build -f ./images/img-builder/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_IMG_BUILDER}-snapshot:$((cat ./version)) .
-      - docker tag ${REPO_NAME}/${ARTIE_IMG_BUILDER}-snapshot:$((cat ./version)) ${REPO_NAME}/${ARTIE_IMG_BUILDER}-snapshot:latest
+      - docker build -f ./images/art-buildah/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_IMG_BUILDER}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ARTIE_IMG_BUILDER}:$((cat ./version)) ${REPO_NAME}/${ARTIE_IMG_BUILDER}:latest
 
-  - name: push-img-builder-image
+  - name: push-art-buildah
     description: pushes the image builder to the container registry
     run:
-      - docker push ${REPO_NAME}/${ARTIE_IMG_BUILDER}-snapshot:$((cat ./version))
-      - docker push ${REPO_NAME}/${ARTIE_IMG_BUILDER}-snapshot:latest
+      - docker push ${REPO_NAME}/${ARTIE_IMG_BUILDER}:$((cat ./version))
+      - docker push ${REPO_NAME}/${ARTIE_IMG_BUILDER}:latest
 
-  - name: build-java-builder-image
+  - name: build-art-java
     description: creates an artie java builder image
     run:
-      - docker pull docker.io/centos:7
-      - docker build -f ./images/java-builder/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:$((cat ./version)) .
-      - docker tag ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:$((cat ./version)) ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:latest
+      - docker build -f ./images/art-java/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_JAVA_BUILDER}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ARTIE_JAVA_BUILDER}:$((cat ./version)) ${REPO_NAME}/${ARTIE_JAVA_BUILDER}:latest
 
-  - name: push-java-builder-image
+  - name: push-art-java
     description: pushes the java builder to the container registry
     run:
-      - docker push ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:$((cat ./version))
-      - docker push ${REPO_NAME}/${ARTIE_JAVA_BUILDER}-snapshot:latest
+      - docker push ${REPO_NAME}/${ARTIE_JAVA_BUILDER}:$((cat ./version))
+      - docker push ${REPO_NAME}/${ARTIE_JAVA_BUILDER}:latest
 
-  - name: build-python-builder-image
+  - name: build-art-python
     description: creates an artie python builder image
     run:
-      - docker pull registry.access.redhat.com/ubi8/ubi-minimal
-      - docker build -f ./images/py-builder/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}-snapshot:$((cat ./version)) .
-      - docker tag ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}-snapshot:$((cat ./version)) ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}-snapshot:latest
+      - docker build -f ./images/art-python/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}:$((cat ./version)) ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}:latest
 
-  - name: push-python-builder-image
+  - name: push-art-python
     description: pushes the python builder to the container registry
     run:
-      - docker push ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}-snapshot:$((cat ./version))
-      - docker push ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}-snapshot:latest
+      - docker push ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}:$((cat ./version))
+      - docker push ${REPO_NAME}/${ARTIE_PYTHON_BUILDER}:latest
 
-  - name: build-node-builder-image
+  - name: build-art-node
     description: creates an artie node builder image
     run:
-      - docker pull quay.io/gatblau/node:12-ubi8-min
-      - docker build -f ./images/node-builder/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_NODE_BUILDER}-snapshot:$((cat ./version)) .
-      - docker tag ${REPO_NAME}/${ARTIE_NODE_BUILDER}-snapshot:$((cat ./version)) ${REPO_NAME}/${ARTIE_NODE_BUILDER}-snapshot:latest
+      - docker build -f ./images/art-node/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_NODE_BUILDER}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ARTIE_NODE_BUILDER}:$((cat ./version)) ${REPO_NAME}/${ARTIE_NODE_BUILDER}:latest
 
-  - name: push-node-builder-image
+  - name: push-art-node
     description: pushes the node builder to the container registry
     run:
-      - docker push ${REPO_NAME}/${ARTIE_NODE_BUILDER}-snapshot:$((cat ./version))
-      - docker push ${REPO_NAME}/${ARTIE_NODE_BUILDER}-snapshot:latest
+      - docker push ${REPO_NAME}/${ARTIE_NODE_BUILDER}:$((cat ./version))
+      - docker push ${REPO_NAME}/${ARTIE_NODE_BUILDER}:latest
+
+  - name: build-art-go
+    description: creates an artie golang builder image
+    run:
+      - docker build -f ./images/art-go/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_GO_BUILDER}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ARTIE_GO_BUILDER}:$((cat ./version)) ${REPO_NAME}/${ARTIE_GO_BUILDER}:latest
+
+  - name: push-art-go
+    description: pushes the node builder to the container registry
+    run:
+      - docker push ${REPO_NAME}/${ARTIE_GO_BUILDER}:$((cat ./version))
+      - docker push ${REPO_NAME}/${ARTIE_GO_BUILDER}:latest
 
   - name: release-snapshot
     description: build and push all container images
     run:
       - $(build-linux)
-      - $(build-registry-image)
-      - $(push-registry-image)
-      - $(build-img-builder-image)
-      - $(push-img-builder-image)
-      - $(build-java-builder-image)
-      - $(push-java-builder-image)
-      - $(build-python-builder-image)
-      - $(push-python-builder-image)
-      - $(build-node-builder-image)
-      - $(push-node-builder-image)
+      - $(refresh-base)
+      - $(build-art-registry)
+      - $(push-art-registry)
+      - $(build-art-buildah)
+      - $(push-art-buildah)
+      - $(build-art-java)
+      - $(push-art-java)
+      - $(build-art-python)
+      - $(push-art-python)
+      - $(build-art-node)
+      - $(push-art-node)
+      - $(build-art-go)
+      - $(push-art-go)
+
+  - name: refresh-base
+    description: refresh base images used in the builds
+    run:
+      - docker pull registry.access.redhat.com/ubi8/ubi-minimal
+      - docker pull quay.io/gatblau/node
+      - docker pull docker.io/centos:7
 
   - name: swagen
     description: generates/refreshes the OpenAPI specifications for Artie's HTTP API

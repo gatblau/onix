@@ -1,10 +1,16 @@
-# Artie Image Builder
+# Artie Linux Container Image Builder
 
-The builder image that the Image Manager uses to rebuild images.
+A container image with **artie** and **buildah** that can be used to create container images out of:
+
+- artefacts in an artefact registry
+- base images in a container registry
 
 ## How it works
 
-The builder image uses [buildah](https://buildah.io/) to create container images for applications. The builder also has artie to allow pulling artefacts from the Artie artefact registry to embed in the container image. Because the application is packaged by Artie this image does not need any tool chain to build the application, that is already built and in the Artie artefact registry.
+The builder image uses [buildah](https://buildah.io/) to create container images for applications.
+The builder also has artie to allow pulling artefacts from the Artie artefact registry to embed in the container image.
+Because the application is packaged by Artie this image does not need any tool chain to build the application,
+that is already built and in the Artie artefact registry.
 
 When the image is run, the bootstrap script [build.sh](./build.sh) is executed.
 
