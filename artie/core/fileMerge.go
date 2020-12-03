@@ -104,6 +104,6 @@ func writeToFile(filename string, data string) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("'%v' bytes written to file '%s'\n", len(data), filename)
+	log.Printf("'%v' bytes written to file '%s'\n", len(data), FilenameWithoutExtension(filename))
 	return file.Sync()
 }
