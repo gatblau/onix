@@ -184,6 +184,9 @@ func (r *Api) GetArtefactInfo(group, name, id, user, pwd string) (*Artefact, err
 	if err != nil {
 		return nil, err
 	}
+	if !isJSON(string(b)) {
+		return nil, fmt.Errorf("invalid artefact name: %s/%s/%s", r.domain, group, name)
+	}
 	artefact := new(Artefact)
 	err = json.Unmarshal(b, artefact)
 	return artefact, err
