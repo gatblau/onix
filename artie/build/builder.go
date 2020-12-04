@@ -423,7 +423,7 @@ func (b *Builder) runProfile(profileName string, execDir string) *Profile {
 		// if the profile has not been provided
 		if len(profileName) == 0 {
 			// check if a default profile has been set
-			defaultProfile := b.buildFile.defaultProfile()
+			defaultProfile := b.buildFile.DefaultProfile()
 			// use the default profile
 			if defaultProfile != nil {
 				core.Msg("building the default profile '%s'", defaultProfile.Name)

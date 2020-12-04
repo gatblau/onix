@@ -20,6 +20,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -185,4 +186,21 @@ func UserPwd(creds string) (user, pwd string) {
 
 func FilenameWithoutExtension(fn string) string {
 	return strings.TrimSuffix(fn, path.Ext(fn))
+}
+
+// return a valid absolute path that exists
+func AbsPath(filePath string) (string, error) {
+	var p = filePath
+	if !filepath.IsAbs(filePath) {
+		absPath, err := filepath.Abs(filePath)
+		if err != nil {
+			return "", err
+		}
+		p = absPath
+	}
+	_, err := os.Stat(p)
+	if err != nil {
+		return "", err
+	}
+	return p, nil
 }

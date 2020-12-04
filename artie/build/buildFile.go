@@ -15,6 +15,8 @@ import (
 
 // structure of build.yaml file
 type BuildFile struct {
+	// the name of the application
+	Application string `yaml:"application"`
 	// the type of technology used by the application that can be used to determine the tool chain to use
 	// e.g. java, nodejs, golang, python, php, etc
 	Type string `yaml:"type"`
@@ -39,7 +41,7 @@ func (b *BuildFile) getEnv() map[string]string {
 }
 
 // return the default profile if exists
-func (b *BuildFile) defaultProfile() *Profile {
+func (b *BuildFile) DefaultProfile() *Profile {
 	for _, profile := range b.Profiles {
 		if profile.Default {
 			return &profile

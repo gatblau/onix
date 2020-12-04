@@ -21,6 +21,7 @@ func InitialiseRootCmd() *RootCmd {
 	pullCmd := NewPullCmd()
 	openCmd := NewOpenCmd()
 	certCmd := InitialiseCertCommand()
+	pipeCmd := InitialisePipeCommand()
 	rootCmd.Cmd.AddCommand(
 		buildCmd.cmd,
 		artefactsCmd.cmd,
@@ -34,8 +35,16 @@ func InitialiseRootCmd() *RootCmd {
 		pullCmd.cmd,
 		openCmd.cmd,
 		certCmd.cmd,
+		pipeCmd.cmd,
 	)
 	return rootCmd
+}
+
+func InitialisePipeCommand() *PipeCmd {
+	pipeCmd := NewPipeCmd()
+	pipeSetupCmd := NewPipeSetupCmd()
+	pipeCmd.cmd.AddCommand(pipeSetupCmd.cmd)
+	return pipeCmd
 }
 
 func InitialiseCertCommand() *CertCmd {
