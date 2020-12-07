@@ -8,21 +8,23 @@
 package tkn
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/asaskevich/govalidator"
 	"github.com/gatblau/onix/artie/build"
 	"github.com/gatblau/onix/artie/core"
+	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"strings"
 	"text/template"
 )
 
-// a tekton-based Artie's pipeline
+// a tekton-based Artie's CI pipeline
 type Pipeline struct {
 	// ART_APP_NAME
 	AppName string
@@ -43,6 +45,7 @@ type Pipeline struct {
 // create a new pipeline
 func NewPipeline(buildFilePath, buildProfile string) *Pipeline {
 	var profile = buildProfile
+	// load the build file
 	buildFile := loadBuildFile(buildFilePath)
 	// if no build profile is specified
 	if len(buildProfile) == 0 {
@@ -60,6 +63,8 @@ func NewPipeline(buildFilePath, buildProfile string) *Pipeline {
 	p.BuilderImage = builderImage(buildFile.Type)
 	// set the build profile
 	p.BuildProfile = profile
+	// set the application name
+	p.AppName = buildFile.Application
 	// attempt to load the pipeline configuration from the environment
 	// NOTE: environment vars can override builder image and/or build profile used (if defined)
 	p.loadFromEnv()
@@ -69,18 +74,25 @@ func NewPipeline(buildFilePath, buildProfile string) *Pipeline {
 	return p
 }
 
-// try and set pipeline variables from the environment
+// try and set ciPipeline variables from the environment
 func (p *Pipeline) loadFromEnv() {
-	p.AppName = os.Getenv("ART_APP_NAME")
-	if len(p.AppName) > 0 {
-		fmt.Printf("using ART_APP_NAME=%s\n", p.AppName)
+	p.AppName = p.LoadVar("ART_APP_NAME", p.AppName)
+	p.GitURI = p.LoadVar("ART_GIT_URI", p.GitURI)
+	p.BuilderImage = p.LoadVar("ART_BUILDER_IMG", p.BuilderImage)
+	p.BuildProfile = p.LoadVar("ART_BUILD_PROFILE", p.BuildProfile)
+	p.ArtefactName = p.LoadVar("ART_NAME", p.ArtefactName)
+	p.ArtefactRegistryUser = p.LoadVar("ART_REG_USER", p.ArtefactRegistryUser)
+	p.ArtefactRegistryPwd = p.LoadVar("ART_REG_PWD", p.ArtefactRegistryPwd)
+}
+
+func (p *Pipeline) LoadVar(name string, value string) string {
+	if len(value) == 0 {
+		value = os.Getenv(name)
+		if len(p.ArtefactName) > 0 {
+			fmt.Printf("using %s=%s\n", name, value)
+		}
 	}
-	p.GitURI = os.Getenv("ART_GIT_URI")
-	p.BuilderImage = os.Getenv("ART_BUILDER_IMG")
-	p.BuildProfile = os.Getenv("ART_BUILD_PROFILE")
-	p.ArtefactName = os.Getenv("ART_NAME")
-	p.ArtefactRegistryUser = os.Getenv("ART_REG_USER")
-	p.ArtefactRegistryPwd = os.Getenv("ART_REG_PWD")
+	return value
 }
 
 // collect missing variables on the command line
@@ -90,45 +102,62 @@ func (p *Pipeline) survey() {
 		prompt := &survey.Input{
 			Message: "application name:",
 		}
-		survey.AskOne(prompt, &p.AppName, survey.WithValidator(survey.Required))
+		p.handleCtrlC(survey.AskOne(prompt, &p.AppName, survey.WithValidator(survey.Required)))
+	} else {
+		fmt.Printf("application name: %s\n", p.AppName)
 	}
 	// if the GIT URI is not defined, prompt for it
 	if len(p.GitURI) == 0 {
 		prompt := &survey.Input{
 			Message: "git repo url:",
 		}
-		survey.AskOne(prompt, &p.AppName, survey.WithValidator(validURL))
+		p.handleCtrlC(survey.AskOne(prompt, &p.AppName, survey.WithValidator(validURL)))
+	} else {
+		fmt.Printf("git repo url: %s", p.GitURI)
 	}
 	// if the artefact name is not defined prompt for it
 	if len(p.ArtefactName) == 0 {
 		prompt := &survey.Input{
 			Message: "artefact name:",
 		}
-		survey.AskOne(prompt, &p.AppName, survey.WithValidator(survey.Required))
+		p.handleCtrlC(survey.AskOne(prompt, &p.ArtefactName, survey.WithValidator(survey.Required)))
+	} else {
+		fmt.Printf("artefact name: %s", p.ArtefactName)
 	}
 	// if the artefact registry user is not defined prompt for it
 	if len(p.ArtefactRegistryUser) == 0 {
 		prompt := &survey.Input{
 			Message: "artefact registry username:",
 		}
-		survey.AskOne(prompt, &p.ArtefactRegistryUser, survey.WithValidator(survey.Required))
+		p.handleCtrlC(survey.AskOne(prompt, &p.ArtefactRegistryUser, survey.WithValidator(survey.Required)))
+	} else {
+		fmt.Printf("artefact registry username: %s", p.ArtefactRegistryUser)
 	}
 	// if the artefact registry pwd is not defined prompt for it
 	if len(p.ArtefactRegistryPwd) == 0 {
 		prompt := &survey.Password{
 			Message: "artefact registry password:",
 		}
-		survey.AskOne(prompt, &p.ArtefactRegistryPwd, survey.WithValidator(survey.Required))
+		p.handleCtrlC(survey.AskOne(prompt, &p.ArtefactRegistryPwd, survey.WithValidator(survey.Required)))
 	}
 }
 
 // merges the template and its values into the passed in writer
 func (p *Pipeline) Merge(w io.Writer) error {
-	t, err := template.New("pipeline").Parse(pipeline)
+	t, err := template.New("pipeline").Parse(ciPipeline)
 	if err != nil {
 		return err
 	}
 	return t.Execute(w, p)
+}
+
+func (p *Pipeline) handleCtrlC(err error) {
+	if err == terminal.InterruptErr {
+		fmt.Println("\ncommand interrupted")
+		os.Exit(0)
+	} else if err != nil {
+		panic(err)
+	}
 }
 
 // validates url is valid
@@ -164,16 +193,16 @@ func loadBuildFile(buildFilePath string) *build.BuildFile {
 		core.RaiseErr("invalid build file path: %s", err.Error())
 		return nil
 	}
-	b, err := ioutil.ReadFile(filePath)
+	b, err := ioutil.ReadFile(path.Join(filePath, "build.yaml"))
 	core.CheckErr(err, "cannot read build file")
 	buildFile := new(build.BuildFile)
-	err = json.Unmarshal(b, buildFile)
+	err = yaml.Unmarshal(b, buildFile)
 	core.CheckErr(err, "cannot unmarshall build file")
 	return buildFile
 }
 
-// the pipeline template containing parameterised resource definitions
-const pipeline = `
+// the ciPipeline template containing parameterised resource definitions
+const ciPipeline = `
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
@@ -184,16 +213,16 @@ spec:
       - {type: git, name: source}
   steps:
     - name: apply
-      image: {{.BuilderImage} 
+      image: {{.BuilderImage}} 
       env:
         - name: ARTEFACT_NAME
-          value: {{.ArtefactName}
+          value: {{.ArtefactName}}
         - name: BUILD_PROFILE
-          value: {{.BuildProfile}
+          value: {{.BuildProfile}}
         - name: ARTEFACT_UNAME
-          value: {{.ArtefactUser}
+          value: {{.ArtefactRegistryUser}}
         - name: ARTEFACT_PWD
-          value: {{.ArtefactPwd}
+          value: {{.ArtefactRegistryPwd}}
       workingDir: /workspace/source
       volumeMounts:
         - name: config-volume
@@ -201,7 +230,7 @@ spec:
   volumes:
     - name: config-volume
       configMap:
-        name: sap-config-map
+        name: signing-key-config-map
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
