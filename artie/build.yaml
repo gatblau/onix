@@ -34,7 +34,7 @@ profiles:
       GOOS: linux
     run:
       - $(build-linux)
-    target: images/bin/output/artie
+    target: images/bin/output/artie-linux-${APP_VERSION}-${ART_REF}-${LIFECYCLE_STAGE}
 functions:
   - name: build
     description: build artie binary in all configurations
