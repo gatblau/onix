@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/asaskevich/govalidator"
 	"github.com/gatblau/onix/artie/build"
 	"github.com/gatblau/onix/artie/core"
@@ -43,18 +42,26 @@ type Pipeline struct {
 }
 
 // create a new pipeline
-func NewPipeline(buildFilePath, buildProfile string) *Pipeline {
-	var profile = buildProfile
+func NewPipeline(buildFilePath, profileName string) *Pipeline {
+	var profile *build.Profile
 	// load the build file
 	buildFile := loadBuildFile(buildFilePath)
 	// if no build profile is specified
-	if len(buildProfile) == 0 {
+	if len(profileName) == 0 {
 		// try and get the default profile
 		if buildFile.DefaultProfile() != nil {
-			profile = buildFile.DefaultProfile().Name
+			profile = buildFile.DefaultProfile()
 		} else {
 			// uses the first profile
-			profile = buildFile.Profiles[0].Name
+			profile = buildFile.Profiles[0]
+		}
+	} else {
+		// pick the specified profile
+		profile = buildFile.Profile(profileName)
+		// if the profile is not in the build file
+		if profile == nil {
+			core.RaiseErr("profile '%s' not found", profileName)
+			os.Exit(1)
 		}
 	}
 	// create an instance of the pipeline
@@ -62,14 +69,16 @@ func NewPipeline(buildFilePath, buildProfile string) *Pipeline {
 	// resolve the builder image using the appType
 	p.BuilderImage = builderImage(buildFile.Type)
 	// set the build profile
-	p.BuildProfile = profile
+	p.BuildProfile = profile.Name
 	// set the application name
 	p.AppName = buildFile.Application
 	// attempt to load the pipeline configuration from the environment
 	// NOTE: environment vars can override builder image and/or build profile used (if defined)
 	p.loadFromEnv()
-	// survey whatever is left undefined
+	// survey any variables in the pipeline that has been left undefined
 	p.survey()
+	// finally survey any missing variables in the build profile that are not defined
+	profile.Survey(buildFile)
 	// return the configured pipeline
 	return p
 }
@@ -102,7 +111,7 @@ func (p *Pipeline) survey() {
 		prompt := &survey.Input{
 			Message: "application name:",
 		}
-		p.handleCtrlC(survey.AskOne(prompt, &p.AppName, survey.WithValidator(survey.Required)))
+		core.HandleCtrlC(survey.AskOne(prompt, &p.AppName, survey.WithValidator(survey.Required)))
 	} else {
 		fmt.Printf("application name: %s\n", p.AppName)
 	}
@@ -111,7 +120,7 @@ func (p *Pipeline) survey() {
 		prompt := &survey.Input{
 			Message: "git repo url:",
 		}
-		p.handleCtrlC(survey.AskOne(prompt, &p.AppName, survey.WithValidator(validURL)))
+		core.HandleCtrlC(survey.AskOne(prompt, &p.AppName, survey.WithValidator(validURL)))
 	} else {
 		fmt.Printf("git repo url: %s", p.GitURI)
 	}
@@ -120,7 +129,7 @@ func (p *Pipeline) survey() {
 		prompt := &survey.Input{
 			Message: "artefact name:",
 		}
-		p.handleCtrlC(survey.AskOne(prompt, &p.ArtefactName, survey.WithValidator(survey.Required)))
+		core.HandleCtrlC(survey.AskOne(prompt, &p.ArtefactName, survey.WithValidator(survey.Required)))
 	} else {
 		fmt.Printf("artefact name: %s", p.ArtefactName)
 	}
@@ -129,7 +138,7 @@ func (p *Pipeline) survey() {
 		prompt := &survey.Input{
 			Message: "artefact registry username:",
 		}
-		p.handleCtrlC(survey.AskOne(prompt, &p.ArtefactRegistryUser, survey.WithValidator(survey.Required)))
+		core.HandleCtrlC(survey.AskOne(prompt, &p.ArtefactRegistryUser, survey.WithValidator(survey.Required)))
 	} else {
 		fmt.Printf("artefact registry username: %s", p.ArtefactRegistryUser)
 	}
@@ -138,7 +147,7 @@ func (p *Pipeline) survey() {
 		prompt := &survey.Password{
 			Message: "artefact registry password:",
 		}
-		p.handleCtrlC(survey.AskOne(prompt, &p.ArtefactRegistryPwd, survey.WithValidator(survey.Required)))
+		core.HandleCtrlC(survey.AskOne(prompt, &p.ArtefactRegistryPwd, survey.WithValidator(survey.Required)))
 	}
 }
 
@@ -149,15 +158,6 @@ func (p *Pipeline) Merge(w io.Writer) error {
 		return err
 	}
 	return t.Execute(w, p)
-}
-
-func (p *Pipeline) handleCtrlC(err error) {
-	if err == terminal.InterruptErr {
-		fmt.Println("\ncommand interrupted")
-		os.Exit(0)
-	} else if err != nil {
-		panic(err)
-	}
 }
 
 // validates url is valid
