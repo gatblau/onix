@@ -71,13 +71,9 @@ func (r *LocalRegistry) GetArtefactsByName(name *core.ArtieName) ([]*Artefact, b
 }
 
 // return the artefact that matches the specified:
-// - domain/group/name:tag or
-// - artefact id substring or
+// - domain/group/name:tag
 // nil if not found in the LocalRegistry
 func (r *LocalRegistry) FindArtefact(name *core.ArtieName) *Artefact {
-	// go through the artefacts in the repository and check for Id matches
-	artefactsFound := make([]*Artefact, 0)
-
 	// first gets the repository the artefact is in
 	for _, repository := range r.Repositories {
 		if repository.Repository == name.FullyQualifiedName() {
@@ -92,20 +88,27 @@ func (r *LocalRegistry) FindArtefact(name *core.ArtieName) *Artefact {
 			}
 			break
 		}
+	}
+	return nil
+}
+
+// return the artefacts that matches the specified:
+// - artefact id substring
+func (r *LocalRegistry) FindArtefactsById(id string) []*core.ArtieName {
+	// go through the artefacts in the repository and check for Id matches
+	names := make([]*core.ArtieName, 0)
+	// first gets the repository the artefact is in
+	for _, repository := range r.Repositories {
 		for _, artefact := range repository.Artefacts {
 			// try and match against the artefact ID substring
-			if strings.Contains(artefact.Id, name.Name) {
-				artefactsFound = append(artefactsFound, artefact)
+			if strings.Contains(artefact.Id, id) {
+				for _, tag := range artefact.Tags {
+					names = append(names, core.ParseName(fmt.Sprintf("%s:%s", repository.Repository, tag)))
+				}
 			}
 		}
-		if len(artefactsFound) > 1 {
-			core.RaiseErr("artefact Id hint provided is not sufficiently long to pin point the artifact, %d were found", len(artefactsFound))
-		}
 	}
-	if len(artefactsFound) == 0 {
-		return nil
-	}
-	return artefactsFound[0]
+	return names
 }
 
 // create a localRepo management structure
@@ -157,7 +160,6 @@ func (r *LocalRegistry) file() string {
 
 // save the state of the LocalRegistry
 func (r *LocalRegistry) save() {
-	core.Msg("updating local registry metadata")
 	regBytes := core.ToJsonBytes(r)
 	core.CheckErr(ioutil.WriteFile(r.file(), regBytes, os.ModePerm), "fail to update local registry metadata")
 }
@@ -268,7 +270,6 @@ func (r *LocalRegistry) removeRepoByName(a []*Repository, name *core.ArtieName) 
 func (r *LocalRegistry) unTag(name *core.ArtieName, tag string) {
 	artie := r.FindArtefact(name)
 	if artie != nil {
-		core.Msg("untagging %s", name)
 		artie.Tags = core.RemoveElement(artie.Tags, tag)
 	}
 }
@@ -616,45 +617,54 @@ func (r *LocalRegistry) Remove(names []*core.ArtieName) {
 	for _, name := range names {
 		// try and get the artefact by complete URI or id ref
 		artie := r.FindArtefact(name)
+		// if the artefact is not found by name:tag
 		if artie == nil {
-			fmt.Printf("name %s not found\n", name.Name)
-			continue
-		}
-		// try to remove it using full name
-		// remove the specified tag
-		length := len(artie.Tags)
-		r.unTag(name, name.Tag)
-		// if the tag was successfully deleted
-		if len(artie.Tags) < length {
-			// if there are no tags left at the end then remove the repository
-			if len(artie.Tags) == 0 {
-				r.Repositories = r.removeRepoByName(r.Repositories, name)
-				// only remove the files if there are no other repositories containing the same artefact!
-				found := false
-			Loop:
-				for _, repo := range r.Repositories {
-					for _, art := range repo.Artefacts {
-						if art.Id == artie.Id {
-							found = true
-							break Loop
+			// try finding it by Id (passed in the name part of the artefact name)
+			list := r.FindArtefactsById(name.Name)
+			if len(list) == 0 {
+				fmt.Printf("name %s not found\n", name.Name)
+				continue
+			} else {
+				// call the remove with the new names
+				r.Remove(list)
+			}
+		} else {
+			// try to remove it using full name
+			// remove the specified tag
+			length := len(artie.Tags)
+			r.unTag(name, name.Tag)
+			// if the tag was successfully deleted
+			if len(artie.Tags) < length {
+				// if there are no tags left at the end then remove the repository
+				if len(artie.Tags) == 0 {
+					r.Repositories = r.removeRepoByName(r.Repositories, name)
+					// only remove the files if there are no other repositories containing the same artefact!
+					found := false
+				Loop:
+					for _, repo := range r.Repositories {
+						for _, art := range repo.Artefacts {
+							if art.Id == artie.Id {
+								found = true
+								break Loop
+							}
 						}
 					}
+					// no other repo contains the artefact so safe to remove the files
+					if !found {
+						r.removeFiles(artie)
+					}
 				}
-				// no other repo contains the artefact so safe to remove the files
-				if !found {
-					r.removeFiles(artie)
-				}
+				// persist changes
+				r.save()
+				log.Print(name)
+			} else {
+				// attempt to remove by Id (stored in the Name)
+				repo := r.findRepository(name)
+				repo.Artefacts = r.removeArtefactById(repo.Artefacts, name.Name)
+				r.removeFiles(artie)
+				r.save()
+				log.Print(artie.Id)
 			}
-			// persist changes
-			r.save()
-			log.Print(artie.Id)
-		} else {
-			// attempt to remove by Id (stored in the Name)
-			repo := r.findRepository(name)
-			repo.Artefacts = r.removeArtefactById(repo.Artefacts, name.Name)
-			r.removeFiles(artie)
-			r.save()
-			log.Print(artie.Id)
 		}
 	}
 }
