@@ -15,7 +15,8 @@ import (
 
 // create a file seal
 type RunCmd struct {
-	cmd *cobra.Command
+	cmd         *cobra.Command
+	interactive *bool
 }
 
 func NewRunCmd() *RunCmd {
@@ -26,6 +27,7 @@ func NewRunCmd() *RunCmd {
 			Long:  ``,
 		},
 	}
+	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -40,5 +42,5 @@ func (r *RunCmd) Run(cmd *cobra.Command, args []string) {
 		path = args[1]
 	}
 	builder := build.NewBuilder()
-	builder.Run(function, path)
+	builder.Run(function, path, *r.interactive)
 }

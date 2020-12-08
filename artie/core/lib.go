@@ -15,12 +15,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/hashicorp/go-uuid"
 	"io"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -203,4 +206,73 @@ func AbsPath(filePath string) (string, error) {
 		return "", err
 	}
 	return p, nil
+}
+
+func HandleCtrlC(err error) {
+	if err == terminal.InterruptErr {
+		fmt.Println("\ncommand interrupted")
+		os.Exit(0)
+	} else if err != nil {
+		panic(err)
+	}
+}
+
+// merges environment variables in the arguments
+// returns the merged command list and the updated environment variables map if interactive mode is used
+func MergeEnvironmentVars(args []string, env map[string]string, interactive bool) ([]string, map[string]string) {
+	var result = make([]string, len(args))
+	// the updated environment if interactive mode is used
+	var updatedEnv = env
+	// env variable regex
+	evExpression := regexp.MustCompile("\\${(.*?)}")
+	// check if the args have env variables and if so merge them
+	for ix, arg := range args {
+		result[ix] = arg
+		// find all environment variables in the argument
+		matches := evExpression.FindAllString(arg, -1)
+		// if we have matches
+		if matches != nil {
+			for _, match := range matches {
+				// get the name of the environment variable i.e. the name part in "${name}"
+				name := match[2 : len(match)-1]
+				// get the value of the variable
+				value := env[name]
+				// if not value exists
+				if len(value) == 0 {
+					// if running in interactive mode
+					if interactive {
+						// prompt for the value
+						prompt := &survey.Input{
+							Message: fmt.Sprintf("%s:", name),
+						}
+						HandleCtrlC(survey.AskOne(prompt, &value, survey.WithValidator(survey.Required)))
+						// add the variable to the updated environment map
+						updatedEnv[name] = value
+					} else {
+						// if non-interactive then raise an error
+						RaiseErr("environment variable '%s' is not defined", name)
+					}
+				}
+				// merges the variable
+				result[ix] = strings.Replace(result[ix], match, value, -1)
+			}
+		}
+	}
+	return result, updatedEnv
+}
+
+func HasFunction(value string) (bool, string) {
+	matches := regexp.MustCompile("\\$\\((.*?)\\)").FindAllString(value, 1)
+	if matches != nil {
+		return true, matches[0][2 : len(matches[0])-1]
+	}
+	return false, ""
+}
+
+func HasShell(value string) (bool, string, string) {
+	matches := regexp.MustCompile("\\$\\(\\((.*?)\\)\\)").FindAllString(value, 1)
+	if matches != nil {
+		return true, matches[0], matches[0][3 : len(matches[0])-2]
+	}
+	return false, "", ""
 }
