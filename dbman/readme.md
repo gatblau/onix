@@ -68,6 +68,8 @@ The container image can be configured by passing the following environment varia
 
 | var | description | default |
 |---|---|---|
+| `OX_DBM_APPVERSION` | The database schema version to use | N/A |
+| `OX_DBM_THEME` | The Web UI theme (skin) to use when calling reporting functions on a web browser. | empty |
 | `OX_DBM_HTTP_METRICS` | Whether prometheus `/metrics` endpoint is enabled. Only available if running dbman as an http service. | `true` |
 | `OX_DBM_HTTP_AUTHMODE` | The authentication mode used by dbman http service. Acceptable values are `none` or `basic` for basic user authentication tokens. <br>Only available if running dbman as an http service. | `basic` |
 | `OX_DBM_HTTP_PORT` | The port the http server is listening on.<br>Only available if running dbman as an http service. | `8085` |
@@ -79,11 +81,11 @@ The container image can be configured by passing the following environment varia
 | `OX_DBM_DB_PORT` | The database port | `5432` |
 | `OX_DBM_DB_USERNAME` | The database user name | `onix` |
 | `OX_DBM_DB_PASSWORD` | The database user password | `onix` |
-| `OX_DBM_DB_ADMINUSER` | The database admin user | `postgres` |
-| `OX_DBM_DB_ADMINPWD` | The database admin password | `onix` |
-| `OX_DBM_SCHEMA_URI` | The root path of the database scripts. | `https://raw.githubusercontent.com/gatblau/ox-db/master` |
-| `OX_DBM_SCHEMA_USERNAME` | The username for the scripts repository. | `git-username-here` |
-| `OX_DBM_SCHEMA_TOKEN` | The token/password for the scripts repository. | `git-password-here` |
+| `OX_DBM_DB_ADMINUSERNAME` | The database admin user | `postgres` |
+| `OX_DBM_DB_ADMINPASSWORD` | The database admin password | `onix` |
+| `OX_DBM_REPO_URI` | The root path of the database scripts. | `https://raw.githubusercontent.com/gatblau/ox-db/master` |
+| `OX_DBM_REPO_USERNAME` | The username for the scripts repository. | `git-username-here` |
+| `OX_DBM_REPOPASSWORD` | The token/password for the scripts repository. | `git-password-here` |
 
 ## Swagger Web API
 
