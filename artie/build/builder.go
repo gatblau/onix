@@ -58,7 +58,7 @@ func NewBuilder() *Builder {
 // artefactName: the full name of the artefact to be built including the tag
 // profileName: the name of the profile to be built. If empty then the default profile is built. If no default profile exists, the first profile is built.
 // copy: indicates whether a copy should be made of the project files before packaging (only valid for from location in the file system)
-func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, profileName string, copy bool) {
+func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, profileName string, copy bool, interactive bool) {
 	b.from = from
 	// prepare the source ready for the build
 	repo := b.prepareSource(from, fromPath, gitToken, name, copy)
@@ -67,13 +67,13 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, p
 	// run commands
 	// set the command execution directory
 	execDir := b.loadFrom
-	buildProfile := b.runProfile(profileName, execDir)
+	buildProfile := b.runProfile(profileName, execDir, interactive)
 	// check if a profile target exist, otherwise it cannot package
 	if len(buildProfile.Target) == 0 {
 		core.RaiseErr("profile '%s' target not specified, cannot continue", buildProfile.Name)
 	}
 	// merge env with target
-	mergedTarget := mergeEnvironmentVars([]string{buildProfile.Target}, b.env.vars)
+	mergedTarget, _ := core.MergeEnvironmentVars([]string{buildProfile.Target}, b.env.vars, interactive)
 	// wait for the target to be created in the file system
 	targetPath := filepath.Join(b.loadFrom, mergedTarget[0])
 	waitForTargetToBeCreated(targetPath)
@@ -88,7 +88,7 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, p
 }
 
 // execute the specified function
-func (b *Builder) Run(function string, path string) {
+func (b *Builder) Run(function string, path string, interactive bool) {
 	// if no path is specified use .
 	if len(path) == 0 {
 		path = "."
@@ -107,7 +107,7 @@ func (b *Builder) Run(function string, path string) {
 		localPath = absPath
 	}
 	b.buildFile = LoadBuildFile(filepath.Join(localPath, "build.yaml"))
-	b.runFunction(function, localPath)
+	b.runFunction(function, localPath, interactive)
 }
 
 // either clone a remote git repo or copy a local one onto the source folder
@@ -325,7 +325,7 @@ func (b *Builder) getIgnored() []string {
 }
 
 // run a specified function
-func (b *Builder) runFunction(function string, path string) {
+func (b *Builder) runFunction(function string, path string, interactive bool) {
 	// gets the function to run
 	fx := b.buildFile.fx(function)
 	if fx == nil {
@@ -359,20 +359,20 @@ func (b *Builder) runFunction(function string, path string) {
 	// for each run statement in the function
 	for _, cmd := range fx.Run {
 		// if the statement has a function call
-		if ok, expr, shell := hasShell(cmd); ok {
-			out, err := executeWithOutput(shell, path, buildEnv)
+		if ok, expr, shell := core.HasShell(cmd); ok {
+			out, err := executeWithOutput(shell, path, buildEnv, interactive)
 			core.CheckErr(err, "cannot execute subshell command: %s", cmd)
 			// merges the output of the subshell in the original command
 			cmd = strings.Replace(cmd, expr, out, -1)
 			// execute the statement
-			err = execute(cmd, path, buildEnv)
+			err = execute(cmd, path, buildEnv, interactive)
 			core.CheckErr(err, "cannot execute command: %s", cmd)
-		} else if ok, fx := hasFunction(cmd); ok {
+		} else if ok, fx := core.HasFunction(cmd); ok {
 			// executes the function
-			b.runFunction(fx, path)
+			b.runFunction(fx, path, interactive)
 		} else {
 			// execute the statement
-			err := execute(cmd, path, buildEnv)
+			err := execute(cmd, path, buildEnv, interactive)
 			core.CheckErr(err, "cannot execute command: %s", cmd)
 		}
 	}
@@ -382,7 +382,7 @@ func (b *Builder) runFunction(function string, path string) {
 // if not profile is specified, it uses the default profile
 // if a default profile has not been defined, then uses the first profile in the build file
 // returns the profile used
-func (b *Builder) runProfile(profileName string, execDir string) *Profile {
+func (b *Builder) runProfile(profileName string, execDir string, interactive bool) *Profile {
 	core.Msg("preparing to execute build commands")
 	// construct an environment with the vars at build file level
 	env := NewEnVarFromSlice(os.Environ())
@@ -401,24 +401,24 @@ func (b *Builder) runProfile(profileName string, execDir string) *Profile {
 			// for each run statement in the profile
 			for _, cmd := range profile.Run {
 				// execute the statement
-				if ok, expr, shell := hasShell(cmd); ok {
-					out, err := executeWithOutput(shell, execDir, buildEnv)
+				if ok, expr, shell := core.HasShell(cmd); ok {
+					out, err := executeWithOutput(shell, execDir, buildEnv, interactive)
 					core.CheckErr(err, "cannot execute subshell command: %s", cmd)
 					// merges the output of the subshell in the original command
 					cmd = strings.Replace(cmd, expr, out, -1)
 					// execute the statement
-					err = execute(cmd, execDir, buildEnv)
+					err = execute(cmd, execDir, buildEnv, interactive)
 					core.CheckErr(err, "cannot execute command: %s", cmd)
-				} else if ok, fx := hasFunction(cmd); ok {
+				} else if ok, fx := core.HasFunction(cmd); ok {
 					// executes the function
-					b.runFunction(fx, execDir)
+					b.runFunction(fx, execDir, interactive)
 				} else {
 					// execute the statement
-					err := execute(cmd, execDir, buildEnv)
+					err := execute(cmd, execDir, buildEnv, interactive)
 					core.CheckErr(err, "cannot execute command: %s", cmd)
 				}
 			}
-			return &profile
+			return profile
 		}
 		// if the profile has not been provided
 		if len(profileName) == 0 {
@@ -427,11 +427,11 @@ func (b *Builder) runProfile(profileName string, execDir string) *Profile {
 			// use the default profile
 			if defaultProfile != nil {
 				core.Msg("building the default profile '%s'", defaultProfile.Name)
-				return b.runProfile(defaultProfile.Name, execDir)
+				return b.runProfile(defaultProfile.Name, execDir, interactive)
 			} else {
 				core.Msg("building the first profile in the build file: '%s'", b.buildFile.Profiles[0].Name)
 				// there is no default profile defined so use the first profile
-				return b.runProfile(b.buildFile.Profiles[0].Name, execDir)
+				return b.runProfile(b.buildFile.Profiles[0].Name, execDir, interactive)
 			}
 		}
 	}
