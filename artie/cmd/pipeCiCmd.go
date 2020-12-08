@@ -16,15 +16,15 @@ import (
 )
 
 // list local artefacts
-type PipeDeployCmd struct {
+type PipeCiCmd struct {
 	cmd     *cobra.Command
 	profile string
 }
 
-func NewPipeDeployCmd() *PipeDeployCmd {
-	c := &PipeDeployCmd{
+func NewPipeCiCmd() *PipeCiCmd {
+	c := &PipeCiCmd{
 		cmd: &cobra.Command{
-			Use:   "deploy",
+			Use:   "ci [flags] [build-file-path]",
 			Short: "deploy a CI pipeline for a specific application type to integrate application code using artie",
 			Long:  ``,
 		},
@@ -34,7 +34,7 @@ func NewPipeDeployCmd() *PipeDeployCmd {
 	return c
 }
 
-func (b *PipeDeployCmd) Run(cmd *cobra.Command, args []string) {
+func (b *PipeCiCmd) Run(cmd *cobra.Command, args []string) {
 	var buildFile = "."
 	if len(args) == 1 {
 		buildFile = args[0]
