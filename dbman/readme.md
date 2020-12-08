@@ -85,7 +85,7 @@ The container image can be configured by passing the following environment varia
 | `OX_DBM_DB_ADMINPASSWORD` | The database admin password | `onix` |
 | `OX_DBM_REPO_URI` | The root path of the database scripts. | `https://raw.githubusercontent.com/gatblau/ox-db/master` |
 | `OX_DBM_REPO_USERNAME` | The username for the scripts repository. | `git-username-here` |
-| `OX_DBM_REPOPASSWORD` | The token/password for the scripts repository. | `git-password-here` |
+| `OX_DBM_REPO_PASSWORD` | The token/password for the scripts repository. | `git-password-here` |
 
 ## Swagger Web API
 
