@@ -8,6 +8,7 @@
 package build
 
 import (
+	"github.com/gatblau/onix/artie/core"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
@@ -31,7 +32,7 @@ type BuildFile struct {
 	// they should be used to document key aspects of the artefact in a generic way
 	Labels map[string]string `yaml:"labels"`
 	// a list of build configurations in the form of labels, commands to run and environment variables
-	Profiles []Profile `yaml:"profiles"`
+	Profiles []*Profile `yaml:"profiles"`
 	// a list of functions containing a list of commands to execute
 	Functions []Function `yaml:"functions"`
 }
@@ -44,7 +45,7 @@ func (b *BuildFile) getEnv() map[string]string {
 func (b *BuildFile) DefaultProfile() *Profile {
 	for _, profile := range b.Profiles {
 		if profile.Default {
-			return &profile
+			return profile
 		}
 	}
 	return nil
@@ -81,6 +82,37 @@ func (p *Profile) getEnv() map[string]string {
 	return p.Env
 }
 
+// return the build profile specified by its name
+func (b *BuildFile) Profile(name string) *Profile {
+	for _, profile := range b.Profiles {
+		if profile.Name == name {
+			return profile
+		}
+	}
+	return nil
+}
+
+// survey all missing variables in the profile
+func (p *Profile) Survey(bf *BuildFile) map[string]string {
+	env := bf.Env
+	// merges the profile environment with the passed in environment
+	for k, v := range p.Env {
+		env[k] = v
+	}
+	// attempt to merge any environment variable in the profile run commands
+	// run the merge in interactive mode so that any variables not available in the build file environment are surveyed
+	_, updatedEnvironment := core.MergeEnvironmentVars(p.Run, env, true)
+	// attempt to merge any environment variable in the functions run commands
+	for _, run := range p.Run {
+		// if the run line has a function
+		if ok, fxName := core.HasFunction(run); ok {
+			// merge any variables on the function
+			env = bf.fx(fxName).Survey(env)
+		}
+	}
+	return updatedEnvironment
+}
+
 func LoadBuildFile(path string) *BuildFile {
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -106,6 +138,19 @@ type Function struct {
 }
 
 // gets a slice of string with each element containing key=value
-func (p *Function) getEnv() map[string]string {
-	return p.Env
+func (f *Function) getEnv() map[string]string {
+	return f.Env
+}
+
+// survey all missing variables in the function
+// pass in any available environment variables so that they are not surveyed
+func (f *Function) Survey(env map[string]string) map[string]string {
+	// merges the function environment with the passed in environment
+	for k, v := range f.Env {
+		env[k] = v
+	}
+	// attempt to merge any environment variable in the run commands
+	// run the merge in interactive mode so that any variables not available in the build file environment are surveyed
+	_, updatedEnvironment := core.MergeEnvironmentVars(f.Run, env, true)
+	return updatedEnvironment
 }

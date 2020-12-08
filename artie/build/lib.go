@@ -22,7 +22,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -261,7 +260,7 @@ func round(val float64, roundOn float64, places int) (newVal float64) {
 }
 
 // executes a command and sends output and error streams to stdout and stderr
-func execute(cmd string, dir string, env *envar) (err error) {
+func execute(cmd string, dir string, env *envar, interactive bool) (err error) {
 	if cmd == "" {
 		return errors.New("no command provided")
 	}
@@ -274,7 +273,7 @@ func execute(cmd string, dir string, env *envar) (err error) {
 		args = cmdArr[1:]
 	}
 
-	args = mergeEnvironmentVars(args, env.vars)
+	args, _ = core.MergeEnvironmentVars(args, env.vars, interactive)
 
 	command := exec.Command(name, args...)
 	command.Dir = dir
@@ -319,7 +318,7 @@ func execute(cmd string, dir string, env *envar) (err error) {
 }
 
 // executes a command and returns ist output
-func executeWithOutput(cmd string, dir string, env *envar) (string, error) {
+func executeWithOutput(cmd string, dir string, env *envar, interactive bool) (string, error) {
 	if cmd == "" {
 		return "", errors.New("no command provided")
 	}
@@ -332,7 +331,7 @@ func executeWithOutput(cmd string, dir string, env *envar) (string, error) {
 		args = cmdArr[1:]
 	}
 
-	args = mergeEnvironmentVars(args, env.vars)
+	args, _ = core.MergeEnvironmentVars(args, env.vars, interactive)
 
 	command := exec.Command(name, args...)
 	command.Dir = dir
@@ -355,35 +354,6 @@ func handleReader(reader *bufio.Reader) {
 	}
 }
 
-// merges environment variables in the arguments
-func mergeEnvironmentVars(args []string, env map[string]string) []string {
-	var result = make([]string, len(args))
-	// env variable regex
-	evExpression := regexp.MustCompile("\\${(.*?)}")
-	// check if the args have env variables and if so merge them
-	for ix, arg := range args {
-		result[ix] = arg
-		// find all environment variables in the argument
-		matches := evExpression.FindAllString(arg, -1)
-		// if we have matches
-		if matches != nil {
-			for _, match := range matches {
-				// get the name of the environment variable i.e. the name part in "${name}"
-				name := match[2 : len(match)-1]
-				// get the value of the variable
-				value := env[name]
-				// if not value exist then error
-				if len(value) == 0 {
-					core.RaiseErr("environment variable '%s' is not defined", name)
-				}
-				// merges the variable
-				result[ix] = strings.Replace(result[ix], match, value, -1)
-			}
-		}
-	}
-	return result
-}
-
 func contains(value string, list []string) bool {
 	for _, v := range list {
 		if v == value {
@@ -391,20 +361,4 @@ func contains(value string, list []string) bool {
 		}
 	}
 	return false
-}
-
-func hasFunction(value string) (bool, string) {
-	matches := regexp.MustCompile("\\$\\((.*?)\\)").FindAllString(value, 1)
-	if matches != nil {
-		return true, matches[0][2 : len(matches[0])-1]
-	}
-	return false, ""
-}
-
-func hasShell(value string) (bool, string, string) {
-	matches := regexp.MustCompile("\\$\\(\\((.*?)\\)\\)").FindAllString(value, 1)
-	if matches != nil {
-		return true, matches[0], matches[0][3 : len(matches[0])-2]
-	}
-	return false, "", ""
 }
