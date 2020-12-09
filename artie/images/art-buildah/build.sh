@@ -39,36 +39,42 @@ if [[ -z "${PULL_IMAGE_REGISTRY+x}" ]]; then
     echo "PULL_IMAGE_REGISTRY must be provided"
     exit 1
 fi
-if [[ -z "${INIT_SCRIPT_URL+x}" ]]; then
-    echo "INIT_SCRIPT_URL must be provided"
+if [[ -z "${BUILD_FILE_URL+x}" ]]; then
+    echo "BUILD_FILE_URL must be provided"
     exit 1
 fi
 
 # defines the container image fqn
 PUSH_IMAGE_FQN="${PUSH_IMAGE_REGISTRY}/${PUSH_IMAGE_REPO}/${PUSH_IMAGE_NAME}"
 
-# fetch the init script
+# fetch the build.yaml file from the project repository
 # if an authentication token has been provided
 if [[ -z "${GIT_TOKEN+x}" ]]; then
-  echo GIT_TOKEN not defined, retrieving init.sh without authenticating
-  wget "${INIT_SCRIPT_URL}" -O init.sh
+  echo GIT_TOKEN not defined, retrieving build.yaml without authenticating
+  wget "${BUILD_FILE_URL}" -O build.yaml
 else
-  echo GIT_TOKEN defined, retrieving init.sh with token
-  wget --header="PRIVATE-TOKEN:${GIT_TOKEN}" "${INIT_SCRIPT_URL}" -O init.sh
+  echo GIT_TOKEN defined, retrieving build.yaml with token
+  wget --header="PRIVATE-TOKEN:${GIT_TOKEN}" "${BUILD_FILE_URL}" -O build.yaml
 fi
 
-# run the script
-# NOTE: init script should check for its own environment variables
-sh init.sh
+# import required keys
+# one or more public keys for verifying artefacts
+# one private key for signing the container image
+artie run import-keys
 
-## get the execution status of the init.sh
-INIT_STATUS=$?
+# if the exit code of the previous command is not zero
+if [ "$?" -ne 0 ]; then
+   echo "failed to import keys"
+   exit 1
+fi
 
-## if status code greater than 0 (error) then exit
-if [[ -n "${INIT_STATUS}" && "${INIT_STATUS}" -gt 0 ]]; then
-  echo failed to execute init.sh script, verify the script runs without error
-  echo exiting build
-  exit 1
+# open artefact(s) using artie
+artie run open-artefacts
+
+# if the exit code of the previous command is not zero
+if [ "$?" -ne 0 ]; then
+   echo "failed to open artefact(s)"
+   exit 1
 fi
 
 # login to the base image registry if a username is provided
