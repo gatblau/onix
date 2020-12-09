@@ -482,7 +482,7 @@ func (b *Builder) createSeal(artie *core.ArtieName, profile *Profile) *core.Seal
 	// take the hash of the zip file and seal info combined
 	sum := core.SealChecksum(b.workDirZipFilename(), info)
 	// load private key
-	pk, err := sign.LoadPrivateKey(artie.Group, artie.Name)
+	pk, err := sign.LoadPGPPrivateKey(artie.Group, artie.Name)
 	core.CheckErr(err, "cannot load signing key")
 	// create a Base-64 encoded cryptographic signature
 	signature, err := b.signer.SignBase64(pk, sum)

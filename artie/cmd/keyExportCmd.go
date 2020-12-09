@@ -14,32 +14,32 @@ import (
 )
 
 // list local artefacts
-type CertExportCmd struct {
+type KeyExportCmd struct {
 	cmd       *cobra.Command
 	group     string // the repository group for which the key should be used - if empty then the root is used
 	name      string // the repository name for which the key should be used
 	isPrivate *bool  //  whether the key is public or private
 }
 
-func NewCertExportCmd() *CertExportCmd {
-	c := &CertExportCmd{
+func NewKeyExportCmd() *KeyExportCmd {
+	c := &KeyExportCmd{
 		cmd: &cobra.Command{
 			Use:   "export [flags] path/to/exported/file",
 			Short: "export a (private or public) RSA key stored in the local registry",
-			Long:  `a private RSA key is used to digitally sign an artefact upon build, a public RSA key is used to verify the digital signature when the artefact is opened`,
+			Long:  `a private PGP/RSA key is used to digitally sign an artefact upon build, a public RSA key is used to verify the digital signature when the artefact is opened`,
 		},
 	}
-	c.isPrivate = c.cmd.Flags().BoolP("private", "k", false, "A flag indicating if the key to export is the private or public key.")
-	c.cmd.Flags().StringVarP(&c.group, "group", "g", "", "The repository group location of the exported key.")
-	c.cmd.Flags().StringVarP(&c.name, "name", "n", "", "The repository name location of the exported key.")
+	c.isPrivate = c.cmd.Flags().BoolP("private", "k", false, "flag that indicates if the key to export is the private or public key.")
+	c.cmd.Flags().StringVarP(&c.group, "group", "g", "", "the repository group location of the exported key.")
+	c.cmd.Flags().StringVarP(&c.name, "name", "n", "", "the repository name location of the exported key.")
 	c.cmd.Run = c.Run
 	return c
 }
 
-func (b *CertExportCmd) Run(cmd *cobra.Command, args []string) {
+func (b *KeyExportCmd) Run(cmd *cobra.Command, args []string) {
 	// check if a path to the key has been provided
 	if len(args) == 0 {
-		core.RaiseErr("the path to the key file to be imported must be provided when calling this command")
+		core.RaiseErr("the path to the key file to be exported must be provided when calling this command")
 	}
 	if len(args) > 1 {
 		core.RaiseErr("more than one argument have been provided, only the path to the key file is required")

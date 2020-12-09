@@ -13,14 +13,14 @@ import (
 )
 
 // event listener merging information
-type EventListener struct {
+type EL struct {
 	AppName string
 	AppIcon string
 	GitURI  string
 }
 
 // merges the template and its values into the passed in writer
-func (p *EventListener) Merge(w io.Writer) error {
+func (p *EL) Merge(w io.Writer) error {
 	t, err := template.New("event-listener").Parse(eventListener)
 	if err != nil {
 		return err

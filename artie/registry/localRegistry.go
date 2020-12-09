@@ -144,7 +144,7 @@ func (r *LocalRegistry) checkRegistryDir() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		sign.GenerateKeys(keysPath, "root", 2048)
+		sign.GeneratePGPKeys(keysPath, "root", 2048)
 	}
 }
 
@@ -566,13 +566,13 @@ func (r *LocalRegistry) Open(name *core.ArtieName, credentials string, useTLS bo
 		var pubKey *rsa.PublicKey
 		if len(pubKeyPath) > 0 {
 			// retrieve the verification key from the specified location
-			pubKeyBytes, err := ioutil.ReadFile(pubKeyPath)
-			core.CheckErr(err, "cannot read public key")
-			pubKey, err = sign.ParsePublicKey(pubKeyBytes, pubKeyPath)
+			// pubKeyBytes, err := ioutil.ReadFile(pubKeyPath)
+			// core.CheckErr(err, "cannot read public key")
+			pubKey, err = sign.ReadPGPPublicKey(pubKeyPath)
 			core.CheckErr(err, "cannot load public key")
 		} else {
 			// otherwise load it from the registry store
-			pub, err := sign.LoadPublicKey(name.Group, name.Name)
+			pub, err := sign.LoadPGPPublicKey(name.Group, name.Name)
 			core.CheckErr(err, "cannot load public key")
 			pubKey = pub
 		}
@@ -782,20 +782,32 @@ func (r *LocalRegistry) ImportKey(keyPath string, isPrivate bool, repoGroup stri
 		keyPath, err := filepath.Abs(keyPath)
 		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
 	}
-	// load the key first
-	b, err := ioutil.ReadFile(keyPath)
-	core.CheckErr(err, "cannot load key from path '%s'", keyPath)
+	// // load the key first
+	// b, err := ioutil.ReadFile(keyPath)
+	// core.CheckErr(err, "cannot load key from path '%s'", keyPath)
+	// destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
+	// if isPrivate {
+	// 	pk, err := sign.ParseX509PrivateKey(b, keyPath)
+	// 	core.CheckErr(err, "cannot parse private key '%s'", keyPath)
+	// 	fqdn := path.Join(destPath, sign.PrivateKeyName(prefix))
+	// 	sign.SaveX509PrivateKey(fqdn, pk)
+	// } else {
+	// 	pub, err := sign.ParseX509PublicKey(b, keyPath)
+	// 	core.CheckErr(err, "cannot parse private key '%s'", keyPath)
+	// 	fqdn := path.Join(destPath, sign.PublicKeyName(prefix))
+	// 	sign.SaveX509PublicKey(fqdn, pub)
+	// }
 	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
 	if isPrivate {
-		pk, err := sign.ParsePrivateKey(b, keyPath)
-		core.CheckErr(err, "cannot parse private key '%s'", keyPath)
-		fqdn := path.Join(destPath, sign.PrivateKeyName(prefix))
-		sign.SavePrivateKey(fqdn, pk)
+		key, err := sign.ReadPGPPrivateKey(keyPath)
+		core.CheckErr(err, "cannot read private pgp key '%s'", keyPath)
+		fqdn := path.Join(destPath, sign.PrivateKeyName(prefix, "pgp"))
+		sign.SavePGPPrivateKey(fqdn, key, nil)
 	} else {
-		pub, err := sign.ParsePublicKey(b, keyPath)
-		core.CheckErr(err, "cannot parse private key '%s'", keyPath)
-		fqdn := path.Join(destPath, sign.PublicKeyName(prefix))
-		sign.SavePublicKey(fqdn, pub)
+		key, err := sign.ReadPGPPublicKey(keyPath)
+		core.CheckErr(err, "cannot read public pgp key '%s'", keyPath)
+		fqdn := path.Join(destPath, sign.PublicKeyName(prefix, "pgp"))
+		sign.SavePGPPublicKey(fqdn, key, nil)
 	}
 }
 
@@ -806,11 +818,11 @@ func (r *LocalRegistry) ExportKey(keyPath string, isPrivate bool, repoGroup stri
 	}
 	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
 	if isPrivate {
-		keyName := sign.PrivateKeyName(prefix)
+		keyName := sign.PrivateKeyName(prefix, "pgp")
 		err := CopyFile(path.Join(destPath, keyName), path.Join(keyPath, keyName))
 		core.CheckErr(err, "cannot export private key")
 	} else {
-		keyName := sign.PublicKeyName(prefix)
+		keyName := sign.PublicKeyName(prefix, "pgp")
 		err := CopyFile(path.Join(destPath, keyName), path.Join(keyPath, keyName))
 		core.CheckErr(err, "cannot export public key")
 	}
