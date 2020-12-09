@@ -14,19 +14,19 @@ import (
 )
 
 // list local artefacts
-type CertImportCmd struct {
+type KeyImportCmd struct {
 	cmd       *cobra.Command
 	group     string // the repository group for which the key should be used - if empty then the root is used
 	name      string // the repository name for which the key should be used
 	isPrivate *bool  //  whether the key is public or private
 }
 
-func NewCertImportCmd() *CertImportCmd {
-	c := &CertImportCmd{
+func NewKeyImportCmd() *KeyImportCmd {
+	c := &KeyImportCmd{
 		cmd: &cobra.Command{
 			Use:   "import [flags] path/to/key/file",
-			Short: "import RSA keys into the local registry",
-			Long:  `a private RSA key is used to digitally sign an artefact upon build, a public RSA key is used to verify the digital signature when the artefact is opened`,
+			Short: "import PGP/RSA keys into the local registry",
+			Long:  `a private PGP/RSA key is used to digitally sign an artefact upon build, a public RSA key is used to verify the digital signature when the artefact is opened`,
 		},
 	}
 	c.isPrivate = c.cmd.Flags().BoolP("private", "k", false, "A flag indicating if the key to import is the private or public key.")
@@ -36,7 +36,7 @@ func NewCertImportCmd() *CertImportCmd {
 	return c
 }
 
-func (b *CertImportCmd) Run(cmd *cobra.Command, args []string) {
+func (b *KeyImportCmd) Run(cmd *cobra.Command, args []string) {
 	// check if a path to the key has been provided
 	if len(args) == 0 {
 		core.RaiseErr("the path to the key file to be imported must be provided when calling this command")

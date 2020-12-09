@@ -41,7 +41,7 @@ func (b *PipeCiCmd) Run(cmd *cobra.Command, args []string) {
 	} else if len(args) > 1 {
 		core.RaiseErr("only one argument is required")
 	}
-	pipeline := tkn.NewPipeline(buildFile, b.profile)
+	pipeline := tkn.NewArtefactPipeline(buildFile, b.profile)
 	merged := new(bytes.Buffer)
 	err := pipeline.Merge(merged)
 	core.CheckErr(err, "cannot merge pipeline template")

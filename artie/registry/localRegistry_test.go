@@ -23,7 +23,7 @@ func TestDownload(t *testing.T) {
 
 func TestRemove(t *testing.T) {
 	l := NewLocalRegistry()
-	l.Remove([]*core.ArtieName{core.ParseName("874484")})
+	l.Remove([]*core.ArtieName{core.ParseName("879")})
 }
 
 func TestTag(t *testing.T) {

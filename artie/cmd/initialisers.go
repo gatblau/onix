@@ -20,7 +20,7 @@ func InitialiseRootCmd() *RootCmd {
 	mergeCmd := NewMergeCmd()
 	pullCmd := NewPullCmd()
 	openCmd := NewOpenCmd()
-	certCmd := InitialiseCertCommand()
+	certCmd := InitialiseKeyCommand()
 	pipeCmd := InitialisePipeCommand()
 	rootCmd.Cmd.AddCommand(
 		buildCmd.cmd,
@@ -47,11 +47,11 @@ func InitialisePipeCommand() *PipeCmd {
 	return pipeCmd
 }
 
-func InitialiseCertCommand() *CertCmd {
-	certCmd := NewCertCmd()
-	certGenCmd := NewCertGenCmd()
-	certImportCmd := NewCertImportCmd()
-	certExportCmd := NewCertExportCmd()
+func InitialiseKeyCommand() *KeyCmd {
+	certCmd := NewKeyCmd()
+	certGenCmd := NewKeyGenCmd()
+	certImportCmd := NewKeyImportCmd()
+	certExportCmd := NewKeyExportCmd()
 	certCmd.cmd.AddCommand(certGenCmd.cmd, certImportCmd.cmd, certExportCmd.cmd)
 	return certCmd
 }

@@ -15,6 +15,7 @@ env:
   GOARCH: amd64
   REPO_NAME: quay.io/gatblau
   ARTIE_REGISTRY: art-registry
+  ARTIE_KUBE: art-kube
   ARTIE_IMG_BUILDER: art-buildah
   ARTIE_JAVA_BUILDER: art-java
   ARTIE_PYTHON_BUILDER: art-python
@@ -72,6 +73,18 @@ functions:
     run:
       - docker push ${REPO_NAME}/${ARTIE_REGISTRY}:$((cat ./version))
       - docker push ${REPO_NAME}/${ARTIE_REGISTRY}:latest
+      -
+  - name: build-art-kube
+    description: creates an artie K8S client image
+    run:
+      - docker build -f ./images/art-kube/Dockerfile --build-arg APP_NAME=artie-linux-$((cat ./version)) -t ${REPO_NAME}/${ARTIE_KUBE}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ARTIE_KUBE}:$((cat ./version)) ${REPO_NAME}/${ARTIE_KUBE}:latest
+
+  - name: push-art-kube
+    description: creates a container image for K8S client
+    run:
+      - docker push ${REPO_NAME}/${ARTIE_KUBE}:$((cat ./version))
+      - docker push ${REPO_NAME}/${ARTIE_KUBE}:latest
 
   - name: build-art-buildah
     description: creates an artie image builder image
@@ -142,6 +155,8 @@ functions:
       - $(push-art-registry)
       - $(build-art-buildah)
       - $(push-art-buildah)
+      - $(build-art-kube)
+      - $(push-art-kube)
       - $(build-art-java)
       - $(push-art-java)
       - $(build-art-python)
