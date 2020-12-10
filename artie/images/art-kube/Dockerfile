@@ -34,12 +34,13 @@ RUN wget https://github.com/openshift/okd/releases/download/$OKD_VERSION/openshi
     mv oc $ARTIE_HOME && \
     rm openshift-client-linux-$OKD_VERSION.tar.gz
 
-COPY ./images/bin/output/$APP_NAME $ARTIE_HOME/
+COPY ./images/bin/output/$APP_NAME ./images/art-kube/buildconfig.yaml.tem $ARTIE_HOME/
 
 RUN ln -s $ARTIE_HOME/$APP_NAME $ARTIE_HOME/artie && \
     chmod ug+x $ARTIE_HOME/$APP_NAME && \
     chmod ug+x $ARTIE_HOME/artie && \
     chmod ug+x $ARTIE_HOME/kubectl && \
-    chmod ug+x $ARTIE_HOME/oc
+    chmod ug+x $ARTIE_HOME/oc && \
+    chmod ug+rwx $ARTIE_HOME/buildconfig.yaml.tem
 
 USER $UNAME
