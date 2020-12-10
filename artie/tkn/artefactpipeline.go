@@ -24,7 +24,7 @@ import (
 )
 
 // a tekton-based Artie's CI pipeline
-type ArtefactPipeline struct {
+type ArtefactPipelineConfig struct {
 	// ART_APP_NAME
 	AppName string
 	// ART_GIT_URI
@@ -39,10 +39,14 @@ type ArtefactPipeline struct {
 	ArtefactRegistryUser string
 	// ART_REG_PWD
 	ArtefactRegistryPwd string
+
+	SigningKeyName string
+
+	AppIcon string
 }
 
 // create a new pipeline
-func NewArtefactPipeline(buildFilePath, profileName string) *ArtefactPipeline {
+func NewArtPipelineConfig(buildFilePath, profileName string) *ArtefactPipelineConfig {
 	var profile *build.Profile
 	// load the build file
 	buildFile := loadBuildFile(buildFilePath)
@@ -65,7 +69,7 @@ func NewArtefactPipeline(buildFilePath, profileName string) *ArtefactPipeline {
 		}
 	}
 	// create an instance of the pipeline
-	p := new(ArtefactPipeline)
+	p := new(ArtefactPipelineConfig)
 	// resolve the builder image using the appType
 	p.BuilderImage = builderImage(buildFile.Type)
 	// set the build profile
@@ -84,7 +88,7 @@ func NewArtefactPipeline(buildFilePath, profileName string) *ArtefactPipeline {
 }
 
 // try and set ciPipeline variables from the environment
-func (p *ArtefactPipeline) loadFromEnv() {
+func (p *ArtefactPipelineConfig) loadFromEnv() {
 	p.AppName = p.LoadVar("ART_APP_NAME", p.AppName)
 	p.GitURI = p.LoadVar("ART_GIT_URI", p.GitURI)
 	p.BuilderImage = p.LoadVar("ART_BUILDER_IMG", p.BuilderImage)
@@ -94,7 +98,7 @@ func (p *ArtefactPipeline) loadFromEnv() {
 	p.ArtefactRegistryPwd = p.LoadVar("ART_REG_PWD", p.ArtefactRegistryPwd)
 }
 
-func (p *ArtefactPipeline) LoadVar(name string, value string) string {
+func (p *ArtefactPipelineConfig) LoadVar(name string, value string) string {
 	if len(value) == 0 {
 		value = os.Getenv(name)
 		if len(p.ArtefactName) > 0 {
@@ -105,7 +109,7 @@ func (p *ArtefactPipeline) LoadVar(name string, value string) string {
 }
 
 // collect missing variables on the command line
-func (p *ArtefactPipeline) survey() {
+func (p *ArtefactPipelineConfig) survey() {
 	// if the application name is not defined prompt for it
 	if len(p.AppName) == 0 {
 		prompt := &survey.Input{
@@ -152,7 +156,7 @@ func (p *ArtefactPipeline) survey() {
 }
 
 // merges the template and its values into the passed in writer
-func (p *ArtefactPipeline) Merge(w io.Writer) error {
+func (p *ArtefactPipelineConfig) Merge(w io.Writer) error {
 	t, err := template.New("pipeline").Parse(ciPipeline)
 	if err != nil {
 		return err
