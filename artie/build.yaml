@@ -21,6 +21,7 @@ env:
   ARTIE_PYTHON_BUILDER: art-python
   ARTIE_NODE_BUILDER: art-node
   ARTIE_GO_BUILDER: art-go
+  SONAR_SCANNER: art-sonar
   APP_VERSION: 0.0.4
 #  alpha: Alpha release, typically used for work-in-progress and experimentation
 #  beta: Beta release, typically one that is feature complete for the next planned release, but may contain known bugs.
@@ -73,7 +74,7 @@ functions:
     run:
       - docker push ${REPO_NAME}/${ARTIE_REGISTRY}:$((cat ./version))
       - docker push ${REPO_NAME}/${ARTIE_REGISTRY}:latest
-      -
+
   - name: build-art-kube
     description: creates an artie K8S client image
     run:
@@ -109,6 +110,18 @@ functions:
     run:
       - docker push ${REPO_NAME}/${ARTIE_JAVA_BUILDER}:$((cat ./version))
       - docker push ${REPO_NAME}/${ARTIE_JAVA_BUILDER}:latest
+
+  - name: build-art-sonar
+    description: creates a sonar scanner image
+    run:
+      - docker build -f ./images/art-sonar/Dockerfile -t ${REPO_NAME}/${SONAR_SCANNER}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${SONAR_SCANNER}:$((cat ./version)) ${REPO_NAME}/${SONAR_SCANNER}:latest
+
+  - name: push-art-sonar
+    description: pushes the sonar scanner image to the container registry
+    run:
+      - docker push ${REPO_NAME}/${SONAR_SCANNER}:$((cat ./version))
+      - docker push ${REPO_NAME}/${SONAR_SCANNER}:latest
 
   - name: build-art-python
     description: creates an artie python builder image
