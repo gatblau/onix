@@ -7,24 +7,24 @@ type Metadata struct {
 }
 
 type Resources struct {
-	Name        string      `yaml:"name"`
-	Type        string      `yaml:"type"`
-	Inputs      []Inputs    `yaml:"inputs"`
-	ResourceRef ResourceRef `yaml:"resourceRef"`
+	Name        string      `yaml:"name",omitempty`
+	Type        string      `yaml:"type",omitempty`
+	Inputs      []Inputs    `yaml:"inputs",omitempty`
+	ResourceRef ResourceRef `yaml:"resourceRef",omitempty`
 }
 
 type Params struct {
-	Name        string `yaml:"name"`
-	Value       string `yaml:"value"`
-	Type        string `yaml:"type"`
-	Description string `yaml:"description"`
-	Default     string `yaml:"default,omitempty"`
+	Name        string `yaml:"name",omitempty`
+	Value       string `yaml:"value",omitempty`
+	Type        string `yaml:"type",omitempty`
+	Description string `yaml:"description",omitempty`
+	Default     string `yaml:"default",omitempty`
 }
 
 type Inputs struct {
-	Name      string      `yaml:"name"`
-	Resource  string      `yaml:"resource"`
-	Resources []Resources `yaml:"resources"`
+	Name      string      `yaml:"name",omitempty`
+	Resource  string      `yaml:"resource",omitempty`
+	Resources []Resources `yaml:"resources",omitempty`
 }
 
 type Spec struct {
@@ -45,10 +45,10 @@ type Spec struct {
 }
 
 type Labels struct {
-	Application           string `yaml:"application"`
-	AppOpenshiftIoRuntime string `yaml:"app.openshift.io/runtime"`
+	Application           string `yaml:"application",omitempty`
+	AppOpenshiftIoRuntime string `yaml:"app.openshift.io/runtime",omitempty`
 }
 
 type PipelineRef struct {
-	Name string `yaml:"name"`
+	Name string `yaml:"name",omitempty`
 }

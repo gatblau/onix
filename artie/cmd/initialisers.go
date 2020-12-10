@@ -20,7 +20,7 @@ func InitialiseRootCmd() *RootCmd {
 	mergeCmd := NewMergeCmd()
 	pullCmd := NewPullCmd()
 	openCmd := NewOpenCmd()
-	certCmd := InitialiseKeyCommand()
+	keyCmd := InitialiseKeyCommand()
 	pipeCmd := InitialisePipeCommand()
 	rootCmd.Cmd.AddCommand(
 		buildCmd.cmd,
@@ -34,7 +34,7 @@ func InitialiseRootCmd() *RootCmd {
 		mergeCmd.cmd,
 		pullCmd.cmd,
 		openCmd.cmd,
-		certCmd.cmd,
+		keyCmd.cmd,
 		pipeCmd.cmd,
 	)
 	return rootCmd
@@ -42,7 +42,7 @@ func InitialiseRootCmd() *RootCmd {
 
 func InitialisePipeCommand() *PipeCmd {
 	pipeCmd := NewPipeCmd()
-	pipeSetupCmd := NewPipeCiCmd()
+	pipeSetupCmd := NewPipeArtefactCmd()
 	pipeCmd.cmd.AddCommand(pipeSetupCmd.cmd)
 	return pipeCmd
 }

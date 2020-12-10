@@ -8,7 +8,6 @@
 package cmd
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/gatblau/onix/artie/core"
 	"github.com/gatblau/onix/artie/tkn"
@@ -16,17 +15,17 @@ import (
 )
 
 // list local artefacts
-type PipeCiCmd struct {
+type PipeArtefactCmd struct {
 	cmd     *cobra.Command
 	profile string
 }
 
-func NewPipeCiCmd() *PipeCiCmd {
-	c := &PipeCiCmd{
+func NewPipeArtefactCmd() *PipeArtefactCmd {
+	c := &PipeArtefactCmd{
 		cmd: &cobra.Command{
-			Use:   "ci [flags] [build-file-path]",
-			Short: "deploy a CI pipeline for a specific application type to integrate application code using artie",
-			Long:  ``,
+			Use:   "artefact [flags] [build-file-path]",
+			Short: "deploy an artefact pipeline",
+			Long:  `deploy a Tekton Pipeline to build an application artefact using Artie`,
 		},
 	}
 	c.cmd.Flags().StringVarP(&c.profile, "profile", "p", "", "the build profile to use. if not provided, the default profile defined in the build file is used. if no default profile is found, then the first profile in the build file is used.")
@@ -34,16 +33,14 @@ func NewPipeCiCmd() *PipeCiCmd {
 	return c
 }
 
-func (b *PipeCiCmd) Run(cmd *cobra.Command, args []string) {
+func (b *PipeArtefactCmd) Run(cmd *cobra.Command, args []string) {
 	var buildFile = "."
 	if len(args) == 1 {
 		buildFile = args[0]
 	} else if len(args) > 1 {
 		core.RaiseErr("only one argument is required")
 	}
-	pipeline := tkn.NewArtefactPipeline(buildFile, b.profile)
-	merged := new(bytes.Buffer)
-	err := pipeline.Merge(merged)
-	core.CheckErr(err, "cannot merge pipeline template")
-	fmt.Print(merged)
+	c := tkn.NewArtPipelineConfig(buildFile, b.profile)
+
+	fmt.Print(tkn.MergeArtPipe(c.AppName, c.BuilderImage, c.ArtefactName, c.BuildProfile, "root", c.GitURI, "java"))
 }
