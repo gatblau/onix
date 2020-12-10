@@ -1,3 +1,23 @@
+if [[ -z "${SONAR_PROJECT_KEY+x}" ]]; then
+    echo "SONAR_PROJECT_KEY must be provided"
+    exit 1
+fi
+
+if [[ -z "${SONAR_URI+x}" ]]; then
+    echo "SONAR_URI must be provided"
+    exit 1
+fi
+
+if [[ -z "${SONAR_SOURCES+x}" ]]; then
+    echo "SONAR_SOURCES must be provided"
+    exit 1
+fi
+
+if [[ -z "${SONAR_BINARIES+x}" ]]; then
+    echo "SONAR_BINARIES must be provided"
+    exit 1
+fi
+
 # merge sonar URI variable
 printf "sonar.sourceEncoding=UTF-8\nsonar.host.url=%s\n" "${SONAR_URI}" >> ./conf/sonar-scanner.properties
 
