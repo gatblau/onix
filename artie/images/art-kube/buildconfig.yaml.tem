@@ -1,0 +1,56 @@
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: ${APPLICATION_NAME}-custom-build
+  labels:
+    name: ${APPLICATION_NAME}-custom-build
+  annotations:
+    template.alpha.openshift.io/wait-for-ready: 'true'
+spec:
+  strategy:
+    type: Custom
+    customStrategy:
+      forcePull: true
+      from:
+        kind: DockerImage
+        name: ${BUILDAH_IMAGE}
+      env:
+        - name: "PUSH_IMAGE_REGISTRY"
+          value: "${PUSH_IMAGE_REGISTRY}"
+        - name: "PUSH_IMAGE_REPO"
+          value: "${PUSH_IMAGE_REPO}"
+        - name: "PUSH_IMAGE_NAME"
+          value: "${PUSH_IMAGE_NAME}"
+        - name: "PUSH_IMAGE_VERSION"
+          value: "${PUSH_IMAGE_VERSION}"
+        - name: "PULL_IMAGE_REGISTRY"
+          value: "${PULL_IMAGE_REGISTRY}"
+        - name: "PULL_IMAGE_REGISTRY_UNAME"
+          value: "${PULL_IMAGE_REGISTRY_UNAME}"
+        - name: "PULL_IMAGE_REGISTRY_PWD"
+          value: "${PULL_IMAGE_REGISTRY_PWD}"
+        - name: "PUSH_IMAGE_REGISTRY_UNAME"
+          value: "${PUSH_IMAGE_REGISTRY_UNAME}"
+        - name: "PUSH_IMAGE_REGISTRY_PWD"
+          value: "${PUSH_IMAGE_REGISTRY_PWD}"
+        - name: "ARTEFACT_UNAME"
+          value: "${ARTEFACT_UNAME}"
+        - name: "ARTEFACT_PWD"
+          value: "${ARTEFACT_PWD}"
+        - name: "GIT_TOKEN"
+          value: "${GIT_TOKEN}"
+        - name: "DOCKERFILE_URL"
+          value: "${DOCKERFILE_URL}"
+        - name: "ARTEFACT_NAME"
+          value: "${ARTEFACT_NAME}"
+      secrets:
+      - secretSource: 
+          name: "root-rsa-key"
+        mountPath: "/keys/root-rsa-key" 
+      - secretSource:
+          name: "root-rsa-pub"
+        mountPath: "/keys/root-rsa-pub"
+  output:
+    to:
+      kind: DockerImage
+      name: registry.gitlab.com
