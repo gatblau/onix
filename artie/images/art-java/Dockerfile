@@ -49,4 +49,4 @@ RUN ln -s $ARTIE_HOME/$APP_NAME /usr/bin/artie && \
 
 USER $UNAME
 
-ENTRYPOINT ["sh", "start.sh"]
+CMD ["sh", "start.sh"]
