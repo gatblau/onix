@@ -19,7 +19,7 @@ if [[ -z "${SONAR_BINARIES+x}" ]]; then
 fi
 
 # merge sonar URI variable
-printf "sonar.sourceEncoding=UTF-8\nsonar.host.url=%s\n" "${SONAR_URI}" >> ./conf/sonar-scanner.properties
+printf "sonar.sourceEncoding=UTF-8\nsonar.host.url=%s\n" "${SONAR_URI}" >> ./sonar/conf/sonar-scanner.properties
 
 # initiates the scan process
 sonar-scanner -Dsonar.projectKey="${SONAR_PROJECT_KEY}" -Dsonar.sources="${SONAR_SOURCES}" -Dsonar.java.binaries="${SONAR_BINARIES}"
