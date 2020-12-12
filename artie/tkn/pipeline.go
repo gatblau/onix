@@ -8,10 +8,10 @@
 package tkn
 
 type Pipeline struct {
-	APIVersion string   `yaml:"apiVersion",omitempty`
-	Kind       string   `yaml:"kind",omitempty`
-	Metadata   Metadata `yaml:"metadata",omitempty`
-	Spec       Spec     `yaml:"spec",omitempty`
+	APIVersion string    `yaml:"apiVersion",omitempty`
+	Kind       string    `yaml:"kind",omitempty`
+	Metadata   *Metadata `yaml:"metadata",omitempty`
+	Spec       *Spec     `yaml:"spec",omitempty`
 }
 
 type TaskRef struct {
@@ -19,7 +19,7 @@ type TaskRef struct {
 }
 
 type Tasks struct {
-	Name      string    `yaml:"name",omitempty`
-	TaskRef   TaskRef   `yaml:"taskRef",omitempty`
-	Resources Resources `yaml:"resources",omitempty`
+	Name      string     `yaml:"name",omitempty`
+	TaskRef   *TaskRef   `yaml:"taskRef",omitempty`
+	Resources *Resources `yaml:"resources",omitempty`
 }

@@ -1,10 +1,10 @@
 package tkn
 
 type EventListener struct {
-	APIVersion string   `yaml:"apiVersion"`
-	Kind       string   `yaml:"kind"`
-	Metadata   Metadata `yaml:"metadata"`
-	Spec       Spec     `yaml:"spec"`
+	APIVersion string    `yaml:"apiVersion"`
+	Kind       string    `yaml:"kind"`
+	Metadata   *Metadata `yaml:"metadata"`
+	Spec       *Spec     `yaml:"spec"`
 }
 
 type Bindings struct {
@@ -16,6 +16,6 @@ type Template struct {
 }
 
 type Triggers struct {
-	Bindings []Bindings `yaml:"bindings"`
-	Template Template   `yaml:"template"`
+	Bindings []*Bindings `yaml:"bindings"`
+	Template *Template   `yaml:"template"`
 }
