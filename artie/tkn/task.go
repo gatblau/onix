@@ -13,10 +13,10 @@ import (
 )
 
 type Task struct {
-	APIVersion string   `yaml:"apiVersion",omitempty`
-	Kind       string   `yaml:"kind",omitempty`
-	Metadata   Metadata `yaml:"metadata",omitempty`
-	Spec       Spec     `yaml:"spec",omitempty`
+	APIVersion string    `yaml:"apiVersion,omitempty"`
+	Kind       string    `yaml:"kind,omitempty"`
+	Metadata   *Metadata `yaml:"metadata,omitempty"`
+	Spec       *Spec     `yaml:"spec,omitempty"`
 }
 
 func ToYaml(o interface{}, ref string) []byte {
@@ -26,38 +26,38 @@ func ToYaml(o interface{}, ref string) []byte {
 }
 
 type SecretKeyRef struct {
-	Key  string `yaml:"key",omitempty`
-	Name string `yaml:"name",omitempty`
+	Key  string `yaml:"key,omitempty"`
+	Name string `yaml:"name,omitempty"`
 }
 
 type ValueFrom struct {
-	SecretKeyRef SecretKeyRef `yaml:"secretKeyRef",omitempty`
+	SecretKeyRef *SecretKeyRef `yaml:"secretKeyRef,omitempty"`
 }
 
 type Env struct {
-	Name      string    `yaml:"name",omitempty`
-	Value     string    `yaml:"value,omitempty"`
-	ValueFrom ValueFrom `yaml:"valueFrom,omitempty"`
+	Name      string     `yaml:"name,omitempty"`
+	Value     string     `yaml:"value,omitempty"`
+	ValueFrom *ValueFrom `yaml:"valueFrom,omitempty"`
 }
 
 type VolumeMounts struct {
-	Name      string `yaml:"name",omitempty`
-	MountPath string `yaml:"mountPath",omitempty`
+	Name      string `yaml:"name,omitempty"`
+	MountPath string `yaml:"mountPath,omitempty"`
 }
 
 type Steps struct {
-	Name         string         `yaml:"name",omitempty`
-	Image        string         `yaml:"image",omitempty`
-	Env          []Env          `yaml:"env",omitempty`
-	WorkingDir   string         `yaml:"workingDir",omitempty`
-	VolumeMounts []VolumeMounts `yaml:"volumeMounts",omitempty`
+	Name         string          `yaml:"name,omitempty"`
+	Image        string          `yaml:"image,omitempty"`
+	Env          []*Env          `yaml:"env,omitempty"`
+	WorkingDir   string          `yaml:"workingDir,omitempty"`
+	VolumeMounts []*VolumeMounts `yaml:"volumeMounts,omitempty"`
 }
 
 type ConfigMap struct {
-	Name string `yaml:"name",omitempty`
+	Name string `yaml:"name,omitempty"`
 }
 
 type Volumes struct {
-	Name      string    `yaml:"name",omitempty`
-	ConfigMap ConfigMap `yaml:"configMap",omitempty`
+	Name      string     `yaml:"name,omitempty"`
+	ConfigMap *ConfigMap `yaml:"configMap,omitempty"`
 }

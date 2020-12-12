@@ -53,20 +53,20 @@ func newArtPipeTask(applicationName, builderImage, artefactName, buildProfile, s
 	t := new(Task)
 	t.APIVersion = ApiVersionTekton
 	t.Kind = "Task"
-	t.Spec = Spec{
-		Inputs: Inputs{
-			Resources: []Resources{
+	t.Spec = &Spec{
+		Inputs: &Inputs{
+			Resources: []*Resources{
 				{
 					Name: "source",
 					Type: "git",
 				},
 			},
 		},
-		Steps: []Steps{
+		Steps: []*Steps{
 			{
 				Name:  "apply",
 				Image: builderImage,
-				Env: []Env{
+				Env: []*Env{
 					{
 						Name:  "ARTEFACT_NAME",
 						Value: artefactName,
@@ -77,23 +77,23 @@ func newArtPipeTask(applicationName, builderImage, artefactName, buildProfile, s
 					},
 					{
 						Name: "ARTEFACT_REG_USER",
-						ValueFrom: ValueFrom{
-							SecretKeyRef: SecretKeyRef{
+						ValueFrom: &ValueFrom{
+							SecretKeyRef: &SecretKeyRef{
 								Name: fmt.Sprintf("%s-art-registry-creds", applicationName),
 								Key:  "user",
 							}},
 					},
 					{
 						Name: "ARTEFACT_REG_PWD",
-						ValueFrom: ValueFrom{
-							SecretKeyRef: SecretKeyRef{
+						ValueFrom: &ValueFrom{
+							SecretKeyRef: &SecretKeyRef{
 								Name: fmt.Sprintf("%s-art-registry-creds", applicationName),
 								Key:  "pwd",
 							}},
 					},
 				},
 				WorkingDir: "/workspace/source",
-				VolumeMounts: []VolumeMounts{
+				VolumeMounts: []*VolumeMounts{
 					{
 						Name:      "keys-volume",
 						MountPath: "/keys",
@@ -101,10 +101,10 @@ func newArtPipeTask(applicationName, builderImage, artefactName, buildProfile, s
 				},
 			},
 		},
-		Volumes: []Volumes{
+		Volumes: []*Volumes{
 			{
 				Name: "keys-volume",
-				ConfigMap: ConfigMap{
+				ConfigMap: &ConfigMap{
 					Name: fmt.Sprintf("%s-key-cm", signingKeyName),
 				},
 			},
@@ -117,31 +117,31 @@ func newArtPipe(applicationName string) *Pipeline {
 	p := new(Pipeline)
 	p.Kind = "Pipeline"
 	p.APIVersion = ApiVersionTekton
-	p.Metadata = Metadata{
+	p.Metadata = &Metadata{
 		Name: fmt.Sprintf("%s-artefact-pipeline", applicationName),
 	}
-	p.Spec = Spec{
-		Resources: []Resources{
+	p.Spec = &Spec{
+		Resources: []*Resources{
 			{
 				Name: fmt.Sprintf("%s-code-repository", applicationName),
 				Type: "git",
 			},
 		},
-		Params: []Params{
+		Params: []*Params{
 			{
 				Name:        "deployment-name",
 				Type:        "string",
 				Description: "???",
 			},
 		},
-		Tasks: []Tasks{
+		Tasks: []*Tasks{
 			{
 				Name: "build-artefacts",
-				TaskRef: TaskRef{
+				TaskRef: &TaskRef{
 					Name: fmt.Sprintf("%s-build-artefacts", applicationName),
 				},
-				Resources: Resources{
-					Inputs: []Inputs{
+				Resources: &Resources{
+					Inputs: []*Inputs{
 						{
 							Name:     "source",
 							Resource: fmt.Sprintf("%s-code-repository", applicationName),
@@ -158,12 +158,12 @@ func newArtPipeResource(applicationName, gitURI string) *PipelineResource {
 	r := new(PipelineResource)
 	r.APIVersion = ApiVersionTekton
 	r.Kind = "PipelineResource"
-	r.Metadata = Metadata{
+	r.Metadata = &Metadata{
 		Name: fmt.Sprintf("%s-code-repository", applicationName),
 	}
-	r.Spec = Spec{
+	r.Spec = &Spec{
 		Type: "git",
-		Params: []Params{
+		Params: []*Params{
 			{
 				Name:  "url",
 				Value: gitURI,
@@ -177,26 +177,26 @@ func newArtPipeRun(applicationName string) *PipelineRun {
 	r := new(PipelineRun)
 	r.Kind = "PipelineRun"
 	r.APIVersion = ApiVersionTekton
-	r.Metadata = Metadata{
+	r.Metadata = &Metadata{
 		Name: fmt.Sprintf("build-deploy-%s-pipelinerun", applicationName),
 	}
-	r.Spec = Spec{
-		Resources: []Resources{
+	r.Spec = &Spec{
+		Resources: []*Resources{
 			{
 				Name: fmt.Sprintf("%s-code-repository", applicationName),
-				ResourceRef: ResourceRef{
+				ResourceRef: &ResourceRef{
 					Name: fmt.Sprintf("%s-code-repository", applicationName),
 				},
 			},
 		},
-		Params: []Params{
+		Params: []*Params{
 			{
 				Name:  "deployment-name",
 				Value: applicationName,
 			},
 		},
 		ServiceAccountName: ServiceAccountName,
-		PipelineRef: PipelineRef{
+		PipelineRef: &PipelineRef{
 			Name: fmt.Sprintf("%s-artefact-builder", applicationName),
 		},
 	}
@@ -207,22 +207,22 @@ func newArtPipeEventListener(applicationName, appIcon string) *EventListener {
 	e := new(EventListener)
 	e.APIVersion = ApiVersionTektonTrigger
 	e.Kind = "EventListener"
-	e.Metadata = Metadata{
+	e.Metadata = &Metadata{
 		Name: applicationName,
-		Labels: Labels{
+		Labels: &Labels{
 			AppOpenshiftIoRuntime: appIcon,
 		},
 	}
-	e.Spec = Spec{
+	e.Spec = &Spec{
 		ServiceAccountName: ServiceAccountName,
-		Triggers: []Triggers{
+		Triggers: []*Triggers{
 			{
-				Bindings: []Bindings{
+				Bindings: []*Bindings{
 					{
 						Name: applicationName,
 					},
 				},
-				Template: Template{
+				Template: &Template{
 					Name: applicationName,
 				},
 			},
@@ -235,24 +235,24 @@ func newArtPipeRoute(applicationName string) *Route {
 	r := new(Route)
 	r.APIVersion = ApiVersion
 	r.Kind = "Route"
-	r.Metadata = Metadata{
+	r.Metadata = &Metadata{
 		Name: fmt.Sprintf("el-%s", applicationName),
-		Labels: Labels{
+		Labels: &Labels{
 			Application: fmt.Sprintf("%s-https", applicationName),
 		},
-		Annotations: Annotations{
+		Annotations: &Annotations{
 			Description: "Route for the Artefact Pipeline Event Listener.",
 		},
 	}
-	r.Spec = Spec{
-		Port: Port{
+	r.Spec = &Spec{
+		Port: &Port{
 			TargetPort: "8080",
 		},
-		TLS: TLS{
+		TLS: &TLS{
 			InsecureEdgeTerminationPolicy: "Redirect",
 			Termination:                   "edge",
 		},
-		To: To{
+		To: &To{
 			Kind: "Service",
 			Name: fmt.Sprintf("el-%s", applicationName),
 		},
@@ -264,11 +264,11 @@ func newArtPipeTriggerBinding(applicationName string) *TriggerBinding {
 	t := new(TriggerBinding)
 	t.APIVersion = ApiVersionTektonTrigger
 	t.Kind = "TriggerBinding"
-	t.Metadata = Metadata{
+	t.Metadata = &Metadata{
 		Name: applicationName,
 	}
-	t.Spec = Spec{
-		Params: []Params{
+	t.Spec = &Spec{
+		Params: []*Params{
 			{
 				Name:  "git-repo-url",
 				Value: "$(body.project.web_url)",
@@ -293,11 +293,11 @@ func newArtPipeTriggerTemplate(applicationName, gitURI string) *PipelineRun {
 	t := new(PipelineRun)
 	t.APIVersion = ApiVersionTektonTrigger
 	t.Kind = "TriggerTemplate"
-	t.Metadata = Metadata{
+	t.Metadata = &Metadata{
 		Name: applicationName,
 	}
-	t.Spec = Spec{
-		Params: []Params{
+	t.Spec = &Spec{
+		Params: []*Params{
 			{
 				Name:  "git-repo-url",
 				Value: "The git repository url",
@@ -320,20 +320,20 @@ func newArtPipeResourceTriggerTemplate(applicationName, gitURI string) *Pipeline
 	r := new(PipelineResource)
 	r.APIVersion = ApiVersionTekton
 	r.Kind = "PipelineResource"
-	r.Metadata = Metadata{
+	r.Metadata = &Metadata{
 		Name: "$(params.git-repo-name)-git-repo-$(uid)",
 	}
-	r.Spec = Spec{
+	r.Spec = &Spec{
 		ServiceAccountName: ServiceAccountName,
-		PipelineRef: PipelineRef{
+		PipelineRef: &PipelineRef{
 			Name: fmt.Sprintf("%s-artefact-builder", applicationName),
 		},
-		Resources: []Resources{
+		Resources: []*Resources{
 			{
 				Name: "",
 			},
 		},
-		Params: []Params{
+		Params: []*Params{
 			{
 				Name:  "revision",
 				Value: "$(params.git-revision)",
@@ -351,26 +351,26 @@ func newArtPipeRunTriggerTemplate(applicationName string) *PipelineRun {
 	r := new(PipelineRun)
 	r.Kind = "PipelineRun"
 	r.APIVersion = ApiVersionTekton
-	r.Metadata = Metadata{
+	r.Metadata = &Metadata{
 		Name: "build-deploy-$(params.git-repo-name)-$(uid)",
 	}
-	r.Spec = Spec{
-		Resources: []Resources{
+	r.Spec = &Spec{
+		Resources: []*Resources{
 			{
 				Name: fmt.Sprintf("%s-code-repository", applicationName),
-				ResourceRef: ResourceRef{
+				ResourceRef: &ResourceRef{
 					Name: "$(params.git-repo-name)-git-repo-$(uid)",
 				},
 			},
 		},
-		Params: []Params{
+		Params: []*Params{
 			{
 				Name:  "deployment-name",
 				Value: "$(params.git-repo-name)",
 			},
 		},
 		ServiceAccountName: ServiceAccountName,
-		PipelineRef: PipelineRef{
+		PipelineRef: &PipelineRef{
 			Name: fmt.Sprintf("%s-artefact-builder", applicationName),
 		},
 	}
