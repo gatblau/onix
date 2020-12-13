@@ -1,0 +1,31 @@
+info:
+  contact:
+    email: onix@gatblau.org
+    name: gatblau
+    url: http://onix.gatblau.org/
+  description: |-
+    Build Manager API
+    build linux container images based on policies
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Onix - Build Manager
+  version: 0.0.4
+paths:
+  /:
+    get:
+      description: |-
+        Checks that Build Manager HTTP server is listening on the required port.
+        Use a liveliness probe.
+        It does not guarantee the server is ready to accept calls.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Check that Build Manager HTTP API is live
+      tags:
+      - General
+swagger: "2.0"

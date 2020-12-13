@@ -1,0 +1,128 @@
+{
+  "created": "2020-12-09T22:38:10.6593926Z",
+  "architecture": "amd64",
+  "os": "linux",
+  "config": {
+    "User": "artie",
+    "ExposedPorts": {
+      "8082/tcp": {}
+    },
+    "Env": [
+      "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "container=oci",
+      "UID=1000",
+      "GID=1000",
+      "APP=artie-linux-0.0.4-091220223747878-64f8b74f12-alpha"
+    ],
+    "Cmd": [
+      "sh",
+      "-c",
+      "/app/${APP} serve"
+    ],
+    "WorkingDir": "/app",
+    "Labels": {
+      "architecture": "x86_64",
+      "author": "gatblau",
+      "build-date": "2020-10-31T05:07:05.471303",
+      "com.redhat.build-host": "cpt-1002.osbs.prod.upshift.rdu2.redhat.com",
+      "com.redhat.component": "ubi8-minimal-container",
+      "com.redhat.license_terms": "https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI",
+      "description": "The Universal Base Image Minimal is a stripped down image that uses microdnf as a package manager. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.",
+      "distribution-scope": "public",
+      "io.k8s.description": "The Universal Base Image Minimal is a stripped down image that uses microdnf as a package manager. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.",
+      "io.k8s.display-name": "Red Hat Universal Base Image 8 Minimal",
+      "io.openshift.expose-services": "",
+      "io.openshift.tags": "minimal rhel8",
+      "maintainer": "onix@gatblau.org",
+      "name": "ubi8-minimal",
+      "release": "201",
+      "summary": "Provides the latest release of the minimal Red Hat Universal Base Image 8.",
+      "url": "https://access.redhat.com/containers/#/registry.access.redhat.com/ubi8-minimal/images/8.3-201",
+      "vcs-ref": "f53dab37c7541dd0080f410727c5886e85c09ee7",
+      "vcs-type": "git",
+      "vendor": "Red Hat, Inc.",
+      "version": "8.3"
+    }
+  },
+  "rootfs": {
+    "type": "layers",
+    "diff_ids": [
+      "sha256:d6ec160dc60fbfb962da0b216dfd27f00890bc8ace02994de6441a2517b04db5",
+      "sha256:37330a2a1954a6b667ef15cab3299dc3cc82f5bc2bc2bbc46b1a6a938d3b325b",
+      "sha256:36bdab8a430581c6f5947f3dc32848ad286f23cd3db02fc41f79d8e6b7ee355b",
+      "sha256:7799688c55988d68f2727e739351d231278480819daed9ccc0b228238674f415",
+      "sha256:92b5fc2a71724382ffdfb7f95f8268ecbacb34eb0aa1c68d8f25279a0bb9452f"
+    ]
+  },
+  "history": [
+    {
+      "created": "2020-10-31T05:07:10.906750217Z",
+      "comment": "Imported from -"
+    },
+    {
+      "created": "2020-10-31T05:07:18.057798Z"
+    },
+    {
+      "created": "2020-12-02T18:54:58.8266063Z",
+      "created_by": "/bin/sh -c #(nop)  LABEL author=gatblau",
+      "empty_layer": true
+    },
+    {
+      "created": "2020-12-02T18:54:59.0597381Z",
+      "created_by": "/bin/sh -c #(nop)  LABEL maintainer=onix@gatblau.org",
+      "empty_layer": true
+    },
+    {
+      "created": "2020-12-02T18:54:59.2998028Z",
+      "created_by": "/bin/sh -c #(nop)  ARG UNAME=artie",
+      "empty_layer": true
+    },
+    {
+      "created": "2020-12-02T18:54:59.53194Z",
+      "created_by": "/bin/sh -c #(nop)  ARG APP_NAME=artie",
+      "empty_layer": true
+    },
+    {
+      "created": "2020-12-02T18:54:59.767475Z",
+      "created_by": "/bin/sh -c #(nop)  ENV UID=1000",
+      "empty_layer": true
+    },
+    {
+      "created": "2020-12-02T18:55:00.0100897Z",
+      "created_by": "/bin/sh -c #(nop)  ENV GID=1000",
+      "empty_layer": true
+    },
+    {
+      "created": "2020-12-09T22:38:02.0238262Z",
+      "created_by": "/bin/sh -c #(nop)  ENV APP=artie-linux-0.0.4-091220223747878-64f8b74f12-alpha",
+      "empty_layer": true
+    },
+    {
+      "created": "2020-12-09T22:38:08.8853895Z",
+      "created_by": "|2 APP_NAME=artie-linux-0.0.4-091220223747878-64f8b74f12-alpha UNAME=artie /bin/sh -c microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y \u0026\u0026     microdnf install shadow-utils.x86_64 \u0026\u0026     groupadd -g $GID -o $UNAME \u0026\u0026     useradd -M -u $UID -g $GID $UNAME \u0026\u0026     rm -rf /var/cache/yum \u0026\u0026     microdnf clean all \u0026\u0026     mkdir -p /.artie/locks \u0026\u0026 chown $UNAME /.artie/locks \u0026\u0026 chmod ug+wr /.artie/locks \u0026\u0026     mkdir -p /.artie/tmp \u0026\u0026 chown $UNAME /.artie/tmp \u0026\u0026 chmod ug+wr /.artie/tmp \u0026\u0026     mkdir -p /.artie/hooks \u0026\u0026 chown $UNAME /.artie/hooks \u0026\u0026 chmod ug+wr /.artie/hooks"
+    },
+    {
+      "created": "2020-12-09T22:38:09.1461218Z",
+      "created_by": "/bin/sh -c #(nop) WORKDIR /app"
+    },
+    {
+      "created": "2020-12-09T22:38:09.9993867Z",
+      "created_by": "/bin/sh -c #(nop) COPY file:096c73b56b3c6270cced078d2f8cc050742ef921d4dac91653caf5e55494f014 in /app/artie-linux-0.0.4-091220223747878-64f8b74f12-alpha "
+    },
+    {
+      "created": "2020-12-09T22:38:10.2416934Z",
+      "created_by": "/bin/sh -c #(nop)  USER artie",
+      "empty_layer": true
+    },
+    {
+      "created": "2020-12-09T22:38:10.4627715Z",
+      "created_by": "/bin/sh -c #(nop)  CMD [\"sh\" \"-c\" \"/app/${APP} serve\"]",
+      "empty_layer": true
+    },
+    {
+      "created": "2020-12-09T22:38:10.6593926Z",
+      "created_by": "/bin/sh -c #(nop)  EXPOSE 8082/tcp",
+      "empty_layer": true
+    }
+  ]
+}
