@@ -1,0 +1,46 @@
+---
+application: Build Manager
+type: golang
+license: Apache Version 2
+labels:
+  author: gatblau
+  application: Onix Build Manager
+  description: Builds container images based on policies.
+  architecture: amd64
+env:
+  CGO_ENABLED: 0
+  GOARCH: amd64
+  REPO_NAME: quay.io/gatblau
+  IMG_NAME: buildman
+  APP_VERSION: 0.0.4
+#  alpha: Alpha release, typically used for work-in-progress and experimentation
+#  beta: Beta release, typically one that is feature complete for the next planned release, but may contain known bugs.
+#  rc: Release candidate, typically a release that's potentially final (stable) unless significant bugs emerge.
+  LIFECYCLE_STAGE: alpha
+functions:
+  - name: build-linux
+    description: builds the artie binary file for the linux platform
+    env:
+      GOOS: linux
+    run:
+      - sh ./image/bin/version.sh ${APP_VERSION}-${ART_REF}-${LIFECYCLE_STAGE}
+      - go fmt
+      - go build -o image/bin/output/buildman-linux-${APP_VERSION}-${ART_REF}-${LIFECYCLE_STAGE} -v
+
+  - name: swagen
+    description: generates/refreshes the OpenAPI specifications for the Build Manager HTTP API
+    run:
+      - swag init -d ./server -g server.go
+
+  - name: build-image
+    description: creates a Build Manager Service image
+    run:
+      - docker build -f ./image/Dockerfile --build-arg APP_NAME=buildman-linux-$((cat ./version)) -t ${REPO_NAME}/${IMG_NAME}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${IMG_NAME}:$((cat ./version)) ${REPO_NAME}/${IMG_NAME}:latest
+
+  - name: push-image
+    description: creates a container image for the snapshot repository
+    run:
+      - docker push ${REPO_NAME}/${IMG_NAME}:$((cat ./version))
+      - docker push ${REPO_NAME}/${IMG_NAME}:latest
+...
