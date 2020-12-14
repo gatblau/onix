@@ -57,8 +57,10 @@ if [[ -z "${GIT_TOKEN+x}" ]]; then
   echo GIT_TOKEN not defined, retrieving build.yaml without authenticating
   wget "${BUILD_FILE_URL}" -O build.yaml
 else
-  echo GIT_TOKEN defined, retrieving build.yaml with token
+  echo GIT_TOKEN defined
+  echo retrieving build.yaml with token
   wget --header="PRIVATE-TOKEN:${GIT_TOKEN}" "${BUILD_FILE_URL}" -O build.yaml
+  echo retrieving Dockerfile with token
   wget --header="PRIVATE-TOKEN:${GIT_TOKEN}" "${DOCKER_FILE_URL}" -O Dockerfile
 fi
 

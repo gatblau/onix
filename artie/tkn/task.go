@@ -49,6 +49,7 @@ type Steps struct {
 	Name         string          `yaml:"name,omitempty"`
 	Image        string          `yaml:"image,omitempty"`
 	Env          []*Env          `yaml:"env,omitempty"`
+	Command      []string        `yaml:"command,omitempty"`
 	WorkingDir   string          `yaml:"workingDir,omitempty"`
 	VolumeMounts []*VolumeMounts `yaml:"volumeMounts,omitempty"`
 }
@@ -59,5 +60,6 @@ type ConfigMap struct {
 
 type Volumes struct {
 	Name      string     `yaml:"name,omitempty"`
+	Secret    *Secret    `yaml:"secret,omitempty"`
 	ConfigMap *ConfigMap `yaml:"configMap,omitempty"`
 }

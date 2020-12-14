@@ -22,7 +22,7 @@ const (
 // return the full configuration for an Artefact Tekton Pipeline
 func MergeArtPipe(applicationName, builderImage, artefactName, buildProfile, signingKeyName, gitURI, applicationIcon string) string {
 	buf := bytes.Buffer{}
-	task := newArtPipeTask(applicationName, builderImage, artefactName, buildProfile, signingKeyName)
+	task := newArtPipeTask(applicationName, builderImage, "", artefactName, buildProfile, signingKeyName, "", "", "", "")
 	buf.Write(ToYaml(task, "Task"))
 	buf.WriteString("\n---\n")
 	pipe := newArtPipe(applicationName)
@@ -49,7 +49,7 @@ func MergeArtPipe(applicationName, builderImage, artefactName, buildProfile, sig
 	return buf.String()
 }
 
-func newArtPipeTask(applicationName, builderImage, artefactName, buildProfile, signingKeyName string) *Task {
+func newArtPipeTask(applicationName, builderImage, sonarImage, artefactName, buildProfile, signingKeyName, sonarURI, sonarProjectKey, sonarSources, sonarBinaries string) *Task {
 	t := new(Task)
 	t.APIVersion = ApiVersionTekton
 	t.Kind = "Task"
@@ -64,8 +64,47 @@ func newArtPipeTask(applicationName, builderImage, artefactName, buildProfile, s
 		},
 		Steps: []*Steps{
 			{
-				Name:  "apply",
-				Image: builderImage,
+				Name:       "build-app",
+				Image:      builderImage,
+				Command:    []string{"artie", "run", "build-app"},
+				WorkingDir: "/workspace/source",
+			},
+			{
+				Name:    "scan-app",
+				Image:   sonarImage,
+				Command: []string{"artie", "run", "build-app"},
+				Env: []*Env{
+					{
+						Name:  "SONAR_PROJECT_KEY",
+						Value: sonarProjectKey,
+					},
+					{
+						Name:  "SONAR_URI",
+						Value: sonarURI,
+					},
+					{
+						Name:  "SONAR_SOURCES",
+						Value: sonarSources,
+					},
+					{
+						Name:  "SONAR_BINARIES",
+						Value: sonarBinaries,
+					},
+					{
+						Name: "SONAR_TOKEN",
+						ValueFrom: &ValueFrom{
+							SecretKeyRef: &SecretKeyRef{
+								Name: fmt.Sprintf("%s-sonar-token", applicationName),
+								Key:  "token",
+							}},
+					},
+				},
+				WorkingDir: "/workspace/source",
+			},
+			{
+				Name:    "package-app",
+				Image:   builderImage,
+				Command: []string{"artie", "run", "build-app"},
 				Env: []*Env{
 					{
 						Name:  "ARTEFACT_NAME",
@@ -104,8 +143,8 @@ func newArtPipeTask(applicationName, builderImage, artefactName, buildProfile, s
 		Volumes: []*Volumes{
 			{
 				Name: "keys-volume",
-				ConfigMap: &ConfigMap{
-					Name: fmt.Sprintf("%s-key-cm", signingKeyName),
+				Secret: &Secret{
+					SecretName: fmt.Sprintf("%s-key-cm", applicationName),
 				},
 			},
 		},
@@ -131,7 +170,7 @@ func newArtPipe(applicationName string) *Pipeline {
 			{
 				Name:        "deployment-name",
 				Type:        "string",
-				Description: "???",
+				Description: "the unique name for this deployment",
 			},
 		},
 		Tasks: []*Tasks{
@@ -375,4 +414,8 @@ func newArtPipeRunTriggerTemplate(applicationName string) *PipelineRun {
 		},
 	}
 	return r
+}
+
+func newArtSecret() *Secret {
+	return nil
 }
