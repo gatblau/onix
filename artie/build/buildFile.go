@@ -21,6 +21,10 @@ type BuildFile struct {
 	// the type of technology used by the application that can be used to determine the tool chain to use
 	// e.g. java, nodejs, golang, python, php, etc
 	Type string `yaml:"type"`
+	// the artefact name
+	Artefact string `yaml:"artefact"`
+	// the pipeline Icon
+	Icon string `yaml:"icon"`
 	// the environment variables that apply to the build
 	// any variables defined at this level will be available to all build profiles
 	// in addition, the defined variables are added on top of the existing environment

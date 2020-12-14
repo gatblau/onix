@@ -8,10 +8,13 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/gatblau/onix/artie/core"
 	"github.com/gatblau/onix/artie/tkn"
 	"github.com/spf13/cobra"
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
 )
 
 // list local artefacts
@@ -23,7 +26,7 @@ type PipeArtefactCmd struct {
 func NewPipeArtefactCmd() *PipeArtefactCmd {
 	c := &PipeArtefactCmd{
 		cmd: &cobra.Command{
-			Use:   "artefact [flags] [build-file-path]",
+			Use:   "artefact [flags] [build-file-path] [template_name]",
 			Short: "deploy an artefact pipeline",
 			Long:  `deploy a Tekton Pipeline to build an application artefact using Artie`,
 		},
@@ -34,13 +37,38 @@ func NewPipeArtefactCmd() *PipeArtefactCmd {
 }
 
 func (b *PipeArtefactCmd) Run(cmd *cobra.Command, args []string) {
-	var buildFile = "."
+	var (
+		buildFile    = "."
+		templateName = "artefact_pipeline.yaml"
+	)
 	if len(args) == 1 {
 		buildFile = args[0]
-	} else if len(args) > 1 {
-		core.RaiseErr("only one argument is required")
+	}
+	if len(args) == 2 {
+		buildFile = args[0]
+		templateName = args[1]
+	} else if len(args) > 2 {
+		core.RaiseErr("only two arguments are required")
+	}
+	if !path.IsAbs(templateName) {
+		templateName, err := filepath.Abs(templateName)
+		core.CheckErr(err, "cannot convert '%s' to absolute path", templateName)
 	}
 	c := tkn.NewArtPipelineConfig(buildFile, b.profile)
-
-	fmt.Print(tkn.MergeArtPipe(c.AppName, c.BuilderImage, c.ArtefactName, c.BuildProfile, "root", c.GitURI, "java"))
+	template := tkn.MergeArtPipe(
+		c.AppName,
+		c.BuilderImage,
+		c.ArtefactName,
+		c.BuildProfile,
+		c.GitURI,
+		c.AppIcon,
+		c.ArtefactRegistryUser,
+		c.ArtefactRegistryPwd,
+		c.SonarURI,
+		c.SonarImage,
+		c.SonarToken,
+		c.SonarProjectKey,
+		c.SonarSources,
+		c.SonarBinaries)
+	core.CheckErr(ioutil.WriteFile(templateName, template.Bytes(), os.ModePerm), "cannot save template")
 }

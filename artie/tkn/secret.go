@@ -10,5 +10,7 @@ type Secret struct {
 }
 
 type StringData struct {
-	Pwd string `yaml:"pwd,omitempty"`
+	Pwd   string `yaml:"pwd,omitempty"`
+	User  string `yaml:"user,omitempty"`
+	Token string `yaml:"token,omitempty"`
 }

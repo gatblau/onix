@@ -20,10 +20,16 @@ const (
 )
 
 // return the full configuration for an Artefact Tekton Pipeline
-func MergeArtPipe(applicationName, builderImage, artefactName, buildProfile, signingKeyName, gitURI, applicationIcon string) string {
+func MergeArtPipe(applicationName, builderImage, artefactName, buildProfile, gitURI, applicationIcon, artRegistryUser, artRegistryPwd, sonarImage, sonarURI, sonarToken, sonarProjectKey, sonarSources, sonarBinaries string) bytes.Buffer {
 	buf := bytes.Buffer{}
-	task := newArtPipeTask(applicationName, builderImage, "", artefactName, buildProfile, signingKeyName, "", "", "", "")
+	task := newArtPipeTask(applicationName, builderImage, sonarImage, artefactName, buildProfile, sonarURI, sonarProjectKey, sonarSources, sonarBinaries)
 	buf.Write(ToYaml(task, "Task"))
+	buf.WriteString("\n---\n")
+	regSecret := newArtRegSecret(applicationName, artRegistryUser, artRegistryPwd)
+	buf.Write(ToYaml(regSecret, "Secret"))
+	buf.WriteString("\n---\n")
+	sonarSecret := newSonarSecret(applicationName, sonarToken)
+	buf.Write(ToYaml(sonarSecret, "Secret"))
 	buf.WriteString("\n---\n")
 	pipe := newArtPipe(applicationName)
 	buf.Write(ToYaml(pipe, "Pipeline"))
@@ -46,10 +52,10 @@ func MergeArtPipe(applicationName, builderImage, artefactName, buildProfile, sig
 	tt := newArtPipeTriggerTemplate(applicationName, gitURI)
 	buf.Write(ToYaml(tt, "TriggerTemplate"))
 	buf.WriteString("\n---\n")
-	return buf.String()
+	return buf
 }
 
-func newArtPipeTask(applicationName, builderImage, sonarImage, artefactName, buildProfile, signingKeyName, sonarURI, sonarProjectKey, sonarSources, sonarBinaries string) *Task {
+func newArtPipeTask(applicationName, builderImage, sonarImage, artefactName, buildProfile, sonarURI, sonarProjectKey, sonarSources, sonarBinaries string) *Task {
 	t := new(Task)
 	t.APIVersion = ApiVersionTekton
 	t.Kind = "Task"
@@ -416,6 +422,31 @@ func newArtPipeRunTriggerTemplate(applicationName string) *PipelineRun {
 	return r
 }
 
-func newArtSecret() *Secret {
-	return nil
+func newArtRegSecret(applicationName, artRegistryUser, artRegistryPwd string) *Secret {
+	s := new(Secret)
+	s.APIVersion = ApiVersion
+	s.Kind = "Secret"
+	s.Type = "Opaque"
+	s.Metadata = &Metadata{
+		Name: fmt.Sprintf("%s-art-registry-creds", applicationName),
+	}
+	s.StringData = &StringData{
+		Pwd:  artRegistryUser,
+		User: artRegistryPwd,
+	}
+	return s
+}
+
+func newSonarSecret(applicationName, sonarToken string) *Secret {
+	s := new(Secret)
+	s.APIVersion = ApiVersion
+	s.Kind = "Secret"
+	s.Type = "Opaque"
+	s.Metadata = &Metadata{
+		Name: fmt.Sprintf("%s-sonar-token", applicationName),
+	}
+	s.StringData = &StringData{
+		Token: sonarToken,
+	}
+	return s
 }
