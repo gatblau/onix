@@ -41,6 +41,6 @@ RUN ln -s $ARTIE_HOME/$APP_NAME $ARTIE_HOME/artie && \
     chmod ug+x $ARTIE_HOME/artie && \
     chmod ug+x $ARTIE_HOME/kubectl && \
     chmod ug+x $ARTIE_HOME/oc && \
-    chmod ug+rwx $ARTIE_HOME/buildconfig.yaml.tem
+    chmod a+r $ARTIE_HOME/buildconfig.yaml.tem
 
 USER $UNAME
