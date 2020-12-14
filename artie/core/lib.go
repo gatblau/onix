@@ -237,8 +237,8 @@ func MergeEnvironmentVars(args []string, env map[string]string, interactive bool
 				name := match[2 : len(match)-1]
 				// get the value of the variable
 				value := env[name]
-				// if not value exists
-				if len(value) == 0 {
+				// if not value exists and is not an embedded process variable
+				if len(value) == 0 && !strings.HasPrefix(name, "ART_") {
 					// if running in interactive mode
 					if interactive {
 						// prompt for the value
