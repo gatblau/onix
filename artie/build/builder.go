@@ -285,15 +285,21 @@ func (b *Builder) newWorkingDir() {
 
 // construct a unique name for the package using the short HEAD commit hash and current time
 func (b *Builder) setUniqueIdName(repo *git.Repository) {
-	ref, err := repo.Head()
-	if err != nil {
-		log.Fatal(err)
+	var hash = ""
+	// if the repo is there
+	if repo != nil {
+		// get the commit head and add it to the unique reference
+		ref, err := repo.Head()
+		if err != nil {
+			log.Fatal(err)
+		}
+		b.commit = ref.Hash().String()
+		hash = fmt.Sprintf("-%s", ref.Hash().String()[:10])
 	}
 	// get the current time
 	t := time.Now()
 	timeStamp := fmt.Sprintf("%02d%02d%02s%02d%02d%02d%s", t.Day(), t.Month(), strconv.Itoa(t.Year())[:2], t.Hour(), t.Minute(), t.Second(), strconv.Itoa(t.Nanosecond())[:3])
-	b.uniqueIdName = fmt.Sprintf("%s-%s", timeStamp, ref.Hash().String()[:10])
-	b.commit = ref.Hash().String()
+	b.uniqueIdName = fmt.Sprintf("%s%s", timeStamp, hash)
 }
 
 // remove files in the source folder that are specified in the .buildignore file
@@ -336,15 +342,18 @@ func (b *Builder) runFunction(function string, path string, interactive bool) {
 	if len(b.uniqueIdName) == 0 {
 		var gitRoot = path
 		_, err := os.Stat(filepath.Join(gitRoot, ".git"))
+		var repo *git.Repository = nil
 		if os.IsNotExist(err) {
 			parent := filepath.Dir(path)
 			_, err = os.Stat(filepath.Join(filepath.Dir(path), ".git"))
-			if os.IsNotExist(err) {
-				core.CheckErr(err, "cannot find .git repository file")
+			// if the repository is there
+			if !os.IsNotExist(err) {
+				// get a reference to the repository
+				repo = b.openRepo(gitRoot)
 			}
 			gitRoot = parent
 		}
-		b.setUniqueIdName(b.openRepo(gitRoot))
+		b.setUniqueIdName(repo)
 	}
 	if len(b.from) == 0 {
 		b.from = path

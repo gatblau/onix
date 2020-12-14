@@ -14,14 +14,14 @@ LABEL builder-for=CONTAINER-IMAGES
 LABEL tools="buildah"
 
 ARG APP_NAME=artie
-ARG UNAME=builder
+#ARG UNAME=builder
 
 ENV UID=1000
 ENV GID=1000
 
 RUN yum update -y && \
     yum install buildah wget -y && \
-    groupadd -g $GID -o $UNAME && useradd -M -u $UID -g $GID $UNAME && \
+#    groupadd -g $GID -o $UNAME && useradd -M -u $UID -g $GID $UNAME && \
     rm -rf /var/cache/yum && \
     yum clean all
 
@@ -34,6 +34,6 @@ RUN ln -s /usr/bin/$APP_NAME /usr/bin/artie && \
     # folder below to mount keys in container
     mkdir -p /keys
 
-USER $UNAME
+#USER $UNAME
 
-ENTRYPOINT ["/usr/bin/build.sh"]
+CMD ["/usr/bin/build.sh"]

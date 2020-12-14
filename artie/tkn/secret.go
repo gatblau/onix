@@ -6,8 +6,9 @@ type Secret struct {
 	Metadata   *Metadata   `yaml:"metadata",omitempty`
 	Type       string      `yaml:"type",omitempty`
 	StringData *StringData `yaml:"stringData",omitempty`
+	SecretName string      `yaml:"secretName,omitempty"`
 }
 
 type StringData struct {
-	Pwd string `yaml:"pwd",omitempty`
+	Pwd string `yaml:"pwd,omitempty"`
 }
