@@ -43,6 +43,10 @@ if [[ -z "${BUILD_FILE_URL+x}" ]]; then
     echo "BUILD_FILE_URL must be provided"
     exit 1
 fi
+if [[ -z "${DOCKER_FILE_URL+x}" ]]; then
+    echo "DOCKER_FILE_URL must be provided"
+    exit 1
+fi
 
 # defines the container image fqn
 PUSH_IMAGE_FQN="${PUSH_IMAGE_REGISTRY}/${PUSH_IMAGE_REPO}/${PUSH_IMAGE_NAME}"
@@ -55,6 +59,7 @@ if [[ -z "${GIT_TOKEN+x}" ]]; then
 else
   echo GIT_TOKEN defined, retrieving build.yaml with token
   wget --header="PRIVATE-TOKEN:${GIT_TOKEN}" "${BUILD_FILE_URL}" -O build.yaml
+  wget --header="PRIVATE-TOKEN:${GIT_TOKEN}" "${DOCKER_FILE_URL}" -O Dockerfile
 fi
 
 # import required keys
