@@ -27,9 +27,9 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
     rm -rf /var/cache/yum && \
     microdnf clean all
 
-RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/${SONAR_FILE}.zip && \
+RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/${SONAR_ZIP_FILE} && \
     unzip ${SONAR_ZIP_FILE} && \
-    mv ${SONAR_FODER} sonar
+    mv ${SONAR_FOLDER} sonar
 
 COPY ./images/art-sonar/scan.sh $IMG_HOME/
 
