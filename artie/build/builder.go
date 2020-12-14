@@ -341,19 +341,30 @@ func (b *Builder) runFunction(function string, path string, interactive bool) {
 	// make build specific vars available within the function
 	if len(b.uniqueIdName) == 0 {
 		var gitRoot = path
+		// look for the git repo in the path
 		_, err := os.Stat(filepath.Join(gitRoot, ".git"))
-		var repo *git.Repository = nil
+		// if it cannot find it
 		if os.IsNotExist(err) {
+			// try in the parent folder
 			parent := filepath.Dir(path)
-			_, err = os.Stat(filepath.Join(filepath.Dir(path), ".git"))
-			// if the repository is there
-			if !os.IsNotExist(err) {
-				// get a reference to the repository
-				repo = b.openRepo(gitRoot)
+			_, err = os.Stat(filepath.Join(parent, ".git"))
+			// if the repository is not there
+			if os.IsNotExist(err) {
+				// set the root to empty
+				gitRoot = ""
 			}
+			// if found set the root to parent
 			gitRoot = parent
 		}
-		b.setUniqueIdName(repo)
+		// if no root exist then repo is nil
+		if len(gitRoot) == 0 {
+			// does not use the repo to calculate the unique name
+			b.setUniqueIdName(nil)
+		} else {
+			// otherwise use the repo to calculate the unique name
+			b.setUniqueIdName(b.openRepo(gitRoot))
+		}
+
 	}
 	if len(b.from) == 0 {
 		b.from = path
