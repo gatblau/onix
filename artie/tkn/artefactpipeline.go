@@ -25,24 +25,34 @@ import (
 
 // a tekton-based Artie's CI pipeline
 type ArtefactPipelineConfig struct {
-	// ART_APP_NAME
+	// PIPE_ART_APP_NAME
 	AppName string
-	// ART_GIT_URI
+	// PIPE_ART_GIT_URI
 	GitURI string
-	// ART_BUILDER_IMG
+	// PIPE_ART_BUILDER_IMG
 	BuilderImage string
-	// ART_BUILD_PROFILE
+	// PIPE_ART_BUILD_PROFILE
 	BuildProfile string
-	// ART_NAME
+	// PIPE_ART_NAME
 	ArtefactName string
-	// ART_REG_USER
+	// PIPE_ART_REG_USER
 	ArtefactRegistryUser string
-	// ART_REG_PWD
+	// PIPE_ART_REG_PWD
 	ArtefactRegistryPwd string
-
-	SigningKeyName string
-
+	// PIPE_ART_APP_ICON
 	AppIcon string
+	// PIPE_ART_SONAR_URI
+	SonarURI string
+	// PIPE_ART_SONAR_TOKEN
+	SonarToken string
+	// PIPE_ART_SONAR_IMAGE
+	SonarImage string
+	// PIPE_ART_SONAR_PROJ_KEY
+	SonarProjectKey string
+	// PIPE_ART_SONAR_SOURCES
+	SonarSources string
+	// PIPE_ART_SONAR_BINARIES
+	SonarBinaries string
 }
 
 // create a new pipeline
@@ -72,10 +82,14 @@ func NewArtPipelineConfig(buildFilePath, profileName string) *ArtefactPipelineCo
 	p := new(ArtefactPipelineConfig)
 	// resolve the builder image using the appType
 	p.BuilderImage = builderImage(buildFile.Type)
+	// sonar image
+	p.SonarImage = "quay.io/gatblau/art-sonar"
 	// set the build profile
 	p.BuildProfile = profile.Name
 	// set the application name
 	p.AppName = buildFile.Application
+	p.AppIcon = buildFile.Icon
+	p.ArtefactName = buildFile.Artefact
 	// attempt to load the pipeline configuration from the environment
 	// NOTE: environment vars can override builder image and/or build profile used (if defined)
 	p.loadFromEnv()
@@ -89,13 +103,19 @@ func NewArtPipelineConfig(buildFilePath, profileName string) *ArtefactPipelineCo
 
 // try and set ciPipeline variables from the environment
 func (p *ArtefactPipelineConfig) loadFromEnv() {
-	p.AppName = p.LoadVar("ART_APP_NAME", p.AppName)
-	p.GitURI = p.LoadVar("ART_GIT_URI", p.GitURI)
-	p.BuilderImage = p.LoadVar("ART_BUILDER_IMG", p.BuilderImage)
-	p.BuildProfile = p.LoadVar("ART_BUILD_PROFILE", p.BuildProfile)
-	p.ArtefactName = p.LoadVar("ART_NAME", p.ArtefactName)
-	p.ArtefactRegistryUser = p.LoadVar("ART_REG_USER", p.ArtefactRegistryUser)
-	p.ArtefactRegistryPwd = p.LoadVar("ART_REG_PWD", p.ArtefactRegistryPwd)
+	p.AppName = p.LoadVar("PIPE_ART_APP_NAME", p.AppName)
+	p.AppIcon = p.LoadVar("PIPE_ART_PIPE_APP_ICON", p.AppIcon)
+	p.GitURI = p.LoadVar("PIPE_ART_GIT_URI", p.GitURI)
+	p.BuilderImage = p.LoadVar("PIPE_ART_BUILDER_IMG", p.BuilderImage)
+	p.BuildProfile = p.LoadVar("PIPE_ART_BUILD_PROFILE", p.BuildProfile)
+	p.ArtefactName = p.LoadVar("PIPE_ART_NAME", p.ArtefactName)
+	p.ArtefactRegistryUser = p.LoadVar("PIPE_ART_REG_USER", p.ArtefactRegistryUser)
+	p.ArtefactRegistryPwd = p.LoadVar("PIPE_ART_REG_PWD", p.ArtefactRegistryPwd)
+	p.SonarURI = p.LoadVar("PIPE_ART_SONAR_URI", p.SonarURI)
+	p.SonarToken = p.LoadVar("PIPE_ART_SONAR_TOKEN", p.SonarToken)
+	p.SonarImage = p.LoadVar("PIPE_ART_SONAR_IMAGE", p.SonarImage)
+	p.SonarSources = p.LoadVar("PIPE_ART_SONAR_SOURCES", p.SonarSources)
+	p.SonarBinaries = p.LoadVar("PIPE_ART_SONAR_BINARIES", p.SonarBinaries)
 }
 
 func (p *ArtefactPipelineConfig) LoadVar(name string, value string) string {
@@ -124,7 +144,7 @@ func (p *ArtefactPipelineConfig) survey() {
 		prompt := &survey.Input{
 			Message: "git repo url:",
 		}
-		core.HandleCtrlC(survey.AskOne(prompt, &p.AppName, survey.WithValidator(validURL)))
+		core.HandleCtrlC(survey.AskOne(prompt, &p.GitURI, survey.WithValidator(validURL)))
 	} else {
 		fmt.Printf("git repo url: %s", p.GitURI)
 	}
@@ -152,6 +172,49 @@ func (p *ArtefactPipelineConfig) survey() {
 			Message: "artefact registry password:",
 		}
 		core.HandleCtrlC(survey.AskOne(prompt, &p.ArtefactRegistryPwd, survey.WithValidator(survey.Required)))
+	}
+	// if the Sonar URI is not defined, prompt for it
+	if len(p.SonarURI) == 0 {
+		prompt := &survey.Input{
+			Message: "Sonar URI:",
+		}
+		core.HandleCtrlC(survey.AskOne(prompt, &p.SonarURI, survey.WithValidator(validURL)))
+	} else {
+		fmt.Printf("Sonar URI: %s", p.SonarURI)
+	}
+	// if the Sonar token is not defined prompt for it
+	if len(p.SonarToken) == 0 {
+		prompt := &survey.Password{
+			Message: "Sonar Token:",
+		}
+		core.HandleCtrlC(survey.AskOne(prompt, &p.SonarToken, survey.WithValidator(survey.Required)))
+	}
+	// if the Sonar Project Key is not defined prompt for it
+	if len(p.SonarProjectKey) == 0 {
+		prompt := &survey.Input{
+			Message: "Sonar project key:",
+		}
+		core.HandleCtrlC(survey.AskOne(prompt, &p.SonarProjectKey, survey.WithValidator(survey.Required)))
+	} else {
+		fmt.Printf("Sonar project key: %s\n", p.SonarProjectKey)
+	}
+	// if the Sonar Project Key is not defined prompt for it
+	if len(p.SonarSources) == 0 {
+		prompt := &survey.Input{
+			Message: "Sonar sources:",
+		}
+		core.HandleCtrlC(survey.AskOne(prompt, &p.SonarSources, survey.WithValidator(survey.Required)))
+	} else {
+		fmt.Printf("Sonar sources: %s\n", p.SonarSources)
+	}
+	// if the Sonar Project Key is not defined prompt for it
+	if len(p.SonarProjectKey) == 0 {
+		prompt := &survey.Input{
+			Message: "Sonar binaries:",
+		}
+		core.HandleCtrlC(survey.AskOne(prompt, &p.SonarBinaries, survey.WithValidator(survey.Required)))
+	} else {
+		fmt.Printf("Sonar binaries: %s\n", p.SonarBinaries)
 	}
 }
 
