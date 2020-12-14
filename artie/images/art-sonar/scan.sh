@@ -18,11 +18,16 @@ if [[ -z "${SONAR_BINARIES+x}" ]]; then
     exit 1
 fi
 
+if [[ -z "${SONAR_TOKEN+x}" ]]; then
+    echo "SONAR_TOKEN must be provided"
+    exit 1
+fi
+
 # merge sonar URI variable
-printf "sonar.sourceEncoding=UTF-8\nsonar.host.url=%s\n" "${SONAR_URI}" >> ./sonar/conf/sonar-scanner.properties
+printf "sonar.sourceEncoding=UTF-8\nsonar.host.url=%s\n" "${SONAR_URI}" >> /sonar/conf/sonar-scanner.properties
 
 # initiates the scan process
-sonar-scanner -Dsonar.projectKey="${SONAR_PROJECT_KEY}" -Dsonar.sources="${SONAR_SOURCES}" -Dsonar.java.binaries="${SONAR_BINARIES}"
+sonar-scanner -Dsonar.projectKey="${SONAR_PROJECT_KEY}" -Dsonar.sources="${SONAR_SOURCES}" -Dsonar.java.binaries="${SONAR_BINARIES}" -Dsonar.login="${SONAR_TOKEN}"
 
 printf "sonar server is %s\n" "${SONAR_URI}"
 printf "project key is %s\n" "${SONAR_PROJECT_KEY}"

@@ -17,7 +17,8 @@ ARG UNAME=scanner
 ENV UID=1000
 ENV GID=1000
 ENV IMG_HOME /usr/bin
-ENV SONAR_FILE=sonar-scanner-cli-3.3.0.1492-linux
+ENV SONAR_ZIP_FILE=sonar-scanner-cli-3.3.0.1492-linux.zip
+ENV SONAR_FOLDER=sonar-scanner-3.3.0.1492-linux
 ENV PATH $PATH:/sonar/bin
 
 RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y && \
@@ -27,11 +28,12 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
     microdnf clean all
 
 RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/${SONAR_FILE}.zip && \
-    unzip ${SONAR_FILE}.zip -d sonar
+    unzip ${SONAR_ZIP_FILE} && \
+    mv ${SONAR_FODER} sonar
 
 COPY ./images/art-sonar/scan.sh $IMG_HOME/
 
-RUN chmod ug+x $IMG_HOME/scan.sh && chmod -R ug+rwx sonar
+RUN chmod ug+x $IMG_HOME/scan.sh && chmod -R a+rwx sonar
 
 USER $UNAME
 
