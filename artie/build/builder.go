@@ -352,9 +352,10 @@ func (b *Builder) runFunction(function string, path string, interactive bool) {
 			if os.IsNotExist(err) {
 				// set the root to empty
 				gitRoot = ""
+			} else {
+				// if found set the root to parent
+				gitRoot = parent
 			}
-			// if found set the root to parent
-			gitRoot = parent
 		}
 		// if no root exist then repo is nil
 		if len(gitRoot) == 0 {
