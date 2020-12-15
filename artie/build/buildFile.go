@@ -25,6 +25,8 @@ type BuildFile struct {
 	Artefact string `yaml:"artefact"`
 	// the pipeline Icon
 	Icon string `yaml:"icon"`
+	// Sonar configuration
+	Sonar *Sonar `yaml:"sonar,omitempty"`
 	// the environment variables that apply to the build
 	// any variables defined at this level will be available to all build profiles
 	// in addition, the defined variables are added on top of the existing environment
@@ -157,4 +159,11 @@ func (f *Function) Survey(env map[string]string) map[string]string {
 	// run the merge in interactive mode so that any variables not available in the build file environment are surveyed
 	_, updatedEnvironment := core.MergeEnvironmentVars(f.Run, env, true)
 	return updatedEnvironment
+}
+
+type Sonar struct {
+	URI        string `yaml:"uri"`
+	ProjectKey string `yaml:"project_key"`
+	Sources    string `yaml:"sources"`
+	Binaries   string `yaml:"binaries"`
 }
