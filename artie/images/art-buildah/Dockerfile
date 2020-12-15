@@ -20,7 +20,7 @@ ENV UID=1000
 ENV GID=1000
 
 RUN yum update -y && \
-    yum install buildah wget -y && \
+    yum install buildah skopeo wget -y && \
 #    groupadd -g $GID -o $UNAME && useradd -M -u $UID -g $GID $UNAME && \
     rm -rf /var/cache/yum && \
     yum clean all
