@@ -95,13 +95,18 @@ func getSteps(c *ArtefactPipelineConfig, sonar bool) []*Steps {
 		Image:      c.BuilderImage,
 		Command:    []string{"artie", "run", "build-app"},
 		WorkingDir: "/workspace/source",
+		VolumeMounts: []*VolumeMounts{
+			{
+				Name:      "keys-volume",
+				MountPath: "/keys",
+			},
+		},
 	}
 	if sonar {
 		ix++
 		steps[ix] = &Steps{
-			Name:    "scan-app",
-			Image:   c.SonarImage,
-			Command: []string{"artie", "run", "build-app"},
+			Name:  "scan-app",
+			Image: c.SonarImage,
 			Env: []*Env{
 				{
 					Name:  "SONAR_PROJECT_KEY",
@@ -133,9 +138,8 @@ func getSteps(c *ArtefactPipelineConfig, sonar bool) []*Steps {
 	}
 	ix++
 	steps[ix] = &Steps{
-		Name:    "package-app",
-		Image:   c.BuilderImage,
-		Command: []string{"artie", "run", "build-app"},
+		Name:  "package-app",
+		Image: c.BuilderImage,
 		Env: []*Env{
 			{
 				Name:  "ARTEFACT_NAME",

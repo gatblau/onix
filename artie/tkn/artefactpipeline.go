@@ -97,7 +97,7 @@ func NewArtPipelineConfig(buildFilePath, profileName string, sonar bool) *Artefa
 	}
 	// attempt to load the pipeline configuration from the environment
 	// NOTE: environment vars can override builder image and/or build profile used (if defined)
-	p.loadFromEnv()
+	p.loadFromEnv(sonar)
 	// survey any variables in the pipeline that has been left undefined
 	p.survey(sonar)
 	// finally survey any missing variables in the build profile that are not defined
@@ -107,7 +107,7 @@ func NewArtPipelineConfig(buildFilePath, profileName string, sonar bool) *Artefa
 }
 
 // try and set ciPipeline variables from the environment
-func (p *ArtefactPipelineConfig) loadFromEnv() {
+func (p *ArtefactPipelineConfig) loadFromEnv(sonar bool) {
 	p.AppName = p.LoadVar("PIPE_ART_APP_NAME", p.AppName)
 	p.AppIcon = p.LoadVar("PIPE_ART_PIPE_APP_ICON", p.AppIcon)
 	p.GitURI = p.LoadVar("PIPE_ART_GIT_URI", p.GitURI)
@@ -116,20 +116,23 @@ func (p *ArtefactPipelineConfig) loadFromEnv() {
 	p.ArtefactName = p.LoadVar("PIPE_ART_NAME", p.ArtefactName)
 	p.ArtefactRegistryUser = p.LoadVar("PIPE_ART_REG_USER", p.ArtefactRegistryUser)
 	p.ArtefactRegistryPwd = p.LoadVar("PIPE_ART_REG_PWD", p.ArtefactRegistryPwd)
-	p.SonarURI = p.LoadVar("PIPE_ART_SONAR_URI", p.SonarURI)
-	p.SonarToken = p.LoadVar("PIPE_ART_SONAR_TOKEN", p.SonarToken)
-	p.SonarImage = p.LoadVar("PIPE_ART_SONAR_IMAGE", p.SonarImage)
-	p.SonarSources = p.LoadVar("PIPE_ART_SONAR_SOURCES", p.SonarSources)
-	p.SonarBinaries = p.LoadVar("PIPE_ART_SONAR_BINARIES", p.SonarBinaries)
+	if sonar {
+		p.SonarURI = p.LoadVar("PIPE_ART_SONAR_URI", p.SonarURI)
+		p.SonarToken = p.LoadVar("PIPE_ART_SONAR_TOKEN", p.SonarToken)
+		p.SonarImage = p.LoadVar("PIPE_ART_SONAR_IMAGE", p.SonarImage)
+		p.SonarSources = p.LoadVar("PIPE_ART_SONAR_SOURCES", p.SonarSources)
+		p.SonarBinaries = p.LoadVar("PIPE_ART_SONAR_BINARIES", p.SonarBinaries)
+	}
 }
 
 func (p *ArtefactPipelineConfig) LoadVar(name string, value string) string {
-	if len(value) == 0 {
-		value = os.Getenv(name)
-		if len(p.ArtefactName) > 0 {
-			fmt.Printf("using %s=%s\n", name, value)
-		}
+	// try and retrieve value from environment variable
+	envVarValue := os.Getenv(name)
+	// if there is a value use it
+	if len(envVarValue) > 0 {
+		return envVarValue
 	}
+	// if not then return the original value
 	return value
 }
 
