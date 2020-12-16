@@ -1,3 +1,0 @@
-LABEL author="gatblau"
-RUN go build .
-PATH .
