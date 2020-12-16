@@ -273,15 +273,15 @@ func (r *Nexus3Backend) addFile(writer *multipart.Writer, fieldName, fileName st
 }
 
 func (r *Nexus3Backend) componentsURI() string {
-	return fmt.Sprintf("%s/service/rest/v1/components?repository=artie", r.domain)
+	return fmt.Sprintf("%s/service/rest/v1/components?repository=artisan", r.domain)
 }
 
 func (r *Nexus3Backend) fileDownloadURI(group, name, filename string) string {
-	return fmt.Sprintf("%s/repository/artie/%s/%s/%s", r.domain, group, name, filename)
+	return fmt.Sprintf("%s/repository/artisan/%s/%s/%s", r.domain, group, name, filename)
 }
 
 func (r *Nexus3Backend) downloadURI(repoGroup, repoName, filename string) string {
-	return fmt.Sprintf("%s/repository/artie/%s/%s/%s", r.domain, repoGroup, repoName, filename)
+	return fmt.Sprintf("%s/repository/artisan/%s/%s/%s", r.domain, repoGroup, repoName, filename)
 }
 
 func (r *Nexus3Backend) DownloadArtefact() {}
