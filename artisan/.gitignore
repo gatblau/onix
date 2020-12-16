@@ -1,0 +1,6 @@
+artisan
+art
+!build
+docs/version.go
+output
+version

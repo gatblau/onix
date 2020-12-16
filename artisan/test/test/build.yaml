@@ -1,0 +1,6 @@
+---
+functions:
+  - name: test
+    run:
+      - echo "hello"
+...

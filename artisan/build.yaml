@@ -1,0 +1,196 @@
+# Artisan's Build File
+# It contains the instructions to build Artisan using itself
+# No need for make, can run on windows, linux or mac providing the commands in the profiles or functions are compatible
+---
+application: artisan
+artefact: gatblau/artisan
+type: golang
+license: Apache Version 2
+labels:
+  author: gatblau
+  application: artisan
+  description: build, package, sign and publish applications in a generic format as if they were docker images.
+  architecture: amd64
+env:
+  CGO_ENABLED: 0
+  GOARCH: amd64
+  REPO_NAME: quay.io/gatblau
+  ART_REGISTRY: art-registry
+  ART_KUBE: art-kube
+  ART_IMG_BUILDER: art-buildah
+  ART_JAVA_BUILDER: art-java
+  ART_PYTHON_BUILDER: art-python
+  ART_NODE_BUILDER: art-node
+  ART_GO_BUILDER: art-go
+  SONAR_SCANNER: art-sonar
+  APP_VERSION: 0.0.4
+#  alpha: Alpha release, typically used for work-in-progress and experimentation
+#  beta: Beta release, typically one that is feature complete for the next planned release, but may contain known bugs.
+#  rc: Release candidate, typically a release that's potentially final (stable) unless significant bugs emerge.
+  LIFECYCLE_STAGE: alpha
+profiles:
+  - name: linux
+    default: true
+    labels:
+      platform: linux
+    env:
+      GOOS: linux
+    run:
+      - $(build-linux)
+    target: images/bin/output/art-linux-${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE}
+functions:
+  - name: build
+    description: build Artisan binary in all configurations
+    run:
+      - rm -rf ./images/bin/output
+      - $(build-linux)
+      - $(build-windows)
+
+  - name: build-linux
+    description: builds the Artisan binary file for the linux platform
+    env:
+      GOOS: linux
+    run:
+      - sh ./images/bin/version.sh ${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE}
+      - go fmt
+      - go build -o images/bin/output/art-linux-${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE} -v
+
+  - name: build-windows
+    description: builds the Artisan binary file for the windows platform
+    env:
+      GOOS: windows
+    run:
+      - sh ./images/bin/version.sh ${APP_VERSION}-${ARTISAN_REF}
+      - go fmt
+      - go build -o images/bin/output/art-windows-${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE}.exe -v
+
+  - name: build-art-registry
+    description: creates an Artisan registry service image
+    run:
+      - docker build -f ./images/art-registry/Dockerfile --build-arg APP_NAME=art-linux-$((cat ./version)) -t ${REPO_NAME}/${ART_REGISTRY}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ART_REGISTRY}:$((cat ./version)) ${REPO_NAME}/${ART_REGISTRY}:latest
+
+  - name: push-art-registry
+    description: creates a container image for the snapshot repository
+    run:
+      - docker push ${REPO_NAME}/${ART_REGISTRY}:$((cat ./version))
+      - docker push ${REPO_NAME}/${ART_REGISTRY}:latest
+
+  - name: build-art-kube
+    description: creates an Artisan K8S client image
+    run:
+      - docker build -f ./images/art-kube/Dockerfile --build-arg APP_NAME=art-linux-$((cat ./version)) -t ${REPO_NAME}/${ART_KUBE}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ART_KUBE}:$((cat ./version)) ${REPO_NAME}/${ART_KUBE}:latest
+
+  - name: push-art-kube
+    description: creates a container image for K8S client
+    run:
+      - docker push ${REPO_NAME}/${ART_KUBE}:$((cat ./version))
+      - docker push ${REPO_NAME}/${ART_KUBE}:latest
+
+  - name: build-art-buildah
+    description: creates an Artisan image builder image
+    run:
+      - docker build -f ./images/art-buildah/Dockerfile --build-arg APP_NAME=art-linux-$((cat ./version)) -t ${REPO_NAME}/${ART_IMG_BUILDER}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ART_IMG_BUILDER}:$((cat ./version)) ${REPO_NAME}/${ART_IMG_BUILDER}:latest
+
+  - name: push-art-buildah
+    description: pushes the image builder to the container registry
+    run:
+      - docker push ${REPO_NAME}/${ART_IMG_BUILDER}:$((cat ./version))
+      - docker push ${REPO_NAME}/${ART_IMG_BUILDER}:latest
+
+  - name: build-art-java
+    description: creates an Artisan java builder image
+    run:
+      - docker build -f ./images/art-java/Dockerfile --build-arg APP_NAME=art-linux-$((cat ./version)) -t ${REPO_NAME}/${ART_JAVA_BUILDER}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ART_JAVA_BUILDER}:$((cat ./version)) ${REPO_NAME}/${ART_JAVA_BUILDER}:latest
+
+  - name: push-art-java
+    description: pushes the java builder to the container registry
+    run:
+      - docker push ${REPO_NAME}/${ART_JAVA_BUILDER}:$((cat ./version))
+      - docker push ${REPO_NAME}/${ART_JAVA_BUILDER}:latest
+
+  - name: build-art-sonar
+    description: creates a sonar scanner image
+    run:
+      - docker build -f ./images/art-sonar/Dockerfile -t ${REPO_NAME}/${SONAR_SCANNER}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${SONAR_SCANNER}:$((cat ./version)) ${REPO_NAME}/${SONAR_SCANNER}:latest
+
+  - name: push-art-sonar
+    description: pushes the sonar scanner image to the container registry
+    run:
+      - docker push ${REPO_NAME}/${SONAR_SCANNER}:$((cat ./version))
+      - docker push ${REPO_NAME}/${SONAR_SCANNER}:latest
+
+  - name: build-art-python
+    description: creates an Artisan python builder image
+    run:
+      - docker build -f ./images/art-python/Dockerfile --build-arg APP_NAME=art-linux-$((cat ./version)) -t ${REPO_NAME}/${ART_PYTHON_BUILDER}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ART_PYTHON_BUILDER}:$((cat ./version)) ${REPO_NAME}/${ART_PYTHON_BUILDER}:latest
+
+  - name: push-art-python
+    description: pushes the python builder to the container registry
+    run:
+      - docker push ${REPO_NAME}/${ART_PYTHON_BUILDER}:$((cat ./version))
+      - docker push ${REPO_NAME}/${ART_PYTHON_BUILDER}:latest
+
+  - name: build-art-node
+    description: creates an Artisan node builder image
+    run:
+      - docker build -f ./images/art-node/Dockerfile --build-arg APP_NAME=art-linux-$((cat ./version)) -t ${REPO_NAME}/${ART_NODE_BUILDER}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ART_NODE_BUILDER}:$((cat ./version)) ${REPO_NAME}/${ART_NODE_BUILDER}:latest
+
+  - name: push-art-node
+    description: pushes the node builder to the container registry
+    run:
+      - docker push ${REPO_NAME}/${ART_NODE_BUILDER}:$((cat ./version))
+      - docker push ${REPO_NAME}/${ART_NODE_BUILDER}:latest
+
+  - name: build-art-go
+    description: creates an Artisan golang builder image
+    run:
+      - docker build -f ./images/art-go/Dockerfile --build-arg APP_NAME=art-linux-$((cat ./version)) -t ${REPO_NAME}/${ART_GO_BUILDER}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${ART_GO_BUILDER}:$((cat ./version)) ${REPO_NAME}/${ART_GO_BUILDER}:latest
+
+  - name: push-art-go
+    description: pushes the node builder to the container registry
+    run:
+      - docker push ${REPO_NAME}/${ART_GO_BUILDER}:$((cat ./version))
+      - docker push ${REPO_NAME}/${ART_GO_BUILDER}:latest
+
+  - name: release-snapshot
+    description: build and push all container images
+    run:
+      - $(build-linux)
+      - $(refresh-base)
+      - $(build-art-registry)
+      - $(push-art-registry)
+      - $(build-art-buildah)
+      - $(push-art-buildah)
+      - $(build-art-kube)
+      - $(push-art-kube)
+      - $(build-art-java)
+      - $(push-art-java)
+      - $(build-art-python)
+      - $(push-art-python)
+      - $(build-art-node)
+      - $(push-art-node)
+      - $(build-art-go)
+      - $(push-art-go)
+      - $(build-art-sonar)
+      - $(push-art-sonar)
+
+  - name: refresh-base
+    description: refresh base images used in the builds
+    run:
+      - docker pull registry.access.redhat.com/ubi8/ubi-minimal
+      - docker pull quay.io/gatblau/node
+      - docker pull docker.io/centos:7
+
+  - name: swagen
+    description: generates/refreshes the OpenAPI specifications for Artisan's HTTP API
+    run:
+      - swag init -d ./server -g server.go
+...

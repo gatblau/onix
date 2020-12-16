@@ -1,0 +1,324 @@
+definitions:
+  server.WebHookConfig:
+    properties:
+      actions:
+        description: Actions that should trigger the webhook
+        items:
+          type: integer
+        type: array
+      group:
+        description: the repository Group for the webhook
+        type: string
+      id:
+        description: the unique webhook identifier
+        type: string
+      name:
+        description: the repository Name for the webhook
+        type: string
+      pwd:
+        description: the webhook URI password
+        type: string
+      uname:
+        description: the webhook URI user
+        type: string
+      uri:
+        description: the webhook URI
+        type: string
+    type: object
+info:
+  contact:
+    email: onix@gatblau.org
+    name: gatblau
+    url: http://onix.gatblau.org/
+  description: |-
+    Application Registry that supports generic packaging, signing and tagging.
+    Allows to manage application artefacts in a similar way to linux container images.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Artisan Registry
+  version: 0.0.4
+paths:
+  /:
+    get:
+      description: |-
+        Checks that Artie's HTTP server is listening on the required port.
+        Use a liveliness probe.
+        It does not guarantee the server is ready to accept calls.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Check that Artie's HTTP API is live
+      tags:
+      - General
+  /artefact/{repository-group}/{repository-name}/id/{artefact-id}:
+    get:
+      consumes:
+      - text/html
+      - ' application/json'
+      - ' application/yaml'
+      - ' application/xml'
+      - ' application/xhtml+xml'
+      description: gets meta data about the artefact identified by its id
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      produces:
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Get information about the specified artefact
+      tags:
+      - Artefacts
+    put:
+      description: updates meta data about the artefact identified by its id
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the artefact unique identifier
+        in: path
+        name: artefact-id
+        required: true
+        type: string
+      - description: the artefact information to be updated
+        in: body
+        name: artefact-info
+        required: true
+        schema:
+          type: object
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Update information about the specified artefact
+      tags:
+      - Artefacts
+  /artefact/{repository-group}/{repository-name}/tag/{artefact-tag}:
+    post:
+      description: uploads the artefact file and its seal to the pre-configured backend
+        (e.g. Nexus, etc)
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the artefact reference name
+        in: path
+        name: tag
+        required: true
+        type: string
+      - description: the artefact metadata in JSON base64 encoded string format
+        in: formData
+        name: artefact-meta
+        required: true
+        type: string
+      - description: the artefact file part of the multipart message
+        in: formData
+        name: artefact-file
+        required: true
+        type: file
+      - description: the seal file part of the multipart message
+        in: formData
+        name: artefact-seal
+        required: true
+        type: file
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "423":
+          description: Locked
+          schema:
+            type: string
+      summary: Push an artefact to the configured backend
+      tags:
+      - Artefacts
+  /file/{repository-group}/{repository-name}/{filename}:
+    get:
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the filename to download
+        in: path
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Download a file from the registry
+      tags:
+      - Files
+  /repository/{repository-group}/{repository-name}:
+    get:
+      consumes:
+      - text/html
+      - ' application/json'
+      - ' application/yaml'
+      - ' application/xml'
+      - ' application/xhtml+xml'
+      description: gets meta data about artefacts in the specified repository
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      produces:
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Get information about the artefacts in a repository
+      tags:
+      - Repositories
+  /webhook/{repository-group}/{repository-name}:
+    get:
+      description: get a list of webhook configurations for the specified repository
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: get a list of webhooks
+      tags:
+      - Webhooks
+    post:
+      description: create the webhook configuration for a specified repository and
+        url
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the webhook configuration
+        in: body
+        name: artefact-info
+        required: true
+        schema:
+          $ref: '#/definitions/server.WebHookConfig'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: creates a webhook configuration
+      tags:
+      - Webhooks
+  /webhook/{repository-group}/{repository-name}/{webhook-id}:
+    delete:
+      description: delete the specified webhook configuration
+      parameters:
+      - description: the artefact repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the artefact repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the webhook unique identifier
+        in: path
+        name: webhook-id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: delete a webhook configuration by Id
+      tags:
+      - Webhooks
+swagger: "2.0"
