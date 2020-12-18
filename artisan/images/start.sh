@@ -1,3 +1,20 @@
+# check for input variables
+if [[ -z "${ARTEFACT_NAME+x}" ]]; then
+    echo "ARTEFACT_NAME must be provided"
+    exit 1
+fi
+if [[ -z "${ARTEFACT_REG_USER+x}" ]]; then
+    echo "ARTEFACT_REG_USER must be provided"
+    exit 1
+fi
+if [[ -z "${ARTEFACT_REG_PWD+x}" ]]; then
+    echo "ARTEFACT_REG_PWD must be provided"
+    exit 1
+fi
+if [[ -z "${BUILD_PROFILE+x}" ]]; then
+    echo "BUILD_PROFILE must be provided"
+    exit 1
+fi
 # import the signing key from the mount point
 art key import -k /keys/root_rsa_key.pgp
 # if the exit code of the previous command is not zero
@@ -23,7 +40,7 @@ if [ "$?" -ne 0 ]; then
 fi
 
 # push the built artefact
-art push -u "${ARTEFACT_UNAME}:${ARTEFACT_PWD}" "${ARTEFACT_NAME}"
+art push -u "${ARTEFACT_REG_USER}:${ARTEFACT_REG_PWD}" "${ARTEFACT_NAME}"
 # if the exit code of the previous command is not zero
 if [ "$?" -ne 0 ]; then
    echo "failed to push artefact"

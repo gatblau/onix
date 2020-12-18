@@ -144,7 +144,7 @@ func (r *LocalRegistry) checkRegistryDir() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		sign.GeneratePGPKeys(keysPath, "root", 2048)
+		sign.GeneratePGPKeys(keysPath, "root", 2048, nil)
 	}
 }
 

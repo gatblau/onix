@@ -49,7 +49,7 @@ type Steps struct {
 	Name         string          `yaml:"name,omitempty"`
 	Image        string          `yaml:"image,omitempty"`
 	Env          []*Env          `yaml:"env,omitempty"`
-	Command      []string        `yaml:"command,omitempty"`
+	Command      []string        `yaml:"command,omitempty,flow"`
 	WorkingDir   string          `yaml:"workingDir,omitempty"`
 	VolumeMounts []*VolumeMounts `yaml:"volumeMounts,omitempty"`
 }

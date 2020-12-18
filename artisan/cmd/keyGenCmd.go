@@ -36,5 +36,5 @@ func NewKeyGenCmd() *KeyGenCmd {
 }
 
 func (b *KeyGenCmd) Run(cmd *cobra.Command, args []string) {
-	sign.GeneratePGPKeys(b.path, b.name, *b.bitSize)
+	sign.GeneratePGPKeys(b.path, b.name, *b.bitSize, nil)
 }

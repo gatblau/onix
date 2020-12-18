@@ -6,7 +6,7 @@ import (
 
 func TestSurvey(t *testing.T) {
 	// collects information to assemble the pipeline
-	c := NewArtPipelineConfig(".", "", false)
+	c := NewAppPipelineConfig(".", "", false)
 	// assembles the pipeline
 	_ = MergeArtPipe(c, false)
 }
