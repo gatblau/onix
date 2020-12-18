@@ -10,8 +10,8 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-uuid v1.0.2
+	github.com/joho/godotenv v1.3.0
 	github.com/prometheus/client_golang v1.8.0
-	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spf13/cobra v1.1.1
 	github.com/swaggo/http-swagger v1.0.0
 	github.com/swaggo/swag v1.7.0

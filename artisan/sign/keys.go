@@ -82,7 +82,7 @@ func SavePGPPublicKey(filename string, key *rsa.PublicKey, headers map[string]st
 }
 
 // generates a private and public RSA keys for signing and verifying artefacts
-func GeneratePGPKeys(path, name string, size int) {
+func GeneratePGPKeys(path, name string, size int, headers map[string]string) {
 	if size > 4500 {
 		core.RaiseErr("maximum bit size 4500 exceeded")
 	}
@@ -92,8 +92,8 @@ func GeneratePGPKeys(path, name string, size int) {
 	keyFilename, pubFilename := KeyNames(path, name, "pgp")
 	key, err := NewKeyPair(size)
 	core.CheckErr(err, "cannot create key pair")
-	core.CheckErr(SavePGPPrivateKey(keyFilename, key, nil), "cannot save PGP private key")
-	core.CheckErr(SavePGPPublicKey(pubFilename, &key.PublicKey, nil), "cannot save PGP public key")
+	core.CheckErr(SavePGPPrivateKey(keyFilename, key, headers), "cannot save PGP private key")
+	core.CheckErr(SavePGPPublicKey(pubFilename, &key.PublicKey, headers), "cannot save PGP public key")
 }
 
 func LoadPGPPrivateKey(group, name string) (*rsa.PrivateKey, error) {

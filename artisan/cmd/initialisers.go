@@ -42,7 +42,7 @@ func InitialiseRootCmd() *RootCmd {
 
 func InitialisePipeCommand() *PipeCmd {
 	pipeCmd := NewPipeCmd()
-	pipeSetupCmd := NewPipeArtefactCmd()
+	pipeSetupCmd := NewPipeAppCmd()
 	pipeCmd.cmd.AddCommand(pipeSetupCmd.cmd)
 	return pipeCmd
 }

@@ -8,6 +8,7 @@
 package core
 
 import (
+	"github.com/joho/godotenv"
 	"io"
 	"io/ioutil"
 	"log"
@@ -17,7 +18,7 @@ import (
 	"strings"
 )
 
-func MergeFiles(filenames []string) {
+func MergeFiles(filenames []string, envFilename string) {
 	files := filenames
 	regex, err := regexp.Compile("\\${(?P<NAME>[^}]*)}")
 	if err != nil {
@@ -28,6 +29,9 @@ func MergeFiles(filenames []string) {
 		log.Printf("you must provide files to merge!\n")
 		return
 	}
+
+	// load environment variables from file, if file not specified then try loading .env
+	LoadEnvFromFile(envFilename)
 
 	// loop through the specified configuration files
 	for _, file := range files {
@@ -88,6 +92,35 @@ func MergeFiles(filenames []string) {
 			if err != nil {
 				log.Printf("cannot update config file: %s\n", err)
 			}
+		}
+	}
+}
+
+func LoadEnvFromFile(envFilename string) {
+	// attempt to load config variables from .env file if exists
+	if len(envFilename) == 0 {
+		// try to load .env file
+		_, err := os.Stat(filepath.Join(WorkDir(), ".env"))
+		if os.IsExist(err) {
+			err := godotenv.Load()
+			if err != nil {
+				log.Fatal("error loading .env file")
+			}
+		}
+	} else {
+		var (
+			err error
+		)
+		// load vars from specified file
+		if !filepath.IsAbs(envFilename) {
+			envFilename, err = filepath.Abs(envFilename)
+			if err != nil {
+				log.Fatalf("error converting environment file path to an absolute path: %v", err)
+			}
+		}
+		err = godotenv.Load(envFilename)
+		if err != nil {
+			log.Fatal("error loading .env file")
 		}
 	}
 }

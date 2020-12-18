@@ -14,21 +14,23 @@ import (
 
 // merges environment variables into one or more files
 type MergeCmd struct {
-	cmd *cobra.Command
+	cmd         *cobra.Command
+	envFilename string
 }
 
 func NewMergeCmd() *MergeCmd {
 	c := &MergeCmd{
 		cmd: &cobra.Command{
-			Use:   "merge [files]",
+			Use:   "merge [flags] [files]",
 			Short: "merges environment variables in the specified files",
 			Long:  ``,
 		},
 	}
 	c.cmd.Run = c.Run
+	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env")
 	return c
 }
 
 func (c *MergeCmd) Run(cmd *cobra.Command, args []string) {
-	core.MergeFiles(args)
+	core.MergeFiles(args, c.envFilename)
 }

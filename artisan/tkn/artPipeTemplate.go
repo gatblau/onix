@@ -20,7 +20,7 @@ const (
 )
 
 // return the full configuration for an Artefact Tekton Pipeline
-func MergeArtPipe(c *ArtefactPipelineConfig, sonar bool) bytes.Buffer {
+func MergeArtPipe(c *AppPipelineConfig, sonar bool) bytes.Buffer {
 	buf := bytes.Buffer{}
 	task := newArtPipeTask(c, sonar)
 	buf.Write(ToYaml(task, "Task"))
@@ -28,9 +28,11 @@ func MergeArtPipe(c *ArtefactPipelineConfig, sonar bool) bytes.Buffer {
 	regSecret := newArtRegSecret(c)
 	buf.Write(ToYaml(regSecret, "Secret"))
 	buf.WriteString("\n---\n")
-	sonarSecret := newSonarSecret(c)
-	buf.Write(ToYaml(sonarSecret, "Secret"))
-	buf.WriteString("\n---\n")
+	if sonar {
+		sonarSecret := newSonarSecret(c)
+		buf.Write(ToYaml(sonarSecret, "Secret"))
+		buf.WriteString("\n---\n")
+	}
 	pipe := newArtPipe(c)
 	buf.Write(ToYaml(pipe, "Pipeline"))
 	buf.WriteString("\n---\n")
@@ -55,10 +57,13 @@ func MergeArtPipe(c *ArtefactPipelineConfig, sonar bool) bytes.Buffer {
 	return buf
 }
 
-func newArtPipeTask(c *ArtefactPipelineConfig, sonar bool) *Task {
+func newArtPipeTask(c *AppPipelineConfig, sonar bool) *Task {
 	t := new(Task)
 	t.APIVersion = ApiVersionTekton
 	t.Kind = "Task"
+	t.Metadata = &Metadata{
+		Name: c.buildTaskName(),
+	}
 	t.Spec = &Spec{
 		Inputs: &Inputs{
 			Resources: []*Resources{
@@ -81,7 +86,7 @@ func newArtPipeTask(c *ArtefactPipelineConfig, sonar bool) *Task {
 	return t
 }
 
-func getSteps(c *ArtefactPipelineConfig, sonar bool) []*Steps {
+func getSteps(c *AppPipelineConfig, sonar bool) []*Steps {
 	stepCount := 2
 	if sonar {
 		stepCount = 3
@@ -93,7 +98,7 @@ func getSteps(c *ArtefactPipelineConfig, sonar bool) []*Steps {
 	steps[ix] = &Steps{
 		Name:       "build-app",
 		Image:      c.BuilderImage,
-		Command:    []string{"artie", "run", "build-app"},
+		Command:    []string{"art", "run", "build-app"},
 		WorkingDir: "/workspace/source",
 		VolumeMounts: []*VolumeMounts{
 			{
@@ -177,17 +182,17 @@ func getSteps(c *ArtefactPipelineConfig, sonar bool) []*Steps {
 	return steps
 }
 
-func newArtPipe(c *ArtefactPipelineConfig) *Pipeline {
+func newArtPipe(c *AppPipelineConfig) *Pipeline {
 	p := new(Pipeline)
 	p.Kind = "Pipeline"
 	p.APIVersion = ApiVersionTekton
 	p.Metadata = &Metadata{
-		Name: fmt.Sprintf("%s-artefact-pipeline", c.AppName),
+		Name: c.pipelineName(),
 	}
 	p.Spec = &Spec{
 		Resources: []*Resources{
 			{
-				Name: fmt.Sprintf("%s-code-repository", c.AppName),
+				Name: c.codeRepoResourceName(),
 				Type: "git",
 			},
 		},
@@ -200,15 +205,15 @@ func newArtPipe(c *ArtefactPipelineConfig) *Pipeline {
 		},
 		Tasks: []*Tasks{
 			{
-				Name: "build-artefacts",
+				Name: "app-build",
 				TaskRef: &TaskRef{
-					Name: fmt.Sprintf("%s-build-artefacts", c.AppName),
+					Name: c.buildTaskName(),
 				},
 				Resources: &Resources{
 					Inputs: []*Inputs{
 						{
 							Name:     "source",
-							Resource: fmt.Sprintf("%s-code-repository", c.AppName),
+							Resource: c.codeRepoResourceName(),
 						},
 					},
 				},
@@ -218,12 +223,12 @@ func newArtPipe(c *ArtefactPipelineConfig) *Pipeline {
 	return p
 }
 
-func newArtPipeResource(c *ArtefactPipelineConfig) *PipelineResource {
+func newArtPipeResource(c *AppPipelineConfig) *PipelineResource {
 	r := new(PipelineResource)
 	r.APIVersion = ApiVersionTekton
 	r.Kind = "PipelineResource"
 	r.Metadata = &Metadata{
-		Name: fmt.Sprintf("%s-code-repository", c.AppName),
+		Name: c.codeRepoResourceName(),
 	}
 	r.Spec = &Spec{
 		Type: "git",
@@ -237,19 +242,19 @@ func newArtPipeResource(c *ArtefactPipelineConfig) *PipelineResource {
 	return r
 }
 
-func newArtPipeRun(c *ArtefactPipelineConfig) *PipelineRun {
+func newArtPipeRun(c *AppPipelineConfig) *PipelineRun {
 	r := new(PipelineRun)
 	r.Kind = "PipelineRun"
 	r.APIVersion = ApiVersionTekton
 	r.Metadata = &Metadata{
-		Name: fmt.Sprintf("build-deploy-%s-pipelinerun", c.AppName),
+		Name: c.pipelineRunName(),
 	}
 	r.Spec = &Spec{
 		Resources: []*Resources{
 			{
-				Name: fmt.Sprintf("%s-code-repository", c.AppName),
+				Name: c.codeRepoResourceName(),
 				ResourceRef: &ResourceRef{
-					Name: fmt.Sprintf("%s-code-repository", c.AppName),
+					Name: c.codeRepoResourceName(),
 				},
 			},
 		},
@@ -261,13 +266,13 @@ func newArtPipeRun(c *ArtefactPipelineConfig) *PipelineRun {
 		},
 		ServiceAccountName: ServiceAccountName,
 		PipelineRef: &PipelineRef{
-			Name: fmt.Sprintf("%s-artefact-builder", c.AppName),
+			Name: c.pipelineName(),
 		},
 	}
 	return r
 }
 
-func newArtPipeEventListener(c *ArtefactPipelineConfig) *EventListener {
+func newArtPipeEventListener(c *AppPipelineConfig) *EventListener {
 	e := new(EventListener)
 	e.APIVersion = ApiVersionTektonTrigger
 	e.Kind = "EventListener"
@@ -295,7 +300,7 @@ func newArtPipeEventListener(c *ArtefactPipelineConfig) *EventListener {
 	return e
 }
 
-func newArtPipeRoute(c *ArtefactPipelineConfig) *Route {
+func newArtPipeRoute(c *AppPipelineConfig) *Route {
 	r := new(Route)
 	r.APIVersion = ApiVersion
 	r.Kind = "Route"
@@ -324,7 +329,7 @@ func newArtPipeRoute(c *ArtefactPipelineConfig) *Route {
 	return r
 }
 
-func newArtPipeTriggerBinding(c *ArtefactPipelineConfig) *TriggerBinding {
+func newArtPipeTriggerBinding(c *AppPipelineConfig) *TriggerBinding {
 	t := new(TriggerBinding)
 	t.APIVersion = ApiVersionTektonTrigger
 	t.Kind = "TriggerBinding"
@@ -350,7 +355,7 @@ func newArtPipeTriggerBinding(c *ArtefactPipelineConfig) *TriggerBinding {
 	return t
 }
 
-func newArtPipeTriggerTemplate(c *ArtefactPipelineConfig) *PipelineRun {
+func newArtPipeTriggerTemplate(c *AppPipelineConfig) *PipelineRun {
 	pipeResx := newArtPipeResourceTriggerTemplate(c)
 	pipeRun := newArtPipeRunTriggerTemplate(c)
 
@@ -363,16 +368,17 @@ func newArtPipeTriggerTemplate(c *ArtefactPipelineConfig) *PipelineRun {
 	t.Spec = &Spec{
 		Params: []*Params{
 			{
-				Name:  "git-repo-url",
-				Value: "The git repository url",
+				Name:        "git-repo-url",
+				Description: "The git repository url",
 			},
 			{
-				Name:  "git-repo-name",
-				Value: "The git repository name",
+				Name:        "git-repo-name",
+				Description: "The git repository name",
 			},
 			{
-				Name:  "git-revision",
-				Value: "The git revision",
+				Name:        "git-revision",
+				Description: "The git revision",
+				Default:     "master",
 			},
 		},
 		ResourceTemplates: []interface{}{pipeResx, pipeRun},
@@ -380,7 +386,7 @@ func newArtPipeTriggerTemplate(c *ArtefactPipelineConfig) *PipelineRun {
 	return t
 }
 
-func newArtPipeResourceTriggerTemplate(c *ArtefactPipelineConfig) *PipelineResource {
+func newArtPipeResourceTriggerTemplate(c *AppPipelineConfig) *PipelineResource {
 	r := new(PipelineResource)
 	r.APIVersion = ApiVersionTekton
 	r.Kind = "PipelineResource"
@@ -388,15 +394,7 @@ func newArtPipeResourceTriggerTemplate(c *ArtefactPipelineConfig) *PipelineResou
 		Name: "$(params.git-repo-name)-git-repo-$(uid)",
 	}
 	r.Spec = &Spec{
-		ServiceAccountName: ServiceAccountName,
-		PipelineRef: &PipelineRef{
-			Name: fmt.Sprintf("%s-artefact-builder", c.AppName),
-		},
-		Resources: []*Resources{
-			{
-				Name: "",
-			},
-		},
+		Type: "git",
 		Params: []*Params{
 			{
 				Name:  "revision",
@@ -411,7 +409,7 @@ func newArtPipeResourceTriggerTemplate(c *ArtefactPipelineConfig) *PipelineResou
 	return r
 }
 
-func newArtPipeRunTriggerTemplate(c *ArtefactPipelineConfig) *PipelineRun {
+func newArtPipeRunTriggerTemplate(c *AppPipelineConfig) *PipelineRun {
 	r := new(PipelineRun)
 	r.Kind = "PipelineRun"
 	r.APIVersion = ApiVersionTekton
@@ -419,9 +417,13 @@ func newArtPipeRunTriggerTemplate(c *ArtefactPipelineConfig) *PipelineRun {
 		Name: "build-deploy-$(params.git-repo-name)-$(uid)",
 	}
 	r.Spec = &Spec{
+		ServiceAccountName: ServiceAccountName,
+		PipelineRef: &PipelineRef{
+			Name: c.pipelineName(),
+		},
 		Resources: []*Resources{
 			{
-				Name: fmt.Sprintf("%s-code-repository", c.AppName),
+				Name: c.codeRepoResourceName(),
 				ResourceRef: &ResourceRef{
 					Name: "$(params.git-repo-name)-git-repo-$(uid)",
 				},
@@ -433,15 +435,11 @@ func newArtPipeRunTriggerTemplate(c *ArtefactPipelineConfig) *PipelineRun {
 				Value: "$(params.git-repo-name)",
 			},
 		},
-		ServiceAccountName: ServiceAccountName,
-		PipelineRef: &PipelineRef{
-			Name: fmt.Sprintf("%s-artefact-builder", c.AppName),
-		},
 	}
 	return r
 }
 
-func newArtRegSecret(c *ArtefactPipelineConfig) *Secret {
+func newArtRegSecret(c *AppPipelineConfig) *Secret {
 	s := new(Secret)
 	s.APIVersion = ApiVersion
 	s.Kind = "Secret"
@@ -450,13 +448,13 @@ func newArtRegSecret(c *ArtefactPipelineConfig) *Secret {
 		Name: fmt.Sprintf("%s-art-registry-creds", c.AppName),
 	}
 	s.StringData = &StringData{
-		Pwd:  c.ArtefactRegistryUser,
-		User: c.ArtefactRegistryPwd,
+		Pwd:  c.ArtefactRegistryPwd,
+		User: c.ArtefactRegistryUser,
 	}
 	return s
 }
 
-func newSonarSecret(c *ArtefactPipelineConfig) *Secret {
+func newSonarSecret(c *AppPipelineConfig) *Secret {
 	s := new(Secret)
 	s.APIVersion = ApiVersion
 	s.Kind = "Secret"

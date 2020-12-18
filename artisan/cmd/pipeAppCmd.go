@@ -18,27 +18,29 @@ import (
 )
 
 // list local artefacts
-type PipeArtefactCmd struct {
-	cmd     *cobra.Command
-	profile string
-	sonar   *bool
+type PipeAppCmd struct {
+	cmd         *cobra.Command
+	profile     string
+	sonar       *bool
+	envFilename string
 }
 
-func NewPipeArtefactCmd() *PipeArtefactCmd {
-	c := &PipeArtefactCmd{
+func NewPipeAppCmd() *PipeAppCmd {
+	c := &PipeAppCmd{
 		cmd: &cobra.Command{
-			Use:   "artefact [flags] [build-file-path] [template_name]",
+			Use:   "app [flags] [build-file-path] [template_name]",
 			Short: "deploy an artefact pipeline",
-			Long:  `deploy a Tekton Pipeline to build an application artefact using Artisan`,
+			Long:  `deploy a Tekton Pipeline to build an application package using Artisan`,
 		},
 	}
 	c.cmd.Flags().StringVarP(&c.profile, "profile", "p", "", "the build profile to use. if not provided, the default profile defined in the build file is used. if no default profile is found, then the first profile in the build file is used.")
 	c.sonar = c.cmd.Flags().BoolP("sonar", "s", false, "--sonar or -s add Sonar quality check step")
+	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env")
 	c.cmd.Run = c.Run
 	return c
 }
 
-func (b *PipeArtefactCmd) Run(cmd *cobra.Command, args []string) {
+func (b *PipeAppCmd) Run(cmd *cobra.Command, args []string) {
 	var (
 		buildFile    = "."
 		templateName = "artefact_pipeline.yaml"
@@ -56,8 +58,10 @@ func (b *PipeArtefactCmd) Run(cmd *cobra.Command, args []string) {
 		templateName, err := filepath.Abs(templateName)
 		core.CheckErr(err, "cannot convert '%s' to absolute path", templateName)
 	}
+	// try to load env from file
+	core.LoadEnvFromFile(b.envFilename)
 	// collects information to assemble the pipeline
-	c := tkn.NewArtPipelineConfig(buildFile, b.profile, *b.sonar)
+	c := tkn.NewAppPipelineConfig(buildFile, b.profile, *b.sonar)
 	// assembles the pipeline
 	template := tkn.MergeArtPipe(c, *b.sonar)
 	core.CheckErr(ioutil.WriteFile(templateName, template.Bytes(), os.ModePerm), "cannot save template")

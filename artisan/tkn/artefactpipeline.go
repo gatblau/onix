@@ -15,16 +15,14 @@ import (
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
 	"gopkg.in/yaml.v2"
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
-	"text/template"
 )
 
-// a tekton-based Artie's CI pipeline
-type ArtefactPipelineConfig struct {
+// a tekton-based Artisan CI pipeline
+type AppPipelineConfig struct {
 	// PIPE_ART_APP_NAME
 	AppName string
 	// PIPE_ART_GIT_URI
@@ -56,7 +54,7 @@ type ArtefactPipelineConfig struct {
 }
 
 // create a new pipeline
-func NewArtPipelineConfig(buildFilePath, profileName string, sonar bool) *ArtefactPipelineConfig {
+func NewAppPipelineConfig(buildFilePath, profileName string, sonar bool) *AppPipelineConfig {
 	var profile *build.Profile
 	// load the build file
 	buildFile := loadBuildFile(buildFilePath)
@@ -79,7 +77,7 @@ func NewArtPipelineConfig(buildFilePath, profileName string, sonar bool) *Artefa
 		}
 	}
 	// create an instance of the pipeline
-	p := new(ArtefactPipelineConfig)
+	p := new(AppPipelineConfig)
 	// resolve the builder image using the appType
 	p.BuilderImage = builderImage(buildFile.Type)
 	// set the build profile
@@ -102,30 +100,52 @@ func NewArtPipelineConfig(buildFilePath, profileName string, sonar bool) *Artefa
 	p.survey(sonar)
 	// finally survey any missing variables in the build profile that are not defined
 	profile.Survey(buildFile)
+	// need this to take the cli cursor to the new line
+	fmt.Print("\n")
 	// return the configured pipeline
 	return p
 }
 
+// return the name of the application build task
+func (p *AppPipelineConfig) buildTaskName() string {
+	return fmt.Sprintf("%s-app-build-task", p.AppName)
+}
+
+// return the name of the code repository resource
+func (p *AppPipelineConfig) codeRepoResourceName() string {
+	return fmt.Sprintf("%s-code-repo", p.AppName)
+}
+
+// return the name of the code repository resource
+func (p *AppPipelineConfig) pipelineName() string {
+	return fmt.Sprintf("%s-app-builder", p.AppName)
+}
+
+// return the name of the code repository resource
+func (p *AppPipelineConfig) pipelineRunName() string {
+	return fmt.Sprintf("%s-app-pr", p.AppName)
+}
+
 // try and set ciPipeline variables from the environment
-func (p *ArtefactPipelineConfig) loadFromEnv(sonar bool) {
-	p.AppName = p.LoadVar("PIPE_ART_APP_NAME", p.AppName)
-	p.AppIcon = p.LoadVar("PIPE_ART_PIPE_APP_ICON", p.AppIcon)
-	p.GitURI = p.LoadVar("PIPE_ART_GIT_URI", p.GitURI)
-	p.BuilderImage = p.LoadVar("PIPE_ART_BUILDER_IMG", p.BuilderImage)
-	p.BuildProfile = p.LoadVar("PIPE_ART_BUILD_PROFILE", p.BuildProfile)
-	p.ArtefactName = p.LoadVar("PIPE_ART_NAME", p.ArtefactName)
-	p.ArtefactRegistryUser = p.LoadVar("PIPE_ART_REG_USER", p.ArtefactRegistryUser)
-	p.ArtefactRegistryPwd = p.LoadVar("PIPE_ART_REG_PWD", p.ArtefactRegistryPwd)
+func (p *AppPipelineConfig) loadFromEnv(sonar bool) {
+	p.AppName = p.LoadVar("ART_PIPE_APP_NAME", p.AppName)
+	p.AppIcon = p.LoadVar("ART_PIPE_APP_ICON", p.AppIcon)
+	p.GitURI = p.LoadVar("ART_PIPE_APP_GIT_URI", p.GitURI)
+	p.BuilderImage = p.LoadVar("ART_PIPE_APP_BUILDER_IMG", p.BuilderImage)
+	p.BuildProfile = p.LoadVar("ART_PIPE_APP_BUILD_PROFILE", p.BuildProfile)
+	p.ArtefactName = p.LoadVar("ART_PIPE_APP_ART_NAME", p.ArtefactName)
+	p.ArtefactRegistryUser = p.LoadVar("ART_PIPE_APP_ART_REG_USER", p.ArtefactRegistryUser)
+	p.ArtefactRegistryPwd = p.LoadVar("ART_PIPE_APP_ART_REG_PWD", p.ArtefactRegistryPwd)
 	if sonar {
-		p.SonarURI = p.LoadVar("PIPE_ART_SONAR_URI", p.SonarURI)
-		p.SonarToken = p.LoadVar("PIPE_ART_SONAR_TOKEN", p.SonarToken)
-		p.SonarImage = p.LoadVar("PIPE_ART_SONAR_IMAGE", p.SonarImage)
-		p.SonarSources = p.LoadVar("PIPE_ART_SONAR_SOURCES", p.SonarSources)
-		p.SonarBinaries = p.LoadVar("PIPE_ART_SONAR_BINARIES", p.SonarBinaries)
+		p.SonarURI = p.LoadVar("ART_PIPE_APP_SONAR_URI", p.SonarURI)
+		p.SonarToken = p.LoadVar("ART_PIPE_APP_SONAR_TOKEN", p.SonarToken)
+		p.SonarImage = p.LoadVar("ART_PIPE_APP_SONAR_IMAGE", p.SonarImage)
+		p.SonarSources = p.LoadVar("ART_PIPE_APP_SONAR_SOURCES", p.SonarSources)
+		p.SonarBinaries = p.LoadVar("ART_PIPE_APP_SONAR_BINARIES", p.SonarBinaries)
 	}
 }
 
-func (p *ArtefactPipelineConfig) LoadVar(name string, value string) string {
+func (p *AppPipelineConfig) LoadVar(name string, value string) string {
 	// try and retrieve value from environment variable
 	envVarValue := os.Getenv(name)
 	// if there is a value use it
@@ -137,7 +157,7 @@ func (p *ArtefactPipelineConfig) LoadVar(name string, value string) string {
 }
 
 // collect missing variables on the command line
-func (p *ArtefactPipelineConfig) survey(sonar bool) {
+func (p *AppPipelineConfig) survey(sonar bool) {
 	// the sonar scanner image to use
 	p.SonarImage = "quay.io/gatblau/art-sonar"
 
@@ -231,15 +251,6 @@ func (p *ArtefactPipelineConfig) survey(sonar bool) {
 	}
 }
 
-// merges the template and its values into the passed in writer
-func (p *ArtefactPipelineConfig) Merge(w io.Writer) error {
-	t, err := template.New("pipeline").Parse(ciPipeline)
-	if err != nil {
-		return err
-	}
-	return t.Execute(w, p)
-}
-
 // validates url is valid
 func validURL(url interface{}) error {
 	if str, ok := url.(string); !ok || !govalidator.IsURL(str) {
@@ -280,82 +291,3 @@ func loadBuildFile(buildFilePath string) *build.BuildFile {
 	core.CheckErr(err, "cannot unmarshall build file")
 	return buildFile
 }
-
-// the ciPipeline template containing parameterised resource definitions
-const ciPipeline = `
-apiVersion: tekton.dev/v1alpha1
-kind: Task
-metadata:
-  name: {{.AppName}}-build-artefacts
-spec:
-  inputs:
-    resources:
-      - {type: git, name: source}
-  steps:
-    - name: apply
-      image: {{.BuilderImage}} 
-      env:
-        - name: ARTEFACT_NAME
-          value: {{.ArtefactName}}
-        - name: BUILD_PROFILE
-          value: {{.BuildProfile}}
-        - name: ARTEFACT_UNAME
-          value: {{.ArtefactRegistryUser}}
-        - name: ARTEFACT_PWD
-          value: {{.ArtefactRegistryPwd}}
-      workingDir: /workspace/source
-      volumeMounts:
-        - name: config-volume
-          mountPath: /keys
-  volumes:
-    - name: config-volume
-      configMap:
-        name: signing-key-config-map
----
-apiVersion: tekton.dev/v1alpha1
-kind: Pipeline
-metadata:
-  name: {{.AppName}}-build-and-deploy
-spec:
-  resources:
-  - name: {{.AppName}}-git-repo
-    type: git
-  params:
-  - name: deployment-name
-    type: string
-    description: name of the deployment to be patched
-  tasks:
-  - name: build-artefacts
-    taskRef:
-      name: {{.AppName}}-build-artefacts
-    resources:
-      inputs:
-      - name: source
-        resource: {{.AppName}}-git-repo
----
-apiVersion: tekton.dev/v1alpha1
-kind: PipelineResource
-metadata:
-  name: {{.AppName}}-git-repo
-spec:
-  type: git
-  params:
-  - name: url
-    value: {{.GitURI}}
----
-apiVersion: tekton.dev/v1alpha1
-kind: PipelineRun
-metadata:
-  name: build-deploy-{{.AppName}}-pipelinerun
-spec:
-  serviceAccountName: pipeline
-  pipelineRef:
-    name: {{.AppName}}-build-and-deploy
-  resources:
-  - name: {{.AppName}}-git-repo
-    resourceRef:
-      name: {{.AppName}}-git-repo
-  params:
-  - name: deployment-name
-    value: {{.AppName}}
-`
