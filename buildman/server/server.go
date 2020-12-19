@@ -1,5 +1,5 @@
 /*
-  Onix Config Manager - Buildman
+  Onix Config Manager - Build Manager
   Copyright (c) 2018-2020 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
@@ -22,9 +22,10 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	_ "github.com/gatblau/onix/builder/docs" // documentation needed for swagger
+	_ "github.com/gatblau/onix/buildman/docs" // documentation needed for swagger
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/reugn/go-quartz/quartz"
 	"github.com/swaggo/http-swagger" // http-swagger middleware
 	"gopkg.in/yaml.v2"
 	"log"
@@ -37,11 +38,13 @@ import (
 type Server struct {
 	start time.Time
 	conf  *Config
+	sched *quartz.StdScheduler
 }
 
 func NewServer() *Server {
 	return &Server{
-		conf: &Config{},
+		conf:  &Config{},
+		sched: quartz.NewStdScheduler(),
 	}
 }
 
@@ -70,6 +73,17 @@ func (s *Server) Serve() {
 		router.Handle("/metrics", promhttp.Handler()).Methods("GET")
 	}
 
+	// creates a job to check for changes in the base image
+	checkBaseImageJob, err := NewCheckImageJob()
+	if err != nil {
+		log.Fatalf("cannot create base image check job: %s", err)
+	}
+	s.sched.Start()
+
+	err = s.sched.ScheduleJob(checkBaseImageJob, quartz.NewSimpleTrigger(time.Minute*time.Duration(checkBaseImageJob.cfg.Interval)))
+	if err != nil {
+		log.Fatalf("cannot schedule image check job: %s", err)
+	}
 	// starts the server
 	s.listen(router)
 }
@@ -108,6 +122,9 @@ func (s *Server) listen(handler http.Handler) {
 		fmt.Printf("? I have taken %v to start\n", time.Since(s.start))
 		if err := server.ListenAndServe(); err != nil {
 			fmt.Printf("! Stopping the server: %v\n", err)
+			// stops the scheduler
+			s.sched.Stop()
+			// exit
 			os.Exit(1)
 		}
 	}()
@@ -155,7 +172,7 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "" {
 			// if no authorisation header is passed, then it prompts a client browser to authenticate
-			w.Header().Set("WWW-Authenticate", `Basic realm="onix/artie"`)
+			w.Header().Set("WWW-Authenticate", `Basic realm="onix/buildman"`)
 			w.WriteHeader(http.StatusUnauthorized)
 			fmt.Printf("? unauthorised http request from: '%v'\n", r.RemoteAddr)
 		} else {
