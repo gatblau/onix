@@ -1,0 +1,95 @@
+---
+# this is an Artisan automation file to facilitate setting up a local environment for testing the build manager
+# it requires the art cli installed
+# the functions below can be invoke as follows:
+#   $ art run [function-name]
+env:
+  # the name of the test base image
+  TEST_BASE_IMAGE: quay.io/gatblau/dummy-base
+  # the name of the test app image
+  TEST_APP_IMAGE: quay.io/gatblau/dummy-app
+  # the kubernetes namespace where the image pipeline is running
+  NAMESPACE: default
+functions:
+  - name: install-mini-win
+    description: installs minikube in Windows - requires chocolatey - see https://chocolatey.org/install
+    run:
+      - choco install minikube
+
+  - name: install-mini-mac
+    description: installs minikube in MacOS - requires brew - see https://brew.sh
+    run:
+      - brew install minikube
+
+  - name: install-mini-linux
+    description: installs the minikube binary in Linux
+    env:
+      # download location for the latest minikube binary
+      MINIKUBE_URI: https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+    run:
+      - curl -LO ${MINIKUBE_URI}
+      - sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+  - name: start-mini
+    description: starts minikube
+    run:
+      - minikube start --memory=4096 --disk-size=10g
+
+  - name: install-tekton
+    description: installs tekton pipelines on K8S
+    env:
+      # URI of the latest Tekton release resources for installation
+      TEKTON_URI: https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+    run:
+      - kubectl apply --filename ${TEKTON_URI}
+      - kubectl get pods --namespace tekton-pipelines --watch
+
+  - name: setup-rbac
+    description: set up the required role based access controls for buildman to work
+    run:
+      - art merge rbac.yaml.tem
+      - kubectl apply --filename rbac.yaml
+      - rm rbac.yaml
+
+  - name: list-rbac
+    description: shows which service accounts have which roles and whether it is at cluster level or not
+    run:
+      - kubectl get rolebindings,clusterrolebindings --all-namespaces -o=custom-columns=KIND:kind,ROLE:roleRef.name,SERVICE_ACCOUNTS:subjects[?(@.kind=="ServiceAccount")].name
+
+  - name: build-base
+    description: builds a dummy base image
+    run:
+      - docker build -f Dockerfile.base -t=${TEST_BASE_IMAGE} .
+
+  - name: push-base
+    description: push the dummy base image to the registry
+    run:
+      - docker push ${TEST_BASE_IMAGE}
+
+  - name: new-base
+    description: builds and push a new dummy base image
+    run:
+      - $(build-base)
+      - $(push-base)
+
+  - name: build-app
+    description: builds a dummy app image
+    run:
+      - docker build -f Dockerfile.app -t=${TEST_APP_IMAGE} .
+
+  - name: push-app
+    description: push the dummy app image to the registry
+    run:
+      - docker push ${TEST_APP_IMAGE}
+
+  - name: new-app
+    description: builds and push a new dummy app image
+    run:
+      - $(build-app)
+      - $(push-app)
+
+  - name: buildman-deploy
+    run:
+      - art merge buildman.yaml.tem
+      - kubectl apply --filename buildman.yaml
+      - rm buildman.yaml

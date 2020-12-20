@@ -1,0 +1,18 @@
+{
+  "interval": 1,
+  "policies": [
+    {
+      "name": "dummy-app",
+      "description": "test image build",
+      "app": "quay.io/gatblau/dummy-app",
+      "app-user": "",
+      "app-pwd": "",
+      "app-base-created-label": "build-date",
+      "base": "quay.io/gatblau/dummy-base",
+      "base-user": "",
+      "base-pwd": "",
+      "namespace": "default",
+      "pollBase": true
+    }
+  ]
+}

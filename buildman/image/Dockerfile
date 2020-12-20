@@ -18,17 +18,19 @@ ENV GID=1000
 ENV APP=$APP_NAME
 ENV APP_HOME /app
 
-RUN dnf update && \
-    dnf install shadow-utils.x86_64 -y && \
-    dnf install skopeo -y && \
+RUN yum update -y && \
+    yum install shadow-utils.x86_64 -y && \
+    yum install skopeo -y && \
     groupadd -g $GID -o $UNAME && useradd -M -u $UID -g $GID $UNAME && \
     rm -rf /var/cache/yum && \
-    dnf clean all
+    yum clean all && \
+    mkdir /conf
 
 COPY ./image/bin/output/$APP_NAME $APP_HOME/
+COPY ./image/policy.json /conf/
 
-RUN chmod ug+x $APP_HOME/$APP_NAME
+RUN chmod ug+x $APP_HOME/$APP_NAME && chmod ug+r /conf/policy.json
 
 USER $UNAME
 
-CMD ["sh", "-c", "${APP_NAME}/${APP}"]
+CMD ["sh", "-c", "${APP_HOME}/${APP}"]

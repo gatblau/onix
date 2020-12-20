@@ -3,7 +3,7 @@ package server
 import "testing"
 
 func Test(t *testing.T) {
-	_, err := getImgInfo("quay.io/gatblau/art-java", "", "")
+	_, err := getImgInfo("quay.io/gatblau/dummy-app", "", "")
 	if err != nil {
 		t.Fatal(err.Error())
 		t.FailNow()
