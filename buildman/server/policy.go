@@ -17,8 +17,7 @@ import (
 )
 
 func NewPolicyConfig() (*policyConfig, error) {
-	wd := WorkDir()
-	b, err := ioutil.ReadFile(path.Join(wd, "policy.json"))
+	b, err := ioutil.ReadFile(PolicyFile())
 	if err != nil {
 		return nil, fmt.Errorf("cannot read policy file: %s", err)
 	}
@@ -31,16 +30,35 @@ func NewPolicyConfig() (*policyConfig, error) {
 }
 
 type policyConfig struct {
+	// the polling interval to check for base image changes
 	Interval int `json:"interval"`
-	Policies []struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		Base        string `json:"base"`
-		User        string `json:"user"`
-		Pwd         string `json:"pwd"`
-		Namespace   string `json:"namespace"`
-		PollBase    bool   `json:"pollBase"`
-	} `json:"policies"`
+	// a list of policies to trigger new image builds
+	Policies []*policyConf `json:"policies"`
+}
+
+type policyConf struct {
+	// the name of the policy that MUST correspond to the name of the image build pipeline
+	Name string `json:"name"`
+	// the policy description
+	Description string `json:"description"`
+	// the name of the base image
+	Base string `json:"base"`
+	// the label on the base image containing the created date
+	BaseCreated string `json:"app-base-created-label"`
+	// the username to connect to the base image registry
+	BaseUser string `json:"base-user"`
+	// the password to connect to the base image registry
+	BasePwd string `json:"base-pwd"`
+	// the name of the application image
+	App string `json:"app"`
+	// the username to connect to the application image registry
+	AppUser string `json:"app-user"`
+	// the password to connect to the application image registry
+	AppPwd string `json:"app-pwd"`
+	// the kubernetes namespace where the image build pipeline is to be launched
+	Namespace string `json:"namespace"`
+	// a flag to enable the polling of base image information
+	PollBase bool `json:"pollBase"`
 }
 
 func WorkDir() string {
@@ -50,4 +68,14 @@ func WorkDir() string {
 		os.Exit(1)
 	}
 	return wd
+}
+
+// gets the policy file FQDN
+func PolicyFile() string {
+	var filename = path.Join(WorkDir(), "policy.json")
+	policyPath := os.Getenv("OXBM_POLICY_PATH")
+	if len(policyPath) > 0 {
+		filename = path.Join(policyPath, "policy.json")
+	}
+	return filename
 }

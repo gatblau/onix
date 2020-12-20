@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: buildman-policy-cm
+  namespace: ${NAMESPACE}
+data:
+  policy.json: |-
+    {
+      "interval": 1,
+      "policies": [
+        {
+          "name": "dummy-app",
+          "description": "test image build",
+          "app": "quay.io/gatblau/dummy-app",
+          "app-user": "",
+          "app-pwd": "",
+          "app-base-created-label": "build-date",
+          "base": "quay.io/gatblau/dummy-base",
+          "base-user": "",
+          "base-pwd": "",
+          "namespace": "${NAMESPACE}",
+          "pollBase": true
+        }
+      ]
+    }
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: buildman-pod
+  namespace: ${NAMESPACE}
+spec:
+  serviceAccountName: buildman
+  containers:
+    - name: buildman
+      env:
+        - name: OXBM_POLICY_PATH
+          value: /conf
+      image: quay.io/gatblau/buildman
+      imagePullPolicy: Always
+      volumeMounts:
+        - name: config-volume
+          mountPath: /conf/policy.json
+          subPath: policy.json
+  volumes:
+    - name: config-volume
+      configMap:
+        name: buildman-policy-cm

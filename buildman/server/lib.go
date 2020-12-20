@@ -50,7 +50,7 @@ func getKubeConfig() (*rest.Config, error) {
 		config, err = rest.InClusterConfig()
 		if err != nil {
 			log.Printf("could not find the K8S client configuration. "+
-				"are you running Sentinel in a container that has not been deployed in Kubernetes?.\n "+
+				"you cannot run the Build Manager in a container that has not been deployed in Kubernetes?\n "+
 				"the error message was: %v.", err)
 			return nil, err
 		}

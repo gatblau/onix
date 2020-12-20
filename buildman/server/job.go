@@ -7,13 +7,13 @@ import (
 	"log"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 // check that base images have not changed
 type CheckImageJob struct {
-	cfg    *policyConfig
-	digest *digestCache
-	k8s    *K8S
+	cfg *policyConfig
+	k8s *K8S
 }
 
 func NewCheckImageJob() (*CheckImageJob, error) {
@@ -21,22 +21,13 @@ func NewCheckImageJob() (*CheckImageJob, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot create job: %s", err)
 	}
-	dig, err := NewDigests()
-	if err != nil {
-		return nil, fmt.Errorf("cannot retrieve cached digests: %s", err)
-	}
-	err = dig.load()
-	if err != nil {
-		return nil, fmt.Errorf("cannot load cached digests: %s", err)
-	}
 	k8s, err := NewK8S()
 	if err != nil {
 		return nil, fmt.Errorf("cannot create K8S client: %s", err)
 	}
 	return &CheckImageJob{
-		cfg:    conf,
-		digest: dig,
-		k8s:    k8s,
+		cfg: conf,
+		k8s: k8s,
 	}, nil
 }
 
@@ -44,27 +35,27 @@ func (c *CheckImageJob) Execute() {
 	for _, policy := range c.cfg.Policies {
 		if policy.PollBase {
 			log.Printf("info: executing policy: %s\n", policy.Name)
-			info, err := getImgInfo(policy.Base, policy.User, policy.Pwd)
+			appImgBuildDate, appImgBaseBuildDate, baseImgBuildDate, err := getImgProps(policy)
 			if err != nil {
-				log.Printf("error: cannot get image infromation for %s\n%sskipping policy\n", policy.Base, err)
+				log.Printf("error: cannot get image information for %s\n%s\nskipping policy\n", policy.Base, err)
 				continue
 			}
-			// get the base image digest
-			digest := info.Config.Digest
-			// compare the digest with the last recorded one
-			if c.digest.changed(policy.Base, digest) {
+			// if the base image creation date happened after the time recorded in the application image, or
+			// if the base image creation date happened after the time the application image was created
+			if baseImgBuildDate.After(*appImgBaseBuildDate) || baseImgBuildDate.After(*appImgBuildDate) {
 				log.Printf("info: base image change detected: %s\n", policy.Base)
 				log.Printf("info: launching build\n")
 				err = c.k8s.NewImagePipeline(policy.Name, policy.Namespace)
 				if err != nil {
 					log.Printf("error: cannot start image build: %s\n", err)
+				} else {
+					// if the start of the build was successful then
 				}
 			} else {
 				log.Printf("info: base image unchanged, nothing to do: %s\n", policy.Name)
 			}
 		}
 	}
-	c.digest.save()
 }
 
 func (c *CheckImageJob) Description() string {
@@ -79,9 +70,9 @@ func (c *CheckImageJob) Key() int {
 func getImgInfo(imageName, user, pwd string) (*ImgInfo, error) {
 	var command *exec.Cmd
 	if len(user) > 0 && len(pwd) > 0 {
-		command = exec.Command("skopeo", "inspect", fmt.Sprintf("--creds=%s:%s", user, pwd), "--raw", fmt.Sprintf("docker://%s", imageName))
+		command = exec.Command("skopeo", "inspect", fmt.Sprintf("--creds=%s:%s", user, pwd), fmt.Sprintf("docker://%s", imageName))
 	} else {
-		command = exec.Command("skopeo", "inspect", "--raw", fmt.Sprintf("docker://%s", imageName))
+		command = exec.Command("skopeo", "inspect", fmt.Sprintf("docker://%s", imageName))
 	}
 	result, err := command.Output()
 	if err != nil {
@@ -99,8 +90,84 @@ func getImgInfo(imageName, user, pwd string) (*ImgInfo, error) {
 	return info, nil
 }
 
+// returns all required image dates to work out if new build is required
+func getImgProps(policy *policyConf) (appImgBuildDate, appImgBaseBuildDate, baseImgBuildDate *time.Time, err error) {
+	// first retrieves application image information
+	appImgInfo, err := getImgInfo(policy.App, policy.AppUser, policy.AppPwd)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("cannot retrieve application image information: %s", err)
+	}
+	// second retrieves application base image information
+	baseImgInfo, err := getImgInfo(policy.Base, policy.BaseUser, policy.BasePwd)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("cannot retrieve application base image information: %s", err)
+	}
+	appImgBuildDate = parseTime(appImgInfo.Created)
+	if appImgBuildDate == nil {
+		return nil, nil, nil, fmt.Errorf("cannot parse created date on app image manifest: '%s'", appImgInfo.Created)
+	}
+	baseImgBuildDate = parseTime(baseImgInfo.Created)
+	if appImgBuildDate == nil {
+		return nil, nil, nil, fmt.Errorf("cannot parse created date on base image manifest: '%s'", baseImgInfo.Created)
+	}
+	baseCreatedOn := appImgInfo.Labels[policy.BaseCreated]
+	if len(baseCreatedOn) == 0 {
+		return nil, nil, nil, fmt.Errorf("cannot find base image build date based on label '%s' in image: %s", policy.BaseCreated, policy.App)
+	}
+	appImgBaseBuildDate = parseTime(baseCreatedOn)
+	if appImgBaseBuildDate == nil {
+		return nil, nil, nil, fmt.Errorf("cannot parse base image build date based on label '%s': %s", policy.BaseCreated, baseCreatedOn)
+	}
+	return appImgBuildDate, appImgBaseBuildDate, baseImgBuildDate, nil
+}
+
+// parses a time in string format trying different formatting
+func parseTime(timeString string) *time.Time {
+	var result time.Time
+	result, err := time.Parse(time.ANSIC, timeString)
+	if err == nil {
+		return &result
+	}
+	result, err = time.Parse(time.RFC822, timeString)
+	if err == nil {
+		return &result
+	}
+	result, err = time.Parse(time.RFC822Z, timeString)
+	if err == nil {
+		return &result
+	}
+	result, err = time.Parse(time.RFC850, timeString)
+	if err == nil {
+		return &result
+	}
+	result, err = time.Parse(time.RFC1123, timeString)
+	if err == nil {
+		return &result
+	}
+	result, err = time.Parse(time.RFC1123Z, timeString)
+	if err == nil {
+		return &result
+	}
+	result, err = time.Parse(time.RFC3339, timeString)
+	if err == nil {
+		return &result
+	}
+	result, err = time.Parse(time.RFC3339Nano, timeString)
+	if err == nil {
+		return &result
+	}
+	result, err = time.Parse(Rfc3339Custom, timeString)
+	if err == nil {
+		return &result
+	}
+	return nil
+}
+
 func hashCode(s string) int {
 	h := fnv.New32a()
 	_, _ = h.Write([]byte(s))
 	return int(h.Sum32())
 }
+
+// custom format in docker image
+const Rfc3339Custom = "2006-01-02T15:04:05.999999"

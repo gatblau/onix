@@ -82,7 +82,6 @@ func (k *K8S) apply(yamlResource string, ctx context.Context) error {
 	_, err = dr.Patch(ctx, obj.GetName(), types.ApplyPatchType, data, metav1.PatchOptions{
 		FieldManager: "build-manager-controller",
 	})
-
 	return err
 }
 

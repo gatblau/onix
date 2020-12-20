@@ -23,9 +23,9 @@ functions:
     env:
       GOOS: linux
     run:
-      - sh ./image/bin/version.sh ${APP_VERSION}-${ART_REF}-${LIFECYCLE_STAGE}
+      - sh ./image/bin/version.sh ${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE}
       - go fmt
-      - go build -o image/bin/output/buildman-linux-${APP_VERSION}-${ART_REF}-${LIFECYCLE_STAGE} -v
+      - go build -o image/bin/output/buildman-linux-${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE} -v
 
   - name: swagen
     description: generates/refreshes the OpenAPI specifications for the Build Manager HTTP API

@@ -7,18 +7,16 @@
 */
 package server
 
-// response from skopeo inspect docker://image-name-tag --raw
+// response from skopeo inspect docker://image-name-tag
 type ImgInfo struct {
-	SchemaVersion int    `json:"schemaVersion"`
-	MediaType     string `json:"mediaType"`
-	Config        struct {
-		MediaType string `json:"mediaType"`
-		Size      int    `json:"size"`
-		Digest    string `json:"digest"`
-	} `json:"config"`
-	Layers []struct {
-		MediaType string `json:"mediaType"`
-		Size      int    `json:"size"`
-		Digest    string `json:"digest"`
-	} `json:"layers"`
+	Name          string            `json:"Name"`
+	Digest        string            `json:"Digest"`
+	RepoTags      []string          `json:"RepoTags"`
+	Created       string            `json:"Created"`
+	DockerVersion string            `json:"DockerVersion"`
+	Labels        map[string]string `json:"Labels"`
+	Architecture  string            `json:"Architecture"`
+	Os            string            `json:"Os"`
+	Layers        []string          `json:"Layers"`
+	Env           []string          `json:"Env"`
 }
