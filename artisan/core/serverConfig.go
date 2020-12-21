@@ -100,7 +100,7 @@ func (c *ServerConfig) HttpUser() string {
 
 func (c *ServerConfig) HttpUploadLimit() int64 {
 	limit, err := strconv.ParseInt(c.getString(VarHTTPUploadLimit, "30"), 0, 0)
-	CheckErr(err, "invalid upload limit specified", err)
+	CheckErr(err, "invalid upload limit specified")
 	return limit
 }
 
