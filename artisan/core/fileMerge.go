@@ -37,7 +37,7 @@ func MergeFiles(filenames []string, envFilename string) {
 	for _, file := range files {
 		merged := false
 		if filepath.Ext(file) != ".tem" {
-			RaiseErr("file '%s' does not have a .tem extension, cannot process it")
+			RaiseErr("file '%s' does not have a .tem extension, cannot process it", file)
 		}
 		// read the file content
 		bytes, err := ioutil.ReadFile(file)
@@ -73,7 +73,7 @@ func MergeFiles(filenames []string, envFilename string) {
 			if len(ev) == 0 {
 				// if no default value has been defined
 				if len(defValue) == 0 {
-					log.Printf("environment variable '%s' and/or default value not defined, skipping merging\n", vname)
+					log.Fatalf("environment variable '%s' required and not defined, cannot merge\n", vname)
 				} else {
 					// merge with the default value
 					content = strings.Replace(content, string(v), defValue, 1000)
@@ -101,11 +101,8 @@ func LoadEnvFromFile(envFilename string) {
 	if len(envFilename) == 0 {
 		// try to load .env file
 		_, err := os.Stat(filepath.Join(WorkDir(), ".env"))
-		if os.IsExist(err) {
-			err := godotenv.Load()
-			if err != nil {
-				log.Fatal("error loading .env file")
-			}
+		if !os.IsNotExist(err) {
+			godotenv.Load()
 		}
 	} else {
 		var (
@@ -118,10 +115,7 @@ func LoadEnvFromFile(envFilename string) {
 				log.Fatalf("error converting environment file path to an absolute path: %v", err)
 			}
 		}
-		err = godotenv.Load(envFilename)
-		if err != nil {
-			log.Fatal("error loading .env file")
-		}
+		godotenv.Load(envFilename)
 	}
 }
 
