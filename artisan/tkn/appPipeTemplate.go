@@ -363,7 +363,7 @@ func newArtPipeTriggerTemplate(c *AppPipelineConfig) *PipelineRun {
 	t.APIVersion = ApiVersionTektonTrigger
 	t.Kind = "TriggerTemplate"
 	t.Metadata = &Metadata{
-		Name: c.AppName,
+		Name: "$(params.git-repo-name)-app-pr-$(uid)",
 	}
 	t.Spec = &Spec{
 		Params: []*Params{
