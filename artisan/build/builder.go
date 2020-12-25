@@ -74,6 +74,8 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, p
 	}
 	// merge env with target
 	mergedTarget, _ := core.MergeEnvironmentVars([]string{buildProfile.Target}, b.env.vars, interactive)
+	// set the merged target for later use
+	buildProfile.mergedTarget = mergedTarget[0]
 	// wait for the target to be created in the file system
 	targetPath := filepath.Join(b.loadFrom, mergedTarget[0])
 	waitForTargetToBeCreated(targetPath)
@@ -494,7 +496,7 @@ func (b *Builder) createSeal(artie *core.ArtieName, profile *Profile) *core.Seal
 		Commit:  b.commit,
 		Branch:  "",
 		Tag:     "",
-		Target:  profile.Target,
+		Target:  filepath.Base(profile.mergedTarget),
 		Time:    time.Now().Format(time.RFC850),
 		Size:    bytesToLabel(zipInfo.Size()),
 		Zip:     b.zip,

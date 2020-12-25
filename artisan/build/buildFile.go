@@ -81,6 +81,8 @@ type Profile struct {
 	// the output of the build process, namely either a file or a folder, that has to be compressed
 	// as part of the packaging process
 	Target string `yaml:"target"`
+	// merged target if exist, internal use only
+	mergedTarget string
 }
 
 // gets a slice of string with each element containing key=value
