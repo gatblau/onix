@@ -9,6 +9,7 @@ package sign
 
 import (
 	"bytes"
+	"compress/gzip"
 	"crypto"
 	"errors"
 	"fmt"
@@ -24,16 +25,13 @@ import (
 	"time"
 )
 
+// PGP entity for signing, verification, encryption and decryption
 type PGP struct {
 	entity  *openpgp.Entity
 	conf    *packet.Config
 	name    string
 	comment string
 	email   string
-}
-
-func Load(keypath string) *PGP {
-	return nil
 }
 
 // creates a new PGP entity
@@ -87,6 +85,7 @@ func LoadPGP(filename string) (*PGP, error) {
 	}, nil
 }
 
+// signs the specified message (requires loading a private key)
 func (p *PGP) Sign(message []byte) ([]byte, error) {
 	writer := new(bytes.Buffer)
 	reader := bytes.NewReader(message)
@@ -97,6 +96,7 @@ func (p *PGP) Sign(message []byte) ([]byte, error) {
 	return writer.Bytes(), nil
 }
 
+// verifies the message using a specified signature (requires loading a public key)
 func (p *PGP) Verify(message []byte, signature []byte) error {
 	sig, err := parseSignature(signature)
 	if err != nil {
@@ -110,6 +110,75 @@ func (p *PGP) Verify(message []byte, signature []byte) error {
 		return err
 	}
 	return nil
+}
+
+// encrypts the specified message
+func (p *PGP) Encrypt(message []byte) ([]byte, error) {
+	// create buffer to write output to
+	buf := new(bytes.Buffer)
+	// create armor format encoder
+	encoderWriter, err := armor.Encode(buf, "Message", make(map[string]string))
+	if err != nil {
+		return []byte{}, fmt.Errorf("cannot create PGP armor: %v", err)
+	}
+	// create the encryptor with the encoder
+	encryptorWriter, err := openpgp.Encrypt(encoderWriter, []*openpgp.Entity{p.entity}, nil, nil, nil)
+	if err != nil {
+		return []byte{}, fmt.Errorf("cannot create encryptor: %v", err)
+	}
+	// create the compressor with the encryptor
+	compressorWriter, err := gzip.NewWriterLevel(encryptorWriter, gzip.BestCompression)
+	if err != nil {
+		return []byte{}, fmt.Errorf("invalid compression level: %v", err)
+	}
+	// write the message to the compressor
+	messageReader := bytes.NewReader(message)
+	_, err = io.Copy(compressorWriter, messageReader)
+	if err != nil {
+		return []byte{}, fmt.Errorf("cannot write data to the compressor: %v", err)
+	}
+	compressorWriter.Close()
+	encryptorWriter.Close()
+	encoderWriter.Close()
+	// returns an encoded, encrypted, and compressed message
+	return buf.Bytes(), nil
+}
+
+// decrypts the specified message
+func (p *PGP) Decrypt(encrypted []byte) ([]byte, error) {
+	// Decode message
+	block, err := armor.Decode(bytes.NewReader(encrypted))
+	if err != nil {
+		return []byte{}, fmt.Errorf("cannot decode the PGP armor encrypted string: %v", err)
+	}
+	if block.Type != "Message" {
+		return []byte{}, errors.New("invalid message type")
+	}
+	// decrypt the message
+	entityList := openpgp.EntityList{
+		p.entity,
+	}
+	messageReader, err := openpgp.ReadMessage(block.Body, entityList, nil, nil)
+	if err != nil {
+		return []byte{}, fmt.Errorf("cannot read message: %v", err)
+	}
+	read, err := ioutil.ReadAll(messageReader.UnverifiedBody)
+	if err != nil {
+		return []byte{}, fmt.Errorf("cannot read unverified body: %v", err)
+	}
+	// unzip the message
+	reader := bytes.NewReader(read)
+	uncompressed, err := gzip.NewReader(reader)
+	if err != nil {
+		return []byte{}, fmt.Errorf("cannot initialise gzip reader: %v", err)
+	}
+	defer uncompressed.Close()
+	out, err := ioutil.ReadAll(uncompressed)
+	if err != nil {
+		return []byte{}, err
+	}
+	// return the unencoded, unencrypted, and uncompressed message
+	return out, nil
 }
 
 // save the PGP private and public keys to a file

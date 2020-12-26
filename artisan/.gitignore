@@ -4,3 +4,4 @@ art
 docs/version.go
 output
 version
+*.key

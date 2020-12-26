@@ -8,6 +8,7 @@
 package sign
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -47,4 +48,32 @@ func TestLoadKeySignAndVerify(t *testing.T) {
 		t.Fatal(err)
 		t.FailNow()
 	}
+}
+
+func TestEncryptAndDecrypt(t *testing.T) {
+	// anyone can encrypt with the public key
+	// load the public key for encryption of the message
+	pub, err := LoadPGP("pub.key")
+	if err != nil {
+		t.Fatal(err)
+		t.FailNow()
+	}
+	encrypted, err := pub.Encrypt([]byte("Hello World"))
+	if err != nil {
+		t.Fatal(err)
+		t.FailNow()
+	}
+	// only the holder of the private key can decrypt
+	// load the private key for decryption of the message
+	priv, err := LoadPGP("priv.key")
+	if err != nil {
+		t.Fatal(err)
+		t.FailNow()
+	}
+	msg, err := priv.Decrypt(encrypted)
+	if err != nil {
+		t.Fatal(err)
+		t.FailNow()
+	}
+	fmt.Print(msg)
 }
