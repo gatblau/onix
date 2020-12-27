@@ -64,7 +64,7 @@ type Artefact struct {
 }
 
 // determines if the artefact has the specified tag
-func (a Artefact) HasTag(tag string) bool {
+func (a *Artefact) HasTag(tag string) bool {
 	for _, t := range a.Tags {
 		if t == tag {
 			return true
@@ -75,14 +75,14 @@ func (a Artefact) HasTag(tag string) bool {
 
 // removes a specified tag
 // returns true if the tag was found and removed, otherwise false
-func (a Artefact) RemoveTag(tag string) bool {
+func (a *Artefact) RemoveTag(tag string) bool {
 	before := len(a.Tags)
 	a.Tags = core.RemoveElement(a.Tags, tag)
 	after := len(a.Tags)
-	return before < after
+	return before > after
 }
 
-func (a Artefact) ToJson() (string, error) {
+func (a *Artefact) ToJson() (string, error) {
 	bs, err := json.Marshal(a)
 	return base64.StdEncoding.EncodeToString(bs), err
 }
