@@ -13,6 +13,7 @@ import (
 	"crypto"
 	"errors"
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/docs"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
@@ -83,6 +84,17 @@ func LoadPGP(filename string) (*PGP, error) {
 	return &PGP{
 		entity: entityList[0],
 	}, nil
+}
+
+// check if the PGP entity has a private key, if not an error is returned
+func (p *PGP) HasPrivate() error {
+	if p.entity == nil {
+		core.RaiseErr("PGP object does not contain entity")
+	}
+	if p.entity.PrivateKey == nil {
+		return fmt.Errorf("private key not found")
+	}
+	return nil
 }
 
 // signs the specified message (requires loading a private key)

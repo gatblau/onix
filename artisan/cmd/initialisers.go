@@ -20,7 +20,7 @@ func InitialiseRootCmd() *RootCmd {
 	mergeCmd := NewMergeCmd()
 	pullCmd := NewPullCmd()
 	openCmd := NewOpenCmd()
-	keyCmd := InitialiseKeyCommand()
+	pgpCmd := InitialisePGPCommand()
 	pipeCmd := InitialisePipeCommand()
 	rootCmd.Cmd.AddCommand(
 		buildCmd.cmd,
@@ -34,7 +34,7 @@ func InitialiseRootCmd() *RootCmd {
 		mergeCmd.cmd,
 		pullCmd.cmd,
 		openCmd.cmd,
-		keyCmd.cmd,
+		pgpCmd.cmd,
 		pipeCmd.cmd,
 	)
 	return rootCmd
@@ -47,11 +47,13 @@ func InitialisePipeCommand() *PipeCmd {
 	return pipeCmd
 }
 
-func InitialiseKeyCommand() *KeyCmd {
-	certCmd := NewKeyCmd()
-	certGenCmd := NewKeyGenCmd()
-	certImportCmd := NewKeyImportCmd()
-	certExportCmd := NewKeyExportCmd()
-	certCmd.cmd.AddCommand(certGenCmd.cmd, certImportCmd.cmd, certExportCmd.cmd)
-	return certCmd
+func InitialisePGPCommand() *PGPCmd {
+	pgpCmd := NewPGPCmd()
+	pgpGenCmd := NewPGPGenCmd()
+	pgpImportCmd := NewPGPImportCmd()
+	pgpExportCmd := NewPGPExportCmd()
+	pgpEncryptCmd := NewPGPEncryptCmd()
+	pgpDecryptCmd := NewPGPDecryptCmd()
+	pgpCmd.cmd.AddCommand(pgpGenCmd.cmd, pgpImportCmd.cmd, pgpExportCmd.cmd, pgpEncryptCmd.cmd, pgpDecryptCmd.cmd)
+	return pgpCmd
 }

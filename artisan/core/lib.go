@@ -27,6 +27,16 @@ import (
 	"strings"
 )
 
+// converts the path to absolute path
+func ToAbs(path string) string {
+	if !filepath.IsAbs(path) {
+		abs, err := filepath.Abs(path)
+		CheckErr(err, "cannot return an absolute representation of path")
+		path = abs
+	}
+	return path
+}
+
 // convert the passed in parameter to a Json Byte Array
 func ToJsonBytes(s interface{}) []byte {
 	// serialise the seal to json
