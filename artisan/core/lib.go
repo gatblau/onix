@@ -280,6 +280,7 @@ func HasFunction(value string) (bool, string) {
 }
 
 func HasShell(value string) (bool, string, string) {
+	// pattern before escaping = "\$\(\((.*?)\)\)"
 	matches := regexp.MustCompile("\\$\\(\\((.*?)\\)\\)").FindAllString(value, 1)
 	if matches != nil {
 		return true, matches[0], matches[0][3 : len(matches[0])-2]

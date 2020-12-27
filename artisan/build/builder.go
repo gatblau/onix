@@ -374,9 +374,14 @@ func (b *Builder) runFunction(function string, path string, interactive bool) {
 	}
 	// add the build file level environment variables
 	env := NewEnVarFromSlice(os.Environ())
-	env = env.append(b.buildFile.getEnv())
+	// get the build file environment and merge any subshell command
+	vars := b.evalSubshell(b.buildFile.getEnv(), path, env, interactive)
+	// add the merged vars to the env
+	env = env.append(vars)
+	// get the fx environment and merge any subshell command
+	vars = b.evalSubshell(fx.getEnv(), path, env, interactive)
 	// combine the current environment with the function environment
-	buildEnv := env.append(fx.getEnv())
+	buildEnv := env.append(vars)
 	// add build specific variables
 	buildEnv = buildEnv.append(b.getBuildEnv())
 	// for each run statement in the function
@@ -409,14 +414,19 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 	core.Msg("preparing to execute build commands")
 	// construct an environment with the vars at build file level
 	env := NewEnVarFromSlice(os.Environ())
-	env = env.append(b.buildFile.getEnv())
+	// get the build file environment and merge any subshell command
+	vars := b.evalSubshell(b.buildFile.getEnv(), execDir, env, interactive)
+	// add the merged vars to the env
+	env = env.append(vars)
 	// for each build profile
 	for _, profile := range b.buildFile.Profiles {
 		// if a profile name has been provided then build it
 		if len(profileName) > 0 && profile.Name == profileName {
 			core.Msg("building profile '%s'", profileName)
+			// get the profile environment and merge any subshell command
+			vars := b.evalSubshell(profile.getEnv(), execDir, env, interactive)
 			// combine the current environment with the profile environment
-			buildEnv := env.append(profile.getEnv())
+			buildEnv := env.append(vars)
 			// add build specific variables
 			buildEnv = buildEnv.append(b.getBuildEnv())
 			// stores the build environment
@@ -462,6 +472,19 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 	// so cannot continue
 	core.RaiseErr("the requested profile '%s' is not defined in artie's build configuration", profileName)
 	return nil
+}
+
+// evaluate sub-shells and replace their values in the variables
+func (b *Builder) evalSubshell(vars map[string]string, execDir string, env *envar, interactive bool) map[string]string {
+	for k, v := range vars {
+		if ok, expr, shell := core.HasShell(v); ok {
+			out, err := executeWithOutput(shell, execDir, env, interactive)
+			core.CheckErr(err, "cannot execute subshell command: %s", v)
+			// merges the output of the subshell in the original variable
+			vars[k] = strings.Replace(v, expr, out, -1)
+		}
+	}
+	return vars
 }
 
 // return an absolute path using the working directory as base
