@@ -7,7 +7,7 @@
 
   This code has been based on https://github.com/AaronO/go-rsa-sign
 */
-package sign
+package crypto
 
 // func ParseX509PrivateKey(data []byte, location string) (*rsa.PrivateKey, error) {
 // 	pemData, err := pemParse(data, "RSA PRIVATE KEY", location)

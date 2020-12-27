@@ -8,7 +8,7 @@
 package cmd
 
 import (
-	"github.com/gatblau/onix/artisan/sign"
+	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/spf13/cobra"
 )
 
@@ -42,5 +42,5 @@ func NewKeyGenCmd() *KeyGenCmd {
 }
 
 func (b *KeyGenCmd) Run(cmd *cobra.Command, args []string) {
-	sign.GeneratePGPKeys(b.path, b.prefix, b.name, b.comment, b.email, *b.bitSize)
+	crypto.GeneratePGPKeys(b.path, b.prefix, b.name, b.comment, b.email, *b.bitSize)
 }
