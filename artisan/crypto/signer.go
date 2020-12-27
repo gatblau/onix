@@ -7,7 +7,7 @@
 
   This code has been based on https://github.com/AaronO/go-rsa-sign
 */
-package sign
+package crypto
 
 import (
 	"crypto"

@@ -13,7 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/sign"
+	"github.com/gatblau/onix/artisan/crypto"
 	"io/ioutil"
 	"log"
 	"math"
@@ -145,7 +145,7 @@ func (r *LocalRegistry) checkRegistryDir() {
 			log.Fatal(err)
 		}
 		host, _ := os.Hostname()
-		sign.GeneratePGPKeys(keysPath, "root", fmt.Sprintf("root-%s", host), "", "", 2048)
+		crypto.GeneratePGPKeys(keysPath, "root", fmt.Sprintf("root-%s", host), "", "", 2048)
 	}
 }
 
@@ -565,14 +565,14 @@ func (r *LocalRegistry) Open(name *core.ArtieName, credentials string, useTLS bo
 	core.CheckErr(err, "cannot read artefact seal")
 	if verify {
 		// var pubKey *rsa.PublicKey
-		var pgp *sign.PGP
+		var pgp *crypto.PGP
 		if len(pubKeyPath) > 0 {
 			// retrieve the verification key from the specified location
-			pgp, err = sign.LoadPGP(pubKeyPath)
+			pgp, err = crypto.LoadPGP(pubKeyPath)
 			core.CheckErr(err, "cannot load public key, cannot verify signature")
 		} else {
 			// otherwise load it from the registry store
-			pgp, err = sign.LoadPGPPublicKey(name.Group, name.Name)
+			pgp, err = crypto.LoadPGPPublicKey(name.Group, name.Name)
 			core.CheckErr(err, "cannot load public key, cannot verify signature")
 		}
 		// get the location of the artefact
@@ -776,13 +776,13 @@ func (r *LocalRegistry) ImportKey(keyPath string, isPrivate bool, repoGroup stri
 		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
 	}
 	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
-	key, err := sign.LoadPGP(keyPath)
+	key, err := crypto.LoadPGP(keyPath)
 	core.CheckErr(err, "cannot read pgp key '%s'", keyPath)
 	if isPrivate {
-		privateKeyFilename := path.Join(destPath, sign.PrivateKeyName(prefix, "pgp"))
+		privateKeyFilename := path.Join(destPath, crypto.PrivateKeyName(prefix, "pgp"))
 		key.SavePrivateKey(privateKeyFilename)
 	} else {
-		publicKeyFilename := path.Join(destPath, sign.PublicKeyName(prefix, "pgp"))
+		publicKeyFilename := path.Join(destPath, crypto.PublicKeyName(prefix, "pgp"))
 		key.SavePublicKey(publicKeyFilename)
 	}
 }
@@ -794,11 +794,11 @@ func (r *LocalRegistry) ExportKey(keyPath string, isPrivate bool, repoGroup stri
 	}
 	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
 	if isPrivate {
-		keyName := sign.PrivateKeyName(prefix, "pgp")
+		keyName := crypto.PrivateKeyName(prefix, "pgp")
 		err := CopyFile(path.Join(destPath, keyName), path.Join(keyPath, keyName))
 		core.CheckErr(err, "cannot export private key")
 	} else {
-		keyName := sign.PublicKeyName(prefix, "pgp")
+		keyName := crypto.PublicKeyName(prefix, "pgp")
 		err := CopyFile(path.Join(destPath, keyName), path.Join(keyPath, keyName))
 		core.CheckErr(err, "cannot export public key")
 	}

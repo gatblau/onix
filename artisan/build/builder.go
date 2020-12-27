@@ -12,8 +12,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/registry"
-	"github.com/gatblau/onix/artisan/sign"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/google/uuid"
@@ -33,7 +33,7 @@ type Builder struct {
 	repoURI          string
 	commit           string
 	from             string
-	signer           *sign.Signer
+	signer           *crypto.Signer
 	repoName         *core.ArtieName
 	buildFile        *BuildFile
 	localReg         *registry.LocalRegistry
@@ -47,7 +47,7 @@ func NewBuilder() *Builder {
 	// create the builder instance
 	builder := new(Builder)
 	// check the localRepo directory is there
-	builder.signer = new(sign.Signer)
+	builder.signer = new(crypto.Signer)
 	builder.localReg = registry.NewLocalRegistry()
 	return builder
 }
@@ -505,7 +505,7 @@ func (b *Builder) createSeal(artie *core.ArtieName, profile *Profile) *core.Seal
 	// take the hash of the zip file and seal info combined
 	sum := core.SealChecksum(b.workDirZipFilename(), info)
 	// load private key
-	pk, err := sign.LoadPGPPrivateKey(artie.Group, artie.Name)
+	pk, err := crypto.LoadPGPPrivateKey(artie.Group, artie.Name)
 	core.CheckErr(err, "cannot load signing key")
 	// create a PGP cryptographic signature
 	signature, err := pk.Sign(sum)
