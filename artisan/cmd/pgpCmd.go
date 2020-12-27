@@ -12,15 +12,15 @@ import (
 )
 
 // list local artefacts
-type KeyCmd struct {
+type PGPCmd struct {
 	cmd *cobra.Command
 }
 
-func NewKeyCmd() *KeyCmd {
-	c := &KeyCmd{
+func NewPGPCmd() *PGPCmd {
+	c := &PGPCmd{
 		cmd: &cobra.Command{
-			Use:   "key",
-			Short: "provides PGP key management functions",
+			Use:   "pgp",
+			Short: "provides PGP management functions",
 			Long:  ``,
 		},
 	}

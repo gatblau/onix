@@ -14,18 +14,18 @@ import (
 )
 
 // list local artefacts
-type KeyExportCmd struct {
+type PGPExportCmd struct {
 	cmd       *cobra.Command
 	group     string // the repository group for which the key should be used - if empty then the root is used
 	name      string // the repository name for which the key should be used
 	isPrivate *bool  //  whether the key is public or private
 }
 
-func NewKeyExportCmd() *KeyExportCmd {
-	c := &KeyExportCmd{
+func NewPGPExportCmd() *PGPExportCmd {
+	c := &PGPExportCmd{
 		cmd: &cobra.Command{
 			Use:   "export [flags] path/to/exported/file",
-			Short: "export a (private or public) RSA key stored in the local registry",
+			Short: "export a (private or public) PGP/RSA key stored in the local registry",
 			Long:  `a private PGP/RSA key is used to digitally sign an artefact upon build, a public RSA key is used to verify the digital signature when the artefact is opened`,
 		},
 	}
@@ -36,7 +36,7 @@ func NewKeyExportCmd() *KeyExportCmd {
 	return c
 }
 
-func (b *KeyExportCmd) Run(cmd *cobra.Command, args []string) {
+func (b *PGPExportCmd) Run(cmd *cobra.Command, args []string) {
 	// check if a path to the key has been provided
 	if len(args) == 0 {
 		core.RaiseErr("the path to the key file to be exported must be provided when calling this command")
