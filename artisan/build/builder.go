@@ -507,8 +507,8 @@ func (b *Builder) createSeal(artie *core.ArtieName, profile *Profile) *core.Seal
 	// load private key
 	pk, err := sign.LoadPGPPrivateKey(artie.Group, artie.Name)
 	core.CheckErr(err, "cannot load signing key")
-	// create a Base-64 encoded cryptographic signature
-	signature, err := b.signer.SignBase64(pk, sum)
+	// create a PGP cryptographic signature
+	signature, err := pk.Sign(sum)
 	core.CheckErr(err, "failed to create cryptographic signature")
 	// construct the seal
 	s := &core.Seal{
@@ -517,7 +517,7 @@ func (b *Builder) createSeal(artie *core.ArtieName, profile *Profile) *core.Seal
 		// the combined checksum of the seal info and the package
 		Digest: fmt.Sprintf("sha256:%s", base64.StdEncoding.EncodeToString(sum)),
 		// the crypto signature
-		Signature: signature,
+		Signature: base64.StdEncoding.EncodeToString(signature),
 	}
 	// convert the seal to Json
 	dest := core.ToJsonBytes(s)

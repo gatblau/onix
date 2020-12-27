@@ -8,7 +8,7 @@
 package registry
 
 import (
-	"crypto/rsa"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -144,7 +144,8 @@ func (r *LocalRegistry) checkRegistryDir() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		sign.GeneratePGPKeys(keysPath, "root", 2048, nil)
+		host, _ := os.Hostname()
+		sign.GeneratePGPKeys(keysPath, "root", fmt.Sprintf("root-%s", host), "", "", 2048)
 	}
 }
 
@@ -563,35 +564,27 @@ func (r *LocalRegistry) Open(name *core.ArtieName, credentials string, useTLS bo
 	seal, err := r.getSeal(artie)
 	core.CheckErr(err, "cannot read artefact seal")
 	if verify {
-		var pubKey *rsa.PublicKey
+		// var pubKey *rsa.PublicKey
+		var pgp *sign.PGP
 		if len(pubKeyPath) > 0 {
 			// retrieve the verification key from the specified location
-			// pubKeyBytes, err := ioutil.ReadFile(pubKeyPath)
-			// core.CheckErr(err, "cannot read public key")
-			pubKey, err = sign.ReadPGPPublicKey(pubKeyPath)
-			core.CheckErr(err, "cannot load public key")
+			pgp, err = sign.LoadPGP(pubKeyPath)
+			core.CheckErr(err, "cannot load public key, cannot verify signature")
 		} else {
 			// otherwise load it from the registry store
-			pub, err := sign.LoadPGPPublicKey(name.Group, name.Name)
-			core.CheckErr(err, "cannot load public key")
-			pubKey = pub
+			pgp, err = sign.LoadPGPPublicKey(name.Group, name.Name)
+			core.CheckErr(err, "cannot load public key, cannot verify signature")
 		}
-		// creates a verifier
-		verifier := new(sign.Verifier)
-		core.CheckErr(err, "cannot create signature verifier")
 		// get the location of the artefact
 		zipFilename := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef))
 		// get a slice to have the unencrypted signature
 		sum := core.SealChecksum(zipFilename, seal.Manifest)
+		// decode the signature in the seal
+		sig, err := base64.StdEncoding.DecodeString(seal.Signature)
+		core.CheckErr(err, "cannot decode signature in the seal")
 		// verify the signature
-		err = verifier.VerifyBase64(pubKey, sum, seal.Signature)
+		err = pgp.Verify(sum, sig)
 		core.CheckErr(err, "invalid digital signature")
-		// take the hash of the zip file and seal info combined
-		actualSum := core.SealChecksum(zipFilename, seal.Manifest)
-		// compare the actual checksum vs the one in the signature
-		if string(actualSum) != string(sum) {
-			core.RaiseErr("checksum verification failed, artefact has been tampered")
-		}
 	}
 	// now we are ready to open it
 	// if the target was already compressed (e.g. jar file, etc) then it should not unzip it but rename it
@@ -782,32 +775,15 @@ func (r *LocalRegistry) ImportKey(keyPath string, isPrivate bool, repoGroup stri
 		keyPath, err := filepath.Abs(keyPath)
 		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
 	}
-	// // load the key first
-	// b, err := ioutil.ReadFile(keyPath)
-	// core.CheckErr(err, "cannot load key from path '%s'", keyPath)
-	// destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
-	// if isPrivate {
-	// 	pk, err := sign.ParseX509PrivateKey(b, keyPath)
-	// 	core.CheckErr(err, "cannot parse private key '%s'", keyPath)
-	// 	fqdn := path.Join(destPath, sign.PrivateKeyName(prefix))
-	// 	sign.SaveX509PrivateKey(fqdn, pk)
-	// } else {
-	// 	pub, err := sign.ParseX509PublicKey(b, keyPath)
-	// 	core.CheckErr(err, "cannot parse private key '%s'", keyPath)
-	// 	fqdn := path.Join(destPath, sign.PublicKeyName(prefix))
-	// 	sign.SaveX509PublicKey(fqdn, pub)
-	// }
 	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
+	key, err := sign.LoadPGP(keyPath)
+	core.CheckErr(err, "cannot read pgp key '%s'", keyPath)
 	if isPrivate {
-		key, err := sign.ReadPGPPrivateKey(keyPath)
-		core.CheckErr(err, "cannot read private pgp key '%s'", keyPath)
-		fqdn := path.Join(destPath, sign.PrivateKeyName(prefix, "pgp"))
-		sign.SavePGPPrivateKey(fqdn, key, nil)
+		privateKeyFilename := path.Join(destPath, sign.PrivateKeyName(prefix, "pgp"))
+		key.SavePrivateKey(privateKeyFilename)
 	} else {
-		key, err := sign.ReadPGPPublicKey(keyPath)
-		core.CheckErr(err, "cannot read public pgp key '%s'", keyPath)
-		fqdn := path.Join(destPath, sign.PublicKeyName(prefix, "pgp"))
-		sign.SavePGPPublicKey(fqdn, key, nil)
+		publicKeyFilename := path.Join(destPath, sign.PublicKeyName(prefix, "pgp"))
+		key.SavePublicKey(publicKeyFilename)
 	}
 }
 

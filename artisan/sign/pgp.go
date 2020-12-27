@@ -181,34 +181,33 @@ func (p *PGP) Decrypt(encrypted []byte) ([]byte, error) {
 	return out, nil
 }
 
-// save the PGP private and public keys to a file
-func (p *PGP) SaveKeyPair(path, publicKeyFilename, privateKeyFilename string) error {
-	if !filepath.IsAbs(path) {
-		absPath, err := filepath.Abs(path)
-		if err != nil {
-			return fmt.Errorf("cannot convert to absolute path: %s", err)
-		}
-		path = absPath
-	}
-	priv, pub, err := p.toKeyPair()
+func (p *PGP) SavePublicKey(keyFilename string) error {
+	keyBytes, err := p.toPublicKey()
 	if err != nil {
-		return fmt.Errorf("cannot save key pair: %s", err)
-	}
-	// write the private key to a file
-	err = ioutil.WriteFile(filepath.Join(path, privateKeyFilename), priv, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("cannot save private key: %s", err)
+		return fmt.Errorf("cannot save public key: %s", err)
 	}
 	// write the public key to a file
-	err = ioutil.WriteFile(filepath.Join(path, publicKeyFilename), pub, os.ModePerm)
+	err = ioutil.WriteFile(keyFilename, keyBytes, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("cannot save public key: %s", err)
 	}
 	return nil
 }
 
-// return the armor ascii encoded private and public keys
-func (p *PGP) toKeyPair() (privateKey, publicKey []byte, err error) {
+func (p *PGP) SavePrivateKey(keyFilename string) error {
+	keyBytes, err := p.toPrivateKey()
+	if err != nil {
+		return fmt.Errorf("cannot save private key: %s", err)
+	}
+	// write the private key to a file
+	err = ioutil.WriteFile(keyFilename, keyBytes, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("cannot save private key: %s", err)
+	}
+	return nil
+}
+
+func (p *PGP) toPrivateKey() (privateKey []byte, err error) {
 	// the buffer to contain the serialised key pair
 	privateBuf := new(bytes.Buffer)
 	// serialises the private key into the buffer
@@ -216,8 +215,12 @@ func (p *PGP) toKeyPair() (privateKey, publicKey []byte, err error) {
 	// encode the buffer containing the serialised private key into Armor ASCII format
 	privateKey, err = armorEncode(privateBuf, openpgp.PrivateKeyType, p.conf)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot armor encode private key: %s", err)
+		return nil, fmt.Errorf("cannot armor encode private key: %s", err)
 	}
+	return privateKey, nil
+}
+
+func (p *PGP) toPublicKey() (publicKey []byte, err error) {
 	// the buffer to contain the serialised public key
 	publicBuf := new(bytes.Buffer)
 	// serialises the public key into the buffer
@@ -225,9 +228,9 @@ func (p *PGP) toKeyPair() (privateKey, publicKey []byte, err error) {
 	// encode the buffer containing the serialised public key into Armor ASCII format
 	publicKey, err = armorEncode(publicBuf, openpgp.PublicKeyType, p.conf)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot armor encode public key: %s", err)
+		return nil, fmt.Errorf("cannot armor encode public key: %s", err)
 	}
-	return privateKey, publicKey, nil
+	return publicKey, nil
 }
 
 // armor ascii encode the passed in buffer

@@ -17,7 +17,8 @@ func TestGenerateKeys(t *testing.T) {
 	p := NewPGP("gatblau/boot", "an artisan pgp key for digital signatures", "onix@gatblau.org", 2048)
 
 	// saves private and public keys
-	err := p.SaveKeyPair(".", "pub.key", "priv.key")
+	pkName, pubName := KeyNames(".", "root", "pgp")
+	err := p.SaveKeyPair(pubName, pkName)
 	if err != nil {
 		t.FailNow()
 	}
