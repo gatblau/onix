@@ -466,6 +466,8 @@ func (r *LocalRegistry) Push(name *core.ArtieName, credentials string, useTLS bo
 		if len(a.Tags) == 0 {
 			// adds a default tag matching the artefact file reference
 			a.Tags = append(a.Tags, a.FileRef)
+			// updates the metadata in the remote repo
+			core.CheckErr(api.UpdateArtefactInfo(name, a, uname, pwd), "cannot update artefact info")
 		}
 	}
 	zipfile := openFile(fmt.Sprintf("%s/%s.zip", r.Path(), artie.FileRef))
