@@ -846,3 +846,9 @@ func (r *LocalRegistry) removeDangling(name *core.ArtieName) {
 		}
 	}
 }
+
+func (r *LocalRegistry) GetManifest(a *Artefact) *core.Manifest {
+	seal, err := r.getSeal(a)
+	core.CheckErr(err, "cannot get artefact seal")
+	return seal.Manifest
+}

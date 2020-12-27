@@ -64,3 +64,21 @@ func TestGetRepoInfo(t *testing.T) {
 	bytes, _ := json.Marshal(repo)
 	fmt.Print(string(bytes))
 }
+
+func TestGetManifest(t *testing.T) {
+	// validate the name
+	artie := core.ParseName("localhost:8082/gatblau/boot")
+	// create a local registry
+	local := NewLocalRegistry()
+	// find the artefact in the local registry
+	a := local.FindArtefact(artie)
+	if a == nil {
+		core.RaiseErr("artefact not found")
+	}
+	// get the artefact manifest
+	m := local.GetManifest(a)
+	// marshal the manifest
+	bytes, err := json.MarshalIndent(m, "", "   ")
+	core.CheckErr(err, "cannot marshal manifest")
+	fmt.Printf(string(bytes) + "\n")
+}
