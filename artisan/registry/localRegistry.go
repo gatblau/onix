@@ -205,6 +205,8 @@ func (r *LocalRegistry) Add(filename string, name *core.ArtieName, s *core.Seal)
 	core.CheckErr(RenameFile(filepath.Join(basenameDir, fmt.Sprintf("%s.json", basenameNoExt)), filepath.Join(r.Path(), fmt.Sprintf("%s.json", basenameNoExt)), false), "failed to move artefact seal file to the local registry")
 	// untag artefact artefact (if any)
 	r.unTag(name, name.Tag)
+	// remove any dangling artefacts
+	r.removeDangling(name)
 	// find the repository
 	repo := r.findRepository(name)
 	// if the repo does not exist the creates it
@@ -825,4 +827,20 @@ func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string) 
 		core.CheckErr(err, "cannot create private key destination '%s'", destPath)
 	}
 	return destPath, prefix
+}
+
+// removes any artefacts with no tags
+func (r *LocalRegistry) removeDangling(name *core.ArtieName) {
+	repo := r.findRepository(name)
+	if repo != nil {
+		for _, artefact := range repo.Artefacts {
+			// if the artefact has no tags then remove it
+			if len(artefact.Tags) == 0 {
+				// remove the artefact metadata using its Id
+				repo.Artefacts = r.removeArtefactById(repo.Artefacts, artefact.Id)
+				// remove the artefact files
+				r.removeFiles(artefact)
+			}
+		}
+	}
 }
