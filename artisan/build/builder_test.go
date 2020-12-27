@@ -8,12 +8,13 @@
 package build
 
 import (
+	"github.com/gatblau/onix/artisan/core"
 	"testing"
 )
 
 func TestBuild(t *testing.T) {
-	// p := NewBuilder()
-	// p.Build("/Users/andresalos/go/src/github.com/gatblau/onix", "artie", "", core.ParseName("gatblau/artie"), "", false)
+	p := NewBuilder()
+	p.Build("https://github.com/gatblau/boot", "", "", core.ParseName("localhost:8082/gatblau/boot"), "", false, false)
 }
 
 func TestRun(t *testing.T) {
