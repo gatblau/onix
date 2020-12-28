@@ -84,7 +84,7 @@ func zipSource(source, target string, excludeSource []string) error {
 			header.Name = filepath.Join(baseDir, strings.TrimPrefix(path, source))
 		}
 		if info.IsDir() {
-			header.Name += "/"
+			header.Name += string(os.PathSeparator)
 		} else {
 			header.Method = zip.Deflate
 		}
