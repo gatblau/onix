@@ -571,24 +571,39 @@ func (b *Builder) getBuildEnv() map[string]string {
 
 // execute an exported function in a package
 func (b *Builder) Execute(name *core.PackageName, function string, credentials string, useTLS bool, certPath string, verify bool, interactive bool) {
-	// check the run path exist
-	core.RunPathExists()
-	// create a temp random path to open the package
-	var path = filepath.Join(core.RunPath(), core.RandomString(10))
 	// get a local registry handle
 	local := registry.NewLocalRegistry()
-	// open the package on the temp random path
-	local.Open(
-		name,
-		credentials,
-		useTLS,
-		path,
-		certPath,
-		verify)
 	// get the manifest
 	m := local.GetManifest(name)
-	// run the function on the open package
-	b.Run(function, filepath.Join(path, m.Target), interactive)
-	// remove the package files
-	os.RemoveAll(path)
+	// check the function is exported
+	if isExported(m, function) {
+		// check the run path exist
+		core.RunPathExists()
+		// create a temp random path to open the package
+		var path = filepath.Join(core.RunPath(), core.RandomString(10))
+		// open the package on the temp random path
+		local.Open(
+			name,
+			credentials,
+			useTLS,
+			path,
+			certPath,
+			verify)
+		// run the function on the open package
+		b.Run(function, filepath.Join(path, m.Target), interactive)
+		// remove the package files
+		os.RemoveAll(path)
+	} else {
+		core.RaiseErr("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile", function)
+	}
+}
+
+// check the the specified function is in the manifest
+func isExported(m *data.Manifest, fx string) bool {
+	for _, function := range m.Functions {
+		if function.Name == fx {
+			return true
+		}
+	}
+	return false
 }
