@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/asaskevich/govalidator"
-	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/data"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -22,7 +22,7 @@ import (
 )
 
 // a tekton-based Artisan CI pipeline
-type AppPipelineConfig struct {
+type AppPipeConf struct {
 	// PIPE_ART_APP_NAME
 	AppName string
 	// PIPE_ART_GIT_URI
@@ -54,8 +54,8 @@ type AppPipelineConfig struct {
 }
 
 // create a new pipeline
-func NewAppPipelineConfig(buildFilePath, profileName string, sonar bool) *AppPipelineConfig {
-	var profile *build.Profile
+func NewAppPipelineConfig(buildFilePath, profileName string, sonar bool) *AppPipeConf {
+	var profile *data.Profile
 	// load the build file
 	buildFile := loadBuildFile(buildFilePath)
 	// if no build profile is specified
@@ -77,21 +77,21 @@ func NewAppPipelineConfig(buildFilePath, profileName string, sonar bool) *AppPip
 		}
 	}
 	// create an instance of the pipeline
-	p := new(AppPipelineConfig)
+	p := new(AppPipeConf)
 	// resolve the builder image using the appType
-	p.BuilderImage = builderImage(buildFile.Type)
+	p.BuilderImage = builderImage(profile.Type)
 	// set the build profile
 	p.BuildProfile = profile.Name
 	// set the application name
-	p.AppName = buildFile.Application
-	p.AppIcon = buildFile.Icon
-	p.ArtefactName = buildFile.Artefact
+	p.AppName = profile.Application
+	p.AppIcon = profile.Icon
+	p.ArtefactName = profile.Artefact
 	// if sonar step is required and there is a Sonar configuration section in buildfile
-	if sonar && buildFile.Sonar != nil {
-		p.SonarURI = buildFile.Sonar.URI
-		p.SonarProjectKey = buildFile.Sonar.ProjectKey
-		p.SonarSources = buildFile.Sonar.Sources
-		p.SonarBinaries = buildFile.Sonar.Binaries
+	if sonar && profile.Sonar != nil {
+		p.SonarURI = profile.Sonar.URI
+		p.SonarProjectKey = profile.Sonar.ProjectKey
+		p.SonarSources = profile.Sonar.Sources
+		p.SonarBinaries = profile.Sonar.Binaries
 	}
 	// attempt to load the pipeline configuration from the environment
 	// NOTE: environment vars can override builder image and/or build profile used (if defined)
@@ -107,27 +107,27 @@ func NewAppPipelineConfig(buildFilePath, profileName string, sonar bool) *AppPip
 }
 
 // return the name of the application build task
-func (p *AppPipelineConfig) buildTaskName() string {
+func (p *AppPipeConf) buildTaskName() string {
 	return fmt.Sprintf("%s-app-build-task", p.AppName)
 }
 
 // return the name of the code repository resource
-func (p *AppPipelineConfig) codeRepoResourceName() string {
+func (p *AppPipeConf) codeRepoResourceName() string {
 	return fmt.Sprintf("%s-code-repo", p.AppName)
 }
 
 // return the name of the code repository resource
-func (p *AppPipelineConfig) pipelineName() string {
+func (p *AppPipeConf) pipelineName() string {
 	return fmt.Sprintf("%s-app-builder", p.AppName)
 }
 
 // return the name of the code repository resource
-func (p *AppPipelineConfig) pipelineRunName() string {
+func (p *AppPipeConf) pipelineRunName() string {
 	return fmt.Sprintf("%s-app-pr", p.AppName)
 }
 
 // try and set ciPipeline variables from the environment
-func (p *AppPipelineConfig) loadFromEnv(sonar bool) {
+func (p *AppPipeConf) loadFromEnv(sonar bool) {
 	p.AppName = p.LoadVar("ART_PIPE_APP_NAME", p.AppName)
 	p.AppIcon = p.LoadVar("ART_PIPE_APP_ICON", p.AppIcon)
 	p.GitURI = p.LoadVar("ART_PIPE_APP_GIT_URI", p.GitURI)
@@ -145,7 +145,7 @@ func (p *AppPipelineConfig) loadFromEnv(sonar bool) {
 	}
 }
 
-func (p *AppPipelineConfig) LoadVar(name string, value string) string {
+func (p *AppPipeConf) LoadVar(name string, value string) string {
 	// try and retrieve value from environment variable
 	envVarValue := os.Getenv(name)
 	// if there is a value use it
@@ -157,7 +157,7 @@ func (p *AppPipelineConfig) LoadVar(name string, value string) string {
 }
 
 // collect missing variables on the command line
-func (p *AppPipelineConfig) survey(sonar bool) {
+func (p *AppPipeConf) survey(sonar bool) {
 	// the sonar scanner image to use
 	p.SonarImage = "quay.io/gatblau/art-sonar"
 
@@ -278,7 +278,7 @@ func builderImage(appType string) string {
 
 // load the build file from a file system location
 // the passed in path can be either relative or absolute
-func loadBuildFile(buildFilePath string) *build.BuildFile {
+func loadBuildFile(buildFilePath string) *data.BuildFile {
 	filePath, err := core.AbsPath(buildFilePath)
 	if err != nil {
 		core.RaiseErr("invalid build file path: %s", err.Error())
@@ -286,7 +286,7 @@ func loadBuildFile(buildFilePath string) *build.BuildFile {
 	}
 	b, err := ioutil.ReadFile(path.Join(filePath, "build.yaml"))
 	core.CheckErr(err, "cannot read build file")
-	buildFile := new(build.BuildFile)
+	buildFile := new(data.BuildFile)
 	err = yaml.Unmarshal(b, buildFile)
 	core.CheckErr(err, "cannot unmarshall build file")
 	return buildFile

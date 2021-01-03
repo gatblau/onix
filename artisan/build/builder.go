@@ -13,13 +13,16 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/crypto"
+	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/google/uuid"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -35,7 +38,7 @@ type Builder struct {
 	from             string
 	signer           *crypto.Signer
 	repoName         *core.ArtieName
-	buildFile        *BuildFile
+	buildFile        *data.BuildFile
 	localReg         *registry.LocalRegistry
 	shouldCopySource bool
 	loadFrom         string
@@ -75,7 +78,7 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, p
 	// merge env with target
 	mergedTarget, _ := core.MergeEnvironmentVars([]string{buildProfile.Target}, b.env.vars, interactive)
 	// set the merged target for later use
-	buildProfile.mergedTarget = mergedTarget[0]
+	buildProfile.MergedTarget = mergedTarget[0]
 	// wait for the target to be created in the file system
 	targetPath := filepath.Join(b.loadFrom, mergedTarget[0])
 	waitForTargetToBeCreated(targetPath)
@@ -108,7 +111,7 @@ func (b *Builder) Run(function string, path string, interactive bool) {
 		}
 		localPath = absPath
 	}
-	b.buildFile = LoadBuildFile(filepath.Join(localPath, "build.yaml"))
+	b.buildFile = data.LoadBuildFile(filepath.Join(localPath, "build.yaml"))
 	b.runFunction(function, localPath, interactive)
 }
 
@@ -116,10 +119,10 @@ func (b *Builder) Run(function string, path string, interactive bool) {
 func (b *Builder) prepareSource(from string, fromPath string, gitToken string, tagName *core.ArtieName, copy bool) *git.Repository {
 	var repo *git.Repository
 	b.repoName = tagName
+	// creates a temporary working directory
+	b.newWorkingDir()
 	// if "from" is an http url
 	if strings.HasPrefix(strings.ToLower(from), "http") {
-		// creates a temporary working directory
-		b.newWorkingDir()
 		b.loadFrom = b.sourceDir()
 		// if a sub-folder was specified
 		if len(fromPath) > 0 {
@@ -144,8 +147,6 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 		}
 		// if the user requested a copy of the project before building it
 		if copy {
-			// creates a temporary working directory to copy
-			b.newWorkingDir()
 			b.loadFrom = b.sourceDir()
 			// if a sub-folder was specified
 			if len(fromPath) > 0 {
@@ -172,7 +173,7 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 	}
 	// read build.yaml
 	core.Msg("loading build instructions")
-	b.buildFile = LoadBuildFile(filepath.Join(b.loadFrom, "build.yaml"))
+	b.buildFile = data.LoadBuildFile(filepath.Join(b.loadFrom, "build.yaml"))
 	return repo
 }
 
@@ -249,9 +250,11 @@ func (b *Builder) cloneRepo(repoUrl string, gitToken string) *git.Repository {
 
 // opens a git LocalRegistry from the given path
 func (b *Builder) openRepo(path string) *git.Repository {
-	repo, err := git.PlainOpen(path)
+	// find .git path in the current directory or any parents
+	gitPath, _ := findGitPath(path)
+	repo, err := git.PlainOpen(gitPath)
 	if err != nil {
-		log.Fatal(err)
+		core.Msg("no git repository found, repository info will not be available\n")
 	}
 	return repo
 }
@@ -335,51 +338,24 @@ func (b *Builder) getIgnored() []string {
 // run a specified function
 func (b *Builder) runFunction(function string, path string, interactive bool) {
 	// gets the function to run
-	fx := b.buildFile.fx(function)
+	fx := b.buildFile.Fx(function)
 	if fx == nil {
 		core.RaiseErr("function %s does not exist in the build file", function)
 		return
 	}
-	// make build specific vars available within the function
-	if len(b.uniqueIdName) == 0 {
-		var gitRoot = path
-		// look for the git repo in the path
-		_, err := os.Stat(filepath.Join(gitRoot, ".git"))
-		// if it cannot find it
-		if os.IsNotExist(err) {
-			// try in the parent folder
-			parent := filepath.Dir(path)
-			_, err = os.Stat(filepath.Join(parent, ".git"))
-			// if the repository is not there
-			if os.IsNotExist(err) {
-				// set the root to empty
-				gitRoot = ""
-			} else {
-				// if found set the root to parent
-				gitRoot = parent
-			}
-		}
-		// if no root exist then repo is nil
-		if len(gitRoot) == 0 {
-			// does not use the repo to calculate the unique name
-			b.setUniqueIdName(nil)
-		} else {
-			// otherwise use the repo to calculate the unique name
-			b.setUniqueIdName(b.openRepo(gitRoot))
-		}
-
-	}
+	// set the unique name for the run
+	b.setUniqueIdName(b.openRepo(path))
 	if len(b.from) == 0 {
 		b.from = path
 	}
 	// add the build file level environment variables
 	env := NewEnVarFromSlice(os.Environ())
 	// get the build file environment and merge any subshell command
-	vars := b.evalSubshell(b.buildFile.getEnv(), path, env, interactive)
+	vars := b.evalSubshell(b.buildFile.GetEnv(), path, env, interactive)
 	// add the merged vars to the env
 	env = env.append(vars)
 	// get the fx environment and merge any subshell command
-	vars = b.evalSubshell(fx.getEnv(), path, env, interactive)
+	vars = b.evalSubshell(fx.GetEnv(), path, env, interactive)
 	// combine the current environment with the function environment
 	buildEnv := env.append(vars)
 	// add build specific variables
@@ -410,12 +386,12 @@ func (b *Builder) runFunction(function string, path string, interactive bool) {
 // if not profile is specified, it uses the default profile
 // if a default profile has not been defined, then uses the first profile in the build file
 // returns the profile used
-func (b *Builder) runProfile(profileName string, execDir string, interactive bool) *Profile {
+func (b *Builder) runProfile(profileName string, execDir string, interactive bool) *data.Profile {
 	core.Msg("preparing to execute build commands")
 	// construct an environment with the vars at build file level
 	env := NewEnVarFromSlice(os.Environ())
 	// get the build file environment and merge any subshell command
-	vars := b.evalSubshell(b.buildFile.getEnv(), execDir, env, interactive)
+	vars := b.evalSubshell(b.buildFile.GetEnv(), execDir, env, interactive)
 	// add the merged vars to the env
 	env = env.append(vars)
 	// for each build profile
@@ -424,7 +400,7 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 		if len(profileName) > 0 && profile.Name == profileName {
 			core.Msg("building profile '%s'", profileName)
 			// get the profile environment and merge any subshell command
-			vars := b.evalSubshell(profile.getEnv(), execDir, env, interactive)
+			vars := b.evalSubshell(profile.GetEnv(), execDir, env, interactive)
 			// combine the current environment with the profile environment
 			buildEnv := env.append(vars)
 			// add build specific variables
@@ -498,7 +474,7 @@ func (b *Builder) inSourceDirectory(relativePath string) string {
 }
 
 // create the package Seal
-func (b *Builder) createSeal(artie *core.ArtieName, profile *Profile) *core.Seal {
+func (b *Builder) createSeal(artie *core.ArtieName, profile *data.Profile) *data.Seal {
 	core.Msg("creating artefact seal")
 	filename := b.uniqueIdName
 	// merge the labels in the profile with the ones at the build file level
@@ -509,9 +485,9 @@ func (b *Builder) createSeal(artie *core.ArtieName, profile *Profile) *core.Seal
 		log.Fatal(err)
 	}
 	// prepare the seal info
-	info := &core.Manifest{
-		Type:    b.buildFile.Type,
-		License: b.buildFile.License,
+	info := &data.Manifest{
+		Type:    profile.Type,
+		License: profile.License,
 		Ref:     filename,
 		Profile: profile.Name,
 		Labels:  labels,
@@ -519,14 +495,14 @@ func (b *Builder) createSeal(artie *core.ArtieName, profile *Profile) *core.Seal
 		Commit:  b.commit,
 		Branch:  "",
 		Tag:     "",
-		Target:  filepath.Base(profile.mergedTarget),
+		Target:  filepath.Base(profile.MergedTarget),
 		Time:    time.Now().Format(time.RFC850),
 		Size:    bytesToLabel(zipInfo.Size()),
 		Zip:     b.zip,
 	}
-	core.Msg("creating artefact cryptographic signature")
 	// take the hash of the zip file and seal info combined
-	sum := core.SealChecksum(b.workDirZipFilename(), info)
+	s := new(data.Seal)
+	sum := s.Checksum(b.workDirZipFilename())
 	// load private key
 	pk, err := crypto.LoadPGPPrivateKey(artie.Group, artie.Name)
 	core.CheckErr(err, "cannot load signing key")
@@ -534,13 +510,31 @@ func (b *Builder) createSeal(artie *core.ArtieName, profile *Profile) *core.Seal
 	signature, err := pk.Sign(sum)
 	core.CheckErr(err, "failed to create cryptographic signature")
 	// construct the seal
-	s := &core.Seal{
-		// the package
-		Manifest: info,
-		// the combined checksum of the seal info and the package
-		Digest: fmt.Sprintf("sha256:%s", base64.StdEncoding.EncodeToString(sum)),
-		// the crypto signature
-		Signature: base64.StdEncoding.EncodeToString(signature),
+	s.Manifest = info
+	// the combined checksum of the seal info and the package
+	s.Digest = fmt.Sprintf("sha256:%s", base64.StdEncoding.EncodeToString(sum))
+	// the crypto signature
+	s.Signature = base64.StdEncoding.EncodeToString(signature)
+	// check if target is a folder containing a build.yaml
+	buildYamlBytes, err := ioutil.ReadFile(path.Join(profile.MergedTarget, "build.yaml"))
+	// only export functions if the target contains a build.yaml
+	if err == nil {
+		// unmarshal the packaged build.yaml
+		buildFile := new(data.BuildFile)
+		err = yaml.Unmarshal(buildYamlBytes, buildFile)
+		core.CheckErr(err, "cannot unmarshal build file '%s'", path.Join(profile.MergedTarget, "build.yaml"))
+		// add any exported functions
+		for _, function := range buildFile.Functions {
+			f := function
+			// only adds exported functions to the manifest
+			if f.Export != nil && *f.Export {
+				s.Manifest.Functions = append(s.Manifest.Functions, &data.FxInfo{
+					Name:        f.Name,
+					Description: f.Description,
+					Input:       f.Input,
+				})
+			}
+		}
 	}
 	// convert the seal to Json
 	dest := core.ToJsonBytes(s)
@@ -564,7 +558,7 @@ func (b *Builder) workDirZipFilename() string {
 }
 
 // determine if the from location is a file system path
-func (b *Builder) copySource(from string, profile *Profile) bool {
+func (b *Builder) copySource(from string, profile *data.Profile) bool {
 	// location is in the file system and no target is specified for the profile
 	// should only run commands where the source is
 	return !(!strings.HasPrefix(from, "http") && len(profile.Target) == 0)

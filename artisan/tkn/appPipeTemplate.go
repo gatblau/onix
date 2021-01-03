@@ -20,7 +20,7 @@ const (
 )
 
 // return the full configuration for an Artefact Tekton Pipeline
-func MergeArtPipe(c *AppPipelineConfig, sonar bool) bytes.Buffer {
+func MergeArtPipe(c *AppPipeConf, sonar bool) bytes.Buffer {
 	buf := bytes.Buffer{}
 	task := newArtPipeTask(c, sonar)
 	buf.Write(ToYaml(task, "Task"))
@@ -57,7 +57,7 @@ func MergeArtPipe(c *AppPipelineConfig, sonar bool) bytes.Buffer {
 	return buf
 }
 
-func newArtPipeTask(c *AppPipelineConfig, sonar bool) *Task {
+func newArtPipeTask(c *AppPipeConf, sonar bool) *Task {
 	t := new(Task)
 	t.APIVersion = ApiVersionTekton
 	t.Kind = "Task"
@@ -86,7 +86,7 @@ func newArtPipeTask(c *AppPipelineConfig, sonar bool) *Task {
 	return t
 }
 
-func getSteps(c *AppPipelineConfig, sonar bool) []*Steps {
+func getSteps(c *AppPipeConf, sonar bool) []*Steps {
 	stepCount := 2
 	if sonar {
 		stepCount = 3
@@ -182,7 +182,7 @@ func getSteps(c *AppPipelineConfig, sonar bool) []*Steps {
 	return steps
 }
 
-func newArtPipe(c *AppPipelineConfig) *Pipeline {
+func newArtPipe(c *AppPipeConf) *Pipeline {
 	p := new(Pipeline)
 	p.Kind = "Pipeline"
 	p.APIVersion = ApiVersionTekton
@@ -223,7 +223,7 @@ func newArtPipe(c *AppPipelineConfig) *Pipeline {
 	return p
 }
 
-func newArtPipeResource(c *AppPipelineConfig) *PipelineResource {
+func newArtPipeResource(c *AppPipeConf) *PipelineResource {
 	r := new(PipelineResource)
 	r.APIVersion = ApiVersionTekton
 	r.Kind = "PipelineResource"
@@ -242,7 +242,7 @@ func newArtPipeResource(c *AppPipelineConfig) *PipelineResource {
 	return r
 }
 
-func newArtPipeRun(c *AppPipelineConfig) *PipelineRun {
+func newArtPipeRun(c *AppPipeConf) *PipelineRun {
 	r := new(PipelineRun)
 	r.Kind = "PipelineRun"
 	r.APIVersion = ApiVersionTekton
@@ -272,7 +272,7 @@ func newArtPipeRun(c *AppPipelineConfig) *PipelineRun {
 	return r
 }
 
-func newArtPipeEventListener(c *AppPipelineConfig) *EventListener {
+func newArtPipeEventListener(c *AppPipeConf) *EventListener {
 	e := new(EventListener)
 	e.APIVersion = ApiVersionTektonTrigger
 	e.Kind = "EventListener"
@@ -300,7 +300,7 @@ func newArtPipeEventListener(c *AppPipelineConfig) *EventListener {
 	return e
 }
 
-func newArtPipeRoute(c *AppPipelineConfig) *Route {
+func newArtPipeRoute(c *AppPipeConf) *Route {
 	r := new(Route)
 	r.APIVersion = ApiVersion
 	r.Kind = "Route"
@@ -329,7 +329,7 @@ func newArtPipeRoute(c *AppPipelineConfig) *Route {
 	return r
 }
 
-func newArtPipeTriggerBinding(c *AppPipelineConfig) *TriggerBinding {
+func newArtPipeTriggerBinding(c *AppPipeConf) *TriggerBinding {
 	t := new(TriggerBinding)
 	t.APIVersion = ApiVersionTektonTrigger
 	t.Kind = "TriggerBinding"
@@ -355,7 +355,7 @@ func newArtPipeTriggerBinding(c *AppPipelineConfig) *TriggerBinding {
 	return t
 }
 
-func newArtPipeTriggerTemplate(c *AppPipelineConfig) *PipelineRun {
+func newArtPipeTriggerTemplate(c *AppPipeConf) *PipelineRun {
 	pipeResx := newArtPipeResourceTriggerTemplate(c)
 	pipeRun := newArtPipeRunTriggerTemplate(c)
 
@@ -386,7 +386,7 @@ func newArtPipeTriggerTemplate(c *AppPipelineConfig) *PipelineRun {
 	return t
 }
 
-func newArtPipeResourceTriggerTemplate(c *AppPipelineConfig) *PipelineResource {
+func newArtPipeResourceTriggerTemplate(c *AppPipeConf) *PipelineResource {
 	r := new(PipelineResource)
 	r.APIVersion = ApiVersionTekton
 	r.Kind = "PipelineResource"
@@ -409,7 +409,7 @@ func newArtPipeResourceTriggerTemplate(c *AppPipelineConfig) *PipelineResource {
 	return r
 }
 
-func newArtPipeRunTriggerTemplate(c *AppPipelineConfig) *PipelineRun {
+func newArtPipeRunTriggerTemplate(c *AppPipeConf) *PipelineRun {
 	r := new(PipelineRun)
 	r.Kind = "PipelineRun"
 	r.APIVersion = ApiVersionTekton
@@ -439,7 +439,7 @@ func newArtPipeRunTriggerTemplate(c *AppPipelineConfig) *PipelineRun {
 	return r
 }
 
-func newArtRegSecret(c *AppPipelineConfig) *Secret {
+func newArtRegSecret(c *AppPipeConf) *Secret {
 	s := new(Secret)
 	s.APIVersion = ApiVersion
 	s.Kind = "Secret"
@@ -454,7 +454,7 @@ func newArtRegSecret(c *AppPipelineConfig) *Secret {
 	return s
 }
 
-func newSonarSecret(c *AppPipelineConfig) *Secret {
+func newSonarSecret(c *AppPipeConf) *Secret {
 	s := new(Secret)
 	s.APIVersion = ApiVersion
 	s.Kind = "Secret"

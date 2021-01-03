@@ -52,6 +52,7 @@ type Steps struct {
 	Command      []string        `yaml:"command,omitempty,flow"`
 	WorkingDir   string          `yaml:"workingDir,omitempty"`
 	VolumeMounts []*VolumeMounts `yaml:"volumeMounts,omitempty"`
+	Args         string          `yaml:"args,omitempty"`
 }
 
 type ConfigMap struct {
