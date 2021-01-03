@@ -52,3 +52,17 @@ func TmpExists() {
 		_ = os.MkdirAll(tmp, os.ModePerm)
 	}
 }
+
+// temporary path for running package functions
+func RunPath() string {
+	return filepath.Join(RegistryPath(), "tmp", "run")
+}
+
+func RunPathExists() {
+	runPath := RunPath()
+	// ensure tmp folder exists for  running package functions
+	_, err := os.Stat(runPath)
+	if os.IsNotExist(err) {
+		_ = os.MkdirAll(runPath, os.ModePerm)
+	}
+}

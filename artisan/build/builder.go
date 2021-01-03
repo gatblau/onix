@@ -37,7 +37,7 @@ type Builder struct {
 	commit           string
 	from             string
 	signer           *crypto.Signer
-	repoName         *core.ArtieName
+	repoName         *core.PackageName
 	buildFile        *data.BuildFile
 	localReg         *registry.LocalRegistry
 	shouldCopySource bool
@@ -61,7 +61,7 @@ func NewBuilder() *Builder {
 // artefactName: the full name of the artefact to be built including the tag
 // profileName: the name of the profile to be built. If empty then the default profile is built. If no default profile exists, the first profile is built.
 // copy: indicates whether a copy should be made of the project files before packaging (only valid for from location in the file system)
-func (b *Builder) Build(from, fromPath, gitToken string, name *core.ArtieName, profileName string, copy bool, interactive bool) {
+func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName, profileName string, copy bool, interactive bool) {
 	b.from = from
 	// prepare the source ready for the build
 	repo := b.prepareSource(from, fromPath, gitToken, name, copy)
@@ -116,7 +116,7 @@ func (b *Builder) Run(function string, path string, interactive bool) {
 }
 
 // either clone a remote git repo or copy a local one onto the source folder
-func (b *Builder) prepareSource(from string, fromPath string, gitToken string, tagName *core.ArtieName, copy bool) *git.Repository {
+func (b *Builder) prepareSource(from string, fromPath string, gitToken string, tagName *core.PackageName, copy bool) *git.Repository {
 	var repo *git.Repository
 	b.repoName = tagName
 	// creates a temporary working directory
@@ -129,8 +129,6 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 			// add it to the path
 			b.loadFrom = filepath.Join(b.loadFrom, fromPath)
 		}
-		// clone the remote repo
-		core.Msg("preparing to clone remote repository '%s'", from)
 		repo = b.cloneRepo(from, gitToken)
 	} else
 	// there is a local repo instead of a downloadable url
@@ -154,7 +152,6 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 				b.loadFrom = filepath.Join(b.loadFrom, fromPath)
 			}
 			// copy the folder to the source directory
-			core.Msg("preparing to copy local repository '%s'", from)
 			err := copyFiles(from, b.sourceDir())
 			if err != nil {
 				log.Fatal(err)
@@ -172,7 +169,6 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 		repo = b.openRepo(localPath)
 	}
 	// read build.yaml
-	core.Msg("loading build instructions")
 	b.buildFile = data.LoadBuildFile(filepath.Join(b.loadFrom, "build.yaml"))
 	return repo
 }
@@ -180,18 +176,15 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 // compress the target
 func (b *Builder) zipPackage(targetPath string) {
 	ignored := b.getIgnored()
-	core.Msg("compressing target '%s'", targetPath)
 	// get the target source information
 	info, err := os.Stat(targetPath)
 	core.CheckErr(err, "failed to retrieve target to compress: '%s'", targetPath)
 	// if the target is a directory
 	if info.IsDir() {
 		// then zip it
-		core.Msg("compressing folder")
 		core.CheckErr(zipSource(targetPath, b.workDirZipFilename(), ignored), "failed to compress folder")
 	} else {
 		// if it is a file open it to check its type
-		core.Msg("checking type of file target: '%s'", targetPath)
 		file, err := os.Open(targetPath)
 		core.CheckErr(err, "failed to open target: %s", targetPath)
 		// find the content type
@@ -200,18 +193,15 @@ func (b *Builder) zipPackage(targetPath string) {
 		// if the file is not a zip file
 		if contentType != "application/zip" {
 			b.zip = false
-			core.Msg("target is not a zip file, proceeding to compress it")
 			// the zip it
 			core.CheckErr(zipSource(targetPath, b.workDirZipFilename(), ignored), "failed to compress file target")
 			return
 		} else {
 			b.zip = true
-			core.Msg("cannot compress file target, already compressed. checking target file extension")
 			// find the file extension
 			ext := filepath.Ext(targetPath)
 			// if the extension is not zip (e.g. jar files)
 			if ext != ".zip" {
-				core.Msg("renaming file target to .zip extension")
 				// rename the file to .zip
 				core.CheckErr(os.Rename(targetPath, b.workDirZipFilename()), "failed to rename file target to .zip extension")
 				return
@@ -261,7 +251,6 @@ func (b *Builder) openRepo(path string) *git.Repository {
 
 // cleanup all relevant folders and move package to target location
 func (b *Builder) cleanUp() {
-	core.Msg("cleaning up temporary build directory")
 	// remove the working directory
 	core.CheckErr(os.RemoveAll(b.workingDir), "failed to remove temporary build directory")
 	// set the directory to empty
@@ -314,7 +303,6 @@ func (b *Builder) getIgnored() []string {
 	ignoreFileBytes, err := ioutil.ReadFile(filepath.Join(b.loadFrom, ".buildignore"))
 	if err != nil {
 		// assume no ignore file exists, do nothing
-		core.Msg("nothing to remove, %s file not found in project", ignoreFilename)
 		return []string{}
 	}
 	// get the lines in the ignore file
@@ -387,7 +375,6 @@ func (b *Builder) runFunction(function string, path string, interactive bool) {
 // if a default profile has not been defined, then uses the first profile in the build file
 // returns the profile used
 func (b *Builder) runProfile(profileName string, execDir string, interactive bool) *data.Profile {
-	core.Msg("preparing to execute build commands")
 	// construct an environment with the vars at build file level
 	env := NewEnVarFromSlice(os.Environ())
 	// get the build file environment and merge any subshell command
@@ -398,7 +385,6 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 	for _, profile := range b.buildFile.Profiles {
 		// if a profile name has been provided then build it
 		if len(profileName) > 0 && profile.Name == profileName {
-			core.Msg("building profile '%s'", profileName)
 			// get the profile environment and merge any subshell command
 			vars := b.evalSubshell(profile.GetEnv(), execDir, env, interactive)
 			// combine the current environment with the profile environment
@@ -435,10 +421,8 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 			defaultProfile := b.buildFile.DefaultProfile()
 			// use the default profile
 			if defaultProfile != nil {
-				core.Msg("building the default profile '%s'", defaultProfile.Name)
 				return b.runProfile(defaultProfile.Name, execDir, interactive)
 			} else {
-				core.Msg("building the first profile in the build file: '%s'", b.buildFile.Profiles[0].Name)
 				// there is no default profile defined so use the first profile
 				return b.runProfile(b.buildFile.Profiles[0].Name, execDir, interactive)
 			}
@@ -474,8 +458,7 @@ func (b *Builder) inSourceDirectory(relativePath string) string {
 }
 
 // create the package Seal
-func (b *Builder) createSeal(artie *core.ArtieName, profile *data.Profile) *data.Seal {
-	core.Msg("creating artefact seal")
+func (b *Builder) createSeal(artie *core.PackageName, profile *data.Profile) *data.Seal {
 	filename := b.uniqueIdName
 	// merge the labels in the profile with the ones at the build file level
 	labels := mergeMaps(b.buildFile.Labels, profile.Labels)
@@ -523,6 +506,17 @@ func (b *Builder) createSeal(artie *core.ArtieName, profile *data.Profile) *data
 		buildFile := new(data.BuildFile)
 		err = yaml.Unmarshal(buildYamlBytes, buildFile)
 		core.CheckErr(err, "cannot unmarshal build file '%s'", path.Join(profile.MergedTarget, "build.yaml"))
+
+		// if the manifest contains exported functions then include the runtime
+		// image that should be used to execute such functions
+		if len(buildFile.Functions) > 0 {
+			// a runtime must be defined if functions are exported
+			if len(profile.Runtime) == 0 {
+				core.RaiseErr("This package exports functions but does not define a runtime image to run them:\n" +
+					"set the runtime attribute in the package build profile")
+			}
+			s.Manifest.Runtime = profile.Runtime
+		}
 		// add any exported functions
 		for _, function := range buildFile.Functions {
 			f := function
@@ -573,4 +567,28 @@ func (b *Builder) getBuildEnv() map[string]string {
 	env["ARTISAN_WORK_DIR"] = b.workingDir
 	env["ARTISAN_FROM_URI"] = b.from
 	return env
+}
+
+// execute an exported function in a package
+func (b *Builder) Execute(name *core.PackageName, function string, credentials string, useTLS bool, certPath string, verify bool, interactive bool) {
+	// check the run path exist
+	core.RunPathExists()
+	// create a temp random path to open the package
+	var path = filepath.Join(core.RunPath(), core.RandomString(10))
+	// get a local registry handle
+	local := registry.NewLocalRegistry()
+	// open the package on the temp random path
+	local.Open(
+		name,
+		credentials,
+		useTLS,
+		path,
+		certPath,
+		verify)
+	// get the manifest
+	m := local.GetManifest(name)
+	// run the function on the open package
+	b.Run(function, filepath.Join(path, m.Target), interactive)
+	// remove the package files
+	os.RemoveAll(path)
 }

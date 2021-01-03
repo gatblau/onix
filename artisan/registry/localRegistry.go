@@ -36,7 +36,7 @@ func (r *LocalRegistry) api(domain string, useTLS bool) *Api {
 }
 
 // find the Repository specified by name
-func (r *LocalRegistry) findRepository(name *core.ArtieName) *Repository {
+func (r *LocalRegistry) findRepository(name *core.PackageName) *Repository {
 	// find repository using artefact name
 	for _, repository := range r.Repositories {
 		if repository.Repository == name.FullyQualifiedName() {
@@ -55,7 +55,7 @@ func (r *LocalRegistry) findRepository(name *core.ArtieName) *Repository {
 }
 
 // return all the artefacts within the same repository
-func (r *LocalRegistry) GetArtefactsByName(name *core.ArtieName) ([]*Artefact, bool) {
+func (r *LocalRegistry) GetArtefactsByName(name *core.PackageName) ([]*Artefact, bool) {
 	var artefacts = make([]*Artefact, 0)
 	for _, repository := range r.Repositories {
 		if repository.Repository == name.FullyQualifiedName() {
@@ -74,7 +74,7 @@ func (r *LocalRegistry) GetArtefactsByName(name *core.ArtieName) ([]*Artefact, b
 // return the artefact that matches the specified:
 // - domain/group/name:tag
 // nil if not found in the LocalRegistry
-func (r *LocalRegistry) FindArtefact(name *core.ArtieName) *Artefact {
+func (r *LocalRegistry) FindArtefact(name *core.PackageName) *Artefact {
 	// first gets the repository the artefact is in
 	for _, repository := range r.Repositories {
 		if repository.Repository == name.FullyQualifiedName() {
@@ -95,9 +95,9 @@ func (r *LocalRegistry) FindArtefact(name *core.ArtieName) *Artefact {
 
 // return the artefacts that matches the specified:
 // - artefact id substring
-func (r *LocalRegistry) FindArtefactsById(id string) []*core.ArtieName {
+func (r *LocalRegistry) FindArtefactsById(id string) []*core.PackageName {
 	// go through the artefacts in the repository and check for Id matches
-	names := make([]*core.ArtieName, 0)
+	names := make([]*core.PackageName, 0)
 	// first gets the repository the artefact is in
 	for _, repository := range r.Repositories {
 		for _, artefact := range repository.Artefacts {
@@ -186,7 +186,7 @@ func (r *LocalRegistry) load() {
 }
 
 // Add the artefact and seal to the LocalRegistry
-func (r *LocalRegistry) Add(filename string, name *core.ArtieName, s *data.Seal) {
+func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Seal) {
 	// gets the full base name (with extension)
 	basename := filepath.Base(filename)
 	// gets the basename directory only
@@ -250,7 +250,7 @@ func (r *LocalRegistry) removeArtefactById(a []*Artefact, id string) []*Artefact
 	return a
 }
 
-func (r *LocalRegistry) removeRepoByName(a []*Repository, name *core.ArtieName) []*Repository {
+func (r *LocalRegistry) removeRepoByName(a []*Repository, name *core.PackageName) []*Repository {
 	i := -1
 	// find an artefact with the specified tag
 	for ix := 0; ix < len(a); ix++ {
@@ -270,7 +270,7 @@ func (r *LocalRegistry) removeRepoByName(a []*Repository, name *core.ArtieName) 
 }
 
 // remove a given tag from an Artefact
-func (r *LocalRegistry) unTag(name *core.ArtieName, tag string) {
+func (r *LocalRegistry) unTag(name *core.PackageName, tag string) {
 	artie := r.FindArtefact(name)
 	if artie != nil {
 		artie.Tags = core.RemoveElement(artie.Tags, tag)
@@ -278,7 +278,7 @@ func (r *LocalRegistry) unTag(name *core.ArtieName, tag string) {
 }
 
 // remove a given tag from an artefact
-func (r *LocalRegistry) Tag(sourceName *core.ArtieName, targetName *core.ArtieName) {
+func (r *LocalRegistry) Tag(sourceName *core.PackageName, targetName *core.PackageName) {
 	sourceArtie := r.FindArtefact(sourceName)
 	if sourceArtie == nil {
 		core.RaiseErr("source artefact %s does not exit", sourceName)
@@ -353,7 +353,7 @@ func (r *LocalRegistry) Tag(sourceName *core.ArtieName, targetName *core.ArtieNa
 }
 
 // remove all tags from the specified Artefact
-func (r *LocalRegistry) unTagAll(name *core.ArtieName) {
+func (r *LocalRegistry) unTagAll(name *core.PackageName) {
 	if artefs, exists := r.GetArtefactsByName(name); exists {
 		// then it has to untag it, leaving a dangling artefact
 		for _, artef := range artefs {
@@ -420,7 +420,7 @@ func (r *LocalRegistry) ListQ() {
 	core.CheckErr(err, "failed to flush output")
 }
 
-func (r *LocalRegistry) Push(name *core.ArtieName, credentials string, useTLS bool) {
+func (r *LocalRegistry) Push(name *core.PackageName, credentials string, useTLS bool) {
 	// get a reference to the remote registry
 	api := r.api(name.Domain, useTLS)
 	// get registry credentials
@@ -477,7 +477,7 @@ func (r *LocalRegistry) Push(name *core.ArtieName, credentials string, useTLS bo
 	fmt.Printf("pushed %s\n", name.String())
 }
 
-func (r *LocalRegistry) Pull(name *core.ArtieName, credentials string, useTLS bool) *Artefact {
+func (r *LocalRegistry) Pull(name *core.PackageName, credentials string, useTLS bool) *Artefact {
 	// get a reference to the remote registry
 	api := r.api(name.Domain, useTLS)
 	// get registry credentials
@@ -533,7 +533,7 @@ func (r *LocalRegistry) Pull(name *core.ArtieName, credentials string, useTLS bo
 	return r.FindArtefact(name)
 }
 
-func (r *LocalRegistry) Open(name *core.ArtieName, credentials string, useTLS bool, targetPath string, certPath string, verify bool) {
+func (r *LocalRegistry) Open(name *core.PackageName, credentials string, useTLS bool, targetPath string, certPath string, verify bool) {
 	var (
 		pubKeyPath = certPath
 		err        error
@@ -606,7 +606,7 @@ func (r *LocalRegistry) Open(name *core.ArtieName, credentials string, useTLS bo
 	}
 }
 
-func (r *LocalRegistry) Remove(names []*core.ArtieName) {
+func (r *LocalRegistry) Remove(names []*core.PackageName) {
 	for _, name := range names {
 		// try and get the artefact by complete URI or id ref
 		artie := r.FindArtefact(name)
@@ -726,7 +726,7 @@ func (r *LocalRegistry) regDirZipFilename(uniqueIdName string) string {
 }
 
 // find the artefact specified by ist id
-func (r *LocalRegistry) findArtefactByRepoAndId(name *core.ArtieName, id string) *Artefact {
+func (r *LocalRegistry) findArtefactByRepoAndId(name *core.PackageName, id string) *Artefact {
 	for _, repository := range r.Repositories {
 		rep := fmt.Sprintf("%s/%s/%s", name.Domain, name.Group, name.Name)
 		if rep == repository.Repository {
@@ -741,7 +741,7 @@ func (r *LocalRegistry) findArtefactByRepoAndId(name *core.ArtieName, id string)
 }
 
 // returns the artefact coordinates in the repository as (repo index, artefact index)
-func (r *LocalRegistry) artCoords(name *core.ArtieName, art *Artefact) (int, int) {
+func (r *LocalRegistry) artCoords(name *core.PackageName, art *Artefact) (int, int) {
 	for rIx, repository := range r.Repositories {
 		rep := fmt.Sprintf("%s/%s/%s", name.Domain, name.Group, name.Name)
 		if rep == repository.Repository {
@@ -828,7 +828,7 @@ func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string) 
 }
 
 // removes any artefacts with no tags
-func (r *LocalRegistry) removeDangling(name *core.ArtieName) {
+func (r *LocalRegistry) removeDangling(name *core.PackageName) {
 	repo := r.findRepository(name)
 	if repo != nil {
 		for _, artefact := range repo.Artefacts {
@@ -843,7 +843,12 @@ func (r *LocalRegistry) removeDangling(name *core.ArtieName) {
 	}
 }
 
-func (r *LocalRegistry) GetManifest(a *Artefact) *data.Manifest {
+func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
+	// find the artefact in the local registry
+	a := r.FindArtefact(name)
+	if a == nil {
+		core.RaiseErr("artefact %s not found", name)
+	}
 	seal, err := r.getSeal(a)
 	core.CheckErr(err, "cannot get artefact seal")
 	return seal.Manifest

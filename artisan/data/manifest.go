@@ -16,6 +16,8 @@ type Manifest struct {
 	Ref string `json:"ref"`
 	// the build profile used
 	Profile string `json:"profile"`
+	// runtime image that should be used to execute exported functions in the package
+	Runtime string `json:"runtime"`
 	// the labels assigned to the package
 	Labels map[string]string `json:"labels,omitempty"`
 	// the URI of the package source

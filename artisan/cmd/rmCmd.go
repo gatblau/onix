@@ -42,8 +42,8 @@ func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 	local.Remove(c.toArtURIs(args))
 }
 
-func (c *RmCmd) toArtURIs(args []string) []*core.ArtieName {
-	var uris = make([]*core.ArtieName, 0)
+func (c *RmCmd) toArtURIs(args []string) []*core.PackageName {
+	var uris = make([]*core.PackageName, 0)
 	for _, arg := range args {
 		uri := core.ParseName(arg)
 		uris = append(uris, uri)

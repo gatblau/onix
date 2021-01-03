@@ -23,6 +23,7 @@ func InitialiseRootCmd() *RootCmd {
 	pgpCmd := InitialisePGPCommand()
 	pipeCmd := InitialisePipeCommand()
 	manifCmd := NewManifestCmd()
+	execCmd := NewExecCmd()
 	rootCmd.Cmd.AddCommand(
 		buildCmd.cmd,
 		artefactsCmd.cmd,
@@ -38,6 +39,7 @@ func InitialiseRootCmd() *RootCmd {
 		pgpCmd.cmd,
 		pipeCmd.cmd,
 		manifCmd.cmd,
+		execCmd.cmd,
 	)
 	return rootCmd
 }

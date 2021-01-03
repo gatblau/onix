@@ -14,10 +14,22 @@ import (
 
 func TestBuild(t *testing.T) {
 	p := NewBuilder()
-	p.Build(".", "", "", core.ParseName("localhost:8082/gatblau/boot"), "art-buildah", false, false)
+	p.Build(".", "", "", core.ParseName("localhost:8082/gatblau/art-buildah"), "art-buildah", false, false)
 }
 
 func TestRun(t *testing.T) {
 	p := NewBuilder()
 	p.Run("test", "/Users/andresalos/go/src/github.com/gatblau/onix/artisan/build", false)
+}
+
+func TestExec(t *testing.T) {
+	p := NewBuilder()
+	p.Execute(
+		core.ParseName("localhost:8082/gatblau/art-buildah"),
+		"release-image",
+		"",
+		false,
+		"",
+		false,
+		true)
 }

@@ -41,17 +41,10 @@ func (b *ManifestCmd) Run(cmd *cobra.Command, args []string) {
 	} else if len(args) > 1 {
 		core.RaiseErr("too many arguments")
 	}
-	// validate the name
-	artie := core.ParseName(args[0])
 	// create a local registry
 	local := registry.NewLocalRegistry()
-	// find the artefact in the local registry
-	a := local.FindArtefact(artie)
-	if a == nil {
-		core.RaiseErr("artefact %s not found", args[0])
-	}
 	// get the artefact manifest
-	m := local.GetManifest(a)
+	m := local.GetManifest(core.ParseName(args[0]))
 	// marshal the manifest
 	bytes, err := json.MarshalIndent(m, "", "  ")
 	core.CheckErr(err, "cannot marshal manifest")
