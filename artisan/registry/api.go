@@ -49,7 +49,7 @@ func NewGenericAPI(domain string, useTls bool) *Api {
 	}
 }
 
-func (r *Api) UploadArtefact(name *core.ArtieName, artefactRef string, zipfile multipart.File, jsonFile multipart.File, metaInfo *Artefact, user string, pwd string) error {
+func (r *Api) UploadArtefact(name *core.PackageName, artefactRef string, zipfile multipart.File, jsonFile multipart.File, metaInfo *Artefact, user string, pwd string) error {
 	// ensure files are properly closed
 	defer zipfile.Close()
 	defer jsonFile.Close()
@@ -93,7 +93,7 @@ func (r *Api) UploadArtefact(name *core.ArtieName, artefactRef string, zipfile m
 	return nil
 }
 
-func (r *Api) UpdateArtefactInfo(name *core.ArtieName, artefact *Artefact, user string, pwd string) error {
+func (r *Api) UpdateArtefactInfo(name *core.PackageName, artefact *Artefact, user string, pwd string) error {
 	b, err := json.Marshal(artefact)
 	if err != nil {
 		return err

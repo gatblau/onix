@@ -1,44 +1,25 @@
 ---
 env:
-  # gets the artefact reference from the manifest and assigns it to an environment variable
-  REF: $((art manifest ${ARTEFACT_NAME} -f=$.ref))
-  REO_NAME: gatblau
+  REPO_NAME: gatblau
   IMG_NAME: art-buildah
 
 functions:
-  - name: build-context
-    description: |
-      constructs the image build context, by downloading artefacts required to build the docker image
-      and verifying the artefacts' issuer
-    run:
-      - art open -u=${ARTEFACT_REG_USER}:${ARTEFACT_REG_PWD} ${ARTEFACT_NAME} -p=/keys/root_rsa_pub.pgp .
-
   - name: build-image
     description: build the docker image from an existing context
     run:
-      - docker build --build-arg APP_NAME=art-linux-${REF} -t ${REPO_NAME}/${IMG_NAME}:${REF} .
-      - docker tag ${REPO_NAME}/${IMG_NAME}:${REF} ${REPO_NAME}/${IMG_NAME}:latest
+      - docker build --build-arg APP_NAME=art-linux-${ARTISAN_REF} -t ${REPO_NAME}/${IMG_NAME}:${ARTISAN_REF} .
+      - docker tag ${REPO_NAME}/${IMG_NAME}:${ARTISAN_REF} ${REPO_NAME}/${IMG_NAME}:latest
 
   - name: push-image
     description: push the created docker image to the container registry
     run:
-      - docker push ${REPO_NAME}/${IMG_NAME}:${REF}
+      - docker push ${REPO_NAME}/${IMG_NAME}:${ARTISAN_REF}
       - docker push ${REPO_NAME}/${IMG_NAME}:latest
 
   - name: release-image
     description: build the ART-BUILDAH docker image and push it to the registry
     export: true
-    input:
-      - name: ARTEFACT_REG_USER
-        description: package registry user
-        required: true
-        type: string
-      - name: ARTEFACT_REG_PWD
-        description: package registry password
-        required: true
-        type: password
     run:
-      - $(build-context)
       - $(build-image)
       - $(push-image)
 ...

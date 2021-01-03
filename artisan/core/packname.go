@@ -15,35 +15,35 @@ import (
 
 // defines the name of an artefact
 // domain/group/name:tag
-type ArtieName struct {
+type PackageName struct {
 	Domain string
 	Group  string
 	Name   string
 	Tag    string
 }
 
-func (a *ArtieName) IsInTheSameRepositoryAs(name *ArtieName) bool {
+func (a *PackageName) IsInTheSameRepositoryAs(name *PackageName) bool {
 	return a.FullyQualifiedName() == name.FullyQualifiedName()
 }
 
-func (a *ArtieName) String() string {
+func (a *PackageName) String() string {
 	return fmt.Sprintf("%s/%s/%s:%s", a.Domain, a.Group, a.Name, a.Tag)
 }
 
-func (a *ArtieName) FullyQualifiedGroup() string {
+func (a *PackageName) FullyQualifiedGroup() string {
 	return fmt.Sprintf("%s/%s", a.Domain, a.Group)
 }
 
-func (a *ArtieName) FullyQualifiedName() string {
+func (a *PackageName) FullyQualifiedName() string {
 	return fmt.Sprintf("%s/%s/%s", a.Domain, a.Group, a.Name)
 }
 
-func (a *ArtieName) Repository() string {
+func (a *PackageName) Repository() string {
 	return fmt.Sprintf("%s/%s", a.Group, a.Name)
 }
 
-func ParseName(name string) *ArtieName {
-	n := &ArtieName{}
+func ParseName(name string) *PackageName {
+	n := &PackageName{}
 	components := strings.Split(name, "/")
 	// validate component elements
 	for _, component := range components {

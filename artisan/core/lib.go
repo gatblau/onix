@@ -19,11 +19,13 @@ import (
 	"github.com/hashicorp/go-uuid"
 	"io"
 	"log"
+	"math/rand"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // converts the path to absolute path
@@ -246,4 +248,15 @@ func HasShell(value string) (bool, string, string) {
 		return true, matches[0], matches[0][3 : len(matches[0])-2]
 	}
 	return false, "", ""
+}
+
+// gets a random string of specified length
+func RandomString(n int) string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	rand.Seed(time.Now().UnixNano())
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }

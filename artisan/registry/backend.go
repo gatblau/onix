@@ -16,7 +16,7 @@ import (
 // the interface implemented by a backend
 type Backend interface {
 	// upload an artefact to the remote repository
-	UploadArtefact(name *core.ArtieName, artefactRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error
+	UploadArtefact(name *core.PackageName, artefactRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error
 	// get repository information
 	GetRepositoryInfo(group, name, user, pwd string) (*Repository, error)
 	// get artefact information

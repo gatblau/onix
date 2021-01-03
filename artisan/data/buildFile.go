@@ -70,6 +70,8 @@ type Profile struct {
 	Artefact string `yaml:"artefact"`
 	// the pipeline Icon
 	Icon string `yaml:"icon"`
+	// runtime image that should be used to execute functions in the package
+	Runtime string `yaml:"runtime"`
 	// Sonar configuration
 	Sonar *Sonar `yaml:"sonar,omitempty"`
 	// a set of labels associated with the profile

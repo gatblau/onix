@@ -131,7 +131,7 @@ func (r *Nexus3Backend) UpdateArtefactInfo(group, name string, artefact *Artefac
 }
 
 // Upload an artefact
-func (r *Nexus3Backend) UploadArtefact(name *core.ArtieName, artefactRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error {
+func (r *Nexus3Backend) UploadArtefact(name *core.PackageName, artefactRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error {
 	// ensure files are properly closed
 	defer zipfile.Close()
 	defer jsonFile.Close()

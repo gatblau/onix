@@ -145,7 +145,6 @@ func exitMsg(exitCode int) string {
 
 // wait a time duration for a file or folder to be created on the path
 func waitForTargetToBeCreated(path string) {
-	core.Msg("waiting for run commands target to be created")
 	elapsed := 0
 	found := false
 	for {
