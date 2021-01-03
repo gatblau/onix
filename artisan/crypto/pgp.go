@@ -224,8 +224,10 @@ func (p *PGP) toPrivateKey() (privateKey []byte, err error) {
 	privateBuf := new(bytes.Buffer)
 	// serialises the private key into the buffer
 	p.entity.SerializePrivate(privateBuf, p.conf)
+	// create PEM headers for the PGP key
+	headers := pemHeaders(cipherToString(p.conf.DefaultCipher), p.conf.DefaultHash.String(), p.conf.RSABits, p.conf.Time())
 	// encode the buffer containing the serialised private key into Armor ASCII format
-	privateKey, err = armorEncode(privateBuf, openpgp.PrivateKeyType, p.conf)
+	privateKey, err = armorEncode(privateBuf, openpgp.PrivateKeyType, headers)
 	if err != nil {
 		return nil, fmt.Errorf("cannot armor encode private key: %s", err)
 	}
@@ -237,25 +239,31 @@ func (p *PGP) toPublicKey() (publicKey []byte, err error) {
 	publicBuf := new(bytes.Buffer)
 	// serialises the public key into the buffer
 	p.entity.Serialize(publicBuf)
+	// create PEM headers for the PGP key
+	headers := pemHeaders(cipherToString(p.conf.DefaultCipher), p.conf.DefaultHash.String(), p.conf.RSABits, p.conf.Time())
 	// encode the buffer containing the serialised public key into Armor ASCII format
-	publicKey, err = armorEncode(publicBuf, openpgp.PublicKeyType, p.conf)
+	publicKey, err = armorEncode(publicBuf, openpgp.PublicKeyType, headers)
 	if err != nil {
 		return nil, fmt.Errorf("cannot armor encode public key: %s", err)
 	}
 	return publicKey, nil
 }
 
-// armor ascii encode the passed in buffer
-func armorEncode(key *bytes.Buffer, keyType string, conf *packet.Config) ([]byte, error) {
-	buf := bytes.NewBuffer(nil)
-	// adds PEM block headers with some information about the keys
+// create PEM headers for the PGP key
+func pemHeaders(cipher, hash string, rsaBits int, time time.Time) map[string]string {
 	headers := map[string]string{
 		"Version": fmt.Sprintf("golang.org/x/crypto/openpgp - artisan-%s", docs.Version),
-		"Cipher":  cipherToString(conf.DefaultCipher),
-		"Hash":    conf.DefaultHash.String(),
-		"RSABits": strconv.Itoa(conf.RSABits),
-		"Time":    conf.Time().String(),
+		"Cipher":  cipher,
+		"Hash":    hash,
+		"RSABits": strconv.Itoa(rsaBits),
+		"Time":    time.String(),
 	}
+	return headers
+}
+
+// armor ascii encode the passed in buffer
+func armorEncode(key *bytes.Buffer, keyType string, headers map[string]string) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
 	w, err := armor.Encode(buf, keyType, headers)
 	if err != nil {
 		return nil, fmt.Errorf("cannot encode keys in armor format: %s", err)

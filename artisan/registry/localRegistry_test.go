@@ -82,3 +82,8 @@ func TestGetManifest(t *testing.T) {
 	core.CheckErr(err, "cannot marshal manifest")
 	fmt.Printf(string(bytes) + "\n")
 }
+
+func TestUnzip(t *testing.T) {
+	err := unzip("../images/bin/output/art.zip", ".")
+	core.CheckErr(err, "cannot marshal manifest")
+}

@@ -11,7 +11,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -117,18 +116,6 @@ func RemoveElement(a []string, value string) []string {
 	return a
 }
 
-// the artefact id calculated as the hex encoded SHA-256 digest of the artefact Seal
-func ArtefactId(seal *Seal) string {
-	// serialise the seal info to json
-	info := ToJsonBytes(seal)
-	hash := sha256.New()
-	// copy the seal manifest into the hash
-	if _, err := io.Copy(hash, bytes.NewReader(info)); err != nil {
-		log.Fatal(err)
-	}
-	return hex.EncodeToString(hash.Sum(nil))
-}
-
 func CheckErr(err error, msg string, a ...interface{}) {
 	if err != nil {
 		fmt.Printf("error: %s - %s\n", fmt.Sprintf(msg, a...), err)
@@ -147,33 +134,6 @@ func Msg(msg string, a ...interface{}) {
 	} else {
 		fmt.Printf("info: %s\n", msg)
 	}
-}
-
-// takes the combined checksum of the Seal information and the compressed file
-func SealChecksum(path string, sealData *Manifest) []byte {
-	// read the compressed file
-	file, err := os.Open(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-	// serialise the seal info to json
-	info := ToJsonBytes(sealData)
-	hash := sha256.New()
-	// copy the seal manifest into the hash
-	if _, err := io.Copy(hash, bytes.NewReader(info)); err != nil {
-		log.Fatal(err)
-	}
-	// copy the compressed file into the hash
-	if _, err := io.Copy(hash, file); err != nil {
-		log.Fatal(err)
-	}
-	return hash.Sum(nil)
 }
 
 // gets the checksum of the passed string

@@ -2,10 +2,6 @@
 # It contains the instructions to build Artisan using itself
 # No need for make, can run on windows, linux or mac providing the commands in the profiles or functions are compatible
 ---
-application: artisan
-artefact: gatblau/artisan
-type: golang
-license: Apache Version 2
 labels:
   author: gatblau
   application: artisan
@@ -31,6 +27,10 @@ env:
 profiles:
   - name: linux
     default: true
+    application: artisan
+    artefact: gatblau/artisan
+    type: golang
+    license: Apache Version 2
     labels:
       platform: linux
     env:
@@ -38,6 +38,10 @@ profiles:
     run:
       - $(build-linux)
     target: images/bin/output/art-linux-${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE}
+
+  - name: art-buildah
+    target: images/art-buildah
+
 functions:
   - name: build
     description: build Artisan binary in all configurations

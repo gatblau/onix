@@ -18,7 +18,11 @@ func TestGenerateKeys(t *testing.T) {
 
 	// saves private and public keys
 	pkName, pubName := KeyNames(".", "root", "pgp")
-	err := p.SaveKeyPair(pubName, pkName)
+	err := p.SavePublicKey(pubName)
+	if err != nil {
+		t.FailNow()
+	}
+	err = p.SavePrivateKey(pkName)
 	if err != nil {
 		t.FailNow()
 	}
@@ -26,7 +30,7 @@ func TestGenerateKeys(t *testing.T) {
 
 func TestLoadKeySignAndVerify(t *testing.T) {
 	// load the private key for signing
-	priv, err := LoadPGP("priv.key")
+	priv, err := LoadPGP("id_rsa_key.pgp")
 	if err != nil {
 		t.Fatal(err)
 		t.FailNow()
@@ -38,7 +42,7 @@ func TestLoadKeySignAndVerify(t *testing.T) {
 		t.FailNow()
 	}
 	// load the public key for verification of the signature
-	pub, err := LoadPGP("pub.key")
+	pub, err := LoadPGP("id_rsa_pub.pgp")
 	if err != nil {
 		t.Fatal(err)
 		t.FailNow()

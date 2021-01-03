@@ -362,3 +362,17 @@ func contains(value string, list []string) bool {
 	}
 	return false
 }
+
+func findGitPath(path string) (string, error) {
+	for {
+		_, err := os.Stat(filepath.Join(path, ".git"))
+		if os.IsNotExist(err) {
+			path = filepath.Dir(path)
+			if strings.HasSuffix(path, string(os.PathSeparator)) {
+				return "", fmt.Errorf("cannot find .git path")
+			}
+		} else {
+			return path, nil
+		}
+	}
+}

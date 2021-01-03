@@ -21,7 +21,7 @@ type ListCmd struct {
 func NewListCmd() *ListCmd {
 	c := &ListCmd{
 		cmd: &cobra.Command{
-			Use:   "list",
+			Use:   "ls",
 			Short: "list artefacts",
 			Long:  ``,
 		},

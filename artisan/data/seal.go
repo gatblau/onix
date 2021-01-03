@@ -5,7 +5,17 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package core
+package data
+
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"github.com/gatblau/onix/artisan/core"
+	"io"
+	"log"
+	"os"
+)
 
 // the digital Seal for a package
 // the Seal contains information to determine if the package or its metadata has been compromised
@@ -28,33 +38,41 @@ type Seal struct {
 	Signature string `json:"signature,omitempty"`
 }
 
-type Manifest struct {
-	// the package type
-	Type string `json:"type,omitempty"`
-	// the license associated to the package
-	License string `json:"license"`
-	// the name of the package file
-	Ref string `json:"ref"`
-	// the build profile used
-	Profile string `json:"profile"`
-	// the labels assigned to the package in the Pakfile
-	Labels map[string]string `json:"labels,omitempty"`
-	// the URI of the package source
-	Source string `json:"source"`
-	// the path within the source where the project is (for uber repos)
-	SourcePath string `json:"source_path,omitempty"`
-	// the commit hash
-	Commit string `json:"commit"`
-	// repo branch
-	Branch string `json:"branch,omitempty"`
-	// repo tag
-	Tag string `json:"tag,omitempty"`
-	// the name of the file or folder that has been packaged
-	Target string `json:"target,omitempty"`
-	// the timestamp
-	Time string `json:"time"`
-	// the size of the artefact
-	Size string `json:"size"`
-	// true if the target was zipped previous to packaging (e.g. jar files)
-	Zip bool `json:"zip"`
+// takes the combined checksum of the Seal information and the compressed file
+func (seal *Seal) Checksum(path string) []byte {
+	// read the compressed file
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+	// serialise the seal info to json
+	info := core.ToJsonBytes(seal.Manifest)
+	hash := sha256.New()
+	// copy the seal manifest into the hash
+	if _, err := io.Copy(hash, bytes.NewReader(info)); err != nil {
+		log.Fatal(err)
+	}
+	// copy the compressed file into the hash
+	if _, err := io.Copy(hash, file); err != nil {
+		log.Fatal(err)
+	}
+	return hash.Sum(nil)
+}
+
+// the artefact id calculated as the hex encoded SHA-256 digest of the artefact Seal
+func (seal *Seal) ArtefactId() string {
+	// serialise the seal info to json
+	info := core.ToJsonBytes(seal)
+	hash := sha256.New()
+	// copy the seal manifest into the hash
+	if _, err := io.Copy(hash, bytes.NewReader(info)); err != nil {
+		log.Fatal(err)
+	}
+	return hex.EncodeToString(hash.Sum(nil))
 }

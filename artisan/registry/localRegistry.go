@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/crypto"
+	"github.com/gatblau/onix/artisan/data"
 	"io/ioutil"
 	"log"
 	"math"
@@ -185,8 +186,7 @@ func (r *LocalRegistry) load() {
 }
 
 // Add the artefact and seal to the LocalRegistry
-func (r *LocalRegistry) Add(filename string, name *core.ArtieName, s *core.Seal) {
-	core.Msg("adding artefact to local registry: %s", name)
+func (r *LocalRegistry) Add(filename string, name *core.ArtieName, s *data.Seal) {
 	// gets the full base name (with extension)
 	basename := filepath.Base(filename)
 	// gets the basename directory only
@@ -219,7 +219,7 @@ func (r *LocalRegistry) Add(filename string, name *core.ArtieName, s *core.Seal)
 	}
 	// creates a new artefact
 	artefacts := append(repo.Artefacts, &Artefact{
-		Id:      core.ArtefactId(s),
+		Id:      s.ArtefactId(),
 		Type:    s.Manifest.Type,
 		FileRef: basenameNoExt,
 		Tags:    []string{name.Tag},
@@ -285,12 +285,10 @@ func (r *LocalRegistry) Tag(sourceName *core.ArtieName, targetName *core.ArtieNa
 	}
 	if targetName.IsInTheSameRepositoryAs(sourceName) {
 		if !sourceArtie.HasTag(targetName.Tag) {
-			core.Msg("tagging %s", sourceName)
 			sourceArtie.Tags = append(sourceArtie.Tags, targetName.Tag)
 			r.save()
 			return
 		} else {
-			core.Msg("already tagged")
 			return
 		}
 	} else {
@@ -298,7 +296,6 @@ func (r *LocalRegistry) Tag(sourceName *core.ArtieName, targetName *core.ArtieNa
 		newArtie := *sourceArtie
 		// if the target artefact repository does not exist then create it
 		if targetRepository == nil {
-			core.Msg("tagging %s", sourceName)
 			newArtie.Tags = []string{targetName.Tag}
 			r.Repositories = append(r.Repositories, &Repository{
 				Repository: targetName.FullyQualifiedName(),
@@ -322,7 +319,6 @@ func (r *LocalRegistry) Tag(sourceName *core.ArtieName, targetName *core.ArtieNa
 				// check if the tag already exists
 				for _, tag := range targetArtie.Tags {
 					if tag == targetName.Tag {
-						core.Msg("already tagged")
 					} else {
 						// add the tag to the existing artefact
 						targetArtie.Tags = append(targetArtie.Tags, targetName.Tag)
@@ -510,7 +506,7 @@ func (r *LocalRegistry) Pull(name *core.ArtieName, credentials string, useTLS bo
 		// unmarshal the seal
 		sealFile, err := os.Open(sealFilename)
 		core.CheckErr(err, "cannot read artefact seal file")
-		seal := new(core.Seal)
+		seal := new(data.Seal)
 		sealBytes, err := ioutil.ReadAll(sealFile)
 		core.CheckErr(err, "cannot read artefact seal file")
 		err = json.Unmarshal(sealBytes, seal)
@@ -582,7 +578,7 @@ func (r *LocalRegistry) Open(name *core.ArtieName, credentials string, useTLS bo
 		// get the location of the artefact
 		zipFilename := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef))
 		// get a slice to have the unencrypted signature
-		sum := core.SealChecksum(zipFilename, seal.Manifest)
+		sum := seal.Checksum(zipFilename)
 		// decode the signature in the seal
 		sig, err := base64.StdEncoding.DecodeString(seal.Signature)
 		core.CheckErr(err, "cannot decode signature in the seal")
@@ -759,7 +755,7 @@ func (r *LocalRegistry) artCoords(name *core.ArtieName, art *Artefact) (int, int
 	return -1, -1
 }
 
-func (r *LocalRegistry) getSeal(name *Artefact) (*core.Seal, error) {
+func (r *LocalRegistry) getSeal(name *Artefact) (*data.Seal, error) {
 	sealFilename := path.Join(r.Path(), fmt.Sprintf("%s.json", name.FileRef))
 	sealFile, err := os.Open(sealFilename)
 	if err != nil {
@@ -769,7 +765,7 @@ func (r *LocalRegistry) getSeal(name *Artefact) (*core.Seal, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot read seal file %s: %s", sealFilename, err)
 	}
-	seal := new(core.Seal)
+	seal := new(data.Seal)
 	err = json.Unmarshal(sealBytes, seal)
 	return seal, err
 }
@@ -780,14 +776,14 @@ func (r *LocalRegistry) ImportKey(keyPath string, isPrivate bool, repoGroup stri
 		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
 	}
 	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
-	key, err := crypto.LoadPGP(keyPath)
+	// only check it can read the key
+	_, err := crypto.LoadPGP(keyPath)
 	core.CheckErr(err, "cannot read pgp key '%s'", keyPath)
+	// if so, then move the key to the correct location to preserve PEM block data
 	if isPrivate {
-		privateKeyFilename := path.Join(destPath, crypto.PrivateKeyName(prefix, "pgp"))
-		key.SavePrivateKey(privateKeyFilename)
+		CopyFile(keyPath, path.Join(destPath, crypto.PrivateKeyName(prefix, "pgp")))
 	} else {
-		publicKeyFilename := path.Join(destPath, crypto.PublicKeyName(prefix, "pgp"))
-		key.SavePublicKey(publicKeyFilename)
+		CopyFile(keyPath, path.Join(destPath, crypto.PublicKeyName(prefix, "pgp")))
 	}
 }
 
@@ -847,7 +843,7 @@ func (r *LocalRegistry) removeDangling(name *core.ArtieName) {
 	}
 }
 
-func (r *LocalRegistry) GetManifest(a *Artefact) *core.Manifest {
+func (r *LocalRegistry) GetManifest(a *Artefact) *data.Manifest {
 	seal, err := r.getSeal(a)
 	core.CheckErr(err, "cannot get artefact seal")
 	return seal.Manifest
