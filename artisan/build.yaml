@@ -37,7 +37,18 @@ profiles:
       GOOS: linux
     run:
       - $(build-linux)
-    target: images/bin/output/art-linux-${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE}
+    target: images/bin/output/art
+
+  - name: windows
+    application: artisan
+    artefact: gatblau/artisan
+    type: golang
+    license: Apache Version 2
+    labels:
+      platform: windows
+    run:
+      - $(build-windows)
+    target: images/bin/output/art.exe
 
   - name: art-buildah
     target: images/art-buildah
@@ -57,16 +68,16 @@ functions:
     run:
       - sh ./images/bin/version.sh ${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE}
       - go fmt
-      - go build -o images/bin/output/art-linux-${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE} -v
+      - go build -o images/bin/output/art -v
 
   - name: build-windows
     description: builds the Artisan binary file for the windows platform
     env:
       GOOS: windows
     run:
-      - sh ./images/bin/version.sh ${APP_VERSION}-${ARTISAN_REF}
+      - sh ./images/bin/version.sh ${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE}
       - go fmt
-      - go build -o images/bin/output/art-windows-${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE}.exe -v
+      - go build -o images/bin/output/art.exe -v
 
   - name: build-art-registry
     description: creates an Artisan registry service image
@@ -95,7 +106,7 @@ functions:
   - name: build-art-buildah
     description: creates an Artisan image builder image
     run:
-      - docker build -f ./images/art-buildah/Dockerfile --build-arg APP_NAME=art-linux-$((cat ./version)) -t ${REPO_NAME}/${ART_IMG_BUILDER}:$((cat ./version)) .
+      - docker build -f=./images/art-buildah/Dockerfile -t=${REPO_NAME}/${ART_IMG_BUILDER}:$((cat ./version)) .
       - docker tag ${REPO_NAME}/${ART_IMG_BUILDER}:$((cat ./version)) ${REPO_NAME}/${ART_IMG_BUILDER}:latest
 
   - name: push-art-buildah

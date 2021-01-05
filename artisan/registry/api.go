@@ -32,10 +32,10 @@ type Api struct {
 	tmp    string
 }
 
-func NewGenericAPI(domain string, useTls bool) *Api {
+func NewGenericAPI(domain string, noTLS bool) *Api {
 	core.TmpExists()
 	return &Api{
-		https:  useTls,
+		https:  !noTLS,
 		domain: domain,
 		tmp:    core.TmpPath(),
 		client: &http.Client{

@@ -18,7 +18,7 @@ import (
 type PushCmd struct {
 	cmd         *cobra.Command
 	credentials string
-	tls         *bool
+	noTLS       *bool
 }
 
 func NewPushCmd() *PushCmd {
@@ -31,12 +31,12 @@ func NewPushCmd() *PushCmd {
 	}
 	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
-	c.tls = c.cmd.Flags().BoolP("tls", "t", true, "use -t=false or --tls=false to disable https for a backend; i.e. use plain http")
+	c.noTLS = c.cmd.Flags().BoolP("no-tls", "t", false, "use -t or --no-tls to connect to a artisan registry over plain HTTP")
 	return c
 }
 
 func (c *PushCmd) Run(cmd *cobra.Command, args []string) {
-	if !*c.tls {
+	if *c.noTLS {
 		log.Printf("info: Transport Level Security is disabled\n")
 	}
 	// check an artefact name has been provided
@@ -50,5 +50,5 @@ func (c *PushCmd) Run(cmd *cobra.Command, args []string) {
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	// attempt upload to remote repository
-	local.Push(artie, c.credentials, *c.tls)
+	local.Push(artie, c.credentials, *c.noTLS)
 }

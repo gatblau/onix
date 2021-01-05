@@ -9,12 +9,15 @@ package build
 
 import (
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/registry"
 	"testing"
 )
 
 func TestBuild(t *testing.T) {
 	p := NewBuilder()
-	p.Build(".", "", "", core.ParseName("localhost:8082/gatblau/art-buildah"), "art-buildah", false, false)
+	p.Build(".", "", "", core.ParseName("artisan"), "linux", false, false)
+	l := registry.NewLocalRegistry()
+	l.Open(core.ParseName("artisan"), "", false, "test", "", true)
 }
 
 func TestRun(t *testing.T) {
@@ -32,4 +35,24 @@ func TestExec(t *testing.T) {
 		"",
 		false,
 		true)
+}
+
+func TestExec2(t *testing.T) {
+	p := NewBuilder()
+	p.Execute(
+		core.ParseName("artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/sap/sap-equip-jvm-ctx"),
+		"build-image",
+		"admin:nxrpsap",
+		true,
+		"",
+		false,
+		false)
+}
+
+func TestRunInContainer(t *testing.T) {
+	err := RunInContainer("quay.io/gatblau/buildah", "localhost:8082/gatblau/art-buildah", "build-image")
+	if err != nil {
+		t.Fatalf(err.Error())
+		t.FailNow()
+	}
 }
