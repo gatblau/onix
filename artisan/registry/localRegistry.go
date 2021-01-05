@@ -477,9 +477,9 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS b
 	fmt.Printf("pushed %s\n", name.String())
 }
 
-func (r *LocalRegistry) Pull(name *core.PackageName, credentials string, useTLS bool) *Artefact {
+func (r *LocalRegistry) Pull(name *core.PackageName, credentials string, noTLS bool) *Artefact {
 	// get a reference to the remote registry
-	api := r.api(name.Domain, useTLS)
+	api := r.api(name.Domain, noTLS)
 	// get registry credentials
 	uname, pwd := core.UserPwd(credentials)
 	// get remote repository information
@@ -533,7 +533,7 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string, useTLS 
 	return r.FindArtefact(name)
 }
 
-func (r *LocalRegistry) Open(name *core.PackageName, credentials string, useTLS bool, targetPath string, certPath string, ignoreSignature bool) {
+func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS bool, targetPath string, certPath string, ignoreSignature bool) {
 	var (
 		pubKeyPath = certPath
 		err        error
@@ -551,7 +551,7 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, useTLS 
 	// if not found locally
 	if artie == nil {
 		// pull it
-		artie = r.Pull(name, credentials, useTLS)
+		artie = r.Pull(name, credentials, noTLS)
 	}
 	// get the path to the public key
 	if len(pubKeyPath) > 0 {

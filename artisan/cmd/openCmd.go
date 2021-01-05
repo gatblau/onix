@@ -18,7 +18,7 @@ import (
 type OpenCmd struct {
 	cmd             *cobra.Command
 	credentials     string
-	tls             *bool
+	noTLS           *bool
 	ignoreSignature *bool
 	path            string
 	pubPath         string
@@ -34,14 +34,14 @@ func NewOpenCmd() *OpenCmd {
 	}
 	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
-	c.tls = c.cmd.Flags().BoolP("tls", "t", true, "-t=false or --tls=false to disable https for a backend; i.e. use plain http")
+	c.noTLS = c.cmd.Flags().BoolP("no-tls", "t", false, "use -t or --no-tls to connect to a artisan registry over plain HTTP")
 	c.ignoreSignature = c.cmd.Flags().BoolP("ignore-sig", "s", false, "-s or --ignore-sig to ignore signature verification")
-	c.cmd.Flags().StringVarP(&c.pubPath, "pub", "p", "", "--pub=/path/to/public/key or -p=/path/to/public/key")
+	c.cmd.Flags().StringVarP(&c.pubPath, "pub", "p", "", "-p=/path/to/public/key or --pub=/path/to/public/key to load a public PGP key to verify the package digital signature")
 	return c
 }
 
 func (c *OpenCmd) Run(cmd *cobra.Command, args []string) {
-	if !*c.tls {
+	if *c.noTLS {
 		log.Printf("info: Transport Level Security is disabled\n")
 	}
 	// check an artefact name has been provided
@@ -59,5 +59,5 @@ func (c *OpenCmd) Run(cmd *cobra.Command, args []string) {
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	// attempt to open from local registry
-	local.Open(artie, c.credentials, *c.tls, path, c.pubPath, *c.ignoreSignature)
+	local.Open(artie, c.credentials, *c.noTLS, path, c.pubPath, *c.ignoreSignature)
 }

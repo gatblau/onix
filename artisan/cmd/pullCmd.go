@@ -18,7 +18,7 @@ import (
 type PullCmd struct {
 	cmd         *cobra.Command
 	credentials string
-	tls         *bool
+	noTLS       *bool
 	path        string
 }
 
@@ -32,12 +32,12 @@ func NewPullCmd() *PullCmd {
 	}
 	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
-	c.tls = c.cmd.Flags().BoolP("tls", "t", true, "-t=false or --tls=false to disable https for a backend; i.e. use plain http")
+	c.noTLS = c.cmd.Flags().BoolP("no-tls", "t", false, "use -t or --no-tls to connect to a artisan registry over plain HTTP")
 	return c
 }
 
 func (c *PullCmd) Run(cmd *cobra.Command, args []string) {
-	if !*c.tls {
+	if !*c.noTLS {
 		log.Printf("info: Transport Level Security is disabled\n")
 	}
 	// check an artefact name has been provided
@@ -51,5 +51,5 @@ func (c *PullCmd) Run(cmd *cobra.Command, args []string) {
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	// attempt pull from remote registry
-	local.Pull(artie, c.credentials, *c.tls)
+	local.Pull(artie, c.credentials, *c.noTLS)
 }
