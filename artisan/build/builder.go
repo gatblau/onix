@@ -152,7 +152,7 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 				b.loadFrom = filepath.Join(b.loadFrom, fromPath)
 			}
 			// copy the folder to the source directory
-			err := copyFiles(from, b.sourceDir())
+			err := copyFolder(from, b.sourceDir())
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -202,8 +202,8 @@ func (b *Builder) zipPackage(targetPath string) {
 			ext := filepath.Ext(targetPath)
 			// if the extension is not zip (e.g. jar files)
 			if ext != ".zip" {
-				// rename the file to .zip
-				core.CheckErr(os.Rename(targetPath, b.workDirZipFilename()), "failed to rename file target to .zip extension")
+				// rename the file to .zip - do not use os.Rename to avoid "invalid cross-device link" error if running in kubernetes
+				core.CheckErr(renameFile(targetPath, b.workDirZipFilename()), "failed to rename file target to .zip extension")
 				return
 			}
 			return
@@ -242,10 +242,7 @@ func (b *Builder) cloneRepo(repoUrl string, gitToken string) *git.Repository {
 func (b *Builder) openRepo(path string) *git.Repository {
 	// find .git path in the current directory or any parents
 	gitPath, _ := findGitPath(path)
-	repo, err := git.PlainOpen(gitPath)
-	if err != nil {
-		core.Msg("no git repository found, repository info will not be available\n")
-	}
+	repo, _ := git.PlainOpen(gitPath)
 	return repo
 }
 
@@ -573,22 +570,25 @@ func (b *Builder) getBuildEnv() map[string]string {
 func (b *Builder) Execute(name *core.PackageName, function string, credentials string, useTLS bool, certPath string, verify bool, interactive bool) {
 	// get a local registry handle
 	local := registry.NewLocalRegistry()
-	// get the manifest
-	m := local.GetManifest(name)
+	// check the run path exist
+	core.RunPathExists()
+	// create a temp random path to open the package
+	var path = filepath.Join(core.RunPath(), core.RandomString(10))
+	// open the package on the temp random path
+	local.Open(
+		name,
+		credentials,
+		useTLS,
+		path,
+		certPath,
+		verify)
+	a := local.FindArtefact(name)
+	// get the package seal
+	seal, err := local.GetSeal(a)
+	core.CheckErr(err, "cannot get artefact seal")
+	m := seal.Manifest
 	// check the function is exported
 	if isExported(m, function) {
-		// check the run path exist
-		core.RunPathExists()
-		// create a temp random path to open the package
-		var path = filepath.Join(core.RunPath(), core.RandomString(10))
-		// open the package on the temp random path
-		local.Open(
-			name,
-			credentials,
-			useTLS,
-			path,
-			certPath,
-			verify)
 		// run the function on the open package
 		b.Run(function, filepath.Join(path, m.Target), interactive)
 		// remove the package files
