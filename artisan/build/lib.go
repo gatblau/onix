@@ -201,7 +201,7 @@ func copyFile(src, dst string) error {
 }
 
 // copy the files in a folder recursively
-func copyFiles(src string, dst string) error {
+func copyFolder(src string, dst string) error {
 	var err error
 	var fds []os.FileInfo
 	var srcInfo os.FileInfo
@@ -218,7 +218,7 @@ func copyFiles(src string, dst string) error {
 		srcFp := path.Join(src, fd.Name())
 		dstFp := path.Join(dst, fd.Name())
 		if fd.IsDir() {
-			if err = copyFiles(srcFp, dstFp); err != nil {
+			if err = copyFolder(srcFp, dstFp); err != nil {
 				fmt.Println(err)
 			}
 		} else {
@@ -226,6 +226,30 @@ func copyFiles(src string, dst string) error {
 				fmt.Println(err)
 			}
 		}
+	}
+	return nil
+}
+
+func renameFolder(src string, dst string, force bool) (err error) {
+	err = copyFolder(src, dst)
+	if err != nil {
+		return fmt.Errorf("failed to copy source dir %s to %s: %s", src, dst, err)
+	}
+	err = os.RemoveAll(src)
+	if err != nil {
+		return fmt.Errorf("failed to cleanup source dir %s: %s", src, err)
+	}
+	return nil
+}
+
+func renameFile(src string, dst string) (err error) {
+	err = copyFile(src, dst)
+	if err != nil {
+		return fmt.Errorf("failed to copy source file %s to %s: %s", src, dst, err)
+	}
+	err = os.RemoveAll(src)
+	if err != nil {
+		return fmt.Errorf("failed to cleanup source file %s: %s", src, err)
 	}
 	return nil
 }
@@ -374,4 +398,41 @@ func findGitPath(path string) (string, error) {
 			return path, nil
 		}
 	}
+}
+
+// checks if a command is available
+func isCmdAvailable(name string) bool {
+	cmd := exec.Command("command", "-v", name)
+	if err := cmd.Run(); err != nil {
+		return false
+	}
+	return true
+}
+
+// return the command to run to launch a container
+func containerCmd() string {
+	if isCmdAvailable("docker") {
+		return "docker"
+	} else if isCmdAvailable("podman") {
+		return "podman"
+	}
+	return ""
+}
+
+// launch a container and execute a package function
+func RunInContainer(imageName, packageName, fxName string) error {
+	// determine which container tool is available in the host
+	tool := containerCmd()
+	// if no tool is available
+	if len(tool) == 0 {
+		return fmt.Errorf("either podman or docker is required to launch a container")
+	}
+	// create a container name
+	containerName := fmt.Sprintf("artisan-run-%s", core.RandomString(5))
+	// launch the container with an art exec command
+	cmd := exec.Command(tool, "run", "--name", containerName, "-d", "--rm", imageName, fmt.Sprintf("art exec %s %s", packageName, fxName))
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("cannot launch container: %s", err)
+	}
+	return nil
 }
