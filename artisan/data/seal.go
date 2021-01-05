@@ -40,6 +40,10 @@ type Seal struct {
 
 // takes the combined checksum of the Seal information and the compressed file
 func (seal *Seal) Checksum(path string) []byte {
+	// precondition: the manifest is required
+	if seal.Manifest == nil {
+		core.RaiseErr("seal has no manifest, cannot create checksum")
+	}
 	// read the compressed file
 	file, err := os.Open(path)
 	if err != nil {
