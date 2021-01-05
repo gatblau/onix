@@ -31,8 +31,8 @@ type LocalRegistry struct {
 	Repositories []*Repository `json:"repositories"`
 }
 
-func (r *LocalRegistry) api(domain string, useTLS bool) *Api {
-	return NewGenericAPI(domain, useTLS)
+func (r *LocalRegistry) api(domain string, noTLS bool) *Api {
+	return NewGenericAPI(domain, noTLS)
 }
 
 // find the Repository specified by name
@@ -420,9 +420,9 @@ func (r *LocalRegistry) ListQ() {
 	core.CheckErr(err, "failed to flush output")
 }
 
-func (r *LocalRegistry) Push(name *core.PackageName, credentials string, useTLS bool) {
+func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS bool) {
 	// get a reference to the remote registry
-	api := r.api(name.Domain, useTLS)
+	api := r.api(name.Domain, noTLS)
 	// get registry credentials
 	uname, pwd := core.UserPwd(credentials)
 	// fetch the artefact info from the local registry
