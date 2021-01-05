@@ -533,7 +533,7 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string, useTLS 
 	return r.FindArtefact(name)
 }
 
-func (r *LocalRegistry) Open(name *core.PackageName, credentials string, useTLS bool, targetPath string, certPath string, verify bool) {
+func (r *LocalRegistry) Open(name *core.PackageName, credentials string, useTLS bool, targetPath string, certPath string, ignoreSignature bool) {
 	var (
 		pubKeyPath = certPath
 		err        error
@@ -561,9 +561,9 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, useTLS 
 		}
 	}
 	// get the artefact seal
-	seal, err := r.getSeal(artie)
+	seal, err := r.GetSeal(artie)
 	core.CheckErr(err, "cannot read artefact seal")
-	if verify {
+	if !ignoreSignature {
 		// var pubKey *rsa.PublicKey
 		var pgp *crypto.PGP
 		if len(pubKeyPath) > 0 {
@@ -755,7 +755,7 @@ func (r *LocalRegistry) artCoords(name *core.PackageName, art *Artefact) (int, i
 	return -1, -1
 }
 
-func (r *LocalRegistry) getSeal(name *Artefact) (*data.Seal, error) {
+func (r *LocalRegistry) GetSeal(name *Artefact) (*data.Seal, error) {
 	sealFilename := path.Join(r.Path(), fmt.Sprintf("%s.json", name.FileRef))
 	sealFile, err := os.Open(sealFilename)
 	if err != nil {
@@ -849,7 +849,7 @@ func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
 	if a == nil {
 		core.RaiseErr("artefact %s not found", name)
 	}
-	seal, err := r.getSeal(a)
+	seal, err := r.GetSeal(a)
 	core.CheckErr(err, "cannot get artefact seal")
 	return seal.Manifest
 }
