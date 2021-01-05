@@ -71,7 +71,7 @@ type Profile struct {
 	// the pipeline Icon
 	Icon string `yaml:"icon"`
 	// runtime image that should be used to execute functions in the package
-	Runtime string `yaml:"runtime"`
+	Runtime string `yaml:"runtime,omitempty"`
 	// Sonar configuration
 	Sonar *Sonar `yaml:"sonar,omitempty"`
 	// a set of labels associated with the profile
