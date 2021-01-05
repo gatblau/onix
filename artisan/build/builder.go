@@ -482,6 +482,9 @@ func (b *Builder) createSeal(artie *core.PackageName, profile *data.Profile) *da
 	}
 	// take the hash of the zip file and seal info combined
 	s := new(data.Seal)
+	// the seal needs the manifest to create a checksum
+	s.Manifest = info
+	// gets the combined checksum of the manifest and the package
 	sum := s.Checksum(b.workDirZipFilename())
 	// load private key
 	pk, err := crypto.LoadPGPPrivateKey(artie.Group, artie.Name)
@@ -489,8 +492,6 @@ func (b *Builder) createSeal(artie *core.PackageName, profile *data.Profile) *da
 	// create a PGP cryptographic signature
 	signature, err := pk.Sign(sum)
 	core.CheckErr(err, "failed to create cryptographic signature")
-	// construct the seal
-	s.Manifest = info
 	// the combined checksum of the seal info and the package
 	s.Digest = fmt.Sprintf("sha256:%s", base64.StdEncoding.EncodeToString(sum))
 	// the crypto signature
