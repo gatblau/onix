@@ -282,7 +282,7 @@ func (b *Builder) setUniqueIdName(repo *git.Repository) {
 		// get the commit head and add it to the unique reference
 		ref, err := repo.Head()
 		if err != nil {
-			log.Fatal(err)
+			core.RaiseErr("the git repository exists but does not have a commit yet, you need at least one commit before continuing: this is so that a build reference with a commit head can be available within the build context")
 		}
 		b.commit = ref.Hash().String()
 		hash = fmt.Sprintf("-%s", ref.Hash().String()[:10])
