@@ -48,7 +48,15 @@ func NewBuildCmd() *BuildCmd {
 }
 
 func (b *BuildCmd) Run(cmd *cobra.Command, args []string) {
-	b.from = args[0]
+	// validate build path
+	switch len(args) {
+	case 0:
+		b.from = "."
+	case 1:
+		b.from = args[0]
+	default:
+		core.RaiseErr("too many arguments")
+	}
 	builder := build.NewBuilder()
 	builder.Build(b.from, b.fromPath, b.gitToken, core.ParseName(b.artefactName), b.profile, *b.copySource, *b.interactive)
 }
