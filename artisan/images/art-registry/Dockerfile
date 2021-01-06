@@ -11,11 +11,9 @@ LABEL author="gatblau"
 LABEL maintainer="onix@gatblau.org"
 
 ARG UNAME=artisan
-ARG APP_NAME=art
 
 ENV UID=1000
 ENV GID=1000
-ENV APP=$APP_NAME
 
 RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y && \
     microdnf install shadow-utils.x86_64 && \
@@ -33,10 +31,10 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
 
 WORKDIR /app
 
-COPY ./images/bin/output/$APP_NAME /app/$APP_NAME
+COPY ./images/bin/output/art ./
 
 USER $UNAME
 
-CMD ["sh", "-c", "/app/${APP} serve"]
+CMD ["sh", "-c", "/app/art serve"]
 
 EXPOSE 8082/tcp
