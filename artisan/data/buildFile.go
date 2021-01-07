@@ -8,10 +8,10 @@
 package data
 
 import (
+	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"log"
 )
 
 // structure of build.yaml file
@@ -123,17 +123,17 @@ func (p *Profile) Survey(bf *BuildFile) map[string]string {
 	return updatedEnvironment
 }
 
-func LoadBuildFile(path string) *BuildFile {
+func LoadBuildFile(path string) (*BuildFile, error) {
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("cannot load build file from %s: %s", path, err)
 	}
 	buildFile := &BuildFile{}
 	err = yaml.Unmarshal(bytes, buildFile)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("cannot unmarshal build file %s: %s", path, err)
 	}
-	return buildFile
+	return buildFile, nil
 }
 
 type Sonar struct {
