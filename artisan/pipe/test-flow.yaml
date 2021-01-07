@@ -1,0 +1,34 @@
+---
+name: Java Application Builder
+description: Builds a Artisan content package for a Java Application
+steps:
+  - name: build-app
+    description: compile and test the java app
+    runtime: quay.io/gatblau/art-java
+    function: build-app
+  - name: scan-app
+    description: runs a code quality check scan
+    runtime: quay.io/gatblau/art-sonar
+    package: ${ART_REG_DOMAIN}/library/sonar-scanner
+    function: scan-app
+    secret:
+      - name: PUB_KEY
+        description: the public PGP key used to open the Sonar scanner executable package
+        path: /keys/root_rsa_pub.pgp
+      - name: ART_REG_USER
+        description: the artisan registry user
+      - name: ART_REG_PWD
+        description: the artisan registry password
+  - name: package-app
+    description: package and signs the app and publish it
+    runtime: quay.io/gatblau/art-java
+    function: publish-app
+    secret:
+      - name: PK_KEY
+        description: the private PGP key used to sign the java package
+        path: /keys/root_rsa_key.pgp
+      - name: ART_REG_USER
+        description: the artisan registry user
+      - name: ART_REG_PWD
+        description: the artisan registry password
+...
