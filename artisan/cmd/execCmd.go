@@ -15,14 +15,14 @@ import (
 
 // executes an exported function
 type ExecCmd struct {
-	cmd         *cobra.Command
-	interactive *bool
-	container   *bool
-	credentials string
-	tls         *bool
-	verify      *bool
-	path        string
-	pubPath     string
+	cmd             *cobra.Command
+	interactive     *bool
+	container       *bool
+	credentials     string
+	noTLS           *bool
+	ignoreSignature *bool
+	path            string
+	pubPath         string
 }
 
 func NewExecCmd() *ExecCmd {
@@ -36,8 +36,8 @@ func NewExecCmd() *ExecCmd {
 	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
 	c.container = c.cmd.Flags().BoolP("container", "c", false, "runs the function within a container of the image specified in the manifest runtime property")
 	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
-	c.tls = c.cmd.Flags().BoolP("tls", "t", true, "-t=false or --tls=false to disable https for a backend; i.e. use plain http")
-	c.verify = c.cmd.Flags().BoolP("verify", "v", true, "-v=false or --verify=false to signature verification")
+	c.noTLS = c.cmd.Flags().BoolP("no-tls", "t", false, "use -t or --no-tls to connect to a artisan registry over plain HTTP")
+	c.ignoreSignature = c.cmd.Flags().BoolP("ignore-sig", "s", false, "-s or --ignore-sig to ignore signature verification")
 	c.cmd.Flags().StringVarP(&c.pubPath, "pub", "p", "", "--pub=/path/to/public/key or -p=/path/to/public/key")
 	c.cmd.Run = c.Run
 	return c
@@ -54,5 +54,5 @@ func (r *ExecCmd) Run(cmd *cobra.Command, args []string) {
 	// get a builder handle
 	builder := build.NewBuilder()
 	// run the function on the open package
-	builder.Execute(core.ParseName(pack), function, r.credentials, *r.tls, r.pubPath, *r.verify, *r.interactive)
+	builder.Execute(core.ParseName(pack), function, r.credentials, *r.noTLS, r.pubPath, *r.ignoreSignature, *r.interactive)
 }
