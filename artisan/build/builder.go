@@ -111,7 +111,9 @@ func (b *Builder) Run(function string, path string, interactive bool) {
 		}
 		localPath = absPath
 	}
-	b.buildFile = data.LoadBuildFile(filepath.Join(localPath, "build.yaml"))
+	bf, err := data.LoadBuildFile(filepath.Join(localPath, "build.yaml"))
+	core.CheckErr(err, "cannot load build file")
+	b.buildFile = bf
 	b.runFunction(function, localPath, interactive)
 }
 
@@ -169,7 +171,9 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 		repo = b.openRepo(localPath)
 	}
 	// read build.yaml
-	b.buildFile = data.LoadBuildFile(filepath.Join(b.loadFrom, "build.yaml"))
+	bf, err := data.LoadBuildFile(filepath.Join(b.loadFrom, "build.yaml"))
+	core.CheckErr(err, "cannot load build file")
+	b.buildFile = bf
 	return repo
 }
 
