@@ -1,0 +1,29 @@
+# test build file
+---
+env:
+  CGO_ENABLED: 0
+  GOARCH: amd64
+  APP_VERSION: 0.0.4
+  LIFECYCLE_STAGE: alpha
+
+profiles:
+  - name: linux
+    description: build the artisan package
+    default: true
+    type: golang
+    env:
+      GOOS: linux
+    run:
+      - $(build-linux)
+    target: ../images/bin/output/art
+
+functions:
+  - name: build-linux
+    description: builds the Artisan binary for the linux platform
+    env:
+      GOOS: linux
+    run:
+      - sh ../images/bin/version.sh ${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE}
+      - go fmt
+      - go build -o images/bin/output/art -v
+...
