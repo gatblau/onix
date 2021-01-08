@@ -55,13 +55,15 @@ func NewBuilder() *Builder {
 	return builder
 }
 
-// build the artefact
+// build the package
 // from: the source to build, either http based git repository or local system git repository
 // gitToken: if provided it is used to clone a remote repository that has authentication enabled
-// artefactName: the full name of the artefact to be built including the tag
+// name: the full name of the package to be built including the tag
 // profileName: the name of the profile to be built. If empty then the default profile is built. If no default profile exists, the first profile is built.
 // copy: indicates whether a copy should be made of the project files before packaging (only valid for from location in the file system)
-func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName, profileName string, copy bool, interactive bool) {
+// interactive: true if the console should survey for missing variables
+// pk: the path of the private PGP key to use to sign the package, if empty then load from artisan local registry
+func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName, profileName string, copy bool, interactive bool, pkPath string) {
 	b.from = from
 	// prepare the source ready for the build
 	repo := b.prepareSource(from, fromPath, gitToken, name, copy)
@@ -85,7 +87,7 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 	// compress the target defined in the build.yaml' profile
 	b.zipPackage(targetPath)
 	// creates a seal
-	s := b.createSeal(name, buildProfile)
+	s := b.createSeal(name, buildProfile, pkPath)
 	// add the artefact to the local repo
 	b.localReg.Add(b.workDirZipFilename(), b.repoName, s)
 	// cleanup all relevant folders and move package to target location
@@ -459,7 +461,7 @@ func (b *Builder) inSourceDirectory(relativePath string) string {
 }
 
 // create the package Seal
-func (b *Builder) createSeal(artie *core.PackageName, profile *data.Profile) *data.Seal {
+func (b *Builder) createSeal(artie *core.PackageName, profile *data.Profile, pkPath string) *data.Seal {
 	filename := b.uniqueIdName
 	// merge the labels in the profile with the ones at the build file level
 	labels := mergeMaps(b.buildFile.Labels, profile.Labels)
@@ -491,8 +493,14 @@ func (b *Builder) createSeal(artie *core.PackageName, profile *data.Profile) *da
 	// gets the combined checksum of the manifest and the package
 	sum := s.Checksum(b.workDirZipFilename())
 	// load private key
-	pk, err := crypto.LoadPGPPrivateKey(artie.Group, artie.Name)
-	core.CheckErr(err, "cannot load signing key")
+	var pk *crypto.PGP
+	if len(pkPath) == 0 {
+		pk, err = crypto.LoadPGPPrivateKey(artie.Group, artie.Name)
+		core.CheckErr(err, "cannot load signing key")
+	} else {
+		pk, err = crypto.LoadPGP(pkPath)
+		core.CheckErr(err, "cannot load signing key")
+	}
 	// create a PGP cryptographic signature
 	signature, err := pk.Sign(sum)
 	core.CheckErr(err, "failed to create cryptographic signature")

@@ -15,7 +15,7 @@ import (
 
 func TestBuild(t *testing.T) {
 	p := NewBuilder()
-	p.Build(".", "", "", core.ParseName("artisan"), "linux", false, false)
+	p.Build(".", "", "", core.ParseName("artisan"), "linux", false, false, "")
 	l := registry.NewLocalRegistry()
 	l.Open(core.ParseName("artisan"), "", false, "test", "", true)
 }
