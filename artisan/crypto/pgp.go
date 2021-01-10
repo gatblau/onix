@@ -108,14 +108,11 @@ func LoadPGP(filename string) (*PGP, error) {
 }
 
 // check if the PGP entity has a private key, if not an error is returned
-func (p *PGP) HasPrivate() error {
+func (p *PGP) HasPrivate() bool {
 	if p.entity == nil {
 		core.RaiseErr("PGP object does not contain entity")
 	}
-	if p.entity.PrivateKey == nil {
-		return fmt.Errorf("private key not found")
-	}
-	return nil
+	return p.entity.PrivateKey != nil
 }
 
 // signs the specified message (requires loading a private key)

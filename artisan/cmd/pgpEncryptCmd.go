@@ -32,7 +32,7 @@ func NewPGPEncryptCmd() *PGPEncryptCmd {
 			Long:  ``,
 		},
 	}
-	c.cmd.Flags().StringVarP(&c.keyPath, "key", "k", "", "the path to the private key to use")
+	c.cmd.Flags().StringVarP(&c.keyPath, "public-key", "p", "", "the path to the PUBLIC PGP key to use")
 	c.cmd.Flags().StringVarP(&c.group, "group", "g", "", "the artefact group of the private key to use")
 	c.cmd.Flags().StringVarP(&c.name, "name", "n", "", "the artefact name of the private key to use")
 	c.cmd.Run = c.Run
@@ -55,6 +55,9 @@ func (b *PGPEncryptCmd) Run(cmd *cobra.Command, args []string) {
 		// load the crypto key
 		pgp, err = crypto.LoadPGP(core.ToAbs(b.keyPath))
 		core.CheckErr(err, "cannot load public key")
+		if pgp.HasPrivate() {
+			core.RaiseErr("the specified key is private, a public key is required")
+		}
 	} else
 	// load the key based on the local repository resolution process
 	{
