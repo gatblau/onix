@@ -29,13 +29,13 @@ func NewPGPDecryptCmd() *PGPDecryptCmd {
 	c := &PGPDecryptCmd{
 		cmd: &cobra.Command{
 			Use:   "decrypt [flags] filename",
-			Short: "decrypts a file using a designated PGP private key",
+			Short: "decrypts a file using a designated PRIVATE PGP key",
 			Long:  ``,
 		},
 	}
-	c.cmd.Flags().StringVarP(&c.keyPath, "key", "k", "", "the path to the private key to use")
-	c.cmd.Flags().StringVarP(&c.group, "group", "g", "", "the artefact group of the private key to use")
-	c.cmd.Flags().StringVarP(&c.keyPath, "name", "n", "", "the artefact name of the private key to use")
+	c.cmd.Flags().StringVarP(&c.keyPath, "private-key", "k", "", "the path to the PRIVATE PGP key to use")
+	c.cmd.Flags().StringVarP(&c.group, "group", "g", "", "the package group of the PRIVATE PGP key to use")
+	c.cmd.Flags().StringVarP(&c.keyPath, "name", "n", "", "the package name of PRIVATE PGP key to use")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -67,7 +67,9 @@ func (b *PGPDecryptCmd) Run(cmd *cobra.Command, args []string) {
 		core.CheckErr(err, "cannot load private key")
 	}
 	// check the key file provided has a private key
-	core.CheckErr(pgp.HasPrivate(), "the provided key file does not contain a private key, cannot decrypt")
+	if !pgp.HasPrivate() {
+		core.RaiseErr("the provided key file does not contain a private key, cannot decrypt")
+	}
 	// read the file to encrypt
 	file, err = ioutil.ReadFile(path)
 	core.CheckErr(err, "cannot load file to decrypt: %s", path)
