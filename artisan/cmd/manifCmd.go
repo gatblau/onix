@@ -43,8 +43,10 @@ func (b *ManifestCmd) Run(cmd *cobra.Command, args []string) {
 	}
 	// create a local registry
 	local := registry.NewLocalRegistry()
+	name, err := core.ParseName(args[0])
+	core.CheckErr(err, "invalid package name")
 	// get the artefact manifest
-	m := local.GetManifest(core.ParseName(args[0]))
+	m := local.GetManifest(name)
 	// marshal the manifest
 	bytes, err := json.MarshalIndent(m, "", "  ")
 	core.CheckErr(err, "cannot marshal manifest")

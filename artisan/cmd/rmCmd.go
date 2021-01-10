@@ -45,7 +45,8 @@ func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 func (c *RmCmd) toArtURIs(args []string) []*core.PackageName {
 	var uris = make([]*core.PackageName, 0)
 	for _, arg := range args {
-		uri := core.ParseName(arg)
+		uri, err := core.ParseName(arg)
+		core.CheckErr(err, "invalid package name")
 		uris = append(uris, uri)
 	}
 	return uris

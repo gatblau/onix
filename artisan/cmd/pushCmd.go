@@ -46,9 +46,10 @@ func (c *PushCmd) Run(cmd *cobra.Command, args []string) {
 	// get the name of the artefact to push
 	nameTag := args[0]
 	// validate the name
-	artie := core.ParseName(nameTag)
+	packageName, err := core.ParseName(nameTag)
+	core.CheckErr(err, "invalid package name")
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	// attempt upload to remote repository
-	local.Push(artie, c.credentials, *c.noTLS)
+	local.Push(packageName, c.credentials, *c.noTLS)
 }

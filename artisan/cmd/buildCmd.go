@@ -60,5 +60,7 @@ func (b *BuildCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("too many arguments")
 	}
 	builder := build.NewBuilder()
-	builder.Build(b.from, b.fromPath, b.gitToken, core.ParseName(b.artefactName), b.profile, *b.copySource, *b.interactive, b.keyPath)
+	name, err := core.ParseName(b.artefactName)
+	core.CheckErr(err, "invalid package name")
+	builder.Build(b.from, b.fromPath, b.gitToken, name, b.profile, *b.copySource, *b.interactive, b.keyPath)
 }
