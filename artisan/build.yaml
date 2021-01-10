@@ -50,9 +50,6 @@ profiles:
       - $(build-windows)
     target: images/bin/output/art.exe
 
-  - name: art-buildah
-    target: images/art-buildah
-
 functions:
   - name: build
     description: build Artisan binary in all configurations
@@ -60,6 +57,7 @@ functions:
       - rm -rf ./images/bin/output
       - $(build-linux)
       - $(build-windows)
+      - $(build-darwin)
 
   - name: build-linux
     description: builds the Artisan binary file for the linux platform
@@ -78,6 +76,20 @@ functions:
       - sh ./images/bin/version.sh ${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE}
       - go fmt
       - go build -o images/bin/output/art.exe -v
+
+  - name: build-darwin
+    description: builds the Artisan binary file for MacOS
+    env:
+      GOOS: darwin
+    run:
+      - sh ./images/bin/version.sh ${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE}
+      - go fmt
+      - go build -o images/bin/output/art -v
+
+  - name: import-mac
+    description: imports the CLI in MacOS
+    run:
+      - cp images/bin/output/art /usr/local/bin/art
 
   - name: build-art-registry
     description: creates an Artisan registry service image

@@ -46,5 +46,5 @@ type Manifest struct {
 type FxInfo struct {
 	Name        string
 	Description string
-	Input       []*Input
+	Input       *Input
 }

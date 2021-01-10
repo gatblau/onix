@@ -12,6 +12,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"path/filepath"
 )
 
 // structure of build.yaml file
@@ -124,6 +125,11 @@ func (p *Profile) Survey(bf *BuildFile) map[string]string {
 }
 
 func LoadBuildFile(path string) (*BuildFile, error) {
+	if !filepath.IsAbs(path) {
+		abs, err := filepath.Abs(path)
+		core.CheckErr(err, "cannot get absolute path for %s", path)
+		path = abs
+	}
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot load build file from %s: %s", path, err)
