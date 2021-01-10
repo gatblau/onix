@@ -8,9 +8,11 @@
 package data
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/crypto"
 	"net/url"
 	"path/filepath"
 	"reflect"
@@ -72,6 +74,15 @@ type Secret struct {
 	Value string `yaml:"value,omitempty"`
 }
 
+func (s *Secret) Encrypt(pubKey *crypto.PGP) error {
+	encValue, err := pubKey.Encrypt([]byte(s.Value))
+	if err != nil {
+		return fmt.Errorf("cannot encrypt secret %s: %s", s.Name, err)
+	}
+	s.Value = base64.StdEncoding.EncodeToString(encValue)
+	return nil
+}
+
 type Var struct {
 	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
@@ -105,6 +116,9 @@ func (f *Function) SurveyInputs() {
 			// survey the variables
 			f.surveyInputVar()
 		}
+		if f.Input.Secret != nil {
+			f.surveyInputSecret()
+		}
 	}
 }
 
@@ -119,7 +133,7 @@ func (f *Function) surveyInputVar() {
 		}
 		// prompt for the value
 		prompt := &survey.Input{
-			Message: fmt.Sprintf("%s (%s):", variable.Name, desc),
+			Message: fmt.Sprintf("var => %s (%s):", variable.Name, desc),
 		}
 		// if required then add required validator
 		if variable.Required {
@@ -135,6 +149,21 @@ func (f *Function) surveyInputVar() {
 			validator = survey.ComposeValidators(validator, isPackageName)
 		}
 		core.HandleCtrlC(survey.AskOne(prompt, &variable.Value, survey.WithValidator(validator)))
+	}
+}
+
+func (f *Function) surveyInputSecret() {
+	for _, secret := range f.Input.Secret {
+		desc := ""
+		// if a description is available use it
+		if len(secret.Description) > 0 {
+			desc = secret.Description
+		}
+		// prompt for the value
+		prompt := &survey.Password{
+			Message: fmt.Sprintf("secret => %s (%s):", secret.Name, desc),
+		}
+		core.HandleCtrlC(survey.AskOne(prompt, &secret.Value, survey.WithValidator(survey.Required)))
 	}
 }
 
