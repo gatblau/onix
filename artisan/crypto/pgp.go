@@ -18,6 +18,7 @@ import (
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"
+	"golang.org/x/crypto/openpgp/s2k"
 	"io"
 	"io/ioutil"
 	"os"
@@ -35,6 +36,11 @@ type PGP struct {
 	email   string
 }
 
+const (
+	defaultHash   = crypto.SHA256
+	defaultCipher = packet.CipherAES128
+)
+
 // creates a new PGP entity
 func NewPGP(name, comment, email string, bits int) *PGP {
 	var p = &PGP{
@@ -42,8 +48,8 @@ func NewPGP(name, comment, email string, bits int) *PGP {
 		comment: comment,
 		email:   email,
 		conf: &packet.Config{
-			DefaultCipher: packet.CipherAES128,
-			DefaultHash:   crypto.SHA256,
+			DefaultCipher: defaultCipher,
+			DefaultHash:   defaultHash,
 			RSABits:       bits,
 			Time: func() time.Time {
 				return time.Now()
@@ -81,8 +87,23 @@ func LoadPGP(filename string) (*PGP, error) {
 	if len(entityList) == 0 {
 		return nil, fmt.Errorf("no PGP entities found in %s", filename)
 	}
+	entity := entityList[0]
+
+	// NOTE: if this is a public key, adds the default cipher to the id self-signature so that the public key can be used to
+	// encrypt messages without failing with message:
+	// "cannot encrypt because no candidate hash functions are compiled in. (Wanted RIPEMD160 in this case.)
+	// PGP Encrypt defaults to PreferredSymmetric=Cast5 & PreferredHash=Ripemd160
+	// To avoid the error above, it has to change the required values
+	// It needs to be in the list of preferred algorithms specified in the self-signature of the primary identity
+	// there should only be one, but cycle over all identities for completeness
+	for _, id := range entity.Identities {
+		preferredHashId, _ := s2k.HashToHashId(defaultHash)
+		id.SelfSignature.PreferredHash = []uint8{preferredHashId}
+		id.SelfSignature.PreferredSymmetric = []uint8{uint8(defaultCipher)}
+	}
+
 	return &PGP{
-		entity: entityList[0],
+		entity: entity,
 	}, nil
 }
 
