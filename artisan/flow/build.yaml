@@ -1,0 +1,37 @@
+# test build.yaml for a typical java application
+---
+profiles:
+  - name: app
+    description: packages the java uber jar file
+    default: true
+    type: java
+    application: test-app
+    target: target/test-app-1.0-SNAPSHOT-runner.jar
+
+functions:
+  - name: build-app
+    description: compiles and tests the application
+    run:
+      - mvn package -DskipTests=true
+      - mvn test
+
+  - name: publish-app
+    description: packages and publishes the application
+    input:
+      var:
+        - name: APP_PACKAGE_NAME
+          description: the name:tag for the application package to be published
+          required: true
+          type: name
+
+      secret:
+        - name: ART_REG_USER
+          description: the artisan registry user
+          aggregate: true
+        - name: ART_REG_PWD
+          description: the artisan registry password
+
+    run:
+      - art build -t=${APP_PACKAGE_NAME}
+      - art push ${APP_PACKAGE_NAME} -u=${ART_REG_USER}:${ART_REG_PWD}
+...

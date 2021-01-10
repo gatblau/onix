@@ -11,8 +11,8 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-uuid v1.0.2
 	github.com/joho/godotenv v1.3.0
-	github.com/onsi/ginkgo v1.7.0
-	github.com/onsi/gomega v1.4.3
+	github.com/onsi/ginkgo v1.11.0
+	github.com/onsi/gomega v1.7.0
 	github.com/prometheus/client_golang v1.8.0
 	github.com/spf13/cobra v1.1.1
 	github.com/swaggo/http-swagger v1.0.0
@@ -23,4 +23,5 @@ require (
 	golang.org/x/tools v0.0.0-20201215192005-fa10ef0b8743 // indirect
 	google.golang.org/protobuf v1.25.1-0.20200805231151-a709e31e5d12 // indirect
 	gopkg.in/yaml.v2 v2.4.0
+	k8s.io/api v0.20.1
 )
