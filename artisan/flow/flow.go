@@ -26,13 +26,6 @@ func (f *Flow) StepByFx(fxName string) *Step {
 	return nil
 }
 
-type Secret struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
-	Path        string `yaml:"path,omitempty"`
-	Value       string `yaml:"value,omitempty"`
-}
-
 type Step struct {
 	Name        string      `yaml:"name"`
 	Description string      `yaml:"description,omitempty"`

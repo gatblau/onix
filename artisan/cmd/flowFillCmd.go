@@ -12,8 +12,6 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/flow"
 	"github.com/spf13/cobra"
-	"path"
-	"path/filepath"
 )
 
 // list local artefacts
@@ -26,9 +24,11 @@ type FlowFillCmd struct {
 func NewFlowFillCmd() *FlowFillCmd {
 	c := &FlowFillCmd{
 		cmd: &cobra.Command{
-			Use:   "fill [flags] [/path/to/flow.yaml]",
-			Short: "fills in a bare flow by adding the required variables, secrets and keys",
-			Long:  `fills in a bare flow by adding the required variables, secrets and keys`,
+			Use: "fill [flags] [/path/to/flow.yaml] [path/to/pgp/public/key]",
+			Short: "fills in a bare flow by adding the required variables, secrets and keys.\n" +
+				"Secrets and keys are PGP encrypted by default using the provided public PGP key.",
+			Long: `fills in a bare flow by adding the required variables, secrets and keys.\n
+Secrets and keys are PGP encrypted by default using the provided public PGP key.`,
 		},
 	}
 	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env; the path to a file containing environment variables to use")
@@ -38,24 +38,19 @@ func NewFlowFillCmd() *FlowFillCmd {
 }
 
 func (c *FlowFillCmd) Run(cmd *cobra.Command, args []string) {
-	var flowPath string
-	switch len(args) {
-	case 0:
-		flowPath = ""
-	case 1:
-		flowPath = args[0]
-		if !path.IsAbs(flowPath) {
-			abs, err := filepath.Abs(flowPath)
-			core.CheckErr(err, "cannot convert '%s' to absolute path", flowPath)
-			flowPath = abs
-		}
-	default:
-		core.RaiseErr("too many arguments")
+	var flowPath, pubPath string
+	if len(args) == 2 {
+		flowPath = core.ToAbsPath(args[0])
+		pubPath = core.ToAbsPath(args[1])
+	} else if len(args) < 2 {
+		core.RaiseErr("insufficient arguments: need the paths to the flow the PUBLIC PGP key files")
+	} else if len(args) > 2 {
+		core.RaiseErr("insufficient arguments: only need the paths to the flow the PUBLIC PGP key files")
 	}
 	// try to load env from file
 	core.LoadEnvFromFile(c.envFilename)
 	// loads a bare flow from the path
-	g, err := flow.NewFromPath(flowPath, c.buildFilePath)
+	g, err := flow.NewFromPath(flowPath, pubPath, c.buildFilePath)
 	core.CheckErr(err, "failed to load bare flow")
 	// fills in the bare flow
 	g.FillIn()

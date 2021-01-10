@@ -9,6 +9,8 @@ package flow
 
 import (
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/data"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -20,9 +22,10 @@ import (
 type Manager struct {
 	flow      *Flow
 	buildFile *data.BuildFile
+	pub       *crypto.PGP
 }
 
-func NewFromPath(flowPath, buildPath string) (*Manager, error) {
+func NewFromPath(flowPath, pubKeyPath, buildPath string) (*Manager, error) {
 	m := new(Manager)
 	flow, err := loadFlow(flowPath)
 	if err != nil {
@@ -36,6 +39,11 @@ func NewFromPath(flowPath, buildPath string) (*Manager, error) {
 			return nil, fmt.Errorf("cannot load build file from %s: %s", buildPath, err)
 		}
 		m.buildFile = buildFile
+	}
+	m.pub, err = crypto.LoadPGP(pubKeyPath)
+	core.CheckErr(err, "cannot load public PGP encryption key")
+	if m.pub.HasPrivate() {
+		return nil, fmt.Errorf("a private PGP key has been provided but a public PGP key is required")
 	}
 	err = m.validate()
 	if err != nil {
@@ -54,7 +62,7 @@ func (m *Manager) FillIn() {
 			m.loadPackageInfo(step.Package)
 		} else {
 			if len(step.Function) > 0 {
-				m.setStepVar(step)
+				m.setStepInfo(step)
 			} else {
 				// do nothing
 			}
@@ -108,7 +116,7 @@ func (m *Manager) loadPackageInfo(pak string) {
 
 }
 
-func (m *Manager) setStepVar(step *Step) {
+func (m *Manager) setStepInfo(step *Step) {
 	if m.buildFile != nil {
 		// get the function in question
 		fx := m.buildFile.Fx(step.Function)
@@ -119,11 +127,21 @@ func (m *Manager) setStepVar(step *Step) {
 			// set the step input vars to the ones surveyed in the function
 			if step.Input == nil {
 				step.Input = &data.Input{
-					Var: fx.Input.Var,
+					Var:    fx.Input.Var,
+					Secret: m.encryptSecrets(fx.Input.Secret),
 				}
 			} else if step.Input.Var == nil {
 				step.Input.Var = fx.Input.Var
+				step.Input.Secret = m.encryptSecrets(fx.Input.Secret)
 			}
 		}
 	}
+}
+
+func (m *Manager) encryptSecrets(secrets []*data.Secret) []*data.Secret {
+	for _, secret := range secrets {
+		err := secret.Encrypt(m.pub)
+		core.CheckErr(err, "cannot encrypt secret")
+	}
+	return secrets
 }

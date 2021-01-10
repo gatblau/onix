@@ -260,3 +260,12 @@ func RandomString(n int) string {
 	}
 	return string(b)
 }
+
+func ToAbsPath(flowPath string) string {
+	if !path.IsAbs(flowPath) {
+		abs, err := filepath.Abs(flowPath)
+		CheckErr(err, "cannot convert '%s' to absolute path", flowPath)
+		flowPath = abs
+	}
+	return flowPath
+}

@@ -30,6 +30,7 @@ functions:
           aggregate: true
         - name: ART_REG_PWD
           description: the artisan registry password
+          aggregate: true
 
     run:
       - art build -t=${APP_PACKAGE_NAME}
