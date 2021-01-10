@@ -188,9 +188,13 @@ func (s *Server) artefactUploadHandler(w http.ResponseWriter, r *http.Request) {
 	repoName := vars["repository-name"]
 	artefactTag := vars["artefact-tag"]
 	// constructs the artefact name
-	name := core.ParseName(fmt.Sprintf("%s/%s:%s", repoGroup, repoName, artefactTag))
+	nameStr := fmt.Sprintf("%s/%s:%s", repoGroup, repoName, artefactTag)
+	name, err := core.ParseName(nameStr)
+	if err != nil {
+		log.Fatalf("invalid package name %s: %s", nameStr, err)
+	}
 	// file upload limit in MB
-	err := r.ParseMultipartForm(s.conf.HttpUploadLimit() << 20)
+	err = r.ParseMultipartForm(s.conf.HttpUploadLimit() << 20)
 	if err != nil {
 		s.writeError(w, fmt.Errorf("error parsing multipart form: %s", err), http.StatusBadRequest)
 		return

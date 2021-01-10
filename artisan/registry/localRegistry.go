@@ -104,7 +104,11 @@ func (r *LocalRegistry) FindArtefactsById(id string) []*core.PackageName {
 			// try and match against the artefact ID substring
 			if strings.Contains(artefact.Id, id) {
 				for _, tag := range artefact.Tags {
-					names = append(names, core.ParseName(fmt.Sprintf("%s:%s", repository.Repository, tag)))
+					name, err := core.ParseName(fmt.Sprintf("%s:%s", repository.Repository, tag))
+					if err != nil {
+						log.Fatalf(err.Error())
+					}
+					names = append(names, name)
 				}
 			}
 		}

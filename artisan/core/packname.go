@@ -9,7 +9,6 @@ package core
 
 import (
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -42,13 +41,13 @@ func (a *PackageName) Repository() string {
 	return fmt.Sprintf("%s/%s", a.Group, a.Name)
 }
 
-func ParseName(name string) *PackageName {
+func ParseName(name string) (*PackageName, error) {
 	n := &PackageName{}
 	components := strings.Split(name, "/")
 	// validate component elements
 	for _, component := range components {
 		if !domainComponentRegexp.MatchString(component) {
-			log.Fatal(fmt.Sprintf("artefact name %s: component part %s is invalid", name, component))
+			return nil, fmt.Errorf("artefact name %s: component part %s is invalid", name, component)
 		}
 	}
 	if len(components) == 1 {
@@ -83,12 +82,12 @@ func ParseName(name string) *PackageName {
 	// validate
 	if len(n.Domain) > 0 {
 		if !domainComponentRegexp.MatchString(n.Domain) {
-			log.Fatal(fmt.Sprintf("artefact name %s: domain %s is invalid", name, n.Domain))
+			return nil, fmt.Errorf("artefact name %s: domain %s is invalid", name, n.Domain)
 		}
 	}
 	if len(n.Tag) > 0 {
 		if !tagRegexp.MatchString(n.Tag) {
-			log.Fatal(fmt.Sprintf("artefact name %s: tag %s is invalid", name, n.Tag))
+			return nil, fmt.Errorf("artefact name %s: tag %s is invalid", name, n.Tag)
 		}
 	}
 	// set defaults if there are missing values
@@ -101,5 +100,5 @@ func ParseName(name string) *PackageName {
 	if len(n.Tag) == 0 {
 		n.Tag = "latest"
 	}
-	return n
+	return n, nil
 }
