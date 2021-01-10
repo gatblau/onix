@@ -34,5 +34,9 @@ func (c *TagCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("source and target artefact tags are required")
 	}
 	l := registry.NewLocalRegistry()
-	l.Tag(core.ParseName(args[0]), core.ParseName(args[1]))
+	srcName, err := core.ParseName(args[0])
+	core.CheckErr(err, "invalid source package name")
+	destName, err := core.ParseName(args[1])
+	core.CheckErr(err, "invalid destination package name")
+	l.Tag(srcName, destName)
 }

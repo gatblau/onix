@@ -21,7 +21,7 @@ func InitialiseRootCmd() *RootCmd {
 	pullCmd := NewPullCmd()
 	openCmd := NewOpenCmd()
 	pgpCmd := InitialisePGPCommand()
-	pipeCmd := InitialisePipeCommand()
+	flowCmd := InitialiseFlowCommand()
 	manifCmd := NewManifestCmd()
 	execCmd := NewExecCmd()
 	rootCmd.Cmd.AddCommand(
@@ -37,18 +37,18 @@ func InitialiseRootCmd() *RootCmd {
 		pullCmd.cmd,
 		openCmd.cmd,
 		pgpCmd.cmd,
-		pipeCmd.cmd,
+		flowCmd.cmd,
 		manifCmd.cmd,
 		execCmd.cmd,
 	)
 	return rootCmd
 }
 
-func InitialisePipeCommand() *PipeCmd {
-	pipeCmd := NewPipeCmd()
-	pipeSetupCmd := NewPipeAppCmd()
-	pipeCmd.cmd.AddCommand(pipeSetupCmd.cmd)
-	return pipeCmd
+func InitialiseFlowCommand() *FlowCmd {
+	flowCmd := NewFlowCmd()
+	flowFillCmd := NewFlowFillCmd()
+	flowCmd.cmd.AddCommand(flowFillCmd.cmd)
+	return flowCmd
 }
 
 func InitialisePGPCommand() *PGPCmd {

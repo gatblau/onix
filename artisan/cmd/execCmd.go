@@ -53,6 +53,8 @@ func (r *ExecCmd) Run(cmd *cobra.Command, args []string) {
 	)
 	// get a builder handle
 	builder := build.NewBuilder()
+	name, err := core.ParseName(pack)
+	core.CheckErr(err, "invalid package name")
 	// run the function on the open package
-	builder.Execute(core.ParseName(pack), function, r.credentials, *r.noTLS, r.pubPath, *r.ignoreSignature, *r.interactive)
+	builder.Execute(name, function, r.credentials, *r.noTLS, r.pubPath, *r.ignoreSignature, *r.interactive)
 }

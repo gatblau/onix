@@ -47,9 +47,10 @@ func (c *PullCmd) Run(cmd *cobra.Command, args []string) {
 	// get the name of the artefact to push
 	nameTag := args[0]
 	// validate the name
-	artie := core.ParseName(nameTag)
+	packageName, err := core.ParseName(nameTag)
+	core.CheckErr(err, "invalid package name")
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	// attempt pull from remote registry
-	local.Pull(artie, c.credentials, *c.noTLS)
+	local.Pull(packageName, c.credentials, *c.noTLS)
 }
