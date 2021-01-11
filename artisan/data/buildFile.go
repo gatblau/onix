@@ -24,6 +24,8 @@ type BuildFile struct {
 	// a list of labels to be added to the artefact seal
 	// they should be used to document key aspects of the artefact in a generic way
 	Labels map[string]string `yaml:"labels"`
+	// any input required by functions
+	Input *Input `yaml:"input,omitempty"`
 	// a list of build configurations in the form of labels, commands to run and environment variables
 	Profiles []*Profile `yaml:"profiles"`
 	// a list of functions containing a list of commands to execute

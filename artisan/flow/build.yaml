@@ -1,5 +1,27 @@
 # test build.yaml for a typical java application
 ---
+input:
+  var:
+    - name: APP_PACKAGE_NAME
+      description: the name:tag for the application package to be published
+      required: true
+      type: name
+
+  secret:
+    - name: ART_REG_USER
+      description: the artisan registry user
+      aggregate: true
+    - name: ART_REG_PWD
+      description: the artisan registry password
+      aggregate: true
+
+  key:
+    - name: SIGNING_KEY
+      description: the private PGP key required to digitally sign the application package
+      private: true
+      package_group: sap7
+      package_name: sap-equip-jvm
+
 profiles:
   - name: app
     description: packages the java uber jar file
@@ -17,22 +39,15 @@ functions:
 
   - name: publish-app
     description: packages and publishes the application
-    input:
-      var:
-        - name: APP_PACKAGE_NAME
-          description: the name:tag for the application package to be published
-          required: true
-          type: name
-
-      secret:
-        - name: ART_REG_USER
-          description: the artisan registry user
-          aggregate: true
-        - name: ART_REG_PWD
-          description: the artisan registry password
-          aggregate: true
-
     run:
       - art build -t=${APP_PACKAGE_NAME}
       - art push ${APP_PACKAGE_NAME} -u=${ART_REG_USER}:${ART_REG_PWD}
+    input:
+      var:
+        - APP_PACKAGE_NAME
+      secret:
+        - ART_REG_USER
+        - ART_REG_PWD
+      key:
+        - SIGNING_KEY
 ...

@@ -10,13 +10,11 @@ package data
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/crypto"
 	"net/url"
 	"path/filepath"
 	"reflect"
-	"strings"
 )
 
 type Function struct {
@@ -30,8 +28,15 @@ type Function struct {
 	Run []string `yaml:"run,omitempty"`
 	// is this function to be available in the manifest
 	Export *bool `yaml:"export,omitempty"`
-	// defines any input variables required to run this function
-	Input *Input `yaml:"input,omitempty"`
+	// defines any bindings to inputs required to run this function
+	Input *InputBinding `yaml:"input,omitempty"`
+}
+
+// list the names of the inputs required by a function
+type InputBinding struct {
+	Var    []string `yaml:"var"`
+	Secret []string `yaml:"secret"`
+	Key    []string `yaml:"key"`
 }
 
 // describes external input information required by functions or runtimes
@@ -42,6 +47,33 @@ type Input struct {
 	Secret []*Secret `yaml:"secret,omitempty"`
 	// required variables
 	Var []*Var `yaml:"var,omitempty"`
+}
+
+func (i *Input) ContainsVar(binding string) bool {
+	for _, variable := range i.Var {
+		if variable.Name == binding {
+			return true
+		}
+	}
+	return false
+}
+
+func (i *Input) ContainsSecret(binding string) bool {
+	for _, secret := range i.Secret {
+		if secret.Name == binding {
+			return true
+		}
+	}
+	return false
+}
+
+func (i *Input) ContainsKey(binding string) bool {
+	for _, key := range i.Key {
+		if key.Name == binding {
+			return true
+		}
+	}
+	return false
 }
 
 // describes PGP keys required by functions
@@ -107,64 +139,6 @@ func (f *Function) Survey(env map[string]string) map[string]string {
 	// run the merge in interactive mode so that any variables not available in the build file environment are surveyed
 	_, updatedEnvironment := core.MergeEnvironmentVars(f.Run, env, true)
 	return updatedEnvironment
-}
-
-// go through any defined inputs with no value and prompts the user to complete them
-func (f *Function) SurveyInputs() {
-	if f.Input != nil {
-		if f.Input.Var != nil {
-			// survey the variables
-			f.surveyInputVar()
-		}
-		if f.Input.Secret != nil {
-			f.surveyInputSecret()
-		}
-	}
-}
-
-// survey function Input.Var section
-func (f *Function) surveyInputVar() {
-	var validator survey.Validator
-	for _, variable := range f.Input.Var {
-		desc := ""
-		// if a description is available use it
-		if len(variable.Description) > 0 {
-			desc = variable.Description
-		}
-		// prompt for the value
-		prompt := &survey.Input{
-			Message: fmt.Sprintf("var => %s (%s):", variable.Name, desc),
-		}
-		// if required then add required validator
-		if variable.Required {
-			validator = survey.ComposeValidators(survey.Required)
-		}
-		// add type validators
-		switch strings.ToLower(variable.Type) {
-		case "path":
-			validator = survey.ComposeValidators(validator, isPath)
-		case "uri":
-			validator = survey.ComposeValidators(validator, isURI)
-		case "name":
-			validator = survey.ComposeValidators(validator, isPackageName)
-		}
-		core.HandleCtrlC(survey.AskOne(prompt, &variable.Value, survey.WithValidator(validator)))
-	}
-}
-
-func (f *Function) surveyInputSecret() {
-	for _, secret := range f.Input.Secret {
-		desc := ""
-		// if a description is available use it
-		if len(secret.Description) > 0 {
-			desc = secret.Description
-		}
-		// prompt for the value
-		prompt := &survey.Password{
-			Message: fmt.Sprintf("secret => %s (%s):", secret.Name, desc),
-		}
-		core.HandleCtrlC(survey.AskOne(prompt, &secret.Value, survey.WithValidator(survey.Required)))
-	}
 }
 
 // requires the value conforms to a path

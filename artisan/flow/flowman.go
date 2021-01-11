@@ -8,13 +8,19 @@
 package flow
 
 import (
+	"encoding/base64"
 	"fmt"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/data"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"net/url"
+	"os"
 	"path/filepath"
+	"reflect"
+	"strings"
 )
 
 // the pipeline generator requires at least the flow definition
@@ -59,10 +65,10 @@ func NewFromRemote(remotePath string) *Manager {
 func (m *Manager) FillIn() {
 	for _, step := range m.flow.Steps {
 		if len(step.Package) > 0 {
-			m.loadPackageInfo(step.Package)
+			// todo
 		} else {
 			if len(step.Function) > 0 {
-				m.setStepInfo(step)
+				m.setStepInput(step)
 			} else {
 				// do nothing
 			}
@@ -112,27 +118,47 @@ func (m *Manager) validate() error {
 	return nil
 }
 
-func (m *Manager) loadPackageInfo(pak string) {
-
-}
-
-func (m *Manager) setStepInfo(step *Step) {
+func (m *Manager) setStepInput(step *Step) {
 	if m.buildFile != nil {
 		// get the function in question
 		fx := m.buildFile.Fx(step.Function)
-		// survey the function inputs
-		fx.SurveyInputs()
 		// if the function has inputs
 		if fx.Input != nil {
-			// set the step input vars to the ones surveyed in the function
 			if step.Input == nil {
 				step.Input = &data.Input{
-					Var:    fx.Input.Var,
-					Secret: m.encryptSecrets(fx.Input.Secret),
+					Key:    make([]*data.Key, 0),
+					Secret: make([]*data.Secret, 0),
+					Var:    make([]*data.Var, 0),
 				}
-			} else if step.Input.Var == nil {
-				step.Input.Var = fx.Input.Var
-				step.Input.Secret = m.encryptSecrets(fx.Input.Secret)
+			}
+			// add input vars for the exported function
+			for _, varBinding := range fx.Input.Var {
+				for _, variable := range m.buildFile.Input.Var {
+					if variable.Name == varBinding {
+						step.Input.Var = append(step.Input.Var, variable)
+						m.surveyVar(variable)
+					}
+				}
+			}
+			// add input secrets for the exported function
+			for _, secretBinding := range fx.Input.Secret {
+				for _, secret := range m.buildFile.Input.Secret {
+					if secret.Name == secretBinding {
+						step.Input.Secret = append(step.Input.Secret, secret)
+						m.surveySecret(secret)
+					}
+				}
+			}
+			// encrypt the secrets
+			step.Input.Secret = m.encryptSecrets(step.Input.Secret)
+			// add input keys for the exported function
+			for _, keyBinding := range fx.Input.Key {
+				for _, key := range m.buildFile.Input.Key {
+					if key.Name == keyBinding {
+						step.Input.Key = append(step.Input.Key, key)
+						m.surveyKey(key)
+					}
+				}
 			}
 		}
 	}
@@ -144,4 +170,177 @@ func (m *Manager) encryptSecrets(secrets []*data.Secret) []*data.Secret {
 		core.CheckErr(err, "cannot encrypt secret")
 	}
 	return secrets
+}
+
+func (m *Manager) surveyVar(variable *data.Var) {
+	var validator survey.Validator
+	desc := ""
+	// if a description is available use it
+	if len(variable.Description) > 0 {
+		desc = variable.Description
+	}
+	// prompt for the value
+	prompt := &survey.Input{
+		Message: fmt.Sprintf("var => %s (%s):", variable.Name, desc),
+	}
+	// if required then add required validator
+	if variable.Required {
+		validator = survey.ComposeValidators(survey.Required)
+	}
+	// add type validators
+	switch strings.ToLower(variable.Type) {
+	case "path":
+		validator = survey.ComposeValidators(validator, isPath)
+	case "uri":
+		validator = survey.ComposeValidators(validator, isURI)
+	case "name":
+		validator = survey.ComposeValidators(validator, isPackageName)
+	}
+	core.HandleCtrlC(survey.AskOne(prompt, &variable.Value, survey.WithValidator(validator)))
+}
+
+func (m *Manager) surveySecret(secret *data.Secret) {
+	desc := ""
+	// if a description is available use it
+	if len(secret.Description) > 0 {
+		desc = secret.Description
+	}
+	// prompt for the value
+	prompt := &survey.Password{
+		Message: fmt.Sprintf("secret => %s (%s):", secret.Name, desc),
+	}
+	core.HandleCtrlC(survey.AskOne(prompt, &secret.Value, survey.WithValidator(survey.Required)))
+}
+
+func (m *Manager) surveyKey(key *data.Key) {
+	desc := ""
+	// if a description is available use it
+	if len(key.Description) > 0 {
+		desc = key.Description
+	}
+	// prompt for the value
+	prompt := &survey.Input{
+		Message: fmt.Sprintf("PGP key => %s PATH (%s):", key.Name, desc),
+		Default: "/",
+		Help:    "/ indicates root keys; /group-name indicates group level keys; /group-name/package-name indicates package level keys",
+	}
+	var (
+		keyPath, pk, pub string
+		keyBytes         []byte
+		err              error
+	)
+	core.HandleCtrlC(survey.AskOne(prompt, &keyPath, survey.WithValidator(keyPathExist)))
+	// load the keys
+	parts := strings.Split(keyPath, "/")
+	switch len(parts) {
+	// root level keys
+	case 2:
+		pk, pub = crypto.KeyNames(core.KeysPath(), "root", "pgp")
+	// group level keys
+	case 3:
+		pk, pub = crypto.KeyNames(core.KeysPath(), parts[1], "pgp")
+	// package level keys
+	case 4:
+		pk, pub = crypto.KeyNames(core.KeysPath(), fmt.Sprintf("%s_%s", parts[1], parts[2]), "pgp")
+	// error
+	default:
+		core.RaiseErr("the provided path %s is invalid", keyPath)
+	}
+	if key.Private {
+		keyBytes, err = ioutil.ReadFile(pk)
+		core.CheckErr(err, "cannot read private key from registry")
+	} else {
+		keyBytes, err = ioutil.ReadFile(pub)
+		core.CheckErr(err, "cannot read public key from registry")
+	}
+	key.Value = base64.StdEncoding.EncodeToString(keyBytes)
+}
+
+// requires the value conforms to a path
+func isPath(val interface{}) error {
+	// the reflect value of the result
+	value := reflect.ValueOf(val)
+
+	// if the value passed in is a string
+	if value.Kind() == reflect.String {
+		// try and convert the value to an absolute path
+		_, err := filepath.Abs(value.String())
+		// if the value cannot be converted to an absolute path
+		if err != nil {
+			// assumes it is not a valid path
+			return fmt.Errorf("value is not a valid path: %s", err)
+		}
+	} else {
+		// if the value is not of a string type it cannot be a path
+		return fmt.Errorf("value must be a string")
+	}
+	return nil
+}
+
+// requires the value conforms to a URI
+func isURI(val interface{}) error {
+	// the reflect value of the result
+	value := reflect.ValueOf(val)
+
+	// if the value passed in is a string
+	if value.Kind() == reflect.String {
+		// try and parse the URI
+		_, err := url.ParseRequestURI(value.String())
+
+		// if the value cannot be converted to an absolute path
+		if err != nil {
+			// assumes it is not a valid path
+			return fmt.Errorf("value is not a valid URI: %s", err)
+		}
+	} else {
+		// if the value is not of a string type it cannot be a path
+		return fmt.Errorf("value must be a string")
+	}
+	return nil
+}
+
+// requires the value conforms to an Artisan package name
+func isPackageName(val interface{}) error {
+	// the reflect value of the result
+	value := reflect.ValueOf(val)
+
+	// if the value passed in is a string
+	if value.Kind() == reflect.String {
+		// try and parse the package name
+		_, err := core.ParseName(value.String())
+		// if the value cannot be parsed
+		if err != nil {
+			// it is not a valid package name
+			return fmt.Errorf("value is not a valid package name: %s", err)
+		}
+	} else {
+		// if the value is not of a string type it cannot be a path
+		return fmt.Errorf("value must be a string")
+	}
+	return nil
+}
+
+func keyPathExist(val interface{}) error {
+	// the reflect value of the result
+	value := reflect.ValueOf(val)
+
+	// if the value passed in is a string
+	if value.Kind() == reflect.String {
+		if len(value.String()) > 0 {
+			if !strings.HasPrefix(value.String(), "/") {
+				// it is not a valid package name
+				return fmt.Errorf("key path '%s' must start with a forward slash", value.String())
+			}
+			_, err := os.Stat(filepath.Join(core.KeysPath(), value.String()))
+			// if the path to the group does not exist
+			if os.IsNotExist(err) {
+				// it is not a valid package name
+				return fmt.Errorf("key path '%s' does not exist", value.String())
+			}
+		}
+	} else {
+		// if the value is not of a string type it cannot be a path
+		return fmt.Errorf("key group must be a string")
+	}
+	return nil
 }

@@ -12,6 +12,9 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/flow"
 	"github.com/spf13/cobra"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 )
 
 // list local artefacts
@@ -19,6 +22,7 @@ type FlowFillCmd struct {
 	cmd           *cobra.Command
 	envFilename   string
 	buildFilePath string
+	stdout        *bool
 }
 
 func NewFlowFillCmd() *FlowFillCmd {
@@ -33,6 +37,7 @@ Secrets and keys are PGP encrypted by default using the provided public PGP key.
 	}
 	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env; the path to a file containing environment variables to use")
 	c.cmd.Flags().StringVarP(&c.buildFilePath, "build-file", "b", "", "--build-file=. or -b=.; the path to an artisan build.yaml file from which to pick required inputs")
+	c.stdout = c.cmd.Flags().Bool("stdout", false, "--stdout to print the flow to the stdout")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -57,6 +62,14 @@ func (c *FlowFillCmd) Run(cmd *cobra.Command, args []string) {
 	// marshals the merged flow to a yaml string
 	yaml, err := g.YamlString()
 	core.CheckErr(err, "cannot fill in bare flow")
-	// prints the flow to stdout
-	fmt.Println(yaml)
+	if *c.stdout {
+		// prints the flow to stdout
+		fmt.Println(yaml)
+	} else {
+		dir, file := filepath.Split(flowPath)
+		filename := core.FilenameWithoutExtension(file)
+		mergedFlowFilename := filepath.Join(dir, fmt.Sprintf("%s-%s.yaml", filename, core.RandomString(5)))
+		err = ioutil.WriteFile(mergedFlowFilename, []byte(yaml), os.ModePerm)
+		core.CheckErr(err, "cannot save filled in flow")
+	}
 }

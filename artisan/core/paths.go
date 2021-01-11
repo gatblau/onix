@@ -39,6 +39,10 @@ func RegistryPath() string {
 	return filepath.Join(HomeDir(), fmt.Sprintf(".%s", AppName))
 }
 
+func KeysPath() string {
+	return filepath.Join(RegistryPath(), "keys")
+}
+
 // temporary path for file operations
 func TmpPath() string {
 	return filepath.Join(RegistryPath(), "tmp")
