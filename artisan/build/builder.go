@@ -537,6 +537,30 @@ func (b *Builder) createSeal(artie *core.PackageName, profile *data.Profile, pkP
 					Description: f.Description,
 					Input:       f.Input,
 				})
+				// add input vars for the exported function
+				for _, varBinding := range f.Input.Var {
+					for _, variable := range buildFile.Input.Var {
+						if variable.Name == varBinding && !s.Manifest.Input.ContainsVar(varBinding) {
+							s.Manifest.Input.Var = append(s.Manifest.Input.Var, variable)
+						}
+					}
+				}
+				// add input secrets for the exported function
+				for _, secretBinding := range f.Input.Secret {
+					for _, secret := range buildFile.Input.Secret {
+						if secret.Name == secretBinding && !s.Manifest.Input.ContainsSecret(secretBinding) {
+							s.Manifest.Input.Secret = append(s.Manifest.Input.Secret, secret)
+						}
+					}
+				}
+				// add input keys for the exported function
+				for _, keyBinding := range f.Input.Key {
+					for _, key := range buildFile.Input.Key {
+						if key.Name == keyBinding && !s.Manifest.Input.ContainsKey(keyBinding) {
+							s.Manifest.Input.Key = append(s.Manifest.Input.Key, key)
+						}
+					}
+				}
 			}
 		}
 	}
