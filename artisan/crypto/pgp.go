@@ -37,7 +37,7 @@ type PGP struct {
 }
 
 const (
-	defaultHash   = crypto.SHA256
+	defaultDigest = crypto.SHA256
 	defaultCipher = packet.CipherAES128
 )
 
@@ -49,7 +49,7 @@ func NewPGP(name, comment, email string, bits int) *PGP {
 		email:   email,
 		conf: &packet.Config{
 			DefaultCipher: defaultCipher,
-			DefaultHash:   defaultHash,
+			DefaultHash:   defaultDigest,
 			RSABits:       bits,
 			Time: func() time.Time {
 				return time.Now()
@@ -97,7 +97,7 @@ func LoadPGP(filename string) (*PGP, error) {
 	// It needs to be in the list of preferred algorithms specified in the self-signature of the primary identity
 	// there should only be one, but cycle over all identities for completeness
 	for _, id := range entity.Identities {
-		preferredHashId, _ := s2k.HashToHashId(defaultHash)
+		preferredHashId, _ := s2k.HashToHashId(defaultDigest)
 		id.SelfSignature.PreferredHash = []uint8{preferredHashId}
 		id.SelfSignature.PreferredSymmetric = []uint8{uint8(defaultCipher)}
 	}
@@ -271,10 +271,8 @@ func (p *PGP) toPublicKey() (publicKey []byte, err error) {
 func pemHeaders(cipher, hash string, rsaBits int, time time.Time) map[string]string {
 	headers := map[string]string{
 		"Version": fmt.Sprintf("golang.org/x/crypto/openpgp - artisan-%s", docs.Version),
-		"Cipher":  cipher,
-		"Hash":    hash,
-		"RSABits": strconv.Itoa(rsaBits),
-		"Time":    time.String(),
+		"Comment": fmt.Sprintf("Cipher: %s, Hash: %s, RSA Bits: %s, Created: %s", cipher, hash, strconv.Itoa(rsaBits), time.String()),
+		"Hash":    fmt.Sprintf("%s/%s", cipher, hash),
 	}
 	return headers
 }
@@ -306,7 +304,7 @@ func cipherToString(cipher packet.CipherFunction) string {
 	case 8:
 		return "AES192"
 	case 9:
-		return "AES192"
+		return "AES256"
 	default:
 		return "NotKnown"
 	}
