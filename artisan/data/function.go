@@ -39,43 +39,6 @@ type InputBinding struct {
 	Key    []string `yaml:"key"`
 }
 
-// describes external input information required by functions or runtimes
-type Input struct {
-	// required PGP keys
-	Key []*Key `yaml:"key,omitempty"`
-	// required string value secrets
-	Secret []*Secret `yaml:"secret,omitempty"`
-	// required variables
-	Var []*Var `yaml:"var,omitempty"`
-}
-
-func (i *Input) ContainsVar(binding string) bool {
-	for _, variable := range i.Var {
-		if variable.Name == binding {
-			return true
-		}
-	}
-	return false
-}
-
-func (i *Input) ContainsSecret(binding string) bool {
-	for _, secret := range i.Secret {
-		if secret.Name == binding {
-			return true
-		}
-	}
-	return false
-}
-
-func (i *Input) ContainsKey(binding string) bool {
-	for _, key := range i.Key {
-		if key.Name == binding {
-			return true
-		}
-	}
-	return false
-}
-
 // describes PGP keys required by functions
 type Key struct {
 	// the unique reference for the PGP key
@@ -85,25 +48,34 @@ type Key struct {
 	// indicates if the referred key is private or public
 	Private bool `yaml:"private"`
 	// the artisan package group used to select the key
-	PackageGroup string `yaml:"package_group"`
+	PackageGroup string `yaml:"package_group,omitempty"`
 	// the artisan package name used to select the key
-	PackageName string `yaml:"package_name"`
+	PackageName string `yaml:"package_name,omitempty"`
 	// indicates if this key should be aggregated with other keys
 	Aggregate bool `yaml:"aggregate,omitempty"`
 	// the key content
 	Value string `yaml:"value,omitempty"`
 }
 
+func (k *Key) Encrypt(pubKey *crypto.PGP) error {
+	encValue, err := pubKey.Encrypt([]byte(k.Value))
+	if err != nil {
+		return fmt.Errorf("cannot encrypt PGP key %s: %s", k.Name, err)
+	}
+	k.Value = base64.StdEncoding.EncodeToString(encValue)
+	return nil
+}
+
 // describes the secrets required by functions
 type Secret struct {
 	// the unique reference for the secret
-	Name string `yaml:"name"`
+	Name string `yaml:"name" json:"name"`
 	// a description of the intended use or meaning of this secret
-	Description string `yaml:"description"`
+	Description string `yaml:"description" json:"description"`
 	// indicates if this secret should be aggregated with other secrets
-	Aggregate bool `yaml:"aggregate,omitempty"`
+	Aggregate bool `yaml:"aggregate,omitempty" json:"aggregate,omitempty"`
 	// the value of the secret
-	Value string `yaml:"value,omitempty"`
+	Value string `yaml:"value,omitempty" json:"value,omitempty"`
 }
 
 func (s *Secret) Encrypt(pubKey *crypto.PGP) error {
@@ -116,11 +88,11 @@ func (s *Secret) Encrypt(pubKey *crypto.PGP) error {
 }
 
 type Var struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
-	Required    bool   `yaml:"required"`
-	Type        string `yaml:"type"`
-	Value       string `yaml:"value,omitempty"`
+	Name        string `yaml:"name" json:"name"`
+	Description string `yaml:"description" json:"description"`
+	Required    bool   `yaml:"required" json:"required"`
+	Type        string `yaml:"type" json:"type"`
+	Value       string `yaml:"value,omitempty" json:"value,omitempty"`
 }
 
 // gets a slice of string with each element containing key=value

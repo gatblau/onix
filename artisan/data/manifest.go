@@ -20,8 +20,6 @@ type Manifest struct {
 	Runtime string `json:"runtime"`
 	// the labels assigned to the package
 	Labels map[string]string `json:"labels,omitempty"`
-	// any input required by exported functions
-	Input *Input `yaml:"input,omitempty"`
 	// the URI of the package source
 	Source string `json:"source,omitempty"`
 	// the path within the source where the project is (for uber repos)
@@ -46,7 +44,7 @@ type Manifest struct {
 
 // exported function list
 type FxInfo struct {
-	Name        string
-	Description string
-	Input       *InputBinding `json:"input,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Input       *Input `json:"input,omitempty"`
 }

@@ -509,7 +509,8 @@ func (b *Builder) createSeal(artie *core.PackageName, profile *data.Profile, pkP
 	// the crypto signature
 	s.Signature = base64.StdEncoding.EncodeToString(signature)
 	// check if target is a folder containing a build.yaml
-	buildYamlBytes, err := ioutil.ReadFile(path.Join(profile.MergedTarget, "build.yaml"))
+	innerBuildFilePath := path.Join(b.from, profile.MergedTarget, "build.yaml")
+	buildYamlBytes, err := ioutil.ReadFile(innerBuildFilePath)
 	// only export functions if the target contains a build.yaml
 	if err == nil {
 		// unmarshal the packaged build.yaml
@@ -527,40 +528,16 @@ func (b *Builder) createSeal(artie *core.PackageName, profile *data.Profile, pkP
 			}
 			s.Manifest.Runtime = profile.Runtime
 		}
-		// add any exported functions
-		for _, function := range buildFile.Functions {
-			f := function
-			// only adds exported functions to the manifest
-			if f.Export != nil && *f.Export {
+		// add exported functions to the manifest
+		for _, fx := range buildFile.Functions {
+			// if the function is exported
+			if fx.Export != nil && *fx.Export {
+				// then garb the required inputs
 				s.Manifest.Functions = append(s.Manifest.Functions, &data.FxInfo{
-					Name:        f.Name,
-					Description: f.Description,
-					Input:       f.Input,
+					Name:        fx.Name,
+					Description: fx.Description,
+					Input:       data.ExportInput(fx.Name, buildFile, nil, false),
 				})
-				// add input vars for the exported function
-				for _, varBinding := range f.Input.Var {
-					for _, variable := range buildFile.Input.Var {
-						if variable.Name == varBinding && !s.Manifest.Input.ContainsVar(varBinding) {
-							s.Manifest.Input.Var = append(s.Manifest.Input.Var, variable)
-						}
-					}
-				}
-				// add input secrets for the exported function
-				for _, secretBinding := range f.Input.Secret {
-					for _, secret := range buildFile.Input.Secret {
-						if secret.Name == secretBinding && !s.Manifest.Input.ContainsSecret(secretBinding) {
-							s.Manifest.Input.Secret = append(s.Manifest.Input.Secret, secret)
-						}
-					}
-				}
-				// add input keys for the exported function
-				for _, keyBinding := range f.Input.Key {
-					for _, key := range buildFile.Input.Key {
-						if key.Name == keyBinding && !s.Manifest.Input.ContainsKey(keyBinding) {
-							s.Manifest.Input.Key = append(s.Manifest.Input.Key, key)
-						}
-					}
-				}
 			}
 		}
 	}
