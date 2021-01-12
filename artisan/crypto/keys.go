@@ -34,9 +34,9 @@ func GeneratePGPKeys(path, prefix, name, comment, email string, size int) {
 	if len(comment) == 0 {
 		comment = fmt.Sprintf("%d keys, generated on %s", size, time.Now())
 	}
-	// if no email is provided, then autogenerate a fake one
+	// if no email is provided, then autogenerate a fake test email like: test@hostname.com
 	if len(email) == 0 {
-		email = fmt.Sprintf("artisan@%s.com", hostname)
+		email = fmt.Sprintf("test@%s.com", hostname)
 	}
 	// work out the file names for the keys
 	keyFilename, pubFilename := KeyNames(path, prefix, "pgp")
