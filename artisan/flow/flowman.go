@@ -28,7 +28,7 @@ type Manager struct {
 
 func NewFromPath(flowPath, pubKeyPath, buildPath string) (*Manager, error) {
 	m := new(Manager)
-	flow, err := loadFlow(flowPath)
+	flow, err := LoadFlow(flowPath)
 	if err != nil {
 		return nil, fmt.Errorf("cannot load flow definition from %s: %s", flowPath, err)
 	}
@@ -90,7 +90,7 @@ func (m *Manager) YamlString() (string, error) {
 	return string(b), nil
 }
 
-func loadFlow(path string) (*Flow, error) {
+func LoadFlow(path string) (*Flow, error) {
 	var err error
 	if len(path) == 0 {
 		return nil, fmt.Errorf("flow definition is required")

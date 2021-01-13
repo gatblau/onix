@@ -1,4 +1,4 @@
-package tkn
+package tkn2
 
 type imgTypeTemplate struct {
 }

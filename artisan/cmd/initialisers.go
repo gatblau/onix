@@ -22,6 +22,7 @@ func InitialiseRootCmd() *RootCmd {
 	openCmd := NewOpenCmd()
 	pgpCmd := InitialisePGPCommand()
 	flowCmd := InitialiseFlowCommand()
+	tknCmd := InitialiseTknCommand()
 	manifCmd := NewManifestCmd()
 	execCmd := NewExecCmd()
 	rootCmd.Cmd.AddCommand(
@@ -40,6 +41,7 @@ func InitialiseRootCmd() *RootCmd {
 		flowCmd.cmd,
 		manifCmd.cmd,
 		execCmd.cmd,
+		tknCmd.cmd,
 	)
 	return rootCmd
 }
@@ -49,6 +51,13 @@ func InitialiseFlowCommand() *FlowCmd {
 	flowFillCmd := NewFlowFillCmd()
 	flowCmd.cmd.AddCommand(flowFillCmd.cmd)
 	return flowCmd
+}
+
+func InitialiseTknCommand() *TknCmd {
+	tknCmd := NewTknCmd()
+	tknGenCmd := NewTknGenCmd()
+	tknCmd.cmd.AddCommand(tknGenCmd.cmd)
+	return tknCmd
 }
 
 func InitialisePGPCommand() *PGPCmd {
