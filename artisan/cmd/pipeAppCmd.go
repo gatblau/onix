@@ -9,7 +9,7 @@ package cmd
 
 import (
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/tkn"
+	"github.com/gatblau/onix/artisan/tkn2"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
@@ -61,8 +61,8 @@ func (b *PipeAppCmd) Run(cmd *cobra.Command, args []string) {
 	// try to load env from file
 	core.LoadEnvFromFile(b.envFilename)
 	// collects information to assemble the pipeline
-	c := tkn.NewAppPipelineConfig(buildFile, b.profile, *b.sonar)
+	c := tkn2.NewAppPipelineConfig(buildFile, b.profile, *b.sonar)
 	// assembles the pipeline
-	template := tkn.MergeArtPipe(c, *b.sonar)
+	template := tkn2.MergeArtPipe(c, *b.sonar)
 	core.CheckErr(ioutil.WriteFile(templateName, template.Bytes(), os.ModePerm), "cannot save template")
 }

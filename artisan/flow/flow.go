@@ -26,6 +26,24 @@ func (f *Flow) StepByFx(fxName string) *Step {
 	return nil
 }
 
+func (f *Flow) RequiresSource() bool {
+	for _, step := range f.Steps {
+		if len(step.Package) == 0 && len(step.Function) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func (f *Flow) RequiresKey() bool {
+	for _, step := range f.Steps {
+		if step.Input != nil && step.Input.Key != nil {
+			return true
+		}
+	}
+	return false
+}
+
 type Step struct {
 	Name            string      `yaml:"name"`
 	Description     string      `yaml:"description,omitempty"`

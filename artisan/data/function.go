@@ -87,6 +87,18 @@ func (s *Secret) Encrypt(pubKey *crypto.PGP) error {
 	return nil
 }
 
+func (s *Secret) Decrypt(pk *crypto.PGP) {
+	if !pk.HasPrivate() {
+		core.RaiseErr("provided key is not private")
+	}
+	// decode encrypted value
+	decoded, err := base64.StdEncoding.DecodeString(s.Value)
+	core.CheckErr(err, "cannot decode encrypted value using base64")
+	decValueBytes, err := pk.Decrypt([]byte(decoded))
+	core.CheckErr(err, "cannot decrypt secret")
+	s.Value = string(decValueBytes)
+}
+
 type Var struct {
 	Name        string `yaml:"name" json:"name"`
 	Description string `yaml:"description" json:"description"`
