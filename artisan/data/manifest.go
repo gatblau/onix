@@ -42,6 +42,15 @@ type Manifest struct {
 	Functions []*FxInfo `json:"functions,omitempty"`
 }
 
+func (m Manifest) Fx(name string) *FxInfo {
+	for _, fx := range m.Functions {
+		if fx.Name == name {
+			return fx
+		}
+	}
+	return nil
+}
+
 // exported function list
 type FxInfo struct {
 	Name        string `json:"name"`

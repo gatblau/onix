@@ -36,6 +36,15 @@ func (b *BuildFile) GetEnv() map[string]string {
 	return b.Env
 }
 
+func (b *BuildFile) ExportFxs() bool {
+	for _, function := range b.Functions {
+		if function.Export != nil && *function.Export {
+			return true
+		}
+	}
+	return false
+}
+
 // return the default profile if exists
 func (b *BuildFile) DefaultProfile() *Profile {
 	for _, profile := range b.Profiles {

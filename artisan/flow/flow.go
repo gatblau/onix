@@ -27,10 +27,11 @@ func (f *Flow) StepByFx(fxName string) *Step {
 }
 
 type Step struct {
-	Name        string      `yaml:"name"`
-	Description string      `yaml:"description,omitempty"`
-	Runtime     string      `yaml:"runtime"`
-	Function    string      `yaml:"function,omitempty"`
-	Package     string      `yaml:"package,omitempty"`
-	Input       *data.Input `yaml:"input,omitempty"`
+	Name            string      `yaml:"name"`
+	Description     string      `yaml:"description,omitempty"`
+	Runtime         string      `yaml:"runtime"`
+	RuntimeManifest string      `yaml:"runtime_manifest"`
+	Function        string      `yaml:"function,omitempty"`
+	Package         string      `yaml:"package,omitempty"`
+	Input           *data.Input `yaml:"input,omitempty"`
 }

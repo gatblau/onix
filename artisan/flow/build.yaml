@@ -19,8 +19,6 @@ input:
     - name: SIGNING_KEY
       description: the private PGP key required to digitally sign the application package
       private: true
-      package_group: sap7
-      package_name: sap-equip-jvm
 
 profiles:
   - name: app
