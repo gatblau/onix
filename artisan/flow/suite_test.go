@@ -8,14 +8,16 @@
 package flow
 
 import (
+	"fmt"
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/registry"
 	"testing"
 )
 
 func TestSample(t *testing.T) {
 	// creates a generator from a file
-	g, err := NewFromPath("ci-flow.yaml", "build.yaml")
-	core.CheckErr(err, "failsed to create generator")
-	g.FillIn()
-
+	m, err := NewFromPath("ci-flow.yaml", "id_rsa_pub.pgp", "build.yaml")
+	core.CheckErr(err, "failed to create generator")
+	m.FillIn(registry.NewLocalRegistry())
+	fmt.Println(m.flow.Steps)
 }

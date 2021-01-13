@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/flow"
+	"github.com/gatblau/onix/artisan/registry"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
@@ -58,7 +59,7 @@ func (c *FlowFillCmd) Run(cmd *cobra.Command, args []string) {
 	g, err := flow.NewFromPath(flowPath, pubPath, c.buildFilePath)
 	core.CheckErr(err, "failed to load bare flow")
 	// fills in the bare flow
-	g.FillIn()
+	g.FillIn(registry.NewLocalRegistry())
 	// marshals the merged flow to a yaml string
 	yaml, err := g.YamlString()
 	core.CheckErr(err, "cannot fill in bare flow")

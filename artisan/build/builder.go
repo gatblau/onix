@@ -516,11 +516,11 @@ func (b *Builder) createSeal(artie *core.PackageName, profile *data.Profile, pkP
 		// unmarshal the packaged build.yaml
 		buildFile := new(data.BuildFile)
 		err = yaml.Unmarshal(buildYamlBytes, buildFile)
-		core.CheckErr(err, "cannot unmarshal build file '%s'", path.Join(profile.MergedTarget, "build.yaml"))
+		core.CheckErr(err, "invalid YAML format in build file '%s'", path.Join(profile.MergedTarget, "build.yaml"))
 
 		// if the manifest contains exported functions then include the runtime
 		// image that should be used to execute such functions
-		if len(buildFile.Functions) > 0 {
+		if buildFile.ExportFxs() {
 			// a runtime must be defined if functions are exported
 			if len(profile.Runtime) == 0 {
 				core.RaiseErr("This package exports functions but does not define a runtime image to run them:\n" +
@@ -536,7 +536,7 @@ func (b *Builder) createSeal(artie *core.PackageName, profile *data.Profile, pkP
 				s.Manifest.Functions = append(s.Manifest.Functions, &data.FxInfo{
 					Name:        fx.Name,
 					Description: fx.Description,
-					Input:       data.ExportInput(fx.Name, buildFile, nil, false),
+					Input:       data.InputFromBuildFile(fx.Name, buildFile, false),
 				})
 			}
 		}

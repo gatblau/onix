@@ -851,7 +851,7 @@ func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
 	// find the artefact in the local registry
 	a := r.FindArtefact(name)
 	if a == nil {
-		core.RaiseErr("artefact %s not found", name)
+		core.RaiseErr("artefact '%s' not found in the local registry, pull it from remote first", name)
 	}
 	seal, err := r.GetSeal(a)
 	core.CheckErr(err, "cannot get artefact seal")

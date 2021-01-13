@@ -12,6 +12,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/data"
+	"github.com/gatblau/onix/artisan/registry"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"path/filepath"
@@ -56,18 +57,27 @@ func NewFromRemote(remotePath string) *Manager {
 	return &Manager{}
 }
 
-func (m *Manager) FillIn() {
+func (m *Manager) FillIn(local *registry.LocalRegistry) {
 	for _, step := range m.flow.Steps {
 		if len(step.Package) > 0 {
-			// todo
+			name, err := core.ParseName(step.Package)
+			core.CheckErr(err, "invalid step %s package name %s", step.Name, step.Package)
+			// get the package manifest
+			manifest := local.GetManifest(name)
+			step.Input = data.InputFromManifest(step.Function, manifest, true)
 		} else {
 			// if the step has a function
 			if len(step.Function) > 0 {
 				// add exported inputs to the step
-				step.Input = data.ExportInput(step.Function, m.buildFile, m.pub, true)
+				step.Input = data.InputFromBuildFile(step.Function, m.buildFile, true)
 			} else {
-				// do nothing
+				// read input from from runtime_uri
+				step.Input = data.InputFromURI(step.RuntimeManifest, true)
 			}
+		}
+		// encrypts the step sensitive data
+		if step.Input != nil {
+			step.Input.Encrypt(m.pub)
 		}
 	}
 }

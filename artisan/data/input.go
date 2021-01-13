@@ -8,11 +8,11 @@
 package data
 
 import (
-	"encoding/base64"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/crypto"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"path"
@@ -58,53 +58,110 @@ func (i *Input) ContainsKey(binding string) bool {
 	return false
 }
 
+func (i *Input) Encrypt(pub *crypto.PGP) {
+	encryptInput(i, pub)
+}
+
 // extracts the build file Input that is relevant to a function (using its bindings)
-func ExportInput(fxName string, buildFile *BuildFile, encPubKey *crypto.PGP, interactive bool) *Input {
-	result := &Input{
-		Key:    make([]*Key, 0),
-		Secret: make([]*Secret, 0),
-		Var:    make([]*Var, 0),
-	}
+func InputFromBuildFile(fxName string, buildFile *BuildFile, prompt bool) *Input {
 	if buildFile == nil {
 		core.RaiseErr("build file is required")
 	}
 	// get the build file function to inspect
 	fx := buildFile.Fx(fxName)
 	if fx == nil {
-		core.RaiseErr("function %s cannot be found in build file", fxName)
+		core.RaiseErr("function '%s' cannot be found in build file", fxName)
 	}
-	// if the function has bindings
-	if fx.Input != nil {
-		// collects exported vars
-		for _, varBinding := range fx.Input.Var {
-			for _, variable := range buildFile.Input.Var {
-				if variable.Name == varBinding {
-					result.Var = append(result.Var, variable)
-					// if interactive mode is enabled then prompt the user to enter the variable value
-					if interactive {
-						surveyVar(variable)
-					}
+	return getInput(fx.Input, buildFile.Input, prompt)
+}
+
+// extracts the package manifest Input in an exported function
+func InputFromManifest(fxName string, manifest *Manifest, prompt bool) *Input {
+	// get the function in the manifest
+	fx := manifest.Fx(fxName)
+	if fx == nil {
+		core.RaiseErr("function '%s' does not exist in or has not been exported", fxName)
+	}
+	if prompt {
+		return surveyInput(fx.Input)
+	}
+	return fx.Input
+}
+
+func InputFromURI(uri string, prompt bool) *Input {
+	response, err := core.Get(uri, "", "")
+	core.CheckErr(err, "cannot fetch runtime manifest")
+	body, err := ioutil.ReadAll(response.Body)
+	core.CheckErr(err, "cannot read runtime manifest http response")
+	// need a wrapper object for the input for the unmarshaller to work so using buildfile
+	var buildFile = new(BuildFile)
+	err = yaml.Unmarshal(body, buildFile)
+	if prompt {
+		return surveyInput(buildFile.Input)
+	}
+	return buildFile.Input
+}
+
+func surveyInput(input *Input) *Input {
+	// makes a shallow copy of the input
+	result := *input
+	// collect values from command line interface
+	for _, v := range result.Var {
+		surveyVar(v)
+	}
+	for _, secret := range result.Secret {
+		surveySecret(secret)
+	}
+	for _, key := range result.Key {
+		surveyKey(key)
+	}
+	// return pointer to new object
+	return &result
+}
+
+// extract any Input data from the source that have a binding
+func getInput(fxInput *InputBinding, sourceInput *Input, prompt bool) *Input {
+	// if no bindings then return no Input
+	if fxInput == nil {
+		return nil
+	}
+	result := &Input{
+		Key:    make([]*Key, 0),
+		Secret: make([]*Secret, 0),
+		Var:    make([]*Var, 0),
+	}
+	// collects exported vars
+	for _, varBinding := range fxInput.Var {
+		for _, variable := range sourceInput.Var {
+			if variable.Name == varBinding {
+				result.Var = append(result.Var, variable)
+				// if interactive mode is enabled then prompt the user to enter the variable value
+				if prompt {
+					surveyVar(variable)
 				}
 			}
 		}
-		// collect exported secrets
-		for _, secretBinding := range fx.Input.Secret {
-			for _, secret := range buildFile.Input.Secret {
-				if secret.Name == secretBinding {
-					result.Secret = append(result.Secret, secret)
-					// if interactive mode is enabled then prompt the user to enter the variable value
-					if interactive {
-						surveySecret(secret, encPubKey)
-					}
+	}
+	// collect exported secrets
+	for _, secretBinding := range fxInput.Secret {
+		for _, secret := range sourceInput.Secret {
+			if secret.Name == secretBinding {
+				result.Secret = append(result.Secret, secret)
+				// if interactive mode is enabled then prompt the user to enter the variable value
+				if prompt {
+					surveySecret(secret)
 				}
 			}
 		}
-		// collect exported keys
-		for _, keyBinding := range fx.Input.Key {
-			for _, key := range buildFile.Input.Key {
-				if key.Name == keyBinding {
-					result.Key = append(result.Key, key)
-					surveyKey(key, encPubKey)
+	}
+	// collect exported keys
+	for _, keyBinding := range fxInput.Key {
+		for _, key := range sourceInput.Key {
+			if key.Name == keyBinding {
+				result.Key = append(result.Key, key)
+				// if interactive mode is enabled then prompt the user to enter the variable value
+				if prompt {
+					surveyKey(key)
 				}
 			}
 		}
@@ -112,7 +169,33 @@ func ExportInput(fxName string, buildFile *BuildFile, encPubKey *crypto.PGP, int
 	return result
 }
 
+// encrypts secret and key values
+func encryptInput(input *Input, encPubKey *crypto.PGP) {
+	if input == nil {
+		return
+	}
+	for _, secret := range input.Secret {
+		// and encrypts the secret value
+		err := secret.Encrypt(encPubKey)
+		core.CheckErr(err, "cannot encrypt secret")
+	}
+	for _, key := range input.Key {
+		// and encrypts the key value
+		err := key.Encrypt(encPubKey)
+		core.CheckErr(err, "cannot encrypt PGP key %s: %s", key.Name, err)
+	}
+}
+
 func surveyVar(variable *Var) {
+	// check if the var is defined in the environment
+	value := os.Getenv(variable.Name)
+	// if it is
+	if len(value) > 0 {
+		// sets it with  its value and return
+		variable.Value = value
+		return
+	}
+	// otherwise prompts the user to enter it
 	var validator survey.Validator
 	desc := ""
 	// if a description is available use it
@@ -139,7 +222,15 @@ func surveyVar(variable *Var) {
 	core.HandleCtrlC(survey.AskOne(prompt, &variable.Value, survey.WithValidator(validator)))
 }
 
-func surveySecret(secret *Secret, encPubKey *crypto.PGP) {
+func surveySecret(secret *Secret) {
+	// check if the secret is defined in the environment
+	value := os.Getenv(secret.Name)
+	// if it is
+	if len(value) > 0 {
+		// sets it with  its value and return
+		secret.Value = value
+		return
+	}
 	desc := ""
 	// if a description is available use it
 	if len(secret.Description) > 0 {
@@ -150,12 +241,9 @@ func surveySecret(secret *Secret, encPubKey *crypto.PGP) {
 		Message: fmt.Sprintf("secret => %s (%s):", secret.Name, desc),
 	}
 	core.HandleCtrlC(survey.AskOne(prompt, &secret.Value, survey.WithValidator(survey.Required)))
-	// and encrypts the secret value
-	err := secret.Encrypt(encPubKey)
-	core.CheckErr(err, "cannot encrypt secret")
 }
 
-func surveyKey(key *Key, encPubKey *crypto.PGP) {
+func surveyKey(key *Key) {
 	desc := ""
 	// if a description is available use it
 	if len(key.Description) > 0 {
@@ -204,10 +292,7 @@ func surveyKey(key *Key, encPubKey *crypto.PGP) {
 		keyBytes, err = ioutil.ReadFile(pub)
 		core.CheckErr(err, "cannot read public key from registry")
 	}
-	// and encrypts the key value
-	encValue, err := encPubKey.Encrypt(keyBytes)
-	core.CheckErr(err, "cannot encrypt PGP key %s: %s", key.Name, err)
-	key.Value = base64.StdEncoding.EncodeToString(encValue)
+	key.Value = string(keyBytes)
 }
 
 func keyPathExist(val interface{}) error {

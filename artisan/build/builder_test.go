@@ -9,45 +9,44 @@ package build
 
 import (
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/registry"
 	"testing"
 )
 
-func TestBuild(t *testing.T) {
-	p := NewBuilder()
-	p.Build(".", "", "", core.ParseName("artisan"), "linux", false, false, "")
-	l := registry.NewLocalRegistry()
-	l.Open(core.ParseName("artisan"), "", false, "test", "", true)
-}
-
-func TestRun(t *testing.T) {
-	p := NewBuilder()
-	p.Run("test", "/Users/andresalos/go/src/github.com/gatblau/onix/artisan/build", false)
-}
-
-func TestExec(t *testing.T) {
-	p := NewBuilder()
-	p.Execute(
-		core.ParseName("localhost:8082/gatblau/art-buildah"),
-		"release-image",
-		"",
-		false,
-		"",
-		false,
-		true)
-}
-
-func TestExec2(t *testing.T) {
-	p := NewBuilder()
-	p.Execute(
-		core.ParseName("artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/sap/sap-equip-jvm-ctx"),
-		"build-image",
-		"admin:nxrpsap",
-		true,
-		"",
-		false,
-		false)
-}
+// func TestBuild(t *testing.T) {
+// 	p := NewBuilder()
+// 	p.Build(".", "", "", core.ParseName("artisan"), "linux", false, false, "")
+// 	l := registry.NewLocalRegistry()
+// 	l.Open(core.ParseName("artisan"), "", false, "test", "", true)
+// }
+//
+// func TestRun(t *testing.T) {
+// 	p := NewBuilder()
+// 	p.Run("test", "/Users/andresalos/go/src/github.com/gatblau/onix/artisan/build", false)
+// }
+//
+// func TestExec(t *testing.T) {
+// 	p := NewBuilder()
+// 	p.Execute(
+// 		core.ParseName("localhost:8082/gatblau/art-buildah"),
+// 		"release-image",
+// 		"",
+// 		false,
+// 		"",
+// 		false,
+// 		true)
+// }
+//
+// func TestExec2(t *testing.T) {
+// 	p := NewBuilder()
+// 	p.Execute(
+// 		core.ParseName("artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/sap/sap-equip-jvm-ctx"),
+// 		"build-image",
+// 		"admin:nxrpsap",
+// 		true,
+// 		"",
+// 		false,
+// 		false)
+// }
 
 func TestRunInContainer(t *testing.T) {
 	err := RunInContainer("quay.io/gatblau/buildah", "localhost:8082/gatblau/art-buildah", "build-image")
@@ -55,4 +54,12 @@ func TestRunInContainer(t *testing.T) {
 		t.Fatalf(err.Error())
 		t.FailNow()
 	}
+}
+
+func TestBuild(t *testing.T) {
+	name, _ := core.ParseName("artisan")
+	p := NewBuilder()
+	p.Build("/Users/andresalos/dev/artisan/recipe", "", "", name, "java", false, false, "")
+	// l := registry.NewLocalRegistry()
+	// l.Open(core.ParseName("artisan"), "", false, "test", "", true)
 }
