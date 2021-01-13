@@ -375,7 +375,7 @@ func (r *LocalRegistry) List() {
 	// get a table writer for the stdout
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 12, ' ', 0)
 	// print the header row
-	_, err := fmt.Fprintln(w, "REPOSITORY\tTAG\tARTEFACT ID\tARTEFACT TYPE\tCREATED\tSIZE")
+	_, err := fmt.Fprintln(w, "REPOSITORY\tTAG\tPACKAGE ID\tPACKAGE TYPE\tCREATED\tSIZE")
 	core.CheckErr(err, "failed to write table header")
 	// repository, tag, artefact id, created, size
 	for _, repo := range r.Repositories {
@@ -417,7 +417,7 @@ func (r *LocalRegistry) ListQ() {
 	for _, repo := range r.Repositories {
 		for _, a := range repo.Artefacts {
 			_, err := fmt.Fprintln(w, fmt.Sprintf("%s", a.Id[7:19]))
-			core.CheckErr(err, "failed to write artefact Id")
+			core.CheckErr(err, "failed to write package Id")
 		}
 	}
 	err := w.Flush()
