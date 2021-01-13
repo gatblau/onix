@@ -37,8 +37,8 @@ func NewPullCmd() *PullCmd {
 }
 
 func (c *PullCmd) Run(cmd *cobra.Command, args []string) {
-	if !*c.noTLS {
-		log.Printf("info: Transport Level Security is disabled\n")
+	if *c.noTLS {
+		core.Msg("transport level security (TLS) is disabled\n")
 	}
 	// check an artefact name has been provided
 	if len(args) == 0 {
