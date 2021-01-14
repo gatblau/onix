@@ -23,12 +23,4 @@ steps:
     description: package and signs the app and publish it
     runtime: quay.io/gatblau/art-java
     function: publish-app
-
-  #   as package and function are defined, inputs are read from package manifest
-  - name: build-image
-    description: builds, signs and publish the container image
-    runtime: quay.io/gatblau/art-rhctools
-    package: ctx
-    function: build-image
-
 ...
