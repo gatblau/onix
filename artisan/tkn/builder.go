@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/gatblau/onix/artisan/crypto"
-	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/flow"
-	"strings"
 )
 
 const (
@@ -31,11 +29,12 @@ func (b *Builder) Create() bytes.Buffer {
 	task := b.newTask()
 	buf.Write(ToYaml(task, "Task"))
 	buf.WriteString("\n---\n")
-	secrets := b.newSecrets()
-	for _, secret := range secrets {
-		buf.Write(ToYaml(secret, "Secret"))
-		buf.WriteString("\n---\n")
-	}
+	secrets := b.newCredentialsSecret()
+	buf.Write(ToYaml(secrets, "Secret"))
+	buf.WriteString("\n---\n")
+	keysSecret := b.newKeySecrets()
+	buf.Write(ToYaml(keysSecret, "Keys Secret"))
+	buf.WriteString("\n---\n")
 	pipeline := b.newPipeline()
 	buf.Write(ToYaml(pipeline, "Pipeline"))
 	buf.WriteString("\n---\n")
@@ -103,8 +102,8 @@ func (b *Builder) getEnv(step *flow.Step) []*Env {
 			Name: secret.Name,
 			ValueFrom: &ValueFrom{
 				SecretKeyRef: &SecretKeyRef{
-					Name: b.secretName(secret),
-					Key:  strings.ToLower(secret.Name),
+					Name: b.secretName(),
+					Key:  secret.Name,
 				}},
 		})
 	}
@@ -131,7 +130,7 @@ func (b *Builder) newVolumes() []*Volumes {
 			{
 				Name: "keys-volume",
 				Secret: &Secret{
-					SecretName: fmt.Sprintf("%s-key-cm", encode(b.flow.Name)),
+					SecretName: b.keysSecretName(),
 				},
 			},
 		}
@@ -139,32 +138,58 @@ func (b *Builder) newVolumes() []*Volumes {
 	return nil
 }
 
-// secret
-func (b *Builder) newSecret(secret *data.Secret) *Secret {
-	s := new(Secret)
-	s.APIVersion = ApiVersion
-	s.Kind = "Secret"
-	s.Type = "Opaque"
-	s.Metadata = &Metadata{
-		Name: b.secretName(secret),
-	}
-	secret.Decrypt(b.pk)
-	s.StringData = &map[string]string{
-		strings.ToLower(secret.Name): secret.Value,
-	}
-	return s
-}
-
-func (b *Builder) newSecrets() []*Secret {
-	var secs []*Secret
+func (b *Builder) newCredentialsSecret() *Secret {
 	for _, step := range b.flow.Steps {
-		if step.Input != nil {
-			for _, secret := range step.Input.Secret {
-				secs = append(secs, b.newSecret(secret))
+		if step.Input != nil && step.Input.Key != nil {
+			secrets := step.Input.Secret
+			s := new(Secret)
+			s.APIVersion = ApiVersion
+			s.Kind = "Secret"
+			s.Type = "Opaque"
+			s.Metadata = &Metadata{
+				Name: b.secretName(),
 			}
+			credentials := make(map[string]string)
+			for _, secret := range secrets {
+				name := secret.Name
+				secret.Decrypt(b.pk)
+				credentials[name] = secret.Value
+			}
+			s.StringData = &credentials
+			return s
 		}
 	}
-	return secs
+	return nil
+}
+
+func (b *Builder) newKeySecrets() *Secret {
+	for _, step := range b.flow.Steps {
+		if step.Input != nil && step.Input.Key != nil {
+			keys := step.Input.Key
+			s := new(Secret)
+			s.APIVersion = ApiVersion
+			s.Kind = "Secret"
+			s.Type = "Opaque"
+			s.Metadata = &Metadata{
+				Name: b.keysSecretName(),
+			}
+			keysDict := make(map[string]string)
+			var name string
+			for _, key := range keys {
+				prefix := crypto.KeyNamePrefix(key.PackageGroup, key.PackageName)
+				if key.Private {
+					name = crypto.PrivateKeyName(prefix, "pgp")
+				} else {
+					name = crypto.PublicKeyName(prefix, "pgp")
+				}
+				key.Decrypt(b.pk)
+				keysDict[name] = key.Value
+			}
+			s.StringData = &keysDict
+			return s
+		}
+	}
+	return nil
 }
 
 // pipeline
@@ -211,7 +236,7 @@ func (b *Builder) newPipeline() *Pipeline {
 
 // return the name of the application build task
 func (b *Builder) buildTaskName() string {
-	return fmt.Sprintf("%s-app-build-task", encode(b.flow.Name))
+	return fmt.Sprintf("%s-build-task", encode(b.flow.Name))
 }
 
 // return the name of the code repository resource
@@ -230,6 +255,10 @@ func (b *Builder) pipelineRunName() string {
 }
 
 // return the name of the code repository resource
-func (b *Builder) secretName(secret *data.Secret) string {
-	return fmt.Sprintf("%s-%s-secret", encode(secret.Name), encode(b.flow.Name))
+func (b *Builder) secretName() string {
+	return fmt.Sprintf("%s-creds-secret", encode(b.flow.Name))
+}
+
+func (b *Builder) keysSecretName() string {
+	return fmt.Sprintf("%s-keys-secret", encode(b.flow.Name))
 }
