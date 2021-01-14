@@ -53,11 +53,19 @@ func NewFromPath(flowPath, pubKeyPath, buildPath string) (*Manager, error) {
 	return m, nil
 }
 
-func NewFromRemote(remotePath string) *Manager {
-	return &Manager{}
-}
-
 func (m *Manager) FillIn(local *registry.LocalRegistry) {
+	// set the git_uri
+	if m.flow.RequiresSource() {
+		if len(m.buildFile.GitURI) == 0 {
+			core.RaiseErr("a 'git_uri' is required in the build.yaml")
+		}
+		m.flow.GitURI = m.buildFile.GitURI
+	}
+	// set the app_icon
+	if len(m.buildFile.AppIcon) == 0 {
+		core.RaiseErr("an 'app_icon' is required in the build.yaml")
+	}
+	m.flow.AppIcon = m.buildFile.AppIcon
 	for _, step := range m.flow.Steps {
 		if len(step.Package) > 0 {
 			name, err := core.ParseName(step.Package)

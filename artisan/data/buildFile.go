@@ -17,6 +17,10 @@ import (
 
 // structure of build.yaml file
 type BuildFile struct {
+	// the URI of the Git repo
+	GitURI string `yaml:"git_uri,omitempty"`
+	// the icon to use in a tekton pipeline
+	AppIcon string `yaml:"app_icon,omitempty"`
 	// the environment variables that apply to the build
 	// any variables defined at this level will be available to all build profiles
 	// in addition, the defined variables are added on top of the existing environment
