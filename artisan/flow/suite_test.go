@@ -16,7 +16,7 @@ import (
 
 func TestSample(t *testing.T) {
 	// creates a generator from a file
-	m, err := NewFromPath("ci-flow.yaml", "id_rsa_pub.pgp", "build.yaml")
+	m, err := NewFromPath("/Users/andresalos/go/src/github.com/gatblau/onix/artisan/test/art/flow/p2i-flow-merged.yaml", "id_rsa_pub.pgp", "")
 	core.CheckErr(err, "failed to create generator")
 	m.FillIn(registry.NewLocalRegistry())
 	fmt.Println(m.flow.Steps)
