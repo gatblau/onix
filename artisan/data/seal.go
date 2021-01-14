@@ -14,9 +14,8 @@ import (
 	"encoding/hex"
 	"github.com/gatblau/onix/artisan/core"
 	"io"
+	"io/ioutil"
 	"log"
-	"os"
-	"runtime"
 )
 
 // the digital Seal for a package
@@ -47,28 +46,18 @@ func (seal *Seal) Checksum(path string) []byte {
 		core.RaiseErr("seal has no manifest, cannot create checksum")
 	}
 	// read the compressed file
-	file, err := os.Open(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			log.Println(err)
-			runtime.Goexit()
-		}
-	}()
+	file, err := ioutil.ReadFile(path)
+	core.CheckErr(err, "cannot open seal file")
 	// serialise the seal info to json
 	info := core.ToJsonBytes(seal.Manifest)
+	core.Debug("manifest before checksum:\n>> start on next line\n%s\n>> ended on previous line", string(info))
 	hash := sha256.New()
-	// copy the seal manifest into the hash
-	if _, err := io.Copy(hash, bytes.NewReader(info)); err != nil {
-		log.Fatal(err)
-	}
-	// copy the compressed file into the hash
-	if _, err := io.Copy(hash, file); err != nil {
-		log.Fatal(err)
-	}
+	written, err := hash.Write(file)
+	core.CheckErr(err, "cannot write package file to hash")
+	core.Debug("%d bytes from package written to hash", written)
+	written, err = hash.Write(info)
+	core.CheckErr(err, "cannot write manifest to hash")
+	core.Debug("%d bytes from manifest written to hash", written)
 	sum := hash.Sum(nil)
 	core.Debug("seal calculated base64 encoded checksum:\n>> start on next line\n%s\n>> ended on previous line", base64.StdEncoding.EncodeToString(sum))
 	return sum
