@@ -14,6 +14,8 @@ import (
 type Flow struct {
 	Name        string  `yaml:"name"`
 	Description string  `yaml:"description"`
+	GitURI      string  `yaml:"git_uri,omitempty"`
+	AppIcon     string  `yaml:"app_icon,omitempty"`
 	Steps       []*Step `yaml:"steps"`
 }
 
