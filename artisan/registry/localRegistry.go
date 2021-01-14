@@ -583,9 +583,13 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 		zipFilename := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef))
 		// get a slice to have the unencrypted signature
 		sum := seal.Checksum(zipFilename)
+		// if in debug mode prints out signature
+		core.Debug("seal stored base64 encoded signature:\n>> start on next line\n%s\n>> ended on previous line\n", seal.Signature)
 		// decode the signature in the seal
 		sig, err := base64.StdEncoding.DecodeString(seal.Signature)
 		core.CheckErr(err, "cannot decode signature in the seal")
+		// if in debug mode prints out base64 decoded signature
+		core.Debug("seal stored signature:\n>> start on next line\n%s\n>> ended on previous line\n", string(sig))
 		// verify the signature
 		err = pgp.Verify(sum, sig)
 		core.CheckErr(err, "invalid digital signature")

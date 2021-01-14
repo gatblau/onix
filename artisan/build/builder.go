@@ -461,7 +461,7 @@ func (b *Builder) inSourceDirectory(relativePath string) string {
 }
 
 // create the package Seal
-func (b *Builder) createSeal(artie *core.PackageName, profile *data.Profile, pkPath string) *data.Seal {
+func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profile, pkPath string) *data.Seal {
 	filename := b.uniqueIdName
 	// merge the labels in the profile with the ones at the build file level
 	labels := mergeMaps(b.buildFile.Labels, profile.Labels)
@@ -495,7 +495,7 @@ func (b *Builder) createSeal(artie *core.PackageName, profile *data.Profile, pkP
 	// load private key
 	var pk *crypto.PGP
 	if len(pkPath) == 0 {
-		pk, err = crypto.LoadPGPPrivateKey(artie.Group, artie.Name)
+		pk, err = crypto.LoadPGPPrivateKey(packageName.Group, packageName.Name)
 		core.CheckErr(err, "cannot load signing key")
 	} else {
 		pk, err = crypto.LoadPGP(pkPath)
@@ -504,10 +504,14 @@ func (b *Builder) createSeal(artie *core.PackageName, profile *data.Profile, pkP
 	// create a PGP cryptographic signature
 	signature, err := pk.Sign(sum)
 	core.CheckErr(err, "failed to create cryptographic signature")
+	// if in debug mode prints out signature
+	core.Debug("package %s signature: \n>> start on next line\n%s\n>> ended on previous line\n", packageName, string(signature))
 	// the combined checksum of the seal info and the package
 	s.Digest = fmt.Sprintf("sha256:%s", base64.StdEncoding.EncodeToString(sum))
 	// the crypto signature
 	s.Signature = base64.StdEncoding.EncodeToString(signature)
+	// if in debug mode prints out base64 encoded signature
+	core.Debug("package %s base64 encoded signature: \n>> start on next line\n%s\n>> ended on previous line\n", packageName, s.Signature)
 	// check if target is a folder containing a build.yaml
 	innerBuildFilePath := path.Join(b.from, profile.MergedTarget, "build.yaml")
 	buildYamlBytes, err := ioutil.ReadFile(innerBuildFilePath)

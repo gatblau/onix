@@ -88,6 +88,16 @@ func LoadPGPPublicKey(group, name string) (*PGP, error) {
 	return key, nil
 }
 
+func KeyNamePrefix(group, name string) string {
+	if len(group) == 0 && len(name) == 0 {
+		return "root"
+	} else if len(group) > 0 && len(name) == 0 {
+		return group
+	} else {
+		return fmt.Sprintf("%s_%s", group, name)
+	}
+}
+
 func PrivateKeyName(prefix string, extension string) string {
 	if len(prefix) == 0 {
 		prefix = "id"

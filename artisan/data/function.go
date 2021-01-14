@@ -48,13 +48,13 @@ type Key struct {
 	// indicates if the referred key is private or public
 	Private bool `yaml:"private"`
 	// the artisan package group used to select the key
-	PackageGroup string `yaml:"package_group,omitempty"`
+	PackageGroup string `yaml:"package_group,omitempty" json:"package_group,omitempty"`
 	// the artisan package name used to select the key
-	PackageName string `yaml:"package_name,omitempty"`
+	PackageName string `yaml:"package_name,omitempty" json:"package_name,omitempty"`
 	// indicates if this key should be aggregated with other keys
-	Aggregate bool `yaml:"aggregate,omitempty"`
+	Aggregate bool `yaml:"aggregate,omitempty" json:"aggregate,omitempty"`
 	// the key content
-	Value string `yaml:"value,omitempty"`
+	Value string `yaml:"value,omitempty" json:"value,omitempty"`
 }
 
 func (k *Key) Encrypt(pubKey *crypto.PGP) error {
@@ -63,6 +63,17 @@ func (k *Key) Encrypt(pubKey *crypto.PGP) error {
 		return fmt.Errorf("cannot encrypt PGP key %s: %s", k.Name, err)
 	}
 	k.Value = base64.StdEncoding.EncodeToString(encValue)
+	return nil
+}
+
+func (k *Key) Decrypt(privateKey *crypto.PGP) error {
+	decoded, err := base64.StdEncoding.DecodeString(k.Value)
+	core.CheckErr(err, "cannot base64 decode key '%s'", k.Name)
+	decValue, err := privateKey.Decrypt(decoded)
+	if err != nil {
+		return fmt.Errorf("cannot decrypt PGP key %s: %s", k.Name, err)
+	}
+	k.Value = string(decValue)
 	return nil
 }
 

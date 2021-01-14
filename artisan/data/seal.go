@@ -10,11 +10,13 @@ package data
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"github.com/gatblau/onix/artisan/core"
 	"io"
 	"log"
 	"os"
+	"runtime"
 )
 
 // the digital Seal for a package
@@ -52,7 +54,8 @@ func (seal *Seal) Checksum(path string) []byte {
 	defer func() {
 		err := file.Close()
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			runtime.Goexit()
 		}
 	}()
 	// serialise the seal info to json
@@ -66,7 +69,9 @@ func (seal *Seal) Checksum(path string) []byte {
 	if _, err := io.Copy(hash, file); err != nil {
 		log.Fatal(err)
 	}
-	return hash.Sum(nil)
+	sum := hash.Sum(nil)
+	core.Debug("seal calculated base64 encoded checksum:\n>> start on next line\n%s\n>> ended on previous line", base64.StdEncoding.EncodeToString(sum))
+	return sum
 }
 
 // the artefact id calculated as the hex encoded SHA-256 digest of the artefact Seal
