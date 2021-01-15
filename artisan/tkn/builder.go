@@ -9,8 +9,8 @@ import (
 
 const (
 	ApiVersion              = "v1"
-	ApiVersionTekton        = "tekton.dev/v1alpha1"
-	ApiVersionTektonTrigger = "triggers.tekton.dev/v1alpha1"
+	ApiVersionTekton        = "tekton.dev/v1beta1"
+	ApiVersionTektonTrigger = "triggers.tekton.dev/v1beta1"
 	ServiceAccountName      = "pipeline"
 )
 
@@ -464,12 +464,12 @@ func (b *Builder) codeRepoResourceName() string {
 
 // return the name of the code repository resource
 func (b *Builder) pipelineName() string {
-	return fmt.Sprintf("%s-app-builder", encode(b.flow.Name))
+	return fmt.Sprintf("%s-builder", encode(b.flow.Name))
 }
 
 // return the name of the code repository resource
 func (b *Builder) pipelineRunName() string {
-	return fmt.Sprintf("%s-app-pr", encode(b.flow.Name))
+	return fmt.Sprintf("%s-pr", encode(b.flow.Name))
 }
 
 // return the name of the code repository resource
