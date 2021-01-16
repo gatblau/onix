@@ -3,25 +3,25 @@ package tkn
 import (
 	"bytes"
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/flow"
 )
 
 const (
 	ApiVersion              = "v1"
-	ApiVersionTekton        = "tekton.dev/v1beta1"
-	ApiVersionTektonTrigger = "triggers.tekton.dev/v1beta1"
+	ApiVersionTekton        = "tekton.dev/v1alpha1"
+	ApiVersionTektonTrigger = "triggers.tekton.dev/v1alpha1"
 	ServiceAccountName      = "pipeline"
 )
 
 // tekton builder
 type Builder struct {
 	flow *flow.Flow
-	pk   *crypto.PGP
 }
 
-func NewBuilder(flow *flow.Flow, privateKey *crypto.PGP) *Builder {
-	return &Builder{flow: flow, pk: privateKey}
+func NewBuilder(flow *flow.Flow) *Builder {
+	return &Builder{flow: flow}
 }
 
 func (b *Builder) Create() bytes.Buffer {
@@ -115,6 +115,10 @@ func (b *Builder) getEnv(step *flow.Step) []*Env {
 			Value: variable.Value,
 		})
 	}
+	// if the step is for an executable package then inject
+	// required Runtime Standard Interface variables
+	// see here: https://github.com/gatblau/artisan/tree/master/runtime
+	env = b.addRuntimeInterfaceVars(step, env)
 	// add secrets
 	for _, secret := range step.Input.Secret {
 		env = append(env, &Env{
@@ -124,6 +128,39 @@ func (b *Builder) getEnv(step *flow.Step) []*Env {
 					Name: b.secretName(),
 					Key:  secret.Name,
 				}},
+		})
+	}
+	return env
+}
+
+func (b *Builder) addRuntimeInterfaceVars(step *flow.Step, env []*Env) []*Env {
+	if len(step.Package) > 0 {
+		env = append(env, &Env{
+			Name:  "PACKAGE_NAME",
+			Value: step.Package,
+		})
+		env = append(env, &Env{
+			Name:  "FX_NAME",
+			Value: step.Function,
+		})
+		name, _ := core.ParseName(step.Package)
+		env = append(env, &Env{
+			Name: "ART_REG_USER",
+			ValueFrom: &ValueFrom{
+				SecretKeyRef: &SecretKeyRef{
+					Name: b.secretName(),
+					Key:  fmt.Sprintf("ART_REG_USER_%s", name.Domain),
+				},
+			},
+		})
+		env = append(env, &Env{
+			Name: "ART_REG_PWD",
+			ValueFrom: &ValueFrom{
+				SecretKeyRef: &SecretKeyRef{
+					Name: b.secretName(),
+					Key:  fmt.Sprintf("ART_REG_PWD_%s", name.Domain),
+				},
+			},
 		})
 	}
 	return env
@@ -158,42 +195,47 @@ func (b *Builder) newVolumes() []*Volumes {
 }
 
 func (b *Builder) newCredentialsSecret() *Secret {
-	for _, step := range b.flow.Steps {
-		if step.Input != nil && step.Input.Key != nil {
-			secrets := step.Input.Secret
-			s := new(Secret)
-			s.APIVersion = ApiVersion
-			s.Kind = "Secret"
-			s.Type = "Opaque"
-			s.Metadata = &Metadata{
-				Name: b.secretName(),
-			}
-			credentials := make(map[string]string)
-			for _, secret := range secrets {
-				name := secret.Name
-				secret.Decrypt(b.pk)
-				credentials[name] = secret.Value
-			}
-			s.StringData = &credentials
-			return s
+	if b.flow.RequiresSecrets() {
+		s := new(Secret)
+		s.APIVersion = ApiVersion
+		s.Kind = "Secret"
+		s.Type = "Opaque"
+		s.Metadata = &Metadata{
+			Name: b.secretName(),
 		}
+		credentials := make(map[string]string)
+		for _, step := range b.flow.Steps {
+			if step.Input != nil && step.Input.Secret != nil {
+				for _, secret := range step.Input.Secret {
+					name := secret.Name
+					credentials[name] = secret.Value
+				}
+			}
+		}
+		// add flow level secrets
+		for _, cred := range b.flow.Credential {
+			credentials[fmt.Sprintf("ART_REG_USER_%s", cred.Domain)] = cred.User
+			credentials[fmt.Sprintf("ART_REG_PWD_%s", cred.Domain)] = cred.Password
+		}
+		s.StringData = &credentials
+		return s
 	}
 	return nil
 }
 
 func (b *Builder) newKeySecrets() *Secret {
-	for _, step := range b.flow.Steps {
-		if step.Input != nil && step.Input.Key != nil {
+	if b.flow.RequiresKey() {
+		s := new(Secret)
+		s.APIVersion = ApiVersion
+		s.Kind = "Secret"
+		s.Type = "Opaque"
+		s.Metadata = &Metadata{
+			Name: b.keysSecretName(),
+		}
+		keysDict := make(map[string]string)
+		var name string
+		for _, step := range b.flow.Steps {
 			keys := step.Input.Key
-			s := new(Secret)
-			s.APIVersion = ApiVersion
-			s.Kind = "Secret"
-			s.Type = "Opaque"
-			s.Metadata = &Metadata{
-				Name: b.keysSecretName(),
-			}
-			keysDict := make(map[string]string)
-			var name string
 			for _, key := range keys {
 				prefix := crypto.KeyNamePrefix(key.PackageGroup, key.PackageName)
 				if key.Private {
@@ -201,12 +243,11 @@ func (b *Builder) newKeySecrets() *Secret {
 				} else {
 					name = crypto.PublicKeyName(prefix, "pgp")
 				}
-				key.Decrypt(b.pk)
 				keysDict[name] = key.Value
 			}
-			s.StringData = &keysDict
-			return s
 		}
+		s.StringData = &keysDict
+		return s
 	}
 	return nil
 }
@@ -376,7 +417,7 @@ func (b *Builder) newTriggerTemplate() *PipelineRun {
 	t.APIVersion = ApiVersionTektonTrigger
 	t.Kind = "TriggerTemplate"
 	t.Metadata = &Metadata{
-		Name: "$(params.git-repo-name)-app-pr-$(uid)",
+		Name: encode(b.flow.Name),
 	}
 	t.Spec = &Spec{
 		Params: []*Params{
@@ -427,7 +468,7 @@ func (b *Builder) newPipelineRunTriggerTemplate() *PipelineRun {
 	r.Kind = "PipelineRun"
 	r.APIVersion = ApiVersionTekton
 	r.Metadata = &Metadata{
-		Name: "build-deploy-$(params.git-repo-name)-$(uid)",
+		Name: "$(params.git-repo-name)-app-pr-$(uid)",
 	}
 	r.Spec = &Spec{
 		ServiceAccountName: ServiceAccountName,

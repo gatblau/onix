@@ -51,14 +51,29 @@ func (b *TknGenCmd) Run(cmd *cobra.Command, args []string) {
 	default:
 		core.RaiseErr("too many arguments")
 	}
-	if len(b.pkPath) == 0 {
-		core.RaiseErr("decryption key path is required")
+	if len(b.pkPath) > 0 {
+		if filepath.Ext(flowPath) != ".asc" {
+			core.RaiseErr("the flow must be in ASCII armor encrypted format (.asc)")
+		}
+	} else {
+		if filepath.Ext(flowPath) != ".yaml" {
+			core.RaiseErr("the flow must be in yaml format (.yaml)")
+		}
 	}
-	f, err := flow.LoadFlow(flowPath)
+	var (
+		key *crypto.PGP
+		err error
+	)
+	if len(b.pkPath) > 0 {
+		key, err = crypto.LoadPGP(b.pkPath)
+		core.CheckErr(err, "cannot load public PGP encryption key")
+		if key.HasPrivate() {
+			core.RaiseErr("a private PGP key has been provided but a public PGP key is required")
+		}
+	}
+	f, err := flow.LoadFlow(flowPath, key)
 	core.CheckErr(err, "cannot load flow")
-	pk, err := crypto.LoadPGP(b.pkPath)
-	core.CheckErr(err, "cannot load decryption key")
-	builder := tkn.NewBuilder(f, pk)
+	builder := tkn.NewBuilder(f)
 	buf := builder.Create()
 	fmt.Println(buf.String())
 }

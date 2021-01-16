@@ -76,16 +76,24 @@ func InputFromBuildFile(fxName string, buildFile *BuildFile, prompt bool) *Input
 }
 
 // extracts the package manifest Input in an exported function
-func InputFromManifest(fxName string, manifest *Manifest, prompt bool) *Input {
+func InputFromManifest(name *core.PackageName, fxName string, manifest *Manifest, prompt bool) *Input {
 	// get the function in the manifest
 	fx := manifest.Fx(fxName)
 	if fx == nil {
 		core.RaiseErr("function '%s' does not exist in or has not been exported", fxName)
 	}
+	input := *fx.Input
+	// as we need to open this package a verification key is needed
+	// then, add the key to the inputs automatically
+	input.Key = append(input.Key, &Key{
+		Name:        fmt.Sprintf("%s_%s_VERIFICATION_KEY", strings.ToUpper(name.Group), strings.ToUpper(name.Name)),
+		Description: fmt.Sprintf("the public PGP key required to open the package %s", name),
+		Private:     false,
+	})
 	if prompt {
-		return surveyInput(fx.Input)
+		surveyInput(&input)
 	}
-	return fx.Input
+	return &input
 }
 
 func InputFromURI(uri string, prompt bool) *Input {
