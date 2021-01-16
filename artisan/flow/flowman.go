@@ -9,28 +9,37 @@ package flow
 
 import (
 	"fmt"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"os"
 	"path/filepath"
+	"strings"
 )
 
 // the pipeline generator requires at least the flow definition
 // if a build file is passed then step variables can be inferred from it
 type Manager struct {
-	flow      *Flow
-	buildFile *data.BuildFile
-	pub       *crypto.PGP
+	flow         *Flow
+	buildFile    *data.BuildFile
+	bareFlowPath string
 }
 
-func NewFromPath(flowPath, pubKeyPath, buildPath string) (*Manager, error) {
-	m := new(Manager)
-	flow, err := LoadFlow(flowPath)
+func NewFromPath(bareFlowPath, buildPath string) (*Manager, error) {
+	// check the flow path to see if bare flow is named correctly
+	if !strings.HasSuffix(bareFlowPath, "_bare.yaml") {
+		core.RaiseErr("a bare flow is required, the naming convention is [flow_name]_bare.yaml")
+	}
+	m := &Manager{
+		bareFlowPath: bareFlowPath,
+	}
+	flow, err := LoadFlow(bareFlowPath, nil)
 	if err != nil {
-		return nil, fmt.Errorf("cannot load flow definition from %s: %s", flowPath, err)
+		return nil, fmt.Errorf("cannot load flow definition from %s: %s", bareFlowPath, err)
 	}
 	m.flow = flow
 	// if a build file is defined, then load it
@@ -41,11 +50,6 @@ func NewFromPath(flowPath, pubKeyPath, buildPath string) (*Manager, error) {
 		}
 		m.buildFile = buildFile
 	}
-	m.pub, err = crypto.LoadPGP(pubKeyPath)
-	core.CheckErr(err, "cannot load public PGP encryption key")
-	if m.pub.HasPrivate() {
-		return nil, fmt.Errorf("a private PGP key has been provided but a public PGP key is required")
-	}
 	err = m.validate()
 	if err != nil {
 		return nil, fmt.Errorf("invalid generator: %s", err)
@@ -53,13 +57,14 @@ func NewFromPath(flowPath, pubKeyPath, buildPath string) (*Manager, error) {
 	return m, nil
 }
 
-func (m *Manager) FillIn(local *registry.LocalRegistry) {
+func (m *Manager) Merge() error {
+	local := registry.NewLocalRegistry()
 	if m.flow.RequiresSource() {
 		if m.buildFile == nil {
-			core.RaiseErr("a build.yaml file is required to fill the flow")
+			return fmt.Errorf("a build.yaml file is required to fill the flow")
 		}
 		if len(m.buildFile.GitURI) == 0 {
-			core.RaiseErr("a 'git_uri' is required in the build.yaml")
+			return fmt.Errorf("a 'git_uri' is required in the build.yaml")
 		}
 		m.flow.GitURI = m.buildFile.GitURI
 		m.flow.AppIcon = m.buildFile.AppIcon
@@ -70,7 +75,9 @@ func (m *Manager) FillIn(local *registry.LocalRegistry) {
 			core.CheckErr(err, "invalid step %s package name %s", step.Name, step.Package)
 			// get the package manifest
 			manifest := local.GetManifest(name)
-			step.Input = data.InputFromManifest(step.Function, manifest, true)
+			step.Input = data.InputFromManifest(name, step.Function, manifest, true)
+			// collects credentials to retrieve package from registry
+			m.surveyRegistryCreds(step)
 		} else {
 			// if the step has a function
 			if len(step.Function) > 0 {
@@ -81,10 +88,33 @@ func (m *Manager) FillIn(local *registry.LocalRegistry) {
 				step.Input = data.InputFromURI(step.RuntimeManifest, true)
 			}
 		}
-		// encrypts the step sensitive data
-		if step.Input != nil {
-			step.Input.Encrypt(m.pub)
+	}
+	return nil
+}
+
+func (m *Manager) surveyRegistryCreds(step *Step) {
+	name, _ := core.ParseName(step.Package)
+	// if the credentials for the package domain have not been added
+	if !m.flow.HasDomain(name.Domain) {
+		var user, pwd string
+		// prompt for the registry username
+		userPrompt := &survey.Password{
+			Message: fmt.Sprintf("secret => REGISTRY USER (for %s):", step.Package),
 		}
+		core.HandleCtrlC(survey.AskOne(userPrompt, &user, survey.WithValidator(survey.Required)))
+
+		// prompt for the registry password
+		pwdPrompt := &survey.Password{
+			Message: fmt.Sprintf("secret => REGISTRY PASSWORD (for %s):", step.Package),
+		}
+		core.HandleCtrlC(survey.AskOne(pwdPrompt, &pwd, survey.WithValidator(survey.Required)))
+
+		// add the credentials to the flow list
+		m.flow.Credential = append(m.flow.Credential, &Credential{
+			User:     user,
+			Password: pwd,
+			Domain:   name.Domain,
+		})
 	}
 }
 
@@ -96,7 +126,7 @@ func (m *Manager) YamlString() (string, error) {
 	return string(b), nil
 }
 
-func LoadFlow(path string) (*Flow, error) {
+func LoadFlow(path string, key *crypto.PGP) (*Flow, error) {
 	var err error
 	if len(path) == 0 {
 		return nil, fmt.Errorf("flow definition is required")
@@ -104,12 +134,18 @@ func LoadFlow(path string) (*Flow, error) {
 	if !filepath.IsAbs(path) {
 		path, err = filepath.Abs(path)
 		if err != nil {
-			fmt.Errorf("cannot get absolute path for %s: %s", path, err)
+			return nil, fmt.Errorf("cannot get absolute path for %s: %s", path, err)
 		}
 	}
 	flowBytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read flow definition %s: %s", path, err)
+	}
+	if key != nil {
+		flowBytes, err = key.Decrypt(flowBytes)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decrypt flow %s: %s", path, err)
+		}
 	}
 	flow := new(Flow)
 	err = yaml.Unmarshal(flowBytes, flow)
@@ -127,4 +163,23 @@ func (m *Manager) validate() error {
 		}
 	}
 	return nil
+}
+
+func (m *Manager) Save() error {
+	y, err := yaml.Marshal(m.flow)
+	if err != nil {
+		return fmt.Errorf("cannot marshal bare flow: %s", err)
+	}
+	err = ioutil.WriteFile(m.path(), y, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("cannot save merged flow: %s", err)
+	}
+	return nil
+}
+
+// get the merged flow path
+func (m *Manager) path() string {
+	dir, file := filepath.Split(m.bareFlowPath)
+	filename := core.FilenameWithoutExtension(file)
+	return filepath.Join(dir, fmt.Sprintf("%s.yaml", filename[0:len(filename)-len("_bare")]))
 }

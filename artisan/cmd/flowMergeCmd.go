@@ -11,25 +11,21 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/flow"
-	"github.com/gatblau/onix/artisan/registry"
 	"github.com/spf13/cobra"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 )
 
 // list local artefacts
-type FlowFillCmd struct {
+type FlowMergeCmd struct {
 	cmd           *cobra.Command
 	envFilename   string
 	buildFilePath string
 	stdout        *bool
 }
 
-func NewFlowFillCmd() *FlowFillCmd {
-	c := &FlowFillCmd{
+func NewFlowMergeCmd() *FlowMergeCmd {
+	c := &FlowMergeCmd{
 		cmd: &cobra.Command{
-			Use: "fill [flags] [/path/to/flow.yaml] [path/to/pgp/public/key]",
+			Use: "merge [flags] [/path/to/flow.yaml] [path/to/pgp/public/key]",
 			Short: "fills in a bare flow by adding the required variables, secrets and keys.\n" +
 				"Secrets and keys are PGP encrypted by default using the provided public PGP key.",
 			Long: `fills in a bare flow by adding the required variables, secrets and keys.\n
@@ -43,34 +39,26 @@ Secrets and keys are PGP encrypted by default using the provided public PGP key.
 	return c
 }
 
-func (c *FlowFillCmd) Run(cmd *cobra.Command, args []string) {
-	var flowPath, pubPath string
-	if len(args) == 2 {
+func (c *FlowMergeCmd) Run(cmd *cobra.Command, args []string) {
+	var flowPath string
+	if len(args) == 1 {
 		flowPath = core.ToAbsPath(args[0])
-		pubPath = core.ToAbsPath(args[1])
-	} else if len(args) < 2 {
-		core.RaiseErr("insufficient arguments: need the paths to the flow the PUBLIC PGP key files")
+	} else if len(args) < 1 {
+		core.RaiseErr("insufficient arguments: need the path to the bare flow file")
 	} else if len(args) > 2 {
-		core.RaiseErr("insufficient arguments: only need the paths to the flow the PUBLIC PGP key files")
+		core.RaiseErr("too many arguments: only need the path to the bare flow file")
 	}
-	// try to load env from file
-	core.LoadEnvFromFile(c.envFilename)
 	// loads a bare flow from the path
-	g, err := flow.NewFromPath(flowPath, pubPath, c.buildFilePath)
-	core.CheckErr(err, "failed to load bare flow")
-	// fills in the bare flow
-	g.FillIn(registry.NewLocalRegistry())
-	// marshals the merged flow to a yaml string
-	yaml, err := g.YamlString()
-	core.CheckErr(err, "cannot fill in bare flow")
+	flow, err := flow.NewFromPath(flowPath, c.buildFilePath)
+	core.CheckErr(err, "cannot load bare flow")
+	err = flow.Merge()
+	core.CheckErr(err, "cannot merge bare flow")
 	if *c.stdout {
-		// prints the flow to stdout
+		yaml, err := flow.YamlString()
+		core.CheckErr(err, "cannot marshal bare flow")
 		fmt.Println(yaml)
 	} else {
-		dir, file := filepath.Split(flowPath)
-		filename := core.FilenameWithoutExtension(file)
-		mergedFlowFilename := filepath.Join(dir, fmt.Sprintf("%s-%s.yaml", filename, core.RandomString(5)))
-		err = ioutil.WriteFile(mergedFlowFilename, []byte(yaml), os.ModePerm)
-		core.CheckErr(err, "cannot save filled in flow")
+		err = flow.Save()
+		core.CheckErr(err, "cannot save bare flow")
 	}
 }
