@@ -106,11 +106,8 @@ func containerCmd() (string, error) {
 
 // checks if a command is available
 func isCmdAvailable(name string) bool {
-	cmd := exec.Command("command", "-v", name)
-	if err := cmd.Run(); err != nil {
-		return false
-	}
-	return true
+	_, err := exec.LookPath(name)
+	return err == nil
 }
 
 // return an array of environment variable arguments to pass to docker
@@ -171,5 +168,10 @@ func printLogs(containerName string) {
 func removeContainer(containerName string) {
 	tool, err := containerCmd()
 	core.CheckErr(err, "")
-	_ = exec.Command(tool, "rm", containerName)
+	rm := exec.Command(tool, "rm", containerName)
+	out, err := rm.Output()
+	if err != nil {
+		core.Msg(string(out))
+		core.CheckErr(err, "cannot remove temporary container %s", containerName)
+	}
 }

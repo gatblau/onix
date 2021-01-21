@@ -75,5 +75,6 @@ func (r *Runner) RunC(fxName string) error {
 	for isRunning(containerName) {
 		time.Sleep(500 * time.Millisecond)
 	}
+	removeContainer(containerName)
 	return nil
 }
