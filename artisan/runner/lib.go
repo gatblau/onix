@@ -125,6 +125,9 @@ func toCmdArgs(imageName, dir, containerName string, env *core.Envar) []string {
 		// add a bind mount for the current folder to the /workspace/source in the runtime
 		result = append(result, "-v")
 		result = append(result, fmt.Sprintf("%s:%s", dir, "/workspace/source"))
+		// add a bind mount for the artisan registry folder
+		result = append(result, "-v")
+		result = append(result, fmt.Sprintf("%s:%s", core.RegistryPath(), "/.artisan"))
 	}
 	result = append(result, imageName)
 	return result
