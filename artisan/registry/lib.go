@@ -10,9 +10,9 @@ package registry
 import (
 	"archive/zip"
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -119,7 +119,7 @@ func upload(client *http.Client, url string, values map[string]io.Reader, user s
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", basicToken(user, pwd))
+		req.Header.Add("authorization", core.BasicToken(user, pwd))
 	}
 	// Submit the request
 	res, err := client.Do(req)
@@ -140,11 +140,6 @@ func openFile(path string) *os.File {
 		panic(err)
 	}
 	return r
-}
-
-// creates a basic authentication token
-func basicToken(user string, pwd string) string {
-	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
 }
 
 // unzip a package

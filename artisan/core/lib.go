@@ -17,9 +17,12 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/hashicorp/go-uuid"
+	"github.com/ohler55/ojg/jp"
 	"io"
+	"io/ioutil"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -268,4 +271,77 @@ func ToAbsPath(flowPath string) string {
 		flowPath = abs
 	}
 	return flowPath
+}
+
+// encode strings to be used in tekton pipelines names
+func Encode(value string) string {
+	length := 30
+	value = strings.ToLower(value)
+	value = strings.Replace(value, " ", "-", -1)
+	if len(value) > length {
+		value = value[0:length]
+	}
+	return value
+}
+
+func Wait(uri, filter, token string, maxAttempts int) {
+	var (
+		filtered []interface{}
+		attempts = 0
+	)
+	// executes the query
+	filtered = httpGetFiltered(uri, token, filter)
+	// if no result loop
+	for len(filtered) == 0 {
+		// wait for next attempt
+		time.Sleep(500 * time.Millisecond)
+		// executes query
+		filtered = httpGetFiltered(uri, token, filter)
+		// increments the number of attempts
+		attempts++
+		// exits if max attempts reached
+		if attempts >= maxAttempts {
+			RaiseErr("call to %s did not return expected value after %d attempts", uri, maxAttempts)
+		}
+	}
+}
+
+func httpGetFiltered(uri, token, filter string) []interface{} {
+	result := httpGet(uri, token)
+	var jason interface{}
+	err := json.Unmarshal(result, &jason)
+	CheckErr(err, "cannot unmarshal response")
+	// filtered, err = jsonpath.Read(jason, filter)
+	f, err := jp.ParseString(filter)
+	CheckErr(err, "cannot apply filter")
+	return f.Get(jason)
+}
+
+func httpGet(uri, token string) []byte {
+	// create request
+	req, err := http.NewRequest("GET", uri, nil)
+	CheckErr(err, "cannot create new request")
+	// add authorization header if there is a token defined
+	if len(token) > 0 {
+		req.Header.Set("Authorization", token)
+	}
+	// all content type should be in JSON format
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	CheckErr(err, "cannot call URI %s", uri)
+	if resp.StatusCode > 299 {
+		RaiseErr("http request return error: %s", resp.Status)
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	CheckErr(err, "cannot read response body")
+	// if the result is not in JSON format
+	if !isJSON(body) {
+		RaiseErr("the http response body was not in json format, cannot apply JSON path filter")
+	}
+	return body
+}
+
+func isJSON(s []byte) bool {
+	var js map[string]interface{}
+	return json.Unmarshal(s, &js) == nil
 }

@@ -75,7 +75,7 @@ func (r *Api) UploadArtefact(name *core.PackageName, artefactRef string, zipfile
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", basicToken(user, pwd))
+		req.Header.Add("authorization", core.BasicToken(user, pwd))
 	}
 	// Submit the request
 	res, err := r.client.Do(req)
@@ -105,7 +105,7 @@ func (r *Api) UpdateArtefactInfo(name *core.PackageName, artefact *Artefact, use
 	}
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", basicToken(user, pwd))
+		req.Header.Add("authorization", core.BasicToken(user, pwd))
 	}
 	// Submit the request
 	res, err := r.client.Do(req)
@@ -124,7 +124,7 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, err
 	}
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", basicToken(user, pwd))
+		req.Header.Add("authorization", core.BasicToken(user, pwd))
 	}
 	// Submit the request
 	resp, err := r.client.Do(req)
@@ -166,7 +166,7 @@ func (r *Api) GetArtefactInfo(group, name, id, user, pwd string) (*Artefact, err
 	}
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", basicToken(user, pwd))
+		req.Header.Add("authorization", core.BasicToken(user, pwd))
 	}
 	// Submit the request
 	resp, err := r.client.Do(req)
@@ -199,7 +199,7 @@ func (r *Api) Download(group, name, filename, user, pwd string) (string, error) 
 	}
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", basicToken(user, pwd))
+		req.Header.Add("authorization", core.BasicToken(user, pwd))
 	}
 	// Submit the request
 	res, err := r.client.Do(req)

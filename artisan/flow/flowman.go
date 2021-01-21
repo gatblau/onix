@@ -75,37 +75,37 @@ func (m *Manager) Merge() error {
 			core.CheckErr(err, "invalid step %s package name %s", step.Name, step.Package)
 			// get the package manifest
 			manifest := local.GetManifest(name)
-			step.Input = data.InputFromManifest(name, step.Function, manifest, true)
+			step.Input = data.SurveyInputFromManifest(name, step.Function, manifest, true)
 			// collects credentials to retrieve package from registry
-			m.surveyRegistryCreds(step)
+			m.surveyRegistryCreds(step.Package)
 		} else {
 			// if the step has a function
 			if len(step.Function) > 0 {
 				// add exported inputs to the step
-				step.Input = data.InputFromBuildFile(step.Function, m.buildFile, true)
+				step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, true)
 			} else {
 				// read input from from runtime_uri
-				step.Input = data.InputFromURI(step.RuntimeManifest, true)
+				step.Input = data.SurveyInputFromURI(step.RuntimeManifest, true)
 			}
 		}
 	}
 	return nil
 }
 
-func (m *Manager) surveyRegistryCreds(step *Step) {
-	name, _ := core.ParseName(step.Package)
+func (m *Manager) surveyRegistryCreds(packageName string) {
+	name, _ := core.ParseName(packageName)
 	// if the credentials for the package domain have not been added
 	if !m.flow.HasDomain(name.Domain) {
 		var user, pwd string
 		// prompt for the registry username
 		userPrompt := &survey.Password{
-			Message: fmt.Sprintf("secret => REGISTRY USER (for %s):", step.Package),
+			Message: fmt.Sprintf("secret => REGISTRY USER (for %s):", packageName),
 		}
 		core.HandleCtrlC(survey.AskOne(userPrompt, &user, survey.WithValidator(survey.Required)))
 
 		// prompt for the registry password
 		pwdPrompt := &survey.Password{
-			Message: fmt.Sprintf("secret => REGISTRY PASSWORD (for %s):", step.Package),
+			Message: fmt.Sprintf("secret => REGISTRY PASSWORD (for %s):", packageName),
 		}
 		core.HandleCtrlC(survey.AskOne(pwdPrompt, &pwd, survey.WithValidator(survey.Required)))
 
