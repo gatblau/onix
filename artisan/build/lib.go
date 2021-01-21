@@ -283,7 +283,7 @@ func round(val float64, roundOn float64, places int) (newVal float64) {
 }
 
 // executes a command and sends output and error streams to stdout and stderr
-func execute(cmd string, dir string, env *envar, interactive bool) (err error) {
+func execute(cmd string, dir string, env *core.Envar, interactive bool) (err error) {
 	if cmd == "" {
 		return errors.New("no command provided")
 	}
@@ -296,11 +296,11 @@ func execute(cmd string, dir string, env *envar, interactive bool) (err error) {
 		args = cmdArr[1:]
 	}
 
-	args, _ = core.MergeEnvironmentVars(args, env.vars, interactive)
+	args, _ = core.MergeEnvironmentVars(args, env.Vars, interactive)
 
 	command := exec.Command(name, args...)
 	command.Dir = dir
-	command.Env = env.slice()
+	command.Env = env.Slice()
 
 	stdout, err := command.StdoutPipe()
 	if err != nil {
@@ -341,7 +341,7 @@ func execute(cmd string, dir string, env *envar, interactive bool) (err error) {
 }
 
 // executes a command and returns ist output
-func executeWithOutput(cmd string, dir string, env *envar, interactive bool) (string, error) {
+func executeWithOutput(cmd string, dir string, env *core.Envar, interactive bool) (string, error) {
 	if cmd == "" {
 		return "", errors.New("no command provided")
 	}
@@ -354,11 +354,11 @@ func executeWithOutput(cmd string, dir string, env *envar, interactive bool) (st
 		args = cmdArr[1:]
 	}
 
-	args, _ = core.MergeEnvironmentVars(args, env.vars, interactive)
+	args, _ = core.MergeEnvironmentVars(args, env.Vars, interactive)
 
 	command := exec.Command(name, args...)
 	command.Dir = dir
-	command.Env = env.slice()
+	command.Env = env.Slice()
 
 	result, err := command.Output()
 	if err != nil {
@@ -398,41 +398,4 @@ func findGitPath(path string) (string, error) {
 			return path, nil
 		}
 	}
-}
-
-// checks if a command is available
-func isCmdAvailable(name string) bool {
-	cmd := exec.Command("command", "-v", name)
-	if err := cmd.Run(); err != nil {
-		return false
-	}
-	return true
-}
-
-// return the command to run to launch a container
-func containerCmd() string {
-	if isCmdAvailable("docker") {
-		return "docker"
-	} else if isCmdAvailable("podman") {
-		return "podman"
-	}
-	return ""
-}
-
-// launch a container and execute a package function
-func RunInContainer(imageName, packageName, fxName string) error {
-	// determine which container tool is available in the host
-	tool := containerCmd()
-	// if no tool is available
-	if len(tool) == 0 {
-		return fmt.Errorf("either podman or docker is required to launch a container")
-	}
-	// create a container name
-	containerName := fmt.Sprintf("artisan-run-%s", core.RandomString(5))
-	// launch the container with an art exec command
-	cmd := exec.Command(tool, "run", "--name", containerName, "-d", "--rm", imageName, fmt.Sprintf("art exec %s %s", packageName, fxName))
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("cannot launch container: %s", err)
-	}
-	return nil
 }

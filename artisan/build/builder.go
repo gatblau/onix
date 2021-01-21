@@ -42,7 +42,7 @@ type Builder struct {
 	localReg         *registry.LocalRegistry
 	shouldCopySource bool
 	loadFrom         string
-	env              *envar
+	env              *core.Envar
 	zip              bool // if the target is already zipped before packaging (e.g. jar, zip files, etc)
 }
 
@@ -78,7 +78,7 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 		core.RaiseErr("profile '%s' target not specified, cannot continue", buildProfile.Name)
 	}
 	// merge env with target
-	mergedTarget, _ := core.MergeEnvironmentVars([]string{buildProfile.Target}, b.env.vars, interactive)
+	mergedTarget, _ := core.MergeEnvironmentVars([]string{buildProfile.Target}, b.env.Vars, interactive)
 	// set the merged target for later use
 	buildProfile.MergedTarget = mergedTarget[0]
 	// wait for the target to be created in the file system
@@ -340,17 +340,17 @@ func (b *Builder) runFunction(function string, path string, interactive bool) {
 		b.from = path
 	}
 	// add the build file level environment variables
-	env := NewEnVarFromSlice(os.Environ())
+	env := core.NewEnVarFromSlice(os.Environ())
 	// get the build file environment and merge any subshell command
 	vars := b.evalSubshell(b.buildFile.GetEnv(), path, env, interactive)
 	// add the merged vars to the env
-	env = env.append(vars)
+	env = env.Append(vars)
 	// get the fx environment and merge any subshell command
 	vars = b.evalSubshell(fx.GetEnv(), path, env, interactive)
 	// combine the current environment with the function environment
-	buildEnv := env.append(vars)
+	buildEnv := env.Append(vars)
 	// add build specific variables
-	buildEnv = buildEnv.append(b.getBuildEnv())
+	buildEnv = buildEnv.Append(b.getBuildEnv())
 	// for each run statement in the function
 	for _, cmd := range fx.Run {
 		// if the statement has a function call
@@ -379,11 +379,11 @@ func (b *Builder) runFunction(function string, path string, interactive bool) {
 // returns the profile used
 func (b *Builder) runProfile(profileName string, execDir string, interactive bool) *data.Profile {
 	// construct an environment with the vars at build file level
-	env := NewEnVarFromSlice(os.Environ())
+	env := core.NewEnVarFromSlice(os.Environ())
 	// get the build file environment and merge any subshell command
 	vars := b.evalSubshell(b.buildFile.GetEnv(), execDir, env, interactive)
 	// add the merged vars to the env
-	env = env.append(vars)
+	env = env.Append(vars)
 	// for each build profile
 	for _, profile := range b.buildFile.Profiles {
 		// if a profile name has been provided then build it
@@ -391,9 +391,9 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 			// get the profile environment and merge any subshell command
 			vars := b.evalSubshell(profile.GetEnv(), execDir, env, interactive)
 			// combine the current environment with the profile environment
-			buildEnv := env.append(vars)
+			buildEnv := env.Append(vars)
 			// add build specific variables
-			buildEnv = buildEnv.append(b.getBuildEnv())
+			buildEnv = buildEnv.Append(b.getBuildEnv())
 			// stores the build environment
 			b.env = buildEnv
 			// for each run statement in the profile
@@ -438,7 +438,7 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 }
 
 // evaluate sub-shells and replace their values in the variables
-func (b *Builder) evalSubshell(vars map[string]string, execDir string, env *envar, interactive bool) map[string]string {
+func (b *Builder) evalSubshell(vars map[string]string, execDir string, env *core.Envar, interactive bool) map[string]string {
 	for k, v := range vars {
 		if ok, expr, shell := core.HasShell(v); ok {
 			out, err := executeWithOutput(shell, execDir, env, interactive)
@@ -540,7 +540,7 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 				s.Manifest.Functions = append(s.Manifest.Functions, &data.FxInfo{
 					Name:        fx.Name,
 					Description: fx.Description,
-					Input:       data.InputFromBuildFile(fx.Name, buildFile, false),
+					Input:       data.SurveyInputFromBuildFile(fx.Name, buildFile, false),
 				})
 			}
 		}

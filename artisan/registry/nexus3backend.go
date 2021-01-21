@@ -55,7 +55,7 @@ func (r *Nexus3Backend) Download(repoGroup, repoName, fileName, user, pwd string
 		return nil, err
 	}
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", basicToken(user, pwd))
+		req.Header.Add("authorization", core.BasicToken(user, pwd))
 	}
 	// Submit the request
 	res, err := r.client.Do(req)
@@ -183,7 +183,7 @@ func (r *Nexus3Backend) postMultipart(b bytes.Buffer, writer *multipart.Writer, 
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", basicToken(user, pwd))
+		req.Header.Add("authorization", core.BasicToken(user, pwd))
 	}
 	// Submit the request
 	res, err := r.client.Do(req)
@@ -294,7 +294,7 @@ func (r *Nexus3Backend) getFile(repoGroup, repoName, filename, user, pwd string)
 	}
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", basicToken(user, pwd))
+		req.Header.Add("authorization", core.BasicToken(user, pwd))
 	}
 	// Submit the request
 	resp, err := r.client.Do(req)
@@ -313,7 +313,7 @@ func (r *Nexus3Backend) getComponents(user, pwd string) (*components, error) {
 	}
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", basicToken(user, pwd))
+		req.Header.Add("authorization", core.BasicToken(user, pwd))
 	}
 	// Submit the request
 	resp, err := r.client.Do(req)

@@ -23,7 +23,7 @@ func Get(url, user, pwd string) (*http.Response, error) {
 	}
 	// add http request headers
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("Authorization", basicToken(user, pwd))
+		req.Header.Add("Authorization", BasicToken(user, pwd))
 	}
 	// issue http request
 	resp, err := http.DefaultClient.Do(req)
@@ -38,6 +38,6 @@ func Get(url, user, pwd string) (*http.Response, error) {
 	return resp, err
 }
 
-func basicToken(user string, pwd string) string {
+func BasicToken(user string, pwd string) string {
 	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
 }

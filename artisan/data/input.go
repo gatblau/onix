@@ -63,7 +63,7 @@ func (i *Input) Encrypt(pub *crypto.PGP) {
 }
 
 // extracts the build file Input that is relevant to a function (using its bindings)
-func InputFromBuildFile(fxName string, buildFile *BuildFile, prompt bool) *Input {
+func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt bool) *Input {
 	if buildFile == nil {
 		core.RaiseErr("build file is required")
 	}
@@ -76,7 +76,7 @@ func InputFromBuildFile(fxName string, buildFile *BuildFile, prompt bool) *Input
 }
 
 // extracts the package manifest Input in an exported function
-func InputFromManifest(name *core.PackageName, fxName string, manifest *Manifest, prompt bool) *Input {
+func SurveyInputFromManifest(name *core.PackageName, fxName string, manifest *Manifest, prompt bool) *Input {
 	// get the function in the manifest
 	fx := manifest.Fx(fxName)
 	if fx == nil {
@@ -96,7 +96,7 @@ func InputFromManifest(name *core.PackageName, fxName string, manifest *Manifest
 	return &input
 }
 
-func InputFromURI(uri string, prompt bool) *Input {
+func SurveyInputFromURI(uri string, prompt bool) *Input {
 	response, err := core.Get(uri, "", "")
 	core.CheckErr(err, "cannot fetch runtime manifest")
 	body, err := ioutil.ReadAll(response.Body)

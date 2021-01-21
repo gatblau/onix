@@ -19,6 +19,8 @@ import (
 type BuildFile struct {
 	// the URI of the Git repo
 	GitURI string `yaml:"git_uri,omitempty"`
+	// the runtime to use to run functions
+	Runtime string `yaml:"runtime,omitempty"`
 	// the icon to use in a tekton pipeline
 	AppIcon string `yaml:"app_icon,omitempty"`
 	// the environment variables that apply to the build
@@ -152,7 +154,7 @@ func LoadBuildFile(path string) (*BuildFile, error) {
 	buildFile := &BuildFile{}
 	err = yaml.Unmarshal(bytes, buildFile)
 	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal build file %s: %s", path, err)
+		return nil, fmt.Errorf("syntax error in build file %s: %s", path, err)
 	}
 	return buildFile, nil
 }

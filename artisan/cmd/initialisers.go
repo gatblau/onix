@@ -17,6 +17,7 @@ func InitialiseRootCmd() *RootCmd {
 	serveCmd := NewServeCmd()
 	versionCmd := NewVersionCmd()
 	runCmd := NewRunCmd()
+	runCCmd := NewRunCCmd()
 	mergeCmd := NewMergeCmd()
 	pullCmd := NewPullCmd()
 	openCmd := NewOpenCmd()
@@ -25,6 +26,7 @@ func InitialiseRootCmd() *RootCmd {
 	tknCmd := InitialiseTknCommand()
 	manifCmd := NewManifestCmd()
 	execCmd := NewExecCmd()
+	waitCmd := NewWaitCmd()
 	rootCmd.Cmd.AddCommand(
 		buildCmd.cmd,
 		artefactsCmd.cmd,
@@ -34,6 +36,7 @@ func InitialiseRootCmd() *RootCmd {
 		serveCmd.cmd,
 		versionCmd.cmd,
 		runCmd.cmd,
+		runCCmd.cmd,
 		mergeCmd.cmd,
 		pullCmd.cmd,
 		openCmd.cmd,
@@ -42,6 +45,7 @@ func InitialiseRootCmd() *RootCmd {
 		manifCmd.cmd,
 		execCmd.cmd,
 		tknCmd.cmd,
+		waitCmd.cmd,
 	)
 	return rootCmd
 }

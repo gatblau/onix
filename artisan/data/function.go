@@ -30,6 +30,8 @@ type Function struct {
 	Export *bool `yaml:"export,omitempty"`
 	// defines any bindings to inputs required to run this function
 	Input *InputBinding `yaml:"input,omitempty"`
+	// the runtime to run this function
+	Runtime string `yaml:"runtime,omitempty"`
 }
 
 // list the names of the inputs required by a function
