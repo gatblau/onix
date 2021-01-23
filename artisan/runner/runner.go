@@ -12,6 +12,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -49,6 +50,8 @@ func (r *Runner) RunC(fxName string) error {
 	} else {
 		return fmt.Errorf("runtime attribute is required in build.yaml within %s", r.path)
 	}
+	// completes name if the short form is used
+	runtime = format(runtime)
 	// generate a unique name for the running container
 	containerName := fmt.Sprintf("art-%s-%s", core.Encode(fxName), core.RandomString(8))
 	// collect any input required to run the function
@@ -77,4 +80,14 @@ func (r *Runner) RunC(fxName string) error {
 	}
 	removeContainer(containerName)
 	return nil
+}
+
+func format(runtime string) string {
+	// container images must be in lower case
+	runtime = strings.ToLower(runtime)
+	// if no repository is specified then assume artisan library at quay.io/artisan
+	if !strings.ContainsAny(runtime, "/") {
+		return fmt.Sprintf("quay.io/artisan/%s", runtime)
+	}
+	return runtime
 }
