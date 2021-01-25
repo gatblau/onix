@@ -25,11 +25,9 @@ type FlowMergeCmd struct {
 func NewFlowMergeCmd() *FlowMergeCmd {
 	c := &FlowMergeCmd{
 		cmd: &cobra.Command{
-			Use: "merge [flags] [/path/to/flow.yaml] [path/to/pgp/public/key]",
-			Short: "fills in a bare flow by adding the required variables, secrets and keys.\n" +
-				"Secrets and keys are PGP encrypted by default using the provided public PGP key.",
-			Long: `fills in a bare flow by adding the required variables, secrets and keys.\n
-Secrets and keys are PGP encrypted by default using the provided public PGP key.`,
+			Use:   "merge [flags] [/path/to/flow_bare.yaml]",
+			Short: "fills in a bare flow by adding the required variables, secrets and keys",
+			Long:  `fills in a bare flow by adding the required variables, secrets and keys`,
 		},
 	}
 	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env; the path to a file containing environment variables to use")
@@ -45,7 +43,7 @@ func (c *FlowMergeCmd) Run(cmd *cobra.Command, args []string) {
 		flowPath = core.ToAbsPath(args[0])
 	} else if len(args) < 1 {
 		core.RaiseErr("insufficient arguments: need the path to the bare flow file")
-	} else if len(args) > 2 {
+	} else if len(args) > 1 {
 		core.RaiseErr("too many arguments: only need the path to the bare flow file")
 	}
 	// loads a bare flow from the path
