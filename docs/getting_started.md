@@ -12,18 +12,7 @@ To do that you will need the following dependencies in your system:
 - [Docker Compose](https://docs.docker.com/compose/install/)
 - Access to [Docker Hub Onix image repositories](https://hub.docker.com/u/gatblau)
 
-Run the following commands from a terminal window:
-
-```bash
-# first, create a directory to place the docker-compose file
-$ mkdir onix && cd onix
-
-# second, download the docker compose file and place it into the new directory
-$ wget https://raw.githubusercontent.com/gatblau/onix/v1/install/container/docker-compose.yml
-
-# finally, launch docker compose in detached mode
-$ docker-compose up -d
-```
+Refer to the documentation [here](install/container/readme.md) to install Onix using docker-compose.
 
 <a name="installing-using-openshift"></a>
 ### Option B: using OpenShift

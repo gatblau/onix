@@ -24,7 +24,7 @@ services:
     container_name: oxdb
     restart: always
     environment:
-      - POSTGRESQL_ADMIN_PASSWORD=${PG_ADMIN_PASSWORD}
+      - POSTGRESQL_ADMIN_PASSWORD=${PG_ADMIN_PWD}
     ports:
       - "5432:5432"
   dbman:
@@ -35,10 +35,12 @@ services:
     restart: always
     environment:
       - OX_DBM_DB_HOST=oxdb
-      - OX_DBM_DB_USERNAME=${DBMAN_USER}
-      - OX_DBM_DB_PASSWORD=${DBMAN_PWD}
-      - OX_DBM_DB_ADMINUSERNAME=${DBMAN_ADMIN_USER}
-      - OX_DBM_DB_ADMINPASSWORD=${DBMAN_ADMIN_PWD}
+      - OX_DBM_DB_USERNAME=${ONIX_DB_USER}
+      - OX_DBM_DB_PASSWORD=${ONIX_DB_PWD}
+      - OX_DBM_DB_ADMINUSERNAME=${PG_ADMIN_USER}
+      - OX_DBM_DB_ADMINPASSWORD=${PG_ADMIN_PWD}
+      - OX_DBM_HTTP_USERNAME=${DBMAN_HTTP_USER}
+      - OX_DBM_HTTP_PASSWORD=${DBMAN_HTTP_PWD}
       - OX_DBM_HTTP_AUTHMODE=${DBMAN_AUTH_MODE}
       - OX_DBM_APPVERSION=${DBMAN_APP_VERSION}
     ports:
@@ -59,10 +61,13 @@ services:
     restart: always
     environment:
       - DB_HOST=oxdb
-      - DB_ADMIN_PWD=${PG_ADMIN_PASSWORD}
+      - DB_USER=${ONIX_DB_USER}
+      - DB_PWD=${ONIX_DB_PWD}
+      - DB_ADMIN_USER=${PG_ADMIN_USER}
+      - DB_ADMIN_PWD=${PG_ADMIN_PWD}
       - WAPI_AUTH_MODE=${AUTH_MODE}
-      - WAPI_ADMIN_USER=${ADMIN_USER}
-      - WAPI_ADMIN_PWD=${ADMIN_PWD}
+      - WAPI_ADMIN_USER=${ONIX_HTTP_ADMIN_USER}
+      - WAPI_ADMIN_PWD=${ONIX_HTTP_ADMIN_PWD}
       - WAPI_EVENTS_ENABLED=${BROKER_ENABLED}
       - WAPI_EVENTS_SERVER_HOST=oxmsg
       - WAPI_EVENTS_SERVER_PORT=${BROKER_PORT}
