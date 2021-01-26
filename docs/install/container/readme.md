@@ -4,13 +4,21 @@
 
 ## Using Docker Compose
 
-To spin up Onix using [Docker Compose](https://docs.docker.com/compose/) just run the following command:
+To spin up Onix using [Docker Compose](https://docs.docker.com/compose/):
 
+- copy the .env, the docker_compose.yaml and up_with_compose.sh files to a local folder
+- open the .env file and update the following password variables:
+    - PG_ADMIN_PWD: the postgres admin database user password
+    - ONIX_DB_PWD: the onix database user password
+    - DBMAN_HTTP_PWD: the DbMan Web API HTTP admin user password
+    - ONIX_HTTP_ADMIN_PWD: the Onix Web API HTTP admin user password
+    - ONIX_HTTP_READER_PWD: the Onix Web API HTTP reader user password
+    - ONIX_HTTP_WRITER_PWD: the Onix Web API HTTP writer user password
+- finally run the up_with_compose.sh script, which will ensure schemas are installed and passwords updated accordingly
+  
 ```bash
 sh up_with_compose.sh
 ```
-
-***NOTE***: The above script will call compose but also the readyness probe to deploy the database.
 
 To destroy the containers:
 
