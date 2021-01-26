@@ -6,7 +6,7 @@
 
 To spin up Onix using [Docker Compose](https://docs.docker.com/compose/):
 
-- copy the [.env](.env), the [docker_compose.yaml](docker_compose.yaml) and [up_with_compose.sh](up_with_compose.sh) files to a local folder
+- copy the [.env](.env), the [docker-compose.yaml](docker-compose.yaml) and [up_with_compose.sh](up_with_compose.sh) files to a local folder
 - open the .env file and update the following password variables:
     - PG_ADMIN_PWD: the postgres admin database user password
     - ONIX_DB_PWD: the onix database user password
