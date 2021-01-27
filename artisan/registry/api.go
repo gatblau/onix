@@ -39,7 +39,7 @@ func NewGenericAPI(domain string, noTLS bool) *Api {
 		domain: domain,
 		tmp:    core.TmpPath(),
 		client: &http.Client{
-			Timeout: time.Second * 10,
+			Timeout: time.Second * 60,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: true,
