@@ -9,12 +9,12 @@ import (
 	"testing"
 )
 
-// func TestUpload(t *testing.T) {
-// 	name := core.ParseName("localhost:8082/gatblau/boot")
-// 	local := NewLocalRegistry()
-// 	local.Push(name, "admin:admin", false)
-// }
-//
+func TestUpload(t *testing.T) {
+	name, _ := core.ParseName("artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/gatblau/artisan")
+	local := NewLocalRegistry()
+	local.Push(name, "admin:nxrpsap", false)
+}
+
 // func TestDownload(t *testing.T) {
 // 	name := core.ParseName("localhost:8082/gatblau/artie")
 // 	local := NewLocalRegistry()
