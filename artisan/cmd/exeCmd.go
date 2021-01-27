@@ -14,7 +14,7 @@ import (
 )
 
 // executes an exported function
-type ExecCmd struct {
+type ExeCmd struct {
 	cmd             *cobra.Command
 	interactive     *bool
 	container       *bool
@@ -25,10 +25,10 @@ type ExecCmd struct {
 	pubPath         string
 }
 
-func NewExecCmd() *ExecCmd {
-	c := &ExecCmd{
+func NewExeCmd() *ExeCmd {
+	c := &ExeCmd{
 		cmd: &cobra.Command{
-			Use:   "exec [package name] [function]",
+			Use:   "exe [package name] [function]",
 			Short: "execute an exported function in a package",
 			Long:  ``,
 		},
@@ -43,7 +43,7 @@ func NewExecCmd() *ExecCmd {
 	return c
 }
 
-func (r *ExecCmd) Run(cmd *cobra.Command, args []string) {
+func (r *ExeCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) < 2 {
 		core.RaiseErr("package and function names are required")
 	}
