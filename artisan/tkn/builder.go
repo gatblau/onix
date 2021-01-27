@@ -134,14 +134,16 @@ func (b *Builder) getEnv(step *flow.Step) []*Env {
 }
 
 func (b *Builder) addRuntimeInterfaceVars(step *flow.Step, env []*Env) []*Env {
+	if len(step.Function) > 0 {
+		env = append(env, &Env{
+			Name:  "FX_NAME",
+			Value: step.Function,
+		})
+	}
 	if len(step.Package) > 0 {
 		env = append(env, &Env{
 			Name:  "PACKAGE_NAME",
 			Value: step.Package,
-		})
-		env = append(env, &Env{
-			Name:  "FX_NAME",
-			Value: step.Function,
 		})
 		name, _ := core.ParseName(step.Package)
 		env = append(env, &Env{
