@@ -97,8 +97,11 @@ func runPackageFx(runtimeName, packageName, fxName, dir, containerName, artRegis
 	env.Add("FX_NAME", fxName)
 	env.Add("ART_REG_USER", artRegistryUser)
 	env.Add("ART_REG_PWD", artRegistryPwd)
+	// create a slice with docker run args
+	args := toContainerArgs(runtimeName, dir, containerName, env)
 	// launch the container with an art exec command
-	cmd := exec.Command(tool, toContainerArgs(runtimeName, dir, containerName, env)...)
+	cmd := exec.Command(tool, args...)
+	core.Debug("! launching runtime: %s %s\n", tool, strings.Join(args, " "))
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("cannot launch container: %s", err)
 	}
