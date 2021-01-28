@@ -13,6 +13,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/cheggaaa/pb"
 	"github.com/gatblau/onix/artisan/core"
 	"io"
 	"io/ioutil"
@@ -68,8 +69,13 @@ func (r *Api) UploadArtefact(name *core.PackageName, artefactRef string, zipfile
 	// If you don't close it, your request will be missing the terminating boundary.
 	err = writer.Close()
 	core.CheckErr(err, "cannot close writer")
+	// create and start bar
+	bar := pb.New(b.Len()).SetUnits(pb.U_BYTES)
+	bar.Start()
+	// create proxy reader
+	reader := bar.NewProxyReader(&b)
 	// Now that you have a form, you can submit it to your handler.
-	req, err := http.NewRequest("POST", r.artefactTagURI(name.Group, name.Name, name.Tag), &b)
+	req, err := http.NewRequest("POST", r.artefactTagURI(name.Group, name.Name, name.Tag), reader)
 	core.CheckErr(err, "cannot create http request")
 	// Don't forget to set the content type, this will contain the boundary.
 	req.Header.Set("Content-Type", writer.FormDataContentType())
