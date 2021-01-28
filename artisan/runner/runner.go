@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
+	"github.com/gatblau/onix/artisan/registry"
 	"path/filepath"
 	"strings"
 	"time"
@@ -53,11 +54,67 @@ func (r *Runner) RunC(fxName string) error {
 	// completes name if the short form is used
 	runtime = format(runtime)
 	// generate a unique name for the running container
-	containerName := fmt.Sprintf("art-%s-%s", core.Encode(fxName), core.RandomString(8))
+	containerName := fmt.Sprintf("art-runc-%s-%s", core.Encode(fxName), core.RandomString(8))
 	// collect any input required to run the function
 	env := core.NewEnVarFromSlice([]string{})
 	// interactively survey for required input via CLI
 	input := data.SurveyInputFromBuildFile(fxName, r.buildFile, true)
+	// fill the environment with the input
+	fillEnv(input, env)
+	// launch a container with a bind mount to the path where the build.yaml is located
+	err := runBuildFileFx(runtime, fxName, r.path, containerName, env)
+	if err != nil {
+		removeContainer(containerName)
+		return err
+	}
+	// wait for the container to complete its task
+	for isRunning(containerName) {
+		time.Sleep(500 * time.Millisecond)
+	}
+	removeContainer(containerName)
+	return nil
+}
+
+func (r *Runner) ExeC(packageName, fxName, credentials, dir string, interactive bool) error {
+	name, _ := core.ParseName(packageName)
+	// get a local registry handle
+	local := registry.NewLocalRegistry()
+	// get the package manifest
+	m := local.GetManifest(name)
+	// if the manifest exports the function
+	if isExported(m, fxName) {
+		// get the runtime to use from the manifest
+		runtime := format(m.Runtime)
+		// collect any input required to run the function
+		env := core.NewEnVarFromSlice([]string{})
+		// interactively survey for required input via CLI
+		input := data.SurveyInputFromManifest(name, fxName, m, interactive)
+		// fill the environment with the input
+		fillEnv(input, env)
+		// get registry credentials
+		uname, pwd := core.UserPwd(credentials)
+		// create a random container name
+		containerName := fmt.Sprintf("art-exec-%s", core.RandomString(8))
+		// launch a container with a bind mount to the path where the build.yaml is located
+		err := runPackageFx(runtime, packageName, fxName, dir, containerName, uname, pwd, env)
+		if err != nil {
+			removeContainer(containerName)
+			return err
+		}
+		// wait for the container to complete its task
+		for isRunning(containerName) {
+			time.Sleep(500 * time.Millisecond)
+		}
+		removeContainer(containerName)
+		return nil
+	} else {
+		core.RaiseErr("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile", fxName)
+	}
+	return nil
+}
+
+// populates the passed-in environment with the input data
+func fillEnv(input *data.Input, env *core.Envar) {
 	// if there are input data
 	if input != nil {
 		// add the variables to the environment
@@ -69,19 +126,9 @@ func (r *Runner) RunC(fxName string) error {
 			env.Add(secret.Name, secret.Value)
 		}
 	}
-	// launch a container with a bind mount to the path where the build.yaml is located
-	err := launchContainerWithBindMount(runtime, fxName, r.path, containerName, env)
-	if err != nil {
-		return err
-	}
-	// wait for the container to complete its task
-	for isRunning(containerName) {
-		time.Sleep(500 * time.Millisecond)
-	}
-	removeContainer(containerName)
-	return nil
 }
 
+// defaults to quay.io/artisan root if not specified
 func format(runtime string) string {
 	// container images must be in lower case
 	runtime = strings.ToLower(runtime)
