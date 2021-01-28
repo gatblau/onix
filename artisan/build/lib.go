@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/data"
 	"io"
 	"io/ioutil"
 	"log"
@@ -289,6 +290,12 @@ func execute(cmd string, dir string, env *core.Envar, interactive bool) (err err
 	}
 
 	cmdArr := strings.Split(cmd, " ")
+	// if we are in windows
+	if runtime.GOOS == "windows" {
+		// prepend "cmd /C" to the command line
+		cmdArr = append([]string{"cmd", "/C"}, cmdArr...)
+		core.Debug("windows cmd => %s", cmdArr)
+	}
 	name := cmdArr[0]
 
 	var args []string
@@ -347,6 +354,12 @@ func executeWithOutput(cmd string, dir string, env *core.Envar, interactive bool
 	}
 
 	cmdArr := strings.Split(cmd, " ")
+	// if we are in windows
+	if runtime.GOOS == "windows" {
+		// prepend "cmd /C" to the command line
+		cmdArr = append([]string{"cmd", "/C"}, cmdArr...)
+		core.Debug("windows cmd => %s", cmdArr)
+	}
 	name := cmdArr[0]
 
 	var args []string
@@ -398,4 +411,14 @@ func findGitPath(path string) (string, error) {
 			return path, nil
 		}
 	}
+}
+
+// check the the specified function is in the manifest
+func isExported(m *data.Manifest, fx string) bool {
+	for _, function := range m.Functions {
+		if function.Name == fx {
+			return true
+		}
+	}
+	return false
 }
