@@ -615,13 +615,3 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 		core.RaiseErr("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile", function)
 	}
 }
-
-// check the the specified function is in the manifest
-func isExported(m *data.Manifest, fx string) bool {
-	for _, function := range m.Functions {
-		if function.Name == fx {
-			return true
-		}
-	}
-	return false
-}
