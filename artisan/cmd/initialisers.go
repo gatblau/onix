@@ -25,7 +25,8 @@ func InitialiseRootCmd() *RootCmd {
 	flowCmd := InitialiseFlowCommand()
 	tknCmd := InitialiseTknCommand()
 	manifCmd := NewManifestCmd()
-	execCmd := NewExeCmd()
+	exeCmd := NewExeCmd()
+	exeCCmd := NewExeCCmd()
 	waitCmd := NewWaitCmd()
 	rootCmd.Cmd.AddCommand(
 		buildCmd.cmd,
@@ -43,7 +44,8 @@ func InitialiseRootCmd() *RootCmd {
 		pgpCmd.cmd,
 		flowCmd.cmd,
 		manifCmd.cmd,
-		execCmd.cmd,
+		exeCmd.cmd,
+		exeCCmd.cmd,
 		tknCmd.cmd,
 		waitCmd.cmd,
 	)

@@ -11,8 +11,10 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
-	"log"
+	"github.com/gatblau/onix/artisan/data"
+	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -20,7 +22,12 @@ import (
 
 // launch a container and mount the current directory on the host machine into the container
 // the current directory must contain a build.yaml file where fxName is defined
-func launchContainerWithBindMount(runtimeName, fxName, dir, containerName string, env *core.Envar) error {
+func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *core.Envar) error {
+	// if wrong UID
+	if ok, msg := wrongUserId(); !ok {
+		// print warning
+		fmt.Println(msg)
+	}
 	if env == nil {
 		env = core.NewEnVarFromSlice([]string{})
 	}
@@ -32,7 +39,7 @@ func launchContainerWithBindMount(runtimeName, fxName, dir, containerName string
 	// add runtime vars
 	env.Add("FX_NAME", fxName)
 	// get the docker run arguments
-	args := toCmdArgs(runtimeName, dir, containerName, env)
+	args := toContainerArgs(runtimeName, dir, containerName, env)
 	// launch the container with an art exec command
 	cmd := exec.Command(tool, args...)
 	core.Debug("! launching runtime: %s %s\n", tool, strings.Join(args, " "))
@@ -74,7 +81,12 @@ func launchContainerWithBindMount(runtimeName, fxName, dir, containerName string
 }
 
 // launch a container and execute a package function
-func runPackageContainer(runtimeName, packageName, fxName, artRegistryUser, artRegistryPwd string, env *core.Envar) error {
+func runPackageFx(runtimeName, packageName, fxName, dir, containerName, artRegistryUser, artRegistryPwd string, env *core.Envar) error {
+	// if wrong UID
+	if ok, msg := wrongUserId(); !ok {
+		// print warning
+		fmt.Println(msg)
+	}
 	// determine which container tool is available in the host
 	tool, err := containerCmd()
 	if err != nil {
@@ -85,9 +97,8 @@ func runPackageContainer(runtimeName, packageName, fxName, artRegistryUser, artR
 	env.Add("FX_NAME", fxName)
 	env.Add("ART_REG_USER", artRegistryUser)
 	env.Add("ART_REG_PWD", artRegistryPwd)
-	containerName := fmt.Sprintf("art-run-%s", core.RandomString(8))
 	// launch the container with an art exec command
-	cmd := exec.Command(tool, toCmdArgs(runtimeName, "", containerName, env)...)
+	cmd := exec.Command(tool, toContainerArgs(runtimeName, dir, containerName, env)...)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("cannot launch container: %s", err)
 	}
@@ -111,7 +122,7 @@ func isCmdAvailable(name string) bool {
 }
 
 // return an array of environment variable arguments to pass to docker
-func toCmdArgs(imageName, dir, containerName string, env *core.Envar) []string {
+func toContainerArgs(imageName, dir, containerName string, env *core.Envar) []string {
 	var result = []string{"run", "--name", containerName} // , "-d", "--rm"
 	vars := env.Slice()
 	for _, v := range vars {
@@ -155,15 +166,6 @@ func isRunning(containerName string) bool {
 	return running
 }
 
-// prints the logs of the container
-func printLogs(containerName string) {
-	tool, err := containerCmd()
-	core.CheckErr(err, "")
-	cmd := exec.Command(tool, "logs", containerName)
-	logs, _ := cmd.Output()
-	log.Printf("%s\n", logs)
-}
-
 // removes a docker container
 func removeContainer(containerName string) {
 	tool, err := containerCmd()
@@ -174,4 +176,39 @@ func removeContainer(containerName string) {
 		core.Msg(string(out))
 		core.CheckErr(err, "cannot remove temporary container %s", containerName)
 	}
+}
+
+// check the user id is correct for bind mounts
+func wrongUserId() (bool, string) {
+	// if running in linux docker does not run in a VM and uid and gid of bind mounts must
+	// match the one in the runtime
+	if runtime.GOOS == "linux" {
+		// if the user id is not the id of the runtime user
+		if os.Geteuid() != 100000000 {
+			return true, fmt.Sprintf(`
+WARNING! The UID of the running user does not match the one in the runtime.
+This can render the bind mounts unusable and red/write errors can ocurr if the process tries to read / or wirte to them.
+If you intend to use this command in a linux machine ensure it is run by a user with UID = 100000000.
+For example, assuming the user is call "runtime"", you can:
+	- create a user with UID 100000000 as follows:
+      $ useradd -u 100000000 -g 100000000 runtime
+    - create a group with GID 100000000 as follows:
+      $ groupadd -g 100000000 -o runtime
+	- log a the "runtime" user before running the art command
+	- if using docker, add the runtime user to the docker group
+      $ sudo usermod -aG docker runtime
+`)
+		}
+	}
+	return false, ""
+}
+
+// check the the specified function is in the manifest
+func isExported(m *data.Manifest, fx string) bool {
+	for _, function := range m.Functions {
+		if function.Name == fx {
+			return true
+		}
+	}
+	return false
 }
