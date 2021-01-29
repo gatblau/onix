@@ -23,22 +23,19 @@ type ExeCCmd struct {
 func NewExeCCmd() *ExeCCmd {
 	c := &ExeCCmd{
 		cmd: &cobra.Command{
-			Use:   "exec [flags] [package-name] [function-name] [path/to/context]",
+			Use:   "exec [flags] [package-name] [function-name]",
 			Short: "runs a function within a package using an artisan runtime",
 			Long: `runs a function within a package using an artisan runtime
 * package-name: 
    mandatory - the fully qualified name of the package containing the function to execute
 * function-name: 
    mandatory - the name of the function exported by the package that should be executed
-* path/to/context: 
-   optional - the path to the folder in the host where context files are located
-   if not specified then current path is assumed.
 
 NOTE: exec always pulls the package from its registry as it is done within the runtime and that is its only behaviour
    if the package is in a secure registry, then credentials must be specified via -u / --credentials flag
    if running in a linux host, ensure the user executing the exec command has UID/GID = 100000000 
    to avoid read / write issues from / to the host - e.g. public PGP key in the host artisan registry is required to open
-     the package within the runtime - keys are accessible in the runtime using bind mounts
+     the package within the runtime - keys are accessible within the runtime using bind mounts
 `,
 		},
 	}
@@ -66,6 +63,6 @@ func (c *ExeCCmd) Run(cmd *cobra.Command, args []string) {
 	run, err := runner.NewFromPath(path)
 	core.CheckErr(err, "cannot initialise runner")
 	// launch a runtime to execute the function
-	err = run.ExeC(packageName, fxName, c.credentials, path, *c.interactive)
+	err = run.ExeC(packageName, fxName, c.credentials, *c.interactive)
 	core.CheckErr(err, "cannot execute function '%s' in package '%s'", fxName, packageName)
 }

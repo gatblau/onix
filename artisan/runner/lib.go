@@ -81,7 +81,7 @@ func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *core.En
 }
 
 // launch a container and execute a package function
-func runPackageFx(runtimeName, packageName, fxName, dir, containerName, artRegistryUser, artRegistryPwd string, env *core.Envar) error {
+func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUser, artRegistryPwd string, env *core.Envar) error {
 	// if wrong UID
 	if ok, msg := wrongUserId(); !ok {
 		// print warning
@@ -98,7 +98,7 @@ func runPackageFx(runtimeName, packageName, fxName, dir, containerName, artRegis
 	env.Add("ART_REG_USER", artRegistryUser)
 	env.Add("ART_REG_PWD", artRegistryPwd)
 	// create a slice with docker run args
-	args := toContainerArgs(runtimeName, dir, containerName, env)
+	args := toContainerArgs(runtimeName, "", containerName, env)
 	// launch the container with an art exec command
 	cmd := exec.Command(tool, args...)
 	core.Debug("! launching runtime: %s %s\n", tool, strings.Join(args, " "))
@@ -126,7 +126,7 @@ func isCmdAvailable(name string) bool {
 
 // return an array of environment variable arguments to pass to docker
 func toContainerArgs(imageName, dir, containerName string, env *core.Envar) []string {
-	var result = []string{"run", "--name", containerName} // , "-d", "--rm"
+	var result = []string{"run", "--name", containerName}
 	vars := env.Slice()
 	for _, v := range vars {
 		result = append(result, "-e")
@@ -136,10 +136,10 @@ func toContainerArgs(imageName, dir, containerName string, env *core.Envar) []st
 		// add a bind mount for the current folder to the /workspace/source in the runtime
 		result = append(result, "-v")
 		result = append(result, fmt.Sprintf("%s:%s", dir, "/workspace/source"))
-		// add a bind mount for the artisan registry folder
-		result = append(result, "-v")
-		result = append(result, fmt.Sprintf("%s:%s", core.RegistryPath(), "/.artisan"))
 	}
+	// add a bind mount for the artisan registry folder
+	result = append(result, "-v")
+	result = append(result, fmt.Sprintf("%s:%s", core.RegistryPath(), "/.artisan"))
 	result = append(result, imageName)
 	return result
 }
