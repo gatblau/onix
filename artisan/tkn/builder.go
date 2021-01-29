@@ -237,15 +237,17 @@ func (b *Builder) newKeySecrets() *Secret {
 		keysDict := make(map[string]string)
 		var name string
 		for _, step := range b.flow.Steps {
-			keys := step.Input.Key
-			for _, key := range keys {
-				prefix := crypto.KeyNamePrefix(key.PackageGroup, key.PackageName)
-				if key.Private {
-					name = crypto.PrivateKeyName(prefix, "pgp")
-				} else {
-					name = crypto.PublicKeyName(prefix, "pgp")
+			if step.Input != nil {
+				keys := step.Input.Key
+				for _, key := range keys {
+					prefix := crypto.KeyNamePrefix(key.PackageGroup, key.PackageName)
+					if key.Private {
+						name = crypto.PrivateKeyName(prefix, "pgp")
+					} else {
+						name = crypto.PublicKeyName(prefix, "pgp")
+					}
+					keysDict[name] = key.Value
 				}
-				keysDict[name] = key.Value
 			}
 		}
 		s.StringData = &keysDict
