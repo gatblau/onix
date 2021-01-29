@@ -190,9 +190,9 @@ func wrongUserId() (bool, string) {
 		if os.Geteuid() != 100000000 {
 			return true, fmt.Sprintf(`
 WARNING! The UID of the running user does not match the one in the runtime.
-This can render the bind mounts unusable and red/write errors can ocurr if the process tries to read / or wirte to them.
-If you intend to use this command in a linux machine ensure it is run by a user with UID = 100000000.
-For example, assuming the user is call "runtime"", you can:
+This can render the bind mounts unusable and read/write errors can ocurr if the process tries to read / or write to them.
+If you intend to use this command in a linux machine ensure it is run by a user with UID/GID = 100000000.
+For example, assuming the user is called "runtime", you can:
 	- create a user with UID 100000000 as follows:
       $ useradd -u 100000000 -g 100000000 runtime
     - create a group with GID 100000000 as follows:
