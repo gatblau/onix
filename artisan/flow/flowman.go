@@ -17,6 +17,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -44,7 +45,8 @@ func NewFromPath(bareFlowPath, buildPath string) (*Manager, error) {
 	m.flow = flow
 	// if a build file is defined, then load it
 	if len(buildPath) > 0 {
-		buildFile, err := data.LoadBuildFile(buildPath)
+		buildPath = core.ToAbs(buildPath)
+		buildFile, err := data.LoadBuildFile(path.Join(buildPath, "build.yaml"))
 		if err != nil {
 			return nil, fmt.Errorf("cannot load build file from %s: %s", buildPath, err)
 		}
