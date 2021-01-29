@@ -54,13 +54,9 @@ func (c *ExeCCmd) Run(cmd *cobra.Command, args []string) {
 	var (
 		packageName = args[0]
 		fxName      = args[1]
-		path        = "."
 	)
-	if len(args) > 1 {
-		path = args[1]
-	}
 	// create an instance of the runner
-	run, err := runner.NewFromPath(path)
+	run, err := runner.New()
 	core.CheckErr(err, "cannot initialise runner")
 	// launch a runtime to execute the function
 	err = run.ExeC(packageName, fxName, c.credentials, *c.interactive)
