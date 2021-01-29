@@ -6,6 +6,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.2.5
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef
+	github.com/cheggaaa/pb v1.0.29
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.8.0
