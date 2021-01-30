@@ -38,6 +38,10 @@ func NewFromPath(path string) (*Runner, error) {
 	}, nil
 }
 
+func New() (*Runner, error) {
+	return new(Runner), nil
+}
+
 func (r *Runner) RunC(fxName string) error {
 	var runtime string
 	fx := r.buildFile.Fx(fxName)
@@ -75,7 +79,7 @@ func (r *Runner) RunC(fxName string) error {
 	return nil
 }
 
-func (r *Runner) ExeC(packageName, fxName, credentials, dir string, interactive bool) error {
+func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool) error {
 	name, _ := core.ParseName(packageName)
 	// get a local registry handle
 	local := registry.NewLocalRegistry()
@@ -95,8 +99,8 @@ func (r *Runner) ExeC(packageName, fxName, credentials, dir string, interactive 
 		uname, pwd := core.UserPwd(credentials)
 		// create a random container name
 		containerName := fmt.Sprintf("art-exec-%s", core.RandomString(8))
-		// launch a container with a bind mount to the path where the build.yaml is located
-		err := runPackageFx(runtime, packageName, fxName, dir, containerName, uname, pwd, env)
+		// launch a container with a bind mount to the artisan registry only
+		err := runPackageFx(runtime, packageName, fxName, containerName, uname, pwd, env)
 		if err != nil {
 			removeContainer(containerName)
 			return err
