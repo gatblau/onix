@@ -1,0 +1,31 @@
+---
+labels:
+  author: onix@gatblau.org
+  application: Onix Artisan Command Line Interface
+  description: Package manager that build, package, sign and publish packages; and execute package  functions.
+  architecture: amd64
+
+env:
+  CGO_ENABLED: 0
+  GOARCH: amd64
+  REPO_NAME: quay.io/gatblau
+  APP_VERSION: 0.0.4
+  LIFECYCLE_STAGE: alpha
+
+profiles:
+
+functions:
+  - name: set-version
+    description: set-version on the parent build, updating global version
+    run:
+      - art run set-version ../
+
+  - name: build-linux
+    description: builds the Artisan CLI for the linux platform
+    env:
+      GOOS: linux
+    run:
+      - $(set-version)
+      - go build -o bin/linux/art -v
+
+...

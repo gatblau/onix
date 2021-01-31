@@ -5,16 +5,24 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package main
+package cmd
 
 import (
-	"github.com/gatblau/onix/artisan/cmd"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	rootCmd := cmd.InitialiseRootCmd()
+// list local artefacts
+type PGPCmd struct {
+	cmd *cobra.Command
+}
 
-	// Execute adds all child commands to the root command and sets flags appropriately.
-	// This is called by main.main(). It only needs to happen once to the rootCmd.
-	rootCmd.Cmd.Execute()
+func NewPGPCmd() *PGPCmd {
+	c := &PGPCmd{
+		cmd: &cobra.Command{
+			Use:   "pgp",
+			Short: "provides PGP management functions",
+			Long:  ``,
+		},
+	}
+	return c
 }
