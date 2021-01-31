@@ -1,0 +1,38 @@
+---
+labels:
+  author: onix@gatblau.org
+  application: Onix Artisan Package Registry
+  description: An HTTP API for pushing and pulling Artisan packages.
+  architecture: amd64
+
+env:
+  CGO_ENABLED: 0
+  GOARCH: amd64
+  REPO_NAME: quay.io/gatblau
+  APP_VERSION: 0.0.4
+  LIFECYCLE_STAGE: alpha
+  ART_REGISTRY: artisan-registry
+
+profiles:
+
+functions:
+  - name: set-version
+    description: set-version on the parent build, updating global version
+    run:
+      - art run set-version ../
+
+  - name: build-linux
+    description: builds the Artisan Package Registry for the linux platform
+    env:
+      GOOS: linux
+    run:
+      - $(set-version)
+      - go build -o bin/linux/artreg -v
+
+  - name: build-registry
+    description: creates an Artisan Package Registry image
+    run:
+      - $(build-linux)
+      - docker build -t ${REPO_NAME}/${ART_REGISTRY}:$((cat ../version)) .
+      - docker tag ${REPO_NAME}/${ART_REGISTRY}:$((cat ../version)) ${REPO_NAME}/${ART_REGISTRY}:latest
+...
