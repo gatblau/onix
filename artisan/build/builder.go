@@ -507,8 +507,8 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 		if buildFile.ExportFxs() {
 			// a runtime must be defined if functions are exported
 			if len(profile.Runtime) == 0 {
-				core.RaiseErr("This package exports functions but does not define a runtime image to run them:\n" +
-					"set the runtime attribute in the package build profile")
+				core.RaiseErr("This package exports functions but the profile '%s' does not define a runtime image to run them:\n"+
+					"set the runtime attribute in the package build profile", profile.Name)
 			}
 			s.Manifest.Runtime = profile.Runtime
 		}
