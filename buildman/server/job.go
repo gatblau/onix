@@ -35,14 +35,15 @@ func (c *CheckImageJob) Execute() {
 	for _, policy := range c.cfg.Policies {
 		if policy.PollBase {
 			log.Printf("info: executing policy: %s\n", policy.Name)
-			appImgBuildDate, appImgBaseBuildDate, baseImgBuildDate, err := getImgProps(policy)
+			appImgBuildDate, appImgBaseBuildDate, baseImgBuildDate, baseImgBaseBuildDate, err := getImgProps(policy)
 			if err != nil {
 				log.Printf("error: cannot get image information for %s\n%s\nskipping policy\n", policy.Base, err)
 				continue
 			}
-			// if the base image creation date happened after the time recorded in the application image, or
+			// if the app image is not there
+			// if the base image creation date label happened after the application image creation date label, or
 			// if the base image creation date happened after the time the application image was created
-			if baseImgBuildDate.After(*appImgBaseBuildDate) || baseImgBuildDate.After(*appImgBuildDate) {
+			if appImgBuildDate == nil || baseImgBaseBuildDate.After(*appImgBaseBuildDate) || baseImgBuildDate.After(*appImgBuildDate) {
 				log.Printf("info: base image change detected: %s\n", policy.Base)
 				log.Printf("info: launching build\n")
 				err = c.k8s.NewImagePipeline(policy.Name, policy.Namespace)
@@ -91,34 +92,54 @@ func getImgInfo(imageName, user, pwd string) (*ImgInfo, error) {
 }
 
 // returns all required image dates to work out if new build is required
-func getImgProps(policy *policyConf) (appImgBuildDate, appImgBaseBuildDate, baseImgBuildDate *time.Time, err error) {
+func getImgProps(policy *policyConf) (appImgBuildDate, appImgBaseBuildDate, baseImgBuildDate, baseImgBaseBuildDate *time.Time, err error) {
 	// first retrieves application image information
 	appImgInfo, err := getImgInfo(policy.App, policy.AppUser, policy.AppPwd)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("cannot retrieve application image information: %s", err)
+		// assume app image is not there - this could also happen if login credentials are wrong so it needs improved logic
+		// do nothing, let appImgInfo be nil and deal with it down the line
+		// return nil, nil, nil, nil, fmt.Errorf("cannot retrieve application image information: %s", err)
 	}
 	// second retrieves application base image information
 	baseImgInfo, err := getImgInfo(policy.Base, policy.BaseUser, policy.BasePwd)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("cannot retrieve application base image information: %s", err)
+		return nil, nil, nil, nil, fmt.Errorf("cannot retrieve application base image information: %s", err)
 	}
-	appImgBuildDate = parseTime(appImgInfo.Created)
-	if appImgBuildDate == nil {
-		return nil, nil, nil, fmt.Errorf("cannot parse created date on app image manifest: '%s'", appImgInfo.Created)
+	if appImgInfo != nil {
+		appImgBuildDate = parseTime(appImgInfo.Created)
+		if appImgBuildDate == nil {
+			return nil, nil, nil, nil, fmt.Errorf("cannot parse created date on app image manifest: '%s'", appImgInfo.Created)
+		}
+		appImgBaseCreatedOn := appImgInfo.Labels[policy.BaseCreated]
+		if len(appImgBaseCreatedOn) == 0 {
+			return nil, nil, nil, nil, fmt.Errorf("cannot find base image build date based on label '%s' in image: %s", policy.BaseCreated, policy.App)
+		}
+		appImgBaseBuildDate, err = getLabelDate(policy.BaseCreated, appImgInfo)
+		if err != nil {
+			return nil, nil, nil, nil, fmt.Errorf("cannot parse app base image build date based on label '%s': %s", policy.BaseCreated, appImgBaseBuildDate)
+		}
 	}
 	baseImgBuildDate = parseTime(baseImgInfo.Created)
-	if appImgBuildDate == nil {
-		return nil, nil, nil, fmt.Errorf("cannot parse created date on base image manifest: '%s'", baseImgInfo.Created)
+	if baseImgBuildDate == nil {
+		return nil, nil, nil, nil, fmt.Errorf("cannot parse created date on base image manifest: '%s'", baseImgInfo.Created)
 	}
-	baseCreatedOn := appImgInfo.Labels[policy.BaseCreated]
-	if len(baseCreatedOn) == 0 {
-		return nil, nil, nil, fmt.Errorf("cannot find base image build date based on label '%s' in image: %s", policy.BaseCreated, policy.App)
+	baseImgBaseBuildDate, err = getLabelDate(policy.BaseCreated, baseImgInfo)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("cannot parse base image build date based on label '%s': %s", policy.BaseCreated, baseImgBaseBuildDate)
 	}
-	appImgBaseBuildDate = parseTime(baseCreatedOn)
-	if appImgBaseBuildDate == nil {
-		return nil, nil, nil, fmt.Errorf("cannot parse base image build date based on label '%s': %s", policy.BaseCreated, baseCreatedOn)
+	return appImgBuildDate, appImgBaseBuildDate, baseImgBuildDate, baseImgBaseBuildDate, nil
+}
+
+func getLabelDate(label string, info *ImgInfo) (*time.Time, error) {
+	value := info.Labels[label]
+	if len(value) == 0 {
+		return nil, fmt.Errorf("no label %s found in image %s", label, info.Name)
 	}
-	return appImgBuildDate, appImgBaseBuildDate, baseImgBuildDate, nil
+	timeValue := parseTime(value)
+	if timeValue == nil {
+		return nil, fmt.Errorf("cannot parse time %s in label %s", value, label)
+	}
+	return timeValue, nil
 }
 
 // parses a time in string format trying different formatting

@@ -1,3 +1,3 @@
 package docs
 
-const Version = "0.0.4-201220141732683-c3fd552211-alpha"
+const Version = "0.0.4-211220132010453-3963bb7d78-alpha"

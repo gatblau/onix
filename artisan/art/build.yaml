@@ -13,6 +13,28 @@ env:
   LIFECYCLE_STAGE: alpha
 
 profiles:
+  - name: linux
+    default: true
+    application: artisan
+    artefact: gatblau/artisan
+    type: content/binary
+    license: Apache Version 2
+    labels:
+      platform: linux
+    env:
+      GOOS: linux
+    run:
+      - $(build-linux)
+    target: bin/linux/art
+
+  - name: windows
+    application: artisan
+    type: content/binary
+    env:
+      GOOS: windows
+    run:
+      - $(build-win)
+    target: bin/windows/art.exe
 
 functions:
   - name: set-version
@@ -27,5 +49,17 @@ functions:
     run:
       - $(set-version)
       - go build -o bin/linux/art -v
+      - zip bin/linux/art
 
+  - name: build-win
+    description: builds the Artisan CLI for the linux platform
+    env:
+      GOOS: windows
+    run:
+      - $(set-version)
+      - go build -o bin/windows/art.exe -v
+
+  - name: zip
+    run:
+      - zip art.zip bin/windows/art.exe bin/linux/art
 ...
