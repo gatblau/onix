@@ -115,13 +115,13 @@ func surveyInput(input *Input) *Input {
 	result := *input
 	// collect values from command line interface
 	for _, v := range result.Var {
-		surveyVar(v)
+		SurveyVar(v)
 	}
 	for _, secret := range result.Secret {
-		surveySecret(secret)
+		SurveySecret(secret)
 	}
 	for _, key := range result.Key {
-		surveyKey(key)
+		SurveyKey(key)
 	}
 	// return pointer to new object
 	return &result
@@ -145,7 +145,7 @@ func getInput(fxInput *InputBinding, sourceInput *Input, prompt bool) *Input {
 				result.Var = append(result.Var, variable)
 				// if interactive mode is enabled then prompt the user to enter the variable value
 				if prompt {
-					surveyVar(variable)
+					SurveyVar(variable)
 				}
 			}
 		}
@@ -157,7 +157,7 @@ func getInput(fxInput *InputBinding, sourceInput *Input, prompt bool) *Input {
 				result.Secret = append(result.Secret, secret)
 				// if interactive mode is enabled then prompt the user to enter the variable value
 				if prompt {
-					surveySecret(secret)
+					SurveySecret(secret)
 				}
 			}
 		}
@@ -169,7 +169,7 @@ func getInput(fxInput *InputBinding, sourceInput *Input, prompt bool) *Input {
 				result.Key = append(result.Key, key)
 				// if interactive mode is enabled then prompt the user to enter the variable value
 				if prompt {
-					surveyKey(key)
+					SurveyKey(key)
 				}
 			}
 		}
@@ -194,7 +194,7 @@ func encryptInput(input *Input, encPubKey *crypto.PGP) {
 	}
 }
 
-func surveyVar(variable *Var) {
+func SurveyVar(variable *Var) {
 	// check if the var is defined in the environment
 	value := os.Getenv(variable.Name)
 	// if it is
@@ -230,7 +230,7 @@ func surveyVar(variable *Var) {
 	core.HandleCtrlC(survey.AskOne(prompt, &variable.Value, survey.WithValidator(validator)))
 }
 
-func surveySecret(secret *Secret) {
+func SurveySecret(secret *Secret) {
 	// check if the secret is defined in the environment
 	value := os.Getenv(secret.Name)
 	// if it is
@@ -251,7 +251,7 @@ func surveySecret(secret *Secret) {
 	core.HandleCtrlC(survey.AskOne(prompt, &secret.Value, survey.WithValidator(survey.Required)))
 }
 
-func surveyKey(key *Key) {
+func SurveyKey(key *Key) {
 	desc := ""
 	// if a description is available use it
 	if len(key.Description) > 0 {
