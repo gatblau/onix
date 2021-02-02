@@ -1,17 +1,17 @@
 {
-  "interval": 1,
+  "interval": 3,
   "policies": [
     {
-      "name": "dummy-app",
+      "name": "sap-equip-jvm",
       "description": "test image build",
-      "app": "quay.io/gatblau/dummy-app",
-      "app-user": "",
-      "app-pwd": "",
+      "app": "registry.gitlab.com/sap7/sap-equip:jvm-cicd",
+      "app-user": "pratik10596",
+      "app-pwd": "pratik786786",
       "app-base-created-label": "build-date",
-      "base": "quay.io/gatblau/dummy-base",
-      "base-user": "",
-      "base-pwd": "",
-      "namespace": "default",
+      "base": "registry.gitlab.com/sap7/sap-equip/openjdk-11-rhel8",
+      "base-user": "pratik10596",
+      "base-pwd": "pratik786786",
+      "namespace": "amosonline-aws-01-sapgatewaycd",
       "pollBase": true
     }
   ]

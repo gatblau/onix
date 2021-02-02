@@ -41,7 +41,7 @@ set-version:
 # build the dbman binary in the current platform
 build:
 	$(GO_CMD) fmt
-	export GOROOT=/usr/local/go; export GOPATH=$HOME/go; $(GO_CMD) build -o $(BINARY_NAME) -v
+	export GOROOT=/usr/local/go; export GOPATH=$(HOME)/go; $(GO_CMD) build -o $(BINARY_NAME) -v
 
 build-windows:
 	$(GO_CMD) fmt

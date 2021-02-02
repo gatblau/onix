@@ -1,5 +1,5 @@
 {
-  "interval": 1,
+  "interval": 3,
   "policies": [
     {
       "name": "dummy-app",

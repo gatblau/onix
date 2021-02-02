@@ -196,13 +196,14 @@ func (p *pilot) reload(cf *appCfg) error {
 		}
 	case TriggerGet:
 		{
-			// TODO: issue an http reload request
-			return errors.New(fmt.Sprintf("http get trigger not implemented"))
+			logger.Info().Msgf("reloading configuration resource (%s) using HTTP GET", cf.meta.Path)
+			_, err := p.http("GET", cf.meta.Uri, "", nil)
+			return err
 		}
 	case TriggerPost:
 		{
-			log.Info().Msgf("reloading configuration resource (%s) using HTTP POST", cf.meta.Path)
-			err := p.sendConfig(cf, "POST")
+			logger.Info().Msgf("reloading configuration resource (%s) using HTTP POST", cf.meta.Path)
+			err := p.submitConfiguration(cf, "POST")
 			if err != nil {
 				log.Error().Msgf(err.Error())
 				return err
@@ -210,8 +211,8 @@ func (p *pilot) reload(cf *appCfg) error {
 		}
 	case TriggerPut:
 		{
-			log.Info().Msgf("reloading configuration resource (%s) using HTTP PUT", cf.meta.Path)
-			return p.sendConfig(cf, "PUT")
+			logger.Info().Msgf("reloading configuration resource (%s) using HTTP PUT", cf.meta.Path)
+			return p.submitConfiguration(cf, "PUT")
 		}
 	case TriggerSignal:
 		{
@@ -312,23 +313,21 @@ func (p *pilot) Stop() {
 }
 
 // send a configuration to the application via HTTP
-func (p *pilot) sendConfig(cf *appCfg, method string) error {
-	h := p.httpHeaders(cf.meta.User, cf.meta.Pwd, cf.meta.ContentType)
-	_, err := p.http(method, cf.meta.Path, cf.config, h)
-	if err != nil {
-		return err
+func (p *pilot) submitConfiguration(cf *appCfg, method string) error {
+	if method != "POST" || method != "PUT" {
+		return errors.New("configuration can only be posted or put to a resource URI")
 	}
-	return nil
-}
-
-// add http headers to the request object
-func (p *pilot) httpHeaders(user string, pwd string, cotentType string) http.Header {
 	headers := http.Header{}
-	if len(user) > 0 && len(pwd) > 0 {
-		headers.Set("Authorization", basicToken(user, pwd))
+	// if authentication credentials exists
+	if len(cf.meta.User) > 0 && len(cf.meta.Pwd) > 0 {
+		// add Authorization header (with basic authentication token)
+		headers.Set("Authorization", basicToken(cf.meta.User, cf.meta.Pwd))
 	}
-	headers.Set("Content-Type", cotentType)
-	return headers
+	// add Content-Type header
+	headers.Set("Content-Type", cf.meta.ContentType)
+	// submits the configuration
+	_, err := p.http(method, cf.meta.Uri, cf.config, headers)
+	return err
 }
 
 // Make a generic HTTP request
