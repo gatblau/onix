@@ -118,6 +118,7 @@ type Var struct {
 	Required    bool   `yaml:"required" json:"required"`
 	Type        string `yaml:"type" json:"type"`
 	Value       string `yaml:"value,omitempty" json:"value,omitempty"`
+	Default     string `yaml:"default,omitempty" json:"default,omitempty"`
 }
 
 // gets a slice of string with each element containing key=value

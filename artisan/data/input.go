@@ -203,6 +203,10 @@ func SurveyVar(variable *Var) {
 		variable.Value = value
 		return
 	}
+	// do not surevey if there is a value already defined
+	if len(variable.Value) > 0 {
+		return
+	}
 	// otherwise prompts the user to enter it
 	var validator survey.Validator
 	desc := ""
@@ -213,6 +217,7 @@ func SurveyVar(variable *Var) {
 	// prompt for the value
 	prompt := &survey.Input{
 		Message: fmt.Sprintf("var => %s (%s):", variable.Name, desc),
+		Default: variable.Default,
 	}
 	// if required then add required validator
 	if variable.Required {
@@ -237,6 +242,10 @@ func SurveySecret(secret *Secret) {
 	if len(value) > 0 {
 		// sets it with  its value and return
 		secret.Value = value
+		return
+	}
+	// do not survey if there is already a value
+	if len(secret.Value) > 0 {
 		return
 	}
 	desc := ""
