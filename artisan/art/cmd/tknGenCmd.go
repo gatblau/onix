@@ -10,7 +10,6 @@ package cmd
 import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/flow"
 	"github.com/gatblau/onix/artisan/tkn"
 	"github.com/spf13/cobra"
@@ -19,8 +18,7 @@ import (
 )
 
 type TknGenCmd struct {
-	cmd    *cobra.Command
-	pkPath string
+	cmd *cobra.Command
 }
 
 func NewTknGenCmd() *TknGenCmd {
@@ -32,7 +30,6 @@ func NewTknGenCmd() *TknGenCmd {
 		},
 	}
 	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.pkPath, "key", "k", "", "--key=/path/to/private/key or -k=/path/to/private/key")
 	return c
 }
 
@@ -51,27 +48,10 @@ func (b *TknGenCmd) Run(cmd *cobra.Command, args []string) {
 	default:
 		core.RaiseErr("too many arguments")
 	}
-	if len(b.pkPath) > 0 {
-		if filepath.Ext(flowPath) != ".asc" {
-			core.RaiseErr("the flow must be in ASCII armor encrypted format (.asc)")
-		}
-	} else {
-		if filepath.Ext(flowPath) != ".yaml" {
-			core.RaiseErr("the flow must be in yaml format (.yaml)")
-		}
+	if filepath.Ext(flowPath) != ".yaml" {
+		core.RaiseErr("the flow must be in yaml format (.yaml)")
 	}
-	var (
-		key *crypto.PGP
-		err error
-	)
-	if len(b.pkPath) > 0 {
-		key, err = crypto.LoadPGP(b.pkPath)
-		core.CheckErr(err, "cannot load public PGP encryption key")
-		if key.HasPrivate() {
-			core.RaiseErr("a private PGP key has been provided but a public PGP key is required")
-		}
-	}
-	f, err := flow.LoadFlow(flowPath, key)
+	f, err := flow.LoadFlow(flowPath)
 	core.CheckErr(err, "cannot load flow")
 	builder := tkn.NewBuilder(f)
 	buf := builder.Create()
