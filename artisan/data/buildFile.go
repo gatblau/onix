@@ -151,6 +151,7 @@ func LoadBuildFile(path string) (*BuildFile, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot load build file from %s: %s", path, err)
 	}
+	core.Debug("loaded: '%s'\ncontent:\n%s\n", path, string(bytes))
 	buildFile := &BuildFile{}
 	err = yaml.Unmarshal(bytes, buildFile)
 	if err != nil {

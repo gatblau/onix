@@ -65,13 +65,24 @@ func (m *Manager) Merge() error {
 		if m.buildFile == nil {
 			return fmt.Errorf("a build.yaml file is required to fill the flow")
 		}
+		// if git uri is not defined
 		if len(m.buildFile.GitURI) == 0 {
-			return fmt.Errorf("a 'git_uri' is required in the build.yaml")
+			// survey its value
+			gitUri := &data.Var{
+				Name:        "GIT_URI",
+				Description: "the URI of the git repository for the project",
+				Required:    true,
+				Type:        "uri",
+			}
+			data.SurveyVar(gitUri)
+			// set the git uri in the build file
+			m.buildFile.GitURI = gitUri.Value
 		}
 		m.flow.GitURI = m.buildFile.GitURI
 		m.flow.AppIcon = m.buildFile.AppIcon
 	}
 	for _, step := range m.flow.Steps {
+		step.Runtime = core.QualifyRuntime(step.Runtime)
 		if len(step.Package) > 0 {
 			name, err := core.ParseName(step.Package)
 			core.CheckErr(err, "invalid step %s package name %s", step.Name, step.Package)

@@ -345,3 +345,14 @@ func isJSON(s []byte) bool {
 	var js map[string]interface{}
 	return json.Unmarshal(s, &js) == nil
 }
+
+// defaults to quay.io/artisan root if not specified
+func QualifyRuntime(runtime string) string {
+	// container images must be in lower case
+	runtime = strings.ToLower(runtime)
+	// if no repository is specified then assume artisan library at quay.io/artisan
+	if !strings.ContainsAny(runtime, "/") {
+		return fmt.Sprintf("quay.io/artisan/%s", runtime)
+	}
+	return runtime
+}
