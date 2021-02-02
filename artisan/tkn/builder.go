@@ -101,6 +101,9 @@ func (b *Builder) newSteps() []*Steps {
 				s.Env = b.getEnv(step)
 			}
 		}
+		// add the environment information required by the Artisan runtime to work
+		// see here: https://github.com/gatblau/artisan/tree/master/runtime
+		s.Env = b.addRuntimeInterfaceVars(step, s.Env)
 		steps = append(steps, s)
 	}
 	return steps
@@ -108,27 +111,26 @@ func (b *Builder) newSteps() []*Steps {
 
 func (b *Builder) getEnv(step *flow.Step) []*Env {
 	env := make([]*Env, 0)
-	// add variables
-	for _, variable := range step.Input.Var {
-		env = append(env, &Env{
-			Name:  variable.Name,
-			Value: variable.Value,
-		})
-	}
-	// if the step is for an executable package then inject
-	// required Runtime Standard Interface variables
-	// see here: https://github.com/gatblau/artisan/tree/master/runtime
-	env = b.addRuntimeInterfaceVars(step, env)
-	// add secrets
-	for _, secret := range step.Input.Secret {
-		env = append(env, &Env{
-			Name: secret.Name,
-			ValueFrom: &ValueFrom{
-				SecretKeyRef: &SecretKeyRef{
-					Name: b.secretName(),
-					Key:  secret.Name,
-				}},
-		})
+	// if there is an input defined
+	if step.Input != nil {
+		// add variables
+		for _, variable := range step.Input.Var {
+			env = append(env, &Env{
+				Name:  variable.Name,
+				Value: variable.Value,
+			})
+		}
+		// add secrets
+		for _, secret := range step.Input.Secret {
+			env = append(env, &Env{
+				Name: secret.Name,
+				ValueFrom: &ValueFrom{
+					SecretKeyRef: &SecretKeyRef{
+						Name: b.secretName(),
+						Key:  secret.Name,
+					}},
+			})
+		}
 	}
 	return env
 }
