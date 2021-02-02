@@ -30,11 +30,15 @@ func (b *Builder) Create() bytes.Buffer {
 	buf.Write(ToYaml(task, "Task"))
 	buf.WriteString("\n---\n")
 	secrets := b.newCredentialsSecret()
-	buf.Write(ToYaml(secrets, "Secret"))
-	buf.WriteString("\n---\n")
+	if secrets != nil {
+		buf.Write(ToYaml(secrets, "Secret"))
+		buf.WriteString("\n---\n")
+	}
 	keysSecret := b.newKeySecrets()
-	buf.Write(ToYaml(keysSecret, "Keys Secret"))
-	buf.WriteString("\n---\n")
+	if keysSecret != nil {
+		buf.Write(ToYaml(keysSecret, "Keys Secret"))
+		buf.WriteString("\n---\n")
+	}
 	pipeline := b.newPipeline()
 	buf.Write(ToYaml(pipeline, "Pipeline"))
 	buf.WriteString("\n---\n")
