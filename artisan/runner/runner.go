@@ -13,7 +13,6 @@ import (
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -56,7 +55,7 @@ func (r *Runner) RunC(fxName string) error {
 		return fmt.Errorf("runtime attribute is required in build.yaml within %s", r.path)
 	}
 	// completes name if the short form is used
-	runtime = format(runtime)
+	runtime = core.QualifyRuntime(runtime)
 	// generate a unique name for the running container
 	containerName := fmt.Sprintf("art-runc-%s-%s", core.Encode(fxName), core.RandomString(8))
 	// collect any input required to run the function
@@ -88,7 +87,7 @@ func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool)
 	// if the manifest exports the function
 	if isExported(m, fxName) {
 		// get the runtime to use from the manifest
-		runtime := format(m.Runtime)
+		runtime := core.QualifyRuntime(m.Runtime)
 		// collect any input required to run the function
 		env := core.NewEnVarFromSlice([]string{})
 		// interactively survey for required input via CLI
@@ -130,15 +129,4 @@ func fillEnv(input *data.Input, env *core.Envar) {
 			env.Add(secret.Name, secret.Value)
 		}
 	}
-}
-
-// defaults to quay.io/artisan root if not specified
-func format(runtime string) string {
-	// container images must be in lower case
-	runtime = strings.ToLower(runtime)
-	// if no repository is specified then assume artisan library at quay.io/artisan
-	if !strings.ContainsAny(runtime, "/") {
-		return fmt.Sprintf("quay.io/artisan/%s", runtime)
-	}
-	return runtime
 }
