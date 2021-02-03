@@ -57,6 +57,8 @@ type Key struct {
 	Aggregate bool `yaml:"aggregate,omitempty" json:"aggregate,omitempty"`
 	// the key content
 	Value string `yaml:"value,omitempty" json:"value,omitempty"`
+	// the path to the key in the Artisan registry
+	Path string `yaml:"path,omitempty" json:"path,omitempty"`
 }
 
 func (k *Key) Encrypt(pubKey *crypto.PGP) error {

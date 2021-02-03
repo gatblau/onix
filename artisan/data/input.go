@@ -266,10 +266,17 @@ func SurveyKey(key *Key) {
 	if len(key.Description) > 0 {
 		desc = key.Description
 	}
+	// takes default path from input
+	defaultPath := key.Path
+	// if not defined in input
+	if len(defaultPath) == 0 {
+		// defaults to root path
+		defaultPath = "/"
+	}
 	// prompt for the value
 	prompt := &survey.Input{
 		Message: fmt.Sprintf("PGP key => %s PATH (%s):", key.Name, desc),
-		Default: "/",
+		Default: defaultPath,
 		Help:    "/ indicates root keys; /group-name indicates group level keys; /group-name/package-name indicates package level keys",
 	}
 	var (
@@ -277,7 +284,13 @@ func SurveyKey(key *Key) {
 		keyBytes         []byte
 		err              error
 	)
-	core.HandleCtrlC(survey.AskOne(prompt, &keyPath, survey.WithValidator(keyPathExist)))
+	keyPathValue := os.Getenv(key.Name)
+	// if the key path is not defined as an environment variable
+	if len(keyPathValue) == 0 {
+		core.HandleCtrlC(survey.AskOne(prompt, &keyPath, survey.WithValidator(keyPathExist)))
+	} else {
+		keyPath = keyPathValue
+	}
 	// load the keys
 	parts := strings.Split(keyPath, "/")
 	switch len(parts) {
