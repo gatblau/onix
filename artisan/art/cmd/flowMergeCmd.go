@@ -53,7 +53,7 @@ func (c *FlowMergeCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("too many arguments: only need the path to the bare flow file")
 	}
 	// loads a bare flow from the path
-	flow, err := flow.NewFromPath(flowPath, c.buildFilePath, c.envFilename)
+	flow, err := flow.NewWithEnv(flowPath, c.buildFilePath, c.envFilename)
 	core.CheckErr(err, "cannot load bare flow")
 	// survey for required inputs
 	err = flow.Merge()

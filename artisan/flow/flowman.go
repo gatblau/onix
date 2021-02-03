@@ -30,7 +30,7 @@ type Manager struct {
 	envFile      string
 }
 
-func NewFromPath(bareFlowPath, buildPath, envFile string) (*Manager, error) {
+func New(bareFlowPath, buildPath string) (*Manager, error) {
 	// check the flow path to see if bare flow is named correctly
 	if !strings.HasSuffix(bareFlowPath, "_bare.yaml") {
 		core.RaiseErr("a bare flow is required, the naming convention is [flow_name]_bare.yaml")
@@ -38,7 +38,6 @@ func NewFromPath(bareFlowPath, buildPath, envFile string) (*Manager, error) {
 	m := &Manager{
 		bareFlowPath: bareFlowPath,
 	}
-	m.envFile = core.ToAbs(envFile)
 	flow, err := LoadFlow(bareFlowPath)
 	if err != nil {
 		return nil, fmt.Errorf("cannot load flow definition from %s: %s", bareFlowPath, err)
@@ -57,6 +56,13 @@ func NewFromPath(bareFlowPath, buildPath, envFile string) (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid generator: %s", err)
 	}
+	return m, nil
+}
+
+func NewWithEnv(bareFlowPath, buildPath, envFile string) (*Manager, error) {
+	m, err := New(bareFlowPath, buildPath)
+	core.CheckErr(err, "cannot load flow")
+	m.envFile = core.ToAbs(envFile)
 	return m, nil
 }
 

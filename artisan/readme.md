@@ -1,3 +1,5 @@
+<img src="https://github.com/gatblau/artisan/raw/master/artisan.png" width="150" align="right"/>
+
 # ARTISAN - One stop shop for building, packaging, signing, tagging and distributing any application.
 
 Artisan is part of Onix Configuration Manager build system, an effort to standardise the process of building and packaging software
