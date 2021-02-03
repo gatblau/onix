@@ -87,8 +87,6 @@ type Secret struct {
 	Name string `yaml:"name" json:"name"`
 	// a description of the intended use or meaning of this secret
 	Description string `yaml:"description" json:"description"`
-	// indicates if this secret should be aggregated with other secrets
-	Aggregate bool `yaml:"aggregate,omitempty" json:"aggregate,omitempty"`
 	// the value of the secret
 	Value string `yaml:"value,omitempty" json:"value,omitempty"`
 }

@@ -52,8 +52,9 @@ func InitialiseRootCmd() *RootCmd {
 
 func InitialiseFlowCommand() *FlowCmd {
 	flowCmd := NewFlowCmd()
-	flowFillCmd := NewFlowMergeCmd()
-	flowCmd.cmd.AddCommand(flowFillCmd.cmd)
+	flowMergeCmd := NewFlowMergeCmd()
+	flowEnvCmd := NewFlowEnvCmd()
+	flowCmd.cmd.AddCommand(flowMergeCmd.cmd, flowEnvCmd.cmd)
 	return flowCmd
 }
 

@@ -91,6 +91,11 @@ functions:
     run:
       - cp images/bin/output/art /usr/local/bin/art
 
+  - name: set-version
+    description: updates the CLI version go file
+    run:
+      - sh version.sh ${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE}
+
   - name: build-art-registry
     description: creates an Artisan registry service image
     run:

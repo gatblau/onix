@@ -62,6 +62,65 @@ func (i *Input) Encrypt(pub *crypto.PGP) {
 	encryptInput(i, pub)
 }
 
+// merges the passed in input with the current input
+func (i *Input) Merge(in *Input) {
+	if in == nil {
+		// nothing to merge
+		return
+	}
+	for _, v := range in.Var {
+		// dedup
+		for _, iV := range i.Var {
+			// if the variable to be merged is already in the source
+			if iV.Name == v.Name {
+				// skip merge
+				continue
+			}
+		}
+		i.Var = append(i.Var, v)
+	}
+	for _, s := range in.Secret {
+		// dedup
+		for _, iS := range i.Secret {
+			// if the secret to be merged is already in the source
+			if iS.Name == s.Name {
+				// skip merge
+				continue
+			}
+		}
+		i.Secret = append(i.Secret, s)
+	}
+	for _, k := range in.Key {
+		// dedup
+		for _, kV := range i.Key {
+			// if the key to be merged is already in the source
+			if kV.Name == k.Name {
+				// skip merge
+				continue
+			}
+		}
+		i.Key = append(i.Key, k)
+	}
+}
+
+func (i *Input) VarExist(name string) bool {
+	for _, v := range i.Var {
+		if v.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func (i *Input) SecretExist(name string) bool {
+	for _, s := range i.Secret {
+		if s.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 // extracts the build file Input that is relevant to a function (using its bindings)
 func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt bool) *Input {
 	if buildFile == nil {
@@ -72,7 +131,7 @@ func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt bool) 
 	if fx == nil {
 		core.RaiseErr("function '%s' cannot be found in build file", fxName)
 	}
-	return getInput(fx.Input, buildFile.Input, prompt)
+	return getBoundInput(fx.Input, buildFile.Input, prompt)
 }
 
 // extracts the package manifest Input in an exported function
@@ -128,15 +187,15 @@ func surveyInput(input *Input) *Input {
 }
 
 // extract any Input data from the source that have a binding
-func getInput(fxInput *InputBinding, sourceInput *Input, prompt bool) *Input {
-	// if no bindings then return no Input
-	if fxInput == nil {
-		return nil
-	}
+func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt bool) *Input {
 	result := &Input{
 		Key:    make([]*Key, 0),
 		Secret: make([]*Secret, 0),
 		Var:    make([]*Var, 0),
+	}
+	// if no bindings then return an empty Input
+	if fxInput == nil {
+		return result
 	}
 	// collects exported vars
 	for _, varBinding := range fxInput.Var {
