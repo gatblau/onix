@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
 	"gopkg.in/yaml.v2"
@@ -25,12 +24,13 @@ import (
 // the pipeline generator requires at least the flow definition
 // if a build file is passed then step variables can be inferred from it
 type Manager struct {
-	flow         *Flow
+	Flow         *Flow
 	buildFile    *data.BuildFile
 	bareFlowPath string
+	envFile      string
 }
 
-func NewFromPath(bareFlowPath, buildPath string) (*Manager, error) {
+func NewFromPath(bareFlowPath, buildPath, envFile string) (*Manager, error) {
 	// check the flow path to see if bare flow is named correctly
 	if !strings.HasSuffix(bareFlowPath, "_bare.yaml") {
 		core.RaiseErr("a bare flow is required, the naming convention is [flow_name]_bare.yaml")
@@ -38,11 +38,12 @@ func NewFromPath(bareFlowPath, buildPath string) (*Manager, error) {
 	m := &Manager{
 		bareFlowPath: bareFlowPath,
 	}
-	flow, err := LoadFlow(bareFlowPath, nil)
+	m.envFile = core.ToAbs(envFile)
+	flow, err := LoadFlow(bareFlowPath)
 	if err != nil {
 		return nil, fmt.Errorf("cannot load flow definition from %s: %s", bareFlowPath, err)
 	}
-	m.flow = flow
+	m.Flow = flow
 	// if a build file is defined, then load it
 	if len(buildPath) > 0 {
 		buildPath = core.ToAbs(buildPath)
@@ -60,8 +61,10 @@ func NewFromPath(bareFlowPath, buildPath string) (*Manager, error) {
 }
 
 func (m *Manager) Merge() error {
+	// load environment variables from file, if file not specified then try loading .env
+	core.LoadEnvFromFile(m.envFile)
 	local := registry.NewLocalRegistry()
-	if m.flow.RequiresSource() {
+	if m.Flow.RequiresSource() {
 		if m.buildFile == nil {
 			return fmt.Errorf("a build.yaml file is required to fill the flow")
 		}
@@ -78,10 +81,10 @@ func (m *Manager) Merge() error {
 			// set the git uri in the build file
 			m.buildFile.GitURI = gitUri.Value
 		}
-		m.flow.GitURI = m.buildFile.GitURI
-		m.flow.AppIcon = m.buildFile.AppIcon
+		m.Flow.GitURI = m.buildFile.GitURI
+		m.Flow.AppIcon = m.buildFile.AppIcon
 	}
-	for _, step := range m.flow.Steps {
+	for _, step := range m.Flow.Steps {
 		step.Runtime = core.QualifyRuntime(step.Runtime)
 		if len(step.Package) > 0 {
 			name, err := core.ParseName(step.Package)
@@ -108,7 +111,7 @@ func (m *Manager) Merge() error {
 func (m *Manager) surveyRegistryCreds(packageName string) {
 	name, _ := core.ParseName(packageName)
 	// if the credentials for the package domain have not been added
-	if !m.flow.HasDomain(name.Domain) {
+	if !m.Flow.HasDomain(name.Domain) {
 		var user, pwd string
 		// prompt for the registry username
 		userPrompt := &survey.Password{
@@ -123,7 +126,7 @@ func (m *Manager) surveyRegistryCreds(packageName string) {
 		core.HandleCtrlC(survey.AskOne(pwdPrompt, &pwd, survey.WithValidator(survey.Required)))
 
 		// add the credentials to the flow list
-		m.flow.Credential = append(m.flow.Credential, &Credential{
+		m.Flow.Credential = append(m.Flow.Credential, &Credential{
 			User:     user,
 			Password: pwd,
 			Domain:   name.Domain,
@@ -132,14 +135,14 @@ func (m *Manager) surveyRegistryCreds(packageName string) {
 }
 
 func (m *Manager) YamlString() (string, error) {
-	b, err := yaml.Marshal(m.flow)
+	b, err := yaml.Marshal(m.Flow)
 	if err != nil {
 		return "", fmt.Errorf("cannot marshal execution flow: %s", err)
 	}
 	return string(b), nil
 }
 
-func LoadFlow(path string, key *crypto.PGP) (*Flow, error) {
+func LoadFlow(path string) (*Flow, error) {
 	var err error
 	if len(path) == 0 {
 		return nil, fmt.Errorf("flow definition is required")
@@ -154,12 +157,6 @@ func LoadFlow(path string, key *crypto.PGP) (*Flow, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot read flow definition %s: %s", path, err)
 	}
-	if key != nil {
-		flowBytes, err = key.Decrypt(flowBytes)
-		if err != nil {
-			return nil, fmt.Errorf("cannot decrypt flow %s: %s", path, err)
-		}
-	}
 	flow := new(Flow)
 	err = yaml.Unmarshal(flowBytes, flow)
 	if err != nil {
@@ -170,7 +167,7 @@ func LoadFlow(path string, key *crypto.PGP) (*Flow, error) {
 
 func (m *Manager) validate() error {
 	// check that the steps have the required attributes set
-	for _, step := range m.flow.Steps {
+	for _, step := range m.Flow.Steps {
 		if len(step.Runtime) == 0 {
 			return fmt.Errorf("invalid step %s, runtime is missing", step.Name)
 		}
@@ -179,7 +176,7 @@ func (m *Manager) validate() error {
 }
 
 func (m *Manager) Save() error {
-	y, err := yaml.Marshal(m.flow)
+	y, err := yaml.Marshal(m.Flow)
 	if err != nil {
 		return fmt.Errorf("cannot marshal bare flow: %s", err)
 	}
@@ -190,7 +187,7 @@ func (m *Manager) Save() error {
 	return nil
 }
 
-// get the merged flow path
+// get the merged Flow path
 func (m *Manager) path() string {
 	dir, file := filepath.Split(m.bareFlowPath)
 	filename := core.FilenameWithoutExtension(file)
