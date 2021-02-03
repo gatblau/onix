@@ -338,8 +338,8 @@ func execute(cmd string, dir string, env *core.Envar, interactive bool) (err err
 
 	if err := command.Wait(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-				core.RaiseErr(exitMsg(status.ExitStatus()))
+			if _, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+				core.RaiseErr("run command failed: '%s' - '%s'", cmd, exitErr.Error())
 			}
 		}
 		return err

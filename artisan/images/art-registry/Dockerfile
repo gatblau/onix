@@ -12,8 +12,8 @@ LABEL maintainer="onix@gatblau.org"
 
 ARG UNAME=artisan
 
-ENV UID=1000
-ENV GID=1000
+ENV UID=100000000
+ENV GID=100000000
 
 RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y && \
     microdnf install shadow-utils.x86_64 && \
@@ -31,10 +31,10 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
 
 WORKDIR /app
 
-COPY ./images/bin/output/art ./
+COPY ./images/bin/output/artreg ./
 
 USER $UNAME
 
-CMD ["sh", "-c", "/app/art serve"]
+CMD ["sh", "-c", "/app/artreg"]
 
 EXPOSE 8082/tcp

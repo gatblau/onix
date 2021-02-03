@@ -188,7 +188,7 @@ func HandleCtrlC(err error) {
 		fmt.Println("\ncommand interrupted")
 		os.Exit(0)
 	} else if err != nil {
-		panic(err)
+		RaiseErr("run command failed in build.yaml: %s", err)
 	}
 }
 
