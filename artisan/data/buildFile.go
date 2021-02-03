@@ -90,8 +90,6 @@ type Profile struct {
 	Icon string `yaml:"icon"`
 	// runtime image that should be used to execute functions in the package
 	Runtime string `yaml:"runtime,omitempty"`
-	// Sonar configuration
-	Sonar *Sonar `yaml:"sonar,omitempty"`
 	// a set of labels associated with the profile
 	Labels map[string]string `yaml:"labels"`
 	// a set of environment variables required by the run commands
@@ -158,11 +156,4 @@ func LoadBuildFile(path string) (*BuildFile, error) {
 		return nil, fmt.Errorf("syntax error in build file %s: %s", path, err)
 	}
 	return buildFile, nil
-}
-
-type Sonar struct {
-	URI        string `yaml:"uri"`
-	ProjectKey string `yaml:"project_key"`
-	Sources    string `yaml:"sources"`
-	Binaries   string `yaml:"binaries"`
 }
