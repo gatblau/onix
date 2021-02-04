@@ -88,8 +88,6 @@ type Profile struct {
 	Artefact string `yaml:"artefact"`
 	// the pipeline Icon
 	Icon string `yaml:"icon"`
-	// runtime image that should be used to execute functions in the package
-	Runtime string `yaml:"runtime,omitempty"`
 	// a set of labels associated with the profile
 	Labels map[string]string `yaml:"labels"`
 	// a set of environment variables required by the run commands

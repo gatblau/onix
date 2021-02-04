@@ -499,18 +499,17 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 	if err == nil {
 		// unmarshal the packaged build.yaml
 		buildFile := new(data.BuildFile)
+		buildFilePath := path.Join(profile.MergedTarget, "build.yaml")
 		err = yaml.Unmarshal(buildYamlBytes, buildFile)
-		core.CheckErr(err, "invalid YAML format in build file '%s'", path.Join(profile.MergedTarget, "build.yaml"))
+		core.CheckErr(err, "invalid YAML format in build file '%s'", buildFilePath)
 
 		// if the manifest contains exported functions then include the runtime
 		// image that should be used to execute such functions
 		if buildFile.ExportFxs() {
-			// a runtime must be defined if functions are exported
-			if len(profile.Runtime) == 0 {
-				core.RaiseErr("This package exports functions but the profile '%s' does not define a runtime image to run them:\n"+
-					"set the runtime attribute in the package build profile", profile.Name)
+			// pick the runtime at the buildfile level if exists
+			if len(buildFile.Runtime) > 0 {
+				s.Manifest.Runtime = buildFile.Runtime
 			}
-			s.Manifest.Runtime = profile.Runtime
 		}
 		// add exported functions to the manifest
 		for _, fx := range buildFile.Functions {
@@ -521,7 +520,12 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 					Name:        fx.Name,
 					Description: fx.Description,
 					Input:       data.SurveyInputFromBuildFile(fx.Name, buildFile, false),
+					Runtime:     fx.Runtime,
 				})
+				// a runtime must be specified for exported functions
+				if len(fx.Runtime) == 0 && len(buildFile.Runtime) == 0 {
+					core.RaiseErr("a runtime must be specified at the exported function '%s' level or the overall '%s' file level", fx.Name, buildFilePath)
+				}
 			}
 		}
 	}

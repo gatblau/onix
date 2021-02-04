@@ -56,4 +56,6 @@ type FxInfo struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Input       *Input `json:"input,omitempty"`
+	// runtime image that should be used to execute functions in the package
+	Runtime string `json:"runtime,omitempty"`
 }
