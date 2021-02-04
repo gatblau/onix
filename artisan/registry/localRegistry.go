@@ -35,23 +35,16 @@ func (r *LocalRegistry) api(domain string, noTLS bool) *Api {
 	return NewGenericAPI(domain, noTLS)
 }
 
-// find the Repository specified by name
-func (r *LocalRegistry) findRepository(name *core.PackageName) *Repository {
-	// find repository using artefact name
-	for _, repository := range r.Repositories {
-		if repository.Repository == name.FullyQualifiedName() {
-			return repository
-		}
+// create a localRepo management structure
+func NewLocalRegistry() *LocalRegistry {
+	r := &LocalRegistry{
+		Repositories: []*Repository{},
 	}
-	// find repository using artefact Id
-	for _, repository := range r.Repositories {
-		for _, artie := range repository.Artefacts {
-			if strings.Contains(artie.Id, name.Name) {
-				return repository
-			}
-		}
-	}
-	return nil
+	// check the registry directory is in place
+	r.checkRegistryDir()
+	// load local registry
+	r.load()
+	return r
 }
 
 // return all the artefacts within the same repository
@@ -116,77 +109,9 @@ func (r *LocalRegistry) FindArtefactsById(id string) []*core.PackageName {
 	return names
 }
 
-// create a localRepo management structure
-func NewLocalRegistry() *LocalRegistry {
-	r := &LocalRegistry{
-		Repositories: []*Repository{},
-	}
-	// check the registry directory is in place
-	r.checkRegistryDir()
-	// load local registry
-	r.load()
-	return r
-}
-
-// check the local localReg directory exists and if not creates it
-func (r *LocalRegistry) checkRegistryDir() {
-	// check the home directory exists
-	_, err := os.Stat(r.Path())
-	// if it does not
-	if os.IsNotExist(err) {
-		err = os.Mkdir(r.Path(), os.ModePerm)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	keysPath := path.Join(r.Path(), "keys")
-	// check the keys directory exists
-	_, err = os.Stat(keysPath)
-	// if it does not
-	if os.IsNotExist(err) {
-		// create a key pair
-		err = os.Mkdir(keysPath, os.ModePerm)
-		if err != nil {
-			log.Fatal(err)
-		}
-		host, _ := os.Hostname()
-		crypto.GeneratePGPKeys(keysPath, "root", fmt.Sprintf("root-%s", host), "", "", 2048)
-	}
-}
-
 // the local Path to the local LocalRegistry
 func (r *LocalRegistry) Path() string {
 	return core.RegistryPath()
-}
-
-// return the LocalRegistry full file name
-func (r *LocalRegistry) file() string {
-	return filepath.Join(r.Path(), "repository.json")
-}
-
-// save the state of the LocalRegistry
-func (r *LocalRegistry) save() {
-	regBytes := core.ToJsonBytes(r)
-	core.CheckErr(ioutil.WriteFile(r.file(), regBytes, os.ModePerm), "fail to update local registry metadata")
-}
-
-// load the content of the LocalRegistry
-func (r *LocalRegistry) load() {
-	// check if localRepo file exist
-	_, err := os.Stat(r.file())
-	if err != nil {
-		// then assume localRepo.json is not there: try and create it
-		r.save()
-	} else {
-		regBytes, err := ioutil.ReadFile(r.file())
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = json.Unmarshal(regBytes, r)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
 }
 
 // Add the artefact and seal to the LocalRegistry
@@ -233,52 +158,6 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 	repo.Artefacts = artefacts
 	// persist the changes
 	r.save()
-}
-
-func (r *LocalRegistry) removeArtefactById(a []*Artefact, id string) []*Artefact {
-	i := -1
-	// find the value to remove
-	for ix := 0; ix < len(a); ix++ {
-		if strings.Contains(a[ix].Id, id) {
-			i = ix
-			break
-		}
-	}
-	if i == -1 {
-		return a
-	}
-	// Remove the element at index i from a.
-	a[i] = a[len(a)-1] // Copy last element to index i.
-	a[len(a)-1] = nil  // Erase last element (write zero value).
-	a = a[:len(a)-1]   // Truncate slice.
-	return a
-}
-
-func (r *LocalRegistry) removeRepoByName(a []*Repository, name *core.PackageName) []*Repository {
-	i := -1
-	// find an artefact with the specified tag
-	for ix := 0; ix < len(a); ix++ {
-		if a[ix].Repository == name.FullyQualifiedName() {
-			i = ix
-			break
-		}
-	}
-	if i == -1 {
-		return a
-	}
-	// Remove the element at index i from a.
-	a[i] = a[len(a)-1] // Copy last element to index i.
-	a[len(a)-1] = nil  // Erase last element (write zero value).
-	a = a[:len(a)-1]   // Truncate slice.
-	return a
-}
-
-// remove a given tag from an Artefact
-func (r *LocalRegistry) unTag(name *core.PackageName, tag string) {
-	artie := r.FindArtefact(name)
-	if artie != nil {
-		artie.Tags = core.RemoveElement(artie.Tags, tag)
-	}
 }
 
 // remove a given tag from an artefact
@@ -354,20 +233,6 @@ func (r *LocalRegistry) Tag(sourceName *core.PackageName, targetName *core.Packa
 			}
 		}
 	}
-}
-
-// remove all tags from the specified Artefact
-func (r *LocalRegistry) unTagAll(name *core.PackageName) {
-	if artefs, exists := r.GetArtefactsByName(name); exists {
-		// then it has to untag it, leaving a dangling artefact
-		for _, artef := range artefs {
-			for _, tag := range artef.Tags {
-				artef.Tags = core.RemoveElement(artef.Tags, tag)
-			}
-		}
-	}
-	// persist changes
-	r.save()
 }
 
 // List artefacts to stdout
@@ -670,6 +535,109 @@ func (r *LocalRegistry) Remove(names []*core.PackageName) {
 	}
 }
 
+func (r *LocalRegistry) GetSeal(name *Artefact) (*data.Seal, error) {
+	sealFilename := path.Join(r.Path(), fmt.Sprintf("%s.json", name.FileRef))
+	sealFile, err := os.Open(sealFilename)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open seal file %s: %s", sealFilename, err)
+	}
+	sealBytes, err := ioutil.ReadAll(sealFile)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read seal file %s: %s", sealFilename, err)
+	}
+	seal := new(data.Seal)
+	err = json.Unmarshal(sealBytes, seal)
+	return seal, err
+}
+
+func (r *LocalRegistry) ImportKey(keyPath string, isPrivate bool, repoGroup string, repoName string) {
+	if !filepath.IsAbs(keyPath) {
+		keyPath, err := filepath.Abs(keyPath)
+		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
+	}
+	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
+	// only check it can read the key
+	_, err := crypto.LoadPGP(keyPath)
+	core.CheckErr(err, "cannot read pgp key '%s'", keyPath)
+	// if so, then move the key to the correct location to preserve PEM block data
+	if isPrivate {
+		CopyFile(keyPath, path.Join(destPath, crypto.PrivateKeyName(prefix, "pgp")))
+	} else {
+		CopyFile(keyPath, path.Join(destPath, crypto.PublicKeyName(prefix, "pgp")))
+	}
+}
+
+func (r *LocalRegistry) ExportKey(keyPath string, isPrivate bool, repoGroup string, repoName string) {
+	if !filepath.IsAbs(keyPath) {
+		keyPath, err := filepath.Abs(keyPath)
+		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
+	}
+	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
+	if isPrivate {
+		keyName := crypto.PrivateKeyName(prefix, "pgp")
+		err := CopyFile(path.Join(destPath, keyName), path.Join(keyPath, keyName))
+		core.CheckErr(err, "cannot export private key")
+	} else {
+		keyName := crypto.PublicKeyName(prefix, "pgp")
+		err := CopyFile(path.Join(destPath, keyName), path.Join(keyPath, keyName))
+		core.CheckErr(err, "cannot export public key")
+	}
+}
+
+func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
+	// find the artefact in the local registry
+	a := r.FindArtefact(name)
+	if a == nil {
+		core.RaiseErr("artefact '%s' not found in the local registry, pull it from remote first", name)
+	}
+	seal, err := r.GetSeal(a)
+	core.CheckErr(err, "cannot get artefact seal")
+	return seal.Manifest
+}
+
+// -----------------
+// utility functions
+// -----------------
+
+// works out the destination folder and prefix for the key
+func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string) (destPath string, prefix string) {
+	if len(repoName) > 0 {
+		// use the repo name location
+		destPath = path.Join(r.Path(), "keys", repoGroup, repoName)
+		prefix = fmt.Sprintf("%s_%s", repoGroup, repoName)
+	} else if len(repoGroup) > 0 {
+		// use the repo group location
+		destPath = path.Join(r.Path(), "keys", repoGroup)
+		prefix = repoGroup
+	} else {
+		// use the registry root location
+		destPath = path.Join(r.Path(), "keys")
+		prefix = "root"
+	}
+	_, err := os.Stat(destPath)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(destPath, os.ModePerm)
+		core.CheckErr(err, "cannot create private key destination '%s'", destPath)
+	}
+	return destPath, prefix
+}
+
+// removes any artefacts with no tags
+func (r *LocalRegistry) removeDangling(name *core.PackageName) {
+	repo := r.findRepository(name)
+	if repo != nil {
+		for _, artefact := range repo.Artefacts {
+			// if the artefact has no tags then remove it
+			if len(artefact.Tags) == 0 {
+				// remove the artefact metadata using its Id
+				repo.Artefacts = r.removeArtefactById(repo.Artefacts, artefact.Id)
+				// remove the artefact files
+				r.removeFiles(artefact)
+			}
+		}
+	}
+}
+
 // remove the files associated with an Artefact
 func (r *LocalRegistry) removeFiles(artie *Artefact) {
 	// remove the zip file
@@ -763,101 +731,137 @@ func (r *LocalRegistry) artCoords(name *core.PackageName, art *Artefact) (int, i
 	return -1, -1
 }
 
-func (r *LocalRegistry) GetSeal(name *Artefact) (*data.Seal, error) {
-	sealFilename := path.Join(r.Path(), fmt.Sprintf("%s.json", name.FileRef))
-	sealFile, err := os.Open(sealFilename)
-	if err != nil {
-		return nil, fmt.Errorf("cannot open seal file %s: %s", sealFilename, err)
-	}
-	sealBytes, err := ioutil.ReadAll(sealFile)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read seal file %s: %s", sealFilename, err)
-	}
-	seal := new(data.Seal)
-	err = json.Unmarshal(sealBytes, seal)
-	return seal, err
-}
-
-func (r *LocalRegistry) ImportKey(keyPath string, isPrivate bool, repoGroup string, repoName string) {
-	if !filepath.IsAbs(keyPath) {
-		keyPath, err := filepath.Abs(keyPath)
-		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
-	}
-	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
-	// only check it can read the key
-	_, err := crypto.LoadPGP(keyPath)
-	core.CheckErr(err, "cannot read pgp key '%s'", keyPath)
-	// if so, then move the key to the correct location to preserve PEM block data
-	if isPrivate {
-		CopyFile(keyPath, path.Join(destPath, crypto.PrivateKeyName(prefix, "pgp")))
-	} else {
-		CopyFile(keyPath, path.Join(destPath, crypto.PublicKeyName(prefix, "pgp")))
-	}
-}
-
-func (r *LocalRegistry) ExportKey(keyPath string, isPrivate bool, repoGroup string, repoName string) {
-	if !filepath.IsAbs(keyPath) {
-		keyPath, err := filepath.Abs(keyPath)
-		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
-	}
-	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
-	if isPrivate {
-		keyName := crypto.PrivateKeyName(prefix, "pgp")
-		err := CopyFile(path.Join(destPath, keyName), path.Join(keyPath, keyName))
-		core.CheckErr(err, "cannot export private key")
-	} else {
-		keyName := crypto.PublicKeyName(prefix, "pgp")
-		err := CopyFile(path.Join(destPath, keyName), path.Join(keyPath, keyName))
-		core.CheckErr(err, "cannot export public key")
-	}
-}
-
-// works out the destination folder and prefix for the key
-func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string) (destPath string, prefix string) {
-	if len(repoName) > 0 {
-		// use the repo name location
-		destPath = path.Join(r.Path(), "keys", repoGroup, repoName)
-		prefix = fmt.Sprintf("%s_%s", repoGroup, repoName)
-	} else if len(repoGroup) > 0 {
-		// use the repo group location
-		destPath = path.Join(r.Path(), "keys", repoGroup)
-		prefix = repoGroup
-	} else {
-		// use the registry root location
-		destPath = path.Join(r.Path(), "keys")
-		prefix = "root"
-	}
-	_, err := os.Stat(destPath)
-	if os.IsNotExist(err) {
-		err = os.MkdirAll(destPath, os.ModePerm)
-		core.CheckErr(err, "cannot create private key destination '%s'", destPath)
-	}
-	return destPath, prefix
-}
-
-// removes any artefacts with no tags
-func (r *LocalRegistry) removeDangling(name *core.PackageName) {
-	repo := r.findRepository(name)
-	if repo != nil {
-		for _, artefact := range repo.Artefacts {
-			// if the artefact has no tags then remove it
-			if len(artefact.Tags) == 0 {
-				// remove the artefact metadata using its Id
-				repo.Artefacts = r.removeArtefactById(repo.Artefacts, artefact.Id)
-				// remove the artefact files
-				r.removeFiles(artefact)
+// remove all tags from the specified Artefact
+func (r *LocalRegistry) unTagAll(name *core.PackageName) {
+	if artefs, exists := r.GetArtefactsByName(name); exists {
+		// then it has to untag it, leaving a dangling artefact
+		for _, artef := range artefs {
+			for _, tag := range artef.Tags {
+				artef.Tags = core.RemoveElement(artef.Tags, tag)
 			}
+		}
+	}
+	// persist changes
+	r.save()
+}
+
+// remove a given tag from an Artefact
+func (r *LocalRegistry) unTag(name *core.PackageName, tag string) {
+	artie := r.FindArtefact(name)
+	if artie != nil {
+		artie.Tags = core.RemoveElement(artie.Tags, tag)
+	}
+}
+
+func (r *LocalRegistry) removeArtefactById(a []*Artefact, id string) []*Artefact {
+	i := -1
+	// find the value to remove
+	for ix := 0; ix < len(a); ix++ {
+		if strings.Contains(a[ix].Id, id) {
+			i = ix
+			break
+		}
+	}
+	if i == -1 {
+		return a
+	}
+	// Remove the element at index i from a.
+	a[i] = a[len(a)-1] // Copy last element to index i.
+	a[len(a)-1] = nil  // Erase last element (write zero value).
+	a = a[:len(a)-1]   // Truncate slice.
+	return a
+}
+
+func (r *LocalRegistry) removeRepoByName(a []*Repository, name *core.PackageName) []*Repository {
+	i := -1
+	// find an artefact with the specified tag
+	for ix := 0; ix < len(a); ix++ {
+		if a[ix].Repository == name.FullyQualifiedName() {
+			i = ix
+			break
+		}
+	}
+	if i == -1 {
+		return a
+	}
+	// Remove the element at index i from a.
+	a[i] = a[len(a)-1] // Copy last element to index i.
+	a[len(a)-1] = nil  // Erase last element (write zero value).
+	a = a[:len(a)-1]   // Truncate slice.
+	return a
+}
+
+// return the LocalRegistry full file name
+func (r *LocalRegistry) file() string {
+	return filepath.Join(r.Path(), "repository.json")
+}
+
+// save the state of the LocalRegistry
+func (r *LocalRegistry) save() {
+	regBytes := core.ToJsonBytes(r)
+	core.CheckErr(ioutil.WriteFile(r.file(), regBytes, os.ModePerm), "fail to update local registry metadata")
+}
+
+// load the content of the LocalRegistry
+func (r *LocalRegistry) load() {
+	// check if localRepo file exist
+	_, err := os.Stat(r.file())
+	if err != nil {
+		// then assume localRepo.json is not there: try and create it
+		r.save()
+	} else {
+		regBytes, err := ioutil.ReadFile(r.file())
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = json.Unmarshal(regBytes, r)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 }
 
-func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
-	// find the artefact in the local registry
-	a := r.FindArtefact(name)
-	if a == nil {
-		core.RaiseErr("artefact '%s' not found in the local registry, pull it from remote first", name)
+// check the local localReg directory exists and if not creates it
+func (r *LocalRegistry) checkRegistryDir() {
+	// check the home directory exists
+	_, err := os.Stat(r.Path())
+	// if it does not
+	if os.IsNotExist(err) {
+		err = os.Mkdir(r.Path(), os.ModePerm)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
-	seal, err := r.GetSeal(a)
-	core.CheckErr(err, "cannot get artefact seal")
-	return seal.Manifest
+	keysPath := path.Join(r.Path(), "keys")
+	// check the keys directory exists
+	_, err = os.Stat(keysPath)
+	// if it does not
+	if os.IsNotExist(err) {
+		// create a key pair
+		err = os.Mkdir(keysPath, os.ModePerm)
+		if err != nil {
+			log.Fatal(err)
+		}
+		host, _ := os.Hostname()
+		crypto.GeneratePGPKeys(keysPath, "root", fmt.Sprintf("root-%s", host), "", "", 2048)
+	}
+}
+
+// find the Repository specified by name
+func (r *LocalRegistry) findRepository(name *core.PackageName) *Repository {
+	// find repository using artefact name
+	for _, repository := range r.Repositories {
+		if repository.Repository == name.FullyQualifiedName() {
+			return repository
+		}
+	}
+	// find repository using artefact Id
+	for _, repository := range r.Repositories {
+		for _, artie := range repository.Artefacts {
+			if strings.Contains(artie.Id, name.Name) {
+				return repository
+			}
+		}
+	}
+	return nil
 }
