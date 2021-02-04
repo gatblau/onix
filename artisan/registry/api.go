@@ -86,15 +86,15 @@ func (r *Api) UploadArtefact(name *core.PackageName, artefactRef string, zipfile
 	// Submit the request
 	res, err := r.client.Do(req)
 	core.CheckErr(err, "cannot post to backend")
-	// Check the response
-	if res.StatusCode > 299 {
-		return fmt.Errorf("failed to push, the remote server responded with status code %d: %s", res.StatusCode, res.Status)
-	}
 	switch res.StatusCode {
 	case http.StatusCreated:
-		core.Msg("artefact pushed")
+		fmt.Printf("tag %s pushed\n", name.Tag)
 	case http.StatusOK:
-		core.Msg("nothing to do")
+		fmt.Printf("nothing to do")
+	default:
+		if res.StatusCode > 299 {
+			return fmt.Errorf("failed to push, the remote server responded with status code %d: %s", res.StatusCode, res.Status)
+		}
 	}
 	return nil
 }

@@ -315,7 +315,6 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS b
 			remoteArt.Tags = append(remoteArt.Tags, name.Tag)
 			err = api.UpdateArtefactInfo(name, remoteArt, uname, pwd)
 			core.CheckErr(err, "cannot update remote artefact tags")
-			fmt.Printf("tag %s pushed\n", name.Tag)
 			return
 		}
 	}
