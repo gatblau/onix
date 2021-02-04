@@ -145,7 +145,9 @@ func SurveyInputFromManifest(name *core.PackageName, fxName string, manifest *Ma
 	// as we need to open this package a verification key is needed
 	// then, add the key to the inputs automatically
 	input.Key = append(input.Key, &Key{
-		Name:        fmt.Sprintf("%s_%s_VERIFICATION_KEY", strings.ToUpper(name.Group), strings.ToUpper(name.Name)),
+		Name: fmt.Sprintf("%s_%s_VERIFICATION_KEY",
+			strings.Replace(strings.ToUpper(name.Group), "-", "_", -1),
+			strings.Replace(strings.ToUpper(name.Name), "-", "_", -1)),
 		Description: fmt.Sprintf("the public PGP key required to open the package %s", name),
 		Private:     false,
 	})
