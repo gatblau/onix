@@ -127,7 +127,7 @@ func (m *Manager) surveyRegistryCreds(packageName string, prompt bool) {
 	}
 	name, _ := core.ParseName(packageName)
 	// check for art_reg_user
-	userName := fmt.Sprintf("ART_REG_USER_%s", name.Domain)
+	userName := fmt.Sprintf("ART_REG_USER_%s", data.NormInputName(name.Domain))
 	if !m.Flow.HasSecret(userName) {
 		userSecret := &data.Secret{
 			Name:        userName,
@@ -145,7 +145,7 @@ func (m *Manager) surveyRegistryCreds(packageName string, prompt bool) {
 	if !m.Flow.HasSecret(pwd) {
 		pwdSecret := &data.Secret{
 			Name:        pwd,
-			Description: fmt.Sprintf("the password to authenticate with the registry at '%s'", name.Domain),
+			Description: fmt.Sprintf("the password to authenticate with the registry at '%s'", data.NormInputName(name.Domain)),
 		}
 		if prompt {
 			data.SurveySecret(pwdSecret)
