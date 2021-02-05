@@ -31,7 +31,7 @@ type Input struct {
 	Var []*Var `yaml:"var,omitempty" json:"var,omitempty"`
 }
 
-func (i *Input) ContainsVar(binding string) bool {
+func (i *Input) HasVarBinding(binding string) bool {
 	for _, variable := range i.Var {
 		if variable.Name == binding {
 			return true
@@ -40,7 +40,7 @@ func (i *Input) ContainsVar(binding string) bool {
 	return false
 }
 
-func (i *Input) ContainsSecret(binding string) bool {
+func (i *Input) HasSecretBinding(binding string) bool {
 	for _, secret := range i.Secret {
 		if secret.Name == binding {
 			return true
@@ -49,7 +49,7 @@ func (i *Input) ContainsSecret(binding string) bool {
 	return false
 }
 
-func (i *Input) ContainsKey(binding string) bool {
+func (i *Input) HasKeyBinding(binding string) bool {
 	for _, key := range i.Key {
 		if key.Name == binding {
 			return true
@@ -58,8 +58,76 @@ func (i *Input) ContainsKey(binding string) bool {
 	return false
 }
 
+func (i *Input) HasVar(name string) bool {
+	for _, v := range i.Var {
+		if v.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func (i *Input) HasSecret(name string) bool {
+	for _, s := range i.Secret {
+		if s.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func (i *Input) HasKey(name string) bool {
+	for _, k := range i.Key {
+		if k.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 func (i *Input) Encrypt(pub *crypto.PGP) {
 	encryptInput(i, pub)
+}
+
+func (i *Input) SurveyRegistryCreds(packageName string, prompt, defOnly bool) {
+	name, _ := core.ParseName(packageName)
+	// check for art_reg_user
+	userName := fmt.Sprintf("ART_REG_USER_%s", NormInputName(name.Domain))
+	if !i.HasSecret(userName) {
+		userSecret := &Secret{
+			Name:        userName,
+			Description: fmt.Sprintf("the username to authenticate with the registry at '%s'", name.Domain),
+		}
+		if !defOnly {
+			EvalSecret(userSecret, prompt)
+		}
+		i.Secret = append(i.Secret, userSecret)
+	}
+	// check for art_reg_pwd
+	pwd := fmt.Sprintf("ART_REG_PWD_%s", NormInputName(name.Domain))
+	if !i.HasSecret(pwd) {
+		pwdSecret := &Secret{
+			Name:        pwd,
+			Description: fmt.Sprintf("the password to authenticate with the registry at '%s'", NormInputName(name.Domain)),
+		}
+		if !defOnly {
+			EvalSecret(pwdSecret, prompt)
+		}
+		i.Secret = append(i.Secret, pwdSecret)
+	}
+	// as we need to open this package a verification (public PGP) key is needed
+	keyName := fmt.Sprintf("%s_%s_VERIFICATION_KEY", NormInputName(name.Group), NormInputName(name.Name))
+	if !i.HasKey(keyName) {
+		key := &Key{
+			Name:        keyName,
+			Description: fmt.Sprintf("the public PGP key required to open the package %s", name),
+			Private:     false,
+		}
+		if !defOnly {
+			EvalKey(key, prompt)
+		}
+		i.Key = append(i.Key, key)
+	}
 }
 
 // merges the passed in input with the current input
@@ -122,7 +190,7 @@ func (i *Input) SecretExist(name string) bool {
 }
 
 // extracts the build file Input that is relevant to a function (using its bindings)
-func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt bool) *Input {
+func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt, defOnly bool) *Input {
 	if buildFile == nil {
 		core.RaiseErr("build file is required")
 	}
@@ -131,36 +199,39 @@ func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt bool) 
 	if fx == nil {
 		core.RaiseErr("function '%s' cannot be found in build file", fxName)
 	}
-	return getBoundInput(fx.Input, buildFile.Input, prompt)
+	return getBoundInput(fx.Input, buildFile.Input, prompt, defOnly)
 }
 
 // extracts the package manifest Input in an exported function
-func SurveyInputFromManifest(name *core.PackageName, fxName string, manifest *Manifest, prompt bool) *Input {
+func SurveyInputFromManifest(name *core.PackageName, fxName string, manifest *Manifest, prompt, defOnly bool) *Input {
 	// get the function in the manifest
 	fx := manifest.Fx(fxName)
 	if fx == nil {
 		core.RaiseErr("function '%s' does not exist in or has not been exported", fxName)
 	}
-	input := *fx.Input
-	// as we need to open this package a verification key is needed
-	// then, add the key to the inputs automatically
-	input.Key = append(input.Key, &Key{
-		Name:        fmt.Sprintf("%s_%s_VERIFICATION_KEY", NormInputName(name.Group), NormInputName(name.Name)),
-		Description: fmt.Sprintf("the public PGP key required to open the package %s", name),
-		Private:     false,
-	})
-	if prompt {
-		surveyInput(&input)
+	input := fx.Input
+	if input == nil {
+		input = &Input{
+			Key:    make([]*Key, 0),
+			Secret: make([]*Secret, 0),
+			Var:    make([]*Var, 0),
+		}
 	}
-	return &input
+	// first evaluates the existing inputs
+	input = evalInput(input, prompt, defOnly)
+	// then add registry credential inputs
+	input.SurveyRegistryCreds(name.String(), prompt, defOnly)
+	return input
 }
 
 // ensure the passed in name is formatted as a valid environment variable name
 func NormInputName(name string) string {
-	return strings.Replace(strings.ToUpper(name), "-", "_", -1)
+	result := strings.Replace(strings.ToUpper(name), "-", "_", -1)
+	result = strings.Replace(result, ".", "_", -1)
+	return result
 }
 
-func SurveyInputFromURI(uri string, prompt bool) *Input {
+func SurveyInputFromURI(uri string, prompt, defOnly bool) *Input {
 	response, err := core.Get(uri, "", "")
 	core.CheckErr(err, "cannot fetch runtime manifest")
 	body, err := ioutil.ReadAll(response.Body)
@@ -168,31 +239,92 @@ func SurveyInputFromURI(uri string, prompt bool) *Input {
 	// need a wrapper object for the input for the unmarshaller to work so using buildfile
 	var buildFile = new(BuildFile)
 	err = yaml.Unmarshal(body, buildFile)
-	if prompt {
-		return surveyInput(buildFile.Input)
-	}
-	return buildFile.Input
+	return evalInput(buildFile.Input, prompt, defOnly)
 }
 
-func surveyInput(input *Input) *Input {
+func evalInput(input *Input, interactive, defOnly bool) *Input {
 	// makes a shallow copy of the input
 	result := *input
 	// collect values from command line interface
 	for _, v := range result.Var {
-		SurveyVar(v)
+		if !defOnly {
+			EvalVar(v, interactive)
+		}
 	}
 	for _, secret := range result.Secret {
-		SurveySecret(secret)
+		if !defOnly {
+			EvalSecret(secret, interactive)
+		}
 	}
 	for _, key := range result.Key {
-		SurveyKey(key)
+		if !defOnly {
+			surveyKey(key)
+		}
 	}
 	// return pointer to new object
 	return &result
 }
 
+func EvalVar(inputVar *Var, prompt bool) {
+	// do not evaluate it if there is already a value
+	if len(inputVar.Value) > 0 {
+		return
+	}
+	// check if there is an env variable
+	varValue := os.Getenv(inputVar.Name)
+	// if so
+	if len(varValue) > 0 {
+		// set the var value to the env variable's
+		inputVar.Value = varValue
+	} else if prompt {
+		// survey the var value
+		surveyVar(inputVar)
+	} else {
+		// otherwise error
+		core.RaiseErr("%s is required", inputVar.Name)
+	}
+}
+
+func EvalSecret(inputSecret *Secret, prompt bool) {
+	// do not evaluate it if there is already a value
+	if len(inputSecret.Value) > 0 {
+		return
+	}
+	// check if there is an env variable
+	secretValue := os.Getenv(inputSecret.Name)
+	// if so
+	if len(secretValue) > 0 {
+		// set the secret value to the env variable's
+		inputSecret.Value = secretValue
+	} else if prompt {
+		// survey the secret value
+		surveySecret(inputSecret)
+	} else {
+		// otherwise error
+		core.RaiseErr("%s is required", inputSecret.Name)
+	}
+}
+
+func EvalKey(inputKey *Key, prompt bool) {
+	// do not evaluate it if there is already a value
+	if len(inputKey.Value) > 0 {
+		return
+	}
+	// check if there is an env variable
+	keyPath := os.Getenv(inputKey.Name)
+	// if so
+	if len(keyPath) > 0 {
+		// load the correct key using the provided path
+		loadKeyFromPath(inputKey, keyPath)
+	} else if prompt {
+		surveyKey(inputKey)
+	} else {
+		core.RaiseErr("%s is required", inputKey.Name)
+	}
+}
+
 // extract any Input data from the source that have a binding
-func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt bool) *Input {
+func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt, defOnly bool) *Input {
 	result := &Input{
 		Key:    make([]*Key, 0),
 		Secret: make([]*Secret, 0),
@@ -207,9 +339,9 @@ func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt bool) *Inpu
 		for _, variable := range sourceInput.Var {
 			if variable.Name == varBinding {
 				result.Var = append(result.Var, variable)
-				// if interactive mode is enabled then prompt the user to enter the variable value
-				if prompt {
-					SurveyVar(variable)
+				// if not definition only it should evaluate the variable
+				if !defOnly {
+					EvalVar(variable, prompt)
 				}
 			}
 		}
@@ -219,9 +351,9 @@ func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt bool) *Inpu
 		for _, secret := range sourceInput.Secret {
 			if secret.Name == secretBinding {
 				result.Secret = append(result.Secret, secret)
-				// if interactive mode is enabled then prompt the user to enter the variable value
-				if prompt {
-					SurveySecret(secret)
+				// if not definition only it should evaluate the secret
+				if !defOnly {
+					EvalSecret(secret, prompt)
 				}
 			}
 		}
@@ -231,9 +363,9 @@ func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt bool) *Inpu
 		for _, key := range sourceInput.Key {
 			if key.Name == keyBinding {
 				result.Key = append(result.Key, key)
-				// if interactive mode is enabled then prompt the user to enter the variable value
-				if prompt {
-					SurveyKey(key)
+				// if not definition only it should evaluate the key
+				if !defOnly {
+					EvalKey(key, prompt)
 				}
 			}
 		}
@@ -258,19 +390,7 @@ func encryptInput(input *Input, encPubKey *crypto.PGP) {
 	}
 }
 
-func SurveyVar(variable *Var) {
-	// check if the var is defined in the environment
-	value := os.Getenv(variable.Name)
-	// if it is
-	if len(value) > 0 {
-		// sets it with  its value and return
-		variable.Value = value
-		return
-	}
-	// do not surevey if there is a value already defined
-	if len(variable.Value) > 0 {
-		return
-	}
+func surveyVar(variable *Var) {
 	// otherwise prompts the user to enter it
 	var validator survey.Validator
 	desc := ""
@@ -299,19 +419,7 @@ func SurveyVar(variable *Var) {
 	core.HandleCtrlC(survey.AskOne(prompt, &variable.Value, survey.WithValidator(validator)))
 }
 
-func SurveySecret(secret *Secret) {
-	// check if the secret is defined in the environment
-	value := os.Getenv(secret.Name)
-	// if it is
-	if len(value) > 0 {
-		// sets it with  its value and return
-		secret.Value = value
-		return
-	}
-	// do not survey if there is already a value
-	if len(secret.Value) > 0 {
-		return
-	}
+func surveySecret(secret *Secret) {
 	desc := ""
 	// if a description is available use it
 	if len(secret.Description) > 0 {
@@ -324,7 +432,7 @@ func SurveySecret(secret *Secret) {
 	core.HandleCtrlC(survey.AskOne(prompt, &secret.Value, survey.WithValidator(survey.Required)))
 }
 
-func SurveyKey(key *Key) {
+func surveyKey(key *Key) {
 	desc := ""
 	// if a description is available use it
 	if len(key.Description) > 0 {
@@ -343,19 +451,20 @@ func SurveyKey(key *Key) {
 		Default: defaultPath,
 		Help:    "/ indicates root keys; /group-name indicates group level keys; /group-name/package-name indicates package level keys",
 	}
-	var (
-		keyPath, pk, pub string
-		keyBytes         []byte
-		err              error
-	)
-	keyPathValue := os.Getenv(key.Name)
-	// if the key path is not defined as an environment variable
-	if len(keyPathValue) == 0 {
-		core.HandleCtrlC(survey.AskOne(prompt, &keyPath, survey.WithValidator(keyPathExist)))
-	} else {
-		keyPath = keyPathValue
-	}
+	var keyPath string
+	// survey the key path
+	core.HandleCtrlC(survey.AskOne(prompt, &keyPath, survey.WithValidator(keyPathExist)))
 	// load the keys
+	loadKeyFromPath(key, keyPath)
+}
+
+// load the PGP in the key object using the passed in key path
+func loadKeyFromPath(key *Key, keyPath string) {
+	var (
+		pk, pub  string
+		keyBytes []byte
+		err      error
+	)
 	parts := strings.Split(keyPath, "/")
 	switch len(parts) {
 	case 2:
