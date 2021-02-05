@@ -22,22 +22,12 @@ type Credential struct {
 }
 
 type Flow struct {
-	Name        string        `yaml:"name"`
-	Description string        `yaml:"description"`
-	GitURI      string        `yaml:"git_uri,omitempty"`
-	AppIcon     string        `yaml:"app_icon,omitempty"`
-	Steps       []*Step       `yaml:"steps"`
-	Credential  []*Credential `yaml:"credential,omitempty"`
-}
-
-// finds if the domain contains credentials
-func (f *Flow) HasDomain(domain string) bool {
-	for _, credential := range f.Credential {
-		if credential.Domain == domain {
-			return true
-		}
-	}
-	return false
+	Name        string      `yaml:"name"`
+	Description string      `yaml:"description"`
+	GitURI      string      `yaml:"git_uri,omitempty"`
+	AppIcon     string      `yaml:"app_icon,omitempty"`
+	Steps       []*Step     `yaml:"steps"`
+	Input       *data.Input `yaml:"input,omitempty"`
 }
 
 func (f *Flow) StepByFx(fxName string) *Step {
@@ -74,28 +64,6 @@ func (f *Flow) RequiresSecrets() bool {
 		}
 	}
 	return false
-}
-
-func (f *Flow) GetRegistryUser(packageName string) string {
-	name, err := core.ParseName(packageName)
-	core.CheckErr(err, "cannot parse package name %s", packageName)
-	for _, credential := range f.Credential {
-		if credential.Domain == name.Domain {
-			return credential.User
-		}
-	}
-	return ""
-}
-
-func (f *Flow) GetRegistryPwd(packageName string) string {
-	name, err := core.ParseName(packageName)
-	core.CheckErr(err, "cannot parse package name %s", packageName)
-	for _, credential := range f.Credential {
-		if credential.Domain == name.Domain {
-			return credential.Password
-		}
-	}
-	return ""
 }
 
 type Step struct {
@@ -178,4 +146,31 @@ func (f *Flow) GetCombinedInput(b *data.BuildFile) *data.Input {
 		}
 	}
 	return result
+}
+
+func (f *Flow) HasVar(name string) bool {
+	for _, v := range f.Input.Var {
+		if v.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func (f *Flow) HasSecret(name string) bool {
+	for _, s := range f.Input.Secret {
+		if s.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func (f *Flow) HasKey(name string) bool {
+	for _, k := range f.Input.Key {
+		if k.Name == name {
+			return true
+		}
+	}
+	return false
 }

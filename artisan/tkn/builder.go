@@ -221,9 +221,9 @@ func (b *Builder) newCredentialsSecret() *Secret {
 			}
 		}
 		// add flow level secrets
-		for _, cred := range b.flow.Credential {
-			credentials[fmt.Sprintf("ART_REG_USER_%s", cred.Domain)] = cred.User
-			credentials[fmt.Sprintf("ART_REG_PWD_%s", cred.Domain)] = cred.Password
+		for _, cred := range b.flow.Input.Secret {
+			credentials[cred.Name] = cred.Value
+			credentials[cred.Name] = cred.Value
 		}
 		s.StringData = &credentials
 		return s

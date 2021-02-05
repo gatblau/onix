@@ -25,6 +25,7 @@ type FlowMergeCmd struct {
 	buildFilePath string
 	stdout        *bool
 	tkn           *bool
+	interactive   *bool
 }
 
 func NewFlowMergeCmd() *FlowMergeCmd {
@@ -39,6 +40,7 @@ func NewFlowMergeCmd() *FlowMergeCmd {
 	c.cmd.Flags().StringVarP(&c.buildFilePath, "build-file-path", "b", ".", "--build-file-path=. or -b=.; the path to an artisan build.yaml file from which to pick required inputs")
 	c.stdout = c.cmd.Flags().Bool("stdout", false, "prints the output to the console")
 	c.tkn = c.cmd.Flags().Bool("tkn", false, "generates a tekton resources file")
+	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -55,8 +57,8 @@ func (c *FlowMergeCmd) Run(cmd *cobra.Command, args []string) {
 	// loads a bare flow from the path
 	flow, err := flow.NewWithEnv(flowPath, c.buildFilePath, c.envFilename)
 	core.CheckErr(err, "cannot load bare flow")
-	// survey for required inputs
-	err = flow.Merge()
+	// merges input, surveying for required data if in interactive mode
+	err = flow.Merge(*c.interactive)
 	core.CheckErr(err, "cannot merge bare flow")
 	// if tekton format is requested
 	if *c.tkn {
