@@ -145,9 +145,7 @@ func SurveyInputFromManifest(name *core.PackageName, fxName string, manifest *Ma
 	// as we need to open this package a verification key is needed
 	// then, add the key to the inputs automatically
 	input.Key = append(input.Key, &Key{
-		Name: fmt.Sprintf("%s_%s_VERIFICATION_KEY",
-			strings.Replace(strings.ToUpper(name.Group), "-", "_", -1),
-			strings.Replace(strings.ToUpper(name.Name), "-", "_", -1)),
+		Name:        fmt.Sprintf("%s_%s_VERIFICATION_KEY", NormInputName(name.Group), NormInputName(name.Name)),
 		Description: fmt.Sprintf("the public PGP key required to open the package %s", name),
 		Private:     false,
 	})
@@ -155,6 +153,11 @@ func SurveyInputFromManifest(name *core.PackageName, fxName string, manifest *Ma
 		surveyInput(&input)
 	}
 	return &input
+}
+
+// ensure the passed in name is formatted as a valid environment variable name
+func NormInputName(name string) string {
+	return strings.Replace(strings.ToUpper(name), "-", "_", -1)
 }
 
 func SurveyInputFromURI(uri string, prompt bool) *Input {
