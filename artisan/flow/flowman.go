@@ -9,7 +9,6 @@ package flow
 
 import (
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
@@ -66,7 +65,7 @@ func NewWithEnv(bareFlowPath, buildPath, envFile string) (*Manager, error) {
 	return m, nil
 }
 
-func (m *Manager) Merge() error {
+func (m *Manager) Merge(interactive bool) error {
 	// load environment variables from file, if file not specified then try loading .env
 	core.LoadEnvFromFile(m.envFile)
 	local := registry.NewLocalRegistry()
@@ -83,9 +82,13 @@ func (m *Manager) Merge() error {
 				Required:    true,
 				Type:        "uri",
 			}
-			data.SurveyVar(gitUri)
-			// set the git uri in the build file
-			m.buildFile.GitURI = gitUri.Value
+			if interactive {
+				data.SurveyVar(gitUri)
+				// set the git uri in the build file
+				m.buildFile.GitURI = gitUri.Value
+			} else {
+				core.RaiseErr("GIT_URI is required")
+			}
 		}
 		m.Flow.GitURI = m.buildFile.GitURI
 		m.Flow.AppIcon = m.buildFile.AppIcon
@@ -97,46 +100,59 @@ func (m *Manager) Merge() error {
 			core.CheckErr(err, "invalid step %s package name %s", step.Name, step.Package)
 			// get the package manifest
 			manifest := local.GetManifest(name)
-			step.Input = data.SurveyInputFromManifest(name, step.Function, manifest, true)
+			step.Input = data.SurveyInputFromManifest(name, step.Function, manifest, interactive)
 			// collects credentials to retrieve package from registry
-			m.surveyRegistryCreds(step.Package)
+			m.surveyRegistryCreds(step.Package, interactive)
 		} else {
 			// if the step has a function
 			if len(step.Function) > 0 {
 				// add exported inputs to the step
-				step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, true)
+				step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, interactive)
 			} else {
 				// read input from from runtime_uri
-				step.Input = data.SurveyInputFromURI(step.RuntimeManifest, true)
+				step.Input = data.SurveyInputFromURI(step.RuntimeManifest, interactive)
 			}
 		}
 	}
 	return nil
 }
 
-func (m *Manager) surveyRegistryCreds(packageName string) {
+func (m *Manager) surveyRegistryCreds(packageName string, prompt bool) {
+	if m.Flow.Input == nil {
+		m.Flow.Input = &data.Input{
+			Key:    make([]*data.Key, 0),
+			Secret: make([]*data.Secret, 0),
+			Var:    make([]*data.Var, 0),
+		}
+	}
 	name, _ := core.ParseName(packageName)
-	// if the credentials for the package domain have not been added
-	if !m.Flow.HasDomain(name.Domain) {
-		var user, pwd string
-		// prompt for the registry username
-		userPrompt := &survey.Password{
-			Message: fmt.Sprintf("secret => REGISTRY USER (for %s):", packageName),
+	// check for art_reg_user
+	userName := fmt.Sprintf("ART_REG_USER_%s", name.Domain)
+	if !m.Flow.HasSecret(userName) {
+		userSecret := &data.Secret{
+			Name:        userName,
+			Description: fmt.Sprintf("the username to authenticate with the registry at '%s'", name.Domain),
 		}
-		core.HandleCtrlC(survey.AskOne(userPrompt, &user, survey.WithValidator(survey.Required)))
-
-		// prompt for the registry password
-		pwdPrompt := &survey.Password{
-			Message: fmt.Sprintf("secret => REGISTRY PASSWORD (for %s):", packageName),
+		if prompt {
+			data.SurveySecret(userSecret)
+		} else {
+			core.RaiseErr("%s is required", userName)
 		}
-		core.HandleCtrlC(survey.AskOne(pwdPrompt, &pwd, survey.WithValidator(survey.Required)))
-
-		// add the credentials to the flow list
-		m.Flow.Credential = append(m.Flow.Credential, &Credential{
-			User:     user,
-			Password: pwd,
-			Domain:   name.Domain,
-		})
+		m.Flow.Input.Secret = append(m.Flow.Input.Secret, userSecret)
+	}
+	// check for art_reg_pwd
+	pwd := fmt.Sprintf("ART_REG_PWD_%s", name.Domain)
+	if !m.Flow.HasSecret(pwd) {
+		pwdSecret := &data.Secret{
+			Name:        pwd,
+			Description: fmt.Sprintf("the password to authenticate with the registry at '%s'", name.Domain),
+		}
+		if prompt {
+			data.SurveySecret(pwdSecret)
+		} else {
+			core.RaiseErr("%s is required", pwd)
+		}
+		m.Flow.Input.Secret = append(m.Flow.Input.Secret, pwdSecret)
 	}
 }
 
