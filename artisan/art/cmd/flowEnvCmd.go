@@ -66,7 +66,7 @@ func (c *FlowEnvCmd) Run(cmd *cobra.Command, args []string) {
 		b, err = data.LoadBuildFile(path.Join(c.buildFilePath, "build.yaml"))
 	}
 	// discover the input required by the flow / build file
-	input := f.GetCombinedInput(b)
+	input := f.GetInputDefinition(b)
 	var output []byte
 	switch strings.ToLower(c.out) {
 	// if the requested format is env
@@ -110,6 +110,15 @@ func toEnv(i *data.Input) []byte {
 		} else {
 			buf.WriteString(fmt.Sprintf("%s=\n", v.Name))
 		}
+	}
+	for _, s := range i.Secret {
+		buf.WriteString(fmt.Sprintf("# %s\n", s.Description))
+		buf.WriteString(fmt.Sprintf("%s=\n", s.Name))
+	}
+	for _, k := range i.Key {
+		buf.WriteString(fmt.Sprint("# the path of the key in the artisan registry as described below:\n"))
+		buf.WriteString(fmt.Sprintf("# %s\n", k.Description))
+		buf.WriteString(fmt.Sprintf("%s=\n", k.Name))
 	}
 	return buf.Bytes()
 }

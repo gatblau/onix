@@ -82,13 +82,7 @@ func (m *Manager) Merge(interactive bool) error {
 				Required:    true,
 				Type:        "uri",
 			}
-			if interactive {
-				data.SurveyVar(gitUri)
-				// set the git uri in the build file
-				m.buildFile.GitURI = gitUri.Value
-			} else {
-				core.RaiseErr("GIT_URI is required")
-			}
+			data.EvalVar(gitUri, interactive)
 		}
 		m.Flow.GitURI = m.buildFile.GitURI
 		m.Flow.AppIcon = m.buildFile.AppIcon
@@ -100,60 +94,21 @@ func (m *Manager) Merge(interactive bool) error {
 			core.CheckErr(err, "invalid step %s package name %s", step.Name, step.Package)
 			// get the package manifest
 			manifest := local.GetManifest(name)
-			step.Input = data.SurveyInputFromManifest(name, step.Function, manifest, interactive)
+			step.Input = data.SurveyInputFromManifest(name, step.Function, manifest, interactive, false)
 			// collects credentials to retrieve package from registry
-			m.surveyRegistryCreds(step.Package, interactive)
+			step.Input.SurveyRegistryCreds(step.Package, interactive, false)
 		} else {
 			// if the step has a function
 			if len(step.Function) > 0 {
 				// add exported inputs to the step
-				step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, interactive)
+				step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, interactive, false)
 			} else {
 				// read input from from runtime_uri
-				step.Input = data.SurveyInputFromURI(step.RuntimeManifest, interactive)
+				step.Input = data.SurveyInputFromURI(step.RuntimeManifest, interactive, false)
 			}
 		}
 	}
 	return nil
-}
-
-func (m *Manager) surveyRegistryCreds(packageName string, prompt bool) {
-	if m.Flow.Input == nil {
-		m.Flow.Input = &data.Input{
-			Key:    make([]*data.Key, 0),
-			Secret: make([]*data.Secret, 0),
-			Var:    make([]*data.Var, 0),
-		}
-	}
-	name, _ := core.ParseName(packageName)
-	// check for art_reg_user
-	userName := fmt.Sprintf("ART_REG_USER_%s", data.NormInputName(name.Domain))
-	if !m.Flow.HasSecret(userName) {
-		userSecret := &data.Secret{
-			Name:        userName,
-			Description: fmt.Sprintf("the username to authenticate with the registry at '%s'", name.Domain),
-		}
-		if prompt {
-			data.SurveySecret(userSecret)
-		} else {
-			core.RaiseErr("%s is required", userName)
-		}
-		m.Flow.Input.Secret = append(m.Flow.Input.Secret, userSecret)
-	}
-	// check for art_reg_pwd
-	pwd := fmt.Sprintf("ART_REG_PWD_%s", name.Domain)
-	if !m.Flow.HasSecret(pwd) {
-		pwdSecret := &data.Secret{
-			Name:        pwd,
-			Description: fmt.Sprintf("the password to authenticate with the registry at '%s'", data.NormInputName(name.Domain)),
-		}
-		if prompt {
-			data.SurveySecret(pwdSecret)
-		} else {
-			core.RaiseErr("%s is required", pwd)
-		}
-		m.Flow.Input.Secret = append(m.Flow.Input.Secret, pwdSecret)
-	}
 }
 
 func (m *Manager) YamlString() (string, error) {

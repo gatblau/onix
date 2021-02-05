@@ -61,7 +61,7 @@ func (r *Runner) RunC(fxName string) error {
 	// collect any input required to run the function
 	env := core.NewEnVarFromSlice([]string{})
 	// interactively survey for required input via CLI
-	input := data.SurveyInputFromBuildFile(fxName, r.buildFile, true)
+	input := data.SurveyInputFromBuildFile(fxName, r.buildFile, true, false)
 	// fill the environment with the input
 	fillEnv(input, env)
 	// launch a container with a bind mount to the path where the build.yaml is located
@@ -91,7 +91,7 @@ func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool)
 		// collect any input required to run the function
 		env := core.NewEnVarFromSlice([]string{})
 		// interactively survey for required input via CLI
-		input := data.SurveyInputFromManifest(name, fxName, m, interactive)
+		input := data.SurveyInputFromManifest(name, fxName, m, interactive, false)
 		// fill the environment with the input
 		fillEnv(input, env)
 		// get registry credentials

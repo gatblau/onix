@@ -8,7 +8,6 @@
 package flow
 
 import (
-	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
@@ -77,8 +76,8 @@ type Step struct {
 }
 
 // retrieve all input data required by the flow without values
-// interactive mode is off
-func (f *Flow) GetCombinedInput(b *data.BuildFile) *data.Input {
+// interactive mode is off - gets definition only
+func (f *Flow) GetInputDefinition(b *data.BuildFile) *data.Input {
 	result := &data.Input{
 		Key:    make([]*data.Key, 0),
 		Secret: make([]*data.Secret, 0),
@@ -93,7 +92,7 @@ func (f *Flow) GetCombinedInput(b *data.BuildFile) *data.Input {
 				core.RaiseErr("flow '%s' requires a build.yaml", f.Name)
 			}
 			// surveys the build.yaml for variables
-			i := data.SurveyInputFromBuildFile(step.Function, b, false)
+			i := data.SurveyInputFromBuildFile(step.Function, b, false, true)
 			// add GIT_URI if not already added
 			if i == nil || !result.VarExist("GIT_URI") {
 				i.Var = append(i.Var, &data.Var{
@@ -112,26 +111,12 @@ func (f *Flow) GetCombinedInput(b *data.BuildFile) *data.Input {
 			if manif == nil {
 				core.RaiseErr("manifest for package '%s' not found", name)
 			}
-			i := data.SurveyInputFromManifest(name, step.Function, manif, false)
-			// add package registry credentials
-			userKey := fmt.Sprintf("ART_REG_USER_%s", name.Domain)
-			pwdKey := fmt.Sprintf("ART_REG_PWD_%s", name.Domain)
-			if i == nil || !result.SecretExist(userKey) {
-				i.Secret = append(i.Secret, &data.Secret{
-					Name:        userKey,
-					Description: fmt.Sprintf("the username to authenticate with the artefact registry at '%s'", name.Domain),
-				})
-			}
-			if i == nil || !result.SecretExist(pwdKey) {
-				i.Secret = append(i.Secret, &data.Secret{
-					Name:        pwdKey,
-					Description: fmt.Sprintf("the password to authenticate with the artefact registry at '%s'", name.Domain),
-				})
-			}
+			i := data.SurveyInputFromManifest(name, step.Function, manif, false, true)
+			i.SurveyRegistryCreds(step.Package, false, true)
 			result.Merge(i)
 		} else {
 			// surveys runtime manifest for variables
-			i := data.SurveyInputFromURI(step.RuntimeManifest, false)
+			i := data.SurveyInputFromURI(step.RuntimeManifest, false, true)
 			result.Merge(i)
 		}
 		// try augment the result with default values in the build.yaml
@@ -146,31 +131,4 @@ func (f *Flow) GetCombinedInput(b *data.BuildFile) *data.Input {
 		}
 	}
 	return result
-}
-
-func (f *Flow) HasVar(name string) bool {
-	for _, v := range f.Input.Var {
-		if v.Name == name {
-			return true
-		}
-	}
-	return false
-}
-
-func (f *Flow) HasSecret(name string) bool {
-	for _, s := range f.Input.Secret {
-		if s.Name == name {
-			return true
-		}
-	}
-	return false
-}
-
-func (f *Flow) HasKey(name string) bool {
-	for _, k := range f.Input.Key {
-		if k.Name == name {
-			return true
-		}
-	}
-	return false
 }
