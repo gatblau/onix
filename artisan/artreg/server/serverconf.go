@@ -5,11 +5,12 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package core
+package server
 
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	"os"
 	"strconv"
 	"strings"
@@ -77,7 +78,7 @@ func (c *ServerConfig) Backend() Backend {
 	}
 	backend := ParseBackend(value)
 	if backend == NotRecognized {
-		RaiseErr("backend '%s' is not a valid backend", value)
+		core.RaiseErr("backend '%s' is not a valid backend", value)
 	}
 	return backend
 }
@@ -100,7 +101,7 @@ func (c *ServerConfig) HttpUser() string {
 
 func (c *ServerConfig) HttpUploadLimit() int64 {
 	limit, err := strconv.ParseInt(c.getString(VarHTTPUploadLimit, "30"), 0, 0)
-	CheckErr(err, "invalid upload limit specified")
+	core.CheckErr(err, "invalid upload limit specified")
 	return limit
 }
 
