@@ -42,14 +42,14 @@ import (
 
 type Server struct {
 	lock  *lock
-	conf  *core.ServerConfig
+	conf  *ServerConfig
 	start time.Time
 }
 
 func NewServer() *Server {
 	return &Server{
 		// the server configuration
-		conf: new(core.ServerConfig),
+		conf: new(ServerConfig),
 		// a read/write lock
 		lock: new(lock),
 	}
