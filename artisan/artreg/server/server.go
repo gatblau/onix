@@ -23,8 +23,9 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/gatblau/onix/artisan/artreg/backend"
+	_ "github.com/gatblau/onix/artisan/artreg/docs"
 	"github.com/gatblau/onix/artisan/core"
-	_ "github.com/gatblau/onix/artisan/docs" // documentation needed for swagger
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -141,7 +142,7 @@ func (s *Server) fileDownloadHandler(w http.ResponseWriter, r *http.Request) {
 	filename := vars["filename"]
 
 	// get the backend to use
-	back := registry.GetBackend()
+	back := GetBackend()
 
 	file, _ := back.Download(group, name, filename, s.conf.HttpUser(), s.conf.HttpPwd())
 	defer file.Close()
@@ -224,7 +225,7 @@ func (s *Server) artefactUploadHandler(w http.ResponseWriter, r *http.Request) {
 	// try and upload checking the resource is not locked
 	repoPath := fmt.Sprintf("%s/%s", repoGroup, repoName)
 	// get the backend to use
-	back := registry.GetBackend()
+	back := GetBackend()
 	// retrieve the repository meta data
 	repo, err := back.GetRepositoryInfo(repoGroup, repoName, s.conf.HttpUser(), s.conf.HttpPwd())
 	if err != nil {
@@ -311,7 +312,7 @@ func (s *Server) repositoryInfoHandler(w http.ResponseWriter, r *http.Request) {
 	repoGroup := vars["repository-group"]
 	repoName := vars["repository-name"]
 	// retrieve repository metadata from the backend
-	repo, err := registry.GetBackend().GetRepositoryInfo(repoGroup, repoName, s.conf.HttpUser(), s.conf.HttpPwd())
+	repo, err := GetBackend().GetRepositoryInfo(repoGroup, repoName, s.conf.HttpUser(), s.conf.HttpPwd())
 	if err != nil {
 		s.writeError(w, err, 500)
 		return
@@ -335,7 +336,7 @@ func (s *Server) artefactInfoGetHandler(w http.ResponseWriter, r *http.Request) 
 	repoName := vars["repository-name"]
 	id := vars["artefact-id"]
 	// retrieve repository metadata from the backend
-	artie, err := registry.GetBackend().GetArtefactInfo(repoGroup, repoName, id, s.conf.HttpUser(), s.conf.HttpPwd())
+	artie, err := GetBackend().GetArtefactInfo(repoGroup, repoName, id, s.conf.HttpUser(), s.conf.HttpPwd())
 	if err != nil {
 		s.writeError(w, err, http.StatusInternalServerError)
 		return
@@ -379,7 +380,7 @@ func (s *Server) artefactInfoUpdateHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	// updates the repository metadata in Nexus
-	if err = registry.GetBackend().UpdateArtefactInfo(repoGroup, repoName, artie, s.conf.HttpUser(), s.conf.HttpPwd()); err != nil {
+	if err = GetBackend().UpdateArtefactInfo(repoGroup, repoName, artie, s.conf.HttpUser(), s.conf.HttpPwd()); err != nil {
 		s.writeError(w, fmt.Errorf("cannot update repository information in Nexus backend: %s", err), http.StatusInternalServerError)
 		return
 	}
@@ -613,4 +614,17 @@ func (s *Server) write(w http.ResponseWriter, r *http.Request, obj interface{}) 
 		log.Printf("error writing data to response: %s", err)
 		s.writeError(w, err, 500)
 	}
+}
+
+func GetBackend() backend.Backend {
+	conf := new(ServerConfig)
+	// get the configured factory
+	switch conf.Backend() {
+	case backend.Nexus3:
+		return backend.NewNexus3Backend(
+			conf.BackendDomain(), // the nexus scheme://domain:port
+		)
+	}
+	core.RaiseErr("backend not recognised")
+	return nil
 }
