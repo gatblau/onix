@@ -10,10 +10,10 @@ package server
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/gatblau/onix/artisan/artreg/backend"
 	"github.com/gatblau/onix/artisan/core"
 	"os"
 	"strconv"
-	"strings"
 )
 
 const (
@@ -27,60 +27,20 @@ const (
 	VarHTTPUploadLimit = "OXA_HTTP_UPLOAD_LIMIT"
 )
 
-type Backend int
-
-const (
-	FileSystem Backend = iota
-	S3
-	Nexus3
-	Artifactory
-	NotRecognized
-)
-
-func (b Backend) String() string {
-	switch b {
-	case FileSystem:
-		return "FileSystem"
-	case S3:
-		return "S3"
-	case Nexus3:
-		return "Nexus3"
-	case Artifactory:
-		return "Artifactory"
-	default:
-		return "NotRecognized"
-	}
-}
-
-func ParseBackend(value string) Backend {
-	switch strings.ToLower(value) {
-	case "filesystem":
-		return FileSystem
-	case "s3":
-		return S3
-	case "nexus3":
-		return Nexus3
-	case "artifactory":
-		return Artifactory
-	default:
-		return NotRecognized
-	}
-}
-
 type ServerConfig struct {
 }
 
-func (c *ServerConfig) Backend() Backend {
+func (c *ServerConfig) Backend() backend.BackendType {
 	value := os.Getenv(VarBackendType)
 	if len(value) == 0 {
 		// defaults to Nexus3
-		return Nexus3
+		return backend.Nexus3
 	}
-	backend := ParseBackend(value)
-	if backend == NotRecognized {
+	be := backend.ParseBackend(value)
+	if be == backend.NotRecognized {
 		core.RaiseErr("backend '%s' is not a valid backend", value)
 	}
-	return backend
+	return be
 }
 
 func (c *ServerConfig) MetricsEnabled() bool {

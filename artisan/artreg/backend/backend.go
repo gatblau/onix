@@ -5,10 +5,11 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package registry
+package backend
 
 import (
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/registry"
 	"mime/multipart"
 	"os"
 )
@@ -18,24 +19,11 @@ type Backend interface {
 	// upload an artefact to the remote repository
 	UploadArtefact(name *core.PackageName, artefactRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error
 	// get repository information
-	GetRepositoryInfo(group, name, user, pwd string) (*Repository, error)
+	GetRepositoryInfo(group, name, user, pwd string) (*registry.Repository, error)
 	// get artefact information
-	GetArtefactInfo(group, name, id, user, pwd string) (*Artefact, error)
+	GetArtefactInfo(group, name, id, user, pwd string) (*registry.Artefact, error)
 	// update artefact information
-	UpdateArtefactInfo(group string, name string, artefact *Artefact, user string, pwd string) error
+	UpdateArtefactInfo(group string, name string, artefact *registry.Artefact, user string, pwd string) error
 	// open a file for download
 	Download(repoGroup, repoName, fileName, user, pwd string) (*os.File, error)
-}
-
-func GetBackend() Backend {
-	conf := new(core.ServerConfig)
-	// get the configured factory
-	switch conf.Backend() {
-	case core.Nexus3:
-		return NewNexus3Backend(
-			conf.BackendDomain(), // the nexus scheme://domain:port
-		)
-	}
-	core.RaiseErr("backend not recognised")
-	return nil
 }

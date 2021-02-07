@@ -29,10 +29,21 @@ functions:
       - $(set-version)
       - go build -o bin/linux/artreg -v
 
-  - name: build-registry
-    description: creates an Artisan Package Registry image
+  - name: build
+    description: creates an Artisan Registry image
     run:
       - $(build-linux)
       - docker build -t ${REPO_NAME}/${ART_REGISTRY}:$((cat ../version)) .
       - docker tag ${REPO_NAME}/${ART_REGISTRY}:$((cat ../version)) ${REPO_NAME}/${ART_REGISTRY}:latest
+
+  - name: publish
+    description: publishes the Artisan Registry image
+    run:
+      - docker push ${REPO_NAME}/${ART_REGISTRY}:$((cat ../version))
+      - docker push ${REPO_NAME}/${ART_REGISTRY}:latest
+
+  - name: swagen
+    description: generates/refreshes the OpenAPI specifications for Artisan's HTTP API
+    run:
+      - swag init -d ./server -g server.go
 ...

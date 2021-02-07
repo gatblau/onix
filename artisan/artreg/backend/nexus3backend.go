@@ -5,7 +5,7 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package registry
+package backend
 
 import (
 	"bufio"
@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/registry"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -95,7 +96,7 @@ func (r *Nexus3Backend) Download(repoGroup, repoName, fileName, user, pwd string
 	return f, err
 }
 
-func (r *Nexus3Backend) UpdateArtefactInfo(group, name string, artefact *Artefact, user string, pwd string) error {
+func (r *Nexus3Backend) UpdateArtefactInfo(group, name string, artefact *registry.Artefact, user string, pwd string) error {
 	// get the repository info
 	repo, err := r.GetRepositoryInfo(group, name, user, pwd)
 	if err != nil {
@@ -199,7 +200,7 @@ func (r *Nexus3Backend) postMultipart(b bytes.Buffer, writer *multipart.Writer, 
 	return nil
 }
 
-func (r *Nexus3Backend) GetRepositoryInfo(group, name, user, pwd string) (*Repository, error) {
+func (r *Nexus3Backend) GetRepositoryInfo(group, name, user, pwd string) (*registry.Repository, error) {
 	// NOTE: the commented out validation below is not working in some cases, as sometime the metadata in Nexus seems to get corrupted
 	// and although the files are uploaded successfully the components meta data is not being updated accordingly
 
@@ -223,20 +224,20 @@ func (r *Nexus3Backend) GetRepositoryInfo(group, name, user, pwd string) (*Repos
 		return nil, err
 	}
 	// if the file is not in JSON format then
-	if !isJSON(string(b)) {
+	if !core.IsJSON(string(b)) {
 		// assume file not found (404 HTML page)
 		// returns an empty repository
-		return &Repository{
+		return &registry.Repository{
 			Repository: fmt.Sprintf("%s/%s", group, name),
-			Artefacts:  make([]*Artefact, 0),
+			Artefacts:  make([]*registry.Artefact, 0),
 		}, nil
 	}
-	repo := new(Repository)
+	repo := new(registry.Repository)
 	err = json.Unmarshal(b, repo)
 	return repo, err
 }
 
-func (r *Nexus3Backend) GetArtefactInfo(group, name, id, user, pwd string) (*Artefact, error) {
+func (r *Nexus3Backend) GetArtefactInfo(group, name, id, user, pwd string) (*registry.Artefact, error) {
 	repo, err := r.GetRepositoryInfo(group, name, user, pwd)
 	if err != nil {
 		return nil, err
@@ -326,7 +327,7 @@ func (r *Nexus3Backend) getComponents(user, pwd string) (*components, error) {
 		return nil, err
 	}
 	// if the result body is not in JSON format is likely that the domain of the backend does not exist
-	if !isJSON(string(b)) {
+	if !core.IsJSON(string(b)) {
 		return nil, fmt.Errorf("the response body was in an incorrect format, which suggests \nthe backend URI '%s' is not correct, \nor the server responsed with a bogus payload", r.domain)
 	}
 	comps := new(components)
