@@ -3,5 +3,6 @@ artisan
 docs/version.go
 output
 version
+version.go
 *.key
 bin
