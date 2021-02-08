@@ -1,0 +1,49 @@
+---
+labels:
+  author: onix@gatblau.org
+  application: Onix Artisan Flow Runner
+  description: An HTTP API for executing Artisan flows.
+  architecture: amd64
+
+env:
+  CGO_ENABLED: 0
+  GOARCH: amd64
+  REPO_NAME: quay.io/gatblau
+  APP_VERSION: 0.0.4
+  LIFECYCLE_STAGE: alpha
+  ART_RUNNER: artisan-runner
+
+profiles:
+
+functions:
+  - name: set-version
+    description: set-version on the parent build, updating global version
+    run:
+      - art run set-version ../
+
+  - name: build-linux
+    description: builds the Artisan Flow Runner for the linux platform
+    env:
+      GOOS: linux
+    run:
+      - $(set-version)
+      - go build -o bin/linux/runner -v
+
+  - name: build
+    description: creates an Artisan Flow Runner image
+    run:
+      - $(build-linux)
+      - docker build -t ${REPO_NAME}/${ART_RUNNER}:$((cat ../version)) .
+      - docker tag ${REPO_NAME}/${ART_RUNNER}:$((cat ../version)) ${REPO_NAME}/${ART_RUNNER}:latest
+
+  - name: publish
+    description: publishes the Artisan Registry image
+    run:
+      - docker push ${REPO_NAME}/${ART_RUNNER}:$((cat ../version))
+      - docker push ${REPO_NAME}/${ART_RUNNER}:latest
+
+  - name: swagen
+    description: generates/refreshes the OpenAPI specifications for Artisan's HTTP API
+    run:
+      - swag init -d ./server -g server.go
+...
