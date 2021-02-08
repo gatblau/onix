@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/crypto"
+	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/flow"
 )
 
@@ -157,7 +158,7 @@ func (b *Builder) addRuntimeInterfaceVars(step *flow.Step, env []*Env) []*Env {
 			ValueFrom: &ValueFrom{
 				SecretKeyRef: &SecretKeyRef{
 					Name: b.secretName(),
-					Key:  fmt.Sprintf("ART_REG_USER_%s", name.Domain),
+					Key:  fmt.Sprintf("ART_REG_USER_%s", data.NormInputName(name.Domain)),
 				},
 			},
 		})
@@ -166,7 +167,7 @@ func (b *Builder) addRuntimeInterfaceVars(step *flow.Step, env []*Env) []*Env {
 			ValueFrom: &ValueFrom{
 				SecretKeyRef: &SecretKeyRef{
 					Name: b.secretName(),
-					Key:  fmt.Sprintf("ART_REG_PWD_%s", name.Domain),
+					Key:  fmt.Sprintf("ART_REG_PWD_%s", data.NormInputName(name.Domain)),
 				},
 			},
 		})
@@ -221,9 +222,11 @@ func (b *Builder) newCredentialsSecret() *Secret {
 			}
 		}
 		// add flow level secrets
-		for _, cred := range b.flow.Input.Secret {
-			credentials[cred.Name] = cred.Value
-			credentials[cred.Name] = cred.Value
+		if b.flow.Input != nil && b.flow.Input.Secret != nil {
+			for _, cred := range b.flow.Input.Secret {
+				credentials[cred.Name] = cred.Value
+				credentials[cred.Name] = cred.Value
+			}
 		}
 		s.StringData = &credentials
 		return s
