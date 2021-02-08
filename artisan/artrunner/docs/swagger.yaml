@@ -1,0 +1,16 @@
+info:
+  contact: {}
+paths:
+  /flow:
+    post:
+      description: uploads an Artisan flow and triggers the flow execution
+      parameters:
+      - description: the artefact reference name
+        in: path
+        name: tag
+        required: true
+        type: string
+      summary: Executes an Artisan flow
+      tags:
+      - Flows
+swagger: "2.0"
