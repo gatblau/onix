@@ -10,7 +10,6 @@ package registry
 import (
 	"archive/zip"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"io"
@@ -200,9 +199,4 @@ func unzip(src, dest string) error {
 		}
 	}
 	return nil
-}
-
-func isJSON(s string) bool {
-	var js map[string]interface{}
-	return json.Unmarshal([]byte(s), &js) == nil
 }

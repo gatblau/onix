@@ -133,6 +133,11 @@ func RaiseErr(msg string, a ...interface{}) {
 	os.Exit(1)
 }
 
+func IsJSON(s string) bool {
+	var js map[string]interface{}
+	return json.Unmarshal([]byte(s), &js) == nil
+}
+
 func Msg(msg string, a ...interface{}) {
 	if len(a) > 0 {
 		fmt.Printf("info: %s\n", fmt.Sprintf(msg, a...))
