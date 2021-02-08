@@ -391,6 +391,12 @@ func encryptInput(input *Input, encPubKey *crypto.PGP) {
 }
 
 func surveyVar(variable *Var) {
+	// check if an env var has been set
+	envVal := os.Getenv(variable.Name)
+	// if so, skip survey
+	if len(envVal) > 0 {
+		return
+	}
 	// otherwise prompts the user to enter it
 	var validator survey.Validator
 	desc := ""
@@ -420,6 +426,12 @@ func surveyVar(variable *Var) {
 }
 
 func surveySecret(secret *Secret) {
+	// check if an env var has been set
+	envVal := os.Getenv(secret.Name)
+	// if so, skip survey
+	if len(envVal) > 0 {
+		return
+	}
 	desc := ""
 	// if a description is available use it
 	if len(secret.Description) > 0 {
@@ -433,6 +445,12 @@ func surveySecret(secret *Secret) {
 }
 
 func surveyKey(key *Key) {
+	// check if an env var has been set
+	envVal := os.Getenv(key.Name)
+	// if so, skip survey
+	if len(envVal) > 0 {
+		return
+	}
 	desc := ""
 	// if a description is available use it
 	if len(key.Description) > 0 {
@@ -447,7 +465,7 @@ func surveyKey(key *Key) {
 	}
 	// prompt for the value
 	prompt := &survey.Input{
-		Message: fmt.Sprintf("PGP key => %s PATH (%s):", key.Name, desc),
+		Message: fmt.Sprintf("PGP key => path to %s (%s):", key.Name, desc),
 		Default: defaultPath,
 		Help:    "/ indicates root keys; /group-name indicates group level keys; /group-name/package-name indicates package level keys",
 	}
