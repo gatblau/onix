@@ -519,7 +519,7 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 				s.Manifest.Functions = append(s.Manifest.Functions, &data.FxInfo{
 					Name:        fx.Name,
 					Description: fx.Description,
-					Input:       data.SurveyInputFromBuildFile(fx.Name, buildFile, false, false),
+					Input:       data.SurveyInputFromBuildFile(fx.Name, buildFile, false, true),
 					Runtime:     fx.Runtime,
 				})
 				// a runtime must be specified for exported functions
