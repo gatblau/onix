@@ -6,8 +6,8 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-rm ./version.go || true
-rm version || true
+rm ./core/version.go || true
+rm ./version || true
 pwd
-printf "package core\nconst Version=\"%s\"" "${TAG}" > ./version.go
+printf "package core\nconst Version=\"%s\"" "${TAG}" > ./core/version.go
 echo "${TAG}" >> version
