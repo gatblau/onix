@@ -83,6 +83,7 @@ func (m *Manager) Merge(interactive bool) error {
 				Type:        "uri",
 			}
 			data.EvalVar(gitUri, interactive)
+			m.buildFile.GitURI = gitUri.Value
 		}
 		m.Flow.GitURI = m.buildFile.GitURI
 		m.Flow.AppIcon = m.buildFile.AppIcon
