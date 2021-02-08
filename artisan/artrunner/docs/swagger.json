@@ -1,0 +1,26 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/flow": {
+            "post": {
+                "description": "uploads an Artisan flow and triggers the flow execution",
+                "tags": [
+                    "Flows"
+                ],
+                "summary": "Executes an Artisan flow",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the artefact reference name",
+                        "name": "tag",
+                        "in": "path",
+                        "required": true
+                    }
+                ]
+            }
+        }
+    }
+}
