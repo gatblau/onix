@@ -9,7 +9,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/gatblau/onix/artisan/docs"
+	"github.com/gatblau/onix/artisan/core"
 	"github.com/spf13/cobra"
 )
 
@@ -31,5 +31,5 @@ func NewVersionCmd() *VersionCmd {
 }
 
 func (b *VersionCmd) Run(cmd *cobra.Command, args []string) {
-	fmt.Printf("build: %s\n", docs.Version)
+	fmt.Printf("build: %s\n", core.Version)
 }

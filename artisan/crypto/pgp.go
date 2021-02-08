@@ -14,7 +14,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/docs"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"
@@ -270,7 +269,7 @@ func (p *PGP) toPublicKey() (publicKey []byte, err error) {
 // create PEM headers for the PGP key
 func pemHeaders(cipher, hash string, rsaBits int, time time.Time) map[string]string {
 	headers := map[string]string{
-		"Version": fmt.Sprintf("golang.org/x/crypto/openpgp - artisan-%s", docs.Version),
+		"Version": fmt.Sprintf("golang.org/x/crypto/openpgp - artisan-%s", core.Version),
 		"Comment": fmt.Sprintf("Cipher: %s, Hash: %s, RSA Bits: %s, Created: %s", cipher, hash, strconv.Itoa(rsaBits), time.String()),
 		"Hash":    fmt.Sprintf("%s/%s", cipher, hash),
 	}
