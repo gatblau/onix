@@ -150,7 +150,7 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, err
 		return nil, err
 	}
 	// if the result body is not in JSON format is likely that the domain of artefact does not exist
-	if !isJSON(string(b)) {
+	if !core.IsJSON(string(b)) {
 		return nil, fmt.Errorf("the artefact was not found: its domain/group/name is likely to be incorrect")
 	}
 	// if not response then return an empty repository
@@ -190,7 +190,7 @@ func (r *Api) GetArtefactInfo(group, name, id, user, pwd string) (*Artefact, err
 	if err != nil {
 		return nil, err
 	}
-	if !isJSON(string(b)) {
+	if !core.IsJSON(string(b)) {
 		return nil, fmt.Errorf("invalid artefact name: %s/%s/%s", r.domain, group, name)
 	}
 	artefact := new(Artefact)
