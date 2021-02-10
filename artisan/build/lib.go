@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
+	"github.com/mattn/go-shellwords"
 	"io"
 	"io/ioutil"
 	"log"
@@ -288,8 +289,11 @@ func execute(cmd string, dir string, env *core.Envar, interactive bool) (err err
 	if cmd == "" {
 		return errors.New("no command provided")
 	}
+	// create a command parser
+	p := shellwords.NewParser()
+	// parse the command line
+	cmdArr, err := p.Parse(cmd)
 
-	cmdArr := strings.Split(cmd, " ")
 	// if we are in windows
 	if runtime.GOOS == "windows" {
 		// prepend "cmd /C" to the command line
@@ -352,8 +356,11 @@ func executeWithOutput(cmd string, dir string, env *core.Envar, interactive bool
 	if cmd == "" {
 		return "", errors.New("no command provided")
 	}
+	// create a command parser
+	p := shellwords.NewParser()
+	// parse the command line
+	cmdArr, err := p.Parse(cmd)
 
-	cmdArr := strings.Split(cmd, " ")
 	// if we are in windows
 	if runtime.GOOS == "windows" {
 		// prepend "cmd /C" to the command line
