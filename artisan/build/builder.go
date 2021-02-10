@@ -105,7 +105,7 @@ func (b *Builder) Run(function string, path string, interactive bool) {
 	if strings.HasPrefix(path, "http") {
 		core.RaiseErr("the path must not be an http resource")
 	}
-	if strings.HasPrefix(path, "./") || (!strings.HasPrefix(path, "/")) {
+	if strings.HasPrefix(path, "./") || strings.HasPrefix(path, "../") || (!strings.HasPrefix(path, "/")) {
 		// turn it into an absolute path
 		absPath, err := filepath.Abs(path)
 		if err != nil {
