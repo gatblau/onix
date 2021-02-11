@@ -16,6 +16,7 @@ import (
 // create a file seal
 type RunCmd struct {
 	cmd         *cobra.Command
+	envFilename string
 	interactive *bool
 }
 
@@ -27,12 +28,13 @@ func NewRunCmd() *RunCmd {
 			Long:  ``,
 		},
 	}
+	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env; the path to a file containing environment variables to use")
 	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
 	c.cmd.Run = c.Run
 	return c
 }
 
-func (r *RunCmd) Run(cmd *cobra.Command, args []string) {
+func (c *RunCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
 		core.RaiseErr("At least function name is required")
 	}
@@ -42,5 +44,8 @@ func (r *RunCmd) Run(cmd *cobra.Command, args []string) {
 		path = args[1]
 	}
 	builder := build.NewBuilder()
-	builder.Run(function, path, *r.interactive)
+	// load environment variables from file
+	core.LoadEnvFromFile(c.envFilename)
+	// execute the function
+	builder.Run(function, path, *c.interactive)
 }

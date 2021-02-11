@@ -32,7 +32,7 @@ func NewRunCCmd() *RunCCmd {
 	return c
 }
 
-func (r *RunCCmd) Run(cmd *cobra.Command, args []string) {
+func (c *RunCCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
 		core.RaiseErr("At least function name is required")
 	}
@@ -45,6 +45,6 @@ func (r *RunCCmd) Run(cmd *cobra.Command, args []string) {
 	run, err := runner.NewFromPath(path)
 	core.CheckErr(err, "cannot initialise runner")
 	// launch a runtime to execute the function
-	err = run.RunC(function)
+	err = run.RunC(function, *c.interactive)
 	core.CheckErr(err, "cannot execute function '%s'", function)
 }

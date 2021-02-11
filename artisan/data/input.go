@@ -130,6 +130,20 @@ func (i *Input) SurveyRegistryCreds(packageName string, prompt, defOnly bool) {
 	}
 }
 
+func (i *Input) Env() *core.Envar {
+	env := make(map[string]string)
+	for _, v := range i.Var {
+		env[v.Name] = v.Value
+	}
+	for _, s := range i.Secret {
+		env[s.Name] = s.Value
+	}
+	for _, k := range i.Key {
+		env[k.Name] = k.Value
+	}
+	return core.NewEnVarFromMap(env)
+}
+
 // merges the passed in input with the current input
 func (i *Input) Merge(in *Input) {
 	if in == nil {
@@ -449,6 +463,8 @@ func surveyKey(key *Key) {
 	envVal := os.Getenv(key.Name)
 	// if so, skip survey
 	if len(envVal) > 0 {
+		// load the key using the env var path value specified
+		loadKeyFromPath(key, envVal)
 		return
 	}
 	desc := ""

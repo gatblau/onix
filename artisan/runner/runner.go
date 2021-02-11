@@ -12,6 +12,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
+	"os"
 	"path/filepath"
 	"time"
 )
@@ -41,7 +42,7 @@ func New() (*Runner, error) {
 	return new(Runner), nil
 }
 
-func (r *Runner) RunC(fxName string) error {
+func (r *Runner) RunC(fxName string, interactive bool) error {
 	var runtime string
 	fx := r.buildFile.Fx(fxName)
 	// if the runtime is defined at the function level
@@ -58,12 +59,12 @@ func (r *Runner) RunC(fxName string) error {
 	runtime = core.QualifyRuntime(runtime)
 	// generate a unique name for the running container
 	containerName := fmt.Sprintf("art-runc-%s-%s", core.Encode(fxName), core.RandomString(8))
-	// collect any input required to run the function
-	env := core.NewEnVarFromSlice([]string{})
-	// interactively survey for required input via CLI
-	input := data.SurveyInputFromBuildFile(fxName, r.buildFile, true, false)
-	// fill the environment with the input
-	fillEnv(input, env)
+	// add the build file level environment variables
+	env := core.NewEnVarFromSlice(os.Environ())
+	// if insputs are defined for the function then survey for data
+	i := data.SurveyInputFromBuildFile(fxName, r.buildFile, true, false)
+	// merge the collected input with the current environment
+	env.Merge(i.Env())
 	// launch a container with a bind mount to the path where the build.yaml is located
 	err := runBuildFileFx(runtime, fxName, r.path, containerName, env)
 	if err != nil {
@@ -88,12 +89,12 @@ func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool)
 	if isExported(m, fxName) {
 		// get the runtime to use from the manifest
 		runtime := core.QualifyRuntime(m.Runtime)
-		// collect any input required to run the function
-		env := core.NewEnVarFromSlice([]string{})
+		// add the build file level environment variables
+		env := core.NewEnVarFromSlice(os.Environ())
 		// interactively survey for required input via CLI
 		input := data.SurveyInputFromManifest(name, fxName, m, interactive, false)
-		// fill the environment with the input
-		fillEnv(input, env)
+		// merge the collected input with the current environment
+		env.Merge(input.Env())
 		// get registry credentials
 		uname, pwd := core.UserPwd(credentials)
 		// create a random container name
@@ -114,19 +115,4 @@ func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool)
 		core.RaiseErr("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile", fxName)
 	}
 	return nil
-}
-
-// populates the passed-in environment with the input data
-func fillEnv(input *data.Input, env *core.Envar) {
-	// if there are input data
-	if input != nil {
-		// add the variables to the environment
-		for _, variable := range input.Var {
-			env.Add(variable.Name, variable.Value)
-		}
-		// add the secrets to the environment
-		for _, secret := range input.Secret {
-			env.Add(secret.Name, secret.Value)
-		}
-	}
 }
