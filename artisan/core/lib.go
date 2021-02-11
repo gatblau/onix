@@ -129,7 +129,7 @@ func CheckErr(err error, msg string, a ...interface{}) {
 }
 
 func RaiseErr(msg string, a ...interface{}) {
-	fmt.Printf("error: %s\n", fmt.Sprintf(msg, a...))
+	fmt.Printf("error!\n* %s\n", fmt.Sprintf(msg, a...))
 	os.Exit(1)
 }
 
@@ -230,7 +230,7 @@ func MergeEnvironmentVars(args []string, env map[string]string, interactive bool
 						updatedEnv[name] = value
 					} else {
 						// if non-interactive then raise an error
-						RaiseErr("environment variable '%s' is not defined", name)
+						RaiseErr("the environment variable '%s' is not defined, are you missing a binding? you can always run the command in interactive mode to manually input its value", name)
 					}
 				}
 				// merges the variable

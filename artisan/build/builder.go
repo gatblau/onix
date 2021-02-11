@@ -328,6 +328,12 @@ func (b *Builder) getIgnored() []string {
 
 // run a specified function
 func (b *Builder) runFunction(function string, path string, interactive bool) {
+	// add the build file level environment variables
+	env := core.NewEnVarFromSlice(os.Environ())
+	// if insputs are defined for the function then survey for data
+	i := data.SurveyInputFromBuildFile(function, b.buildFile, interactive, false)
+	// merge the collected input with the current environment
+	env.Merge(i.Env())
 	// gets the function to run
 	fx := b.buildFile.Fx(function)
 	if fx == nil {
@@ -339,8 +345,6 @@ func (b *Builder) runFunction(function string, path string, interactive bool) {
 	if len(b.from) == 0 {
 		b.from = path
 	}
-	// add the build file level environment variables
-	env := core.NewEnVarFromSlice(os.Environ())
 	// get the build file environment and merge any subshell command
 	vars := b.evalSubshell(b.buildFile.GetEnv(), path, env, interactive)
 	// add the merged vars to the env

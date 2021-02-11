@@ -46,3 +46,9 @@ func (e *Envar) Append(v map[string]string) *Envar {
 	}
 	return NewEnVarFromMap(result)
 }
+
+func (e *Envar) Merge(env *Envar) {
+	for key, value := range env.Vars {
+		e.Vars[key] = value
+	}
+}
