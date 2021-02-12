@@ -309,7 +309,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS b
 		// check if the tag already exist in the remote repository
 		if remoteArt.HasTag(name.Tag) {
 			// nothing to do, returns
-			fmt.Printf("tag already exists, nothing to push\n")
+			i18n.Printf(i18n.INFO_NOTHING_TO_PUSH)
 			return
 		} else {
 			// the metadata has to be updated to include the new tag
