@@ -9,6 +9,7 @@ package cmd
 
 import (
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/spf13/cobra"
 	"log"
@@ -46,7 +47,7 @@ func (c *RmCmd) toArtURIs(args []string) []*core.PackageName {
 	var uris = make([]*core.PackageName, 0)
 	for _, arg := range args {
 		uri, err := core.ParseName(arg)
-		core.CheckErr(err, "invalid package name")
+		i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
 		uris = append(uris, uri)
 	}
 	return uris

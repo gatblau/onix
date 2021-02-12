@@ -9,6 +9,7 @@ package cmd
 
 import (
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/gatblau/onix/artisan/runner"
 	"github.com/spf13/cobra"
 )
@@ -64,5 +65,5 @@ func (c *ExeCCmd) Run(cmd *cobra.Command, args []string) {
 	core.LoadEnvFromFile(c.envFilename)
 	// launch a runtime to execute the function
 	err = run.ExeC(packageName, fxName, c.credentials, *c.interactive)
-	core.CheckErr(err, "cannot execute function '%s' in package '%s'", fxName, packageName)
+	i18n.Err(err, i18n.ERR_CANT_EXEC_FUNC_IN_PACKAGE, fxName, packageName)
 }

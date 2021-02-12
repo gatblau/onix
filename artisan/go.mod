@@ -18,6 +18,7 @@ require (
 	github.com/swaggo/http-swagger v1.0.0
 	golang.org/x/crypto v0.0.0-20201208171446-5f87f3452ae9
 	golang.org/x/net v0.0.0-20201216054612-986b41b23924 // indirect
+	golang.org/x/text v0.3.4
 	golang.org/x/tools v0.0.0-20201215192005-fa10ef0b8743 // indirect
 	google.golang.org/protobuf v1.25.1-0.20200805231151-a709e31e5d12 // indirect
 	gopkg.in/yaml.v2 v2.4.0

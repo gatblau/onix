@@ -10,6 +10,7 @@ package flow
 import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
+	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/gatblau/onix/artisan/registry"
 )
 
@@ -106,7 +107,7 @@ func (f *Flow) GetInputDefinition(b *data.BuildFile) *data.Input {
 		} else if len(step.Function) > 0 && len(step.Package) > 0 {
 			// surveys the package manifest for variables
 			name, err := core.ParseName(step.Package)
-			core.CheckErr(err, "package name is invalid")
+			i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
 			manif := local.GetManifest(name)
 			if manif == nil {
 				core.RaiseErr("manifest for package '%s' not found", name)
