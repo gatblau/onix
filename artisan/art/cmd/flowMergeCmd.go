@@ -69,7 +69,7 @@ func (c *FlowMergeCmd) Run(cmd *cobra.Command, args []string) {
 		// if stdout required
 		if *c.stdout {
 			// print to console
-			fmt.Println(buf)
+			fmt.Println(buf.String())
 		} else {
 			// write to file
 			err = ioutil.WriteFile(tknPath(flowPath), buf.Bytes(), os.ModePerm)
