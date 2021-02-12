@@ -18,6 +18,7 @@ type ExeCCmd struct {
 	interactive *bool
 	credentials string
 	path        string
+	envFilename string
 }
 
 func NewExeCCmd() *ExeCCmd {
@@ -41,6 +42,7 @@ NOTE: exec always pulls the package from its registry as it is done within the r
 	}
 	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
 	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD artisan registry user and password")
+	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -58,6 +60,8 @@ func (c *ExeCCmd) Run(cmd *cobra.Command, args []string) {
 	// create an instance of the runner
 	run, err := runner.New()
 	core.CheckErr(err, "cannot initialise runner")
+	// load environment variables from file, if file not specified then try loading .env
+	core.LoadEnvFromFile(c.envFilename)
 	// launch a runtime to execute the function
 	err = run.ExeC(packageName, fxName, c.credentials, *c.interactive)
 	core.CheckErr(err, "cannot execute function '%s' in package '%s'", fxName, packageName)
