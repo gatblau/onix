@@ -100,8 +100,8 @@ func (b *Builder) newSteps() []*Steps {
 					},
 				}
 			}
-			// if the step has vars or secrets
-			if len(step.Input.Var)+len(step.Input.Secret) > 0 {
+			// if the step has vars or secrets or keys
+			if len(step.Input.Var)+len(step.Input.Secret)+len(step.Input.Key) > 0 {
 				// add to env
 				s.Env = b.getEnv(step)
 			}
@@ -133,6 +133,17 @@ func (b *Builder) getEnv(step *flow.Step) []*Env {
 					SecretKeyRef: &SecretKeyRef{
 						Name: b.secretName(),
 						Key:  secret.Name,
+					}},
+			})
+		}
+		// add keys
+		for _, key := range step.Input.Key {
+			env = append(env, &Env{
+				Name: key.Name,
+				ValueFrom: &ValueFrom{
+					SecretKeyRef: &SecretKeyRef{
+						Name: b.keysSecretName(),
+						Key:  key.Name,
 					}},
 			})
 		}
