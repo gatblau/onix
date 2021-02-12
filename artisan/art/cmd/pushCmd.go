@@ -9,6 +9,7 @@ package cmd
 
 import (
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/spf13/cobra"
 	"log"
@@ -47,7 +48,7 @@ func (c *PushCmd) Run(cmd *cobra.Command, args []string) {
 	nameTag := args[0]
 	// validate the name
 	packageName, err := core.ParseName(nameTag)
-	core.CheckErr(err, "invalid package name")
+	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	// attempt upload to remote repository

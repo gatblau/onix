@@ -10,6 +10,7 @@ package cmd
 import (
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/spf13/cobra"
 )
 
@@ -54,7 +55,7 @@ func (r *ExeCmd) Run(cmd *cobra.Command, args []string) {
 	// get a builder handle
 	builder := build.NewBuilder()
 	name, err := core.ParseName(pack)
-	core.CheckErr(err, "invalid package name")
+	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
 	// load environment variables from file, if file not specified then try loading .env
 	core.LoadEnvFromFile(r.envFilename)
 	// run the function on the open package

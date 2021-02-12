@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/spf13/cobra"
 	"github.com/yalp/jsonpath"
@@ -44,7 +45,7 @@ func (b *ManifestCmd) Run(cmd *cobra.Command, args []string) {
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	name, err := core.ParseName(args[0])
-	core.CheckErr(err, "invalid package name")
+	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
 	// get the artefact manifest
 	m := local.GetManifest(name)
 	// marshal the manifest

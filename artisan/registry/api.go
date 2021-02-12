@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"github.com/cheggaaa/pb"
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/i18n"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -88,9 +89,9 @@ func (r *Api) UploadArtefact(name *core.PackageName, artefactRef string, zipfile
 	core.CheckErr(err, "cannot post to backend")
 	switch res.StatusCode {
 	case http.StatusCreated:
-		fmt.Printf("tag %s pushed\n", name.Tag)
+		i18n.Printf(i18n.INFO_PUSHED, name.String())
 	case http.StatusOK:
-		fmt.Printf("nothing to do")
+		i18n.Printf(i18n.INFO_NOTHING_TO_PUSH)
 	default:
 		if res.StatusCode > 299 {
 			return fmt.Errorf("failed to push, the remote server responded with status code %d: %s", res.StatusCode, res.Status)

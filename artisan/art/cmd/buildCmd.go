@@ -10,6 +10,7 @@ package cmd
 import (
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/spf13/cobra"
 )
 
@@ -61,6 +62,6 @@ func (b *BuildCmd) Run(cmd *cobra.Command, args []string) {
 	}
 	builder := build.NewBuilder()
 	name, err := core.ParseName(b.artefactName)
-	core.CheckErr(err, "invalid package name")
+	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
 	builder.Build(b.from, b.fromPath, b.gitToken, name, b.profile, *b.copySource, *b.interactive, b.keyPath)
 }

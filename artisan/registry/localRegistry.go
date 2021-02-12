@@ -15,6 +15,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/data"
+	"github.com/gatblau/onix/artisan/i18n"
 	"io/ioutil"
 	"log"
 	"math"
@@ -341,8 +342,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS b
 	artefact.Tags = []string{name.Tag}
 	// execute the upload
 	err = api.UploadArtefact(name, artie.FileRef, zipfile, jsonfile, artefact, uname, pwd)
-	core.CheckErr(err, "cannot push artefact")
-	fmt.Printf("pushed %s\n", name.String())
+	i18n.Err(err, i18n.ERR_CANT_PUSH_PACKAGE)
 }
 
 func (r *LocalRegistry) Pull(name *core.PackageName, credentials string, noTLS bool) *Artefact {
