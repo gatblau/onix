@@ -22,6 +22,7 @@ type ExeCmd struct {
 	ignoreSignature *bool
 	path            string
 	pubPath         string
+	envFilename     string
 }
 
 func NewExeCmd() *ExeCmd {
@@ -37,6 +38,7 @@ func NewExeCmd() *ExeCmd {
 	c.noTLS = c.cmd.Flags().BoolP("no-tls", "t", false, "use -t or --no-tls to connect to a artisan registry over plain HTTP")
 	c.ignoreSignature = c.cmd.Flags().BoolP("ignore-sig", "s", false, "-s or --ignore-sig to ignore signature verification")
 	c.cmd.Flags().StringVarP(&c.pubPath, "pub", "p", "", "--pub=/path/to/public/key or -p=/path/to/public/key - public PGP key to verify package source")
+	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -53,6 +55,8 @@ func (r *ExeCmd) Run(cmd *cobra.Command, args []string) {
 	builder := build.NewBuilder()
 	name, err := core.ParseName(pack)
 	core.CheckErr(err, "invalid package name")
+	// load environment variables from file, if file not specified then try loading .env
+	core.LoadEnvFromFile(r.envFilename)
 	// run the function on the open package
 	builder.Execute(name, function, r.credentials, *r.noTLS, r.pubPath, *r.ignoreSignature, *r.interactive)
 }
