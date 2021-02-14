@@ -13,12 +13,30 @@
 package i18n
 
 import (
+	"errors"
 	"strings"
 	"syscall"
 	"unsafe"
 )
 
-const LOCALE_NAME_MAX_LENGTH uint32 = 85
+const (
+	LOCALE_NAME_MAX_LENGTH                 uint32 = 85
+	COULD_NOT_DETECT_PACKAGE_ERROR_MESSAGE        = "Could not detect Language"
+)
+
+var SUPPORTED_LOCALES = map[uintptr]string{
+	0x0407: "de-DE",
+	0x0409: "en-US",
+	0x0c0a: "es-ES", //or is it 0x040a
+	0x040c: "fr-FR",
+	0x0410: "it-IT",
+	0x0411: "ja-JA",
+	0x0412: "ko_KR",
+	0x0416: "pt-BR",
+	0x0804: "zh-CN",
+	0x0c04: "zh-HK",
+	0x0404: "zh-TW",
+}
 
 func lang() string {
 	language, _ := splitLocale(getLocale())
@@ -26,6 +44,7 @@ func lang() string {
 }
 
 func getLocale() (locale string) {
+	var err error
 	locale, err = getWindowsLocale()
 	if err != nil {
 		locale = ""
@@ -54,17 +73,14 @@ func getAllWindowsLocaleFrom(sysCall string) (string, error) {
 	if err != nil {
 		return "", errors.New("Could not find kernel32 dll")
 	}
-
 	proc, err := dll.FindProc(sysCall)
 	if err != nil {
 		return "", err
 	}
-
 	locale, _, dllError := proc.Call()
 	if locale == 0 {
 		return "", errors.New(COULD_NOT_DETECT_PACKAGE_ERROR_MESSAGE + ":\n" + dllError.Error())
 	}
-
 	return SUPPORTED_LOCALES[locale], nil
 }
 
