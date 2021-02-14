@@ -10,10 +10,11 @@ package i18n
 // french
 var msg_fr = map[I18NKey]string{
 	// messages d'erreur
-	ERR_CANT_EXEC_FUNC_IN_PACKAGE: "impossible d'exécuter la fonction '%s' dans le package '%s'",
-	ERR_CANT_LOAD_PRIV_KEY:        "impossible de charger la clé privée",
-	ERR_CANT_PUSH_PACKAGE:         "impossible de pousser le paquet",
-	ERR_INVALID_PACKAGE_NAME:      "nom de package non valide",
+	ERR_CANT_CREATE_REGISTRY_FOLDER: "impossible de créer le dossier de registre local '%s', accueil de l'utilisateur: '%s'",
+	ERR_CANT_EXEC_FUNC_IN_PACKAGE:   "impossible d'exécuter la fonction '%s' dans le package '%s'",
+	ERR_CANT_LOAD_PRIV_KEY:          "impossible de charger la clé privée",
+	ERR_CANT_PUSH_PACKAGE:           "impossible de pousser le paquet",
+	ERR_INVALID_PACKAGE_NAME:        "nom de package non valide",
 	// messages d'information
 	INFO_PUSHED:          "poussé: %s\n",
 	INFO_NOTHING_TO_PUSH: "rien à pousser\n",

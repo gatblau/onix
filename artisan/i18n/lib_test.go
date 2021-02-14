@@ -8,11 +8,9 @@
 package i18n
 
 import (
-	"fmt"
 	"testing"
 )
 
 func Test(t *testing.T) {
-	a := lang()
-	fmt.Printf("%s\n", a)
+	Printf(INFO_PUSHED, "aaa/bbb")
 }

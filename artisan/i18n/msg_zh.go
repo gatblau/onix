@@ -10,10 +10,11 @@ package i18n
 // chinese traditional
 var msg_zh = map[I18NKey]string{
 	// 錯誤訊息
-	ERR_CANT_EXEC_FUNC_IN_PACKAGE: "無法執行軟件包“％s”中的功能“％s”",
-	ERR_CANT_LOAD_PRIV_KEY:        "無法加載私鑰",
-	ERR_CANT_PUSH_PACKAGE:         "不能推包",
-	ERR_INVALID_PACKAGE_NAME:      "無效的包裹名稱",
+	ERR_CANT_CREATE_REGISTRY_FOLDER: "無法創建本地註冊表文件夾“％s”，用戶主目錄：“％s”",
+	ERR_CANT_EXEC_FUNC_IN_PACKAGE:   "無法執行軟件包“％s”中的功能“％s”",
+	ERR_CANT_LOAD_PRIV_KEY:          "無法加載私鑰",
+	ERR_CANT_PUSH_PACKAGE:           "不能推包",
+	ERR_INVALID_PACKAGE_NAME:        "無效的包裹名稱",
 	// 信息消息
 	INFO_PUSHED:          "推: %s\n",
 	INFO_NOTHING_TO_PUSH: "沒什麼可推\n",
