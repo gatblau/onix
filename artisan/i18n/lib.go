@@ -14,6 +14,10 @@ import (
 	"strings"
 )
 
+func String(key I18NKey) string {
+	return msg(key)
+}
+
 // prints a localised message
 func Printf(key I18NKey, a ...interface{}) {
 	fmt.Printf(msg(key), a...)

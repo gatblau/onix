@@ -19,4 +19,6 @@ const (
 	// information messages
 	INFO_PUSHED
 	INFO_NOTHING_TO_PUSH
+	// labels
+	LBL_LS_HEADER
 )

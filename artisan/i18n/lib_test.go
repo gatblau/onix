@@ -8,9 +8,12 @@
 package i18n
 
 import (
+	"fmt"
 	"testing"
 )
 
 func Test(t *testing.T) {
+	str := String(LBL_LS_HEADER)
+	fmt.Print(str)
 	Printf(INFO_PUSHED, "aaa/bbb")
 }
