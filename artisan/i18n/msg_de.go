@@ -10,10 +10,11 @@ package i18n
 // german
 var msg_de = map[I18NKey]string{
 	// Fehlermeldungen
-	ERR_CANT_EXEC_FUNC_IN_PACKAGE: "funktion '%s' kann im paket '%s' nicht ausgeführt werden",
-	ERR_CANT_LOAD_PRIV_KEY:        "der private schlüssel kann nicht geladen werden",
-	ERR_CANT_PUSH_PACKAGE:         "paket kann nicht gepusht werden",
-	ERR_INVALID_PACKAGE_NAME:      "ungültiger paketname",
+	ERR_CANT_CREATE_REGISTRY_FOLDER: "der lokale registrierungsordner '%s' kann nicht erstellt werden. benutzerhome: '%s'",
+	ERR_CANT_EXEC_FUNC_IN_PACKAGE:   "funktion '%s' kann im paket '%s' nicht ausgeführt werden",
+	ERR_CANT_LOAD_PRIV_KEY:          "der private schlüssel kann nicht geladen werden",
+	ERR_CANT_PUSH_PACKAGE:           "paket kann nicht gepusht werden",
+	ERR_INVALID_PACKAGE_NAME:        "ungültiger paketname",
 	// Informationsnachrichten
 	INFO_PUSHED:          "geschoben: %s\n",
 	INFO_NOTHING_TO_PUSH: "nichts zu schieben\n",

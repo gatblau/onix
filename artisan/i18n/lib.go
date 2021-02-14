@@ -34,7 +34,7 @@ func msg(key I18NKey) string {
 	// if the key is not found or it is empty
 	if !found || len(value) == 0 {
 		// if in debug mode, show if a language specific key is missing
-		core.Debug("key '%s' not found in language '%s'", lang())
+		core.Debug("key '%d' not found in language '%s'", key, lang())
 		// get the value from the english map
 		value = msg_en[key]
 	}
@@ -47,6 +47,7 @@ func getMap() map[I18NKey]string {
 	inter := os.Getenv("ARTISAN_I18N")
 	// if not then use english
 	if len(inter) == 0 {
+		core.Debug("i18n is disabled, to enable set ARTISAN_I18N")
 		return msg_en
 	}
 	// check if an overriding language has been set

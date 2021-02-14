@@ -10,10 +10,11 @@ package i18n
 // english
 var msg_en = map[I18NKey]string{
 	// error messages
-	ERR_CANT_EXEC_FUNC_IN_PACKAGE: "cannot execute function '%s' in package '%s'",
-	ERR_CANT_LOAD_PRIV_KEY:        "cannot load the private key",
-	ERR_CANT_PUSH_PACKAGE:         "cannot push package",
-	ERR_INVALID_PACKAGE_NAME:      "invalid package name",
+	ERR_CANT_CREATE_REGISTRY_FOLDER: "cannot create local registry folder '%s', user home: '%s'",
+	ERR_CANT_EXEC_FUNC_IN_PACKAGE:   "cannot execute function '%s' in package '%s'",
+	ERR_CANT_LOAD_PRIV_KEY:          "cannot load the private key",
+	ERR_CANT_PUSH_PACKAGE:           "cannot push package",
+	ERR_INVALID_PACKAGE_NAME:        "invalid package name",
 	// information messages
 	INFO_PUSHED:          "pushed: %s\n",
 	INFO_NOTHING_TO_PUSH: "nothing to push\n",
