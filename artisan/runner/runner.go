@@ -14,6 +14,7 @@ import (
 	"github.com/gatblau/onix/artisan/registry"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -59,8 +60,9 @@ func (r *Runner) RunC(fxName string, interactive bool) error {
 	runtime = core.QualifyRuntime(runtime)
 	// generate a unique name for the running container
 	containerName := fmt.Sprintf("art-runc-%s-%s", core.Encode(fxName), core.RandomString(8))
-	// add the build file level environment variables
-	env := core.NewEnVarFromSlice(os.Environ())
+	// get the host env vars
+	// make sure USER & HOME are not there to avoid overriding the ones in the runtime
+	env := core.NewEnVarFromSlice(filterUserHome(os.Environ()))
 	// if insputs are defined for the function then survey for data
 	i := data.SurveyInputFromBuildFile(fxName, r.buildFile, true, false)
 	// merge the collected input with the current environment
@@ -115,4 +117,18 @@ func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool)
 		core.RaiseErr("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile", fxName)
 	}
 	return nil
+}
+
+// return an env slice with no user home info
+func filterUserHome(env []string) []string {
+	result := []string{}
+	for _, e := range env {
+		// ensure local user and home are not added
+		if strings.Contains(e, "USER") || strings.Contains(e, "HOME") || // linux, osx
+			strings.Contains(e, "HOMEDRIVE") || strings.Contains(e, "HOMEPATH") { // windows
+			continue
+		}
+		result = append(result, e)
+	}
+	return result
 }
