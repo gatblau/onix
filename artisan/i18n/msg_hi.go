@@ -18,4 +18,6 @@ var msg_hi = map[I18NKey]string{
 	// सूचना संदेश
 	INFO_PUSHED:          "धकेल दिया: %s\n",
 	INFO_NOTHING_TO_PUSH: "पुश करने के लिए कुछ भी नहीं\n",
+	// labels
+	LBL_LS_HEADER: "भंडार\tटैग\tपैकेज पहचान\tबंडल का प्रकार\tबनाया था\tआकार",
 }

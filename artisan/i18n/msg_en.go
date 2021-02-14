@@ -18,4 +18,6 @@ var msg_en = map[I18NKey]string{
 	// information messages
 	INFO_PUSHED:          "pushed: %s\n",
 	INFO_NOTHING_TO_PUSH: "nothing to push\n",
+	// labels
+	LBL_LS_HEADER: "REPOSITORY\tTAG\tPACKAGE ID\tPACKAGE TYPE\tCREATED\tSIZE",
 }

@@ -18,4 +18,6 @@ var msg_de = map[I18NKey]string{
 	// Informationsnachrichten
 	INFO_PUSHED:          "geschoben: %s\n",
 	INFO_NOTHING_TO_PUSH: "nichts zu schieben\n",
+	// labels
+	LBL_LS_HEADER: "REPOSITORY\tETIKETT\tPAKET-ID\tPAKETTYP\tERSTELLT\tGRÖSSE",
 }

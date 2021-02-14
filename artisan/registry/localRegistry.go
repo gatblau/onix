@@ -241,7 +241,7 @@ func (r *LocalRegistry) List() {
 	// get a table writer for the stdout
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 12, ' ', 0)
 	// print the header row
-	_, err := fmt.Fprintln(w, "REPOSITORY\tTAG\tPACKAGE ID\tPACKAGE TYPE\tCREATED\tSIZE")
+	_, err := fmt.Fprintln(w, i18n.String(i18n.LBL_LS_HEADER))
 	core.CheckErr(err, "failed to write table header")
 	// repository, tag, artefact id, created, size
 	for _, repo := range r.Repositories {
@@ -827,9 +827,7 @@ func (r *LocalRegistry) checkRegistryDir() {
 	// if it does not
 	if os.IsNotExist(err) {
 		err = os.Mkdir(r.Path(), os.ModePerm)
-		if err != nil {
-			log.Fatal(err)
-		}
+		i18n.Err(err, i18n.ERR_CANT_CREATE_REGISTRY_FOLDER, r.Path(), core.HomeDir())
 	}
 	keysPath := path.Join(r.Path(), "keys")
 	// check the keys directory exists

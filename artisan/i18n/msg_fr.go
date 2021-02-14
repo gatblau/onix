@@ -18,4 +18,6 @@ var msg_fr = map[I18NKey]string{
 	// messages d'information
 	INFO_PUSHED:          "poussé: %s\n",
 	INFO_NOTHING_TO_PUSH: "rien à pousser\n",
+	// labels
+	LBL_LS_HEADER: "DÉPÔT\tÉTIQUETER\tID DU PACKAGE\tTYPE D'PACKAGE\tCRÉÉ\tTAILLE",
 }

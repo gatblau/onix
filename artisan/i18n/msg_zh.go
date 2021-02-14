@@ -18,4 +18,6 @@ var msg_zh = map[I18NKey]string{
 	// 信息消息
 	INFO_PUSHED:          "推: %s\n",
 	INFO_NOTHING_TO_PUSH: "沒什麼可推\n",
+	// labels
+	LBL_LS_HEADER: "倉庫\t標籤\t包裹識別符\t包裝類型\t已建立\t尺寸",
 }

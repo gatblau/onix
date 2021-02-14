@@ -18,4 +18,6 @@ var msg_es = map[I18NKey]string{
 	// mensajes de informacion
 	INFO_PUSHED:          "empujado: %s\n",
 	INFO_NOTHING_TO_PUSH: "nada que empujar\n",
+	// labels
+	LBL_LS_HEADER: "REPOSITORIO\tETIQUETA\tIDENTIFICADOR DE PAQUETE\tTIPO DE PAQUETE\tCREADO\tTAMANO",
 }
