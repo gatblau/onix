@@ -42,6 +42,14 @@ functions:
     run:
       - art run set-version ../
 
+  - name: build-mac
+    description: builds the Artisan CLI for MacOS
+    env:
+      GOOS: darwin
+    run:
+      - $(set-version)
+      - go build -o bin/darwin/art -v
+
   - name: build-linux
     description: builds the Artisan CLI for the linux platform
     env:
@@ -60,5 +68,5 @@ functions:
 
   - name: zip
     run:
-      - zip art.zip bin/windows/art.exe bin/linux/art
+      - zip art.zip bin/windows/art.exe bin/linux/art bin/darwin/art
 ...
