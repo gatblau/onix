@@ -9,14 +9,10 @@ package server
 
 import (
 	"context"
-	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	httpSwagger "github.com/swaggo/http-swagger"
-	"gopkg.in/yaml.v2"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -163,43 +159,4 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 		// Pass down the request to the next middleware (or final handler)
 		next.ServeHTTP(w, r)
 	})
-}
-
-// writes the content of an object using the response writer in the format specified by the accept http header
-// supporting content negotiation for json, yaml, and xml formats
-func (s *Server) write(w http.ResponseWriter, r *http.Request, obj interface{}) {
-	var (
-		bs  []byte
-		err error
-	)
-	// gets the accept http header
-	accept := r.Header.Get("Accept")
-	switch accept {
-	case "*/*":
-		fallthrough
-	case "application/json":
-		fallthrough
-	default:
-		w.Header().Set("Content-Type", "application/json")
-		bs, err = json.Marshal(obj)
-	case "application/yaml":
-		w.Header().Set("Content-Type", "application/yaml")
-		bs, err = yaml.Marshal(obj)
-	case "application/xml":
-		w.Header().Set("Content-Type", "application/xml")
-		bs, err = xml.Marshal(obj)
-	}
-	if err != nil {
-		s.writeError(w, err, 500)
-	}
-	_, err = w.Write(bs)
-	if err != nil {
-		log.Printf("error writing data to response: %s\n", err)
-		s.writeError(w, err, 500)
-	}
-}
-
-func (s *Server) writeError(w http.ResponseWriter, err error, errorCode int) {
-	fmt.Printf(fmt.Sprintf("%s\n", err))
-	w.WriteHeader(errorCode)
 }

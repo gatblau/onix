@@ -1,15 +1,148 @@
+definitions:
+  data.Input:
+    properties:
+      key:
+        description: required PGP keys
+        items:
+          $ref: '#/definitions/data.Key'
+        type: array
+      secret:
+        description: required string value secrets
+        items:
+          $ref: '#/definitions/data.Secret'
+        type: array
+      var:
+        description: required variables
+        items:
+          $ref: '#/definitions/data.Var'
+        type: array
+    type: object
+  data.Key:
+    properties:
+      aggregate:
+        description: indicates if this key should be aggregated with other keys
+        type: boolean
+      description:
+        description: a description of the intended use of this key
+        type: string
+      name:
+        description: the unique reference for the PGP key
+        type: string
+      package_group:
+        description: the artisan package group used to select the key
+        type: string
+      package_name:
+        description: the artisan package name used to select the key
+        type: string
+      path:
+        description: the path to the key in the Artisan registry
+        type: string
+      private:
+        description: indicates if the referred key is private or public
+        type: boolean
+      value:
+        description: the key content
+        type: string
+    type: object
+  data.Secret:
+    properties:
+      description:
+        description: a description of the intended use or meaning of this secret
+        type: string
+      name:
+        description: the unique reference for the secret
+        type: string
+      value:
+        description: the value of the secret
+        type: string
+    type: object
+  data.Var:
+    properties:
+      default:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      required:
+        type: boolean
+      type:
+        type: string
+      value:
+        type: string
+    type: object
+  flow.Flow:
+    properties:
+      appIcon:
+        type: string
+      description:
+        type: string
+      gitURI:
+        type: string
+      input:
+        $ref: '#/definitions/data.Input'
+      name:
+        type: string
+      steps:
+        items:
+          $ref: '#/definitions/flow.Step'
+        type: array
+    type: object
+  flow.Step:
+    properties:
+      description:
+        type: string
+      function:
+        type: string
+      input:
+        $ref: '#/definitions/data.Input'
+      name:
+        type: string
+      package:
+        type: string
+      runtime:
+        type: string
+      runtimeManifest:
+        type: string
+    type: object
 info:
-  contact: {}
+  contact:
+    email: onix@gatblau.org
+    name: gatblau
+    url: http://onix.gatblau.org/
+  description: Run Artisan flows
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Artisan Flow Runner
+  version: 0.0.4
 paths:
+  /:
+    get:
+      description: |-
+        Checks that Artie's HTTP server is listening on the required port.
+        Use a liveliness probe.
+        It does not guarantee the server is ready to accept calls.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Check that Artie's HTTP API is live
+      tags:
+      - General
   /flow:
     post:
       description: uploads an Artisan flow and triggers the flow execution
       parameters:
-      - description: the artefact reference name
-        in: path
-        name: tag
+      - description: the artisan flow to run
+        in: body
+        name: flow
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/flow.Flow'
       summary: Executes an Artisan flow
       tags:
       - Flows

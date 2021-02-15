@@ -45,5 +45,5 @@ functions:
   - name: swagen
     description: generates/refreshes the OpenAPI specifications for Artisan's HTTP API
     run:
-      - swag init -d ./server -g server.go
+      - swag init -d ./ -g handlers.go --parseDependency ../flow/flow.go
 ...
