@@ -43,6 +43,10 @@ func KeysPath() string {
 	return filepath.Join(RegistryPath(), "keys")
 }
 
+func LangPath() string {
+	return filepath.Join(RegistryPath(), "lang")
+}
+
 // temporary path for file operations
 func TmpPath() string {
 	return filepath.Join(RegistryPath(), "tmp")
@@ -54,6 +58,15 @@ func TmpExists() {
 	_, err := os.Stat(tmp)
 	if os.IsNotExist(err) {
 		_ = os.MkdirAll(tmp, os.ModePerm)
+	}
+}
+
+func LangExists() {
+	lang := LangPath()
+	// ensure lang folder exists for temp file operations
+	_, err := os.Stat(lang)
+	if os.IsNotExist(err) {
+		_ = os.MkdirAll(lang, os.ModePerm)
 	}
 }
 

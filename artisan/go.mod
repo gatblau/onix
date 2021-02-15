@@ -14,6 +14,7 @@ require (
 	github.com/kr/pty v1.1.5 // indirect
 	github.com/mattn/go-shellwords v1.0.11
 	github.com/ohler55/ojg v1.4.0
+	github.com/pelletier/go-toml v1.8.1
 	github.com/prometheus/client_golang v1.8.0
 	github.com/swaggo/http-swagger v1.0.0
 	golang.org/x/crypto v0.0.0-20201208171446-5f87f3452ae9
