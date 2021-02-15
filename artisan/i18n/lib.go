@@ -33,6 +33,12 @@ func Err(err error, key I18NKey, a ...interface{}) {
 	}
 }
 
+// raise an error
+func Raise(key I18NKey, a ...interface{}) {
+	fmt.Printf("%s\n", fmt.Sprintf(get(key), a...))
+	os.Exit(1)
+}
+
 func get(key I18NKey) string {
 	var language string
 	// check if internationalisation is enabled
