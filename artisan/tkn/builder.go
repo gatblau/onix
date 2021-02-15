@@ -139,12 +139,8 @@ func (b *Builder) getEnv(step *flow.Step) []*Env {
 		// add keys
 		for _, key := range step.Input.Key {
 			env = append(env, &Env{
-				Name: key.Name,
-				ValueFrom: &ValueFrom{
-					SecretKeyRef: &SecretKeyRef{
-						Name: b.keysSecretName(),
-						Key:  key.Name,
-					}},
+				Name:  key.Name,
+				Value: key.Path,
 			})
 		}
 	}
