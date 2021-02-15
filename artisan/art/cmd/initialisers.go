@@ -27,6 +27,7 @@ func InitialiseRootCmd() *RootCmd {
 	exeCmd := NewExeCmd()
 	exeCCmd := NewExeCCmd()
 	waitCmd := NewWaitCmd()
+	langCmd := InitialiseLangCommand()
 	rootCmd.Cmd.AddCommand(
 		buildCmd.cmd,
 		artefactsCmd.cmd,
@@ -46,8 +47,16 @@ func InitialiseRootCmd() *RootCmd {
 		exeCCmd.cmd,
 		tknCmd.cmd,
 		waitCmd.cmd,
+		langCmd.cmd,
 	)
 	return rootCmd
+}
+
+func InitialiseLangCommand() *LangCmd {
+	langCmd := NewLangCmd()
+	langFetchCmd := NewLangFetchCmd()
+	langCmd.cmd.AddCommand(langFetchCmd.cmd)
+	return langCmd
 }
 
 func InitialiseFlowCommand() *FlowCmd {
