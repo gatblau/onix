@@ -1,9 +1,40 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "Run Artisan flows",
+        "title": "Artisan Flow Runner",
+        "contact": {
+            "name": "gatblau",
+            "url": "http://onix.gatblau.org/",
+            "email": "onix@gatblau.org"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "0.0.4"
     },
     "paths": {
+        "/": {
+            "get": {
+                "description": "Checks that Artie's HTTP server is listening on the required port.\nUse a liveliness probe.\nIt does not guarantee the server is ready to accept calls.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "Check that Artie's HTTP API is live",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/flow": {
             "post": {
                 "description": "uploads an Artisan flow and triggers the flow execution",
@@ -13,13 +44,172 @@
                 "summary": "Executes an Artisan flow",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "the artefact reference name",
-                        "name": "tag",
-                        "in": "path",
-                        "required": true
+                        "description": "the artisan flow to run",
+                        "name": "flow",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/flow.Flow"
+                        }
                     }
                 ]
+            }
+        }
+    },
+    "definitions": {
+        "data.Input": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "description": "required PGP keys",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.Key"
+                    }
+                },
+                "secret": {
+                    "description": "required string value secrets",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.Secret"
+                    }
+                },
+                "var": {
+                    "description": "required variables",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.Var"
+                    }
+                }
+            }
+        },
+        "data.Key": {
+            "type": "object",
+            "properties": {
+                "aggregate": {
+                    "description": "indicates if this key should be aggregated with other keys",
+                    "type": "boolean"
+                },
+                "description": {
+                    "description": "a description of the intended use of this key",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "the unique reference for the PGP key",
+                    "type": "string"
+                },
+                "package_group": {
+                    "description": "the artisan package group used to select the key",
+                    "type": "string"
+                },
+                "package_name": {
+                    "description": "the artisan package name used to select the key",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "the path to the key in the Artisan registry",
+                    "type": "string"
+                },
+                "private": {
+                    "description": "indicates if the referred key is private or public",
+                    "type": "boolean"
+                },
+                "value": {
+                    "description": "the key content",
+                    "type": "string"
+                }
+            }
+        },
+        "data.Secret": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "a description of the intended use or meaning of this secret",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "the unique reference for the secret",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "the value of the secret",
+                    "type": "string"
+                }
+            }
+        },
+        "data.Var": {
+            "type": "object",
+            "properties": {
+                "default": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "flow.Flow": {
+            "type": "object",
+            "properties": {
+                "appIcon": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "gitURI": {
+                    "type": "string"
+                },
+                "input": {
+                    "$ref": "#/definitions/data.Input"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/flow.Step"
+                    }
+                }
+            }
+        },
+        "flow.Step": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "function": {
+                    "type": "string"
+                },
+                "input": {
+                    "$ref": "#/definitions/data.Input"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "package": {
+                    "type": "string"
+                },
+                "runtime": {
+                    "type": "string"
+                },
+                "runtimeManifest": {
+                    "type": "string"
+                }
             }
         }
     }

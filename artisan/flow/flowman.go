@@ -143,6 +143,15 @@ func LoadFlow(path string) (*Flow, error) {
 	return flow, nil
 }
 
+func NewFlow(flowBytes []byte) (*Flow, error) {
+	flow := new(Flow)
+	err := yaml.Unmarshal(flowBytes, flow)
+	if err != nil {
+		return nil, fmt.Errorf("cannot unmarshal flow definition %s", err)
+	}
+	return flow, nil
+}
+
 func (m *Manager) validate() error {
 	// check that the steps have the required attributes set
 	for _, step := range m.Flow.Steps {
