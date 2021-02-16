@@ -37,5 +37,5 @@ func (c *LangUpdateCmd) Run(cmd *cobra.Command, args []string) {
 		i18n.Raise(i18n.ERR_TOO_MANY_ARGS)
 	}
 	err := i18n.Update(args[0])
-	i18n.Err(err, i18n.ERR_CANNOT_UPDATE_LANG_FILE)
+	i18n.Err(err, i18n.ERR_CANT_UPDATE_LANG_FILE)
 }
