@@ -17,6 +17,7 @@ import (
 type RunCCmd struct {
 	cmd         *cobra.Command
 	interactive *bool
+	envFilename string
 }
 
 func NewRunCCmd() *RunCCmd {
@@ -28,6 +29,7 @@ func NewRunCCmd() *RunCCmd {
 		},
 	}
 	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
+	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -41,6 +43,8 @@ func (c *RunCCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) > 1 {
 		path = args[1]
 	}
+	// load environment variables from file, if file not specified then try loading .env
+	core.LoadEnvFromFile(c.envFilename)
 	// create an instance of the runner
 	run, err := runner.NewFromPath(path)
 	core.CheckErr(err, "cannot initialise runner")
