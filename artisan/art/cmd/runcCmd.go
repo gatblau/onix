@@ -43,12 +43,10 @@ func (c *RunCCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) > 1 {
 		path = args[1]
 	}
-	// load environment variables from file, if file not specified then try loading .env
-	core.LoadEnvFromFile(c.envFilename)
 	// create an instance of the runner
 	run, err := runner.NewFromPath(path)
 	core.CheckErr(err, "cannot initialise runner")
 	// launch a runtime to execute the function
-	err = run.RunC(function, *c.interactive)
+	err = run.RunC(function, *c.interactive, c.envFilename)
 	core.CheckErr(err, "cannot execute function '%s'", function)
 }
