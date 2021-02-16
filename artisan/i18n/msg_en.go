@@ -17,7 +17,7 @@ var msg_en = map[I18NKey]string{
 	ERR_CANT_PUSH_PACKAGE:           "cannot push package",
 	ERR_CANT_READ_RESPONSE:          "cannot read response body",
 	ERR_CANT_SAVE_FILE:              "cannot save file",
-	ERR_CANNOT_UPDATE_LANG_FILE:     "cannot update language file",
+	ERR_CANT_UPDATE_LANG_FILE:       "cannot update language file",
 	ERR_INSUFFICIENT_ARGS:           "insufficient arguments",
 	ERR_INVALID_PACKAGE_NAME:        "invalid package name",
 	ERR_TOO_MANY_ARGS:               "too many arguments",
