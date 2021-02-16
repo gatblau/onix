@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/pelletier/go-toml"
+	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -37,6 +38,25 @@ func Err(err error, key I18NKey, a ...interface{}) {
 func Raise(key I18NKey, a ...interface{}) {
 	fmt.Printf("%s\n", fmt.Sprintf(get(key), a...))
 	os.Exit(1)
+}
+
+// updates a specific i18n file by adding missing keys but keeping their value in english
+func Update(i18nFile string) error {
+	file := core.ToAbs(i18nFile)
+	f, err := toml.LoadFile(file)
+	if err != nil {
+		return err
+	}
+	for key, value := range msg_en {
+		if !f.Has(string(key)) {
+			f.Set(string(key), value)
+		}
+	}
+	data, err := f.Marshal()
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(file, data, os.ModePerm)
 }
 
 func get(key I18NKey) string {
