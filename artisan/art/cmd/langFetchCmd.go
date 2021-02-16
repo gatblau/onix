@@ -45,7 +45,7 @@ func (c *LangFetchCmd) Run(cmd *cobra.Command, args []string) {
 	// checks the lang path exists within the registry
 	core.LangExists()
 	// try and fetch the language dictionary
-	url := fmt.Sprintf("https://github.com/gatblau/artisan/blob/master/lang/%s_i18n.toml", args[0])
+	url := fmt.Sprintf("https://raw.githubusercontent.com/gatblau/artisan/master/lang/%s_i18n.toml", args[0])
 	resp, err := http.Get(url)
 	i18n.Err(err, i18n.ERR_CANT_DOWNLOAD_LANG, url)
 	if resp.StatusCode != 200 {
