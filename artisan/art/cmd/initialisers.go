@@ -55,7 +55,8 @@ func InitialiseRootCmd() *RootCmd {
 func InitialiseLangCommand() *LangCmd {
 	langCmd := NewLangCmd()
 	langFetchCmd := NewLangFetchCmd()
-	langCmd.cmd.AddCommand(langFetchCmd.cmd)
+	langUpdateCmd := NewLangUpdateCmd()
+	langCmd.cmd.AddCommand(langFetchCmd.cmd, langUpdateCmd.cmd)
 	return langCmd
 }
 
