@@ -68,6 +68,7 @@ func NewWithEnv(bareFlowPath, buildPath, envFile string) (*Manager, error) {
 func (m *Manager) Merge(interactive bool) error {
 	// load environment variables from file, if file not specified then try loading .env
 	core.LoadEnvFromFile(m.envFile)
+	env := core.NewEnVarFromSlice(os.Environ())
 	local := registry.NewLocalRegistry()
 	if m.Flow.RequiresSource() {
 		if m.buildFile == nil {
@@ -82,7 +83,7 @@ func (m *Manager) Merge(interactive bool) error {
 				Required:    true,
 				Type:        "uri",
 			}
-			data.EvalVar(gitUri, interactive)
+			data.EvalVar(gitUri, interactive, env)
 			m.buildFile.GitURI = gitUri.Value
 		}
 		m.Flow.GitURI = m.buildFile.GitURI
@@ -95,14 +96,14 @@ func (m *Manager) Merge(interactive bool) error {
 			core.CheckErr(err, "invalid step %s package name %s", step.Name, step.Package)
 			// get the package manifest
 			manifest := local.GetManifest(name)
-			step.Input = data.SurveyInputFromManifest(name, step.Function, manifest, interactive, false)
+			step.Input = data.SurveyInputFromManifest(name, step.Function, manifest, interactive, false, env)
 			// collects credentials to retrieve package from registry
-			step.Input.SurveyRegistryCreds(step.Package, interactive, false)
+			step.Input.SurveyRegistryCreds(step.Package, interactive, false, env)
 		} else {
 			// if the step has a function
 			if len(step.Function) > 0 {
 				// add exported inputs to the step
-				step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, interactive, false)
+				step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, interactive, false, env)
 			} else {
 				// read input from from runtime_uri
 				step.Input = data.SurveyInputFromURI(step.RuntimeManifest, interactive, false)

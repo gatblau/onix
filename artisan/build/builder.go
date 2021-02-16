@@ -331,9 +331,9 @@ func (b *Builder) runFunction(function string, path string, interactive bool) {
 	// add the build file level environment variables
 	env := core.NewEnVarFromSlice(os.Environ())
 	// if insputs are defined for the function then survey for data
-	i := data.SurveyInputFromBuildFile(function, b.buildFile, interactive, false)
+	i := data.SurveyInputFromBuildFile(function, b.buildFile, interactive, false, env)
 	// merge the collected input with the current environment
-	env.Merge(i.Env())
+	env.Merge(i.Env(false))
 	// gets the function to run
 	fx := b.buildFile.Fx(function)
 	if fx == nil {
@@ -523,7 +523,7 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 				s.Manifest.Functions = append(s.Manifest.Functions, &data.FxInfo{
 					Name:        fx.Name,
 					Description: fx.Description,
-					Input:       data.SurveyInputFromBuildFile(fx.Name, buildFile, false, true),
+					Input:       data.SurveyInputFromBuildFile(fx.Name, buildFile, false, true, core.NewEnVarFromSlice(os.Environ())),
 					Runtime:     fx.Runtime,
 				})
 				// a runtime must be specified for exported functions

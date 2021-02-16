@@ -62,8 +62,9 @@ func (c *ExeCCmd) Run(cmd *cobra.Command, args []string) {
 	run, err := runner.New()
 	core.CheckErr(err, "cannot initialise runner")
 	// load environment variables from file, if file not specified then try loading .env
-	core.LoadEnvFromFile(c.envFilename)
+	env, err := core.NewEnVarFromFile(c.envFilename)
+	core.CheckErr(err, "cannot load env file")
 	// launch a runtime to execute the function
-	err = run.ExeC(packageName, fxName, c.credentials, *c.interactive)
+	err = run.ExeC(packageName, fxName, c.credentials, *c.interactive, env)
 	i18n.Err(err, i18n.ERR_CANT_EXEC_FUNC_IN_PACKAGE, fxName, packageName)
 }

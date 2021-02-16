@@ -78,7 +78,7 @@ type Step struct {
 
 // retrieve all input data required by the flow without values
 // interactive mode is off - gets definition only
-func (f *Flow) GetInputDefinition(b *data.BuildFile) *data.Input {
+func (f *Flow) GetInputDefinition(b *data.BuildFile, env *core.Envar) *data.Input {
 	result := &data.Input{
 		Key:    make([]*data.Key, 0),
 		Secret: make([]*data.Secret, 0),
@@ -93,7 +93,7 @@ func (f *Flow) GetInputDefinition(b *data.BuildFile) *data.Input {
 				core.RaiseErr("flow '%s' requires a build.yaml", f.Name)
 			}
 			// surveys the build.yaml for variables
-			i := data.SurveyInputFromBuildFile(step.Function, b, false, true)
+			i := data.SurveyInputFromBuildFile(step.Function, b, false, true, env)
 			// add GIT_URI if not already added
 			if i == nil || !result.VarExist("GIT_URI") {
 				i.Var = append(i.Var, &data.Var{
@@ -112,8 +112,8 @@ func (f *Flow) GetInputDefinition(b *data.BuildFile) *data.Input {
 			if manif == nil {
 				core.RaiseErr("manifest for package '%s' not found", name)
 			}
-			i := data.SurveyInputFromManifest(name, step.Function, manif, false, true)
-			i.SurveyRegistryCreds(step.Package, false, true)
+			i := data.SurveyInputFromManifest(name, step.Function, manif, false, true, env)
+			i.SurveyRegistryCreds(step.Package, false, true, env)
 			result.Merge(i)
 		} else {
 			// surveys runtime manifest for variables

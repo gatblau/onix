@@ -3,7 +3,7 @@ package core
 import (
 	"bytes"
 	"fmt"
-	"github.com/pelletier/go-toml"
+	"io/ioutil"
 	"strings"
 )
 
@@ -20,14 +20,24 @@ func NewEnVarFromMap(v map[string]string) *Envar {
 func NewEnVarFromFile(envFile string) (*Envar, error) {
 	var outMap = make(map[string]string)
 	file := ToAbs(envFile)
-	t, err := toml.LoadFile(file)
+	data, err := ioutil.ReadFile(file)
 	// if it managed to find the env file load it
 	// otherwise skip it
+	content := strings.Split(string(data), "\n")
 	if err == nil {
-		m := t.ToMap()
-		for key, value := range m {
-			outMap[key] = value.(string)
+		for _, line := range content {
+			// skips comments
+			if strings.HasPrefix(strings.Trim(line, " "), "#") || len(strings.Trim(line, " ")) == 0 {
+				continue
+			}
+			keyValue := strings.Split(line, "=")
+			if len(keyValue) != 2 {
+				return nil, fmt.Errorf("invalid env file format")
+			}
+			outMap[keyValue[0]] = keyValue[1]
 		}
+	} else {
+		Debug("cannot load env file: %s", err.Error())
 	}
 	return &Envar{
 		Vars: outMap,

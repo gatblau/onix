@@ -12,7 +12,6 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -43,7 +42,7 @@ func New() (*Runner, error) {
 	return new(Runner), nil
 }
 
-func (r *Runner) RunC(fxName string, interactive bool) error {
+func (r *Runner) RunC(fxName string, interactive bool, envFile string) error {
 	var runtime string
 	fx := r.buildFile.Fx(fxName)
 	// if the runtime is defined at the function level
@@ -60,15 +59,19 @@ func (r *Runner) RunC(fxName string, interactive bool) error {
 	runtime = core.QualifyRuntime(runtime)
 	// generate a unique name for the running container
 	containerName := fmt.Sprintf("art-runc-%s-%s", core.Encode(fxName), core.RandomString(8))
-	// get the host env vars
-	// make sure USER & HOME are not there to avoid overriding the ones in the runtime
-	env := core.NewEnVarFromSlice(filterUserHome(os.Environ()))
+	// do not pass any vars from the host to avoid clashing issues
+	// if any vars are required load them directly into the container from the env file
+	env, err := core.NewEnVarFromFile(envFile)
+	if err != nil {
+		return err
+	}
 	// if insputs are defined for the function then survey for data
-	i := data.SurveyInputFromBuildFile(fxName, r.buildFile, true, false)
+	i := data.SurveyInputFromBuildFile(fxName, r.buildFile, true, false, env)
 	// merge the collected input with the current environment
-	env.Merge(i.Env())
+	env.Merge(i.Env(false))
+	core.Debug(fmt.Sprintf("env vars passed to container:\n%s\n", env.String()))
 	// launch a container with a bind mount to the path where the build.yaml is located
-	err := runBuildFileFx(runtime, fxName, r.path, containerName, env)
+	err = runBuildFileFx(runtime, fxName, r.path, containerName, env)
 	if err != nil {
 		removeContainer(containerName)
 		return err
@@ -81,7 +84,8 @@ func (r *Runner) RunC(fxName string, interactive bool) error {
 	return nil
 }
 
-func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool) error {
+func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool, env *core.Envar) error {
+	var runtime string
 	name, _ := core.ParseName(packageName)
 	// get a local registry handle
 	local := registry.NewLocalRegistry()
@@ -89,14 +93,23 @@ func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool)
 	m := local.GetManifest(name)
 	// if the manifest exports the function
 	if isExported(m, fxName) {
-		// get the runtime to use from the manifest
-		runtime := core.QualifyRuntime(m.Runtime)
-		// add the build file level environment variables
-		env := core.NewEnVarFromSlice(os.Environ())
+		// get the runtime to use from the manifest function
+		fx := m.Fx(fxName)
+		// if the runtime is defined at the function level
+		if len(fx.Runtime) > 0 {
+			// use the function level runtime
+			runtime = fx.Runtime
+		} else if len(m.Runtime) > 0 {
+			// if not use the manifest level runtime
+			runtime = m.Runtime
+		} else {
+			return fmt.Errorf("runtime attribute is required in manifest for package '%s'", name)
+		}
+		runtime = core.QualifyRuntime(runtime)
 		// interactively survey for required input via CLI
-		input := data.SurveyInputFromManifest(name, fxName, m, interactive, false)
-		// merge the collected input with the current environment
-		env.Merge(input.Env())
+		input := data.SurveyInputFromManifest(name, fxName, m, interactive, false, env)
+		// merge the collected input with the current environment without adding the PGP keys (they must be present locally)
+		env.Merge(input.Env(false))
 		// get registry credentials
 		uname, pwd := core.UserPwd(credentials)
 		// create a random container name
