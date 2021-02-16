@@ -65,7 +65,7 @@ func (c *FlowMergeCmd) Run(cmd *cobra.Command, args []string) {
 		// gets a tekton transpiler
 		builder := tkn.NewBuilder(flow.Flow)
 		// transpile the flow
-		buf := builder.Create()
+		buf := builder.BuildBuffer()
 		// if stdout required
 		if *c.stdout {
 			// print to console

@@ -1,0 +1,16 @@
+export APPLICATION_NAME=sap-equip-jvm
+export ARTEFACT_NAME=artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/sap/sap-equip-jvm
+export BUILD_PROFILE=package-app
+export ART_REG_USER=admin
+export ART_REG_PWD=nxrpsap
+export CRYPTO_KEY_NAME=sap-equip-jvm-image-keys-secret
+export SONAR_URI=https://sonarqube-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io
+export SONAR_PROJECT_KEY=net.atos:sap-equip
+export SONAR_SOURCES=src/
+export SONAR_BINARIES=target/classes
+export SONAR_TOKEN=2828c55eb611365ec0401b9974e5683bbacba4ef
+export SAPG_URL=https://sapgateway-app-with-swagger-amosonline-aws-01-sapgateway.apps.amosds.amosonline.io
+export SAPG_USER=sapg
+export SAPG_PASSWORD=EM0dlxKa
+export SAP_EQUIP_API_USER=sapequip_user
+export SAP_EQUIP_PASSWORD=AnEdSaRaPr

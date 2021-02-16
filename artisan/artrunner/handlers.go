@@ -42,5 +42,5 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 	// get a tekton builder
 	builder := tkn.NewBuilder(f)
 
-	_ = builder.Create()
+	_ = builder.BuildBuffer()
 }

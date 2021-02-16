@@ -1,0 +1,46 @@
+{
+    "Name": "quay.io/gatblau/art-java",
+    "Digest": "sha256:ff6fba700b82c10ff46d7679aa79239b80f21fea7b90fb8b614b69f0747af13e",
+    "RepoTags": [
+        "0.0.4-161220114844437-0d2b33f4c9-alpha",
+        "0.0.4-181220121244956-101b2fb361-alpha",
+        "0.0.4-181220125009308-101b2fb361-alpha",
+        "latest"
+    ],
+    "Created": "2020-12-18T12:51:51.0941262Z",
+    "DockerVersion": "20.10.0",
+    "Labels": {
+        "author": "gatblau",
+        "builder-for": "JAVA-11",
+        "maintainer": "onix@gatblau.org",
+        "org.label-schema.build-date": "20201113",
+        "org.label-schema.license": "GPLv2",
+        "org.label-schema.name": "CentOS Base Image",
+        "org.label-schema.schema-version": "1.0",
+        "org.label-schema.vendor": "CentOS",
+        "org.opencontainers.image.created": "2020-11-13 00:00:00+00:00",
+        "org.opencontainers.image.licenses": "GPL-2.0-only",
+        "org.opencontainers.image.title": "CentOS Base Image",
+        "org.opencontainers.image.vendor": "CentOS",
+        "tools": "maven,jdk11,artisan"
+    },
+    "Architecture": "amd64",
+    "Os": "linux",
+    "Layers": [
+        "sha256:2d473b07cdd5f0912cd6f1a703352c82b512407db6b05b43f2553732b55df3bc",
+        "sha256:c2c0c4f45062f9bdb4e15f7aeccb9188209ebb31d8e340a9b46dae98cf1c5a2a",
+        "sha256:4156d15894dab477d401ad0f0a4c43e06e5a618f1fe2d89f7709c3b202e6218d",
+        "sha256:a0ae4ca55baa056f58729c985c3b037ffbd13ab3155d2be3a0aa837e2f538b30",
+        "sha256:902793746751d84040bd954dc5c7fc53cd9eff99f3d9bf0a979ec2cf8152bea5"
+    ],
+    "Env": [
+        "PATH=/usr/lib/mvn/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "UID=1000",
+        "GID=1000",
+        "APP=art-linux-0.0.4-181220125009308-101b2fb361-alpha",
+        "MAVEN_VERSION=3.6.3",
+        "JAVA_HOME=/usr/lib/jvm/jre-openjdk",
+        "MAVEN_HOME=/usr/lib/mvn",
+        "ARTISAN_HOME=/usr/bin"
+    ]
+}

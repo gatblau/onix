@@ -54,6 +54,6 @@ func (b *TknGenCmd) Run(cmd *cobra.Command, args []string) {
 	f, err := flow.LoadFlow(flowPath)
 	core.CheckErr(err, "cannot load flow")
 	builder := tkn.NewBuilder(f)
-	buf := builder.Create()
+	buf := builder.BuildBuffer()
 	fmt.Println(buf.String())
 }
