@@ -1,7 +1,9 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/pelletier/go-toml"
 	"strings"
 )
 
@@ -13,6 +15,23 @@ func NewEnVarFromMap(v map[string]string) *Envar {
 	return &Envar{
 		Vars: v,
 	}
+}
+
+func NewEnVarFromFile(envFile string) (*Envar, error) {
+	var outMap = make(map[string]string)
+	file := ToAbs(envFile)
+	t, err := toml.LoadFile(file)
+	// if it managed to find the env file load it
+	// otherwise skip it
+	if err == nil {
+		m := t.ToMap()
+		for key, value := range m {
+			outMap[key] = value.(string)
+		}
+	}
+	return &Envar{
+		Vars: outMap,
+	}, nil
 }
 
 func NewEnVarFromSlice(v []string) *Envar {
@@ -51,4 +70,12 @@ func (e *Envar) Merge(env *Envar) {
 	for key, value := range env.Vars {
 		e.Vars[key] = value
 	}
+}
+
+func (e *Envar) String() string {
+	buffer := bytes.Buffer{}
+	for key, value := range e.Vars {
+		buffer.WriteString(fmt.Sprintf("%s=%s\n", key, value))
+	}
+	return buffer.String()
 }
