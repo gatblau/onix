@@ -71,7 +71,7 @@ func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *core.En
 
 	if err = cmd.Wait(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			if _, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+			if _, ok = exitErr.Sys().(syscall.WaitStatus); ok {
 				return exitErr
 			}
 		}
@@ -83,7 +83,7 @@ func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *core.En
 // launch a container and execute a package function
 func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUser, artRegistryPwd string, env *core.Envar) error {
 	// if wrong UID
-	if ok, msg := wrongUserId(); !ok {
+	if isWrong, msg := wrongUserId(); isWrong {
 		// print warning
 		fmt.Println(msg)
 	}
@@ -102,8 +102,39 @@ func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUs
 	// launch the container with an art exec command
 	cmd := exec.Command(tool, args...)
 	core.Debug("! launching runtime: %s %s\n", tool, strings.Join(args, " "))
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("cannot launch container: %s", err)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("failed creating command stdoutpipe: %s", err)
+	}
+	defer func() {
+		_ = stdout.Close()
+	}()
+	stdoutReader := bufio.NewReader(stdout)
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("failed creating command stderrpipe: %s", err)
+	}
+	defer func() {
+		_ = stderr.Close()
+	}()
+	stderrReader := bufio.NewReader(stderr)
+
+	if err = cmd.Start(); err != nil {
+		return err
+	}
+
+	go handleReader(stdoutReader)
+	go handleReader(stderrReader)
+
+	if err = cmd.Wait(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			if _, ok = exitErr.Sys().(syscall.WaitStatus); ok {
+				return exitErr
+			}
+		}
+		return err
 	}
 	return nil
 }

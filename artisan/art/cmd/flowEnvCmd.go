@@ -66,7 +66,7 @@ func (c *FlowEnvCmd) Run(cmd *cobra.Command, args []string) {
 		b, err = data.LoadBuildFile(path.Join(c.buildFilePath, "build.yaml"))
 	}
 	// discover the input required by the flow / build file
-	input := f.GetInputDefinition(b)
+	input := f.GetInputDefinition(b, core.NewEnVarFromSlice([]string{}))
 	var output []byte
 	switch strings.ToLower(c.out) {
 	// if the requested format is env

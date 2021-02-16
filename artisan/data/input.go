@@ -89,7 +89,7 @@ func (i *Input) Encrypt(pub *crypto.PGP) {
 	encryptInput(i, pub)
 }
 
-func (i *Input) SurveyRegistryCreds(packageName string, prompt, defOnly bool) {
+func (i *Input) SurveyRegistryCreds(packageName string, prompt, defOnly bool, env *core.Envar) {
 	name, _ := core.ParseName(packageName)
 	// check for art_reg_user
 	userName := fmt.Sprintf("ART_REG_USER_%s", NormInputName(name.Domain))
@@ -99,7 +99,7 @@ func (i *Input) SurveyRegistryCreds(packageName string, prompt, defOnly bool) {
 			Description: fmt.Sprintf("the username to authenticate with the registry at '%s'", name.Domain),
 		}
 		if !defOnly {
-			EvalSecret(userSecret, prompt)
+			EvalSecret(userSecret, prompt, env)
 		}
 		i.Secret = append(i.Secret, userSecret)
 	}
@@ -111,7 +111,7 @@ func (i *Input) SurveyRegistryCreds(packageName string, prompt, defOnly bool) {
 			Description: fmt.Sprintf("the password to authenticate with the registry at '%s'", NormInputName(name.Domain)),
 		}
 		if !defOnly {
-			EvalSecret(pwdSecret, prompt)
+			EvalSecret(pwdSecret, prompt, env)
 		}
 		i.Secret = append(i.Secret, pwdSecret)
 	}
@@ -124,13 +124,13 @@ func (i *Input) SurveyRegistryCreds(packageName string, prompt, defOnly bool) {
 			Private:     false,
 		}
 		if !defOnly {
-			EvalKey(key, prompt)
+			EvalKey(key, prompt, env)
 		}
 		i.Key = append(i.Key, key)
 	}
 }
 
-func (i *Input) Env() *core.Envar {
+func (i *Input) Env(includeKeys bool) *core.Envar {
 	env := make(map[string]string)
 	for _, v := range i.Var {
 		env[v.Name] = v.Value
@@ -138,8 +138,10 @@ func (i *Input) Env() *core.Envar {
 	for _, s := range i.Secret {
 		env[s.Name] = s.Value
 	}
-	for _, k := range i.Key {
-		env[k.Name] = k.Value
+	if includeKeys {
+		for _, k := range i.Key {
+			env[k.Name] = k.Value
+		}
 	}
 	return core.NewEnVarFromMap(env)
 }
@@ -204,7 +206,7 @@ func (i *Input) SecretExist(name string) bool {
 }
 
 // extracts the build file Input that is relevant to a function (using its bindings)
-func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt, defOnly bool) *Input {
+func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt, defOnly bool, env *core.Envar) *Input {
 	if buildFile == nil {
 		core.RaiseErr("build file is required")
 	}
@@ -213,11 +215,11 @@ func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt, defOn
 	if fx == nil {
 		core.RaiseErr("function '%s' cannot be found in build file", fxName)
 	}
-	return getBoundInput(fx.Input, buildFile.Input, prompt, defOnly)
+	return getBoundInput(fx.Input, buildFile.Input, prompt, defOnly, env)
 }
 
 // extracts the package manifest Input in an exported function
-func SurveyInputFromManifest(name *core.PackageName, fxName string, manifest *Manifest, prompt, defOnly bool) *Input {
+func SurveyInputFromManifest(name *core.PackageName, fxName string, manifest *Manifest, prompt, defOnly bool, env *core.Envar) *Input {
 	// get the function in the manifest
 	fx := manifest.Fx(fxName)
 	if fx == nil {
@@ -232,9 +234,9 @@ func SurveyInputFromManifest(name *core.PackageName, fxName string, manifest *Ma
 		}
 	}
 	// first evaluates the existing inputs
-	input = evalInput(input, prompt, defOnly)
+	input = evalInput(input, prompt, defOnly, env)
 	// then add registry credential inputs
-	input.SurveyRegistryCreds(name.String(), prompt, defOnly)
+	input.SurveyRegistryCreds(name.String(), prompt, defOnly, env)
 	return input
 }
 
@@ -253,21 +255,21 @@ func SurveyInputFromURI(uri string, prompt, defOnly bool) *Input {
 	// need a wrapper object for the input for the unmarshaller to work so using buildfile
 	var buildFile = new(BuildFile)
 	err = yaml.Unmarshal(body, buildFile)
-	return evalInput(buildFile.Input, prompt, defOnly)
+	return evalInput(buildFile.Input, prompt, defOnly, core.NewEnVarFromSlice([]string{}))
 }
 
-func evalInput(input *Input, interactive, defOnly bool) *Input {
+func evalInput(input *Input, interactive, defOnly bool, env *core.Envar) *Input {
 	// makes a shallow copy of the input
 	result := *input
 	// collect values from command line interface
 	for _, v := range result.Var {
 		if !defOnly {
-			EvalVar(v, interactive)
+			EvalVar(v, interactive, env)
 		}
 	}
 	for _, secret := range result.Secret {
 		if !defOnly {
-			EvalSecret(secret, interactive)
+			EvalSecret(secret, interactive, env)
 		}
 	}
 	for _, key := range result.Key {
@@ -279,15 +281,15 @@ func evalInput(input *Input, interactive, defOnly bool) *Input {
 	return &result
 }
 
-func EvalVar(inputVar *Var, prompt bool) {
+func EvalVar(inputVar *Var, prompt bool, env *core.Envar) {
 	// do not evaluate it if there is already a value
 	if len(inputVar.Value) > 0 {
 		return
 	}
 	// check if there is an env variable
-	varValue := os.Getenv(inputVar.Name)
+	varValue, ok := env.Vars[inputVar.Name]
 	// if so
-	if len(varValue) > 0 {
+	if ok {
 		// set the var value to the env variable's
 		inputVar.Value = varValue
 	} else if prompt {
@@ -299,15 +301,15 @@ func EvalVar(inputVar *Var, prompt bool) {
 	}
 }
 
-func EvalSecret(inputSecret *Secret, prompt bool) {
+func EvalSecret(inputSecret *Secret, prompt bool, env *core.Envar) {
 	// do not evaluate it if there is already a value
 	if len(inputSecret.Value) > 0 {
 		return
 	}
 	// check if there is an env variable
-	secretValue := os.Getenv(inputSecret.Name)
+	secretValue, ok := env.Vars[inputSecret.Name]
 	// if so
-	if len(secretValue) > 0 {
+	if ok {
 		// set the secret value to the env variable's
 		inputSecret.Value = secretValue
 	} else if prompt {
@@ -319,15 +321,15 @@ func EvalSecret(inputSecret *Secret, prompt bool) {
 	}
 }
 
-func EvalKey(inputKey *Key, prompt bool) {
+func EvalKey(inputKey *Key, prompt bool, env *core.Envar) {
 	// do not evaluate it if there is already a value
 	if len(inputKey.Value) > 0 {
 		return
 	}
 	// check if there is an env variable
-	keyPath := os.Getenv(inputKey.Name)
+	keyPath, ok := env.Vars[inputKey.Name]
 	// if so
-	if len(keyPath) > 0 {
+	if ok {
 		// load the correct key using the provided path
 		loadKeyFromPath(inputKey, keyPath)
 	} else if prompt {
@@ -338,7 +340,7 @@ func EvalKey(inputKey *Key, prompt bool) {
 }
 
 // extract any Input data from the source that have a binding
-func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt, defOnly bool) *Input {
+func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt, defOnly bool, env *core.Envar) *Input {
 	result := &Input{
 		Key:    make([]*Key, 0),
 		Secret: make([]*Secret, 0),
@@ -355,7 +357,7 @@ func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt, defOnly bo
 				result.Var = append(result.Var, variable)
 				// if not definition only it should evaluate the variable
 				if !defOnly {
-					EvalVar(variable, prompt)
+					EvalVar(variable, prompt, env)
 				}
 			}
 		}
@@ -367,7 +369,7 @@ func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt, defOnly bo
 				result.Secret = append(result.Secret, secret)
 				// if not definition only it should evaluate the secret
 				if !defOnly {
-					EvalSecret(secret, prompt)
+					EvalSecret(secret, prompt, env)
 				}
 			}
 		}
@@ -379,7 +381,7 @@ func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt, defOnly bo
 				result.Key = append(result.Key, key)
 				// if not definition only it should evaluate the key
 				if !defOnly {
-					EvalKey(key, prompt)
+					EvalKey(key, prompt, env)
 				}
 			}
 		}
