@@ -1,0 +1,264 @@
+name: sap-equip-jvm-image
+description: build & push the application image
+steps:
+- name: image-builder
+  description: builds, signs and publish the container image
+  runtime: quay.io/gatblau/art-kube
+  function: start-build
+  package: artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/tekton/bc-launcher
+  input:
+    key:
+    - name: SIGNING_KEY
+      description: the private PGP key required to digitally sign the application
+        package
+      private: true
+      value: |-
+        -----BEGIN PGP PRIVATE KEY BLOCK-----
+        Version: golang.org/x/crypto/openpgp - artisan-0.0.4-140121091550672-3098ef4fe6-alpha
+        Comment: Cipher: AES128, Hash: SHA-256, RSA Bits: 2048, Created: 2021-01-14 09:25:33.520863 +0000 GMT m=+0.282797935
+        Hash: AES128/SHA-256
+
+        xcLYBGAADg0BCAC9cYoG2Yq5M06iNBpiWWUZFrzhw7ZeZdT5BKdfXsSxqcgRh4VG
+        S5n5xPjxbZQWV+1FPjgGLlpZMXtCQfsoPdsKazrBwiBY49QMnxYskjv/rDvs+1HJ
+        GWpapFm+MMo+f6MAsRvaufCflUjRGjowUwno5tUEmBTtfLyKEhEtc3zI+tf3Nqwo
+        LgSt3GhtUmNidWqifCyz32IyAyasMvCQdxgEGeWJnk4d1oH0l5NOdB06P95sDI6s
+        RGgMJ4i5+0jlMgctE4Zzy6FHRsd5PQyRMr5z/XyN5rxIwy8PTo4mEQ6Sa5hiXSm+
+        vViCOCGlQ3WAPoPoIYj+E9qpP+YcnmP/FKOJABEBAAEACACss3HyFqWZekWIJ1ma
+        KQa6HXlpk0KQweKqdOykS7+iezXxjQsZb1haU4/igFPNHrEmO7dVIzKoNyy31XDC
+        WclysRhqhK96eY/ZRbowPcvGo9wpiV8gpjPHmCZb9RyaZz9RJSRQfMv4n143ieJc
+        JYdWNAEj5ATID7vNXvUb6zlp+Xd9R7xRuaHeVAjd9Ko3aH1NoYxzGggV10d0GrZJ
+        tWq9hF7DgXHwDAfu8hMY2xj45PG1KY+F07eSDC8utlS4TOh4s3iT3Bib3JEYyG4s
+        1ZRrfmhyPC/ak9zUBTubPNHLuzRuosZdUhGxkOYbUMkUuVmO/a9zZ9k+Mtb39SKF
+        oieVBAD23KuV+/AOJu+9tYCINIIrW1wAJjzG0U8yNrQStbTFKEPsBMUbwRWYsxuN
+        yEJG7KajALtHubTF5VbD8xwpJdeVGw8HmDXAP8k/8VBwPDEUbbuRtkM/LoEfcI92
+        ftrX4Zwf0dZlOT63ICTde2Jn0/R+cUU9p/0tC/FZAXR+xBKlVwQAxHTBkygMH3/M
+        lLPPpPm5G167UPWGNdOieKrOq7g7mLyeuoKmPkxBxTYliirLChPLwb24BFmr3EgB
+        2L6sIut8HxUiBpWIjRE4di8scmuoTDPT8SNrEtfInx8DlV6UznM5ULdD30WD6eFp
+        JBGmClZR3rpAhRvgkxUStlCMamJRkh8D/3yOdhxfrC9lY3JwtJb4/MRMb9rxGttA
+        YBsJl9DsyRDh036TCuqdrEUDlkZWiy3rk8pt5VDMx4XlIoDW6s1na1newv+rlHIN
+        wXHVsfgiZLunbsypal8B8gWK9C1V3u8zAVyy3O2y/Y+8I3KdY/y43TskRE1YlcCa
+        Dk1laPrEfmrNPjnNlXJvb3QtQW5kcmVzcy1NYWNCb29rLVByby0yLmxvY2FsICgy
+        MDQ4IGtleXMsIGdlbmVyYXRlZCBvbiAyMDIxLTAxLTE0IDA5OjI1OjMzLjI1OTMy
+        NCArMDAwMCBHTVQgbT0rMC4wMjEyNjIyNTkpIDx0ZXN0QEFuZHJlc3MtTWFjQm9v
+        ay1Qcm8tMi5sb2NhbC5jb20+wsBoBBMBCAAcBQJgAA4NCRCguGkCfCvd5gIbAwIZ
+        AQILBwIVCAAA01EIADB7d/sryxlfmFt7bkdZ2Yx90zKOKZa3sINSEEPh8VBuGqNE
+        RzuHOLDr+LjDlSKXH3mv51g1XLeUfpe8QaXF+bLGlo3judQj0zeqkOv7rHmzI1BD
+        KO+N0siaETxMTBM5HgDhV9LyN7xFb4LWm9ZbggEd2yAj6fDtWKJlJfXsQL5ylLgS
+        648kA0pujcaKAFK3+AioQIFyA9inwBdQERL1hrNNbkSGAMyFwTRu5LbpTep5qRDf
+        DLLqD3R920tylXg6bmBq+kJs579l+I2eJ/Mfeun7G05n6dJmdqs8nwi0AIzsaWtM
+        O1QcZ4tnYfKc04RzjDMAmbNu3L2C5rQ2gL44XT/HwtgEYAAODQEIAMeggGEZstjS
+        8TgKCD9gP7RpCWIo809uVgK8qv6LMfoXM1WY0S5woHg6L7MaX8OVdCTE4yx18OJP
+        solSHcAmqoBPNWNq7XnXzWgEKoGMilSINjwTEjsmvOUBUqTCoBuHTRAbUixaMeRR
+        h84AOyEcHHwMbs2WoH4BVaNv/1pIZhJIxSk+rI4i9teXESwhSvdSNDFecVFl7EEr
+        XB93H0Iif3rOnQJ1nNt8dyR26kdk+TNDZItAklS17jj67L1m7nKpt5awLaw+gviw
+        zN1/JvzkZHBdWkA/9jC+RFFg3eDDfjAOYEyOPYE+5HJd9l1gskJantunLk/hZvyP
+        qHSCkXwTBNUAEQEAAQAH/iswg3X+nF4izUOFkCE+DqpWq0wMdg+yXHN9JDWsIeTs
+        zhNv25oDjgRU+mrygtOK6zTlUA0Xe0VLXuIs3PjspKjb+j4HLVfWI7+kXxnmMSt2
+        yN0YdzJLAEU/kwTIguFR1Y9ticrEvNSb+xjLnf9c2KDSA8sBEroQSdnxajq7PTIp
+        H8SAxJesvMy0H3EERoAXw4hsKyp+fCPkA4agLOEU9D6MUAR/stqFpxbgagiD5KI9
+        ba7H5qsvuST1p8b9ut9mDopub+9zQ7CKzV8pZ6VMZQJhFXwVOyZhyRFRij2U1n5F
+        UvMNv0aErx1D1R5OPqjrN+bgkJHCr4wm3ONGMr0/WwEEAP/muzNc0xMfx4Z/2eUj
+        dR1n3l410mwgz4J01buAkrMSTLBhI6rXEQaea0SJsbaZ/aWhsvA25vTIrgRIN3DK
+        Z3r/dW6/lW1gKutI/qcNj8pF3kVhSugtv6ElagZa/IpNAg2JsdCkbNmYKyaaYoDd
+        HK0o0Hadq7drqj4lEqAEoe6VBADHtDal8VHUtNnib2cqPWhaXPW1pMyrN3K8fxHF
+        qbt3oa1fSDA2Z7ZbMPY8aQGUWUjsv/ZciAlJHtvH7eQmfGw7wFver1xQAbzlWq0d
+        5v0H0TtAeG3D8IaVGujSOvTUKZwgWFxfyTtPFSYKM+tqoF+1wTO1y2RDBecA3g0X
+        suBtQQQAjCOZUrNnvve0aWPANDWOgfdkztKY/LyVddve/ZilhJUQhzspk8ibVgMk
+        i2zMa9eV8L9u4wyOBorgGF+lwk7m1esi23svyxxUCRKi7BrTlI1EWN0EKUxey21U
+        iZqrNU3MGvyCgTnHDzA753oogH3IIFphR7cj1lM15TB/zu0cwXw+TMLAXwQYAQgA
+        EwUCYAAODQkQoLhpAnwr3eYCGwwAAEkCCACN4z6fBXyhupA7FB8/pasB6cMmqFEE
+        lAG1Clx/HhPWZN+347LUR34VgGD96qGnFY1Vx6nWfXHO5CByjcjwiRAUumEYII1i
+        pY9I4H5wqR8hbG5ZF4QpG2olYXb+3uEBREftvM8EfOsVdx8HJEgQmDmXrXWUm/1b
+        gjkX4Ny6wpzoCbd5/QQqnYqCx9e5ZitF61AcfV52ir+TfXypLC03Y6QbhPshiDqV
+        AwS8tPAF3UGQk5YrLYKdZUseIpSSysja3i0MeQrsxn8hUGqEqgR+C99fIOmyJiuZ
+        Y9tazb2cjKXQoFSE5PWB1NDfcdFNJgv8UHJWcnhPG7l8OjYbWzyTv5mN
+        =0uFu
+        -----END PGP PRIVATE KEY BLOCK-----
+    - name: VERIFICATION_KEY
+      description: the public PGP key required to open the application package
+      private: false
+      value: |-
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
+        Version: golang.org/x/crypto/openpgp - artisan-0.0.4-140121091550672-3098ef4fe6-alpha
+        Comment: Cipher: AES128, Hash: SHA-256, RSA Bits: 2048, Created: 2021-01-14 09:25:33.516683 +0000 GMT m=+0.278617590
+        Hash: AES128/SHA-256
+
+        xsBNBGAADg0BCAC9cYoG2Yq5M06iNBpiWWUZFrzhw7ZeZdT5BKdfXsSxqcgRh4VG
+        S5n5xPjxbZQWV+1FPjgGLlpZMXtCQfsoPdsKazrBwiBY49QMnxYskjv/rDvs+1HJ
+        GWpapFm+MMo+f6MAsRvaufCflUjRGjowUwno5tUEmBTtfLyKEhEtc3zI+tf3Nqwo
+        LgSt3GhtUmNidWqifCyz32IyAyasMvCQdxgEGeWJnk4d1oH0l5NOdB06P95sDI6s
+        RGgMJ4i5+0jlMgctE4Zzy6FHRsd5PQyRMr5z/XyN5rxIwy8PTo4mEQ6Sa5hiXSm+
+        vViCOCGlQ3WAPoPoIYj+E9qpP+YcnmP/FKOJABEBAAHNlXJvb3QtQW5kcmVzcy1N
+        YWNCb29rLVByby0yLmxvY2FsICgyMDQ4IGtleXMsIGdlbmVyYXRlZCBvbiAyMDIx
+        LTAxLTE0IDA5OjI1OjMzLjI1OTMyNCArMDAwMCBHTVQgbT0rMC4wMjEyNjIyNTkp
+        IDx0ZXN0QEFuZHJlc3MtTWFjQm9vay1Qcm8tMi5sb2NhbC5jb20+wsBiBBMBCAAW
+        BQJgAA4NCRCguGkCfCvd5gIbAwIZAQAAexMIACMe/cTs+sRkYAon4m+x45kK6qdV
+        ClXw8Lu4dFoBJS8BrA44OPdDdYK49LbGQHKGG4AwWa9MS7zcWCwBv6gvtDFCSdNg
+        MqrSEm0RxLbYojiRfeizjyffA5Wbv/FgAGmOk2guYc/AvMJr1WGxTebSlvrwtyqf
+        znsl2ZMV32Oj3W1YEnHnVYbCbx6C1YURNqGnW6WCrUggnNOytyWy0JuZUapCHfxK
+        zH8uXxhIItzDzW6I5jeFTqJXZ4TA8/pCaU36ipYw0/f9BSpYIMlh1KYYbAeKV7n1
+        mT/dEI+epepLxgWEh5o4fCElgpfT6D/aHc6p+VA50cDm6HS+Q73L/is6TNrOwE0E
+        YAAODQEIAMeggGEZstjS8TgKCD9gP7RpCWIo809uVgK8qv6LMfoXM1WY0S5woHg6
+        L7MaX8OVdCTE4yx18OJPsolSHcAmqoBPNWNq7XnXzWgEKoGMilSINjwTEjsmvOUB
+        UqTCoBuHTRAbUixaMeRRh84AOyEcHHwMbs2WoH4BVaNv/1pIZhJIxSk+rI4i9teX
+        ESwhSvdSNDFecVFl7EErXB93H0Iif3rOnQJ1nNt8dyR26kdk+TNDZItAklS17jj6
+        7L1m7nKpt5awLaw+gviwzN1/JvzkZHBdWkA/9jC+RFFg3eDDfjAOYEyOPYE+5HJd
+        9l1gskJantunLk/hZvyPqHSCkXwTBNUAEQEAAcLAXwQYAQgAEwUCYAAODQkQoLhp
+        Anwr3eYCGwwAAEkCCACN4z6fBXyhupA7FB8/pasB6cMmqFEElAG1Clx/HhPWZN+3
+        47LUR34VgGD96qGnFY1Vx6nWfXHO5CByjcjwiRAUumEYII1ipY9I4H5wqR8hbG5Z
+        F4QpG2olYXb+3uEBREftvM8EfOsVdx8HJEgQmDmXrXWUm/1bgjkX4Ny6wpzoCbd5
+        /QQqnYqCx9e5ZitF61AcfV52ir+TfXypLC03Y6QbhPshiDqVAwS8tPAF3UGQk5Yr
+        LYKdZUseIpSSysja3i0MeQrsxn8hUGqEqgR+C99fIOmyJiuZY9tazb2cjKXQoFSE
+        5PWB1NDfcdFNJgv8UHJWcnhPG7l8OjYbWzyTv5mN
+        =1zFs
+        -----END PGP PUBLIC KEY BLOCK-----
+    - name: TEKTON_BC-LAUNCHER_VERIFICATION_KEY
+      description: the public PGP key required to open the package artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/tekton/bc-launcher:latest
+      private: false
+      value: |-
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
+        Version: golang.org/x/crypto/openpgp - artisan-0.0.4-140121091550672-3098ef4fe6-alpha
+        Comment: Cipher: AES128, Hash: SHA-256, RSA Bits: 2048, Created: 2021-01-14 09:25:33.516683 +0000 GMT m=+0.278617590
+        Hash: AES128/SHA-256
+
+        xsBNBGAADg0BCAC9cYoG2Yq5M06iNBpiWWUZFrzhw7ZeZdT5BKdfXsSxqcgRh4VG
+        S5n5xPjxbZQWV+1FPjgGLlpZMXtCQfsoPdsKazrBwiBY49QMnxYskjv/rDvs+1HJ
+        GWpapFm+MMo+f6MAsRvaufCflUjRGjowUwno5tUEmBTtfLyKEhEtc3zI+tf3Nqwo
+        LgSt3GhtUmNidWqifCyz32IyAyasMvCQdxgEGeWJnk4d1oH0l5NOdB06P95sDI6s
+        RGgMJ4i5+0jlMgctE4Zzy6FHRsd5PQyRMr5z/XyN5rxIwy8PTo4mEQ6Sa5hiXSm+
+        vViCOCGlQ3WAPoPoIYj+E9qpP+YcnmP/FKOJABEBAAHNlXJvb3QtQW5kcmVzcy1N
+        YWNCb29rLVByby0yLmxvY2FsICgyMDQ4IGtleXMsIGdlbmVyYXRlZCBvbiAyMDIx
+        LTAxLTE0IDA5OjI1OjMzLjI1OTMyNCArMDAwMCBHTVQgbT0rMC4wMjEyNjIyNTkp
+        IDx0ZXN0QEFuZHJlc3MtTWFjQm9vay1Qcm8tMi5sb2NhbC5jb20+wsBiBBMBCAAW
+        BQJgAA4NCRCguGkCfCvd5gIbAwIZAQAAexMIACMe/cTs+sRkYAon4m+x45kK6qdV
+        ClXw8Lu4dFoBJS8BrA44OPdDdYK49LbGQHKGG4AwWa9MS7zcWCwBv6gvtDFCSdNg
+        MqrSEm0RxLbYojiRfeizjyffA5Wbv/FgAGmOk2guYc/AvMJr1WGxTebSlvrwtyqf
+        znsl2ZMV32Oj3W1YEnHnVYbCbx6C1YURNqGnW6WCrUggnNOytyWy0JuZUapCHfxK
+        zH8uXxhIItzDzW6I5jeFTqJXZ4TA8/pCaU36ipYw0/f9BSpYIMlh1KYYbAeKV7n1
+        mT/dEI+epepLxgWEh5o4fCElgpfT6D/aHc6p+VA50cDm6HS+Q73L/is6TNrOwE0E
+        YAAODQEIAMeggGEZstjS8TgKCD9gP7RpCWIo809uVgK8qv6LMfoXM1WY0S5woHg6
+        L7MaX8OVdCTE4yx18OJPsolSHcAmqoBPNWNq7XnXzWgEKoGMilSINjwTEjsmvOUB
+        UqTCoBuHTRAbUixaMeRRh84AOyEcHHwMbs2WoH4BVaNv/1pIZhJIxSk+rI4i9teX
+        ESwhSvdSNDFecVFl7EErXB93H0Iif3rOnQJ1nNt8dyR26kdk+TNDZItAklS17jj6
+        7L1m7nKpt5awLaw+gviwzN1/JvzkZHBdWkA/9jC+RFFg3eDDfjAOYEyOPYE+5HJd
+        9l1gskJantunLk/hZvyPqHSCkXwTBNUAEQEAAcLAXwQYAQgAEwUCYAAODQkQoLhp
+        Anwr3eYCGwwAAEkCCACN4z6fBXyhupA7FB8/pasB6cMmqFEElAG1Clx/HhPWZN+3
+        47LUR34VgGD96qGnFY1Vx6nWfXHO5CByjcjwiRAUumEYII1ipY9I4H5wqR8hbG5Z
+        F4QpG2olYXb+3uEBREftvM8EfOsVdx8HJEgQmDmXrXWUm/1bgjkX4Ny6wpzoCbd5
+        /QQqnYqCx9e5ZitF61AcfV52ir+TfXypLC03Y6QbhPshiDqVAwS8tPAF3UGQk5Yr
+        LYKdZUseIpSSysja3i0MeQrsxn8hUGqEqgR+C99fIOmyJiuZY9tazb2cjKXQoFSE
+        5PWB1NDfcdFNJgv8UHJWcnhPG7l8OjYbWzyTv5mN
+        =1zFs
+        -----END PGP PUBLIC KEY BLOCK-----
+    secret:
+    - name: BC_PULL_IMAGE_REGISTRY_UNAME
+      description: user name for the container registry where the base image is located
+      aggregate: true
+      value: pratik10596
+    - name: BC_PULL_IMAGE_REGISTRY_PWD
+      description: password for the container registry where the base image is located
+      aggregate: true
+      value: pratik786786
+    - name: BC_PUSH_IMAGE_REGISTRY_UNAME
+      description: user name for the container registry where the application image
+        will be pushed
+      aggregate: true
+      value: pratik10596
+    - name: BC_PUSH_IMAGE_REGISTRY_PWD
+      description: password for the container registry where the application image
+        will be pushed
+      aggregate: true
+      value: pratik786786
+    - name: BC_ART_REG_USER
+      description: artefact registry user name
+      aggregate: true
+      value: admin
+    - name: BC_ART_REG_PWD
+      description: artefact registry user password
+      aggregate: true
+      value: nxrpsap
+    var:
+    - name: BC_APPLICATION_NAME
+      description: openshift app name
+      required: true
+      type: string
+      value: sap-equip-jvm
+    - name: BC_BUILDER_IMAGE
+      description: image builder name (buildah image)
+      required: true
+      type: string
+      value: quay.io/gatblau/art-rhctools
+    - name: BC_PUSH_IMAGE_REGISTRY
+      description: application image registry name
+      required: true
+      type: string
+      value: registry.gitlab.com
+    - name: BC_PUSH_IMAGE_REPO
+      description: application image repo name
+      required: true
+      type: string
+      value: sap7
+    - name: BC_PUSH_IMAGE_NAME
+      description: application image name
+      required: true
+      type: string
+      value: sap-equip
+    - name: BC_PUSH_IMAGE_VERSION
+      description: application image version/tag
+      required: true
+      type: string
+      value: jvm-cicd
+    - name: BC_PULL_IMAGE_REGISTRY
+      description: application runtime image registry name
+      required: true
+      type: string
+      value: registry.gitlab.com
+    - name: BC_ARTEFACT_NAME
+      description: name for the artefact that will be downloaded
+      required: true
+      type: string
+      value: artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/sap/sap-equip-jvm
+    - name: BC_PACKAGE_NAME
+      description: docker context artefact name
+      required: true
+      type: string
+      value: artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/sap/sap-equip-jvm-ctx
+    - name: BC_PUB_KEY_PATH
+      description: public key path to open the application artefacts
+      required: true
+      type: string
+      value: /keys/root_rsa_pub.pgp
+    - name: BC_FX_NAME
+      description: function name to build image
+      required: true
+      type: string
+      value: build-image
+    - name: BC_PRI_KEY_PATH
+      description: private key path to sign the application image
+      required: true
+      type: string
+      value: /keys/root_rsa_key.pgp
+    - name: BC_CRYPTO_KEY_EMAIL
+      description: email id which is used to genearte crypto signature keys
+      required: true
+      type: string
+      value: artisan@vm-sapg01.com
+    - name: BC_CRYPTO_KEY_NAME
+      description: cryptography signature secret name
+      required: true
+      type: string
+      value: sap-equip-jvm-key-cm
+    - name: APPLICATION_NAME
+      description: openshift application name
+      required: true
+      type: string
+      value: sap-equip-jvm
+    - name: PUB_KEY_PATH
+      description: public key path to open the application artefacts
+      required: true
+      type: string
+      value: /keys/root_rsa_pub.pgp
+credential:
+- user: admin
+  password: nxrpsap
+  domain: artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io

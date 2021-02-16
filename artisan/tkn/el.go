@@ -21,7 +21,7 @@ type EL struct {
 
 // merges the template and its values into the passed in writer
 func (p *EL) Merge(w io.Writer) error {
-	t, err := template.New("event-listener").Parse(eventListener)
+	t, err := template.New("event-listener").Parse(evListener)
 	if err != nil {
 		return err
 	}
@@ -29,7 +29,7 @@ func (p *EL) Merge(w io.Writer) error {
 }
 
 // event listener template definition
-const eventListener = `
+const evListener = `
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: EventListener
 metadata:

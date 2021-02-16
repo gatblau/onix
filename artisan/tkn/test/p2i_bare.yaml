@@ -1,0 +1,12 @@
+---
+name: sap-equip-jvm-image
+description: build & push the application image
+
+steps:
+  # as package and function are defined, inputs are read from package manifest
+  - name: image-builder
+    description: builds, signs and publish the container image
+    runtime: quay.io/gatblau/art-kube
+    package: artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/tekton/bc-launcher
+    function: start-build
+...

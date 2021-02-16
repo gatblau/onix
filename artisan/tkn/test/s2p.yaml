@@ -1,0 +1,24 @@
+---
+name: sap-equip-app
+description: build, package, sign and publish a Java Application
+
+steps:
+  # use case 1: call the build-app function in the source project
+  - name: build-app
+    description: compile and test the java app
+    runtime: quay.io/gatblau/art-java11
+    function: build-app
+
+  # use case 2: execute a runtime default logic (run.sh)
+  - name: scan-app
+    description: runs a code quality check scan using the sonar runtime
+    runtime: quay.io/gatblau/art-sonar
+    # defines the URI where the input definition for this runtime is located
+    # NOTE: if not specified, uses the https://raw.githubusercontent.com/gatblau/artisan/master/runtime/{RUNTIME_NAME}/input.yml
+    runtime_manifest: https://raw.githubusercontent.com/gatblau/artisan/master/runtime/art-sonar/input.yaml
+
+  # use case 3: call the publish-app function in the source project
+  - name: package-app
+    description: package and signs the app and publish it
+    runtime: quay.io/gatblau/art-java
+    function: publish-app

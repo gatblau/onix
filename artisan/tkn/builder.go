@@ -21,48 +21,85 @@ type Builder struct {
 	flow *flow.Flow
 }
 
+// creates a new tekton builder
 func NewBuilder(flow *flow.Flow) *Builder {
 	return &Builder{flow: flow}
 }
 
-func (b *Builder) Create() bytes.Buffer {
+// creates a buffer with all K8S resources required to create a tekton pipleine out of an Artisan flow
+func (b *Builder) BuildBuffer() bytes.Buffer {
+	buffer := bytes.Buffer{}
+	resx := b.BuildSlice()
+	for _, resource := range resx {
+		buffer.Write(resource)
+		buffer.WriteString("\n---\n")
+	}
+	return buffer
+}
+
+// creates a slice with all K8S resources required to create a tekton pipleine out of an Artisan flow
+func (b *Builder) BuildSlice() [][]byte {
+	result := make([][]byte, 0)
 	buf := bytes.Buffer{}
+	// writes a task
 	task := b.newTask()
 	buf.Write(ToYaml(task, "Task"))
-	buf.WriteString("\n---\n")
+	result = append(result, buf.Bytes())
+	buf.Reset()
+	// write secrets with credentials
 	secrets := b.newCredentialsSecret()
 	if secrets != nil {
 		buf.Write(ToYaml(secrets, "Secret"))
-		buf.WriteString("\n---\n")
+		result = append(result, buf.Bytes())
+		buf.Reset()
 	}
+	// write secrets with keys
 	keysSecret := b.newKeySecrets()
 	if keysSecret != nil {
 		buf.Write(ToYaml(keysSecret, "Keys Secret"))
-		buf.WriteString("\n---\n")
+		result = append(result, buf.Bytes())
+		buf.Reset()
 	}
+	// write pipeline
 	pipeline := b.newPipeline()
 	buf.Write(ToYaml(pipeline, "Pipeline"))
-	buf.WriteString("\n---\n")
+	result = append(result, buf.Bytes())
+	buf.Reset()
+
 	// if source code repository is required by the pipeline
 	if b.flow.RequiresSource() {
-		// add the following resources
+		// add the following resources:
+		// tekton pipeline resource
 		pipelineResource := b.newPipelineResource()
 		buf.Write(ToYaml(pipelineResource, "PipelineResource"))
-		buf.WriteString("\n---\n")
+		result = append(result, buf.Bytes())
+		buf.Reset()
+
+		// tekton event listener
 		eventListener := b.newEventListener()
 		buf.Write(ToYaml(eventListener, "EventListener"))
-		buf.WriteString("\n---\n")
+		result = append(result, buf.Bytes())
+		buf.Reset()
+
+		// k8s route
 		route := b.newRoute()
 		buf.Write(ToYaml(route, "Route"))
-		buf.WriteString("\n---\n")
+		result = append(result, buf.Bytes())
+		buf.Reset()
+
+		// tekton trigger binding
 		triggerBinding := b.newTriggerBinding()
 		buf.Write(ToYaml(triggerBinding, "TriggerBinding"))
-		buf.WriteString("\n---\n")
+		result = append(result, buf.Bytes())
+		buf.Reset()
+
+		// tekton trigger template
 		triggerTemplate := b.newTriggerTemplate()
 		buf.Write(ToYaml(triggerTemplate, "TriggerTemplate"))
-		buf.WriteString("\n---\n")
+		result = append(result, buf.Bytes())
+		buf.Reset()
 	}
-	return buf
+	return result
 }
 
 // task

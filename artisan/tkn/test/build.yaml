@@ -1,0 +1,173 @@
+---
+application: sap-equip-jvm
+artefact: artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/sap/sap-equip-jvm
+icon: quarkus
+type: java
+license: Apache Version 2
+git_uri: https://gitlab.com/sap7/sap-equip.git
+app_icon: quarkus
+labels:
+  author: gatblau
+  application: sap-equip
+  description: create artefacts
+  architecture: amd64
+env:
+  REGISTRY_NAME: registry.gitlab.com
+  GROUP_NAME: sap7
+  REPO_NAME: sap-equip
+  IMAGE_NAME: openjdk-11-rhel8
+
+input:
+  var:
+    - name: APPLICATION_NAME
+      description: Openshift app name
+      required: true
+      type: string
+    - name: BUILDER_IMAGE
+      description: Image builder name (buildah image)
+      required: true
+      type: string
+    - name: ARTEFACT_NAME
+      description: Name for the artefact that will be created
+      required: true
+      type: string
+    - name: BUILD_PROFILE
+      description: profile name to package & push the application
+      required: true
+      type: string
+    - name: CRYPTO_KEY_NAME
+      description: openshift secret name which is already created & contains pub & pri key
+      required: true
+      type: string
+    - name: SONAR_IMAGE
+      description: sonar docker image uri
+      required: true
+      type: string
+    - name: SONAR_URI
+      description: sonar openshift application uri
+      required: true
+      type: string
+    - name: SONAR_PROJECT_KEY
+      description: sonar project key
+      required: true
+      type: string
+    - name: SONAR_SOURCES
+      description: sonar sources path
+      required: true
+      type: string
+    - name: SONAR_BINARIES
+      description: sonar binaries path
+      required: true
+      type: string
+    - name: SAPG_URL
+      description: openshift sap gateway app url
+      required: true
+      type: string
+    - name: FX_NAME
+      description: function name to build application
+      required: true
+      type: string
+
+  secret:
+    - name: ART_REG_USER
+      description: artefact registry username
+      aggregate: true
+    - name: ART_REG_PWD
+      description: artefact registry password
+      aggregate: true
+    - name: SONAR_TOKEN
+      description: sonar token for authentication
+      aggregate: true
+    - name: SAPG_USER
+      description: sap gateway app username
+      aggregate: true
+    - name: SAPG_PASSWORD
+      description: sap gateway app password
+      aggregate: true
+    - name: SAP_EQUIP_API_USER
+      description: sap equip app username
+      aggregate: true
+    - name: SAP_EQUIP_PASSWORD
+      description: sap equip app password
+      aggregate: true
+
+  key:
+    - name: SIGNING_KEY
+      description: private PGP key required to sign the application package
+      private: true
+
+profiles:
+  - name: jvm
+    labels:
+      platform: linux
+    run:
+      - mvn -DskipTests=true clean package -Puber-jar
+    target: target/sap-equip-1.0-SNAPSHOT-runner.jar
+
+  - name: package-app
+    default: true
+    labels:
+      platform: linux
+    target: target/sap-equip-1.0-SNAPSHOT-runner.jar
+
+  - name: package-ctx
+    runtime: quay.io/gatblau/art-buildah
+    target: images/ctx/
+
+  - name: package-bc-launcher
+    runtime: quay.io/gatblau/art-kube
+    target: images/bc-launcher
+
+functions:
+  # *************************** Build App ****************************
+  # this function is required by the build app pipeline (do not remove)
+  # you can add any build cmd you required under the run section
+  - name: build-app
+    description: build application
+    export: true
+    run:
+      - mvn clean package -Puber-jar
+      - mvn test
+    input:
+      var:
+        - SAPG_URL
+        - FX_NAME
+        - APPLICATION_NAME
+        - BUILDER_IMAGE
+        - CRYPTO_KEY_NAME
+      secret:
+        - SAPG_USER
+        - SAPG_PASSWORD
+        - SAP_EQUIP_API_USER
+        - SAP_EQUIP_PASSWORD
+
+  # this function is required by the build app pipeline (do not remove)
+  - name: publish-app
+    description: publish application
+    run:
+      - art build -t ${ARTEFACT_NAME} -p ${BUILD_PROFILE} .
+      - art push -u ${ART_REG_USER}:${ART_REG_PWD} ${ARTEFACT_NAME}
+    input:
+      var:
+        - ARTEFACT_NAME
+        - BUILD_PROFILE
+        - FX_NAME
+      secret:
+        - ART_REG_USER
+        - ART_REG_PWD
+      key:
+        - SIGNING_KEY
+
+  # *************************** Other Functions ****************************
+  # These functions are not mandatory for pipeline to work but may need by developer
+  - name: image-build-push-base
+    description: build and push redhat base image
+    run:
+      - docker build -f images/rhel-openjdk/Dockerfile -t ${REGISTRY_NAME}/${GROUP_NAME}/${REPO_NAME}/${IMAGE_NAME}:latest .
+      - docker push ${REGISTRY_NAME}/${GROUP_NAME}/${REPO_NAME}/${IMAGE_NAME}:latest
+  - name: cucumber-test
+    description: Test case execution
+    run:
+      - mvn test
+...
+
