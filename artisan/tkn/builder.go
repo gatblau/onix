@@ -40,64 +40,45 @@ func (b *Builder) BuildBuffer() bytes.Buffer {
 // creates a slice with all K8S resources required to create a tekton pipleine out of an Artisan flow
 func (b *Builder) BuildSlice() [][]byte {
 	result := make([][]byte, 0)
-	buf := bytes.Buffer{}
 	// writes a task
 	task := b.newTask()
-	buf.Write(ToYaml(task, "Task"))
-	result = append(result, buf.Bytes())
-	buf.Reset()
+	result = append(result, ToYaml(task, "Task"))
 	// write secrets with credentials
 	secrets := b.newCredentialsSecret()
 	if secrets != nil {
-		buf.Write(ToYaml(secrets, "Secret"))
-		result = append(result, buf.Bytes())
-		buf.Reset()
+		result = append(result, ToYaml(secrets, "Secret"))
 	}
 	// write secrets with keys
 	keysSecret := b.newKeySecrets()
 	if keysSecret != nil {
-		buf.Write(ToYaml(keysSecret, "Keys Secret"))
-		result = append(result, buf.Bytes())
-		buf.Reset()
+		result = append(result, ToYaml(keysSecret, "Keys Secret"))
 	}
 	// write pipeline
 	pipeline := b.newPipeline()
-	buf.Write(ToYaml(pipeline, "Pipeline"))
-	result = append(result, buf.Bytes())
-	buf.Reset()
+	result = append(result, ToYaml(pipeline, "Pipeline"))
 
 	// if source code repository is required by the pipeline
 	if b.flow.RequiresSource() {
 		// add the following resources:
 		// tekton pipeline resource
 		pipelineResource := b.newPipelineResource()
-		buf.Write(ToYaml(pipelineResource, "PipelineResource"))
-		result = append(result, buf.Bytes())
-		buf.Reset()
+		result = append(result, ToYaml(pipelineResource, "PipelineResource"))
 
 		// tekton event listener
 		eventListener := b.newEventListener()
-		buf.Write(ToYaml(eventListener, "EventListener"))
-		result = append(result, buf.Bytes())
-		buf.Reset()
+		result = append(result, ToYaml(eventListener, "EventListener"))
 
 		// k8s route
 		route := b.newRoute()
-		buf.Write(ToYaml(route, "Route"))
-		result = append(result, buf.Bytes())
-		buf.Reset()
+		result = append(result, ToYaml(route, "Route"))
 
 		// tekton trigger binding
 		triggerBinding := b.newTriggerBinding()
-		buf.Write(ToYaml(triggerBinding, "TriggerBinding"))
-		result = append(result, buf.Bytes())
-		buf.Reset()
+		result = append(result, ToYaml(triggerBinding, "TriggerBinding"))
 
 		// tekton trigger template
 		triggerTemplate := b.newTriggerTemplate()
-		buf.Write(ToYaml(triggerTemplate, "TriggerTemplate"))
-		result = append(result, buf.Bytes())
-		buf.Reset()
+		result = append(result, ToYaml(triggerTemplate, "TriggerTemplate"))
 	}
 	return result
 }
