@@ -24,9 +24,10 @@ import (
 // the current directory must contain a build.yaml file where fxName is defined
 func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *core.Envar) error {
 	// if wrong UID
-	if ok, msg := wrongUserId(); !ok {
+	if isWrong, msg := wrongUserId(); isWrong {
 		// print warning
 		fmt.Println(msg)
+		os.Exit(1)
 	}
 	if env == nil {
 		env = core.NewEnVarFromSlice([]string{})
@@ -86,6 +87,7 @@ func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUs
 	if isWrong, msg := wrongUserId(); isWrong {
 		// print warning
 		fmt.Println(msg)
+		os.Exit(1)
 	}
 	// determine which container tool is available in the host
 	tool, err := containerCmd()
@@ -220,7 +222,7 @@ func wrongUserId() (bool, string) {
 		// if the user id is not the id of the runtime user
 		if os.Geteuid() != 100000000 {
 			return true, fmt.Sprintf(`
-WARNING! The UID of the running user does not match the one in the runtime.
+ERROR! The UID of the running user does not match the one in the runtime.
 This can render the bind mounts unusable and read/write errors can ocurr if the process tries to read / or write to them.
 If you intend to use this command in a linux machine ensure it is run by a user with UID/GID = 100000000.
 For example, assuming the user is called "runtime", you can:
@@ -228,7 +230,7 @@ For example, assuming the user is called "runtime", you can:
       $ useradd -u 100000000 -g 100000000 runtime
     - create a group with GID 100000000 as follows:
       $ groupadd -g 100000000 -o runtime
-	- log a the "runtime" user before running the art command
+	- log as the "runtime" user before running the art command
 	- if using docker, add the runtime user to the docker group
       $ sudo usermod -aG docker runtime
 `)
