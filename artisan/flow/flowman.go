@@ -106,7 +106,7 @@ func (m *Manager) Merge(interactive bool) error {
 				step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, interactive, false, env)
 			} else {
 				// read input from from runtime_uri
-				step.Input = data.SurveyInputFromURI(step.RuntimeManifest, interactive, false)
+				step.Input = data.SurveyInputFromURI(step.RuntimeManifest, interactive, false, env)
 			}
 		}
 	}

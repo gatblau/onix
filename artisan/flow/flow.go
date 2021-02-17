@@ -117,7 +117,7 @@ func (f *Flow) GetInputDefinition(b *data.BuildFile, env *core.Envar) *data.Inpu
 			result.Merge(i)
 		} else {
 			// surveys runtime manifest for variables
-			i := data.SurveyInputFromURI(step.RuntimeManifest, false, true)
+			i := data.SurveyInputFromURI(step.RuntimeManifest, false, true, env)
 			result.Merge(i)
 		}
 		// try augment the result with default values in the build.yaml
