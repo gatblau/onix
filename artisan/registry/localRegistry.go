@@ -22,6 +22,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -826,6 +827,11 @@ func (r *LocalRegistry) checkRegistryDir() {
 	_, err := os.Stat(r.Path())
 	// if it does not
 	if os.IsNotExist(err) {
+		if runtime.GOOS == "linux" && os.Geteuid() == 0 {
+			core.Msg("WARNING: if the root user creates the local registry then runc commands will fail\n" +
+				"as the runtime user will not be able to access its content when it is bind mounted\n" +
+				"ensure the local registry path is not owned by the root user")
+		}
 		err = os.Mkdir(r.Path(), os.ModePerm)
 		i18n.Err(err, i18n.ERR_CANT_CREATE_REGISTRY_FOLDER, r.Path(), core.HomeDir())
 	}

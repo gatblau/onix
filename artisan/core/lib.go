@@ -27,9 +27,39 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 )
+
+// check the user id is correct for bind mounts
+func WrongUserId() (bool, string) {
+	// if running in linux docker does not run in a VM and uid and gid of bind mounts must
+	// match the one in the runtime
+	if runtime.GOOS == "linux" {
+		// if the user id is not the id of the runtime user
+		if os.Geteuid() != 100000000 {
+			return true, fmt.Sprintf(`
+ERROR! The Id of the running user does not match the one in the runtime.
+This can render the bind mounts unusable and read/write errors will ocurr if the process tries to read or write to them.
+If you intend to use this command in a linux machine ensure it is run by a user with UID/GID = 100000000.
+The name of the user is not important providinh the UID is correct.
+For example, assuming the user is called "runtime", you can:
+1) create a group with GID 100000000 as follows:
+  $ groupadd -g 100000000 -o runtime	
+2) create a user with UID 100000000 as follows:
+  $ useradd -u 100000000 -g 100000000 runtime
+3) if using docker, add the runtime user to the docker group
+  $ sudo usermod -aG docker runtime
+4) exit as root
+  $ exit
+5) log as the "runtime" user before running the art command
+  $ su runtime
+`)
+		}
+	}
+	return false, ""
+}
 
 // converts the path to absolute path
 func ToAbs(path string) string {
@@ -360,4 +390,13 @@ func QualifyRuntime(runtime string) string {
 		return fmt.Sprintf("quay.io/artisan/%s", runtime)
 	}
 	return runtime
+}
+
+func MapKeyExist(m map[string]string, key string) bool {
+	for k, _ := range m {
+		if k == key {
+			return true
+		}
+	}
+	return false
 }
