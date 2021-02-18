@@ -23,11 +23,19 @@ import (
 // launch a container and mount the current directory on the host machine into the container
 // the current directory must contain a build.yaml file where fxName is defined
 func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *core.Envar) error {
-	// if wrong UID
-	if isWrong, msg := wrongUserId(); isWrong {
+	// if the OS is linux and the user id is not 100,000,000, it cannot continue
+	if isWrong, msg := core.WrongUserId(); isWrong {
 		// print warning
 		fmt.Println(msg)
 		os.Exit(1)
+	}
+	// check the local registry path has not been created by the root user othewise the runtime will error
+	registryPath := core.RegistryPath()
+	if runtime.GOOS == "linux" && strings.HasPrefix(registryPath, "//") {
+		// in linux if the user is not root but the local registry folder is owned by the root user, then
+		// the registry path in a runtime will start with two consecutive forward slashes
+		core.RaiseErr("cannot continue, the local registry folder is owned by root\n" +
+			"ensure it is owned by UID=100000000 for the runtime to work")
 	}
 	if env == nil {
 		env = core.NewEnVarFromSlice([]string{})
@@ -83,8 +91,8 @@ func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *core.En
 
 // launch a container and execute a package function
 func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUser, artRegistryPwd string, env *core.Envar) error {
-	// if wrong UID
-	if isWrong, msg := wrongUserId(); isWrong {
+	// if the OS is linux and the user id is not 100,000,000, it cannot continue
+	if isWrong, msg := core.WrongUserId(); isWrong {
 		// print warning
 		fmt.Println(msg)
 		os.Exit(1)
@@ -212,31 +220,6 @@ func removeContainer(containerName string) {
 		core.Msg(string(out))
 		core.CheckErr(err, "cannot remove temporary container %s", containerName)
 	}
-}
-
-// check the user id is correct for bind mounts
-func wrongUserId() (bool, string) {
-	// if running in linux docker does not run in a VM and uid and gid of bind mounts must
-	// match the one in the runtime
-	if runtime.GOOS == "linux" {
-		// if the user id is not the id of the runtime user
-		if os.Geteuid() != 100000000 {
-			return true, fmt.Sprintf(`
-ERROR! The UID of the running user does not match the one in the runtime.
-This can render the bind mounts unusable and read/write errors can ocurr if the process tries to read / or write to them.
-If you intend to use this command in a linux machine ensure it is run by a user with UID/GID = 100000000.
-For example, assuming the user is called "runtime", you can:
-	- create a user with UID 100000000 as follows:
-      $ useradd -u 100000000 -g 100000000 runtime
-    - create a group with GID 100000000 as follows:
-      $ groupadd -g 100000000 -o runtime
-	- log as the "runtime" user before running the art command
-	- if using docker, add the runtime user to the docker group
-      $ sudo usermod -aG docker runtime
-`)
-		}
-	}
-	return false, ""
 }
 
 // check the the specified function is in the manifest
