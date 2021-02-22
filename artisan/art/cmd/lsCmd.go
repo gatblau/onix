@@ -22,7 +22,7 @@ func NewListCmd() *ListCmd {
 	c := &ListCmd{
 		cmd: &cobra.Command{
 			Use:   "ls",
-			Short: "list artefacts",
+			Short: "list local packages",
 			Long:  ``,
 		},
 	}
