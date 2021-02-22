@@ -39,13 +39,18 @@ func (f *Flow) StepByFx(fxName string) *Step {
 	return nil
 }
 
-func (f *Flow) RequiresSource() bool {
+func (f *Flow) RequiresGitSource() bool {
+	var requiresSource, usePackageSource bool
 	for _, step := range f.Steps {
 		if len(step.Package) == 0 && len(step.Function) > 0 {
-			return true
+			requiresSource = true
+		}
+		if len(step.Package) > 0 && len(step.PackageSource) > 0 {
+			usePackageSource = true
 		}
 	}
-	return false
+	// git source is required if it is not using a package source
+	return requiresSource && !usePackageSource
 }
 
 func (f *Flow) RequiresKey() bool {
@@ -73,6 +78,7 @@ type Step struct {
 	RuntimeManifest string      `yaml:"runtime_manifest,omitempty"`
 	Function        string      `yaml:"function,omitempty"`
 	Package         string      `yaml:"package,omitempty"`
+	PackageSource   string      `yaml:"source,omitempty"`
 	Input           *data.Input `yaml:"input,omitempty"`
 }
 

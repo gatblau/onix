@@ -247,7 +247,7 @@ func NormInputName(name string) string {
 	return result
 }
 
-func SurveyInputFromURI(uri string, prompt, defOnly bool) *Input {
+func SurveyInputFromURI(uri string, prompt, defOnly bool, env *core.Envar) *Input {
 	response, err := core.Get(uri, "", "")
 	core.CheckErr(err, "cannot fetch runtime manifest")
 	body, err := ioutil.ReadAll(response.Body)
@@ -255,7 +255,7 @@ func SurveyInputFromURI(uri string, prompt, defOnly bool) *Input {
 	// need a wrapper object for the input for the unmarshaller to work so using buildfile
 	var buildFile = new(BuildFile)
 	err = yaml.Unmarshal(body, buildFile)
-	return evalInput(buildFile.Input, prompt, defOnly, core.NewEnVarFromSlice([]string{}))
+	return evalInput(buildFile.Input, prompt, defOnly, env)
 }
 
 func evalInput(input *Input, interactive, defOnly bool, env *core.Envar) *Input {

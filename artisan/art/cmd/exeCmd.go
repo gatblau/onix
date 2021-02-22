@@ -24,6 +24,7 @@ type ExeCmd struct {
 	path            string
 	pubPath         string
 	envFilename     string
+	preserveFiles   *bool
 }
 
 func NewExeCmd() *ExeCmd {
@@ -40,6 +41,8 @@ func NewExeCmd() *ExeCmd {
 	c.ignoreSignature = c.cmd.Flags().BoolP("ignore-sig", "s", false, "-s or --ignore-sig to ignore signature verification")
 	c.cmd.Flags().StringVarP(&c.pubPath, "pub", "p", "", "--pub=/path/to/public/key or -p=/path/to/public/key - public PGP key to verify package source")
 	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env")
+	c.cmd.Flags().StringVar(&c.path, "path", "", "--path=/path/to/package/files - specify the location where the Artisan package must be open. If not specified, Artisan opens the package in a temporary folder under a randomly generated name.")
+	c.preserveFiles = c.cmd.Flags().BoolP("preserve-files", "f", false, "use -f to preserve the open package files")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -59,5 +62,5 @@ func (r *ExeCmd) Run(cmd *cobra.Command, args []string) {
 	// load environment variables from file, if file not specified then try loading .env
 	core.LoadEnvFromFile(r.envFilename)
 	// run the function on the open package
-	builder.Execute(name, function, r.credentials, *r.noTLS, r.pubPath, *r.ignoreSignature, *r.interactive)
+	builder.Execute(name, function, r.credentials, *r.noTLS, r.pubPath, *r.ignoreSignature, *r.interactive, r.path, *r.preserveFiles)
 }

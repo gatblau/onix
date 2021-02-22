@@ -595,13 +595,19 @@ func (b *Builder) getBuildEnv() map[string]string {
 }
 
 // execute an exported function in a package
-func (b *Builder) Execute(name *core.PackageName, function string, credentials string, noTLS bool, certPath string, ignoreSignature bool, interactive bool) {
+func (b *Builder) Execute(name *core.PackageName, function string, credentials string, noTLS bool, certPath string, ignoreSignature bool, interactive bool, path string, preserveFiles bool) {
 	// get a local registry handle
 	local := registry.NewLocalRegistry()
 	// check the run path exist
 	core.RunPathExists()
-	// create a temp random path to open the package
-	var path = filepath.Join(core.RunPath(), core.RandomString(10))
+	// if no path is specified
+	if len(path) == 0 {
+		// create a temp random path to open the package
+		path = filepath.Join(core.RunPath(), core.RandomString(10))
+	} else {
+		// otherwise make sure the path is absolute
+		path = core.ToAbs(path)
+	}
 	// open the package on the temp random path
 	local.Open(
 		name,
@@ -618,9 +624,12 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 	// check the function is exported
 	if isExported(m, function) {
 		// run the function on the open package
-		b.Run(function, filepath.Join(path, m.Target), interactive)
-		// remove the package files
-		os.RemoveAll(path)
+		b.Run(function, path, interactive)
+		// if there is no instruction to preserve the open files
+		if !preserveFiles {
+			// remove the package files
+			os.RemoveAll(path)
+		}
 	} else {
 		core.RaiseErr("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile", function)
 	}

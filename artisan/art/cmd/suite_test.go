@@ -29,7 +29,7 @@ func TestMerge(t *testing.T) {
 	// gets a tekton transpiler
 	builder := tkn.NewBuilder(flow.Flow)
 	// transpile the flow
-	buf := builder.Create()
+	buf := builder.BuildBuffer()
 	// write to file
 	err = ioutil.WriteFile(tknPath(flowPath), buf.Bytes(), os.ModePerm)
 	core.CheckErr(err, "cannot write tekton file")
@@ -51,7 +51,7 @@ func TestEnv(t *testing.T) {
 	if len(buildFilePath) > 0 {
 		b, err = data.LoadBuildFile(path.Join(buildFilePath, "build.yaml"))
 	}
-	input := f.GetInputDefinition(b)
+	input := f.GetInputDefinition(b, core.NewEnVarFromSlice([]string{}))
 
 	switch strings.ToLower("env") {
 	case "env":

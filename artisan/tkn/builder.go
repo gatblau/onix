@@ -58,7 +58,7 @@ func (b *Builder) BuildSlice() [][]byte {
 	result = append(result, ToYaml(pipeline, "Pipeline"))
 
 	// if source code repository is required by the pipeline
-	if b.flow.RequiresSource() {
+	if b.flow.RequiresGitSource() {
 		// add the following resources:
 		// tekton pipeline resource
 		pipelineResource := b.newPipelineResource()
@@ -177,6 +177,12 @@ func (b *Builder) addRuntimeInterfaceVars(step *flow.Step, env []*Env) []*Env {
 			Name:  "PACKAGE_NAME",
 			Value: step.Package,
 		})
+		if len(step.PackageSource) > 0 {
+			env = append(env, &Env{
+				Name:  "PACKAGE_SOURCE",
+				Value: step.PackageSource,
+			})
+		}
 		name, _ := core.ParseName(step.Package)
 		env = append(env, &Env{
 			Name: "ART_REG_USER",
@@ -201,7 +207,7 @@ func (b *Builder) addRuntimeInterfaceVars(step *flow.Step, env []*Env) []*Env {
 }
 
 func (b *Builder) newInputs() *Inputs {
-	if b.flow.RequiresSource() {
+	if b.flow.RequiresGitSource() {
 		return &Inputs{
 			Resources: []*Resources{
 				{
@@ -302,7 +308,7 @@ func (b *Builder) newPipeline() *Pipeline {
 		inputs    []*Inputs
 		resources []*Resources
 	)
-	if b.flow.RequiresSource() {
+	if b.flow.RequiresGitSource() {
 		inputs = []*Inputs{
 			{
 				Name:     "source",
