@@ -19,9 +19,18 @@ type RootCmd struct {
 func NewRootCmd() *RootCmd {
 	c := &RootCmd{
 		Cmd: &cobra.Command{
-			Use:     "art",
-			Short:   "build and package applications as if they were container images",
-			Long:    ``,
+			Use:   "art",
+			Short: "Artisan: the Onix DevOps CLI",
+			Long: `
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+|         __    ___  _____  _   __    __    _          |
+|        / /\  | |_)  | |  | | ( ('  / /\  | |\ |      |
+|       /_/--\ |_| \  |_|  |_| _)_) /_/--\ |_| \|      |
+|                                                      |
+|          the DevOps command line interface           |
+|   package any logic and execute it in simple flows   |
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+`,
 			Version: core.Version,
 		},
 	}
