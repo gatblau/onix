@@ -7,7 +7,10 @@
 */
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/gatblau/onix/artisan/core"
+	"github.com/spf13/cobra"
+)
 
 type RootCmd struct {
 	Cmd *cobra.Command
@@ -16,11 +19,13 @@ type RootCmd struct {
 func NewRootCmd() *RootCmd {
 	c := &RootCmd{
 		Cmd: &cobra.Command{
-			Use:   "art",
-			Short: "build and package applications as if they were container images",
-			Long:  ``,
+			Use:     "art",
+			Short:   "build and package applications as if they were container images",
+			Long:    ``,
+			Version: core.Version,
 		},
 	}
+	c.Cmd.SetVersionTemplate("Onix Artisan version: {{.Version}}\n")
 	cobra.OnInitialize(c.initConfig)
 	return c
 }
