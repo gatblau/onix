@@ -13,9 +13,12 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"io"
+	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -73,6 +76,88 @@ func CopyFile(src, dst string) (err error) {
 	}
 
 	return
+}
+
+// CopyDir recursively copies a directory tree, attempting to preserve permissions.
+// Source directory must exist
+// Symlinks are ignored and skipped.
+func CopyDir(src string, dst string) (err error) {
+	src = filepath.Clean(src)
+	dst = filepath.Clean(dst)
+
+	si, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if !si.IsDir() {
+		return fmt.Errorf("source is not a directory")
+	}
+	_, err = os.Stat(dst)
+	// if the destination does not exist
+	if os.IsNotExist(err) {
+		// create the destination folder
+		err = os.MkdirAll(dst, si.Mode())
+		if err != nil {
+			return
+		}
+	}
+	entries, err := ioutil.ReadDir(src)
+	if err != nil {
+		return
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+
+		if entry.IsDir() {
+			err = CopyDir(srcPath, dstPath)
+			if err != nil {
+				return
+			}
+		} else {
+			// Skip symlinks.
+			if entry.Mode()&os.ModeSymlink != 0 {
+				continue
+			}
+
+			err = CopyFile(srcPath, dstPath)
+			if err != nil {
+				return
+			}
+		}
+	}
+
+	return
+}
+
+func MoveFolderContent(srcFolder, dstFolder string) error {
+	srcFolder = core.ToAbs(srcFolder)
+	dstFolder = core.ToAbs(dstFolder)
+	file, err := os.Open(srcFolder)
+	if err != nil {
+		log.Fatalf("failed opening directory: %s", err)
+	}
+	defer file.Close()
+
+	files, err := file.Readdir(-1)
+	if err != nil {
+		return err
+	}
+	for _, info := range files {
+		if info.IsDir() {
+			err = CopyDir(path.Join(srcFolder, info.Name()), path.Join(dstFolder, info.Name()))
+			if err != nil {
+				return err
+			}
+		} else {
+			err = CopyFile(path.Join(srcFolder, info.Name()), path.Join(dstFolder, info.Name()))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return os.RemoveAll(srcFolder)
 }
 
 // Upload content to an http endpoint

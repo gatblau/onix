@@ -70,7 +70,7 @@ func (m *Manager) Merge(interactive bool) error {
 	core.LoadEnvFromFile(m.envFile)
 	env := core.NewEnVarFromSlice(os.Environ())
 	local := registry.NewLocalRegistry()
-	if m.Flow.RequiresSource() {
+	if m.Flow.RequiresGitSource() {
 		if m.buildFile == nil {
 			return fmt.Errorf("a build.yaml file is required to fill the flow")
 		}
