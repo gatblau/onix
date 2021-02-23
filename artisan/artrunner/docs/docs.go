@@ -55,6 +55,9 @@ var doc = `{
         "/flow": {
             "post": {
                 "description": "uploads an Artisan flow and triggers the flow execution",
+                "produces": [
+                    "text/plain"
+                ],
                 "tags": [
                     "Flows"
                 ],
@@ -69,7 +72,21 @@ var doc = `{
                             "$ref": "#/definitions/flow.Flow"
                         }
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
             }
         }
     },
@@ -219,6 +236,9 @@ var doc = `{
                     "type": "string"
                 },
                 "package": {
+                    "type": "string"
+                },
+                "packageSource": {
                     "type": "string"
                 },
                 "runtime": {

@@ -17,6 +17,7 @@ package main
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
 import (
+	"context"
 	"fmt"
 	_ "github.com/gatblau/onix/artisan/artrunner/docs"
 	"github.com/gatblau/onix/artisan/flow"
@@ -30,7 +31,10 @@ import (
 // @Description uploads an Artisan flow and triggers the flow execution
 // @Tags Flows
 // @Router /flow [post]
+// @Produce plain
 // @Param flow body flow.Flow true "the artisan flow to run"
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
 func runHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -42,5 +46,24 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 	// get a tekton builder
 	builder := tkn.NewBuilder(f)
 
-	_ = builder.BuildBuffer()
+	resources := builder.BuildSlice()
+
+	ctx := context.Background()
+	k8s, err := NewK8S()
+	if err != nil {
+		writeError(w, err, 500, "cannot create kubernetes client")
+		return
+	}
+	for _, resource := range resources {
+		err = k8s.Apply(string(resource), ctx)
+		writeError(w, err, 500, "cannot apply kubernetes resources")
+		return
+	}
+}
+
+func writeError(w http.ResponseWriter, err error, errorCode int, message string) {
+	m := fmt.Sprintf("%s: %s\n", message, err)
+	fmt.Printf(m)
+	w.WriteHeader(errorCode)
+	w.Write([]byte(fmt.Sprintf("{ \"error\":  \"%s\" }", m)))
 }
