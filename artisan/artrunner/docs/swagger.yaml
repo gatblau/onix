@@ -100,6 +100,8 @@ definitions:
         type: string
       package:
         type: string
+      packageSource:
+        type: string
       runtime:
         type: string
       runtimeManifest:
@@ -143,6 +145,17 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/flow.Flow'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Executes an Artisan flow
       tags:
       - Flows
