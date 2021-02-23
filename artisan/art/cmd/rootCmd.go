@@ -27,7 +27,7 @@ func NewRootCmd() *RootCmd {
 |        / /\  | |_)  | |  | | ( ('  / /\  | |\ |       |
 |       /_/--\ |_| \  |_|  |_| _)_) /_/--\ |_| \|       |
 |         the Onix DevOps command line interface        |
-| package automation scirpts and run them in containers |
+| package automation scripts and run them in containers |
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 `,
 			Version: core.Version,
