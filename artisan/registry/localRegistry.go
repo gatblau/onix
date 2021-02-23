@@ -480,9 +480,14 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 		info, _ := os.Stat(targetPath)
 		// only get rid of the target folder if there is one
 		if info.IsDir() {
-			// move content of the target folder and remove
-			err = MoveFolderContent(path.Join(targetPath, seal.Manifest.Target), targetPath)
-			core.CheckErr(err, "cannot move target folder content")
+			srcPath := path.Join(targetPath, seal.Manifest.Target)
+			info, _ = os.Stat(srcPath)
+			// if the source path is a folder
+			if info.IsDir() {
+				// unwrap the folder
+				err = MoveFolderContent(srcPath, targetPath)
+				core.CheckErr(err, "cannot move target folder content")
+			}
 		}
 	}
 }
