@@ -22,14 +22,13 @@ func NewRootCmd() *RootCmd {
 			Use:   "art",
 			Short: "Artisan: the Onix DevOps CLI",
 			Long: `
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-|         __    ___  _____  _   __    __    _          |
-|        / /\  | |_)  | |  | | ( ('  / /\  | |\ |      |
-|       /_/--\ |_| \  |_|  |_| _)_) /_/--\ |_| \|      |
-|                                                      |
-|          the DevOps command line interface           |
-|   package any logic and execute it in simple flows   |
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+|         __    ___  _____  _   __    __    _           |
+|        / /\  | |_)  | |  | | ( ('  / /\  | |\ |       |
+|       /_/--\ |_| \  |_|  |_| _)_) /_/--\ |_| \|       |
+|         the Onix DevOps command line interface        |
+| package automation scirpts and run them in containers |
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 `,
 			Version: core.Version,
 		},
