@@ -16,6 +16,7 @@ type RootCmd struct {
 	Cmd *cobra.Command
 }
 
+// https://textkool.com/en/ascii-art-generator?hl=default&vl=default&font=Broadway%20KB&text=artisan%0A
 func NewRootCmd() *RootCmd {
 	c := &RootCmd{
 		Cmd: &cobra.Command{
