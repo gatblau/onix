@@ -8,6 +8,7 @@
 package flow
 
 import (
+	"encoding/json"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/i18n"
@@ -138,4 +139,12 @@ func (f *Flow) GetInputDefinition(b *data.BuildFile, env *core.Envar) *data.Inpu
 		}
 	}
 	return result
+}
+
+func (f *Flow) JsonBytes() ([]byte, error) {
+	data, err := json.Marshal(f)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

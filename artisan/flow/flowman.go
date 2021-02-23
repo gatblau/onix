@@ -8,12 +8,14 @@
 package flow
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -153,16 +155,6 @@ func NewFlow(flowBytes []byte) (*Flow, error) {
 	return flow, nil
 }
 
-func (m *Manager) validate() error {
-	// check that the steps have the required attributes set
-	for _, step := range m.Flow.Steps {
-		if len(step.Runtime) == 0 {
-			return fmt.Errorf("invalid step %s, runtime is missing", step.Name)
-		}
-	}
-	return nil
-}
-
 func (m *Manager) Save() error {
 	y, err := yaml.Marshal(m.Flow)
 	if err != nil {
@@ -171,6 +163,46 @@ func (m *Manager) Save() error {
 	err = ioutil.WriteFile(m.path(), y, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("cannot save merged flow: %s", err)
+	}
+	return nil
+}
+
+// merge and send a flow to a runner
+func (m *Manager) Run(runnerName, creds string, interactive, noTLS bool) error {
+	err := m.Merge(interactive)
+	if err != nil {
+		return err
+	}
+	body, err := m.Flow.JsonBytes()
+	if err != nil {
+		return err
+	}
+	token := core.BasicToken(core.UserPwd(creds))
+	var scheme = "https"
+	if noTLS {
+		scheme = "http"
+	}
+	requestURI := fmt.Sprintf("%s://%s/flow", scheme, runnerName)
+	request, err := http.NewRequest("POST", requestURI, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("Authorization", token)
+	response, err := http.DefaultClient.Do(request)
+	if response.StatusCode > 300 {
+		bodyBytes, _ := ioutil.ReadAll(response.Body)
+		return fmt.Errorf("%s, %s", response.Status, string(bodyBytes))
+	}
+	return nil
+}
+
+func (m *Manager) validate() error {
+	// check that the steps have the required attributes set
+	for _, step := range m.Flow.Steps {
+		if len(step.Runtime) == 0 {
+			return fmt.Errorf("invalid step %s, runtime is missing", step.Name)
+		}
 	}
 	return nil
 }

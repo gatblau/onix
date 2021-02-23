@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	VarMetricsEnabled = "OXAR_METRICS_ENABLED"
-	VarSwaggerEnabled = "OXAR_SWAGGER_ENABLED"
-	VarHTTPPort       = "OXAR_HTTP_PORT"
-	VarHTTPUname      = "OXAR_HTTP_UNAME"
-	VarHTTPPwd        = "OXAR_HTTP_PWD"
+	VarMetricsEnabled = "OX_METRICS_ENABLED"
+	VarSwaggerEnabled = "OX_SWAGGER_ENABLED"
+	VarHTTPPort       = "OX_HTTP_PORT"
+	VarHTTPUname      = "OX_HTTP_UNAME"
+	VarHTTPPwd        = "OX_HTTP_PWD"
 )
 
 type ServerConfig struct{}
@@ -33,7 +33,7 @@ func (c *ServerConfig) SwaggerEnabled() bool {
 }
 
 func (c *ServerConfig) HttpPort() string {
-	return c.getString(VarHTTPPort, "8088")
+	return c.getString(VarHTTPPort, "8080")
 }
 
 func (c *ServerConfig) HttpUser() string {
