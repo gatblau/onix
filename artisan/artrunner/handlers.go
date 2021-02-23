@@ -21,7 +21,6 @@ import (
 	"fmt"
 	_ "github.com/gatblau/onix/artisan/artrunner/docs"
 	"github.com/gatblau/onix/artisan/flow"
-	"github.com/gatblau/onix/artisan/server"
 	"github.com/gatblau/onix/artisan/tkn"
 	"io/ioutil"
 	"net/http"
@@ -38,7 +37,7 @@ import (
 func runHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		server.WriteError(w, fmt.Errorf("cannot read request payload: %s", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("cannot read request payload: %s", err), http.StatusInternalServerError)
 		return
 	}
 	// unmarshal the flow bytes
@@ -51,19 +50,12 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	k8s, err := NewK8S()
 	if err != nil {
-		writeError(w, err, 500, "cannot create kubernetes client")
+		http.Error(w, fmt.Sprintf("cannot create kubernetes client: %s", err), http.StatusInternalServerError)
 		return
 	}
 	for _, resource := range resources {
 		err = k8s.Apply(string(resource), ctx)
-		writeError(w, err, 500, "cannot apply kubernetes resources")
+		http.Error(w, fmt.Sprintf("cannot apply kubernetes resources: %s", err), http.StatusInternalServerError)
 		return
 	}
-}
-
-func writeError(w http.ResponseWriter, err error, errorCode int, message string) {
-	m := fmt.Sprintf("%s: %s\n", message, err)
-	fmt.Printf(m)
-	w.WriteHeader(errorCode)
-	w.Write([]byte(fmt.Sprintf("{ \"error\":  \"%s\" }", m)))
 }

@@ -62,7 +62,8 @@ func InitialiseFlowCommand() *FlowCmd {
 	flowCmd := NewFlowCmd()
 	flowMergeCmd := NewFlowMergeCmd()
 	flowEnvCmd := NewFlowEnvCmd()
-	flowCmd.cmd.AddCommand(flowMergeCmd.cmd, flowEnvCmd.cmd)
+	flowRunCmd := NewFlowRunCmd()
+	flowCmd.cmd.AddCommand(flowMergeCmd.cmd, flowEnvCmd.cmd, flowRunCmd.cmd)
 	return flowCmd
 }
 
