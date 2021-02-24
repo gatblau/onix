@@ -72,8 +72,8 @@ func (r *Api) UploadArtefact(name *core.PackageName, artefactRef string, zipfile
 	err = writer.Close()
 	core.CheckErr(err, "cannot close writer")
 	// create and start bar
-	bar := pb.New(b.Len())
-	bar.Start()
+	bar := pb.Simple.New(b.Len()).Start()
+	bar.Set("prefix", "package > ")
 	// create proxy reader
 	reader := bar.NewProxyReader(&b)
 	// Now that you have a form, you can submit it to your handler.
