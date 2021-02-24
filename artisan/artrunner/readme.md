@@ -16,4 +16,4 @@ The runner can be configured with the following variables:
 
 ## Image location
 
-quay.io/gtablau/artisan-runner
+quay.io/gatblau/artisan-runner

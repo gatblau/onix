@@ -8,6 +8,7 @@
 package data
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/gatblau/onix/artisan/core"
@@ -337,6 +338,28 @@ func EvalKey(inputKey *Key, prompt bool, env *core.Envar) {
 	} else {
 		core.RaiseErr("%s is required", inputKey.Name)
 	}
+}
+
+func (i *Input) ToEnvFile() []byte {
+	buf := &bytes.Buffer{}
+	for _, v := range i.Var {
+		buf.WriteString(fmt.Sprintf("# %s\n", v.Description))
+		if len(v.Default) > 0 {
+			buf.WriteString(fmt.Sprintf("%s=%s\n", v.Name, v.Default))
+		} else {
+			buf.WriteString(fmt.Sprintf("%s=\n", v.Name))
+		}
+	}
+	for _, s := range i.Secret {
+		buf.WriteString(fmt.Sprintf("# %s\n", s.Description))
+		buf.WriteString(fmt.Sprintf("%s=\n", s.Name))
+	}
+	for _, k := range i.Key {
+		buf.WriteString(fmt.Sprint("# the path of the key in the artisan registry as described below:\n"))
+		buf.WriteString(fmt.Sprintf("# %s\n", k.Description))
+		buf.WriteString(fmt.Sprintf("%s=\n", k.Name))
+	}
+	return buf.Bytes()
 }
 
 // extract any Input data from the source that have a binding
