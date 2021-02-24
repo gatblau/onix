@@ -13,7 +13,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/cheggaaa/pb"
+	"github.com/cheggaaa/pb/v3"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/i18n"
 	"io"
@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -71,7 +72,7 @@ func (r *Api) UploadArtefact(name *core.PackageName, artefactRef string, zipfile
 	err = writer.Close()
 	core.CheckErr(err, "cannot close writer")
 	// create and start bar
-	bar := pb.New(b.Len()).SetUnits(pb.U_BYTES)
+	bar := pb.New(b.Len())
 	bar.Start()
 	// create proxy reader
 	reader := bar.NewProxyReader(&b)
@@ -214,6 +215,24 @@ func (r *Api) Download(group, name, filename, user, pwd string) (string, error) 
 		return "", err
 	}
 	defer res.Body.Close()
+
+	// download progress bar
+	// retireve the content lenght to download from the http reader
+	limit, err := strconv.ParseInt(res.Header.Get("Content-Length"), 0, 64)
+	if err != nil {
+		return "", err
+	}
+	// start simple new progress bar
+	bar := pb.Simple.Start64(limit)
+	// adjust the prefix in the progress bar according to the file being downloaded
+	if filepath.Ext(filename) == ".json" {
+		bar.Set("prefix", "seal    > ")
+	} else {
+		bar.Set("prefix", "package > ")
+	}
+	// create proxy reader for the progress bar
+	reader := bar.NewProxyReader(res.Body)
+
 	switch res.StatusCode {
 	case http.StatusNotFound:
 		return "", fmt.Errorf("file '%s' not found in registry", filename)
@@ -223,7 +242,7 @@ func (r *Api) Download(group, name, filename, user, pwd string) (string, error) 
 	// write response to a temp file
 	var b bytes.Buffer
 	out := bufio.NewWriter(&b)
-	_, err = io.Copy(out, res.Body)
+	_, err = io.Copy(out, reader)
 	if err != nil {
 		return "", err
 	}
@@ -237,6 +256,7 @@ func (r *Api) Download(group, name, filename, user, pwd string) (string, error) 
 	}
 	_, err = file.Write(b.Bytes())
 	file.Close()
+	bar.Finish()
 	return file.Name(), err
 }
 

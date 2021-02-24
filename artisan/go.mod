@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/AlecAivazis/survey/v2 v2.2.5
 	github.com/cheggaaa/pb v1.0.29
+	github.com/cheggaaa/pb/v3 v3.0.6 // indirect
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/google/go-cmp v0.5.2 // indirect
 	github.com/google/uuid v1.1.2
