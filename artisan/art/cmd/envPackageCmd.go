@@ -32,9 +32,11 @@ type EnvPackageCmd struct {
 func NewEnvPackageCmd() *EnvPackageCmd {
 	c := &EnvPackageCmd{
 		cmd: &cobra.Command{
-			Use:   "package [flags] [package name] [function-name]",
-			Short: "return the variables required by a given package to run",
-			Long:  `return the variables required by a given package to run`,
+			Use: "package [flags] [package name] [function-name (optional)]",
+			Short: "return the variables required by a given package to run\n " +
+				"if a function name is not specified then variables for all functions are retrieved",
+			Long: "return the variables required by a given package to run\n " +
+				"if a function name is not specified then variables for all functions are retrieved",
 		},
 	}
 	c.cmd.Flags().StringVarP(&c.buildFilePath, "build-file-path", "b", "", "--build-file-path=. or -b=.; the path to an artisan build.yaml file from which to pick required inputs")
@@ -46,14 +48,24 @@ func NewEnvPackageCmd() *EnvPackageCmd {
 
 func (c *EnvPackageCmd) Run(cmd *cobra.Command, args []string) {
 	var input *data.Input
-	if len(args) == 2 {
+	if len(args) > 0 && len(args) < 3 {
 		name, err := core.ParseName(args[0])
 		core.CheckErr(err, "invalid package name: %s", name)
-		fxName := args[1]
 		local := registry.NewLocalRegistry()
 		manifest := local.GetManifest(name)
-		fx := manifest.Fx(fxName)
-		input = fx.Input
+		if len(args) == 2 {
+			fxName := args[1]
+			fx := manifest.Fx(fxName)
+			input = fx.Input
+		} else {
+			for i, function := range manifest.Functions {
+				if i == 0 {
+					input = function.Input
+				} else {
+					input.Merge(function.Input)
+				}
+			}
+		}
 	} else if len(args) < 2 {
 		i18n.Raise(i18n.ERR_INSUFFICIENT_ARGS)
 	} else if len(args) > 2 {
