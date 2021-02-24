@@ -8,7 +8,6 @@
 package cmd
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
@@ -24,7 +23,7 @@ import (
 )
 
 // list local artefacts
-type FlowEnvCmd struct {
+type EnvFlowCmd struct {
 	cmd           *cobra.Command
 	buildFilePath string
 	stdout        *bool
@@ -32,10 +31,10 @@ type FlowEnvCmd struct {
 	flowPath      string
 }
 
-func NewFlowEnvCmd() *FlowEnvCmd {
-	c := &FlowEnvCmd{
+func NewEnvFlowCmd() *EnvFlowCmd {
+	c := &EnvFlowCmd{
 		cmd: &cobra.Command{
-			Use:   "env [flags] [/path/to/flow_bare.yaml]",
+			Use:   "flow [flags] [/path/to/flow_bare.yaml]",
 			Short: "return the variables required by a given flow and can include a build.yaml",
 			Long:  `return the variables required by a given flow and can include a build.yaml`,
 		},
@@ -47,7 +46,7 @@ func NewFlowEnvCmd() *FlowEnvCmd {
 	return c
 }
 
-func (c *FlowEnvCmd) Run(cmd *cobra.Command, args []string) {
+func (c *EnvFlowCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) == 1 {
 		c.flowPath = core.ToAbsPath(args[0])
 	} else if len(args) < 1 {
@@ -71,7 +70,7 @@ func (c *FlowEnvCmd) Run(cmd *cobra.Command, args []string) {
 	switch strings.ToLower(c.out) {
 	// if the requested format is env
 	case "env":
-		output = toEnv(input)
+		output = input.ToEnvFile()
 	case "yaml":
 		output, err = yaml.Marshal(input)
 		core.CheckErr(err, "cannot marshal input")
@@ -99,26 +98,4 @@ func (c *FlowEnvCmd) Run(cmd *cobra.Command, args []string) {
 		err := ioutil.WriteFile(path.Join(dir, filename), output, os.ModePerm)
 		core.CheckErr(err, "cannot write '%s' file", filename)
 	}
-}
-
-func toEnv(i *data.Input) []byte {
-	buf := &bytes.Buffer{}
-	for _, v := range i.Var {
-		buf.WriteString(fmt.Sprintf("# %s\n", v.Description))
-		if len(v.Default) > 0 {
-			buf.WriteString(fmt.Sprintf("%s=%s\n", v.Name, v.Default))
-		} else {
-			buf.WriteString(fmt.Sprintf("%s=\n", v.Name))
-		}
-	}
-	for _, s := range i.Secret {
-		buf.WriteString(fmt.Sprintf("# %s\n", s.Description))
-		buf.WriteString(fmt.Sprintf("%s=\n", s.Name))
-	}
-	for _, k := range i.Key {
-		buf.WriteString(fmt.Sprint("# the path of the key in the artisan registry as described below:\n"))
-		buf.WriteString(fmt.Sprintf("# %s\n", k.Description))
-		buf.WriteString(fmt.Sprintf("%s=\n", k.Name))
-	}
-	return buf.Bytes()
 }

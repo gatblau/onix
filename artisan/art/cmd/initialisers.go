@@ -27,6 +27,7 @@ func InitialiseRootCmd() *RootCmd {
 	exeCCmd := NewExeCCmd()
 	waitCmd := NewWaitCmd()
 	langCmd := InitialiseLangCommand()
+	envCmd := InitialiseEnvCommand()
 	rootCmd.Cmd.AddCommand(
 		buildCmd.cmd,
 		artefactsCmd.cmd,
@@ -46,8 +47,17 @@ func InitialiseRootCmd() *RootCmd {
 		tknCmd.cmd,
 		waitCmd.cmd,
 		langCmd.cmd,
+		envCmd.cmd,
 	)
 	return rootCmd
+}
+
+func InitialiseEnvCommand() *EnvCmd {
+	envCmd := NewEnvCmd()
+	envPackageCmd := NewEnvPackageCmd()
+	envFlowCmd := NewEnvFlowCmd()
+	envCmd.cmd.AddCommand(envFlowCmd.cmd, envPackageCmd.cmd)
+	return envCmd
 }
 
 func InitialiseLangCommand() *LangCmd {
@@ -61,9 +71,8 @@ func InitialiseLangCommand() *LangCmd {
 func InitialiseFlowCommand() *FlowCmd {
 	flowCmd := NewFlowCmd()
 	flowMergeCmd := NewFlowMergeCmd()
-	flowEnvCmd := NewFlowEnvCmd()
 	flowRunCmd := NewFlowRunCmd()
-	flowCmd.cmd.AddCommand(flowMergeCmd.cmd, flowEnvCmd.cmd, flowRunCmd.cmd)
+	flowCmd.cmd.AddCommand(flowMergeCmd.cmd, flowRunCmd.cmd)
 	return flowCmd
 }
 
