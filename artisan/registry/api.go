@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -52,7 +53,7 @@ func NewGenericAPI(domain string, noTLS bool) *Api {
 	}
 }
 
-func (r *Api) UploadArtefact(name *core.PackageName, artefactRef string, zipfile multipart.File, jsonFile multipart.File, metaInfo *Artefact, user string, pwd string) error {
+func (r *Api) UploadPackage(name *core.PackageName, artefactRef string, zipfile multipart.File, jsonFile multipart.File, metaInfo *Artefact, user string, pwd string) error {
 	// ensure files are properly closed
 	defer zipfile.Close()
 	defer jsonFile.Close()
@@ -60,13 +61,13 @@ func (r *Api) UploadArtefact(name *core.PackageName, artefactRef string, zipfile
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
 	info, err := metaInfo.ToJson()
-	core.CheckErr(err, "cannot marshall artefact info")
-	err = r.addField(writer, "artefact-meta", info)
-	core.CheckErr(err, "cannot add artefact meta file")
-	err = r.addFile(writer, "artefact-seal", fmt.Sprintf("%s.json", artefactRef), jsonFile)
+	core.CheckErr(err, "cannot marshall package info")
+	err = r.addField(writer, "package-meta", info)
+	core.CheckErr(err, "cannot add package meta file")
+	err = r.addFile(writer, "package-seal", fmt.Sprintf("%s.json", artefactRef), jsonFile)
 	core.CheckErr(err, "cannot add seal file")
-	err = r.addFile(writer, "artefact-file", fmt.Sprintf("%s.zip", artefactRef), zipfile)
-	core.CheckErr(err, "cannot add artefact file")
+	err = r.addFile(writer, "package-file", fmt.Sprintf("%s.zip", artefactRef), zipfile)
+	core.CheckErr(err, "cannot add package file")
 	// don't forget to close the multipart writer.
 	// If you don't close it, your request will be missing the terminating boundary.
 	err = writer.Close()
@@ -77,7 +78,7 @@ func (r *Api) UploadArtefact(name *core.PackageName, artefactRef string, zipfile
 	// create proxy reader
 	reader := bar.NewProxyReader(&b)
 	// Now that you have a form, you can submit it to your handler.
-	req, err := http.NewRequest("POST", r.artefactTagURI(name.Group, name.Name, name.Tag), reader)
+	req, err := http.NewRequest("POST", r.packageTagURI(name.Group, name.Name, name.Tag), reader)
 	core.CheckErr(err, "cannot create http request")
 	// Don't forget to set the content type, this will contain the boundary.
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -101,13 +102,13 @@ func (r *Api) UploadArtefact(name *core.PackageName, artefactRef string, zipfile
 	return nil
 }
 
-func (r *Api) UpdateArtefactInfo(name *core.PackageName, artefact *Artefact, user string, pwd string) error {
+func (r *Api) UpdatePackageInfo(name *core.PackageName, artefact *Artefact, user string, pwd string) error {
 	b, err := json.Marshal(artefact)
 	if err != nil {
 		return err
 	}
 	body := bytes.NewReader([]byte(b))
-	req, err := http.NewRequest("PUT", r.artefactIdURI(name.Group, name.Name, artefact.Id), body)
+	req, err := http.NewRequest("PUT", r.packageIdURI(name.Group, name.Name, artefact.Id), body)
 	if err != nil {
 		return err
 	}
@@ -120,12 +121,13 @@ func (r *Api) UpdateArtefactInfo(name *core.PackageName, artefact *Artefact, use
 	core.CheckErr(err, "cannot post to backend")
 	// Check the response
 	if res.StatusCode > 299 {
-		return fmt.Errorf("failed to update artefact info, the remote server responded with: %s", res.Status)
+		return fmt.Errorf("failed to update package info, the remote server responded with: %s", res.Status)
 	}
 	return nil
 }
 
 func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, error) {
+	// note: repoURI() escape the group
 	req, err := http.NewRequest("GET", r.repoURI(group, name), nil)
 	if err != nil {
 		return nil, err
@@ -142,8 +144,8 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, err
 	defer resp.Body.Close()
 	switch resp.StatusCode {
 	case http.StatusNotFound:
-		// if repository is nil then the client is not talking to the proper artefact registry
-		return nil, fmt.Errorf("\"%s\" does not conform to the artefact registry api, are you sure the artefact domain is correct", r.domain)
+		// if repository is nil then the client is not talking to the proper package registry
+		return nil, fmt.Errorf("\"%s\" does not conform to the Package Registry API, are you sure the package domain is correct?", r.domain)
 	case http.StatusForbidden:
 		return nil, fmt.Errorf("invalid credentials, access to the registry is forbidden")
 	}
@@ -153,7 +155,7 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, err
 	}
 	// if the result body is not in JSON format is likely that the domain of artefact does not exist
 	if !core.IsJSON(string(b)) {
-		return nil, fmt.Errorf("the artefact was not found: its domain/group/name is likely to be incorrect")
+		return nil, fmt.Errorf("the package was not found: its domain/group/name is likely to be incorrect")
 	}
 	// if not response then return an empty repository
 	if len(b) == 0 {
@@ -167,8 +169,8 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, err
 	return repo, err
 }
 
-func (r *Api) GetArtefactInfo(group, name, id, user, pwd string) (*Artefact, error) {
-	req, err := http.NewRequest("GET", r.artefactIdURI(group, name, id), nil)
+func (r *Api) GetPackageInfo(group, name, id, user, pwd string) (*Artefact, error) {
+	req, err := http.NewRequest("GET", r.packageIdURI(group, name, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +195,7 @@ func (r *Api) GetArtefactInfo(group, name, id, user, pwd string) (*Artefact, err
 		return nil, err
 	}
 	if !core.IsJSON(string(b)) {
-		return nil, fmt.Errorf("invalid artefact name: %s/%s/%s", r.domain, group, name)
+		return nil, fmt.Errorf("invalid package name: %s/%s/%s", r.domain, group, name)
 	}
 	artefact := new(Artefact)
 	err = json.Unmarshal(b, artefact)
@@ -266,24 +268,25 @@ func (r *Api) repoURI(group, name string) string {
 		scheme = fmt.Sprintf("%ss", scheme)
 	}
 	// {scheme}://{domain}/repository/{repository-group}/{repository-name}
-	return fmt.Sprintf("%s://%s/repository/%s/%s", scheme, r.domain, group, name)
+	return fmt.Sprintf("%s://%s/repository/%s/%s", scheme, r.domain, escape(group), name)
 }
 
-func (r *Api) artefactURI(group, name string) string {
+func (r *Api) packageURI(group, name string) string {
 	scheme := "http"
 	if r.https {
 		scheme = fmt.Sprintf("%ss", scheme)
 	}
-	// {scheme}://{domain}/artefact/{repository-group}/{repository-name}/{tag}
-	return fmt.Sprintf("%s://%s/artefact/%s/%s", scheme, r.domain, group, name)
+	// {scheme}://{domain}/package/{repository-group}/{repository-name}/{tag}
+	return fmt.Sprintf("%s://%s/package/%s/%s", scheme, r.domain, escape(group), name)
 }
 
-func (r *Api) artefactTagURI(group, name, tag string) string {
-	return fmt.Sprintf("%s/tag/%s", r.artefactURI(group, name), tag)
+func (r *Api) packageTagURI(group, name, tag string) string {
+	return fmt.Sprintf("%s/tag/%s", r.packageURI(group, name), tag)
 }
 
-func (r *Api) artefactIdURI(group, name, id string) string {
-	return fmt.Sprintf("%s/id/%s", r.artefactURI(group, name), id)
+func (r *Api) packageIdURI(group, name, id string) string {
+	// group escaped by artefactURI()
+	return fmt.Sprintf("%s/id/%s", r.packageURI(group, name), id)
 }
 
 func (r *Api) fileURI(group, name, filename string) string {
@@ -291,7 +294,7 @@ func (r *Api) fileURI(group, name, filename string) string {
 	if r.https {
 		scheme = fmt.Sprintf("%ss", scheme)
 	}
-	return fmt.Sprintf("%s://%s/file/%s/%s/%s", scheme, r.domain, group, name, filename)
+	return fmt.Sprintf("%s://%s/file/%s/%s/%s", scheme, r.domain, escape(group), name, filename)
 }
 
 // add a field to a multipart form
@@ -317,4 +320,10 @@ func (r *Api) addFile(writer *multipart.Writer, fieldName, fileName string, file
 	_, err = io.Copy(formWriter, file)
 	file.Close()
 	return err
+}
+
+// escape slashes in path variables
+func escape(path string) string {
+	// NOTE: not sure why but need to escape twice for the request to work properly!
+	return url.PathEscape(url.PathEscape(path))
 }

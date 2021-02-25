@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -225,6 +226,11 @@ func (r *Nexus3Backend) GetRepositoryInfo(group, name, user, pwd string) (*regis
 	}
 	// if the file is not in JSON format then
 	if !core.IsJSON(string(b)) {
+		// unescape the repository group
+		group, err = url.PathUnescape(group)
+		if err != nil {
+			return nil, err
+		}
 		// assume file not found (404 HTML page)
 		// returns an empty repository
 		return &registry.Repository{

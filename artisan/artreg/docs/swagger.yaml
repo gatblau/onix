@@ -30,19 +30,17 @@ info:
     email: onix@gatblau.org
     name: gatblau
     url: http://onix.gatblau.org/
-  description: |-
-    Application Registry that supports generic packaging, signing and tagging.
-    Allows to manage application artefacts in a similar way to linux container images.
+  description: Registry for Artisan packages
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Artisan Registry
+  title: Artisan Package Registry
   version: 0.0.4
 paths:
   /:
     get:
       description: |-
-        Checks that Artie's HTTP server is listening on the required port.
+        Checks that the registry HTTP server is listening on the required port.
         Use a liveliness probe.
         It does not guarantee the server is ready to accept calls.
       produces:
@@ -52,131 +50,18 @@ paths:
           description: OK
           schema:
             type: string
-      summary: Check that Artie's HTTP API is live
+      summary: Check that the registry HTTP API is live
       tags:
       - General
-  /artefact/{repository-group}/{repository-name}/id/{artefact-id}:
-    get:
-      consumes:
-      - text/html
-      - ' application/json'
-      - ' application/yaml'
-      - ' application/xml'
-      - ' application/xhtml+xml'
-      description: gets meta data about the artefact identified by its id
-      parameters:
-      - description: the artefact repository group name
-        in: path
-        name: repository-group
-        required: true
-        type: string
-      - description: the artefact repository name
-        in: path
-        name: repository-name
-        required: true
-        type: string
-      produces:
-      - application/json
-      - ' application/yaml'
-      - ' application/xml'
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-      summary: Get information about the specified artefact
-      tags:
-      - Artefacts
-    put:
-      description: updates meta data about the artefact identified by its id
-      parameters:
-      - description: the artefact repository group name
-        in: path
-        name: repository-group
-        required: true
-        type: string
-      - description: the artefact repository name
-        in: path
-        name: repository-name
-        required: true
-        type: string
-      - description: the artefact unique identifier
-        in: path
-        name: artefact-id
-        required: true
-        type: string
-      - description: the artefact information to be updated
-        in: body
-        name: artefact-info
-        required: true
-        schema:
-          type: object
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-      summary: Update information about the specified artefact
-      tags:
-      - Artefacts
-  /artefact/{repository-group}/{repository-name}/tag/{artefact-tag}:
-    post:
-      description: uploads the artefact file and its seal to the pre-configured backend
-        (e.g. Nexus, etc)
-      parameters:
-      - description: the artefact repository group name
-        in: path
-        name: repository-group
-        required: true
-        type: string
-      - description: the artefact repository name
-        in: path
-        name: repository-name
-        required: true
-        type: string
-      - description: the artefact reference name
-        in: path
-        name: tag
-        required: true
-        type: string
-      - description: the artefact metadata in JSON base64 encoded string format
-        in: formData
-        name: artefact-meta
-        required: true
-        type: string
-      - description: the artefact file part of the multipart message
-        in: formData
-        name: artefact-file
-        required: true
-        type: file
-      - description: the seal file part of the multipart message
-        in: formData
-        name: artefact-seal
-        required: true
-        type: file
-      produces:
-      - text/plain
-      responses:
-        "204":
-          description: No Content
-          schema:
-            type: string
-        "423":
-          description: Locked
-          schema:
-            type: string
-      summary: Push an artefact to the configured backend
-      tags:
-      - Artefacts
   /file/{repository-group}/{repository-name}/{filename}:
     get:
       parameters:
-      - description: the artefact repository group name
+      - description: the package repository group name
         in: path
         name: repository-group
         required: true
         type: string
-      - description: the artefact repository name
+      - description: the package repository name
         in: path
         name: repository-name
         required: true
@@ -200,7 +85,7 @@ paths:
       summary: Download a file from the registry
       tags:
       - Files
-  /repository/{repository-group}/{repository-name}:
+  /package/{repository-group}/{repository-name}/id/{package-id}:
     get:
       consumes:
       - text/html
@@ -208,14 +93,14 @@ paths:
       - ' application/yaml'
       - ' application/xml'
       - ' application/xhtml+xml'
-      description: gets meta data about artefacts in the specified repository
+      description: gets meta data about the package identified by its id
       parameters:
-      - description: the artefact repository group name
+      - description: the package repository group name
         in: path
         name: repository-group
         required: true
         type: string
-      - description: the artefact repository name
+      - description: the package repository name
         in: path
         name: repository-name
         required: true
@@ -229,19 +114,132 @@ paths:
           description: OK
           schema:
             type: string
-      summary: Get information about the artefacts in a repository
+      summary: Get information about the specified package
+      tags:
+      - Packages
+    put:
+      description: updates meta data about the package identified by its id
+      parameters:
+      - description: the package repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the package repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the package unique identifier
+        in: path
+        name: package-id
+        required: true
+        type: string
+      - description: the package information to be updated
+        in: body
+        name: package-info
+        required: true
+        schema:
+          type: object
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Update information about the specified package
+      tags:
+      - Packages
+  /package/{repository-group}/{repository-name}/tag/{package-tag}:
+    post:
+      description: uploads the package file and its seal to the pre-configured backend
+        (e.g. Nexus, etc)
+      parameters:
+      - description: the package repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the package repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the package reference name
+        in: path
+        name: tag
+        required: true
+        type: string
+      - description: the package metadata in JSON base64 encoded string format
+        in: formData
+        name: package-meta
+        required: true
+        type: string
+      - description: the package file part of the multipart message
+        in: formData
+        name: package-file
+        required: true
+        type: file
+      - description: the seal file part of the multipart message
+        in: formData
+        name: package-seal
+        required: true
+        type: file
+      produces:
+      - text/plain
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "423":
+          description: Locked
+          schema:
+            type: string
+      summary: Push an package to the configured backend
+      tags:
+      - Packages
+  /repository/{repository-group}/{repository-name}:
+    get:
+      consumes:
+      - text/html
+      - ' application/json'
+      - ' application/yaml'
+      - ' application/xml'
+      - ' application/xhtml+xml'
+      description: gets meta data about packages in the specified repository
+      parameters:
+      - description: the package repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the package repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      produces:
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Get information about the packages in a repository
       tags:
       - Repositories
   /webhook/{repository-group}/{repository-name}:
     get:
       description: get a list of webhook configurations for the specified repository
       parameters:
-      - description: the artefact repository group name
+      - description: the package repository group name
         in: path
         name: repository-group
         required: true
         type: string
-      - description: the artefact repository name
+      - description: the package repository name
         in: path
         name: repository-name
         required: true
@@ -262,19 +260,19 @@ paths:
       description: create the webhook configuration for a specified repository and
         url
       parameters:
-      - description: the artefact repository group name
+      - description: the package repository group name
         in: path
         name: repository-group
         required: true
         type: string
-      - description: the artefact repository name
+      - description: the package repository name
         in: path
         name: repository-name
         required: true
         type: string
       - description: the webhook configuration
         in: body
-        name: artefact-info
+        name: package-info
         required: true
         schema:
           $ref: '#/definitions/server.WebHookConfig'
@@ -294,12 +292,12 @@ paths:
     delete:
       description: delete the specified webhook configuration
       parameters:
-      - description: the artefact repository group name
+      - description: the package repository group name
         in: path
         name: repository-group
         required: true
         type: string
-      - description: the artefact repository name
+      - description: the package repository name
         in: path
         name: repository-name
         required: true

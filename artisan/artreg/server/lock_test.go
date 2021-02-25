@@ -13,7 +13,8 @@ import (
 )
 
 func TestLock(t *testing.T) {
-	repoName := core.ParseName("gatblau/boot").Repository()
+	name, _ := core.ParseName("gatblau/boot")
+	repoName := name.Repository()
 	lock := new(lock)
 	lock.ensurePath()
 	locked, err := lock.acquire(repoName)
