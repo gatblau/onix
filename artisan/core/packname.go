@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-// defines the name of an artefact
+// defines the name of a package
 // domain/group/name:tag
 type PackageName struct {
 	Domain string
@@ -41,64 +41,64 @@ func (a *PackageName) Repository() string {
 	return fmt.Sprintf("%s/%s", a.Group, a.Name)
 }
 
-func ParseName(name string) (*PackageName, error) {
-	n := &PackageName{}
-	components := strings.Split(name, "/")
-	// validate component elements
-	for _, component := range components {
-		if !domainComponentRegexp.MatchString(component) {
-			return nil, fmt.Errorf("artefact name %s: component part %s is invalid", name, component)
-		}
+func ParseName(packageName string) (*PackageName, error) {
+	domain, group, name, tag, err := breakName(packageName)
+	n := &PackageName{
+		Domain: domain,
+		Group:  group,
+		Name:   name,
+		Tag:    tag,
 	}
-	if len(components) == 1 {
-		parts := strings.Split(components[0], ":")
-		if len(parts) == 2 {
-			n.Name = parts[0]
-			n.Tag = parts[1]
-		} else {
-			n.Name = components[0]
-		}
-	} else if len(components) == 2 {
-		parts := strings.Split(components[1], ":")
-		n.Group = components[0]
-		if len(parts) == 2 {
-			n.Name = parts[0]
-			n.Tag = parts[1]
-		} else {
-			n.Name = components[1]
-		}
-	} else if len(components) == 3 {
-		n.Domain = components[0]
-		n.Group = components[1]
-		parts := strings.Split(components[2], ":")
-		switch len(parts) {
-		case 2:
-			n.Tag = parts[1]
-		case 1:
-			n.Tag = "latest"
-		}
-		n.Name = parts[0]
-	}
-	// validate
-	if len(n.Domain) > 0 {
-		if !domainComponentRegexp.MatchString(n.Domain) {
-			return nil, fmt.Errorf("artefact name %s: domain %s is invalid", name, n.Domain)
-		}
-	}
-	if len(n.Tag) > 0 {
-		if !tagRegexp.MatchString(n.Tag) {
-			return nil, fmt.Errorf("artefact name %s: tag %s is invalid", name, n.Tag)
-		}
+	if err != nil {
+		return nil, err
 	}
 	// set defaults if there are missing values
 	if len(n.Domain) == 0 {
 		n.Domain = "artisan.library"
 	}
 	if len(n.Group) == 0 {
-		n.Group = "library"
+		n.Group = "root"
 	}
 	if len(n.Tag) == 0 {
 		n.Tag = "latest"
 	}
 	return n, nil
+}
+
+func breakName(packageName string) (domain, group, name, tag string, err error) {
+	components := strings.Split(packageName, "/")
+	for i, component := range components {
+		// name:tag
+		if i == len(components)-1 {
+			parts := strings.Split(component, ":")
+			if len(parts) == 2 {
+				tag = parts[1]
+				if !tagRegexp.MatchString(tag) {
+					err = fmt.Errorf("package name %s: tag %s is invalid", name, tag)
+					return
+				}
+			}
+			name = parts[0]
+			if !domainComponentRegexp.MatchString(name) {
+				err = fmt.Errorf("package name %s: component part %s is invalid", packageName, name)
+				return
+			}
+		} else if i == 0 {
+			domain = component
+			if !domainComponentRegexp.MatchString(domain) {
+				err = fmt.Errorf("package name %s: domain %s is invalid", packageName, domain)
+				return
+			}
+		} else {
+			group += fmt.Sprintf("%s/", component)
+			if !domainComponentRegexp.MatchString(component) {
+				err = fmt.Errorf("package name %s: component part %s is invalid", packageName, component)
+				return
+			}
+		}
+	}
+	if len(group) > 0 {
+		group = group[:len(group)-1]
+	}
+	return
 }

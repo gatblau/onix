@@ -34,179 +34,17 @@ var doc = `{
     "paths": {
         "/": {
             "get": {
-                "description": "Checks that Artie's HTTP server is listening on the required port.\nUse a liveliness probe.\nIt does not guarantee the server is ready to accept calls.",
+                "description": "Checks that the registry HTTP server is listening on the required port.\nUse a liveliness probe.\nIt does not guarantee the server is ready to accept calls.",
                 "produces": [
                     "text/plain"
                 ],
                 "tags": [
                     "General"
                 ],
-                "summary": "Check that Artie's HTTP API is live",
+                "summary": "Check that the registry HTTP API is live",
                 "responses": {
                     "200": {
                         "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/artefact/{repository-group}/{repository-name}/id/{artefact-id}": {
-            "get": {
-                "description": "gets meta data about the artefact identified by its id",
-                "consumes": [
-                    "text/html",
-                    " application/json",
-                    " application/yaml",
-                    " application/xml",
-                    " application/xhtml+xml"
-                ],
-                "produces": [
-                    "application/json",
-                    " application/yaml",
-                    " application/xml"
-                ],
-                "tags": [
-                    "Artefacts"
-                ],
-                "summary": "Get information about the specified artefact",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "the artefact repository group name",
-                        "name": "repository-group",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "the artefact repository name",
-                        "name": "repository-name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "updates meta data about the artefact identified by its id",
-                "tags": [
-                    "Artefacts"
-                ],
-                "summary": "Update information about the specified artefact",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "the artefact repository group name",
-                        "name": "repository-group",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "the artefact repository name",
-                        "name": "repository-name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "the artefact unique identifier",
-                        "name": "artefact-id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "the artefact information to be updated",
-                        "name": "artefact-info",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/artefact/{repository-group}/{repository-name}/tag/{artefact-tag}": {
-            "post": {
-                "description": "uploads the artefact file and its seal to the pre-configured backend (e.g. Nexus, etc)",
-                "produces": [
-                    "text/plain"
-                ],
-                "tags": [
-                    "Artefacts"
-                ],
-                "summary": "Push an artefact to the configured backend",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "the artefact repository group name",
-                        "name": "repository-group",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "the artefact repository name",
-                        "name": "repository-name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "the artefact reference name",
-                        "name": "tag",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "the artefact metadata in JSON base64 encoded string format",
-                        "name": "artefact-meta",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "the artefact file part of the multipart message",
-                        "name": "artefact-file",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "the seal file part of the multipart message",
-                        "name": "artefact-seal",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "423": {
-                        "description": "Locked",
                         "schema": {
                             "type": "string"
                         }
@@ -226,14 +64,14 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "the artefact repository group name",
+                        "description": "the package repository group name",
                         "name": "repository-group",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "the artefact repository name",
+                        "description": "the package repository name",
                         "name": "repository-name",
                         "in": "path",
                         "required": true
@@ -262,9 +100,171 @@ var doc = `{
                 }
             }
         },
+        "/package/{repository-group}/{repository-name}/id/{package-id}": {
+            "get": {
+                "description": "gets meta data about the package identified by its id",
+                "consumes": [
+                    "text/html",
+                    " application/json",
+                    " application/yaml",
+                    " application/xml",
+                    " application/xhtml+xml"
+                ],
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Packages"
+                ],
+                "summary": "Get information about the specified package",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the package repository group name",
+                        "name": "repository-group",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package repository name",
+                        "name": "repository-name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "updates meta data about the package identified by its id",
+                "tags": [
+                    "Packages"
+                ],
+                "summary": "Update information about the specified package",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the package repository group name",
+                        "name": "repository-group",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package repository name",
+                        "name": "repository-name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package unique identifier",
+                        "name": "package-id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "the package information to be updated",
+                        "name": "package-info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/package/{repository-group}/{repository-name}/tag/{package-tag}": {
+            "post": {
+                "description": "uploads the package file and its seal to the pre-configured backend (e.g. Nexus, etc)",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Packages"
+                ],
+                "summary": "Push an package to the configured backend",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the package repository group name",
+                        "name": "repository-group",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package repository name",
+                        "name": "repository-name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package reference name",
+                        "name": "tag",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package metadata in JSON base64 encoded string format",
+                        "name": "package-meta",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "the package file part of the multipart message",
+                        "name": "package-file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "the seal file part of the multipart message",
+                        "name": "package-seal",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "423": {
+                        "description": "Locked",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/repository/{repository-group}/{repository-name}": {
             "get": {
-                "description": "gets meta data about artefacts in the specified repository",
+                "description": "gets meta data about packages in the specified repository",
                 "consumes": [
                     "text/html",
                     " application/json",
@@ -280,18 +280,18 @@ var doc = `{
                 "tags": [
                     "Repositories"
                 ],
-                "summary": "Get information about the artefacts in a repository",
+                "summary": "Get information about the packages in a repository",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "the artefact repository group name",
+                        "description": "the package repository group name",
                         "name": "repository-group",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "the artefact repository name",
+                        "description": "the package repository name",
                         "name": "repository-name",
                         "in": "path",
                         "required": true
@@ -317,14 +317,14 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "the artefact repository group name",
+                        "description": "the package repository group name",
                         "name": "repository-group",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "the artefact repository name",
+                        "description": "the package repository name",
                         "name": "repository-name",
                         "in": "path",
                         "required": true
@@ -354,21 +354,21 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "the artefact repository group name",
+                        "description": "the package repository group name",
                         "name": "repository-group",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "the artefact repository name",
+                        "description": "the package repository name",
                         "name": "repository-name",
                         "in": "path",
                         "required": true
                     },
                     {
                         "description": "the webhook configuration",
-                        "name": "artefact-info",
+                        "name": "package-info",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -402,14 +402,14 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "the artefact repository group name",
+                        "description": "the package repository group name",
                         "name": "repository-group",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "the artefact repository name",
+                        "description": "the package repository name",
                         "name": "repository-name",
                         "in": "path",
                         "required": true
@@ -494,8 +494,8 @@ var SwaggerInfo = swaggerInfo{
 	Host:        "",
 	BasePath:    "",
 	Schemes:     []string{},
-	Title:       "Artisan Registry",
-	Description: "Application Registry that supports generic packaging, signing and tagging.\nAllows to manage application artefacts in a similar way to linux container images.",
+	Title:       "Artisan Package Registry",
+	Description: "Registry for Artisan packages",
 }
 
 type s struct{}

@@ -303,7 +303,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS b
 		return
 	}
 	// check the status of the artefact in the remote registry
-	remoteArt, err := api.GetArtefactInfo(name.Group, name.Name, artie.Id, uname, pwd)
+	remoteArt, err := api.GetPackageInfo(name.Group, name.Name, artie.Id, uname, pwd)
 	core.CheckErr(err, "cannot retrieve remote artefact information")
 	// if the artefact exists in the remote registry
 	if remoteArt != nil {
@@ -315,7 +315,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS b
 		} else {
 			// the metadata has to be updated to include the new tag
 			remoteArt.Tags = append(remoteArt.Tags, name.Tag)
-			err = api.UpdateArtefactInfo(name, remoteArt, uname, pwd)
+			err = api.UpdatePackageInfo(name, remoteArt, uname, pwd)
 			core.CheckErr(err, "cannot update remote artefact tags")
 			return
 		}
@@ -333,7 +333,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS b
 			// adds a default tag matching the artefact file reference
 			a.Tags = append(a.Tags, a.FileRef)
 			// updates the metadata in the remote repo
-			core.CheckErr(api.UpdateArtefactInfo(name, a, uname, pwd), "cannot update artefact info")
+			core.CheckErr(api.UpdatePackageInfo(name, a, uname, pwd), "cannot update artefact info")
 		}
 	}
 	zipfile := openFile(fmt.Sprintf("%s/%s.zip", r.Path(), artie.FileRef))
@@ -342,7 +342,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS b
 	artefact := artie
 	artefact.Tags = []string{name.Tag}
 	// execute the upload
-	err = api.UploadArtefact(name, artie.FileRef, zipfile, jsonfile, artefact, uname, pwd)
+	err = api.UploadPackage(name, artie.FileRef, zipfile, jsonfile, artefact, uname, pwd)
 	i18n.Err(err, i18n.ERR_CANT_PUSH_PACKAGE)
 }
 

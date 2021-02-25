@@ -7,10 +7,9 @@
 */
 package server
 
-// @title Artisan Registry
+// @title Artisan Package Registry
 // @version 0.0.4
-// @description Application Registry that supports generic packaging, signing and tagging.
-// @description Allows to manage application artefacts in a similar way to linux container images.
+// @description Registry for Artisan packages
 // @contact.name gatblau
 // @contact.url http://onix.gatblau.org/
 // @contact.email onix@gatblau.org
@@ -35,6 +34,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
@@ -83,12 +83,12 @@ func (s *Server) Serve() {
 		router.Handle("/metrics", promhttp.Handler()).Methods("GET")
 	}
 
-	// push an artefact using a tag
-	router.HandleFunc("/artefact/{repository-group}/{repository-name}/tag/{artefact-tag}", s.artefactUploadHandler).Methods("POST")
+	// push an package using a tag
+	router.HandleFunc("/package/{repository-group}/{repository-name}/tag/{package-tag}", s.packageUploadHandler).Methods("POST")
 
-	// update artefact information by id
-	router.HandleFunc("/artefact/{repository-group}/{repository-name}/id/{artefact-id}", s.artefactInfoUpdateHandler).Methods("PUT")
-	router.HandleFunc("/artefact/{repository-group}/{repository-name}/id/{artefact-id}", s.artefactInfoGetHandler).Methods("GET")
+	// update package information by id
+	router.HandleFunc("/package/{repository-group}/{repository-name}/id/{package-id}", s.packageInfoUpdateHandler).Methods("PUT")
+	router.HandleFunc("/package/{repository-group}/{repository-name}/id/{package-id}", s.packageInfoGetHandler).Methods("GET")
 
 	// get repository information
 	router.HandleFunc("/repository/{repository-group}/{repository-name}", s.repositoryInfoHandler).Methods("GET")
@@ -109,8 +109,8 @@ func (s *Server) Serve() {
 	s.listen(router)
 }
 
-// @Summary Check that Artie's HTTP API is live
-// @Description Checks that Artie's HTTP server is listening on the required port.
+// @Summary Check that the registry HTTP API is live
+// @Description Checks that the registry HTTP server is listening on the required port.
 // @Description Use a liveliness probe.
 // @Description It does not guarantee the server is ready to accept calls.
 // @Tags General
@@ -129,10 +129,10 @@ func (s *Server) liveHandler(w http.ResponseWriter, _ *http.Request) {
 // @Tags Files
 // @Produce octet-stream
 // @Router /file/{repository-group}/{repository-name}/{filename} [get]
-// @Param repository-group path string true "the artefact repository group name"
-// @Param repository-name path string true "the artefact repository name"
+// @Param repository-group path string true "the package repository group name"
+// @Param repository-name path string true "the package repository name"
 // @Param filename path string true "the filename to download"
-// @Success 200 {file} artefact has been downloaded successfully
+// @Success 200 {file} package has been downloaded successfully
 // @Failure 500 {string} internal server error
 func (s *Server) fileDownloadHandler(w http.ResponseWriter, r *http.Request) {
 	// get request variables
@@ -169,57 +169,57 @@ func (s *Server) fileDownloadHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// @Summary Push an artefact to the configured backend
-// @Description uploads the artefact file and its seal to the pre-configured backend (e.g. Nexus, etc)
-// @Tags Artefacts
+// @Summary Push an package to the configured backend
+// @Description uploads the package file and its seal to the pre-configured backend (e.g. Nexus, etc)
+// @Tags Packages
 // @Produce  plain
-// @Success 204 {string} artefact has been uploaded successfully. the server has nothing to respond.
-// @Failure 423 {string} the artefact is locked (pessimistic locking)
-// @Router /artefact/{repository-group}/{repository-name}/tag/{artefact-tag} [post]
-// @Param repository-group path string true "the artefact repository group name"
-// @Param repository-name path string true "the artefact repository name"
-// @Param tag path string true "the artefact reference name"
-// @Param artefact-meta formData string true "the artefact metadata in JSON base64 encoded string format"
-// @Param artefact-file formData file true "the artefact file part of the multipart message"
-// @Param artefact-seal formData file true "the seal file part of the multipart message"
-func (s *Server) artefactUploadHandler(w http.ResponseWriter, r *http.Request) {
+// @Success 204 {string} package has been uploaded successfully. the server has nothing to respond.
+// @Failure 423 {string} the package is locked (pessimistic locking)
+// @Router /package/{repository-group}/{repository-name}/tag/{package-tag} [post]
+// @Param repository-group path string true "the package repository group name"
+// @Param repository-name path string true "the package repository name"
+// @Param tag path string true "the package reference name"
+// @Param package-meta formData string true "the package metadata in JSON base64 encoded string format"
+// @Param package-file formData file true "the package file part of the multipart message"
+// @Param package-seal formData file true "the seal file part of the multipart message"
+func (s *Server) packageUploadHandler(w http.ResponseWriter, r *http.Request) {
 	// get request variables
 	vars := mux.Vars(r)
 	repoGroup := vars["repository-group"]
 	repoName := vars["repository-name"]
-	artefactTag := vars["artefact-tag"]
-	// constructs the artefact name
-	nameStr := fmt.Sprintf("%s/%s:%s", repoGroup, repoName, artefactTag)
-	name, err := core.ParseName(nameStr)
-	if err != nil {
-		log.Fatalf("invalid package name %s: %s", nameStr, err)
+	packageTag := vars["package-tag"]
+	repoGroup, _ = url.PathUnescape(repoGroup)
+	name := &core.PackageName{
+		Group: repoGroup,
+		Name:  repoName,
+		Tag:   packageTag,
 	}
 	// file upload limit in MB
-	err = r.ParseMultipartForm(s.conf.HttpUploadLimit() << 20)
+	err := r.ParseMultipartForm(s.conf.HttpUploadLimit() << 20)
 	if err != nil {
 		s.writeError(w, fmt.Errorf("error parsing multipart form: %s", err), http.StatusBadRequest)
 		return
 	}
-	info := r.FormValue("artefact-meta")
+	info := r.FormValue("package-meta")
 	meta, err := base64.StdEncoding.DecodeString(info)
 	if err != nil {
-		core.CheckErr(err, "failed to base64 decode artefact information")
+		core.CheckErr(err, "failed to base64 decode package information")
 	}
-	jsonFile, _, err := r.FormFile("artefact-seal")
+	jsonFile, _, err := r.FormFile("package-seal")
 	if err != nil {
 		s.writeError(w, fmt.Errorf("error retrieving seal file: %s", err), http.StatusBadRequest)
 		return
 	}
-	zipFile, _, err := r.FormFile("artefact-file")
+	zipFile, _, err := r.FormFile("package-file")
 	if err != nil {
-		s.writeError(w, fmt.Errorf("error retrieving artefact zip file: %s", err), http.StatusBadRequest)
+		s.writeError(w, fmt.Errorf("error retrieving package zip file: %s", err), http.StatusBadRequest)
 		return
 	}
-	// convert the meta file into an artefact
-	artefactMeta := new(registry.Artefact)
-	err = json.Unmarshal(meta, artefactMeta)
+	// convert the meta file into an package
+	packageMeta := new(registry.Artefact)
+	err = json.Unmarshal(meta, packageMeta)
 	if err != nil {
-		s.writeError(w, fmt.Errorf("cannot unmashall artefact metadata: %s", err), http.StatusBadRequest)
+		s.writeError(w, fmt.Errorf("cannot unmashall package metadata: %s", err), http.StatusBadRequest)
 		return
 	}
 	// try and upload checking the resource is not locked
@@ -232,37 +232,37 @@ func (s *Server) artefactUploadHandler(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, fmt.Errorf("cannot retrieve repository information form the backend: %s", err), http.StatusInternalServerError)
 		return
 	}
-	// try to find the artefact being pushed in the remote backend
-	backendArtefact := repo.FindArtefact(artefactMeta.Id)
-	// if the artefact exists
+	// try to find the package being pushed in the remote backend
+	backendArtefact := repo.FindArtefact(packageMeta.Id)
+	// if the package exists
 	if backendArtefact != nil {
 		// check the tag does not exist
-		if backendArtefact.HasTag(artefactTag) {
-			// artefact already exist
-			fmt.Printf("artefact already exist, nothing to push")
+		if backendArtefact.HasTag(packageTag) {
+			// package already exist
+			fmt.Printf("package already exist, nothing to push")
 			// returns ok but not created to indicate there is nothing to do
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-		// if the tag does not exist then add the tag to the backend artefact
-		backendArtefact.Tags = append(backendArtefact.Tags, artefactTag)
-		// update the artefact information
+		// if the tag does not exist then add the tag to the backend package
+		backendArtefact.Tags = append(backendArtefact.Tags, packageTag)
+		// update the package information
 		if !repo.UpdateArtefact(backendArtefact) {
 			s.writeError(w, fmt.Errorf("cannot update repository information: %s", backendArtefact.Id), http.StatusInternalServerError)
 			return
 		}
 		err = back.UpdateArtefactInfo(name.Group, name.Name, backendArtefact, s.conf.HttpUser(), s.conf.HttpPwd())
 		if err != nil {
-			s.writeError(w, fmt.Errorf("cannot update artefact information in Nexus backend: %s", err), http.StatusInternalServerError)
+			s.writeError(w, fmt.Errorf("cannot update package information in Nexus backend: %s", err), http.StatusInternalServerError)
 			return
 		}
 		// returns a 201 to indicate the metadata (tag) was added
 		w.WriteHeader(http.StatusCreated)
 		return
 	}
-	// if the artefact does not exist
+	// if the package does not exist
 	// add it to the repository
-	repo.Artefacts = append(repo.Artefacts, artefactMeta)
+	repo.Artefacts = append(repo.Artefacts, packageMeta)
 	// create a repository file
 	repoFile, err := core.ToJsonFile(repo)
 	if err != nil {
@@ -276,7 +276,7 @@ func (s *Server) artefactUploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if locked > 0 {
-		err = back.UploadArtefact(name, artefactMeta.FileRef, zipFile, jsonFile, repoFile, s.conf.HttpUser(), s.conf.HttpPwd())
+		err = back.UploadArtefact(name, packageMeta.FileRef, zipFile, jsonFile, repoFile, s.conf.HttpUser(), s.conf.HttpPwd())
 		_, e := s.lock.release(repoPath)
 		if err != nil {
 			log.Printf("error whilst pushing to %s backend: %s", s.conf.Backend(), err)
@@ -287,7 +287,7 @@ func (s *Server) artefactUploadHandler(w http.ResponseWriter, r *http.Request) {
 			s.writeError(w, fmt.Errorf("cannot release lock on repository: %s, %s", repoPath, err), http.StatusInternalServerError)
 			return
 		}
-		// returns a created code to indicate the artefact was added
+		// returns a created code to indicate the package was added
 		w.WriteHeader(http.StatusCreated)
 	} else {
 		err := s.lock.tryRelease(repoPath, 15)
@@ -297,15 +297,15 @@ func (s *Server) artefactUploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Get information about the artefacts in a repository
-// @Description gets meta data about artefacts in the specified repository
+// @Summary Get information about the packages in a repository
+// @Description gets meta data about packages in the specified repository
 // @Tags Repositories
 // @Accept text/html, application/json, application/yaml, application/xml, application/xhtml+xml
 // @Produce application/json, application/yaml, application/xml
 // @Success 200 {string} OK
 // @Router /repository/{repository-group}/{repository-name} [get]
-// @Param repository-group path string true "the artefact repository group name"
-// @Param repository-name path string true "the artefact repository name"
+// @Param repository-group path string true "the package repository group name"
+// @Param repository-name path string true "the package repository name"
 func (s *Server) repositoryInfoHandler(w http.ResponseWriter, r *http.Request) {
 	// get request variables
 	vars := mux.Vars(r)
@@ -320,28 +320,28 @@ func (s *Server) repositoryInfoHandler(w http.ResponseWriter, r *http.Request) {
 	s.write(w, r, repo)
 }
 
-// @Summary Get information about the specified artefact
-// @Description gets meta data about the artefact identified by its id
-// @Tags Artefacts
+// @Summary Get information about the specified package
+// @Description gets meta data about the package identified by its id
+// @Tags Packages
 // @Accept text/html, application/json, application/yaml, application/xml, application/xhtml+xml
 // @Produce application/json, application/yaml, application/xml
 // @Success 200 {string} OK
-// @Router /artefact/{repository-group}/{repository-name}/id/{artefact-id} [get]
-// @Param repository-group path string true "the artefact repository group name"
-// @Param repository-name path string true "the artefact repository name"
-func (s *Server) artefactInfoGetHandler(w http.ResponseWriter, r *http.Request) {
+// @Router /package/{repository-group}/{repository-name}/id/{package-id} [get]
+// @Param repository-group path string true "the package repository group name"
+// @Param repository-name path string true "the package repository name"
+func (s *Server) packageInfoGetHandler(w http.ResponseWriter, r *http.Request) {
 	// get request variables
 	vars := mux.Vars(r)
 	repoGroup := vars["repository-group"]
 	repoName := vars["repository-name"]
-	id := vars["artefact-id"]
+	id := vars["package-id"]
 	// retrieve repository metadata from the backend
 	artie, err := GetBackend().GetArtefactInfo(repoGroup, repoName, id, s.conf.HttpUser(), s.conf.HttpPwd())
 	if err != nil {
 		s.writeError(w, err, http.StatusInternalServerError)
 		return
 	}
-	// if the artefact is not found send a not found error
+	// if the package is not found send a not found error
 	if artie == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -349,34 +349,34 @@ func (s *Server) artefactInfoGetHandler(w http.ResponseWriter, r *http.Request) 
 	s.write(w, r, artie)
 }
 
-// @Summary Update information about the specified artefact
-// @Description updates meta data about the artefact identified by its id
-// @Tags Artefacts
+// @Summary Update information about the specified package
+// @Description updates meta data about the package identified by its id
+// @Tags Packages
 // @Success 200 {string} OK
-// @Router /artefact/{repository-group}/{repository-name}/id/{artefact-id} [put]
-// @Param repository-group path string true "the artefact repository group name"
-// @Param repository-name path string true "the artefact repository name"
-// @Param artefact-id path string true "the artefact unique identifier"
-// @Param artefact-info body interface{} true "the artefact information to be updated"
-func (s *Server) artefactInfoUpdateHandler(w http.ResponseWriter, r *http.Request) {
+// @Router /package/{repository-group}/{repository-name}/id/{package-id} [put]
+// @Param repository-group path string true "the package repository group name"
+// @Param repository-name path string true "the package repository name"
+// @Param package-id path string true "the package unique identifier"
+// @Param package-info body interface{} true "the package information to be updated"
+func (s *Server) packageInfoUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	// get request variables
 	vars := mux.Vars(r)
 	repoGroup := vars["repository-group"]
 	repoName := vars["repository-name"]
-	id := vars["artefact-id"]
+	id := vars["package-id"]
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		s.writeError(w, fmt.Errorf("cannot retrieve artefact information from request body: %s", err), 500)
+		s.writeError(w, fmt.Errorf("cannot retrieve package information from request body: %s", err), 500)
 		return
 	}
 	artie := new(registry.Artefact)
 	err = json.Unmarshal(body, artie)
 	if err != nil {
-		s.writeError(w, fmt.Errorf("cannot unmarshal artefact information from request body: %s", err), 500)
+		s.writeError(w, fmt.Errorf("cannot unmarshal package information from request body: %s", err), 500)
 		return
 	}
 	if artie.Id != id {
-		s.writeError(w, fmt.Errorf("artefact Id in URI (%s) does not match the one provided in the payload (%s)", id, artie.Id), 500)
+		s.writeError(w, fmt.Errorf("package Id in URI (%s) does not match the one provided in the payload (%s)", id, artie.Id), 500)
 		return
 	}
 	// updates the repository metadata in Nexus
@@ -393,9 +393,9 @@ func (s *Server) artefactInfoUpdateHandler(w http.ResponseWriter, r *http.Reques
 // @Success 200 {string} returns the new webhook Id
 // @Failure 500 {string} internal error
 // @Router /webhook/{repository-group}/{repository-name} [post]
-// @Param repository-group path string true "the artefact repository group name"
-// @Param repository-name path string true "the artefact repository name"
-// @Param artefact-info body WebHookConfig true "the webhook configuration"
+// @Param repository-group path string true "the package repository group name"
+// @Param repository-name path string true "the package repository name"
+// @Param package-info body WebHookConfig true "the webhook configuration"
 func (s *Server) webhookCreateHandler(w http.ResponseWriter, r *http.Request) {
 	// get request variables
 	vars := mux.Vars(r)
@@ -445,8 +445,8 @@ func (s *Server) webhookCreateHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {string} successfully deleted
 // @Failure 500 {string} internal error
 // @Router /webhook/{repository-group}/{repository-name}/{webhook-id} [delete]
-// @Param repository-group path string true "the artefact repository group name"
-// @Param repository-name path string true "the artefact repository name"
+// @Param repository-group path string true "the package repository group name"
+// @Param repository-name path string true "the package repository name"
 // @Param webhook-id path string true "the webhook unique identifier"
 func (s *Server) webhookDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	// get request variables
@@ -475,8 +475,8 @@ func (s *Server) webhookDeleteHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {string} successfully deleted
 // @Failure 500 {string} internal error
 // @Router /webhook/{repository-group}/{repository-name} [get]
-// @Param repository-group path string true "the artefact repository group name"
-// @Param repository-name path string true "the artefact repository name"
+// @Param repository-group path string true "the package repository group name"
+// @Param repository-name path string true "the package repository name"
 func (s *Server) webhookGetHandler(w http.ResponseWriter, r *http.Request) {
 	// get request variables
 	vars := mux.Vars(r)
