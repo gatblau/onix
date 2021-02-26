@@ -119,8 +119,8 @@ func (f *Flow) GetInputDefinition(b *data.BuildFile, env *core.Envar) *data.Inpu
 			if manif == nil {
 				core.RaiseErr("manifest for package '%s' not found", name)
 			}
-			i := data.SurveyInputFromManifest(name, step.Function, manif, false, true, env)
-			i.SurveyRegistryCreds(step.Package, false, true, env)
+			i := data.SurveyInputFromManifest(f.Name, step.Name, name.Domain, step.Function, manif, false, true, env)
+			i.SurveyRegistryCreds(f.Name, step.Name, name.Domain, false, true, env)
 			result.Merge(i)
 		} else {
 			// surveys runtime manifest for variables
