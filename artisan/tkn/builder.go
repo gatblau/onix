@@ -3,7 +3,6 @@ package tkn
 import (
 	"bytes"
 	"fmt"
-	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/flow"
@@ -126,7 +125,7 @@ func (b *Builder) newSteps() []*Steps {
 		}
 		// add the environment information required by the Artisan runtime to work
 		// see here: https://github.com/gatblau/artisan/tree/master/runtime
-		s.Env = b.addRuntimeInterfaceVars(step, s.Env)
+		s.Env = b.addRuntimeInterfaceVars(b.flow.Name, step, s.Env)
 		steps = append(steps, s)
 	}
 	return steps
@@ -165,7 +164,7 @@ func (b *Builder) getEnv(step *flow.Step) []*Env {
 	return env
 }
 
-func (b *Builder) addRuntimeInterfaceVars(step *flow.Step, env []*Env) []*Env {
+func (b *Builder) addRuntimeInterfaceVars(flowName string, step *flow.Step, env []*Env) []*Env {
 	if len(step.Function) > 0 {
 		env = append(env, &Env{
 			Name:  "FX_NAME",
@@ -183,13 +182,12 @@ func (b *Builder) addRuntimeInterfaceVars(step *flow.Step, env []*Env) []*Env {
 				Value: step.PackageSource,
 			})
 		}
-		name, _ := core.ParseName(step.Package)
 		env = append(env, &Env{
 			Name: "ART_REG_USER",
 			ValueFrom: &ValueFrom{
 				SecretKeyRef: &SecretKeyRef{
 					Name: b.secretName(),
-					Key:  fmt.Sprintf("ART_REG_USER_%s", data.NormInputName(name.Domain)),
+					Key:  fmt.Sprintf("%s_%s_ART_REG_USER", data.NormInputName(flowName), data.NormInputName(step.Name)),
 				},
 			},
 		})
@@ -198,7 +196,7 @@ func (b *Builder) addRuntimeInterfaceVars(step *flow.Step, env []*Env) []*Env {
 			ValueFrom: &ValueFrom{
 				SecretKeyRef: &SecretKeyRef{
 					Name: b.secretName(),
-					Key:  fmt.Sprintf("ART_REG_PWD_%s", data.NormInputName(name.Domain)),
+					Key:  fmt.Sprintf("%s_%s_ART_REG_PWD", data.NormInputName(flowName), data.NormInputName(step.Name)),
 				},
 			},
 		})

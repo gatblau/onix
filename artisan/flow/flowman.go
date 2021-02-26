@@ -98,9 +98,9 @@ func (m *Manager) Merge(interactive bool) error {
 			core.CheckErr(err, "invalid step %s package name %s", step.Name, step.Package)
 			// get the package manifest
 			manifest := local.GetManifest(name)
-			step.Input = data.SurveyInputFromManifest(name, step.Function, manifest, interactive, false, env)
+			step.Input = data.SurveyInputFromManifest(m.Flow.Name, step.Name, name.Domain, step.Function, manifest, interactive, false, env)
 			// collects credentials to retrieve package from registry
-			step.Input.SurveyRegistryCreds(step.Package, interactive, false, env)
+			step.Input.SurveyRegistryCreds(m.Flow.Name, step.Name, name.Domain, interactive, false, env)
 		} else {
 			// if the step has a function
 			if len(step.Function) > 0 {

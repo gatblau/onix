@@ -107,7 +107,7 @@ func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool,
 		}
 		runtime = core.QualifyRuntime(runtime)
 		// interactively survey for required input via CLI
-		input := data.SurveyInputFromManifest(name, fxName, m, interactive, false, env)
+		input := data.SurveyInputFromManifest(name.Group, name.Name, name.Domain, fxName, m, interactive, false, env)
 		// merge the collected input with the current environment without adding the PGP keys (they must be present locally)
 		env.Merge(input.Env(false))
 		// get registry credentials

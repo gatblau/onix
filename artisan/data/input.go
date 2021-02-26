@@ -91,14 +91,14 @@ func (i *Input) Encrypt(pub *crypto.PGP) {
 	encryptInput(i, pub)
 }
 
-func (i *Input) SurveyRegistryCreds(packageName string, prompt, defOnly bool, env *core.Envar) {
-	name, _ := core.ParseName(packageName)
+func (i *Input) SurveyRegistryCreds(flowName, stepName, domain string, prompt, defOnly bool, env *core.Envar) {
+	// name, _ := core.ParseName(packageName)
 	// check for art_reg_user
-	userName := fmt.Sprintf("%s_%s_ART_REG_USER", NormInputName(name.Group), NormInputName(name.Name))
+	userName := fmt.Sprintf("%s_%s_ART_REG_USER", NormInputName(flowName), NormInputName(stepName))
 	if !i.HasSecret(userName) {
 		userSecret := &Secret{
 			Name:        userName,
-			Description: fmt.Sprintf("the username to authenticate with the registry at '%s'", name.Domain),
+			Description: fmt.Sprintf("the username to authenticate with the registry at %s'", domain),
 		}
 		if !defOnly {
 			EvalSecret(userSecret, prompt, env)
@@ -106,11 +106,11 @@ func (i *Input) SurveyRegistryCreds(packageName string, prompt, defOnly bool, en
 		i.Secret = append(i.Secret, userSecret)
 	}
 	// check for art_reg_pwd
-	pwd := fmt.Sprintf("%s_%s_ART_REG_PWD_%s", NormInputName(name.Group), NormInputName(name.Name))
+	pwd := fmt.Sprintf("%s_%s_ART_REG_PWD", NormInputName(flowName), NormInputName(stepName))
 	if !i.HasSecret(pwd) {
 		pwdSecret := &Secret{
 			Name:        pwd,
-			Description: fmt.Sprintf("the password to authenticate with the registry at '%s'", name.Domain),
+			Description: fmt.Sprintf("the password to authenticate with the registry at '%s'", domain),
 		}
 		if !defOnly {
 			EvalSecret(pwdSecret, prompt, env)
@@ -118,11 +118,11 @@ func (i *Input) SurveyRegistryCreds(packageName string, prompt, defOnly bool, en
 		i.Secret = append(i.Secret, pwdSecret)
 	}
 	// as we need to open this package a verification (public PGP) key is needed
-	keyName := fmt.Sprintf("%s_%s_VERIFICATION_KEY", NormInputName(name.Group), NormInputName(name.Name))
+	keyName := fmt.Sprintf("%s_%s_VERIFICATION_KEY", NormInputName(flowName), NormInputName(stepName))
 	if !i.HasKey(keyName) {
 		key := &Key{
 			Name:        keyName,
-			Description: fmt.Sprintf("the public PGP key required to open the package %s", name),
+			Description: fmt.Sprintf("the public PGP key required to open the package %s", domain),
 			Private:     false,
 		}
 		if !defOnly {
@@ -233,7 +233,7 @@ func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt, defOn
 }
 
 // extracts the package manifest Input in an exported function
-func SurveyInputFromManifest(name *core.PackageName, fxName string, manifest *Manifest, prompt, defOnly bool, env *core.Envar) *Input {
+func SurveyInputFromManifest(flowName, stepName, domain string, fxName string, manifest *Manifest, prompt, defOnly bool, env *core.Envar) *Input {
 	// get the function in the manifest
 	fx := manifest.Fx(fxName)
 	if fx == nil {
@@ -250,7 +250,7 @@ func SurveyInputFromManifest(name *core.PackageName, fxName string, manifest *Ma
 	// first evaluates the existing inputs
 	input = evalInput(input, prompt, defOnly, env)
 	// then add registry credential inputs
-	input.SurveyRegistryCreds(name.String(), prompt, defOnly, env)
+	input.SurveyRegistryCreds(flowName, stepName, domain, prompt, defOnly, env)
 	return input
 }
 
