@@ -8,10 +8,8 @@
 package data
 
 import (
-	"encoding/base64"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/crypto"
 	"net/url"
 	"path/filepath"
 	"reflect"
@@ -39,86 +37,6 @@ type InputBinding struct {
 	Var    []string `yaml:"var"`
 	Secret []string `yaml:"secret"`
 	Key    []string `yaml:"key"`
-}
-
-// describes PGP keys required by functions
-type Key struct {
-	// the unique reference for the PGP key
-	Name string `yaml:"name"`
-	// a description of the intended use of this key
-	Description string `yaml:"description"`
-	// indicates if the referred key is private or public
-	Private bool `yaml:"private"`
-	// the artisan package group used to select the key
-	PackageGroup string `yaml:"package_group,omitempty" json:"package_group,omitempty"`
-	// the artisan package name used to select the key
-	PackageName string `yaml:"package_name,omitempty" json:"package_name,omitempty"`
-	// indicates if this key should be aggregated with other keys
-	Aggregate bool `yaml:"aggregate,omitempty" json:"aggregate,omitempty"`
-	// the key content
-	Value string `yaml:"value,omitempty" json:"value,omitempty"`
-	// the path to the key in the Artisan registry
-	Path string `yaml:"path,omitempty" json:"path,omitempty"`
-}
-
-func (k *Key) Encrypt(pubKey *crypto.PGP) error {
-	encValue, err := pubKey.Encrypt([]byte(k.Value))
-	if err != nil {
-		return fmt.Errorf("cannot encrypt PGP key %s: %s", k.Name, err)
-	}
-	k.Value = base64.StdEncoding.EncodeToString(encValue)
-	return nil
-}
-
-func (k *Key) Decrypt(privateKey *crypto.PGP) error {
-	decoded, err := base64.StdEncoding.DecodeString(k.Value)
-	core.CheckErr(err, "cannot base64 decode key '%s'", k.Name)
-	decValue, err := privateKey.Decrypt(decoded)
-	if err != nil {
-		return fmt.Errorf("cannot decrypt PGP key %s: %s", k.Name, err)
-	}
-	k.Value = string(decValue)
-	return nil
-}
-
-// describes the secrets required by functions
-type Secret struct {
-	// the unique reference for the secret
-	Name string `yaml:"name" json:"name"`
-	// a description of the intended use or meaning of this secret
-	Description string `yaml:"description" json:"description"`
-	// the value of the secret
-	Value string `yaml:"value,omitempty" json:"value,omitempty"`
-}
-
-func (s *Secret) Encrypt(pubKey *crypto.PGP) error {
-	encValue, err := pubKey.Encrypt([]byte(s.Value))
-	if err != nil {
-		return fmt.Errorf("cannot encrypt secret %s: %s", s.Name, err)
-	}
-	s.Value = base64.StdEncoding.EncodeToString(encValue)
-	return nil
-}
-
-func (s *Secret) Decrypt(pk *crypto.PGP) {
-	if !pk.HasPrivate() {
-		core.RaiseErr("provided key is not private")
-	}
-	// decode encrypted value
-	decoded, err := base64.StdEncoding.DecodeString(s.Value)
-	core.CheckErr(err, "cannot decode encrypted value using base64")
-	decValueBytes, err := pk.Decrypt([]byte(decoded))
-	core.CheckErr(err, "cannot decrypt secret")
-	s.Value = string(decValueBytes)
-}
-
-type Var struct {
-	Name        string `yaml:"name" json:"name"`
-	Description string `yaml:"description" json:"description"`
-	Required    bool   `yaml:"required" json:"required"`
-	Type        string `yaml:"type" json:"type"`
-	Value       string `yaml:"value,omitempty" json:"value,omitempty"`
-	Default     string `yaml:"default,omitempty" json:"default,omitempty"`
 }
 
 // gets a slice of string with each element containing key=value

@@ -19,17 +19,18 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 )
 
 // describes exported input information required by functions or runtimes
 type Input struct {
 	// required PGP keys
-	Key []*Key `yaml:"key,omitempty" json:"key,omitempty"`
+	Key Keys `yaml:"key,omitempty" json:"key,omitempty"`
 	// required string value secrets
-	Secret []*Secret `yaml:"secret,omitempty" json:"secret,omitempty"`
+	Secret Secrets `yaml:"secret,omitempty" json:"secret,omitempty"`
 	// required variables
-	Var []*Var `yaml:"var,omitempty" json:"var,omitempty"`
+	Var Vars `yaml:"var,omitempty" json:"var,omitempty"`
 }
 
 func (i *Input) HasVarBinding(binding string) bool {
@@ -155,37 +156,49 @@ func (i *Input) Merge(in *Input) {
 	}
 	for _, v := range in.Var {
 		// dedup
+		found := false
 		for _, iV := range i.Var {
 			// if the variable to be merged is already in the source
 			if iV.Name == v.Name {
-				// skip merge
-				continue
+				found = true
+				break
 			}
 		}
-		i.Var = append(i.Var, v)
+		if !found {
+			i.Var = append(i.Var, v)
+		}
 	}
+	sort.Sort(i.Var)
 	for _, s := range in.Secret {
 		// dedup
+		found := false
 		for _, iS := range i.Secret {
 			// if the secret to be merged is already in the source
 			if iS.Name == s.Name {
-				// skip merge
-				continue
+				found = true
+				break
 			}
 		}
-		i.Secret = append(i.Secret, s)
+		if !found {
+			i.Secret = append(i.Secret, s)
+		}
 	}
+	sort.Sort(i.Secret)
 	for _, k := range in.Key {
 		// dedup
+		found := false
 		for _, kV := range i.Key {
 			// if the key to be merged is already in the source
 			if kV.Name == k.Name {
-				// skip merge
-				continue
+				found = true
+				break
 			}
 		}
-		i.Key = append(i.Key, k)
+		if !found {
+			i.Key = append(i.Key, k)
+		}
 	}
+	sort.Sort(i.Key)
 }
 
 func (i *Input) VarExist(name string) bool {
@@ -342,24 +355,42 @@ func EvalKey(inputKey *Key, prompt bool, env *core.Envar) {
 
 func (i *Input) ToEnvFile() []byte {
 	buf := &bytes.Buffer{}
+	buf.WriteString("# ===================================================\n")
+	buf.WriteString("# VARIABLES\n")
+	buf.WriteString("# ===================================================\n")
 	for _, v := range i.Var {
-		buf.WriteString(fmt.Sprintf("# %s\n", v.Description))
+		buf.WriteString(toEnvComments(v.Description))
 		if len(v.Default) > 0 {
 			buf.WriteString(fmt.Sprintf("%s=%s\n", v.Name, v.Default))
 		} else {
 			buf.WriteString(fmt.Sprintf("%s=\n", v.Name))
 		}
 	}
+	buf.WriteString("\n# ===================================================\n")
+	buf.WriteString("# SECRETS\n")
+	buf.WriteString("# ===================================================\n")
 	for _, s := range i.Secret {
-		buf.WriteString(fmt.Sprintf("# %s\n", s.Description))
+		buf.WriteString(toEnvComments(s.Description))
 		buf.WriteString(fmt.Sprintf("%s=\n", s.Name))
 	}
+	buf.WriteString("\n# ===================================================\n")
+	buf.WriteString("# KEY PATHS\n")
+	buf.WriteString("# ===================================================\n")
 	for _, k := range i.Key {
 		buf.WriteString(fmt.Sprint("# the path of the key in the artisan registry as described below:\n"))
-		buf.WriteString(fmt.Sprintf("# %s\n", k.Description))
+		buf.WriteString(toEnvComments(k.Description))
 		buf.WriteString(fmt.Sprintf("%s=\n", k.Name))
 	}
 	return buf.Bytes()
+}
+
+func toEnvComments(value string) string {
+	out := new(bytes.Buffer)
+	values := strings.Split(value, "\n")
+	for _, v := range values {
+		out.WriteString(fmt.Sprintf("# %s\n", v))
+	}
+	return out.String()
 }
 
 // extract any Input data from the source that have a binding
