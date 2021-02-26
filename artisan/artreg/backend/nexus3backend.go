@@ -97,16 +97,16 @@ func (r *Nexus3Backend) Download(repoGroup, repoName, fileName, user, pwd string
 	return f, err
 }
 
-func (r *Nexus3Backend) UpdateArtefactInfo(group, name string, artefact *registry.Artefact, user string, pwd string) error {
+func (r *Nexus3Backend) UpdatePackageInfo(group, name string, packageInfo *registry.Package, user string, pwd string) error {
 	// get the repository info
 	repo, err := r.GetRepositoryInfo(group, name, user, pwd)
 	if err != nil {
 		return err
 	}
 	// update the repository
-	updated := repo.UpdateArtefact(artefact)
+	updated := repo.UpdatePackage(packageInfo)
 	if !updated {
-		return fmt.Errorf("artefact not found in remote repository, not update was made")
+		return fmt.Errorf("package not found in remote repository, not update was made")
 	}
 	// turn the repository into a file to upload
 	// create a repository file
@@ -132,8 +132,8 @@ func (r *Nexus3Backend) UpdateArtefactInfo(group, name string, artefact *registr
 	return r.postMultipart(b, writer, user, pwd)
 }
 
-// Upload an artefact
-func (r *Nexus3Backend) UploadArtefact(name *core.PackageName, artefactRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error {
+// Upload a package
+func (r *Nexus3Backend) UploadPackage(name *core.PackageName, packageRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error {
 	// ensure files are properly closed
 	defer zipfile.Close()
 	defer jsonFile.Close()
@@ -145,19 +145,19 @@ func (r *Nexus3Backend) UploadArtefact(name *core.PackageName, artefactRef strin
 	if err != nil {
 		return err
 	}
-	err = r.addField(writer, "raw.asset1.filename", fmt.Sprintf("%s.json", artefactRef))
+	err = r.addField(writer, "raw.asset1.filename", fmt.Sprintf("%s.json", packageRef))
 	if err != nil {
 		return err
 	}
-	err = r.addFile(writer, "raw.asset1", fmt.Sprintf("%s.json", artefactRef), jsonFile)
+	err = r.addFile(writer, "raw.asset1", fmt.Sprintf("%s.json", packageRef), jsonFile)
 	if err != nil {
 		return err
 	}
-	err = r.addField(writer, "raw.asset2.filename", fmt.Sprintf("%s.zip", artefactRef))
+	err = r.addField(writer, "raw.asset2.filename", fmt.Sprintf("%s.zip", packageRef))
 	if err != nil {
 		return err
 	}
-	err = r.addFile(writer, "raw.asset2", fmt.Sprintf("%s.zip", artefactRef), zipfile)
+	err = r.addFile(writer, "raw.asset2", fmt.Sprintf("%s.zip", packageRef), zipfile)
 	if err != nil {
 		return err
 	}
@@ -215,7 +215,7 @@ func (r *Nexus3Backend) GetRepositoryInfo(group, name, user, pwd string) (*regis
 	// 	// returns an empty repository
 	// 	return &Repository{
 	// 		Repository: fmt.Sprintf("%s/%s", group, name),
-	// 		Artefacts:  make([]*Artefact, 0),
+	// 		Artefacts:  make([]*Package, 0),
 	// 	}, nil
 	// }
 
@@ -235,7 +235,7 @@ func (r *Nexus3Backend) GetRepositoryInfo(group, name, user, pwd string) (*regis
 		// returns an empty repository
 		return &registry.Repository{
 			Repository: fmt.Sprintf("%s/%s", group, name),
-			Artefacts:  make([]*registry.Artefact, 0),
+			Packages:   make([]*registry.Package, 0),
 		}, nil
 	}
 	repo := new(registry.Repository)
@@ -243,13 +243,13 @@ func (r *Nexus3Backend) GetRepositoryInfo(group, name, user, pwd string) (*regis
 	return repo, err
 }
 
-func (r *Nexus3Backend) GetArtefactInfo(group, name, id, user, pwd string) (*registry.Artefact, error) {
+func (r *Nexus3Backend) GetPackageInfo(group, name, id, user, pwd string) (*registry.Package, error) {
 	repo, err := r.GetRepositoryInfo(group, name, user, pwd)
 	if err != nil {
 		return nil, err
 	}
 	if repo != nil {
-		return repo.FindArtefact(id), nil
+		return repo.FindPackage(id), nil
 	}
 	return nil, nil
 }
@@ -290,8 +290,6 @@ func (r *Nexus3Backend) fileDownloadURI(group, name, filename string) string {
 func (r *Nexus3Backend) downloadURI(repoGroup, repoName, filename string) string {
 	return fmt.Sprintf("%s/repository/artisan/%s/%s/%s", r.domain, repoGroup, repoName, filename)
 }
-
-func (r *Nexus3Backend) DownloadArtefact() {}
 
 // get the content of a file from Nexus
 func (r *Nexus3Backend) getFile(repoGroup, repoName, filename, user, pwd string) ([]byte, error) {

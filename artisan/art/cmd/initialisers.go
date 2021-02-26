@@ -10,7 +10,7 @@ package cmd
 func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
 	buildCmd := NewBuildCmd()
-	artefactsCmd := NewListCmd()
+	lsCmd := NewListCmd()
 	pushCmd := NewPushCmd()
 	rmCmd := NewRmCmd()
 	tagCmd := NewTagCmd()
@@ -30,7 +30,7 @@ func InitialiseRootCmd() *RootCmd {
 	envCmd := InitialiseEnvCommand()
 	rootCmd.Cmd.AddCommand(
 		buildCmd.cmd,
-		artefactsCmd.cmd,
+		lsCmd.cmd,
 		pushCmd.cmd,
 		rmCmd.cmd,
 		tagCmd.cmd,

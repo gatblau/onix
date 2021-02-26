@@ -15,7 +15,7 @@ import (
 	"log"
 )
 
-// list local artefacts
+// list local packages
 type RmCmd struct {
 	cmd *cobra.Command
 }
@@ -23,8 +23,8 @@ type RmCmd struct {
 func NewRmCmd() *RmCmd {
 	c := &RmCmd{
 		cmd: &cobra.Command{
-			Use:   "rm ARTEFACT [ARTEFACT...]",
-			Short: "removes one or more artefacts from the local artefact store",
+			Use:   "rm PACHAGE [PACKAGE...]",
+			Short: "removes one or more packages from the local package registry",
 			Long:  ``,
 		},
 	}
@@ -33,13 +33,13 @@ func NewRmCmd() *RmCmd {
 }
 
 func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
-	// check one or more artefact names have been provided
+	// check one or more package names have been provided
 	if len(args) == 0 {
-		log.Fatal("missing name(s) of the artefact(s) to remove")
+		log.Fatal("missing name(s) of the package(s) to remove")
 	}
 	//  create a local registry
 	local := registry.NewLocalRegistry()
-	// get the name(s) of the artefact(s) to remove
+	// get the name(s) of the package(s) to remove
 	local.Remove(c.toArtURIs(args))
 }
 

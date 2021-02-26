@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// list local artefacts
+// list local packages
 type PGPExportCmd struct {
 	cmd       *cobra.Command
 	group     string // the repository group for which the key should be used - if empty then the root is used
@@ -26,7 +26,7 @@ func NewPGPExportCmd() *PGPExportCmd {
 		cmd: &cobra.Command{
 			Use:   "export [flags] path/to/exported/file",
 			Short: "export a (private or public) PGP/RSA key stored in the local registry",
-			Long:  `a private PGP/RSA key is used to digitally sign an artefact upon build, a public RSA key is used to verify the digital signature when the artefact is opened`,
+			Long:  `a private PGP/RSA key is used to digitally sign a package upon build, a public RSA key is used to verify the digital signature when the package is opened`,
 		},
 	}
 	c.isPrivate = c.cmd.Flags().BoolP("private", "k", false, "flag that indicates if the key to export is the private or public key.")

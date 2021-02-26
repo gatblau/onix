@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// list local artefacts
+// list local packages
 type WaitCmd struct {
 	cmd      *cobra.Command
 	attempts int

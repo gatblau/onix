@@ -15,7 +15,7 @@ import (
 	"log"
 )
 
-// list local artefacts
+// list local packages
 type PullCmd struct {
 	cmd         *cobra.Command
 	credentials string
@@ -27,7 +27,7 @@ func NewPullCmd() *PullCmd {
 	c := &PullCmd{
 		cmd: &cobra.Command{
 			Use:   "pull [OPTIONS] NAME[:TAG]",
-			Short: "downloads an artefact from the artefact registry",
+			Short: "downloads an package from the package registry",
 			Long:  ``,
 		},
 	}
@@ -41,11 +41,11 @@ func (c *PullCmd) Run(cmd *cobra.Command, args []string) {
 	if *c.noTLS {
 		core.Msg("transport level security (TLS) is disabled\n")
 	}
-	// check an artefact name has been provided
+	// check an package name has been provided
 	if len(args) == 0 {
-		log.Fatal("name of the artefact to pull is required")
+		log.Fatal("name of the package to pull is required")
 	}
-	// get the name of the artefact to push
+	// get the name of the package to push
 	nameTag := args[0]
 	// validate the name
 	packageName, err := core.ParseName(nameTag)

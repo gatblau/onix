@@ -16,14 +16,14 @@ import (
 
 // the interface implemented by a backend
 type Backend interface {
-	// upload an artefact to the remote repository
-	UploadArtefact(name *core.PackageName, artefactRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error
+	// upload an package to the remote repository
+	UploadPackage(name *core.PackageName, packageRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error
 	// get repository information
 	GetRepositoryInfo(group, name, user, pwd string) (*registry.Repository, error)
-	// get artefact information
-	GetArtefactInfo(group, name, id, user, pwd string) (*registry.Artefact, error)
-	// update artefact information
-	UpdateArtefactInfo(group string, name string, artefact *registry.Artefact, user string, pwd string) error
+	// get package information
+	GetPackageInfo(group, name, id, user, pwd string) (*registry.Package, error)
+	// update package information
+	UpdatePackageInfo(group string, name string, packageInfo *registry.Package, user string, pwd string) error
 	// open a file for download
 	Download(repoGroup, repoName, fileName, user, pwd string) (*os.File, error)
 }

@@ -34,7 +34,7 @@ type Manifest struct {
 	Target string `json:"target,omitempty"`
 	// the timestamp
 	Time string `json:"time"`
-	// the size of the artefact
+	// the size of the package
 	Size string `json:"size"`
 	// true if the target was zipped previous to packaging (e.g. jar files)
 	Zip bool `json:"zip"`

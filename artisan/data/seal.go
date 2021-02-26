@@ -63,8 +63,8 @@ func (seal *Seal) Checksum(path string) []byte {
 	return sum
 }
 
-// the artefact id calculated as the hex encoded SHA-256 digest of the artefact Seal
-func (seal *Seal) ArtefactId() string {
+// the package id calculated as the hex encoded SHA-256 digest of the artefact Seal
+func (seal *Seal) PackageId() string {
 	// serialise the seal info to json
 	info := core.ToJsonBytes(seal)
 	hash := sha256.New()

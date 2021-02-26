@@ -15,7 +15,7 @@ import (
 	"log"
 )
 
-// list local artefacts
+// list local packages
 type PushCmd struct {
 	cmd         *cobra.Command
 	credentials string
@@ -26,7 +26,7 @@ func NewPushCmd() *PushCmd {
 	c := &PushCmd{
 		cmd: &cobra.Command{
 			Use:   "push [OPTIONS] NAME[:TAG]",
-			Short: "uploads an artefact to a remote artefact store",
+			Short: "uploads an package to a remote package store",
 			Long:  ``,
 		},
 	}
@@ -40,11 +40,11 @@ func (c *PushCmd) Run(cmd *cobra.Command, args []string) {
 	if *c.noTLS {
 		log.Printf("info: Transport Level Security is disabled\n")
 	}
-	// check an artefact name has been provided
+	// check an package name has been provided
 	if len(args) == 0 {
-		log.Fatal("name of the artefact to push is required")
+		log.Fatal("name of the package to push is required")
 	}
-	// get the name of the artefact to push
+	// get the name of the package to push
 	nameTag := args[0]
 	// validate the name
 	packageName, err := core.ParseName(nameTag)

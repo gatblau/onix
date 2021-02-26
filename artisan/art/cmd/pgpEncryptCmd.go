@@ -16,7 +16,7 @@ import (
 	"os"
 )
 
-// list local artefacts
+// list local packages
 type PGPEncryptCmd struct {
 	cmd     *cobra.Command
 	keyPath string
@@ -33,8 +33,8 @@ func NewPGPEncryptCmd() *PGPEncryptCmd {
 		},
 	}
 	c.cmd.Flags().StringVarP(&c.keyPath, "public-key", "p", "", "the path to the PUBLIC PGP key to use")
-	c.cmd.Flags().StringVarP(&c.group, "group", "g", "", "the artefact group of the private key to use")
-	c.cmd.Flags().StringVarP(&c.name, "name", "n", "", "the artefact name of the private key to use")
+	c.cmd.Flags().StringVarP(&c.group, "group", "g", "", "the package group of the private key to use")
+	c.cmd.Flags().StringVarP(&c.name, "name", "n", "", "the package name of the private key to use")
 	c.cmd.Run = c.Run
 	return c
 }

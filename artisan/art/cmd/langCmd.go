@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// list local artefacts
+// list local packages
 type LangCmd struct {
 	cmd *cobra.Command
 }

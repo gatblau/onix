@@ -93,7 +93,7 @@ at least one build profile. Build profiles specify which files to package.
 	c.cmd.Flags().StringVarP(&c.profile, "profile", "p", "", "the build profile to use. if not provided, the default profile defined in the build file is used. if no default profile is found, then the first profile in the build file is used.")
 	c.cmd.Flags().StringVar(&c.keyPath, "key", "", "the path to the PGP private key to use to sign the package, if not specified, the keys stored in the local registry are used")
 	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "if true, it prompts the user for information if not provided")
-	c.copySource = c.cmd.Flags().BoolP("copy", "c", false, "indicates if a copy should be made of the project files before building the artefact. it is only applicable if the source is in the file system.")
+	c.copySource = c.cmd.Flags().BoolP("copy", "c", false, "indicates if a copy should be made of the project files before building the package. it is only applicable if the source is in the file system.")
 	return c
 }
 

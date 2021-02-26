@@ -216,7 +216,7 @@ func (s *Server) packageUploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// convert the meta file into an package
-	packageMeta := new(registry.Artefact)
+	packageMeta := new(registry.Package)
 	err = json.Unmarshal(meta, packageMeta)
 	if err != nil {
 		s.writeError(w, fmt.Errorf("cannot unmashall package metadata: %s", err), http.StatusBadRequest)
@@ -233,11 +233,11 @@ func (s *Server) packageUploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// try to find the package being pushed in the remote backend
-	backendArtefact := repo.FindArtefact(packageMeta.Id)
+	backendPackage := repo.FindPackage(packageMeta.Id)
 	// if the package exists
-	if backendArtefact != nil {
+	if backendPackage != nil {
 		// check the tag does not exist
-		if backendArtefact.HasTag(packageTag) {
+		if backendPackage.HasTag(packageTag) {
 			// package already exist
 			fmt.Printf("package already exist, nothing to push")
 			// returns ok but not created to indicate there is nothing to do
@@ -245,13 +245,13 @@ func (s *Server) packageUploadHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// if the tag does not exist then add the tag to the backend package
-		backendArtefact.Tags = append(backendArtefact.Tags, packageTag)
+		backendPackage.Tags = append(backendPackage.Tags, packageTag)
 		// update the package information
-		if !repo.UpdateArtefact(backendArtefact) {
-			s.writeError(w, fmt.Errorf("cannot update repository information: %s", backendArtefact.Id), http.StatusInternalServerError)
+		if !repo.UpdatePackage(backendPackage) {
+			s.writeError(w, fmt.Errorf("cannot update repository information: %s", backendPackage.Id), http.StatusInternalServerError)
 			return
 		}
-		err = back.UpdateArtefactInfo(name.Group, name.Name, backendArtefact, s.conf.HttpUser(), s.conf.HttpPwd())
+		err = back.UpdatePackageInfo(name.Group, name.Name, backendPackage, s.conf.HttpUser(), s.conf.HttpPwd())
 		if err != nil {
 			s.writeError(w, fmt.Errorf("cannot update package information in Nexus backend: %s", err), http.StatusInternalServerError)
 			return
@@ -262,7 +262,7 @@ func (s *Server) packageUploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// if the package does not exist
 	// add it to the repository
-	repo.Artefacts = append(repo.Artefacts, packageMeta)
+	repo.Packages = append(repo.Packages, packageMeta)
 	// create a repository file
 	repoFile, err := core.ToJsonFile(repo)
 	if err != nil {
@@ -276,7 +276,7 @@ func (s *Server) packageUploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if locked > 0 {
-		err = back.UploadArtefact(name, packageMeta.FileRef, zipFile, jsonFile, repoFile, s.conf.HttpUser(), s.conf.HttpPwd())
+		err = back.UploadPackage(name, packageMeta.FileRef, zipFile, jsonFile, repoFile, s.conf.HttpUser(), s.conf.HttpPwd())
 		_, e := s.lock.release(repoPath)
 		if err != nil {
 			log.Printf("error whilst pushing to %s backend: %s", s.conf.Backend(), err)
@@ -336,7 +336,7 @@ func (s *Server) packageInfoGetHandler(w http.ResponseWriter, r *http.Request) {
 	repoName := vars["repository-name"]
 	id := vars["package-id"]
 	// retrieve repository metadata from the backend
-	artie, err := GetBackend().GetArtefactInfo(repoGroup, repoName, id, s.conf.HttpUser(), s.conf.HttpPwd())
+	artie, err := GetBackend().GetPackageInfo(repoGroup, repoName, id, s.conf.HttpUser(), s.conf.HttpPwd())
 	if err != nil {
 		s.writeError(w, err, http.StatusInternalServerError)
 		return
@@ -369,7 +369,7 @@ func (s *Server) packageInfoUpdateHandler(w http.ResponseWriter, r *http.Request
 		s.writeError(w, fmt.Errorf("cannot retrieve package information from request body: %s", err), 500)
 		return
 	}
-	artie := new(registry.Artefact)
+	artie := new(registry.Package)
 	err = json.Unmarshal(body, artie)
 	if err != nil {
 		s.writeError(w, fmt.Errorf("cannot unmarshal package information from request body: %s", err), 500)
@@ -380,7 +380,7 @@ func (s *Server) packageInfoUpdateHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 	// updates the repository metadata in Nexus
-	if err = GetBackend().UpdateArtefactInfo(repoGroup, repoName, artie, s.conf.HttpUser(), s.conf.HttpPwd()); err != nil {
+	if err = GetBackend().UpdatePackageInfo(repoGroup, repoName, artie, s.conf.HttpUser(), s.conf.HttpPwd()); err != nil {
 		s.writeError(w, fmt.Errorf("cannot update repository information in Nexus backend: %s", err), http.StatusInternalServerError)
 		return
 	}

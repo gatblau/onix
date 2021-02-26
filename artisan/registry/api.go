@@ -53,7 +53,7 @@ func NewGenericAPI(domain string, noTLS bool) *Api {
 	}
 }
 
-func (r *Api) UploadPackage(name *core.PackageName, artefactRef string, zipfile multipart.File, jsonFile multipart.File, metaInfo *Artefact, user string, pwd string) error {
+func (r *Api) UploadPackage(name *core.PackageName, packageRef string, zipfile multipart.File, jsonFile multipart.File, metaInfo *Package, user string, pwd string) error {
 	// ensure files are properly closed
 	defer zipfile.Close()
 	defer jsonFile.Close()
@@ -64,9 +64,9 @@ func (r *Api) UploadPackage(name *core.PackageName, artefactRef string, zipfile 
 	core.CheckErr(err, "cannot marshall package info")
 	err = r.addField(writer, "package-meta", info)
 	core.CheckErr(err, "cannot add package meta file")
-	err = r.addFile(writer, "package-seal", fmt.Sprintf("%s.json", artefactRef), jsonFile)
+	err = r.addFile(writer, "package-seal", fmt.Sprintf("%s.json", packageRef), jsonFile)
 	core.CheckErr(err, "cannot add seal file")
-	err = r.addFile(writer, "package-file", fmt.Sprintf("%s.zip", artefactRef), zipfile)
+	err = r.addFile(writer, "package-file", fmt.Sprintf("%s.zip", packageRef), zipfile)
 	core.CheckErr(err, "cannot add package file")
 	// don't forget to close the multipart writer.
 	// If you don't close it, your request will be missing the terminating boundary.
@@ -102,7 +102,7 @@ func (r *Api) UploadPackage(name *core.PackageName, artefactRef string, zipfile 
 	return nil
 }
 
-func (r *Api) UpdatePackageInfo(name *core.PackageName, artefact *Artefact, user string, pwd string) error {
+func (r *Api) UpdatePackageInfo(name *core.PackageName, artefact *Package, user string, pwd string) error {
 	b, err := json.Marshal(artefact)
 	if err != nil {
 		return err
@@ -161,7 +161,7 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, err
 	if len(b) == 0 {
 		return &Repository{
 			Repository: fmt.Sprintf("%s/%s", group, name),
-			Artefacts:  make([]*Artefact, 0),
+			Packages:   make([]*Package, 0),
 		}, nil
 	}
 	repo := new(Repository)
@@ -169,7 +169,7 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, err
 	return repo, err
 }
 
-func (r *Api) GetPackageInfo(group, name, id, user, pwd string) (*Artefact, error) {
+func (r *Api) GetPackageInfo(group, name, id, user, pwd string) (*Package, error) {
 	req, err := http.NewRequest("GET", r.packageIdURI(group, name, id), nil)
 	if err != nil {
 		return nil, err
@@ -197,7 +197,7 @@ func (r *Api) GetPackageInfo(group, name, id, user, pwd string) (*Artefact, erro
 	if !core.IsJSON(string(b)) {
 		return nil, fmt.Errorf("invalid package name: %s/%s/%s", r.domain, group, name)
 	}
-	artefact := new(Artefact)
+	artefact := new(Package)
 	err = json.Unmarshal(b, artefact)
 	return artefact, err
 }
