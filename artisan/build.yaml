@@ -28,7 +28,6 @@ profiles:
   - name: linux
     default: true
     application: artisan
-    artefact: gatblau/artisan
     type: golang
     license: Apache Version 2
     labels:

@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// list local artefacts
+// list local packages
 type PGPImportCmd struct {
 	cmd       *cobra.Command
 	group     string // the repository group for which the key should be used - if empty then the root is used
@@ -26,7 +26,7 @@ func NewPGPImportCmd() *PGPImportCmd {
 		cmd: &cobra.Command{
 			Use:   "import [flags] path/to/key/file",
 			Short: "import PGP/RSA keys into the local registry",
-			Long:  `a private PGP/RSA key is used to digitally sign an artefact upon build, a public RSA key is used to verify the digital signature when the artefact is opened`,
+			Long:  `a private PGP/RSA key is used to digitally sign an package upon build, a public RSA key is used to verify the digital signature when the package is opened`,
 		},
 	}
 	c.isPrivate = c.cmd.Flags().BoolP("private", "k", false, "A flag indicating if the key to import is the private or public key.")

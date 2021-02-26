@@ -21,7 +21,7 @@ import (
 	"strings"
 )
 
-// list local artefacts
+// list local packages
 type EnvPackageCmd struct {
 	cmd           *cobra.Command
 	buildFilePath string

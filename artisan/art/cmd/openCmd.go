@@ -15,7 +15,7 @@ import (
 	"log"
 )
 
-// list local artefacts
+// list local packages
 type OpenCmd struct {
 	cmd             *cobra.Command
 	credentials     string
@@ -29,7 +29,7 @@ func NewOpenCmd() *OpenCmd {
 	c := &OpenCmd{
 		cmd: &cobra.Command{
 			Use:   "open NAME[:TAG] [path]",
-			Short: "opens an artefact in the specified path",
+			Short: "opens an package in the specified path",
 			Long:  ``,
 		},
 	}
@@ -45,11 +45,11 @@ func (c *OpenCmd) Run(cmd *cobra.Command, args []string) {
 	if *c.noTLS {
 		log.Printf("info: Transport Level Security is disabled\n")
 	}
-	// check an artefact name has been provided
+	// check an package name has been provided
 	if len(args) < 1 {
-		log.Fatal("name of the artefact to open is required")
+		log.Fatal("name of the package to open is required")
 	}
-	// get the name of the artefact to push
+	// get the name of the package to push
 	nameTag := args[0]
 	path := ""
 	if len(args) == 2 {

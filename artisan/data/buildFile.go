@@ -27,8 +27,8 @@ type BuildFile struct {
 	// any variables defined at this level will be available to all build profiles
 	// in addition, the defined variables are added on top of the existing environment
 	Env map[string]string `yaml:"env"`
-	// a list of labels to be added to the artefact seal
-	// they should be used to document key aspects of the artefact in a generic way
+	// a list of labels to be added to the package seal
+	// they should be used to document key aspects of the package in a generic way
 	Labels map[string]string `yaml:"labels"`
 	// any input required by functions
 	Input *Input `yaml:"input,omitempty"`
@@ -79,13 +79,11 @@ type Profile struct {
 	// the name of the application
 	Application string `yaml:"application"`
 	// the type of license used by the application
-	// if not empty, it is added to the artefact seal
+	// if not empty, it is added to the package seal
 	License string `yaml:"license"`
 	// the type of technology used by the application that can be used to determine the tool chain to use
 	// e.g. java, nodejs, golang, python, php, etc
 	Type string `yaml:"type"`
-	// the artefact name
-	Artefact string `yaml:"artefact"`
 	// the pipeline Icon
 	Icon string `yaml:"icon"`
 	// a set of labels associated with the profile

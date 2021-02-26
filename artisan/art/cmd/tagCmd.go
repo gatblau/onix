@@ -21,9 +21,9 @@ func NewTagCmd() *TagCmd {
 	c := &TagCmd{
 		cmd: &cobra.Command{
 			Use:     "tag",
-			Short:   "add a tag to an existing artefact",
-			Long:    `create a tag TARGET_ARTEFACT that refers to SOURCE_ARTEFACT`,
-			Example: `art tag SOURCE_ARTEFACT[:TAG] TARGET_ARTEFACT[:TAG]`,
+			Short:   "add a tag to an existing package",
+			Long:    `create a tag TARGET_PACKAGE that refers to SOURCE_PACKAGE`,
+			Example: `art tag SOURCE_PACKAGE[:TAG] TARGET_PACKAGE[:TAG]`,
 		}}
 	c.cmd.Run = c.Run
 	return c
@@ -31,7 +31,7 @@ func NewTagCmd() *TagCmd {
 
 func (c *TagCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) != 2 {
-		core.RaiseErr("source and target artefact tags are required")
+		core.RaiseErr("source and target package tags are required")
 	}
 	l := registry.NewLocalRegistry()
 	srcName, err := core.ParseName(args[0])

@@ -18,7 +18,7 @@ import (
 	"path/filepath"
 )
 
-// list local artefacts
+// list local packages
 type FlowMergeCmd struct {
 	cmd           *cobra.Command
 	envFilename   string

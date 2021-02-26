@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// list local artefacts
+// list local packages
 type ListCmd struct {
 	cmd   *cobra.Command
 	quiet *bool

@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// list local artefacts
+// list local packages
 type PGPGenCmd struct {
 	cmd     *cobra.Command
 	bitSize *int   // the key bit size
@@ -28,7 +28,7 @@ func NewPGPGenCmd() *PGPGenCmd {
 		cmd: &cobra.Command{
 			Use:   "gen",
 			Short: "generate a new PGP/RSA key pair",
-			Long:  `PGP/RSA keys are used to sign and verify signatures of artefacts or encrypt/decrypt files`,
+			Long:  `PGP/RSA keys are used to sign and verify signatures of packages or encrypt/decrypt files`,
 		},
 	}
 	c.bitSize = c.cmd.Flags().IntP("size", "s", 2048, "The bit size of the generated key pair, defaults to s=2048 \nOther common sizes are 1024, 3072 and 4096. \nAny size is possible.")

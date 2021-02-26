@@ -88,7 +88,7 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 	b.zipPackage(targetPath)
 	// creates a seal
 	s := b.createSeal(name, buildProfile, pkPath)
-	// add the artefact to the local repo
+	// add the package to the local repo
 	b.localReg.Add(b.workDirZipFilename(), b.repoName, s)
 	// cleanup all relevant folders and move package to target location
 	b.cleanUp()
@@ -471,7 +471,7 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 	filename := b.uniqueIdName
 	// merge the labels in the profile with the ones at the build file level
 	labels := mergeMaps(b.buildFile.Labels, profile.Labels)
-	// gets the size of the artefact
+	// gets the size of the package
 	zipInfo, err := os.Stat(b.workDirZipFilename())
 	if err != nil {
 		log.Fatal(err)
@@ -558,7 +558,7 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 	// convert the seal to Json
 	dest := core.ToJsonBytes(s)
 	// save the seal
-	core.CheckErr(ioutil.WriteFile(b.workDirJsonFilename(), dest, os.ModePerm), "failed to write artefact seal file")
+	core.CheckErr(ioutil.WriteFile(b.workDirJsonFilename(), dest, os.ModePerm), "failed to write package seal file")
 	return s
 }
 
@@ -616,10 +616,10 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 		path,
 		certPath,
 		ignoreSignature)
-	a := local.FindArtefact(name)
+	a := local.FindPackage(name)
 	// get the package seal
 	seal, err := local.GetSeal(a)
-	core.CheckErr(err, "cannot get artefact seal")
+	core.CheckErr(err, "cannot get package seal")
 	m := seal.Manifest
 	// check the function is exported
 	if isExported(m, function) {

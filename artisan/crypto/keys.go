@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-// generates a private and public RSA keys for signing and verifying artefacts
+// generates a private and public RSA keys for signing and verifying packages
 func GeneratePGPKeys(path, prefix, name, comment, email string, size int) {
 	if size > 4500 {
 		core.RaiseErr("maximum bit size 4500 exceeded")

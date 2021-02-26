@@ -18,7 +18,7 @@ import (
 	"path"
 )
 
-// list local artefacts
+// list local packages
 type LangFetchCmd struct {
 	cmd *cobra.Command
 }

@@ -17,7 +17,7 @@ import (
 	"github.com/yalp/jsonpath"
 )
 
-// return artefact's manifest
+// return package's manifest
 type ManifestCmd struct {
 	cmd    *cobra.Command
 	filter string
@@ -27,7 +27,7 @@ func NewManifestCmd() *ManifestCmd {
 	c := &ManifestCmd{
 		cmd: &cobra.Command{
 			Use:   "manifest [flags] name:tag",
-			Short: "returns the artefact manifest",
+			Short: "returns the package manifest",
 			Long:  ``,
 		},
 	}
@@ -38,7 +38,7 @@ func NewManifestCmd() *ManifestCmd {
 
 func (b *ManifestCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) == 0 {
-		core.RaiseErr("the artefact name:tag is required")
+		core.RaiseErr("the package name:tag is required")
 	} else if len(args) > 1 {
 		core.RaiseErr("too many arguments")
 	}
@@ -46,7 +46,7 @@ func (b *ManifestCmd) Run(cmd *cobra.Command, args []string) {
 	local := registry.NewLocalRegistry()
 	name, err := core.ParseName(args[0])
 	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
-	// get the artefact manifest
+	// get the package manifest
 	m := local.GetManifest(name)
 	// marshal the manifest
 	bytes, err := json.MarshalIndent(m, "", "  ")

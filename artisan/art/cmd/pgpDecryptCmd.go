@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-// list local artefacts
+// list local packages
 type PGPDecryptCmd struct {
 	cmd     *cobra.Command
 	keyPath string

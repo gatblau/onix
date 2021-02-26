@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-// the type of action on an artefact that is published by the webhook
+// the type of action on an package that is published by the webhook
 type WebHookAction int
 
 func NewWhAction(value string) *WebHookAction {
@@ -27,15 +27,15 @@ func NewWhAction(value string) *WebHookAction {
 	return action
 }
 
-// actions on registry artefacts
+// actions on registry packages
 const (
-	// artefact has been uploaded
+	// package has been uploaded
 	WhUploaded WebHookAction = iota
-	// tag has been added to the artefact tag list
+	// tag has been added to the package tag list
 	WhTagged
-	// tag has been removed from the artefact tag list
+	// tag has been removed from the package tag list
 	WhUnTagged
-	// the artefact has been removed from the registry
+	// the package has been removed from the registry
 	WhRemoved
 	// unknown action
 	WhUnknown
@@ -75,15 +75,15 @@ func (action WebHookAction) FromString(actionStrValue string) WebHookAction {
 
 // web hook information
 type WebHook struct {
-	// action on the artefact
+	// action on the package
 	action WebHookAction `json:"action"`
 	// the repository group
 	group string `json:"group"`
 	// the repository name
 	name string `json:"name"`
-	// the artefact tag
+	// the package tag
 	tag string `json:"tag"`
-	// the artefact unique identifier
+	// the package unique identifier
 	artieId string `json:"artie_id"`
 }
 
