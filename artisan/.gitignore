@@ -7,3 +7,5 @@ version.go
 *.key
 bin
 art.zip
+artreg
+artrunner
