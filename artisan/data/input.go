@@ -94,7 +94,7 @@ func (i *Input) Encrypt(pub *crypto.PGP) {
 func (i *Input) SurveyRegistryCreds(packageName string, prompt, defOnly bool, env *core.Envar) {
 	name, _ := core.ParseName(packageName)
 	// check for art_reg_user
-	userName := fmt.Sprintf("ART_REG_USER_%s", NormInputName(name.Domain))
+	userName := fmt.Sprintf("%s_%s_ART_REG_USER", NormInputName(name.Group), NormInputName(name.Name))
 	if !i.HasSecret(userName) {
 		userSecret := &Secret{
 			Name:        userName,
@@ -106,11 +106,11 @@ func (i *Input) SurveyRegistryCreds(packageName string, prompt, defOnly bool, en
 		i.Secret = append(i.Secret, userSecret)
 	}
 	// check for art_reg_pwd
-	pwd := fmt.Sprintf("ART_REG_PWD_%s", NormInputName(name.Domain))
+	pwd := fmt.Sprintf("%s_%s_ART_REG_PWD_%s", NormInputName(name.Group), NormInputName(name.Name))
 	if !i.HasSecret(pwd) {
 		pwdSecret := &Secret{
 			Name:        pwd,
-			Description: fmt.Sprintf("the password to authenticate with the registry at '%s'", NormInputName(name.Domain)),
+			Description: fmt.Sprintf("the password to authenticate with the registry at '%s'", name.Domain),
 		}
 		if !defOnly {
 			EvalSecret(pwdSecret, prompt, env)
