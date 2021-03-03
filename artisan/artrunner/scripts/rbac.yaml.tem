@@ -10,7 +10,7 @@ metadata:
   name: manage-runs
   namespace: ${NAMESPACE}
 rules:
-  - apiGroups: ["*"]
+  - apiGroups: ["tekton.dev"]
     resources: [
         "tasks",
         "taskruns",
@@ -21,7 +21,12 @@ rules:
         "triggertemplates",
         "eventlisteners",
         "conditions",
-        "runs",
+        "runs"
+    ]
+    verbs: [ "get", "list", "create", "update", "delete", "patch", "watch" ]
+
+  - apiGroups: ["*"] # all api groups
+    resources: [
         "secrets",
         "routes"
     ]
