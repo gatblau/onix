@@ -439,7 +439,7 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 	}
 	// if we got to this point then a specific profile was requested but not defined
 	// so cannot continue
-	core.RaiseErr("the requested profile '%s' is not defined in artie's build configuration", profileName)
+	core.RaiseErr("the requested profile '%s' is not defined in Artisan's build configuration", profileName)
 	return nil
 }
 
