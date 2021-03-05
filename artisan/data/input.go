@@ -61,27 +61,33 @@ func (i *Input) HasKeyBinding(binding string) bool {
 }
 
 func (i *Input) HasVar(name string) bool {
-	for _, v := range i.Var {
-		if v.Name == name {
-			return true
+	if i.Var != nil {
+		for _, v := range i.Var {
+			if v.Name == name {
+				return true
+			}
 		}
 	}
 	return false
 }
 
 func (i *Input) HasSecret(name string) bool {
-	for _, s := range i.Secret {
-		if s.Name == name {
-			return true
+	if i.Secret != nil {
+		for _, s := range i.Secret {
+			if s.Name == name {
+				return true
+			}
 		}
 	}
 	return false
 }
 
 func (i *Input) HasKey(name string) bool {
-	for _, k := range i.Key {
-		if k.Name == name {
-			return true
+	if i.Key != nil {
+		for _, k := range i.Key {
+			if k.Name == name {
+				return true
+			}
 		}
 	}
 	return false
@@ -91,44 +97,45 @@ func (i *Input) Encrypt(pub *crypto.PGP) {
 	encryptInput(i, pub)
 }
 
-func (i *Input) SurveyRegistryCreds(flowName, stepName, domain string, prompt, defOnly bool, env *core.Envar) {
-	// name, _ := core.ParseName(packageName)
-	// check for art_reg_user
-	userName := fmt.Sprintf("%s_%s_ART_REG_USER", NormInputName(flowName), NormInputName(stepName))
-	if !i.HasSecret(userName) {
-		userSecret := &Secret{
-			Name:        userName,
-			Description: fmt.Sprintf("the username to authenticate with the registry at %s'", domain),
+func (i *Input) SurveyRegistryCreds(flowName, stepName, packageSource, domain string, prompt, defOnly bool, env *core.Envar) {
+	if packageSource != "read" {
+		// check for art_reg_user
+		userName := fmt.Sprintf("%s_%s_ART_REG_USER", NormInputName(flowName), NormInputName(stepName))
+		if !i.HasSecret(userName) {
+			userSecret := &Secret{
+				Name:        userName,
+				Description: fmt.Sprintf("the username to authenticate with the registry at %s'", domain),
+			}
+			if !defOnly {
+				EvalSecret(userSecret, prompt, env)
+			}
+			i.Secret = append(i.Secret, userSecret)
 		}
-		if !defOnly {
-			EvalSecret(userSecret, prompt, env)
+		// check for art_reg_pwd
+		pwd := fmt.Sprintf("%s_%s_ART_REG_PWD", NormInputName(flowName), NormInputName(stepName))
+		if !i.HasSecret(pwd) {
+			pwdSecret := &Secret{
+				Name:        pwd,
+				Description: fmt.Sprintf("the password to authenticate with the registry at '%s'", domain),
+			}
+			if !defOnly {
+				EvalSecret(pwdSecret, prompt, env)
+			}
+			i.Secret = append(i.Secret, pwdSecret)
 		}
-		i.Secret = append(i.Secret, userSecret)
-	}
-	// check for art_reg_pwd
-	pwd := fmt.Sprintf("%s_%s_ART_REG_PWD", NormInputName(flowName), NormInputName(stepName))
-	if !i.HasSecret(pwd) {
-		pwdSecret := &Secret{
-			Name:        pwd,
-			Description: fmt.Sprintf("the password to authenticate with the registry at '%s'", domain),
+		// as we need to open this package a verification (public PGP) key is needed
+		keyName := fmt.Sprintf("%s_%s_VERIFICATION_KEY", NormInputName(flowName), NormInputName(stepName))
+		if !i.HasKey(keyName) {
+			key := &Key{
+				Name:        keyName,
+				Description: fmt.Sprintf("the public PGP key required to open the package %s", domain),
+				Private:     false,
+			}
+			if !defOnly {
+				EvalKey(key, prompt, env)
+			}
+			i.Key = append(i.Key, key)
 		}
-		if !defOnly {
-			EvalSecret(pwdSecret, prompt, env)
-		}
-		i.Secret = append(i.Secret, pwdSecret)
-	}
-	// as we need to open this package a verification (public PGP) key is needed
-	keyName := fmt.Sprintf("%s_%s_VERIFICATION_KEY", NormInputName(flowName), NormInputName(stepName))
-	if !i.HasKey(keyName) {
-		key := &Key{
-			Name:        keyName,
-			Description: fmt.Sprintf("the public PGP key required to open the package %s", domain),
-			Private:     false,
-		}
-		if !defOnly {
-			EvalKey(key, prompt, env)
-		}
-		i.Key = append(i.Key, key)
 	}
 }
 
@@ -233,7 +240,7 @@ func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt, defOn
 }
 
 // extracts the package manifest Input in an exported function
-func SurveyInputFromManifest(flowName, stepName, domain string, fxName string, manifest *Manifest, prompt, defOnly bool, env *core.Envar) *Input {
+func SurveyInputFromManifest(flowName, stepName, packageSource, domain string, fxName string, manifest *Manifest, prompt, defOnly bool, env *core.Envar) *Input {
 	// get the function in the manifest
 	fx := manifest.Fx(fxName)
 	if fx == nil {
@@ -250,7 +257,7 @@ func SurveyInputFromManifest(flowName, stepName, domain string, fxName string, m
 	// first evaluates the existing inputs
 	input = evalInput(input, prompt, defOnly, env)
 	// then add registry credential inputs
-	input.SurveyRegistryCreds(flowName, stepName, domain, prompt, defOnly, env)
+	input.SurveyRegistryCreds(flowName, stepName, packageSource, domain, prompt, defOnly, env)
 	return input
 }
 
@@ -486,11 +493,11 @@ func surveyVar(variable *Var) {
 	// add type validators
 	switch strings.ToLower(variable.Type) {
 	case "path":
-		validator = survey.ComposeValidators(validator, isPath)
+		validator = survey.ComposeValidators(validator, core.IsPath)
 	case "uri":
-		validator = survey.ComposeValidators(validator, isURI)
+		validator = survey.ComposeValidators(validator, core.IsURI)
 	case "name":
-		validator = survey.ComposeValidators(validator, isPackageName)
+		validator = survey.ComposeValidators(validator, core.IsPackageName)
 	}
 	core.HandleCtrlC(survey.AskOne(prompt, &variable.Value, survey.WithValidator(validator)))
 }
