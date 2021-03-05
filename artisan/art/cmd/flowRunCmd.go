@@ -23,6 +23,7 @@ type FlowRunCmd struct {
 	flowPath      string
 	runnerName    string
 	buildFilePath string
+	labels        []string
 }
 
 func NewFlowRunCmd() *FlowRunCmd {
@@ -38,6 +39,7 @@ func NewFlowRunCmd() *FlowRunCmd {
 	c.noTLS = c.cmd.Flags().BoolP("no-tls", "t", false, "use -t or --no-tls to connect to a artisan registry over plain HTTP")
 	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
 	c.cmd.Flags().StringVarP(&c.buildFilePath, "build-file-path", "b", ".", "--build-file-path=. or -b=.; the path to an artisan build.yaml file from which to pick required inputs")
+	c.cmd.Flags().StringSliceVarP(&c.labels, "label", "l", []string{}, "add one or more labels to the flow; -l label1=value1 -l label2=value2")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -54,6 +56,8 @@ func (c *FlowRunCmd) Run(cmd *cobra.Command, args []string) {
 	// loads a flow from the path
 	f, err := flow.NewWithEnv(c.flowPath, c.buildFilePath, ".env")
 	core.CheckErr(err, "cannot load flow")
+	// add labels to the flow
+	f.AddLabels(c.labels)
 	err = f.Merge(*c.interactive)
 	core.CheckErr(err, "cannot merge flow")
 	err = f.Run(c.runnerName, c.credentials, *c.interactive, *c.noTLS)

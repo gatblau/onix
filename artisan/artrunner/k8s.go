@@ -25,6 +25,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"log"
 	"os"
+	"strings"
 )
 
 type K8S struct {
@@ -107,7 +108,13 @@ func getKubeConfig() (*rest.Config, bool, error) {
 	inCluster := false
 
 	// gets the path to the kube config file
-	kubeConfigFile := fmt.Sprintf("%s/.kube/config", os.Getenv("HOME"))
+	home := os.Getenv("HOME")
+	// if there is no suffix /
+	if !strings.HasSuffix(home, "/") {
+		// add it
+		home = fmt.Sprintf("%s/", home)
+	}
+	kubeConfigFile := fmt.Sprintf("%s.kube/config", home)
 
 	// if a .kube/config file is found, then not running in K8S
 	if _, err := os.Stat(kubeConfigFile); err == nil {

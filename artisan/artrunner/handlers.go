@@ -23,6 +23,7 @@ import (
 	"github.com/gatblau/onix/artisan/flow"
 	"github.com/gatblau/onix/artisan/tkn"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -42,20 +43,28 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// unmarshal the flow bytes
 	f, err := flow.NewFlow(body)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("cannot read flow: %s", err), http.StatusInternalServerError)
+		return
+	}
 	// get a tekton builder
 	builder := tkn.NewBuilder(f)
-
 	resources := builder.BuildSlice()
-
 	ctx := context.Background()
 	k8s, err := NewK8S()
 	if err != nil {
-		http.Error(w, fmt.Sprintf("cannot create kubernetes client: %s", err), http.StatusInternalServerError)
+		msg := fmt.Sprintf("cannot create kubernetes client: %s\n", err)
+		log.Printf(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	for _, resource := range resources {
 		err = k8s.Apply(string(resource), ctx)
-		http.Error(w, fmt.Sprintf("cannot apply kubernetes resources: %s", err), http.StatusInternalServerError)
-		return
+		if err != nil {
+			msg := fmt.Sprintf("cannot apply kubernetes resources: %s\n", err)
+			log.Printf(msg)
+			http.Error(w, msg, http.StatusInternalServerError)
+			return
+		}
 	}
 }

@@ -1,11 +1,19 @@
+/*
+  Onix Config Manager - Artisan
+  Copyright (c) 2018-2021 by www.gatblau.org
+  Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
+  Contributors to this project, hereby assign copyright in this code to the project,
+  to be licensed under the same terms as the rest of the code.
+*/
 package tkn
 
 import (
 	"bytes"
 	"fmt"
 	"github.com/gatblau/onix/artisan/crypto"
-	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/flow"
+	"strings"
+	"time"
 )
 
 const (
@@ -22,7 +30,9 @@ type Builder struct {
 
 // creates a new tekton builder
 func NewBuilder(flow *flow.Flow) *Builder {
-	return &Builder{flow: flow}
+	return &Builder{
+		flow: flow,
+	}
 }
 
 // creates a buffer with all K8S resources required to create a tekton pipleine out of an Artisan flow
@@ -56,6 +66,9 @@ func (b *Builder) BuildSlice() [][]byte {
 	pipeline := b.newPipeline()
 	result = append(result, ToYaml(pipeline, "Pipeline"))
 
+	pipelineRun := b.newPipelineRun()
+	result = append(result, ToYaml(pipelineRun, "Pipeline Run"))
+
 	// if source code repository is required by the pipeline
 	if b.flow.RequiresGitSource() {
 		// add the following resources:
@@ -88,7 +101,8 @@ func (b *Builder) newTask() *Task {
 	t.APIVersion = ApiVersionTekton
 	t.Kind = "Task"
 	t.Metadata = &Metadata{
-		Name: b.buildTaskName(),
+		Name:      b.buildTaskName(),
+		Namespace: b.namespace(),
 	}
 	t.Spec = &Spec{
 		Inputs:  b.newInputs(),
@@ -144,14 +158,37 @@ func (b *Builder) getEnv(step *flow.Step) []*Env {
 		}
 		// add secrets
 		for _, secret := range step.Input.Secret {
-			env = append(env, &Env{
-				Name: secret.Name,
-				ValueFrom: &ValueFrom{
-					SecretKeyRef: &SecretKeyRef{
-						Name: b.secretName(),
-						Key:  secret.Name,
-					}},
-			})
+			if strings.HasSuffix(secret.Name, "ART_REG_USER") {
+				// if the secret is a art reg username, convert it to the format expected by the runtime
+				env = append(env, &Env{
+					Name: "ART_REG_USER",
+					ValueFrom: &ValueFrom{
+						SecretKeyRef: &SecretKeyRef{
+							Name: b.secretName(),
+							Key:  secret.Name,
+						}},
+				})
+			} else if strings.HasSuffix(secret.Name, "ART_REG_PWD") {
+				// if the secret is a art reg username, convert it to the format expected by the runtime
+				env = append(env, &Env{
+					Name: "ART_REG_PWD",
+					ValueFrom: &ValueFrom{
+						SecretKeyRef: &SecretKeyRef{
+							Name: b.secretName(),
+							Key:  secret.Name,
+						}},
+				})
+			} else {
+				// an ordinary secret
+				env = append(env, &Env{
+					Name: secret.Name,
+					ValueFrom: &ValueFrom{
+						SecretKeyRef: &SecretKeyRef{
+							Name: b.secretName(),
+							Key:  secret.Name,
+						}},
+				})
+			}
 		}
 		// add keys
 		for _, key := range step.Input.Key {
@@ -182,24 +219,24 @@ func (b *Builder) addRuntimeInterfaceVars(flowName string, step *flow.Step, env 
 				Value: step.PackageSource,
 			})
 		}
-		env = append(env, &Env{
-			Name: "ART_REG_USER",
-			ValueFrom: &ValueFrom{
-				SecretKeyRef: &SecretKeyRef{
-					Name: b.secretName(),
-					Key:  fmt.Sprintf("%s_%s_ART_REG_USER", data.NormInputName(flowName), data.NormInputName(step.Name)),
-				},
-			},
-		})
-		env = append(env, &Env{
-			Name: "ART_REG_PWD",
-			ValueFrom: &ValueFrom{
-				SecretKeyRef: &SecretKeyRef{
-					Name: b.secretName(),
-					Key:  fmt.Sprintf("%s_%s_ART_REG_PWD", data.NormInputName(flowName), data.NormInputName(step.Name)),
-				},
-			},
-		})
+		// env = append(env, &Env{
+		// 	Name: "ART_REG_USER",
+		// 	ValueFrom: &ValueFrom{
+		// 		SecretKeyRef: &SecretKeyRef{
+		// 			Name: b.secretName(),
+		// 			Key:  fmt.Sprintf("%s_%s_ART_REG_USER", data.NormInputName(flowName), data.NormInputName(step.Name)),
+		// 		},
+		// 	},
+		// })
+		// env = append(env, &Env{
+		// 	Name: "ART_REG_PWD",
+		// 	ValueFrom: &ValueFrom{
+		// 		SecretKeyRef: &SecretKeyRef{
+		// 			Name: b.secretName(),
+		// 			Key:  fmt.Sprintf("%s_%s_ART_REG_PWD", data.NormInputName(flowName), data.NormInputName(step.Name)),
+		// 		},
+		// 	},
+		// })
 	}
 	return env
 }
@@ -239,7 +276,8 @@ func (b *Builder) newCredentialsSecret() *Secret {
 		s.Kind = "Secret"
 		s.Type = "Opaque"
 		s.Metadata = &Metadata{
-			Name: b.secretName(),
+			Name:      b.secretName(),
+			Namespace: b.namespace(),
 		}
 		credentials := make(map[string]string)
 		for _, step := range b.flow.Steps {
@@ -270,7 +308,8 @@ func (b *Builder) newKeySecrets() *Secret {
 		s.Kind = "Secret"
 		s.Type = "Opaque"
 		s.Metadata = &Metadata{
-			Name: b.keysSecretName(),
+			Name:      b.keysSecretName(),
+			Namespace: b.namespace(),
 		}
 		keysDict := make(map[string]string)
 		var name string
@@ -300,7 +339,8 @@ func (b *Builder) newPipeline() *Pipeline {
 	p.Kind = "Pipeline"
 	p.APIVersion = ApiVersionTekton
 	p.Metadata = &Metadata{
-		Name: b.pipelineName(),
+		Name:      b.pipelineName(),
+		Namespace: b.namespace(),
 	}
 	var (
 		inputs    []*Inputs
@@ -364,13 +404,39 @@ func (b *Builder) newPipelineResource() *PipelineResource {
 	return r
 }
 
+// pipeline run
+func (b *Builder) newPipelineRun() *PipelineRun {
+	r := new(PipelineRun)
+	r.Kind = "PipelineRun"
+	r.APIVersion = ApiVersionTekton
+	r.Spec = &Spec{
+		// this is the default service account created by the Tekton operator
+		ServiceAccountName: "pipeline",
+		PipelineRef: &PipelineRef{
+			Name: b.pipelineName(),
+		},
+		Params: []*Params{
+			{
+				Name:  "deployment-name",
+				Value: encode(b.flow.Name),
+			},
+		},
+	}
+	r.Metadata = &Metadata{
+		Name:      b.pipelineRunName(),
+		Namespace: b.namespace(),
+	}
+	return r
+}
+
 // event listener
 func (b *Builder) newEventListener() *EventListener {
 	e := new(EventListener)
 	e.APIVersion = ApiVersionTektonTrigger
 	e.Kind = "EventListener"
 	e.Metadata = &Metadata{
-		Name: encode(b.flow.Name),
+		Name:      encode(b.flow.Name),
+		Namespace: b.namespace(),
 		Labels: &Labels{
 			AppOpenshiftIoRuntime: b.flow.AppIcon,
 		},
@@ -399,7 +465,8 @@ func (b *Builder) newRoute() *Route {
 	r.APIVersion = ApiVersion
 	r.Kind = "Route"
 	r.Metadata = &Metadata{
-		Name: fmt.Sprintf("el-%s", encode(b.flow.Name)),
+		Name:      fmt.Sprintf("el-%s", encode(b.flow.Name)),
+		Namespace: b.namespace(),
 		Labels: &Labels{
 			Application: fmt.Sprintf("%s-https", encode(b.flow.Name)),
 		},
@@ -429,7 +496,8 @@ func (b *Builder) newTriggerBinding() *TriggerBinding {
 	t.APIVersion = ApiVersionTektonTrigger
 	t.Kind = "TriggerBinding"
 	t.Metadata = &Metadata{
-		Name: encode(b.flow.Name),
+		Name:      encode(b.flow.Name),
+		Namespace: b.namespace(),
 	}
 	t.Spec = &Spec{
 		Params: []*Params{
@@ -459,7 +527,8 @@ func (b *Builder) newTriggerTemplate() *PipelineRun {
 	t.APIVersion = ApiVersionTektonTrigger
 	t.Kind = "TriggerTemplate"
 	t.Metadata = &Metadata{
-		Name: encode(b.flow.Name),
+		Name:      encode(b.flow.Name),
+		Namespace: b.namespace(),
 	}
 	t.Spec = &Spec{
 		Params: []*Params{
@@ -487,7 +556,8 @@ func (b *Builder) newPipelineResourceTriggerTemplate() *PipelineResource {
 	r.APIVersion = ApiVersionTekton
 	r.Kind = "PipelineResource"
 	r.Metadata = &Metadata{
-		Name: "$(params.git-repo-name)-git-repo-$(uid)",
+		Name:      "$(params.git-repo-name)-git-repo-$(uid)",
+		Namespace: b.namespace(),
 	}
 	r.Spec = &Spec{
 		Type: "git",
@@ -510,7 +580,8 @@ func (b *Builder) newPipelineRunTriggerTemplate() *PipelineRun {
 	r.Kind = "PipelineRun"
 	r.APIVersion = ApiVersionTekton
 	r.Metadata = &Metadata{
-		Name: "$(params.git-repo-name)-app-pr-$(uid)",
+		Name:      "$(params.git-repo-name)-app-pr-$(uid)",
+		Namespace: b.namespace(),
 	}
 	r.Spec = &Spec{
 		ServiceAccountName: ServiceAccountName,
@@ -552,7 +623,7 @@ func (b *Builder) pipelineName() string {
 
 // return the name of the code repository resource
 func (b *Builder) pipelineRunName() string {
-	return fmt.Sprintf("%s-pr", encode(b.flow.Name))
+	return fmt.Sprintf("%s-pr-%d", encode(b.flow.Name), time.Now().Nanosecond())
 }
 
 // return the name of the code repository resource
@@ -562,4 +633,9 @@ func (b *Builder) secretName() string {
 
 func (b *Builder) keysSecretName() string {
 	return fmt.Sprintf("%s-keys-secret", encode(b.flow.Name))
+}
+
+// retrieves the namespace label in the flow
+func (b *Builder) namespace() string {
+	return b.flow.Labels["namespace"]
 }

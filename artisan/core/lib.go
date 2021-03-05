@@ -23,9 +23,11 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"strings"
@@ -399,4 +401,68 @@ func MapKeyExist(m map[string]string, key string) bool {
 		}
 	}
 	return false
+}
+
+// requires the value conforms to a path
+func IsPath(val interface{}) error {
+	// the reflect value of the result
+	value := reflect.ValueOf(val)
+
+	// if the value passed in is a string
+	if value.Kind() == reflect.String {
+		// try and convert the value to an absolute path
+		_, err := filepath.Abs(value.String())
+		// if the value cannot be converted to an absolute path
+		if err != nil {
+			// assumes it is not a valid path
+			return fmt.Errorf("value is not a valid path: %s", err)
+		}
+	} else {
+		// if the value is not of a string type it cannot be a path
+		return fmt.Errorf("value must be a string")
+	}
+	return nil
+}
+
+// requires the value conforms to a URI
+func IsURI(val interface{}) error {
+	// the reflect value of the result
+	value := reflect.ValueOf(val)
+
+	// if the value passed in is a string
+	if value.Kind() == reflect.String {
+		// try and parse the URI
+		_, err := url.ParseRequestURI(value.String())
+
+		// if the value cannot be converted to an absolute path
+		if err != nil {
+			// assumes it is not a valid path
+			return fmt.Errorf("value is not a valid URI: %s", err)
+		}
+	} else {
+		// if the value is not of a string type it cannot be a path
+		return fmt.Errorf("value must be a string")
+	}
+	return nil
+}
+
+// requires the value conforms to an Artisan package name
+func IsPackageName(val interface{}) error {
+	// the reflect value of the result
+	value := reflect.ValueOf(val)
+
+	// if the value passed in is a string
+	if value.Kind() == reflect.String {
+		// try and parse the package name
+		_, err := ParseName(value.String())
+		// if the value cannot be parsed
+		if err != nil {
+			// it is not a valid package name
+			return fmt.Errorf("value is not a valid package name: %s", err)
+		}
+	} else {
+		// if the value is not of a string type it cannot be a path
+		return fmt.Errorf("value must be a string")
+	}
+	return nil
 }

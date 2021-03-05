@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 )
 
 // structure of build.yaml file
@@ -151,5 +152,37 @@ func LoadBuildFile(path string) (*BuildFile, error) {
 	if err != nil {
 		return nil, fmt.Errorf("syntax error in build file %s: %s", path, err)
 	}
+	if ok, err := anyBindingHasInput(buildFile); !ok {
+		return buildFile, err
+	}
 	return buildFile, nil
+}
+
+func anyBindingHasInput(b *BuildFile) (bool, error) {
+	for _, fx := range b.Functions {
+		if fx.Input != nil {
+			if fx.Input.Var != nil {
+				for _, v := range fx.Input.Var {
+					if !b.Input.HasVar(v) {
+						return false, fmt.Errorf("function '%s' has a Var binding '%s' but not corresponding Var definition has been defined in the build file Input section.", fx.Name, v)
+					}
+				}
+			}
+			if fx.Input.Secret != nil {
+				for _, s := range fx.Input.Secret {
+					if !b.Input.HasSecret(s) && !strings.Contains(s, "ART_REG_USER") && !strings.Contains(s, "ART_REG_PWD") {
+						return false, fmt.Errorf("function '%s' has a Secret binding '%s' but not corresponding Secret definition has been defined in the build file Input section.", fx.Name, s)
+					}
+				}
+			}
+			if fx.Input.Key != nil {
+				for _, k := range fx.Input.Key {
+					if !b.Input.HasKey(k) && !strings.Contains(k, "VERIFICATION_KEY") {
+						return false, fmt.Errorf("function '%s' has a Key binding '%s' but not corresponding Key definition has been defined in the build file Input section.", fx.Name, k)
+					}
+				}
+			}
+		}
+	}
+	return true, nil
 }

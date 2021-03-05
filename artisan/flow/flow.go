@@ -23,12 +23,15 @@ type Credential struct {
 }
 
 type Flow struct {
-	Name        string      `yaml:"name"`
-	Description string      `yaml:"description"`
-	GitURI      string      `yaml:"git_uri,omitempty"`
-	AppIcon     string      `yaml:"app_icon,omitempty"`
-	Steps       []*Step     `yaml:"steps"`
-	Input       *data.Input `yaml:"input,omitempty"`
+	Name        string `yaml:"name"`
+	Description string `yaml:"description"`
+	// a list of labels to document key aspects of the flow execution
+	// for example using a target namespace if running in Kubernetes
+	Labels  map[string]string `yaml:"labels"`
+	GitURI  string            `yaml:"git_uri,omitempty"`
+	AppIcon string            `yaml:"app_icon,omitempty"`
+	Steps   []*Step           `yaml:"steps"`
+	Input   *data.Input       `yaml:"input,omitempty"`
 }
 
 func (f *Flow) StepByFx(fxName string) *Step {
@@ -41,17 +44,19 @@ func (f *Flow) StepByFx(fxName string) *Step {
 }
 
 func (f *Flow) RequiresGitSource() bool {
-	var requiresSource, usePackageSource bool
+	var useGitSource, usePackageSource bool
 	for _, step := range f.Steps {
+		// function only - needs a git source
 		if len(step.Package) == 0 && len(step.Function) > 0 {
-			requiresSource = true
+			useGitSource = true
 		}
-		if len(step.Package) > 0 && len(step.PackageSource) > 0 {
+		// requires a package source
+		if len(step.Package) > 0 && len(step.PackageSource) > 0 && len(step.Function) > 0 {
 			usePackageSource = true
 		}
 	}
 	// git source is required if it is not using a package source
-	return requiresSource && !usePackageSource
+	return useGitSource && !usePackageSource
 }
 
 func (f *Flow) RequiresKey() bool {
@@ -72,17 +77,6 @@ func (f *Flow) RequiresSecrets() bool {
 	return false
 }
 
-type Step struct {
-	Name            string      `yaml:"name"`
-	Description     string      `yaml:"description,omitempty"`
-	Runtime         string      `yaml:"runtime"`
-	RuntimeManifest string      `yaml:"runtime_manifest,omitempty"`
-	Function        string      `yaml:"function,omitempty"`
-	Package         string      `yaml:"package,omitempty"`
-	PackageSource   string      `yaml:"source,omitempty"`
-	Input           *data.Input `yaml:"input,omitempty"`
-}
-
 // retrieve all input data required by the flow without values
 // interactive mode is off - gets definition only
 func (f *Flow) GetInputDefinition(b *data.BuildFile, env *core.Envar) *data.Input {
@@ -92,9 +86,10 @@ func (f *Flow) GetInputDefinition(b *data.BuildFile, env *core.Envar) *data.Inpu
 		Var:    make([]*data.Var, 0),
 	}
 	local := registry.NewLocalRegistry()
+
 	for _, step := range f.Steps {
-		// if a function is defined without a package
-		if len(step.Function) > 0 && len(step.Package) == 0 {
+		// if a function is defined without a package and the source is not a package
+		if step.surveyBuildfile(f.RequiresGitSource()) {
 			// check a build file has been specified
 			if b == nil {
 				core.RaiseErr("flow '%s' requires a build.yaml", f.Name)
@@ -111,7 +106,7 @@ func (f *Flow) GetInputDefinition(b *data.BuildFile, env *core.Envar) *data.Inpu
 				})
 			}
 			result.Merge(i)
-		} else if len(step.Function) > 0 && len(step.Package) > 0 {
+		} else if step.surveyManifest() {
 			// surveys the package manifest for variables
 			name, err := core.ParseName(step.Package)
 			i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
@@ -119,13 +114,15 @@ func (f *Flow) GetInputDefinition(b *data.BuildFile, env *core.Envar) *data.Inpu
 			if manif == nil {
 				core.RaiseErr("manifest for package '%s' not found", name)
 			}
-			i := data.SurveyInputFromManifest(f.Name, step.Name, name.Domain, step.Function, manif, false, true, env)
-			i.SurveyRegistryCreds(f.Name, step.Name, name.Domain, false, true, env)
+			i := data.SurveyInputFromManifest(f.Name, step.Name, step.PackageSource, name.Domain, step.Function, manif, false, true, env)
+			i.SurveyRegistryCreds(f.Name, step.Name, step.PackageSource, name.Domain, false, true, env)
 			result.Merge(i)
-		} else {
+		} else if step.surveyRuntime() {
 			// surveys runtime manifest for variables
 			i := data.SurveyInputFromURI(step.RuntimeManifest, false, true, env)
 			result.Merge(i)
+		} else {
+			flowHealthCheck(f, step)
 		}
 		// try augment the result with default values in the build.yaml
 		if b != nil {
@@ -147,4 +144,13 @@ func (f *Flow) JsonBytes() ([]byte, error) {
 		return nil, err
 	}
 	return data, nil
+}
+
+func (f *Flow) Step(name string) *Step {
+	for _, step := range f.Steps {
+		if step.Name == name {
+			return step
+		}
+	}
+	return nil
 }

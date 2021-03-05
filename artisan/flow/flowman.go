@@ -9,6 +9,7 @@ package flow
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
@@ -93,23 +94,20 @@ func (m *Manager) Merge(interactive bool) error {
 	}
 	for _, step := range m.Flow.Steps {
 		step.Runtime = core.QualifyRuntime(step.Runtime)
-		if len(step.Package) > 0 {
+		// performs a healthcheck of the flow to determine if it can survey inputs
+		flowHealthCheck(m.Flow, step)
+		if step.surveyManifest() {
 			name, err := core.ParseName(step.Package)
 			core.CheckErr(err, "invalid step %s package name %s", step.Name, step.Package)
 			// get the package manifest
 			manifest := local.GetManifest(name)
-			step.Input = data.SurveyInputFromManifest(m.Flow.Name, step.Name, name.Domain, step.Function, manifest, interactive, false, env)
-			// collects credentials to retrieve package from registry
-			step.Input.SurveyRegistryCreds(m.Flow.Name, step.Name, name.Domain, interactive, false, env)
-		} else {
-			// if the step has a function
-			if len(step.Function) > 0 {
-				// add exported inputs to the step
-				step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, interactive, false, env)
-			} else {
-				// read input from from runtime_uri
-				step.Input = data.SurveyInputFromURI(step.RuntimeManifest, interactive, false, env)
-			}
+			step.Input = data.SurveyInputFromManifest(m.Flow.Name, step.Name, step.PackageSource, name.Domain, step.Function, manifest, interactive, false, env)
+		} else if step.surveyBuildfile(m.Flow.RequiresGitSource()) {
+			// add exported inputs to the step
+			step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, interactive, false, env)
+		} else if step.surveyRuntime() {
+			// read input from from runtime_uri
+			step.Input = data.SurveyInputFromURI(step.RuntimeManifest, interactive, false, env)
 		}
 	}
 	return nil
@@ -117,6 +115,14 @@ func (m *Manager) Merge(interactive bool) error {
 
 func (m *Manager) YamlString() (string, error) {
 	b, err := yaml.Marshal(m.Flow)
+	if err != nil {
+		return "", fmt.Errorf("cannot marshal execution flow: %s", err)
+	}
+	return string(b), nil
+}
+
+func (m *Manager) JsonString() (string, error) {
+	b, err := json.MarshalIndent(m.Flow, "", "   ")
 	if err != nil {
 		return "", fmt.Errorf("cannot marshal execution flow: %s", err)
 	}
@@ -143,20 +149,35 @@ func LoadFlow(path string) (*Flow, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot unmarshal flow definition %s: %s", path, err)
 	}
+	if flow.Labels == nil {
+		flow.Labels = make(map[string]string)
+	}
 	return flow, nil
 }
 
-func NewFlow(flowBytes []byte) (*Flow, error) {
+func NewFlow(flowJSONBytes []byte) (*Flow, error) {
 	flow := new(Flow)
-	err := yaml.Unmarshal(flowBytes, flow)
+	err := json.Unmarshal(flowJSONBytes, flow)
 	if err != nil {
 		return nil, fmt.Errorf("cannot unmarshal flow definition %s", err)
 	}
 	return flow, nil
 }
 
-func (m *Manager) Save() error {
+func (m *Manager) SaveYAML() error {
 	y, err := yaml.Marshal(m.Flow)
+	if err != nil {
+		return fmt.Errorf("cannot marshal bare flow: %s", err)
+	}
+	err = ioutil.WriteFile(m.path(), y, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("cannot save merged flow: %s", err)
+	}
+	return nil
+}
+
+func (m *Manager) SaveJSON() error {
+	y, err := json.MarshalIndent(m.Flow, "", "   ")
 	if err != nil {
 		return fmt.Errorf("cannot marshal bare flow: %s", err)
 	}
@@ -212,4 +233,14 @@ func (m *Manager) path() string {
 	dir, file := filepath.Split(m.bareFlowPath)
 	filename := core.FilenameWithoutExtension(file)
 	return filepath.Join(dir, fmt.Sprintf("%s.yaml", filename[0:len(filename)-len("_bare")]))
+}
+
+func (m *Manager) AddLabels(labels []string) {
+	for _, label := range labels {
+		parts := strings.Split(label, "=")
+		if len(parts) != 2 {
+			core.RaiseErr("invalid labels")
+		}
+		m.Flow.Labels[parts[0]] = parts[1]
+	}
 }

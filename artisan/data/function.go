@@ -8,11 +8,7 @@
 package data
 
 import (
-	"fmt"
 	"github.com/gatblau/onix/artisan/core"
-	"net/url"
-	"path/filepath"
-	"reflect"
 )
 
 type Function struct {
@@ -55,68 +51,4 @@ func (f *Function) Survey(env map[string]string) map[string]string {
 	// run the merge in interactive mode so that any variables not available in the build file environment are surveyed
 	_, updatedEnvironment := core.MergeEnvironmentVars(f.Run, env, true)
 	return updatedEnvironment
-}
-
-// requires the value conforms to a path
-func isPath(val interface{}) error {
-	// the reflect value of the result
-	value := reflect.ValueOf(val)
-
-	// if the value passed in is a string
-	if value.Kind() == reflect.String {
-		// try and convert the value to an absolute path
-		_, err := filepath.Abs(value.String())
-		// if the value cannot be converted to an absolute path
-		if err != nil {
-			// assumes it is not a valid path
-			return fmt.Errorf("value is not a valid path: %s", err)
-		}
-	} else {
-		// if the value is not of a string type it cannot be a path
-		return fmt.Errorf("value must be a string")
-	}
-	return nil
-}
-
-// requires the value conforms to a URI
-func isURI(val interface{}) error {
-	// the reflect value of the result
-	value := reflect.ValueOf(val)
-
-	// if the value passed in is a string
-	if value.Kind() == reflect.String {
-		// try and parse the URI
-		_, err := url.ParseRequestURI(value.String())
-
-		// if the value cannot be converted to an absolute path
-		if err != nil {
-			// assumes it is not a valid path
-			return fmt.Errorf("value is not a valid URI: %s", err)
-		}
-	} else {
-		// if the value is not of a string type it cannot be a path
-		return fmt.Errorf("value must be a string")
-	}
-	return nil
-}
-
-// requires the value conforms to an Artisan package name
-func isPackageName(val interface{}) error {
-	// the reflect value of the result
-	value := reflect.ValueOf(val)
-
-	// if the value passed in is a string
-	if value.Kind() == reflect.String {
-		// try and parse the package name
-		_, err := core.ParseName(value.String())
-		// if the value cannot be parsed
-		if err != nil {
-			// it is not a valid package name
-			return fmt.Errorf("value is not a valid package name: %s", err)
-		}
-	} else {
-		// if the value is not of a string type it cannot be a path
-		return fmt.Errorf("value must be a string")
-	}
-	return nil
 }

@@ -25,7 +25,9 @@ type FlowMergeCmd struct {
 	buildFilePath string
 	stdout        *bool
 	tkn           *bool
+	out           string
 	interactive   *bool
+	labels        []string
 }
 
 func NewFlowMergeCmd() *FlowMergeCmd {
@@ -37,10 +39,12 @@ func NewFlowMergeCmd() *FlowMergeCmd {
 		},
 	}
 	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env; the path to a file containing environment variables to use")
-	c.cmd.Flags().StringVarP(&c.buildFilePath, "build-file-path", "b", ".", "--build-file-path=. or -b=.; the path to an artisan build.yaml file from which to pick required inputs")
+	c.cmd.Flags().StringVarP(&c.buildFilePath, "build-file-path", "b", "", "--build-file-path=. or -b=.; the path to an artisan build.yaml file from which to pick required inputs")
 	c.stdout = c.cmd.Flags().Bool("stdout", false, "prints the output to the console")
 	c.tkn = c.cmd.Flags().Bool("tkn", false, "generates a tekton resources file")
+	c.cmd.Flags().StringVarP(&c.out, "output", "o", "yaml", "--output json or -o json; the output format (e.g. json, yaml)")
 	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
+	c.cmd.Flags().StringSliceVarP(&c.labels, "label", "l", []string{}, "add one or more labels to the flow; -l label1=value1 -l label2=value2")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -57,6 +61,8 @@ func (c *FlowMergeCmd) Run(cmd *cobra.Command, args []string) {
 	// loads a bare flow from the path
 	flow, err := flow.NewWithEnv(flowPath, c.buildFilePath, c.envFilename)
 	core.CheckErr(err, "cannot load bare flow")
+	// add labels to the flow
+	flow.AddLabels(c.labels)
 	// merges input, surveying for required data if in interactive mode
 	err = flow.Merge(*c.interactive)
 	core.CheckErr(err, "cannot merge bare flow")
@@ -78,14 +84,28 @@ func (c *FlowMergeCmd) Run(cmd *cobra.Command, args []string) {
 	} else { // flow format requested
 		// if stdout required
 		if *c.stdout {
-			// marshals the flow to YAML
-			yaml, err := flow.YamlString()
-			core.CheckErr(err, "cannot marshal bare flow")
-			// print to stdout
-			fmt.Println(yaml)
+			if c.out == "yaml" {
+				// marshals the flow to YAML
+				yaml, err := flow.YamlString()
+				core.CheckErr(err, "cannot marshal bare flow")
+				// print to stdout
+				fmt.Println(yaml)
+			} else if c.out == "json" {
+				// marshals the flow to YAML
+				json, err := flow.JsonString()
+				core.CheckErr(err, "cannot marshal bare flow")
+				// print to stdout
+				fmt.Println(json)
+			} else {
+				core.RaiseErr("invalid format '%s'", c.out)
+			}
 		} else {
 			// save the flow to file
-			err = flow.Save()
+			if c.out == "yaml" {
+				err = flow.SaveYAML()
+			} else if c.out == "json" {
+				err = flow.SaveJSON()
+			}
 			core.CheckErr(err, "cannot save bare flow")
 		}
 	}
