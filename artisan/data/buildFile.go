@@ -18,6 +18,8 @@ import (
 
 // structure of build.yaml file
 type BuildFile struct {
+	// internal, the path from where the buildfile is loaded
+	path string
 	// the URI of the Git repo
 	GitURI string `yaml:"git_uri,omitempty"`
 	// the runtime to use to run functions
@@ -147,7 +149,9 @@ func LoadBuildFile(path string) (*BuildFile, error) {
 		return nil, fmt.Errorf("cannot load build file from %s: %s", path, err)
 	}
 	core.Debug("loaded: '%s'\ncontent:\n%s\n", path, string(bytes))
-	buildFile := &BuildFile{}
+	buildFile := &BuildFile{
+		path: path,
+	}
 	err = yaml.Unmarshal(bytes, buildFile)
 	if err != nil {
 		return nil, fmt.Errorf("syntax error in build file %s: %s", path, err)
@@ -164,21 +168,21 @@ func anyBindingHasInput(b *BuildFile) (bool, error) {
 			if fx.Input.Var != nil {
 				for _, v := range fx.Input.Var {
 					if !b.Input.HasVar(v) {
-						return false, fmt.Errorf("function '%s' has a Var binding '%s' but not corresponding Var definition has been defined in the build file Input section.", fx.Name, v)
+						return false, fmt.Errorf("function '%s' in build file '%s' has a Var binding '%s' but not corresponding Var definition has been defined in the build file Input section.", fx.Name, b.path, v)
 					}
 				}
 			}
 			if fx.Input.Secret != nil {
 				for _, s := range fx.Input.Secret {
 					if !b.Input.HasSecret(s) && !strings.Contains(s, "ART_REG_USER") && !strings.Contains(s, "ART_REG_PWD") {
-						return false, fmt.Errorf("function '%s' has a Secret binding '%s' but not corresponding Secret definition has been defined in the build file Input section.", fx.Name, s)
+						return false, fmt.Errorf("function '%s' in build file '%s' has a Secret binding '%s' but not corresponding Secret definition has been defined in the build file Input section.", fx.Name, b.path, s)
 					}
 				}
 			}
 			if fx.Input.Key != nil {
 				for _, k := range fx.Input.Key {
 					if !b.Input.HasKey(k) && !strings.Contains(k, "VERIFICATION_KEY") {
-						return false, fmt.Errorf("function '%s' has a Key binding '%s' but not corresponding Key definition has been defined in the build file Input section.", fx.Name, k)
+						return false, fmt.Errorf("function '%s' in build file '%s' has a Key binding '%s' but not corresponding Key definition has been defined in the build file Input section.", fx.Name, b.path, k)
 					}
 				}
 			}
