@@ -67,10 +67,18 @@ func (b *Builder) BuildSlice() [][]byte {
 	result = append(result, ToYaml(pipeline, "Pipeline"))
 
 	pipelineRun := b.newPipelineRun()
-	result = append(result, ToYaml(pipelineRun, "Pipeline Run"))
 
 	// if source code repository is required by the pipeline
 	if b.flow.RequiresGitSource() {
+		// need to add git repo in resources of pipeline run
+		pipelineRun.Spec.Resources = []*Resources{
+			{
+				Name: b.codeRepoResourceName(),
+				ResourceRef: &ResourceRef{
+					Name: b.codeRepoResourceName(),
+				},
+			},
+		}
 		// add the following resources:
 		// tekton pipeline resource
 		pipelineResource := b.newPipelineResource()
@@ -92,6 +100,7 @@ func (b *Builder) BuildSlice() [][]byte {
 		triggerTemplate := b.newTriggerTemplate()
 		result = append(result, ToYaml(triggerTemplate, "TriggerTemplate"))
 	}
+	result = append(result, ToYaml(pipelineRun, "Pipeline Run"))
 	return result
 }
 
