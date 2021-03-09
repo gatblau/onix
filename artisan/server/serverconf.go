@@ -37,11 +37,11 @@ func (c *ServerConfig) HttpPort() string {
 }
 
 func (c *ServerConfig) HttpUser() string {
-	return c.getString(VarHTTPUname, "runner")
+	return c.getString(VarHTTPUname, "admin")
 }
 
 func (c *ServerConfig) HttpPwd() string {
-	return c.getString(VarHTTPPwd, "admin")
+	return c.getString(VarHTTPPwd, "adm1n")
 }
 
 func (c *ServerConfig) getBoolean(varName string, defaultValue bool) bool {

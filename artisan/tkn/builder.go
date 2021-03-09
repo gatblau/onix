@@ -38,7 +38,7 @@ func NewBuilder(flow *flow.Flow) *Builder {
 // creates a buffer with all K8S resources required to create a tekton pipleine out of an Artisan flow
 func (b *Builder) BuildBuffer() bytes.Buffer {
 	buffer := bytes.Buffer{}
-	resx := b.BuildSlice()
+	resx, _ := b.Build()
 	for _, resource := range resx {
 		buffer.Write(resource)
 		buffer.WriteString("\n---\n")
@@ -47,7 +47,7 @@ func (b *Builder) BuildBuffer() bytes.Buffer {
 }
 
 // creates a slice with all K8S resources required to create a tekton pipleine out of an Artisan flow
-func (b *Builder) BuildSlice() [][]byte {
+func (b *Builder) Build() ([][]byte, string) {
 	result := make([][]byte, 0)
 	// writes a task
 	task := b.newTask()
@@ -101,7 +101,7 @@ func (b *Builder) BuildSlice() [][]byte {
 		result = append(result, ToYaml(triggerTemplate, "TriggerTemplate"))
 	}
 	result = append(result, ToYaml(pipelineRun, "Pipeline Run"))
-	return result
+	return result, pipelineRun.Metadata.Name
 }
 
 // task

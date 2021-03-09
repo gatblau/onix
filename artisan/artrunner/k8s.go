@@ -61,9 +61,9 @@ func NewK8S() (*K8S, error) {
 }
 
 // create or update resourse
-func (k *K8S) Patch(yamlResource string, ctx context.Context) error {
+func (k *K8S) Patch(yamlResource []byte, ctx context.Context) error {
 	// obtains a dynamic rest interface for the yaml resource
-	dr, obj, data, err := k.resource(yamlResource)
+	dr, obj, data, err := k.resource(string(yamlResource))
 	if err != nil {
 		return err
 	}
@@ -84,6 +84,17 @@ func (k *K8S) Delete(yamlResource string, ctx context.Context) error {
 	// issue the delete command
 	err = dr.Delete(ctx, obj.GetName(), metav1.DeleteOptions{})
 	return err
+}
+
+// delete all specified resources
+func (k *K8S) DeleteAll(resources [][]byte, ctx context.Context) error {
+	for _, resource := range resources {
+		err := k.Delete(string(resource), ctx)
+		if err != nil {
+			return fmt.Errorf("cannot delete kubernetes resource: %s\n", err)
+		}
+	}
+	return nil
 }
 
 // returns a rest interface for a K8S resource

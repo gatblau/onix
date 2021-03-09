@@ -15,6 +15,7 @@ import (
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
 	"gopkg.in/yaml.v2"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -215,7 +216,9 @@ func (m *Manager) Run(runnerName, creds string, interactive, noTLS bool) error {
 		bodyBytes, _ := ioutil.ReadAll(response.Body)
 		return fmt.Errorf("%s, %s", response.Status, string(bodyBytes))
 	}
-	return nil
+	// copy the response body to the stdout
+	_, err = io.Copy(os.Stdout, response.Body)
+	return err
 }
 
 func (m *Manager) validate() error {
