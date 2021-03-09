@@ -16,7 +16,7 @@ type Task struct {
 	APIVersion string    `yaml:"apiVersion,omitempty"`
 	Kind       string    `yaml:"kind,omitempty"`
 	Metadata   *Metadata `yaml:"metadata,omitempty"`
-	Spec       *Spec     `yaml:"spec,omitempty"`
+	Spec       *TaskSpec `yaml:"spec,omitempty"`
 }
 
 func ToYaml(o interface{}, ref string) []byte {
