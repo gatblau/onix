@@ -30,7 +30,9 @@ import (
 
 type K8S struct {
 	cfg       *rest.Config
+	mapper    *restmapper.DeferredDiscoveryRESTMapper
 	decoder   runtime.Serializer
+	dynIF     dynamic.Interface
 	inCluster bool
 }
 
@@ -39,64 +41,79 @@ func NewK8S() (*K8S, error) {
 	if err != nil {
 		return nil, err
 	}
+	// 1. Prepare a RESTMapper to find GVR
+	dc, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	// 2. Prepare the dynamic client
+	dyn, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
 	return &K8S{
 		cfg:       config,
 		decoder:   yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme),
+		mapper:    restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(dc)),
 		inCluster: inCluster,
+		dynIF:     dyn,
 	}, nil
 }
 
-// Kubernetes Server-Side Apply
-func (k *K8S) Apply(yamlResource string, ctx context.Context) error {
-	// 1. Prepare a RESTMapper to find GVR
-	dc, err := discovery.NewDiscoveryClientForConfig(k.cfg)
+// create or update resourse
+func (k *K8S) Patch(yamlResource string, ctx context.Context) error {
+	// obtains a dynamic rest interface for the yaml resource
+	dr, obj, data, err := k.resource(yamlResource)
 	if err != nil {
 		return err
 	}
-	mapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(dc))
-
-	// 2. Prepare the dynamic client
-	dyn, err := dynamic.NewForConfig(k.cfg)
-	if err != nil {
-		return err
-	}
-
-	// 3. Decode YAML manifest into unstructured.Unstructured
-	obj := &unstructured.Unstructured{}
-	_, gvk, err := k.decoder.Decode([]byte(yamlResource), nil, obj)
-	if err != nil {
-		return err
-	}
-
-	// 4. Find GVR
-	mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
-	if err != nil {
-		return err
-	}
-
-	// 5. Obtain REST interface for the GVR
-	var dr dynamic.ResourceInterface
-	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
-		// namespaced resources should specify the namespace
-		dr = dyn.Resource(mapping.Resource).Namespace(obj.GetNamespace())
-	} else {
-		// for cluster-wide resources
-		dr = dyn.Resource(mapping.Resource)
-	}
-
-	// 6. Marshal object into JSON
-	data, err := json.Marshal(obj)
-	if err != nil {
-		return err
-	}
-
-	// 7. Create or Update the object with SSA
-	//     types.ApplyPatchType indicates SSA.
-	//     FieldManager specifies the field owner ID.
+	// issue the patch command
 	_, err = dr.Patch(ctx, obj.GetName(), types.ApplyPatchType, data, metav1.PatchOptions{
 		FieldManager: "artisan-runner",
 	})
 	return err
+}
+
+// create or update resourse
+func (k *K8S) Delete(yamlResource string, ctx context.Context) error {
+	// obtains a dynamic rest interface for the yaml resource
+	dr, obj, _, err := k.resource(yamlResource)
+	if err != nil {
+		return err
+	}
+	// issue the delete command
+	err = dr.Delete(ctx, obj.GetName(), metav1.DeleteOptions{})
+	return err
+}
+
+// returns a rest interface for a K8S resource
+func (k *K8S) resource(yamlResource string) (dynamic.ResourceInterface, *unstructured.Unstructured, []byte, error) {
+	// 3. Decode YAML manifest into unstructured.Unstructured
+	obj := &unstructured.Unstructured{}
+	_, gvk, err := k.decoder.Decode([]byte(yamlResource), nil, obj)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	// 4. Find GVR
+	mapping, err := k.mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	// 5. Obtain REST interface for the GVR
+	var dr dynamic.ResourceInterface
+	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
+		// namespaced resources should specify the namespace
+		dr = k.dynIF.Resource(mapping.Resource).Namespace(obj.GetNamespace())
+	} else {
+		// for cluster-wide resources
+		dr = k.dynIF.Resource(mapping.Resource)
+	}
+	// marshals  the unstructured object into JSON
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return dr, obj, data, nil
 }
 
 // gets the K8S client configuration either inside or outside of the cluster depending on

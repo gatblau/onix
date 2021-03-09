@@ -59,7 +59,7 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, resource := range resources {
-		err = k8s.Apply(string(resource), ctx)
+		err = k8s.Patch(string(resource), ctx)
 		if err != nil {
 			msg := fmt.Sprintf("cannot apply kubernetes resources: %s\n", err)
 			log.Printf(msg)

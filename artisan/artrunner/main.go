@@ -14,7 +14,7 @@ import (
 
 func main() {
 	// creates a generic http server
-	s := server.New()
+	s := server.New("onix/artisan-runner")
 	// add handlers
 	s.Serve(func(router *mux.Router) {
 		router.HandleFunc("/flow", runHandler).Methods("POST")
