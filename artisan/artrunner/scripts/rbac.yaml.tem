@@ -10,6 +10,14 @@ metadata:
   name: manage-runs
   namespace: ${NAMESPACE}
 rules:
+  - apiGroups: ["triggers.tekton.dev"]
+    resources: [
+        "triggerbindings",
+        "triggertemplates",
+        "eventlisteners",
+      ]
+      verbs: [ "get", "list", "create", "update", "delete", "patch", "watch" ]
+
   - apiGroups: ["tekton.dev"]
     resources: [
         "tasks",
@@ -17,9 +25,6 @@ rules:
         "pipelines",
         "pipelineruns",
         "pipelineresources",
-        "triggerbindings",
-        "triggertemplates",
-        "eventlisteners",
         "conditions",
         "runs"
     ]
