@@ -49,7 +49,7 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// get a tekton builder
 	builder := tkn.NewBuilder(f)
-	resources := builder.BuildSlice()
+	resources, pr := builder.Build()
 	ctx := context.Background()
 	k8s, err := NewK8S()
 	if err != nil {
@@ -58,8 +58,9 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
+	// create the pipeline resources
 	for _, resource := range resources {
-		err = k8s.Patch(string(resource), ctx)
+		err = k8s.Patch(resource, ctx)
 		if err != nil {
 			msg := fmt.Sprintf("cannot apply kubernetes resources: %s\n", err)
 			log.Printf(msg)
@@ -67,4 +68,24 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// stream the execution logs to the client using the tkn cli:
+	// tkn pr logs pipelinerun-name -a -n namespace
+	err = execute("tkn", []string{"pr", "logs", pr, "-a", fmt.Sprintf("-n %s", f.Labels["namespace"])}, w)
+	if err != nil {
+		log.Printf(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// now can delete all resources
+	err = k8s.DeleteAll(resources, ctx)
+	if err != nil {
+		log.Printf(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func listHandler(w http.ResponseWriter, r *http.Request) {
+	execute("tkn", []string{"resource", "list"}, w)
 }

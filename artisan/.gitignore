@@ -8,4 +8,4 @@ version.go
 bin
 art.zip
 artreg
-artrunner
+artrunner/artrunner.*

@@ -25,12 +25,15 @@ type Server struct {
 	start time.Time
 	// the server configuration
 	conf *ServerConfig
+	// basic auth realm
+	realm string
 }
 
-func New() *Server {
+func New(realm string) *Server {
 	return &Server{
 		// the server configuration
-		conf: new(ServerConfig),
+		conf:  new(ServerConfig),
+		realm: realm,
 	}
 }
 
@@ -143,9 +146,9 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "" {
 			// if no authorisation header is passed, then it prompts a client browser to authenticate
-			w.Header().Set("WWW-Authenticate", `Basic realm="onix/artie"`)
+			w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, s.realm))
 			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Printf("? unauthorised http request from: '%v'\n", r.RemoteAddr)
+			fmt.Printf("! unauthorised http request from: '%v'\n", r.RemoteAddr)
 		} else {
 			// authenticate the request
 			requiredToken := s.conf.BasicToken()
