@@ -113,10 +113,19 @@ func (b *Builder) newTask() *Task {
 		Name:      b.buildTaskName(),
 		Namespace: b.namespace(),
 	}
-	t.Spec = &Spec{
-		Inputs:  b.newInputs(),
+	t.Spec = &TaskSpec{
 		Steps:   b.newSteps(),
 		Volumes: b.newVolumes(),
+	}
+	if b.flow.RequiresGitSource() {
+		t.Spec.Resources = &TaskResources{
+			Inputs: []*Inputs{
+				{
+					Name: "source",
+					Type: "git",
+				},
+			},
+		}
 	}
 	return t
 }
@@ -248,20 +257,6 @@ func (b *Builder) addRuntimeInterfaceVars(flowName string, step *flow.Step, env 
 		// })
 	}
 	return env
-}
-
-func (b *Builder) newInputs() *Inputs {
-	if b.flow.RequiresGitSource() {
-		return &Inputs{
-			Resources: []*Resources{
-				{
-					Name: "source",
-					Type: "git",
-				},
-			},
-		}
-	}
-	return nil
 }
 
 func (b *Builder) newVolumes() []*Volumes {
@@ -399,7 +394,8 @@ func (b *Builder) newPipelineResource() *PipelineResource {
 	r.APIVersion = ApiVersionTekton
 	r.Kind = "PipelineResource"
 	r.Metadata = &Metadata{
-		Name: b.codeRepoResourceName(),
+		Name:      b.codeRepoResourceName(),
+		Namespace: b.namespace(),
 	}
 	r.Spec = &Spec{
 		Type: "git",

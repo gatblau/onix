@@ -21,6 +21,12 @@ type Resources struct {
 	ResourceRef *ResourceRef `yaml:"resourceRef,omitempty"`
 }
 
+type TaskResources struct {
+	Name   string    `yaml:"name,omitempty"`
+	Type   string    `yaml:"type,omitempty"`
+	Inputs []*Inputs `yaml:"inputs,omitempty"`
+}
+
 type Params struct {
 	Name        string `yaml:"name,omitempty"`
 	Value       string `yaml:"value,omitempty"`
@@ -31,6 +37,7 @@ type Params struct {
 
 type Inputs struct {
 	Name      string       `yaml:"name,omitempty"`
+	Type      string       `yaml:"type,omitempty"`
 	Resource  string       `yaml:"resource,omitempty"`
 	Resources []*Resources `yaml:"resources,omitempty"`
 }
@@ -50,6 +57,12 @@ type Spec struct {
 	Port               *Port         `yaml:"port,omitempty"`
 	TLS                *TLS          `yaml:"tls,omitempty"`
 	To                 *To           `yaml:"to,omitempty"`
+}
+
+type TaskSpec struct {
+	Resources *TaskResources `yaml:"resources,omitempty"`
+	Steps     []*Steps       `yaml:"steps,omitempty"`
+	Volumes   []*Volumes     `yaml:"volumes,omitempty"`
 }
 
 type Labels struct {
