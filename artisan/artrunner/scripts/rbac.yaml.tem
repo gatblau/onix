@@ -33,7 +33,8 @@ rules:
   - apiGroups: ["*"] # all api groups
     resources: [
         "secrets",
-        "routes"
+        "routes",
+        "pods"
     ]
     verbs: [ "get", "list", "create", "update", "delete", "patch", "watch" ]
 ---
