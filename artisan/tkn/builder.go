@@ -17,10 +17,13 @@ import (
 )
 
 const (
-	ApiVersion              = "v1"
+	ApiVersionSecret        = "v1"
+	ApiVersionRoute         = "route.openshift.io/v1"
 	ApiVersionTekton        = "tekton.dev/v1alpha1"
 	ApiVersionTektonTrigger = "triggers.tekton.dev/v1alpha1"
-	ServiceAccountName      = "pipeline"
+
+	// account below is created by the tekton operator
+	ServiceAccountName = "pipeline"
 )
 
 // tekton builder
@@ -38,7 +41,7 @@ func NewBuilder(flow *flow.Flow) *Builder {
 // creates a buffer with all K8S resources required to create a tekton pipleine out of an Artisan flow
 func (b *Builder) BuildBuffer() bytes.Buffer {
 	buffer := bytes.Buffer{}
-	resx, _ := b.Build()
+	resx, _, _ := b.Build()
 	for _, resource := range resx {
 		buffer.Write(resource)
 		buffer.WriteString("\n---\n")
@@ -47,7 +50,7 @@ func (b *Builder) BuildBuffer() bytes.Buffer {
 }
 
 // creates a slice with all K8S resources required to create a tekton pipleine out of an Artisan flow
-func (b *Builder) Build() ([][]byte, string) {
+func (b *Builder) Build() ([][]byte, string, bool) {
 	result := make([][]byte, 0)
 	// writes a task
 	task := b.newTask()
@@ -101,7 +104,7 @@ func (b *Builder) Build() ([][]byte, string) {
 		result = append(result, ToYaml(triggerTemplate, "TriggerTemplate"))
 	}
 	result = append(result, ToYaml(pipelineRun, "Pipeline Run"))
-	return result, pipelineRun.Metadata.Name
+	return result, pipelineRun.Metadata.Name, b.flow.RequiresGitSource()
 }
 
 // task
@@ -276,7 +279,7 @@ func (b *Builder) newVolumes() []*Volumes {
 func (b *Builder) newCredentialsSecret() *Secret {
 	if b.flow.RequiresSecrets() {
 		s := new(Secret)
-		s.APIVersion = ApiVersion
+		s.APIVersion = ApiVersionSecret
 		s.Kind = "Secret"
 		s.Type = "Opaque"
 		s.Metadata = &Metadata{
@@ -308,7 +311,7 @@ func (b *Builder) newCredentialsSecret() *Secret {
 func (b *Builder) newKeySecrets() *Secret {
 	if b.flow.RequiresKey() {
 		s := new(Secret)
-		s.APIVersion = ApiVersion
+		s.APIVersion = ApiVersionSecret
 		s.Kind = "Secret"
 		s.Type = "Opaque"
 		s.Metadata = &Metadata{
@@ -467,7 +470,7 @@ func (b *Builder) newEventListener() *EventListener {
 // route
 func (b *Builder) newRoute() *Route {
 	r := new(Route)
-	r.APIVersion = ApiVersion
+	r.APIVersion = ApiVersionRoute
 	r.Kind = "Route"
 	r.Metadata = &Metadata{
 		Name:      fmt.Sprintf("el-%s", encode(b.flow.Name)),
@@ -642,5 +645,5 @@ func (b *Builder) keysSecretName() string {
 
 // retrieves the namespace label in the flow
 func (b *Builder) namespace() string {
-	return b.flow.Labels["namespace"]
+	return strings.Trim(b.flow.Labels["namespace"], " ")
 }
