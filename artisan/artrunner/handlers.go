@@ -49,7 +49,7 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// get a tekton builder
 	builder := tkn.NewBuilder(f)
-	resources, pr := builder.Build()
+	resources, pr, requiresGit := builder.Build()
 	ctx := context.Background()
 	k8s, err := NewK8S()
 	if err != nil {
@@ -70,19 +70,24 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// stream the execution logs to the client using the tkn cli:
 	// tkn pr logs pipelinerun-name -a -n namespace
-	err = execute("tkn", []string{"pr", "logs", pr, "-a", fmt.Sprintf("-n %s", f.Labels["namespace"])}, w)
+	err = execute("tkn", []string{"pr", "logs", pr, "-a", "-n", f.Labels["namespace"]}, w)
 	if err != nil {
-		log.Printf(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		msg := "cannot retrieve pipeline logs, pipeline might still be running"
+		log.Printf(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
-	// now can delete all resources
-	err = k8s.DeleteAll(resources, ctx)
-	if err != nil {
-		log.Printf(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	// if got source is not required, the it is not a CI pipeline listening for source code changes
+	// and therefore it is assume to be transient, when the job is done it should be deleted
+	if !requiresGit {
+		// now can delete all resources
+		err = k8s.DeleteAll(resources, ctx)
+		if err != nil {
+			log.Printf(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
