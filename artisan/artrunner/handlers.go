@@ -49,7 +49,7 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// get a tekton builder
 	builder := tkn.NewBuilder(f)
-	resources, pr, requiresGit := builder.Build()
+	resources, pr, _ := builder.Build()
 	ctx := context.Background()
 	k8s, err := NewK8S()
 	if err != nil {
@@ -63,32 +63,36 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 		err = k8s.Patch(resource, ctx)
 		if err != nil {
 			msg := fmt.Sprintf("cannot apply kubernetes resources: %s\n", err)
-			log.Printf(msg)
+			fmt.Printf(msg)
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
 	}
-	// stream the execution logs to the client using the tkn cli:
-	// tkn pr logs pipelinerun-name -a -n namespace
-	err = execute("tkn", []string{"pr", "logs", pr, "-a", "-n", f.Labels["namespace"]}, w)
-	if err != nil {
-		msg := "cannot retrieve pipeline logs, pipeline might still be running"
-		log.Printf(msg)
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
+	msg := fmt.Sprintf("? starting pipeline run %s\n", pr)
+	log.Print(msg)
+	w.Write([]byte(msg))
 
-	// if got source is not required, the it is not a CI pipeline listening for source code changes
-	// and therefore it is assume to be transient, when the job is done it should be deleted
-	if !requiresGit {
-		// now can delete all resources
-		err = k8s.DeleteAll(resources, ctx)
-		if err != nil {
-			log.Printf(err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
+	// // stream the execution logs to the client using the tkn cli:
+	// // tkn pr logs pipelinerun-name -a -f -n namespace
+	// err = execute("tkn", []string{"pr", "logs", pr, "-a", "-f", "-n", f.Labels["namespace"]}, w)
+	// if err != nil {
+	// 	msg := "cannot retrieve pipeline logs, pipeline might still be running"
+	// 	log.Printf(msg)
+	// 	http.Error(w, msg, http.StatusInternalServerError)
+	// 	return
+	// }
+	//
+	// // if got source is not required, the it is not a CI pipeline listening for source code changes
+	// // and therefore it is assume to be transient, when the job is done it should be deleted
+	// if !requiresGit {
+	// 	// now can delete all resources
+	// 	err = k8s.DeleteAll(resources, ctx)
+	// 	if err != nil {
+	// 		log.Printf(err.Error())
+	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 		return
+	// 	}
+	// }
 }
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
