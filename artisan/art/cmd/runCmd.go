@@ -11,6 +11,7 @@ import (
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // create a file seal
@@ -44,8 +45,12 @@ func (c *RunCmd) Run(cmd *cobra.Command, args []string) {
 		path = args[1]
 	}
 	builder := build.NewBuilder()
-	// load environment variables from file
-	core.LoadEnvFromFile(c.envFilename)
+	// add the build file level environment variables
+	env := core.NewEnVarFromSlice(os.Environ())
+	// load vars from file
+	env2, _ := core.NewEnVarFromFile(c.envFilename)
+	// merge with existing environment
+	env.Merge(env2)
 	// execute the function
-	builder.Run(function, path, *c.interactive)
+	builder.Run(function, path, *c.interactive, env)
 }

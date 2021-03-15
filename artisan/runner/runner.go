@@ -42,7 +42,7 @@ func New() (*Runner, error) {
 	return new(Runner), nil
 }
 
-func (r *Runner) RunC(fxName string, interactive bool, envFile string) error {
+func (r *Runner) RunC(fxName string, interactive bool, env *core.Envar) error {
 	var runtime string
 	fx := r.buildFile.Fx(fxName)
 	// if the runtime is defined at the function level
@@ -59,19 +59,13 @@ func (r *Runner) RunC(fxName string, interactive bool, envFile string) error {
 	runtime = core.QualifyRuntime(runtime)
 	// generate a unique name for the running container
 	containerName := fmt.Sprintf("art-runc-%s-%s", core.Encode(fxName), core.RandomString(8))
-	// do not pass any vars from the host to avoid clashing issues
-	// if any vars are required load them directly into the container from the env file
-	env, err := core.NewEnVarFromFile(envFile)
-	if err != nil {
-		return err
-	}
 	// if insputs are defined for the function then survey for data
 	i := data.SurveyInputFromBuildFile(fxName, r.buildFile, true, false, env)
 	// merge the collected input with the current environment
 	env.Merge(i.Env(false))
 	core.Debug(fmt.Sprintf("env vars passed to container:\n%s\n", env.String()))
 	// launch a container with a bind mount to the path where the build.yaml is located
-	err = runBuildFileFx(runtime, fxName, r.path, containerName, env)
+	err := runBuildFileFx(runtime, fxName, r.path, containerName, env)
 	if err != nil {
 		removeContainer(containerName)
 		return err
