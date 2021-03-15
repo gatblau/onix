@@ -70,9 +70,11 @@ func NewWithEnv(bareFlowPath, buildPath, envFile string) (*Manager, error) {
 }
 
 func (m *Manager) Merge(interactive bool) error {
-	// load environment variables from file, if file not specified then try loading .env
-	core.LoadEnvFromFile(m.envFile)
-	env := core.NewEnVarFromSlice(os.Environ())
+	// load environment variables from file
+	env, err := core.NewEnVarFromFile(m.envFile)
+	if err != nil {
+		return err
+	}
 	local := registry.NewLocalRegistry()
 	if m.Flow.RequiresGitSource() {
 		if m.buildFile == nil {

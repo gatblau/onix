@@ -95,7 +95,7 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 }
 
 // execute the specified function
-func (b *Builder) Run(function string, path string, interactive bool) {
+func (b *Builder) Run(function string, path string, interactive bool, env *core.Envar) {
 	// if no path is specified use .
 	if len(path) == 0 {
 		path = "."
@@ -116,7 +116,7 @@ func (b *Builder) Run(function string, path string, interactive bool) {
 	bf, err := data.LoadBuildFile(filepath.Join(localPath, "build.yaml"))
 	core.CheckErr(err, "cannot load build file")
 	b.buildFile = bf
-	b.runFunction(function, localPath, interactive)
+	b.runFunction(function, localPath, interactive, env)
 }
 
 // either clone a remote git repo or copy a local one onto the source folder
@@ -327,9 +327,7 @@ func (b *Builder) getIgnored() []string {
 }
 
 // run a specified function
-func (b *Builder) runFunction(function string, path string, interactive bool) {
-	// add the build file level environment variables
-	env := core.NewEnVarFromSlice(os.Environ())
+func (b *Builder) runFunction(function string, path string, interactive bool, env *core.Envar) {
 	// if insputs are defined for the function then survey for data
 	i := data.SurveyInputFromBuildFile(function, b.buildFile, interactive, false, env)
 	// merge the collected input with the current environment
@@ -370,7 +368,7 @@ func (b *Builder) runFunction(function string, path string, interactive bool) {
 			core.CheckErr(err, "cannot execute command: %s", cmd)
 		} else if ok, fx := core.HasFunction(cmd); ok {
 			// executes the function
-			b.runFunction(fx, path, interactive)
+			b.runFunction(fx, path, interactive, env)
 		} else {
 			// execute the statement
 			err := execute(cmd, path, buildEnv, interactive)
@@ -415,7 +413,7 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 					core.CheckErr(err, "cannot execute command: %s", cmd)
 				} else if ok, fx := core.HasFunction(cmd); ok {
 					// executes the function
-					b.runFunction(fx, execDir, interactive)
+					b.runFunction(fx, execDir, interactive, env)
 				} else {
 					// execute the statement
 					err := execute(cmd, execDir, buildEnv, interactive)
@@ -595,7 +593,7 @@ func (b *Builder) getBuildEnv() map[string]string {
 }
 
 // execute an exported function in a package
-func (b *Builder) Execute(name *core.PackageName, function string, credentials string, noTLS bool, certPath string, ignoreSignature bool, interactive bool, path string, preserveFiles bool) {
+func (b *Builder) Execute(name *core.PackageName, function string, credentials string, noTLS bool, certPath string, ignoreSignature bool, interactive bool, path string, preserveFiles bool, env *core.Envar) {
 	// get a local registry handle
 	local := registry.NewLocalRegistry()
 	// check the run path exist
@@ -624,7 +622,7 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 	// check the function is exported
 	if isExported(m, function) {
 		// run the function on the open package
-		b.Run(function, path, interactive)
+		b.Run(function, path, interactive, env)
 		// if there is no instruction to preserve the open files
 		if !preserveFiles {
 			// remove the package files

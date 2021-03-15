@@ -12,6 +12,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // executes an exported function
@@ -47,7 +48,7 @@ func NewExeCmd() *ExeCmd {
 	return c
 }
 
-func (r *ExeCmd) Run(cmd *cobra.Command, args []string) {
+func (c *ExeCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) < 2 {
 		core.RaiseErr("package and function names are required")
 	}
@@ -59,8 +60,12 @@ func (r *ExeCmd) Run(cmd *cobra.Command, args []string) {
 	builder := build.NewBuilder()
 	name, err := core.ParseName(pack)
 	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
-	// load environment variables from file, if file not specified then try loading .env
-	core.LoadEnvFromFile(r.envFilename)
+	// add the build file level environment variables
+	env := core.NewEnVarFromSlice(os.Environ())
+	// load vars from file
+	env2, _ := core.NewEnVarFromFile(c.envFilename)
+	// merge with existing environment
+	env.Merge(env2)
 	// run the function on the open package
-	builder.Execute(name, function, r.credentials, *r.noTLS, r.pubPath, *r.ignoreSignature, *r.interactive, r.path, *r.preserveFiles)
+	builder.Execute(name, function, c.credentials, *c.noTLS, c.pubPath, *c.ignoreSignature, *c.interactive, c.path, *c.preserveFiles, env)
 }

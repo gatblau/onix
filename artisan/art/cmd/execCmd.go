@@ -8,6 +8,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/gatblau/onix/artisan/runner"
@@ -61,9 +62,12 @@ func (c *ExeCCmd) Run(cmd *cobra.Command, args []string) {
 	// create an instance of the runner
 	run, err := runner.New()
 	core.CheckErr(err, "cannot initialise runner")
-	// load environment variables from file, if file not specified then try loading .env
+	// load environment variables from file
+	// NOTE: do not load from host environment to prevent clashes in the container
 	env, err := core.NewEnVarFromFile(c.envFilename)
-	core.CheckErr(err, "cannot load env file")
+	if err != nil {
+		fmt.Printf("cannot load env file: %s\n", err)
+	}
 	// launch a runtime to execute the function
 	err = run.ExeC(packageName, fxName, c.credentials, *c.interactive, env)
 	i18n.Err(err, i18n.ERR_CANT_EXEC_FUNC_IN_PACKAGE, fxName, packageName)
