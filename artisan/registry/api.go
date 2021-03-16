@@ -147,7 +147,9 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, err
 		// if repository is nil then the client is not talking to the proper package registry
 		return nil, fmt.Errorf("\"%s\" does not conform to the Package Registry API, are you sure the package domain is correct?", r.domain)
 	case http.StatusForbidden:
-		return nil, fmt.Errorf("invalid credentials, access to the registry is forbidden")
+		return nil, fmt.Errorf("access to the registry is forbidden")
+	case http.StatusUnauthorized:
+		return nil, fmt.Errorf("invalid credentials, access to the registry is unauthorised")
 	}
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
