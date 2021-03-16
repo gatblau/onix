@@ -44,7 +44,7 @@ func NewEnVarFromFile(envFile string) (*Envar, error) {
 			if len(keyValue) != 2 {
 				return nil, fmt.Errorf("invalid env file format")
 			}
-			outMap[keyValue[0]] = keyValue[1]
+			outMap[keyValue[0]] = removeTrail(keyValue[1])
 		}
 	} else {
 		Debug("cannot load env file: %s", err.Error())
@@ -52,6 +52,17 @@ func NewEnVarFromFile(envFile string) (*Envar, error) {
 	return &Envar{
 		Vars: outMap,
 	}, nil
+}
+
+// remove trailing \r or \n or \r\n
+func removeTrail(value string) string {
+	// case 1 => \r
+	// case 2 => \n
+	// case 3 => \r\n
+	value = strings.Trim(value, "\r")
+	value = strings.Trim(value, "\n")
+	value = strings.Trim(value, "\r")
+	return value
 }
 
 func NewEnVarFromSlice(v []string) *Envar {
