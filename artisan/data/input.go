@@ -295,7 +295,7 @@ func evalInput(input *Input, interactive, defOnly bool, env *core.Envar) *Input 
 	}
 	for _, key := range result.Key {
 		if !defOnly {
-			surveyKey(key)
+			EvalKey(key, interactive, env)
 		}
 	}
 	// return pointer to new object
