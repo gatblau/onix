@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/gatblau/onix/artisan/crypto"
+	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/flow"
 	"strings"
 	"time"
@@ -240,24 +241,24 @@ func (b *Builder) addRuntimeInterfaceVars(flowName string, step *flow.Step, env 
 				Value: step.PackageSource,
 			})
 		}
-		// env = append(env, &Env{
-		// 	Name: "ART_REG_USER",
-		// 	ValueFrom: &ValueFrom{
-		// 		SecretKeyRef: &SecretKeyRef{
-		// 			Name: b.secretName(),
-		// 			Key:  fmt.Sprintf("%s_%s_ART_REG_USER", data.NormInputName(flowName), data.NormInputName(step.Name)),
-		// 		},
-		// 	},
-		// })
-		// env = append(env, &Env{
-		// 	Name: "ART_REG_PWD",
-		// 	ValueFrom: &ValueFrom{
-		// 		SecretKeyRef: &SecretKeyRef{
-		// 			Name: b.secretName(),
-		// 			Key:  fmt.Sprintf("%s_%s_ART_REG_PWD", data.NormInputName(flowName), data.NormInputName(step.Name)),
-		// 		},
-		// 	},
-		// })
+		env = append(env, &Env{
+			Name: "ART_REG_USER",
+			ValueFrom: &ValueFrom{
+				SecretKeyRef: &SecretKeyRef{
+					Name: b.secretName(),
+					Key:  fmt.Sprintf("%s_%s_ART_REG_USER", data.NormInputName(flowName), data.NormInputName(step.Name)),
+				},
+			},
+		})
+		env = append(env, &Env{
+			Name: "ART_REG_PWD",
+			ValueFrom: &ValueFrom{
+				SecretKeyRef: &SecretKeyRef{
+					Name: b.secretName(),
+					Key:  fmt.Sprintf("%s_%s_ART_REG_PWD", data.NormInputName(flowName), data.NormInputName(step.Name)),
+				},
+			},
+		})
 	}
 	return env
 }
