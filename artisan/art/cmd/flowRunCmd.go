@@ -12,6 +12,7 @@ import (
 	"github.com/gatblau/onix/artisan/flow"
 	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 type FlowRunCmd struct {
@@ -53,8 +54,14 @@ func (c *FlowRunCmd) Run(cmd *cobra.Command, args []string) {
 	} else if len(args) > 1 {
 		i18n.Raise(i18n.ERR_TOO_MANY_ARGS)
 	}
+	// add the build file level environment variables
+	env := core.NewEnVarFromSlice(os.Environ())
+	// load vars from file
+	env2, _ := core.NewEnVarFromFile(c.envFilename)
+	// merge with existing environment
+	env.Merge(env2)
 	// loads a flow from the path
-	f, err := flow.NewWithEnv(c.flowPath, c.buildFilePath, ".env")
+	f, err := flow.NewWithEnv(c.flowPath, c.buildFilePath, env)
 	core.CheckErr(err, "cannot load flow")
 	// add labels to the flow
 	f.AddLabels(c.labels)

@@ -30,7 +30,7 @@ type Manager struct {
 	Flow         *Flow
 	buildFile    *data.BuildFile
 	bareFlowPath string
-	envFile      string
+	env          *core.Envar
 }
 
 func New(bareFlowPath, buildPath string) (*Manager, error) {
@@ -62,19 +62,14 @@ func New(bareFlowPath, buildPath string) (*Manager, error) {
 	return m, nil
 }
 
-func NewWithEnv(bareFlowPath, buildPath, envFile string) (*Manager, error) {
+func NewWithEnv(bareFlowPath, buildPath string, env *core.Envar) (*Manager, error) {
 	m, err := New(bareFlowPath, buildPath)
 	core.CheckErr(err, "cannot load flow")
-	m.envFile = core.ToAbs(envFile)
+	m.env = env
 	return m, nil
 }
 
 func (m *Manager) Merge(interactive bool) error {
-	// load environment variables from file
-	env, err := core.NewEnVarFromFile(m.envFile)
-	if err != nil {
-		return err
-	}
 	local := registry.NewLocalRegistry()
 	if m.Flow.RequiresGitSource() {
 		if m.buildFile == nil {
@@ -89,7 +84,7 @@ func (m *Manager) Merge(interactive bool) error {
 				Required:    true,
 				Type:        "uri",
 			}
-			data.EvalVar(gitUri, interactive, env)
+			data.EvalVar(gitUri, interactive, m.env)
 			m.buildFile.GitURI = gitUri.Value
 		}
 		m.Flow.GitURI = m.buildFile.GitURI
@@ -104,13 +99,13 @@ func (m *Manager) Merge(interactive bool) error {
 			core.CheckErr(err, "invalid step %s package name %s", step.Name, step.Package)
 			// get the package manifest
 			manifest := local.GetManifest(name)
-			step.Input = data.SurveyInputFromManifest(m.Flow.Name, step.Name, step.PackageSource, name.Domain, step.Function, manifest, interactive, false, env)
+			step.Input = data.SurveyInputFromManifest(m.Flow.Name, step.Name, step.PackageSource, name.Domain, step.Function, manifest, interactive, false, m.env)
 		} else if step.surveyBuildfile(m.Flow.RequiresGitSource()) {
 			// add exported inputs to the step
-			step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, interactive, false, env)
+			step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, interactive, false, m.env)
 		} else if step.surveyRuntime() {
 			// read input from from runtime_uri
-			step.Input = data.SurveyInputFromURI(step.RuntimeManifest, interactive, false, env)
+			step.Input = data.SurveyInputFromURI(step.RuntimeManifest, interactive, false, m.env)
 		}
 	}
 	return nil

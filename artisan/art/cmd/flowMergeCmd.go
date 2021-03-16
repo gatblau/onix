@@ -58,8 +58,14 @@ func (c *FlowMergeCmd) Run(cmd *cobra.Command, args []string) {
 	} else if len(args) > 1 {
 		core.RaiseErr("too many arguments: only need the path to the bare flow file")
 	}
+	// add the build file level environment variables
+	env := core.NewEnVarFromSlice(os.Environ())
+	// load vars from file
+	env2, _ := core.NewEnVarFromFile(c.envFilename)
+	// merge with existing environment
+	env.Merge(env2)
 	// loads a bare flow from the path
-	flow, err := flow.NewWithEnv(flowPath, c.buildFilePath, c.envFilename)
+	flow, err := flow.NewWithEnv(flowPath, c.buildFilePath, env)
 	core.CheckErr(err, "cannot load bare flow")
 	// add labels to the flow
 	flow.AddLabels(c.labels)
