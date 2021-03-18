@@ -11,7 +11,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/gatblau/onix/artisan/crypto"
-	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/flow"
 	"strings"
 	"time"
@@ -180,20 +179,20 @@ func (b *Builder) getEnv(step *flow.Step) []*Env {
 		}
 		// add secrets
 		for _, secret := range step.Input.Secret {
-			if strings.HasSuffix(secret.Name, "ART_REG_USER") {
+			if strings.HasSuffix(secret.Name, "OXART_REG_USER") {
 				// if the secret is a art reg username, convert it to the format expected by the runtime
 				env = append(env, &Env{
-					Name: "ART_REG_USER",
+					Name: "OXART_REG_USER",
 					ValueFrom: &ValueFrom{
 						SecretKeyRef: &SecretKeyRef{
 							Name: b.secretName(),
 							Key:  secret.Name,
 						}},
 				})
-			} else if strings.HasSuffix(secret.Name, "ART_REG_PWD") {
+			} else if strings.HasSuffix(secret.Name, "OXART_REG_PWD") {
 				// if the secret is a art reg username, convert it to the format expected by the runtime
 				env = append(env, &Env{
-					Name: "ART_REG_PWD",
+					Name: "OXART_REG_PWD",
 					ValueFrom: &ValueFrom{
 						SecretKeyRef: &SecretKeyRef{
 							Name: b.secretName(),
@@ -226,39 +225,21 @@ func (b *Builder) getEnv(step *flow.Step) []*Env {
 func (b *Builder) addRuntimeInterfaceVars(flowName string, step *flow.Step, env []*Env) []*Env {
 	if len(step.Function) > 0 {
 		env = append(env, &Env{
-			Name:  "FX_NAME",
+			Name:  "OXART_FX_NAME",
 			Value: step.Function,
 		})
 	}
 	if len(step.Package) > 0 {
 		env = append(env, &Env{
-			Name:  "PACKAGE_NAME",
+			Name:  "OXART_PACKAGE_NAME",
 			Value: step.Package,
 		})
 		if len(step.PackageSource) > 0 {
 			env = append(env, &Env{
-				Name:  "PACKAGE_SOURCE",
+				Name:  "OXART_PACKAGE_SOURCE",
 				Value: step.PackageSource,
 			})
 		}
-		env = append(env, &Env{
-			Name: "ART_REG_USER",
-			ValueFrom: &ValueFrom{
-				SecretKeyRef: &SecretKeyRef{
-					Name: b.secretName(),
-					Key:  fmt.Sprintf("%s_%s_ART_REG_USER", data.NormInputName(flowName), data.NormInputName(step.Name)),
-				},
-			},
-		})
-		env = append(env, &Env{
-			Name: "ART_REG_PWD",
-			ValueFrom: &ValueFrom{
-				SecretKeyRef: &SecretKeyRef{
-					Name: b.secretName(),
-					Key:  fmt.Sprintf("%s_%s_ART_REG_PWD", data.NormInputName(flowName), data.NormInputName(step.Name)),
-				},
-			},
-		})
 	}
 	return env
 }
