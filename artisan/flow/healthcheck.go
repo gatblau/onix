@@ -7,11 +7,31 @@
 */
 package flow
 
-import "github.com/gatblau/onix/artisan/core"
+import (
+	"github.com/gatblau/onix/artisan/core"
+	"strings"
+)
 
 // run a health check of the flow configuration to determine if there is no conflicting information
 // and Artisan can identify the sources to survey inputs
 func flowHealthCheck(flow *Flow, step *Step) {
+	// check no reserved vars are used
+	for _, s := range flow.Steps {
+		if s.Input != nil && s.Input.Var != nil {
+			for _, v := range s.Input.Var {
+				if strings.HasPrefix(v.Name, "OXART_") {
+					core.RaiseErr("variable name %s is reserved for Artisan use, choose a different name")
+				}
+			}
+		}
+		if s.Input != nil && s.Input.Secret != nil {
+			for _, s := range s.Input.Secret {
+				if strings.HasPrefix(s.Name, "OXART_") {
+					core.RaiseErr("secret name %s is reserved for Artisan use, choose a different name")
+				}
+			}
+		}
+	}
 	// if there are sources there must be a create
 	sourcesCount, createCount := 0, 0
 	createFirstIx, mergeFirstIx, readFirstIx := -1, -1, -1
