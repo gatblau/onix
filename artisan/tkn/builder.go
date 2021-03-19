@@ -65,6 +65,11 @@ func (b *Builder) Build() ([][]byte, string, bool) {
 	if keysSecret != nil {
 		result = append(result, ToYaml(keysSecret, "Keys Secret"))
 	}
+	// write secrets with files
+	filesSecret := b.newFileSecrets()
+	if filesSecret != nil {
+		result = append(result, ToYaml(filesSecret, "Files Secret"))
+	}
 	// write pipeline
 	pipeline := b.newPipeline()
 	result = append(result, ToYaml(pipeline, "Pipeline"))
@@ -157,6 +162,15 @@ func (b *Builder) newSteps() []*Steps {
 				// add to env
 				s.Env = b.getEnv(step)
 			}
+			if len(step.Input.File) > 0 {
+				// add a volume mount for the files
+				s.VolumeMounts = []*VolumeMounts{
+					{
+						Name:      "files-volume",
+						MountPath: "/files",
+					},
+				}
+			}
 		}
 		// add the environment information required by the Artisan runtime to work
 		// see here: https://github.com/gatblau/artisan/tree/master/runtime
@@ -245,17 +259,30 @@ func (b *Builder) addRuntimeInterfaceVars(flowName string, step *flow.Step, env 
 }
 
 func (b *Builder) newVolumes() []*Volumes {
+	var vols []*Volumes = nil
 	if b.flow.RequiresKey() {
-		return []*Volumes{
-			{
-				Name: "keys-volume",
-				Secret: &Secret{
-					SecretName: b.keysSecretName(),
-				},
-			},
+		if vols == nil {
+			vols = make([]*Volumes, 0)
 		}
+		vols = append(vols, &Volumes{
+			Name: "keys-volume",
+			Secret: &Secret{
+				SecretName: b.keysSecretName(),
+			},
+		})
 	}
-	return nil
+	if b.flow.RequiresFile() {
+		if vols == nil {
+			vols = make([]*Volumes, 0)
+		}
+		vols = append(vols, &Volumes{
+			Name: "files-volume",
+			Secret: &Secret{
+				SecretName: b.filesSecretName(),
+			},
+		})
+	}
+	return vols
 }
 
 func (b *Builder) newCredentialsSecret() *Secret {
@@ -317,6 +344,31 @@ func (b *Builder) newKeySecrets() *Secret {
 			}
 		}
 		s.StringData = &keysDict
+		return s
+	}
+	return nil
+}
+
+func (b *Builder) newFileSecrets() *Secret {
+	if b.flow.RequiresFile() {
+		s := new(Secret)
+		s.APIVersion = ApiVersionSecret
+		s.Kind = "Secret"
+		s.Type = "Opaque"
+		s.Metadata = &Metadata{
+			Name:      b.filesSecretName(),
+			Namespace: b.namespace(),
+		}
+		filesDict := make(map[string]string)
+		for _, step := range b.flow.Steps {
+			if step.Input != nil {
+				files := step.Input.File
+				for _, file := range files {
+					filesDict[file.Path] = file.Content
+				}
+			}
+		}
+		s.StringData = &filesDict
 		return s
 	}
 	return nil
@@ -623,6 +675,10 @@ func (b *Builder) secretName() string {
 
 func (b *Builder) keysSecretName() string {
 	return fmt.Sprintf("%s-keys-secret", encode(b.flow.Name))
+}
+
+func (b *Builder) filesSecretName() string {
+	return fmt.Sprintf("%s-files-secret", encode(b.flow.Name))
 }
 
 // retrieves the namespace label in the flow

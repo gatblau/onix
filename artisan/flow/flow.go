@@ -77,6 +77,15 @@ func (f *Flow) RequiresSecrets() bool {
 	return false
 }
 
+func (f *Flow) RequiresFile() bool {
+	for _, step := range f.Steps {
+		if step.Input != nil && step.Input.File != nil {
+			return true
+		}
+	}
+	return false
+}
+
 // retrieve all input data required by the flow without values
 // interactive mode is off - gets definition only
 func (f *Flow) GetInputDefinition(b *data.BuildFile, env *core.Envar) *data.Input {

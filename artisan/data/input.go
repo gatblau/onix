@@ -25,6 +25,8 @@ import (
 
 // describes exported input information required by functions or runtimes
 type Input struct {
+	// reguired by configuration files
+	File Files `yaml:"file,omitempty" json:"file,omitempty"`
 	// required PGP keys
 	Key Keys `yaml:"key,omitempty" json:"key,omitempty"`
 	// required string value secrets
@@ -360,6 +362,24 @@ func EvalKey(inputKey *Key, prompt bool, env *core.Envar) {
 	}
 }
 
+func EvalFile(inputFile *File, prompt bool, env *core.Envar) {
+	// do not evaluate it if there is already a value
+	if len(inputFile.Content) > 0 {
+		return
+	}
+	// check if there is an env variable
+	keyPath, ok := env.Vars[inputFile.Name]
+	// if so
+	if ok {
+		// load the correct key using the provided path
+		loadFileFromPath(inputFile, keyPath)
+	} else if prompt {
+		surveyFile(inputFile)
+	} else {
+		core.RaiseErr("%s is required", inputFile.Name)
+	}
+}
+
 func (i *Input) ToEnvFile() []byte {
 	buf := &bytes.Buffer{}
 	buf.WriteString("# ===================================================\n")
@@ -406,6 +426,7 @@ func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt, defOnly bo
 		Key:    make([]*Key, 0),
 		Secret: make([]*Secret, 0),
 		Var:    make([]*Var, 0),
+		File:   make([]*File, 0),
 	}
 	// if no bindings then return an empty Input
 	if fxInput == nil {
@@ -443,6 +464,17 @@ func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt, defOnly bo
 				// if not definition only it should evaluate the key
 				if !defOnly {
 					EvalKey(key, prompt, env)
+				}
+			}
+		}
+	}
+	for _, fileBinding := range fxInput.File {
+		for _, file := range sourceInput.File {
+			if file.Name == fileBinding {
+				result.File = append(result.File, file)
+				// if not definition only it should evaluate the file
+				if !defOnly {
+					EvalFile(file, prompt, env)
 				}
 			}
 		}
@@ -618,4 +650,44 @@ func keyPathExist(val interface{}) error {
 		return fmt.Errorf("key group must be a string")
 	}
 	return nil
+}
+
+func surveyFile(file *File) {
+	// check if an env var has been set
+	envVal := os.Getenv(file.Name)
+	// if so, skip survey
+	if len(envVal) > 0 {
+		// load the file using the env var path value specified
+		loadFileFromPath(file, envVal)
+		return
+	}
+	desc := ""
+	// if a description is available use it
+	if len(file.Description) > 0 {
+		desc = file.Description
+	}
+	// takes default path from input
+	defaultPath := file.Path
+	// prompt for the value
+	prompt := &survey.Input{
+		Message: fmt.Sprintf("File => path to %s (%s):", file.Name, desc),
+		Default: defaultPath,
+		Help:    "the path to the file to load from the Artisan registry",
+	}
+	var keyPath string
+	// survey the key path
+	core.HandleCtrlC(survey.AskOne(prompt, &keyPath, survey.WithValidator(keyPathExist)))
+	// load the keys
+	loadFileFromPath(file, keyPath)
+}
+
+// load the file content in the file object using the passed in file path
+func loadFileFromPath(file *File, filePath string) {
+	var (
+		contentBytes []byte
+		err          error
+	)
+	contentBytes, err = ioutil.ReadFile(path.Join(core.FilesPath(), filePath))
+	core.CheckErr(err, "cannot load file from registry")
+	file.Content = string(contentBytes)
 }

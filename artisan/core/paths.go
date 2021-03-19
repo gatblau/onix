@@ -43,6 +43,10 @@ func KeysPath() string {
 	return filepath.Join(RegistryPath(), "keys")
 }
 
+func FilesPath() string {
+	return filepath.Join(RegistryPath(), "files")
+}
+
 func LangPath() string {
 	return filepath.Join(RegistryPath(), "lang")
 }
