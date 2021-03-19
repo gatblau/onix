@@ -32,7 +32,7 @@ func NewEnVarFromFile(envFile string) (*Envar, error) {
 	// otherwise skip it
 	content := strings.Split(string(data), "\n")
 	if err == nil {
-		for _, line := range content {
+		for ix, line := range content {
 			// skips comments
 			if strings.HasPrefix(strings.Trim(line, " "), "#") ||
 				len(strings.Trim(line, " ")) == 0 ||
@@ -42,7 +42,7 @@ func NewEnVarFromFile(envFile string) (*Envar, error) {
 			}
 			keyValue := strings.Split(line, "=")
 			if len(keyValue) != 2 {
-				return nil, fmt.Errorf("invalid env file format")
+				return nil, fmt.Errorf("invalid env file format in line %d: '%s'\n", ix, line)
 			}
 			outMap[keyValue[0]] = removeTrail(keyValue[1])
 		}

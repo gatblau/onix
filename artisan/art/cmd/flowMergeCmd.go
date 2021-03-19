@@ -61,7 +61,8 @@ func (c *FlowMergeCmd) Run(cmd *cobra.Command, args []string) {
 	// add the build file level environment variables
 	env := core.NewEnVarFromSlice(os.Environ())
 	// load vars from file
-	env2, _ := core.NewEnVarFromFile(c.envFilename)
+	env2, err := core.NewEnVarFromFile(c.envFilename)
+	core.CheckErr(err, "failed to load environment file '%s'", c.envFilename)
 	// merge with existing environment
 	env.Merge(env2)
 	// loads a bare flow from the path

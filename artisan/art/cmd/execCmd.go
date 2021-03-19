@@ -8,7 +8,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/gatblau/onix/artisan/runner"
@@ -65,8 +64,9 @@ func (c *ExeCCmd) Run(cmd *cobra.Command, args []string) {
 	// load environment variables from file
 	// NOTE: do not load from host environment to prevent clashes in the container
 	env, err := core.NewEnVarFromFile(c.envFilename)
-	if err != nil {
-		fmt.Printf("cannot load env file: %s\n", err)
+	core.CheckErr(err, "failed to load environment file '%s'", c.envFilename)
+	if len(c.credentials) == 0 {
+		core.Msg("no credentials have been provided, if you are connecting to a authenticated registry, you need to pass the -u flag")
 	}
 	// launch a runtime to execute the function
 	err = run.ExeC(packageName, fxName, c.credentials, *c.interactive, env)

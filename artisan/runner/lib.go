@@ -102,11 +102,11 @@ func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUs
 	if err != nil {
 		return err
 	}
-	// add runtime vars
-	env.Add("PACKAGE_NAME", packageName)
-	env.Add("FX_NAME", fxName)
-	env.Add("ART_REG_USER", artRegistryUser)
-	env.Add("ART_REG_PWD", artRegistryPwd)
+	// add add runtime vars
+	env.Add("OXART_PACKAGE_NAME", packageName)
+	env.Add("OXART_FX_NAME", fxName)
+	env.Add("OXART_REG_USER", artRegistryUser)
+	env.Add("OXART_REG_PWD", artRegistryPwd)
 	// create a slice with docker run args
 	args := toContainerArgs(runtimeName, "", containerName, env)
 	// launch the container with an art exec command
