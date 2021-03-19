@@ -100,7 +100,7 @@ func (i *Input) Encrypt(pub *crypto.PGP) {
 func (i *Input) SurveyRegistryCreds(flowName, stepName, packageSource, domain string, prompt, defOnly bool, env *core.Envar) {
 	if packageSource != "read" {
 		// check for art_reg_user
-		userName := fmt.Sprintf("%s_%s_ART_REG_USER", NormInputName(flowName), NormInputName(stepName))
+		userName := fmt.Sprintf("%s_%s_OXART_REG_USER", NormInputName(flowName), NormInputName(stepName))
 		if !i.HasSecret(userName) {
 			userSecret := &Secret{
 				Name:        userName,
@@ -112,7 +112,7 @@ func (i *Input) SurveyRegistryCreds(flowName, stepName, packageSource, domain st
 			i.Secret = append(i.Secret, userSecret)
 		}
 		// check for art_reg_pwd
-		pwd := fmt.Sprintf("%s_%s_ART_REG_PWD", NormInputName(flowName), NormInputName(stepName))
+		pwd := fmt.Sprintf("%s_%s_OXART_REG_PWD", NormInputName(flowName), NormInputName(stepName))
 		if !i.HasSecret(pwd) {
 			pwdSecret := &Secret{
 				Name:        pwd,
@@ -124,7 +124,7 @@ func (i *Input) SurveyRegistryCreds(flowName, stepName, packageSource, domain st
 			i.Secret = append(i.Secret, pwdSecret)
 		}
 		// as we need to open this package a verification (public PGP) key is needed
-		keyName := fmt.Sprintf("%s_%s_VERIFICATION_KEY", NormInputName(flowName), NormInputName(stepName))
+		keyName := fmt.Sprintf("%s_%s_OXART_VERIFICATION_KEY", NormInputName(flowName), NormInputName(stepName))
 		if !i.HasKey(keyName) {
 			key := &Key{
 				Name:        keyName,
