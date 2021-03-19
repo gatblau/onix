@@ -8,7 +8,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/runner"
 	"github.com/spf13/cobra"
@@ -51,9 +50,7 @@ func (c *RunCCmd) Run(cmd *cobra.Command, args []string) {
 	// NOTE: do not pass any vars from the host to avoid clashing issues
 	// if any vars are required load them directly into the container from the env file
 	env, err := core.NewEnVarFromFile(c.envFilename)
-	if err != nil {
-		fmt.Printf("cannot load env file: %s\n", err)
-	}
+	core.CheckErr(err, "failed to load environment file '%s'", c.envFilename)
 	// launch a runtime to execute the function
 	err = run.RunC(function, *c.interactive, env)
 	core.CheckErr(err, "cannot execute function '%s'", function)

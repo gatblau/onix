@@ -165,6 +165,13 @@ func RaiseErr(msg string, a ...interface{}) {
 	os.Exit(1)
 }
 
+func Exist(name, value string) error {
+	if len(value) == 0 {
+		return fmt.Errorf("%s is required", name)
+	}
+	return nil
+}
+
 func IsJSON(s string) bool {
 	var js map[string]interface{}
 	return json.Unmarshal([]byte(s), &js) == nil
