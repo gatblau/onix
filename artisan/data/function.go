@@ -33,6 +33,7 @@ type InputBinding struct {
 	Var    []string `yaml:"var"`
 	Secret []string `yaml:"secret"`
 	Key    []string `yaml:"key"`
+	File   []string `yaml:"file"`
 }
 
 // gets a slice of string with each element containing key=value

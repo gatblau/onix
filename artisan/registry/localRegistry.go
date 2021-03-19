@@ -861,6 +861,17 @@ func (r *LocalRegistry) checkRegistryDir() {
 		host, _ := os.Hostname()
 		crypto.GeneratePGPKeys(keysPath, "root", fmt.Sprintf("root-%s", host), "", "", 2048)
 	}
+	filesPath := core.FilesPath()
+	// check the files directory exists
+	_, err = os.Stat(filesPath)
+	// if it does not
+	if os.IsNotExist(err) {
+		// create a key pair
+		err = os.Mkdir(filesPath, os.ModePerm)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 // find the Repository specified by name
