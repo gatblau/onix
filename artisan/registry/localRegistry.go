@@ -49,36 +49,36 @@ func NewLocalRegistry() *LocalRegistry {
 	return r
 }
 
-// return all the artefacts within the same repository
-func (r *LocalRegistry) GetArtefactsByName(name *core.PackageName) ([]*Package, bool) {
-	var artefacts = make([]*Package, 0)
+// return all the packages within the same repository
+func (r *LocalRegistry) GetPackagesByName(name *core.PackageName) ([]*Package, bool) {
+	var packages = make([]*Package, 0)
 	for _, repository := range r.Repositories {
 		if repository.Repository == name.FullyQualifiedName() {
-			for _, artefact := range repository.Packages {
-				artefacts = append(artefacts, artefact)
+			for _, packag := range repository.Packages {
+				packages = append(packages, packag)
 			}
 			break
 		}
 	}
-	if len(artefacts) > 0 {
-		return artefacts, true
+	if len(packages) > 0 {
+		return packages, true
 	}
 	return nil, false
 }
 
-// return the artefact that matches the specified:
+// return the package that matches the specified:
 // - domain/group/name:tag
 // nil if not found in the LocalRegistry
 func (r *LocalRegistry) FindPackage(name *core.PackageName) *Package {
-	// first gets the repository the artefact is in
+	// first gets the repository the package is in
 	for _, repository := range r.Repositories {
 		if repository.Repository == name.FullyQualifiedName() {
 			// try and get it by id first
-			for _, artefact := range repository.Packages {
-				for _, tag := range artefact.Tags {
+			for _, packag := range repository.Packages {
+				for _, tag := range packag.Tags {
 					// try and match against the full URI
 					if tag == name.Tag {
-						return artefact
+						return packag
 					}
 				}
 			}
@@ -88,17 +88,17 @@ func (r *LocalRegistry) FindPackage(name *core.PackageName) *Package {
 	return nil
 }
 
-// return the artefacts that matches the specified:
-// - artefact id substring
-func (r *LocalRegistry) FindArtefactsById(id string) []*core.PackageName {
-	// go through the artefacts in the repository and check for Id matches
+// return the packages that matches the specified:
+// - package id substring
+func (r *LocalRegistry) FindPackagesById(id string) []*core.PackageName {
+	// go through the packages in the repository and check for Id matches
 	names := make([]*core.PackageName, 0)
-	// first gets the repository the artefact is in
+	// first gets the repository the package is in
 	for _, repository := range r.Repositories {
-		for _, artefact := range repository.Packages {
-			// try and match against the artefact ID substring
-			if strings.Contains(artefact.Id, id) {
-				for _, tag := range artefact.Tags {
+		for _, packag := range repository.Packages {
+			// try and match against the package ID substring
+			if strings.Contains(packag.Id, id) {
+				for _, tag := range packag.Tags {
 					name, err := core.ParseName(fmt.Sprintf("%s:%s", repository.Repository, tag))
 					if err != nil {
 						log.Fatalf(err.Error())
@@ -116,7 +116,7 @@ func (r *LocalRegistry) Path() string {
 	return core.RegistryPath()
 }
 
-// Add the artefact and seal to the LocalRegistry
+// Add the package and seal to the LocalRegistry
 func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Seal) {
 	// gets the full base name (with extension)
 	basename := filepath.Base(filename)
@@ -131,12 +131,12 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 		log.Fatal(errors.New(fmt.Sprintf("the localRepo can only accept zip files, the extension provided was %s", basenameExt)))
 	}
 	// move the zip file to the localRepo folder
-	core.CheckErr(RenameFile(filename, filepath.Join(r.Path(), basename), false), "failed to move artefact zip file to the local registry")
+	core.CheckErr(RenameFile(filename, filepath.Join(r.Path(), basename), false), "failed to move package zip file to the local registry")
 	// now move the seal file to the localRepo folder
-	core.CheckErr(RenameFile(filepath.Join(basenameDir, fmt.Sprintf("%s.json", basenameNoExt)), filepath.Join(r.Path(), fmt.Sprintf("%s.json", basenameNoExt)), false), "failed to move artefact seal file to the local registry")
-	// untag artefact artefact (if any)
+	core.CheckErr(RenameFile(filepath.Join(basenameDir, fmt.Sprintf("%s.json", basenameNoExt)), filepath.Join(r.Path(), fmt.Sprintf("%s.json", basenameNoExt)), false), "failed to move package seal file to the local registry")
+	// untag package package (if any)
 	r.unTag(name, name.Tag)
-	// remove any dangling artefacts
+	// remove any dangling packages
 	r.removeDangling(name)
 	// find the repository
 	repo := r.findRepository(name)
@@ -148,8 +148,8 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 		}
 		r.Repositories = append(r.Repositories, repo)
 	}
-	// creates a new artefact
-	artefacts := append(repo.Packages, &Package{
+	// creates a new package
+	packages := append(repo.Packages, &Package{
 		Id:      s.PackageId(),
 		Type:    s.Manifest.Type,
 		FileRef: basenameNoExt,
@@ -157,20 +157,20 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 		Size:    s.Manifest.Size,
 		Created: s.Manifest.Time,
 	})
-	repo.Packages = artefacts
+	repo.Packages = packages
 	// persist the changes
 	r.save()
 }
 
-// remove a given tag from an artefact
+// remove a given tag from an package
 func (r *LocalRegistry) Tag(sourceName *core.PackageName, targetName *core.PackageName) {
-	sourceArtie := r.FindPackage(sourceName)
-	if sourceArtie == nil {
-		core.RaiseErr("source artefact %s does not exit", sourceName)
+	sourcePackage := r.FindPackage(sourceName)
+	if sourcePackage == nil {
+		core.RaiseErr("source package %s does not exit", sourceName)
 	}
 	if targetName.IsInTheSameRepositoryAs(sourceName) {
-		if !sourceArtie.HasTag(targetName.Tag) {
-			sourceArtie.Tags = append(sourceArtie.Tags, targetName.Tag)
+		if !sourcePackage.HasTag(targetName.Tag) {
+			sourcePackage.Tags = append(sourcePackage.Tags, targetName.Tag)
 			r.save()
 			return
 		} else {
@@ -178,57 +178,57 @@ func (r *LocalRegistry) Tag(sourceName *core.PackageName, targetName *core.Packa
 		}
 	} else {
 		targetRepository := r.findRepository(targetName)
-		newArtie := *sourceArtie
-		// if the target artefact repository does not exist then create it
+		newPackage := *sourcePackage
+		// if the target package repository does not exist then create it
 		if targetRepository == nil {
-			newArtie.Tags = []string{targetName.Tag}
+			newPackage.Tags = []string{targetName.Tag}
 			r.Repositories = append(r.Repositories, &Repository{
 				Repository: targetName.FullyQualifiedName(),
 				Packages: []*Package{
 					{
-						Id:      sourceArtie.Id,
-						Type:    sourceArtie.Type,
-						FileRef: sourceArtie.FileRef,
+						Id:      sourcePackage.Id,
+						Type:    sourcePackage.Type,
+						FileRef: sourcePackage.FileRef,
 						Tags:    []string{targetName.Tag},
-						Size:    sourceArtie.Size,
-						Created: sourceArtie.Created,
+						Size:    sourcePackage.Size,
+						Created: sourcePackage.Created,
 					},
 				},
 			})
 			r.save()
 			return
 		} else {
-			targetArtie := r.FindPackage(targetName)
-			// if the artefact exists in the repository
-			if targetArtie != nil {
+			targetPackage := r.FindPackage(targetName)
+			// if the package exists in the repository
+			if targetPackage != nil {
 				// check if the tag already exists
-				for _, tag := range targetArtie.Tags {
+				for _, tag := range targetPackage.Tags {
 					if tag == targetName.Tag {
 					} else {
-						// add the tag to the existing artefact
-						targetArtie.Tags = append(targetArtie.Tags, targetName.Tag)
+						// add the tag to the existing package
+						targetPackage.Tags = append(targetPackage.Tags, targetName.Tag)
 					}
 				}
 			} else {
-				// check that an artefact with the Id of the source exists
+				// check that an package with the Id of the source exists
 				for _, a := range targetRepository.Packages {
-					// if the target repository already contains the artefact Id
-					if a.Id == sourceArtie.Id {
+					// if the target repository already contains the package Id
+					if a.Id == sourcePackage.Id {
 						// add a tag
 						a.Tags = append(a.Tags, targetName.Tag)
 						r.save()
 						return
 					}
 				}
-				// add a new artefact metadata in the existing repository
+				// add a new package metadata in the existing repository
 				targetRepository.Packages = append(targetRepository.Packages,
 					&Package{
-						Id:      sourceArtie.Id,
-						Type:    sourceArtie.Type,
-						FileRef: sourceArtie.FileRef,
+						Id:      sourcePackage.Id,
+						Type:    sourcePackage.Type,
+						FileRef: sourcePackage.FileRef,
 						Tags:    []string{targetName.Tag},
-						Size:    sourceArtie.Size,
-						Created: sourceArtie.Created,
+						Size:    sourcePackage.Size,
+						Created: sourcePackage.Created,
 					})
 				r.save()
 				return
@@ -237,17 +237,17 @@ func (r *LocalRegistry) Tag(sourceName *core.PackageName, targetName *core.Packa
 	}
 }
 
-// List artefacts to stdout
+// List packages to stdout
 func (r *LocalRegistry) List() {
 	// get a table writer for the stdout
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 12, ' ', 0)
 	// print the header row
 	_, err := fmt.Fprintln(w, i18n.String(i18n.LBL_LS_HEADER))
 	core.CheckErr(err, "failed to write table header")
-	// repository, tag, artefact id, created, size
+	// repository, tag, package id, created, size
 	for _, repo := range r.Repositories {
 		for _, a := range repo.Packages {
-			// if the artefact is dangling (no tags)
+			// if the package is dangling (no tags)
 			if len(a.Tags) == 0 {
 				_, err := fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s",
 					repo.Repository,
@@ -276,11 +276,11 @@ func (r *LocalRegistry) List() {
 	core.CheckErr(err, "failed to flush output")
 }
 
-// list (quiet) artefact IDs only
+// list (quiet) package IDs only
 func (r *LocalRegistry) ListQ() {
 	// get a table writer for the stdout
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 10, ' ', 0)
-	// repository, tag, artefact id, created, size
+	// repository, tag, package id, created, size
 	for _, repo := range r.Repositories {
 		for _, a := range repo.Packages {
 			_, err := fmt.Fprintln(w, fmt.Sprintf("%s", a.Id[7:19]))
@@ -296,16 +296,16 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS b
 	api := r.api(name.Domain, noTLS)
 	// get registry credentials
 	uname, pwd := core.UserPwd(credentials)
-	// fetch the artefact info from the local registry
-	artie := r.FindPackage(name)
-	if artie == nil {
-		fmt.Printf("artefact %s not found in the local registry\n", name)
+	// fetch the package info from the local registry
+	localPackage := r.FindPackage(name)
+	if localPackage == nil {
+		fmt.Printf("package %s not found in the local registry\n", name)
 		return
 	}
-	// check the status of the artefact in the remote registry
-	remoteArt, err := api.GetPackageInfo(name.Group, name.Name, artie.Id, uname, pwd)
-	core.CheckErr(err, "cannot retrieve remote artefact information")
-	// if the artefact exists in the remote registry
+	// check the status of the package in the remote registry
+	remoteArt, err := api.GetPackageInfo(name.Group, name.Name, localPackage.Id, uname, pwd)
+	core.CheckErr(err, "cannot retrieve remote package information")
+	// if the package exists in the remote registry
 	if remoteArt != nil {
 		// check if the tag already exist in the remote repository
 		if remoteArt.HasTag(name.Tag) {
@@ -316,33 +316,33 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS b
 			// the metadata has to be updated to include the new tag
 			remoteArt.Tags = append(remoteArt.Tags, name.Tag)
 			err = api.UpdatePackageInfo(name, remoteArt, uname, pwd)
-			core.CheckErr(err, "cannot update remote artefact tags")
+			core.CheckErr(err, "cannot update remote package tags")
 			return
 		}
 	}
-	// if the artefact does not exist in the remote registry
-	// check if the tag has been applied to another artefact in the repository
+	// if the package does not exist in the remote registry
+	// check if the tag has been applied to another package in the repository
 	repo, err := api.GetRepositoryInfo(name.Group, name.Name, uname, pwd)
 	core.CheckErr(err, "cannot retrieve repository information from backend")
 	// if so
 	if a, ok := repo.GetTag(name.Tag); ok {
-		// remove the tag from the artefact as it will be applied to the new artefact
+		// remove the tag from the package as it will be applied to the new package
 		a.RemoveTag(name.Tag)
-		// if the artefact has no tags left
+		// if the package has no tags left
 		if len(a.Tags) == 0 {
-			// adds a default tag matching the artefact file reference
+			// adds a default tag matching the package file reference
 			a.Tags = append(a.Tags, a.FileRef)
 			// updates the metadata in the remote repo
-			core.CheckErr(api.UpdatePackageInfo(name, a, uname, pwd), "cannot update artefact info")
+			core.CheckErr(api.UpdatePackageInfo(name, a, uname, pwd), "cannot update package info")
 		}
 	}
-	zipfile := openFile(fmt.Sprintf("%s/%s.zip", r.Path(), artie.FileRef))
-	jsonfile := openFile(fmt.Sprintf("%s/%s.json", r.Path(), artie.FileRef))
-	// prepare the artefact to upload
-	artefact := artie
-	artefact.Tags = []string{name.Tag}
+	zipfile := openFile(fmt.Sprintf("%s/%s.zip", r.Path(), localPackage.FileRef))
+	jsonfile := openFile(fmt.Sprintf("%s/%s.json", r.Path(), localPackage.FileRef))
+	// prepare the package to upload
+	pack := localPackage
+	pack.Tags = []string{name.Tag}
 	// execute the upload
-	err = api.UploadPackage(name, artie.FileRef, zipfile, jsonfile, artefact, uname, pwd)
+	err = api.UploadPackage(name, localPackage.FileRef, zipfile, jsonfile, pack, uname, pwd)
 	i18n.Err(err, i18n.ERR_CANT_PUSH_PACKAGE)
 }
 
@@ -354,49 +354,49 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string, noTLS b
 	// get remote repository information
 	repo, err := api.GetRepositoryInfo(name.Group, name.Name, uname, pwd)
 	core.CheckErr(err, "cannot retrieve repository information from backend")
-	// find the artefact to pull in the remote repository
+	// find the package to pull in the remote repository
 	remoteArt, exists := repo.GetTag(name.Tag)
 	if !exists {
 		// if it does not exist return
-		core.RaiseErr("artefact %s, does not exist", name)
+		core.RaiseErr("package '%s', does not exist", name)
 	}
-	// check the artefact is not in the local registry
-	localArt := r.findArtefactByRepoAndId(name, remoteArt.Id)
-	// if the local registry does not have the artefact then download it
-	if localArt == nil {
-		// download artefact seal file from registry
+	// check the package is not in the local registry
+	localPackage := r.findPackageByRepoAndId(name, remoteArt.Id)
+	// if the local registry does not have the package then download it
+	if localPackage == nil {
+		// download package seal file from registry
 		sealFilename, err := api.Download(name.Group, name.Name, fmt.Sprintf("%s.json", remoteArt.FileRef), uname, pwd)
-		core.CheckErr(err, "failed to download artefact seal file")
+		core.CheckErr(err, "failed to download package seal file")
 
-		// download artefact file from registry
+		// download package file from registry
 		artieFilename, err := api.Download(name.Group, name.Name, fmt.Sprintf("%s.zip", remoteArt.FileRef), uname, pwd)
-		core.CheckErr(err, "failed to download artefact file")
+		core.CheckErr(err, "failed to download package file")
 
 		// unmarshal the seal
 		sealFile, err := os.Open(sealFilename)
-		core.CheckErr(err, "cannot read artefact seal file")
+		core.CheckErr(err, "cannot read package seal file")
 		seal := new(data.Seal)
 		sealBytes, err := ioutil.ReadAll(sealFile)
-		core.CheckErr(err, "cannot read artefact seal file")
+		core.CheckErr(err, "cannot read package seal file")
 		err = json.Unmarshal(sealBytes, seal)
-		core.CheckErr(err, "cannot unmarshal artefact seal file")
+		core.CheckErr(err, "cannot unmarshal package seal file")
 
-		// add the artefact to the local registry
+		// add the package to the local registry
 		r.Add(artieFilename, name, seal)
 	} else {
-		// the local registry has the artefact
-		// if the local artefact does not have the tag
-		if !localArt.HasTag(name.Tag) {
-			// find the local artefact coordinates
-			rIx, aIx := r.artCoords(name, localArt)
+		// the local registry has the package
+		// if the local package does not have the tag
+		if !localPackage.HasTag(name.Tag) {
+			// find the local package coordinates
+			rIx, aIx := r.artCoords(name, localPackage)
 			// add the tag locally
 			r.Repositories[rIx].Packages[aIx].Tags = append(r.Repositories[rIx].Packages[aIx].Tags, name.Tag)
 			// persist the changes
 			r.save()
-			fmt.Printf("artefact already exist, tag '%s' has been added\n", name.Tag)
+			fmt.Printf("package already exist, tag '%s' has been added\n", name.Tag)
 		} else {
-			// the artefact exists and has the requested tag
-			fmt.Printf("artefact already exist, tag '%s' already exist, nothing to do\n", name.Tag)
+			// the package exists and has the requested tag
+			fmt.Printf("package already exist, tag '%s' already exist, nothing to do\n", name.Tag)
 		}
 	}
 	return r.FindPackage(name)
@@ -429,9 +429,9 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 			core.CheckErr(err, "cannot retrieve absolute path for public key")
 		}
 	}
-	// get the artefact seal
+	// get the package seal
 	seal, err := r.GetSeal(artie)
-	core.CheckErr(err, "cannot read artefact seal")
+	core.CheckErr(err, "cannot read package seal")
 	if !ignoreSignature {
 		// var pubKey *rsa.PublicKey
 		var pgp *crypto.PGP
@@ -444,7 +444,7 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 			pgp, err = crypto.LoadPGPPublicKey(name.Group, name.Name)
 			core.CheckErr(err, "cannot load public key, cannot verify signature")
 		}
-		// get the location of the artefact
+		// get the location of the package
 		zipFilename := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef))
 		// get a slice to have the unencrypted signature
 		sum := seal.Checksum(zipFilename)
@@ -494,12 +494,12 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 
 func (r *LocalRegistry) Remove(names []*core.PackageName) {
 	for _, name := range names {
-		// try and get the artefact by complete URI or id ref
-		artie := r.FindPackage(name)
-		// if the artefact is not found by name:tag
-		if artie == nil {
-			// try finding it by Id (passed in the name part of the artefact name)
-			list := r.FindArtefactsById(name.Name)
+		// try and get the package by complete URI or id ref
+		localPackage := r.FindPackage(name)
+		// if the package is not found by name:tag
+		if localPackage == nil {
+			// try finding it by Id (passed in the name part of the package name)
+			list := r.FindPackagesById(name.Name)
 			if len(list) == 0 {
 				fmt.Printf("name %s not found\n", name.Name)
 				continue
@@ -510,27 +510,27 @@ func (r *LocalRegistry) Remove(names []*core.PackageName) {
 		} else {
 			// try to remove it using full name
 			// remove the specified tag
-			length := len(artie.Tags)
+			length := len(localPackage.Tags)
 			r.unTag(name, name.Tag)
 			// if the tag was successfully deleted
-			if len(artie.Tags) < length {
+			if len(localPackage.Tags) < length {
 				// if there are no tags left at the end then remove the repository
-				if len(artie.Tags) == 0 {
+				if len(localPackage.Tags) == 0 {
 					r.Repositories = r.removeRepoByName(r.Repositories, name)
-					// only remove the files if there are no other repositories containing the same artefact!
+					// only remove the files if there are no other repositories containing the same package!
 					found := false
 				Loop:
 					for _, repo := range r.Repositories {
-						for _, art := range repo.Packages {
-							if art.Id == artie.Id {
+						for _, pack := range repo.Packages {
+							if pack.Id == localPackage.Id {
 								found = true
 								break Loop
 							}
 						}
 					}
-					// no other repo contains the artefact so safe to remove the files
+					// no other repo contains the package so safe to remove the files
 					if !found {
-						r.removeFiles(artie)
+						r.removeFiles(localPackage)
 					}
 				}
 				// persist changes
@@ -539,10 +539,10 @@ func (r *LocalRegistry) Remove(names []*core.PackageName) {
 			} else {
 				// attempt to remove by Id (stored in the Name)
 				repo := r.findRepository(name)
-				repo.Packages = r.removeArtefactById(repo.Packages, name.Name)
-				r.removeFiles(artie)
+				repo.Packages = r.removePackageById(repo.Packages, name.Name)
+				r.removeFiles(localPackage)
 				r.save()
-				log.Print(artie.Id)
+				log.Print(localPackage.Id)
 			}
 		}
 	}
@@ -598,13 +598,13 @@ func (r *LocalRegistry) ExportKey(keyPath string, isPrivate bool, repoGroup stri
 }
 
 func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
-	// find the artefact in the local registry
+	// find the package in the local registry
 	a := r.FindPackage(name)
 	if a == nil {
-		core.RaiseErr("artefact '%s' not found in the local registry, pull it from remote first", name)
+		core.RaiseErr("package '%s' not found in the local registry, pull it from remote first", name)
 	}
 	seal, err := r.GetSeal(a)
-	core.CheckErr(err, "cannot get artefact seal")
+	core.CheckErr(err, "cannot get package seal")
 	return seal.Manifest
 }
 
@@ -635,17 +635,17 @@ func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string) 
 	return destPath, prefix
 }
 
-// removes any artefacts with no tags
+// removes any packages with no tags
 func (r *LocalRegistry) removeDangling(name *core.PackageName) {
 	repo := r.findRepository(name)
 	if repo != nil {
-		for _, artefact := range repo.Packages {
-			// if the artefact has no tags then remove it
-			if len(artefact.Tags) == 0 {
-				// remove the artefact metadata using its Id
-				repo.Packages = r.removeArtefactById(repo.Packages, artefact.Id)
-				// remove the artefact files
-				r.removeFiles(artefact)
+		for _, pack := range repo.Packages {
+			// if the package has no tags then remove it
+			if len(pack.Tags) == 0 {
+				// remove the package metadata using its Id
+				repo.Packages = r.removePackageById(repo.Packages, pack.Id)
+				// remove the package files
+				r.removeFiles(pack)
 			}
 		}
 	}
@@ -714,14 +714,14 @@ func (r *LocalRegistry) regDirZipFilename(uniqueIdName string) string {
 	return fmt.Sprintf("%s/%s.zip", r.Path(), uniqueIdName)
 }
 
-// find the artefact specified by ist id
-func (r *LocalRegistry) findArtefactByRepoAndId(name *core.PackageName, id string) *Package {
+// find the package specified by ist id
+func (r *LocalRegistry) findPackageByRepoAndId(name *core.PackageName, id string) *Package {
 	for _, repository := range r.Repositories {
 		rep := fmt.Sprintf("%s/%s/%s", name.Domain, name.Group, name.Name)
 		if rep == repository.Repository {
-			for _, artefact := range repository.Packages {
-				if artefact.Id == id {
-					return artefact
+			for _, pack := range repository.Packages {
+				if pack.Id == id {
+					return pack
 				}
 			}
 		}
@@ -729,13 +729,13 @@ func (r *LocalRegistry) findArtefactByRepoAndId(name *core.PackageName, id strin
 	return nil
 }
 
-// returns the artefact coordinates in the repository as (repo index, artefact index)
+// returns the package coordinates in the repository as (repo index, package index)
 func (r *LocalRegistry) artCoords(name *core.PackageName, art *Package) (int, int) {
 	for rIx, repository := range r.Repositories {
 		rep := fmt.Sprintf("%s/%s/%s", name.Domain, name.Group, name.Name)
 		if rep == repository.Repository {
-			for aIx, artefact := range repository.Packages {
-				if artefact.Id == art.Id {
+			for aIx, pack := range repository.Packages {
+				if pack.Id == art.Id {
 					return rIx, aIx
 				}
 			}
@@ -746,11 +746,11 @@ func (r *LocalRegistry) artCoords(name *core.PackageName, art *Package) (int, in
 
 // remove all tags from the specified Package
 func (r *LocalRegistry) unTagAll(name *core.PackageName) {
-	if artefs, exists := r.GetArtefactsByName(name); exists {
-		// then it has to untag it, leaving a dangling artefact
-		for _, artef := range artefs {
-			for _, tag := range artef.Tags {
-				artef.Tags = core.RemoveElement(artef.Tags, tag)
+	if packages, exists := r.GetPackagesByName(name); exists {
+		// then it has to untag it, leaving a dangling package
+		for _, pack := range packages {
+			for _, tag := range pack.Tags {
+				pack.Tags = core.RemoveElement(pack.Tags, tag)
 			}
 		}
 	}
@@ -766,7 +766,7 @@ func (r *LocalRegistry) unTag(name *core.PackageName, tag string) {
 	}
 }
 
-func (r *LocalRegistry) removeArtefactById(a []*Package, id string) []*Package {
+func (r *LocalRegistry) removePackageById(a []*Package, id string) []*Package {
 	i := -1
 	// find the value to remove
 	for ix := 0; ix < len(a); ix++ {
@@ -787,7 +787,7 @@ func (r *LocalRegistry) removeArtefactById(a []*Package, id string) []*Package {
 
 func (r *LocalRegistry) removeRepoByName(a []*Repository, name *core.PackageName) []*Repository {
 	i := -1
-	// find an artefact with the specified tag
+	// find an package with the specified tag
 	for ix := 0; ix < len(a); ix++ {
 		if a[ix].Repository == name.FullyQualifiedName() {
 			i = ix
@@ -876,13 +876,13 @@ func (r *LocalRegistry) checkRegistryDir() {
 
 // find the Repository specified by name
 func (r *LocalRegistry) findRepository(name *core.PackageName) *Repository {
-	// find repository using artefact name
+	// find repository using package name
 	for _, repository := range r.Repositories {
 		if repository.Repository == name.FullyQualifiedName() {
 			return repository
 		}
 	}
-	// find repository using artefact Id
+	// find repository using package Id
 	for _, repository := range r.Repositories {
 		for _, artie := range repository.Packages {
 			if strings.Contains(artie.Id, name.Name) {
