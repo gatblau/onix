@@ -102,13 +102,13 @@ func (r *Api) UploadPackage(name *core.PackageName, packageRef string, zipfile m
 	return nil
 }
 
-func (r *Api) UpdatePackageInfo(name *core.PackageName, artefact *Package, user string, pwd string) error {
-	b, err := json.Marshal(artefact)
+func (r *Api) UpdatePackageInfo(name *core.PackageName, pack *Package, user string, pwd string) error {
+	b, err := json.Marshal(pack)
 	if err != nil {
 		return err
 	}
 	body := bytes.NewReader([]byte(b))
-	req, err := http.NewRequest("PUT", r.packageIdURI(name.Group, name.Name, artefact.Id), body)
+	req, err := http.NewRequest("PUT", r.packageIdURI(name.Group, name.Name, pack.Id), body)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, err
 	if err != nil {
 		return nil, err
 	}
-	// if the result body is not in JSON format is likely that the domain of artefact does not exist
+	// if the result body is not in JSON format is likely that the domain of package does not exist
 	if !core.IsJSON(string(b)) {
 		return nil, fmt.Errorf("the package was not found: its domain/group/name is likely to be incorrect")
 	}
@@ -199,9 +199,9 @@ func (r *Api) GetPackageInfo(group, name, id, user, pwd string) (*Package, error
 	if !core.IsJSON(string(b)) {
 		return nil, fmt.Errorf("invalid package name: %s/%s/%s", r.domain, group, name)
 	}
-	artefact := new(Package)
-	err = json.Unmarshal(b, artefact)
-	return artefact, err
+	pack := new(Package)
+	err = json.Unmarshal(b, pack)
+	return pack, err
 }
 
 func (r *Api) Download(group, name, filename, user, pwd string) (string, error) {
@@ -287,7 +287,7 @@ func (r *Api) packageTagURI(group, name, tag string) string {
 }
 
 func (r *Api) packageIdURI(group, name, id string) string {
-	// group escaped by artefactURI()
+	// group escaped by packageURI()
 	return fmt.Sprintf("%s/id/%s", r.packageURI(group, name), id)
 }
 
