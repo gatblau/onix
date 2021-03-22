@@ -254,6 +254,7 @@ func SurveyInputFromManifest(flowName, stepName, packageSource, domain string, f
 			Key:    make([]*Key, 0),
 			Secret: make([]*Secret, 0),
 			Var:    make([]*Var, 0),
+			File:   make([]*File, 0),
 		}
 	}
 	// first evaluates the existing inputs
@@ -298,6 +299,11 @@ func evalInput(input *Input, interactive, defOnly bool, env *core.Envar) *Input 
 	for _, key := range result.Key {
 		if !defOnly {
 			EvalKey(key, interactive, env)
+		}
+	}
+	for _, file := range result.File {
+		if !defOnly {
+			EvalFile(file, interactive, env)
 		}
 	}
 	// return pointer to new object
@@ -659,6 +665,11 @@ func surveyFile(file *File) {
 	if len(envVal) > 0 {
 		// load the file using the env var path value specified
 		loadFileFromPath(file, envVal)
+		return
+	}
+	if len(file.Path) > 0 {
+		// load the file using the path value specified in the manifest / buildfile
+		loadFileFromPath(file, file.Path)
 		return
 	}
 	desc := ""
