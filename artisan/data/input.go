@@ -268,6 +268,7 @@ func SurveyInputFromManifest(flowName, stepName, packageSource, domain string, f
 func NormInputName(name string) string {
 	result := strings.Replace(strings.ToUpper(name), "-", "_", -1)
 	result = strings.Replace(result, ".", "_", -1)
+	result = strings.Replace(result, "/", "_", -1)
 	return result
 }
 
