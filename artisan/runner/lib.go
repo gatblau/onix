@@ -46,7 +46,7 @@ func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *core.En
 		return err
 	}
 	// add runtime vars
-	env.Add("FX_NAME", fxName)
+	env.Add("OXART_FX_NAME", fxName)
 	// get the docker run arguments
 	args := toContainerArgs(runtimeName, dir, containerName, env)
 	// launch the container with an art exec command
