@@ -374,11 +374,14 @@ func EvalFile(inputFile *File, prompt bool, env *core.Envar) {
 		return
 	}
 	// check if there is an env variable
-	keyPath, ok := env.Vars[inputFile.Name]
+	filePath, ok := env.Vars[inputFile.Name]
 	// if so
 	if ok {
 		// load the correct key using the provided path
-		loadFileFromPath(inputFile, keyPath)
+		loadFileFromPath(inputFile, filePath)
+	} else if len(inputFile.Path) > 0 {
+		// load the correct key using the provided path
+		loadFileFromPath(inputFile, inputFile.Path)
 	} else if prompt {
 		surveyFile(inputFile)
 	} else {
