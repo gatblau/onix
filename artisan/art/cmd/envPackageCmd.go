@@ -66,6 +66,8 @@ func (c *EnvPackageCmd) Run(cmd *cobra.Command, args []string) {
 				}
 			}
 		}
+		// add the credentials to download the package
+		input.SurveyRegistryCreds(name.Group, name.Name, "", name.Domain, false, true, core.NewEnVarFromSlice([]string{}))
 	} else if len(args) < 2 {
 		i18n.Raise(i18n.ERR_INSUFFICIENT_ARGS)
 	} else if len(args) > 2 {
