@@ -114,8 +114,8 @@ func flowHealthCheck(flow *Flow, step *Step) {
 	missingFunction := false
 	missingFunctionStepName := ""
 	for _, s := range flow.Steps {
-		// source & function without package
-		if len(s.Function) == 0 && len(s.Package) > 0 {
+		// missing function when package does not exists and source is not merge
+		if len(s.Function) == 0 && len(s.Package) > 0 && strings.ToLower(s.PackageSource) != "merge" {
 			missingFunction = true
 			missingFunctionStepName = s.Name
 			break
