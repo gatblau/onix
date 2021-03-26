@@ -243,19 +243,23 @@ func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt, defOn
 
 // extracts the package manifest Input in an exported function
 func SurveyInputFromManifest(flowName, stepName, packageSource, domain string, fxName string, manifest *Manifest, prompt, defOnly bool, env *core.Envar) *Input {
+	var input *Input
 	// get the function in the manifest
 	fx := manifest.Fx(fxName)
-	if fx == nil {
-		core.RaiseErr("function '%s' does not exist in or has not been exported", fxName)
-	}
-	input := fx.Input
-	if input == nil {
+	if fx != nil {
+		input = fx.Input
+	} else if fx == nil && packageSource == "merge" {
+		// this is the case of a package merge where there is not any need to survey inputs just perform a straight merge
+		// of source
 		input = &Input{
 			Key:    make([]*Key, 0),
 			Secret: make([]*Secret, 0),
 			Var:    make([]*Var, 0),
 			File:   make([]*File, 0),
 		}
+	} else {
+		// requires a function to exist
+		core.RaiseErr("function '%s' does not exist in or has not been exported", fxName)
 	}
 	// first evaluates the existing inputs
 	input = evalInput(input, prompt, defOnly, env)
