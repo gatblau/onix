@@ -1,0 +1,33 @@
+---
+labels:
+  author: onix@gatblau.org
+  application: Onix Remote Service for Pilot
+  description: An HTTP API controlling remote hosts
+
+env:
+  CGO_ENABLED: 0
+  GOARCH: amd64
+  REPO_NAME: quay.io/gatblau
+  APP_VERSION: 0.0.4
+  APP_NAME: ox-rem
+
+functions:
+  - name: set-version
+    description: updates the app version go file
+    run:
+      - sh version.sh ${APP_VERSION}-${ARTISAN_REF}
+
+  - name: build-linux
+    description: builds the REM binary file for the linux platform
+    env:
+      GOOS: linux
+    run:
+      - $(set-version)
+      - go fmt
+      - go build -o bin/rem -v
+
+  - name: swagen
+    description: generates/refreshes the OpenAPI specifications for REM's HTTP API
+    run:
+      - swag init -d ./ -g handlers.go
+...

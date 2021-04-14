@@ -1,0 +1,56 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Remote Ctrl Service for Onix Pilot",
+        "title": "Onix Remote",
+        "contact": {
+            "name": "gatblau",
+            "url": "http://onix.gatblau.org/",
+            "email": "onix@gatblau.org"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "0.0.4"
+    },
+    "paths": {
+        "/beat": {
+            "post": {
+                "description": "receives a heart bit from a host agent via HTTP",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Agent"
+                ],
+                "summary": "heart bit",
+                "parameters": [
+                    {
+                        "description": "the unique key identifying the host sending the heart beat",
+                        "name": "host-key",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
