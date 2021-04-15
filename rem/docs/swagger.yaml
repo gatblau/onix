@@ -7,21 +7,14 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Onix Remote
+  title: Onix Remote Host
   version: 0.0.4
 paths:
-  /beat:
-    post:
-      description: receives a heart bit from a host agent via HTTP
-      parameters:
-      - description: the unique key identifying the host sending the heart beat
-        in: body
-        name: host-key
-        required: true
-        schema:
-          type: string
+  /host:
+    get:
+      description: Returns a list of managed hosts
       produces:
-      - text/plain
+      - application/json
       responses:
         "200":
           description: OK
@@ -31,7 +24,30 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: heart bit
+      summary: Host Query
       tags:
-      - Agent
+      - Admin
+  /ping/{host-key}:
+    post:
+      description: receives a periodic ping request from Onix Pilot
+      parameters:
+      - description: the unique key for the host
+        in: path
+        name: host-key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Host Ping
+      tags:
+      - Pilot
 swagger: "2.0"

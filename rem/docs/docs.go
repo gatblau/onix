@@ -32,25 +32,49 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/beat": {
-            "post": {
-                "description": "receives a heart bit from a host agent via HTTP",
+        "/host": {
+            "get": {
+                "description": "Returns a list of managed hosts",
                 "produces": [
-                    "text/plain"
+                    "application/json"
                 ],
                 "tags": [
-                    "Agent"
+                    "Admin"
                 ],
-                "summary": "heart bit",
-                "parameters": [
-                    {
-                        "description": "the unique key identifying the host sending the heart beat",
-                        "name": "host-key",
-                        "in": "body",
-                        "required": true,
+                "summary": "Host Query",
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/ping/{host-key}": {
+            "post": {
+                "description": "receives a periodic ping request from Onix Pilot",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pilot"
+                ],
+                "summary": "Host Ping",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the unique key for the host",
+                        "name": "host-key",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -87,7 +111,7 @@ var SwaggerInfo = swaggerInfo{
 	Host:        "",
 	BasePath:    "",
 	Schemes:     []string{},
-	Title:       "Onix Remote",
+	Title:       "Onix Remote Host",
 	Description: "Remote Ctrl Service for Onix Pilot",
 }
 
