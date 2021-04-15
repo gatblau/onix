@@ -2,7 +2,7 @@
     "swagger": "2.0",
     "info": {
         "description": "Remote Ctrl Service for Onix Pilot",
-        "title": "Onix Remote",
+        "title": "Onix Remote Host",
         "contact": {
             "name": "gatblau",
             "url": "http://onix.gatblau.org/",
@@ -15,25 +15,49 @@
         "version": "0.0.4"
     },
     "paths": {
-        "/beat": {
-            "post": {
-                "description": "receives a heart bit from a host agent via HTTP",
+        "/host": {
+            "get": {
+                "description": "Returns a list of managed hosts",
                 "produces": [
-                    "text/plain"
+                    "application/json"
                 ],
                 "tags": [
-                    "Agent"
+                    "Admin"
                 ],
-                "summary": "heart bit",
-                "parameters": [
-                    {
-                        "description": "the unique key identifying the host sending the heart beat",
-                        "name": "host-key",
-                        "in": "body",
-                        "required": true,
+                "summary": "Host Query",
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/ping/{host-key}": {
+            "post": {
+                "description": "receives a periodic ping request from Onix Pilot",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pilot"
+                ],
+                "summary": "Host Ping",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the unique key for the host",
+                        "name": "host-key",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {

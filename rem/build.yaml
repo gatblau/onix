@@ -30,4 +30,23 @@ functions:
     description: generates/refreshes the OpenAPI specifications for REM's HTTP API
     run:
       - swag init -d ./ -g handlers.go
+
+  - name: build
+    description: creates a Remote Host Service image
+    run:
+      - $(build-linux)
+      - docker build -t ${REPO_NAME}/${APP_NAME}:$((cat ./version)) .
+      - docker tag ${REPO_NAME}/${APP_NAME}:$((cat ./version)) ${REPO_NAME}/${APP_NAME}:latest
+
+  - name: publish
+    description: publishes the Remote Host Service image
+    run:
+      - docker push ${REPO_NAME}/${APP_NAME}:$((cat ./version))
+      - docker push ${REPO_NAME}/${APP_NAME}:latest
+
+  - name: release
+    description: builds and publishes the Remote Host Service image
+    run:
+      - $(build)
+      - $(publish)
 ...
