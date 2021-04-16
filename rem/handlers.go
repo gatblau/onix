@@ -25,9 +25,9 @@ import (
 	"net/http"
 )
 
-// @Summary Host Ping
-// @Description receives a periodic ping request from Onix Pilot
-// @Tags Pilot
+// @Summary Ping
+// @Description submits a ping from a host to the control plane
+// @Tags Host
 // @Router /ping/{host-key} [post]
 // @Produce json
 // @Param host-key path string true "the unique key for the host"
@@ -40,9 +40,9 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	server.Write(w, r, commands)
 }
 
-// @Summary Host Query
-// @Description Returns a list of managed hosts
-// @Tags Admin
+// @Summary Get All Hosts
+// @Description Returns a list of remote hosts
+// @Tags Host
 // @Router /host [get]
 // @Produce json
 // @Failure 500 {string} there was an error in the server, check the server logs
@@ -75,4 +75,115 @@ func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	server.Write(w, r, hosts)
+}
+
+// @Summary Register a Host
+// @Description registers a new host and its technical details with the service
+// @Tags Host
+// @Router /register [post]
+// @Param registration-info body core.Registration true "the host registration configuration"
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func registerHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+// @Summary Log Events
+// @Description log host events (e.g. up, down, connected, disconnected)
+// @Tags Host
+// @Router /log [post]
+// @Param logs body core.Events true "the host logs to post"
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func newLogHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+// @Summary Get Events by Host
+// @Description get log host events (e.g. up, down, connected, disconnected) by specific host
+// @Tags Host
+// @Router /log/{host-id} [get]
+// @Param host-key path string true "the unique key for the host"
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func geLogHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+// @Summary Create or Update a Command
+// @Description creates a new or updates an existing command definition
+// @Tags Command
+// @Router /cmd [put]
+// @Param command body core.Command true "the command definition"
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func updateCmdHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+// @Summary Get a Command definition
+// @Description get a specific a command definition
+// @Tags Command
+// @Router /cmd/{id} [get]
+// @Param id path string true "the unique id for the command to retrieve"
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getCmdHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+// @Summary Get All Command definitions
+// @Description get all command definitions
+// @Tags Command
+// @Router /cmd [get]
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getAllCmdHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+// @Summary Create a Job
+// @Description create a new job for execution on one or more remote hosts
+// @Tags Job
+// @Router /job [post]
+// @Param command body core.Command true "the job definition"
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func newJobHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+// @Summary Get Job Information
+// @Description get a specific a job information
+// @Tags Job
+// @Router /job/{id} [get]
+// @Param id path string true "the unique id for the job to retrieve"
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getJobHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+// @Summary Get All Jobs Information
+// @Description get all jobs
+// @Tags Job
+// @Router /job [get]
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getJobsHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+// @Summary Submit a Vulnerability Scan Report
+// @Description submits a vulnerability report for a specific host
+func uploadVulnerabilityReportHandler(w http.ResponseWriter, r *http.Request) {
 }
