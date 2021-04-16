@@ -1,3 +1,43 @@
+definitions:
+  core.Command:
+    properties:
+      function:
+        type: string
+      id:
+        type: integer
+      input:
+        additionalProperties:
+          type: string
+        type: object
+      package:
+        type: string
+    type: object
+  core.Event:
+    properties:
+      time:
+        type: string
+      type:
+        description: '0: host up, 1: host down, 2: network up, 3: network down'
+        type: integer
+    type: object
+  core.Registration:
+    properties:
+      cpus:
+        type: integer
+      hostname:
+        type: string
+      machine_id:
+        description: github.com/denisbrodbeck/machineid
+        type: string
+      os:
+        type: string
+      platform:
+        type: string
+      total_memory:
+        type: number
+      virtual:
+        type: boolean
+    type: object
 info:
   contact:
     email: onix@gatblau.org
@@ -10,9 +50,72 @@ info:
   title: Onix Remote Host
   version: 0.0.4
 paths:
+  /cmd:
+    get:
+      description: get all command definitions
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get All Command definitions
+      tags:
+      - Command
+    put:
+      description: creates a new or updates an existing command definition
+      parameters:
+      - description: the command definition
+        in: body
+        name: command
+        required: true
+        schema:
+          $ref: '#/definitions/core.Command'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create or Update a Command
+      tags:
+      - Command
+  /cmd/{id}:
+    get:
+      description: get a specific a command definition
+      parameters:
+      - description: the unique id for the command to retrieve
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get a Command definition
+      tags:
+      - Command
   /host:
     get:
-      description: Returns a list of managed hosts
+      description: Returns a list of remote hosts
       produces:
       - application/json
       responses:
@@ -24,12 +127,125 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Host Query
+      summary: Get All Hosts
       tags:
-      - Admin
+      - Host
+  /job:
+    get:
+      description: get all jobs
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get All Jobs Information
+      tags:
+      - Job
+    post:
+      description: create a new job for execution on one or more remote hosts
+      parameters:
+      - description: the job definition
+        in: body
+        name: command
+        required: true
+        schema:
+          $ref: '#/definitions/core.Command'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create a Job
+      tags:
+      - Job
+  /job/{id}:
+    get:
+      description: get a specific a job information
+      parameters:
+      - description: the unique id for the job to retrieve
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Job Information
+      tags:
+      - Job
+  /log:
+    post:
+      description: log host events (e.g. up, down, connected, disconnected)
+      parameters:
+      - description: the host logs to post
+        in: body
+        name: logs
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/core.Event'
+          type: array
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Log Events
+      tags:
+      - Host
+  /log/{host-id}:
+    get:
+      description: get log host events (e.g. up, down, connected, disconnected) by
+        specific host
+      parameters:
+      - description: the unique key for the host
+        in: path
+        name: host-key
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Events by Host
+      tags:
+      - Host
   /ping/{host-key}:
     post:
-      description: receives a periodic ping request from Onix Pilot
+      description: submits a ping from a host to the control plane
       parameters:
       - description: the unique key for the host
         in: path
@@ -47,7 +263,31 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Host Ping
+      summary: Ping
       tags:
-      - Pilot
+      - Host
+  /register:
+    post:
+      description: registers a new host and its technical details with the service
+      parameters:
+      - description: the host registration configuration
+        in: body
+        name: registration-info
+        required: true
+        schema:
+          $ref: '#/definitions/core.Registration'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Register a Host
+      tags:
+      - Host
 swagger: "2.0"

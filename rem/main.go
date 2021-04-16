@@ -19,5 +19,8 @@ func main() {
 	s.Serve(func(router *mux.Router) {
 		router.HandleFunc("/ping/{host-key}", pingHandler).Methods("POST")
 		router.HandleFunc("/host", hostQueryHandler).Methods("GET")
+		router.HandleFunc("/register", registerHandler).Methods("POST")
+		router.HandleFunc("/cmd", updateCmdHandler).Methods("POST")
+		router.HandleFunc("/cmd/{id}", getCmdHandler).Methods("GET")
 	})
 }
