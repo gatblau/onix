@@ -10,8 +10,8 @@ import "time"
   to be licensed under the same terms as the rest of the code.
 */
 
-// Command command information for remote host execution
-type Command struct {
+// Cmd command information for remote host execution
+type Cmd struct {
 	Id       int               `json:"id"`
 	Package  string            `json:"package"`
 	Function string            `json:"function"`
