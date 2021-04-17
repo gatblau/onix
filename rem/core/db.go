@@ -1,15 +1,16 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"github.com/jackc/pgconn"
-	"time"
-
-	// "github.com/jackc/pgconn"
-	// "github.com/jackc/pgtype"
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"reflect"
+	"strconv"
+	"time"
 )
 
 /*
@@ -47,7 +48,7 @@ type conn struct {
 
 // create a new database connection
 // if it cannot connect within 5 seconds, it returns an error
-func (db *Db) newConn(admin bool, database bool) (*pgxpool.Pool, error) {
+func (db *Db) newConn() (*pgxpool.Pool, error) {
 	// this channel receives an connection
 	connect := make(chan conn, 1)
 	// this channel receives a timeout flag
@@ -108,3 +109,130 @@ func (db *Db) error(err error) (bool, error) {
 	}
 	return isNull, err
 }
+
+func (db *Db) RunCommand(scripts []string) (bytes.Buffer, error) {
+	// create a buffer to write execution output to be passed back to DbMan
+	// use this instead of writing to stdout
+	log := bytes.Buffer{}
+	// acquires a database connection
+	conn, err := db.newConn()
+	// if cannot connect to the server return with the error
+	if err != nil {
+		return log, err
+	}
+	// if the command is to be run within a database transaction
+	// acquires a db transaction
+	tx, err := conn.Begin(context.Background())
+	// if error then return
+	if err != nil {
+		return log, err
+	}
+	// for each database script in the command
+	for _, script := range scripts {
+		// execute the content of the script
+		_, err := tx.Exec(context.Background(), script)
+		// if we have an error return it
+		if isNull, err := db.error(err); !isNull {
+			// rollback the transaction
+			tx.Rollback(context.Background())
+			// return the error
+			return log, err
+		}
+	}
+	// all good so commit the transaction
+	tx.Commit(context.Background())
+	// return the execution log
+	return log, err
+}
+
+func (db *Db) RunQuery(query string) (*Table, error) {
+	// acquires a database connection
+	conn, err := db.newConn()
+	// if cannot connect to the server return with the error
+	if err != nil {
+		return nil, err
+	}
+	// execute the query content
+	result, err := conn.Query(context.Background(), query)
+	// if error then return it
+	if err != nil {
+		return nil, err
+	}
+	// puts together a generic table result
+	header := make(Row, 0) // the table header
+	rows := make([]Row, 0) // a slice of table rows
+	// for each row in the result
+	for result.Next() {
+		// only the first time round populate the header
+		if len(header) == 0 {
+			// for each field in the result set
+			for _, desc := range result.FieldDescriptions() {
+				headerName := string(desc.Name)
+				if headerName == "?column?" { // the query has not defined a column name
+					headerName = "undefined"
+				}
+				// add a new header
+				header = append(header, headerName)
+			}
+		}
+		// create a new row
+		row := make(Row, 0)
+		// populate the row with returned values from the query
+		values, err := result.Values()
+		// if error return it
+		if err != nil {
+			return nil, err
+		}
+		// for each record in the result set
+		for _, value := range values {
+			// if the value is convertible to string
+			if v, ok := value.(string); ok {
+				// append the value to the row slice
+				row = append(row, v)
+			} else
+			// in the case of time values
+			if v, ok := value.(time.Time); ok {
+				// append the string representation of the value to the row slice
+				row = append(row, v.String())
+			} else if v, ok := value.(pgtype.Interval); ok {
+				t := db.toTime(v.Microseconds)
+				row = append(row, t)
+			} else if v, ok := value.(int32); ok {
+				n := strconv.Itoa(int(v))
+				row = append(row, n)
+			} else {
+				valueType := reflect.TypeOf(value)
+				if valueType != nil {
+					row = append(row, fmt.Sprintf("unsupported type '%s.%s'", valueType.PkgPath(), valueType.Name()))
+				}
+			}
+		}
+		// add the row to the row set
+		rows = append(rows, row)
+	}
+	// closes the result set
+	result.Close()
+	// return an instance of the generic table populated with the header and rows
+	return &Table{
+		Header: header,
+		Rows:   rows,
+	}, err
+}
+
+// converts microseconds into HH:mm:SS.ms
+func (db *Db) toTime(microseconds int64) string {
+	milliseconds := (microseconds / 1000) % 1000
+	seconds := (((microseconds / 1000) - milliseconds) / 1000) % 60
+	minutes := (((((microseconds / 1000) - milliseconds) / 1000) - seconds) / 60) % 60
+	hours := ((((((microseconds / 1000) - milliseconds) / 1000) - seconds) / 60) - minutes) / 60
+	return fmt.Sprintf("%02v:%02v:%02v.%03v", hours, minutes, seconds, milliseconds)
+}
+
+// Table generic table used as a serializable result set for queries
+type Table struct {
+	Header Row   `json:"header,omitempty"`
+	Rows   []Row `json:"row,omitempty"`
+}
+
+// Row a row in the table
+type Row []string
