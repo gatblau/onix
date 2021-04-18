@@ -29,7 +29,7 @@ const (
 // to differentiate pilot logging from application logging
 var logger = log.With().Str("agent", "pilot").Logger()
 
-// pilot configuration
+// Config pilot configuration
 type Config struct {
 	LogLevel string
 	// configuration for the Onix client
@@ -46,7 +46,7 @@ type ConfigKey int
 
 func (k ConfigKey) String() string {
 	switch k {
-	case PilotAppKey:
+	case PilotKey:
 		return "PILOT_APP_KEY"
 	case PilotLogLevel:
 		return "PILOT_LOG_LEVEL"
@@ -74,12 +74,18 @@ func (k ConfigKey) String() string {
 		return "PILOT_OX_BROKER_PASSWORD"
 	case PilotOxBrokerInsecureSkipVerify:
 		return "PILOT_OX_BROKER_INSECURESKIPVERIFY"
+	case PilotRemUri:
+		return "PILOT_OX_REM_URI"
+	case PilotRemUsername:
+		return "PILOT_OX_REM_USERNAME"
+	case PilotRemPassword:
+		return "PILOT_OX_REM_PASSWORD"
 	}
 	return ""
 }
 
 const (
-	PilotAppKey ConfigKey = iota
+	PilotKey ConfigKey = iota
 	PilotLogLevel
 	PilotOxWapiUrl
 	PilotOxWapiAuthMode
@@ -93,6 +99,9 @@ const (
 	PilotOxBrokerUsername
 	PilotOxBrokerPassword
 	PilotOxBrokerInsecureSkipVerify
+	PilotRemUri
+	PilotRemUsername
+	PilotRemPassword
 )
 
 func (c *Config) Get(key ConfigKey) string {
@@ -156,7 +165,7 @@ func (c *Config) Load() error {
 	// event manager config
 	emcfg := &oxc.EventConfig{
 		Server:             c.Get(PilotOxBrokerUrl),
-		ItemInstance:       c.Get(PilotAppKey),
+		ItemInstance:       c.Get(PilotKey),
 		Qos:                2,
 		Username:           c.Get(PilotOxBrokerUsername),
 		Password:           c.Get(PilotOxBrokerPassword),

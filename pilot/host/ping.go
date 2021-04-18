@@ -5,13 +5,19 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package main
+package host
 
-import "github.com/gatblau/onix/pilot/cmd"
+// PingJob pings the remote service periodically
+type PingJob struct {
+}
 
-func main() {
-	rootCmd := cmd.InitialiseRootCmd()
+func (c *PingJob) Execute() {
+}
 
-	// Execute adds all child commands to the root command and sets flags appropriately.
-	rootCmd.Execute()
+func (c *PingJob) Description() string {
+	return "pings the remote service"
+}
+
+func (c *PingJob) Key() int {
+	return hashCode(c.Description())
 }
