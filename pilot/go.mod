@@ -1,4 +1,4 @@
-module gatblau.org/onix/pilot
+module github.com/gatblau/onix/pilot
 
 go 1.13
 

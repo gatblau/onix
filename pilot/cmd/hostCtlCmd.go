@@ -9,7 +9,7 @@ package cmd
 
 import (
 	"fmt"
-	. "gatblau.org/onix/pilot/core"
+	. "github.com/gatblau/onix/pilot/core"
 	"github.com/spf13/cobra"
 	"os"
 )

@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// https://textkool.com/en/ascii-art-generator?hl=default&vl=default&font=5%20Line%20Oblique&text=pilot%0A
 type RootCmd struct {
 	*cobra.Command
 }
@@ -19,8 +20,16 @@ func NewRootCmd() *RootCmd {
 	c := &RootCmd{
 		&cobra.Command{
 			Use:   "pilot",
-			Short: "configuration manager host agent",
-			Long:  `An Onix agent to synchronise configuration changes with the processes running on a host or pod and vice-versa`,
+			Short: "Onix configuration manager agent",
+			Long: `
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+|                ___     ( ) //  ___    __  ___         |
+|              //   ) ) / / // //   ) )  / /            |
+|             //___/ / / / // //   / /  / /             |
+|            //       / / // ((___/ /  / /              |
+|         the Onix Pilot command line interface         |
+|   Onix configuration agent for hosts and containers   |
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++`,
 		},
 	}
 	cobra.OnInitialize(c.initConfig)

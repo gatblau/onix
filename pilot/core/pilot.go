@@ -45,7 +45,7 @@ type pilot struct {
 	cfg *Config
 }
 
-// create a new pilot
+// NewPilot create a new pilot
 func NewPilot(mode opMode, cmd string, args []string) (*pilot, error) {
 	// read configuration
 	cfg := &Config{}
