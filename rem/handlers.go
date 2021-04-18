@@ -36,7 +36,7 @@ import (
 func pingHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	_ = vars["host-key"]
-	var commands []core.Command
+	var commands []core.Cmd
 	server.Write(w, r, commands)
 }
 
@@ -49,7 +49,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {string} OK
 func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 	hosts := []core.Host{
-		core.Host{
+		{
 			Name:      "HOST-001",
 			Customer:  "CUST-01",
 			Region:    "UK-North-West",
@@ -57,7 +57,7 @@ func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 			Connected: true,
 			Up:        true,
 		},
-		core.Host{
+		{
 			Name:      "HOST-002",
 			Customer:  "CUST-01",
 			Region:    "UK-North-West",
@@ -65,7 +65,7 @@ func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 			Connected: false,
 			Up:        false,
 		},
-		core.Host{
+		{
 			Name:      "HOST-003",
 			Customer:  "CUST-01",
 			Region:    "UK-South-West",
