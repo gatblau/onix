@@ -191,6 +191,8 @@ func (r *Api) GetPackageInfo(group, name, id, user, pwd string) (*Package, error
 		return nil, nil
 	case http.StatusForbidden:
 		return nil, fmt.Errorf("invalid credentials, access to the registry is forbidden")
+	case http.StatusInternalServerError:
+		return nil, fmt.Errorf("the remote registry responded with an internal error, check the registry logs for more information")
 	}
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -270,7 +272,7 @@ func (r *Api) repoURI(group, name string) string {
 		scheme = fmt.Sprintf("%ss", scheme)
 	}
 	// {scheme}://{domain}/repository/{repository-group}/{repository-name}
-	return fmt.Sprintf("%s://%s/repository/%s/%s", scheme, r.domain, escape(group), name)
+	return fmt.Sprintf("%s://%s/repository/%s/%s", scheme, r.domain, Escape(group), name)
 }
 
 func (r *Api) packageURI(group, name string) string {
@@ -279,7 +281,7 @@ func (r *Api) packageURI(group, name string) string {
 		scheme = fmt.Sprintf("%ss", scheme)
 	}
 	// {scheme}://{domain}/package/{repository-group}/{repository-name}/{tag}
-	return fmt.Sprintf("%s://%s/package/%s/%s", scheme, r.domain, escape(group), name)
+	return fmt.Sprintf("%s://%s/package/%s/%s", scheme, r.domain, Escape(group), name)
 }
 
 func (r *Api) packageTagURI(group, name, tag string) string {
@@ -296,7 +298,7 @@ func (r *Api) fileURI(group, name, filename string) string {
 	if r.https {
 		scheme = fmt.Sprintf("%ss", scheme)
 	}
-	return fmt.Sprintf("%s://%s/file/%s/%s/%s", scheme, r.domain, escape(group), name, filename)
+	return fmt.Sprintf("%s://%s/file/%s/%s/%s", scheme, r.domain, Escape(group), name, filename)
 }
 
 // add a field to a multipart form
@@ -324,8 +326,8 @@ func (r *Api) addFile(writer *multipart.Writer, fieldName, fileName string, file
 	return err
 }
 
-// escape slashes in path variables
-func escape(path string) string {
+// Escape slashes in path variables
+func Escape(path string) string {
 	// NOTE: not sure why but need to escape twice for the request to work properly!
 	return url.PathEscape(url.PathEscape(path))
 }
