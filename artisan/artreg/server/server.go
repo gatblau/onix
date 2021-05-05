@@ -103,7 +103,7 @@ func (s *Server) Serve() {
 	// retrieve webhooks
 	router.HandleFunc("/webhook/{repository-group}/{repository-name}", s.webhookGetHandler).Methods("GET")
 
-	fmt.Printf("? using %s backend @ %s\n", s.conf.Backend(), s.conf.BackendDomain())
+	fmt.Printf("? backend => %s\n", GetBackend().Name())
 
 	// starts the server
 	s.listen(router)
@@ -251,7 +251,7 @@ func (s *Server) packageUploadHandler(w http.ResponseWriter, r *http.Request) {
 			s.writeError(w, fmt.Errorf("cannot update repository information: %s", backendPackage.Id), http.StatusInternalServerError)
 			return
 		}
-		err = back.UpdatePackageInfo(name.Group, name.Name, backendPackage, s.conf.HttpUser(), s.conf.HttpPwd())
+		err = back.UpdatePackageInfo(name, backendPackage, s.conf.HttpUser(), s.conf.HttpPwd())
 		if err != nil {
 			s.writeError(w, fmt.Errorf("cannot update package information in Nexus backend: %s", err), http.StatusInternalServerError)
 			return
@@ -363,6 +363,11 @@ func (s *Server) packageInfoUpdateHandler(w http.ResponseWriter, r *http.Request
 	vars := mux.Vars(r)
 	repoGroup := vars["repository-group"]
 	repoName := vars["repository-name"]
+	name, err := core.ParseName(fmt.Sprintf("%s/%s", repoGroup, repoName))
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot retrieve package information from request body: %s", err), 500)
+		return
+	}
 	id := vars["package-id"]
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -380,7 +385,7 @@ func (s *Server) packageInfoUpdateHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 	// updates the repository metadata in Nexus
-	if err = GetBackend().UpdatePackageInfo(repoGroup, repoName, artie, s.conf.HttpUser(), s.conf.HttpPwd()); err != nil {
+	if err = GetBackend().UpdatePackageInfo(name, artie, s.conf.HttpUser(), s.conf.HttpPwd()); err != nil {
 		s.writeError(w, fmt.Errorf("cannot update repository information in Nexus backend: %s", err), http.StatusInternalServerError)
 		return
 	}
@@ -624,6 +629,8 @@ func GetBackend() backend.Backend {
 		return backend.NewNexus3Backend(
 			conf.BackendDomain(), // the nexus scheme://domain:port
 		)
+	case backend.FileSystem:
+		return backend.NewFsBackend()
 	}
 	core.RaiseErr("backend not recognised")
 	return nil
