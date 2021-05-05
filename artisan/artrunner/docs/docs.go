@@ -88,12 +88,82 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/webhook/{namespace}/{flow-name}": {
+            "post": {
+                "description": "starts a flow execution from a commit in a Git repository",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Flows"
+                ],
+                "summary": "Launch an existing flow from a Git commit",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the kubernetes namespace where the pipeline run is created",
+                        "name": "namespace",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the name of the flow to run",
+                        "name": "flow-name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "data.File": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "the file content",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "a description of the intended use of this file",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "the unique reference for the file",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "path to the file within the Artisan registry",
+                    "type": "string"
+                }
+            }
+        },
         "data.Input": {
             "type": "object",
             "properties": {
+                "file": {
+                    "description": "reguired by configuration files",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.File"
+                    }
+                },
                 "key": {
                     "description": "required PGP keys",
                     "type": "array",
@@ -209,6 +279,13 @@ var doc = `{
                 "input": {
                     "$ref": "#/definitions/data.Input"
                 },
+                "labels": {
+                    "description": "a list of labels to document key aspects of the flow execution\nfor example using a target namespace if running in Kubernetes",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "name": {
                     "type": "string"
                 },
@@ -240,6 +317,9 @@ var doc = `{
                 },
                 "packageSource": {
                     "type": "string"
+                },
+                "privileged": {
+                    "type": "boolean"
                 },
                 "runtime": {
                     "type": "string"
