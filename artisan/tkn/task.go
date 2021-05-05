@@ -46,13 +46,14 @@ type VolumeMounts struct {
 }
 
 type Steps struct {
-	Name         string          `yaml:"name,omitempty"`
-	Image        string          `yaml:"image,omitempty"`
-	Env          []*Env          `yaml:"env,omitempty"`
-	Command      []string        `yaml:"command,omitempty,flow"`
-	WorkingDir   string          `yaml:"workingDir,omitempty"`
-	VolumeMounts []*VolumeMounts `yaml:"volumeMounts,omitempty"`
-	Args         string          `yaml:"args,omitempty"`
+	Name            string           `yaml:"name,omitempty"`
+	Image           string           `yaml:"image,omitempty"`
+	Env             []*Env           `yaml:"env,omitempty"`
+	Command         []string         `yaml:"command,omitempty,flow"`
+	WorkingDir      string           `yaml:"workingDir,omitempty"`
+	VolumeMounts    []*VolumeMounts  `yaml:"volumeMounts,omitempty"`
+	Args            string           `yaml:"args,omitempty"`
+	SecurityContext *SecurityContext `yaml:"securityContext,omitempty"`
 }
 
 type ConfigMap struct {
