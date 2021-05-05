@@ -57,6 +57,7 @@ type Spec struct {
 	Port               *Port         `yaml:"port,omitempty"`
 	TLS                *TLS          `yaml:"tls,omitempty"`
 	To                 *To           `yaml:"to,omitempty"`
+	PodTemplate        *PodTemplate  `yaml:"podTemplate,omitempty"`
 }
 
 type TaskSpec struct {

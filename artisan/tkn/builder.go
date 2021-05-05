@@ -463,6 +463,16 @@ func (b *Builder) newPipelineRun() *PipelineRun {
 				Value: encode(b.flow.Name),
 			},
 		},
+		// always run the pipeline as non root user using the Artisan user Id for the runtimes (i.e. 100000000)
+		// this prevents the pipeline to run as root user in plain Kubernetes
+		// Artisan runtimes cannot run as root
+		PodTemplate: &PodTemplate{
+			SecurityContext: &SecurityContext{
+				RunAsNonRoot: true,
+				FsGroup:      100000000,
+				RunAsUser:    100000000,
+			},
+		},
 	}
 	r.Metadata = &Metadata{
 		Name:      b.pipelineRunName(),
