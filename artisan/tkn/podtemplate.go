@@ -9,11 +9,17 @@ package tkn
 */
 
 type PodTemplate struct {
-	SecurityContext *SecurityContext `yaml:"securityContext,omitempty"`
+	SecurityContext *PipelineSecurityContext `yaml:"securityContext,omitempty"`
 }
 
-type SecurityContext struct {
+type PipelineSecurityContext struct {
 	RunAsNonRoot bool `yaml:"runAsNonRoot"`
 	FsGroup      int  `yaml:"fsGroup"`
+	RunAsUser    int  `yaml:"runAsUser"`
+}
+
+type StepSecurityContext struct {
+	Privileged   bool `yaml:"privileged,omitempty"`
+	RunAsNonRoot bool `yaml:"runAsNonRoot"`
 	RunAsUser    int  `yaml:"runAsUser"`
 }

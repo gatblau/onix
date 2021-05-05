@@ -146,6 +146,15 @@ func (b *Builder) newSteps() []*Steps {
 			Image:      step.Runtime,
 			WorkingDir: "/workspace/source",
 		}
+		// if the step is marked a privileged in the Artisan flow
+		// adds a security context to override the non-privileged setting of the pipeline run
+		if step.Privileged {
+			s.SecurityContext = &StepSecurityContext{
+				Privileged:   true,
+				RunAsNonRoot: true,
+				RunAsUser:    0,
+			}
+		}
 		// if the step requires keys
 		if step.Input != nil {
 			if len(step.Input.Key) > 0 {
@@ -467,7 +476,7 @@ func (b *Builder) newPipelineRun() *PipelineRun {
 		// this prevents the pipeline to run as root user in plain Kubernetes
 		// Artisan runtimes cannot run as root
 		PodTemplate: &PodTemplate{
-			SecurityContext: &SecurityContext{
+			SecurityContext: &PipelineSecurityContext{
 				RunAsNonRoot: true,
 				FsGroup:      100000000,
 				RunAsUser:    100000000,
