@@ -1,6 +1,26 @@
 definitions:
+  data.File:
+    properties:
+      content:
+        description: the file content
+        type: string
+      description:
+        description: a description of the intended use of this file
+        type: string
+      name:
+        description: the unique reference for the file
+        type: string
+      path:
+        description: path to the file within the Artisan registry
+        type: string
+    type: object
   data.Input:
     properties:
+      file:
+        description: reguired by configuration files
+        items:
+          $ref: '#/definitions/data.File'
+        type: array
       key:
         description: required PGP keys
         items:
@@ -81,6 +101,13 @@ definitions:
         type: string
       input:
         $ref: '#/definitions/data.Input'
+      labels:
+        additionalProperties:
+          type: string
+        description: |-
+          a list of labels to document key aspects of the flow execution
+          for example using a target namespace if running in Kubernetes
+        type: object
       name:
         type: string
       steps:
@@ -102,6 +129,8 @@ definitions:
         type: string
       packageSource:
         type: string
+      privileged:
+        type: boolean
       runtime:
         type: string
       runtimeManifest:
@@ -157,6 +186,34 @@ paths:
           schema:
             type: string
       summary: Executes an Artisan flow
+      tags:
+      - Flows
+  /webhook/{namespace}/{flow-name}:
+    post:
+      description: starts a flow execution from a commit in a Git repository
+      parameters:
+      - description: the kubernetes namespace where the pipeline run is created
+        in: path
+        name: namespace
+        required: true
+        type: string
+      - description: the name of the flow to run
+        in: path
+        name: flow-name
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Launch an existing flow from a Git commit
       tags:
       - Flows
 swagger: "2.0"

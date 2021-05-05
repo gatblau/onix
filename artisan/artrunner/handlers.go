@@ -22,6 +22,7 @@ import (
 	_ "github.com/gatblau/onix/artisan/artrunner/docs"
 	"github.com/gatblau/onix/artisan/flow"
 	"github.com/gatblau/onix/artisan/tkn"
+	"github.com/gorilla/mux"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -33,7 +34,7 @@ import (
 // @Router /flow [post]
 // @Produce plain
 // @Param flow body flow.Flow true "the artisan flow to run"
-// @Failure 500 {string} there was an error in the server, check the server logs
+// @Failure 500 {string} there was an error in the server, error the server logs
 // @Success 200 {string} OK
 func runHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
@@ -52,19 +53,13 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 	resources, pr, _ := builder.Build()
 	ctx := context.Background()
 	k8s, err := NewK8S()
-	if err != nil {
-		msg := fmt.Sprintf("cannot create kubernetes client: %s\n", err)
-		log.Printf(msg)
-		http.Error(w, msg, http.StatusInternalServerError)
+	if checkErr(w, "cannot create kubernetes client", err) {
 		return
 	}
 	// create the pipeline resources
 	for _, resource := range resources {
 		err = k8s.Patch(resource, ctx)
-		if err != nil {
-			msg := fmt.Sprintf("cannot apply kubernetes resources: %s\n", err)
-			fmt.Printf(msg)
-			http.Error(w, msg, http.StatusInternalServerError)
+		if checkErr(w, "cannot apply kubernetes resources", err) {
 			return
 		}
 	}
@@ -93,6 +88,44 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 	// 		return
 	// 	}
 	// }
+}
+
+// @Summary Launch an existing flow from a Git commit
+// @Description starts a flow execution from a commit in a Git repository
+// @Tags Flows
+// @Router /webhook/{namespace}/{flow-name} [post]
+// @Param namespace path string true "the kubernetes namespace where the pipeline run is created"
+// @Param flow-name path string true "the name of the flow to run"
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, error the server logs
+// @Success 200 {string} OK
+func webhookHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	flowName := vars["flow-name"]
+	namespace := vars["namespace"]
+
+	builder := new(tkn.Builder)
+	pr := builder.NewNamedPipelineRun(flowName, namespace)
+
+	ctx := context.Background()
+	k8s, err := NewK8S()
+	if checkErr(w, "cannot create kubernetes client", err) {
+		return
+	}
+
+	err = k8s.Patch(tkn.ToYaml(pr, "pipelinerun"), ctx)
+	if checkErr(w, "cannot create pipelinerun", err) {
+		return
+	}
+}
+
+func checkErr(w http.ResponseWriter, msg string, err error) bool {
+	if err != nil {
+		msg := fmt.Sprintf("%s: %s\n", msg, err)
+		fmt.Printf(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
+	}
+	return err != nil
 }
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
