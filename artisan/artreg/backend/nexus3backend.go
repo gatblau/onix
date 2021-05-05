@@ -49,6 +49,10 @@ func NewNexus3Backend(domain string) Backend {
 	}
 }
 
+func (r *Nexus3Backend) Name() string {
+	return fmt.Sprintf("NEXUS3 @ %s\n", r.domain)
+}
+
 func (r *Nexus3Backend) Download(repoGroup, repoName, fileName, user, pwd string) (*os.File, error) {
 	// get the file download URI
 	downloadURI := r.fileDownloadURI(repoGroup, repoName, fileName)
@@ -97,9 +101,9 @@ func (r *Nexus3Backend) Download(repoGroup, repoName, fileName, user, pwd string
 	return f, err
 }
 
-func (r *Nexus3Backend) UpdatePackageInfo(group, name string, packageInfo *registry.Package, user string, pwd string) error {
+func (r *Nexus3Backend) UpdatePackageInfo(name *core.PackageName, packageInfo *registry.Package, user string, pwd string) error {
 	// get the repository info
-	repo, err := r.GetRepositoryInfo(group, name, user, pwd)
+	repo, err := r.GetRepositoryInfo(name.Group, name.Name, user, pwd)
 	if err != nil {
 		return err
 	}
@@ -116,7 +120,7 @@ func (r *Nexus3Backend) UpdatePackageInfo(group, name string, packageInfo *regis
 	}
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
-	err = r.addField(writer, "raw.directory", fmt.Sprintf("%s/%s", group, name))
+	err = r.addField(writer, "raw.directory", name.Repository())
 	if err != nil {
 		return err
 	}
@@ -141,7 +145,8 @@ func (r *Nexus3Backend) UploadPackage(name *core.PackageName, packageRef string,
 
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
-	err := r.addField(writer, "raw.directory", name.Repository())
+	rawDir := name.Repository()
+	err := r.addField(writer, "raw.directory", rawDir)
 	if err != nil {
 		return err
 	}
