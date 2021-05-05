@@ -1,3 +1,5 @@
+package flow
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,9 +7,10 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package flow
-
-import "github.com/gatblau/onix/artisan/data"
+import (
+	"github.com/gatblau/onix/artisan/data"
+	"strings"
+)
 
 type Step struct {
 	Name            string      `yaml:"name"`
@@ -18,6 +21,7 @@ type Step struct {
 	Package         string      `yaml:"package,omitempty"`
 	PackageSource   string      `yaml:"source,omitempty"`
 	Input           *data.Input `yaml:"input,omitempty"`
+	Privileged      bool        `yaml:"privileged"`
 }
 
 func (s *Step) surveyBuildfile(requiresGitSource bool) bool {
@@ -26,8 +30,8 @@ func (s *Step) surveyBuildfile(requiresGitSource bool) bool {
 }
 
 func (s *Step) surveyManifest() bool {
-	// defines a function and a package
-	return (len(s.Function) > 0 && len(s.Package) > 0)
+	// defines a function and a package or in the case of a package merge a function is not required but package and source = merge exist
+	return (len(s.Function) > 0 && len(s.Package) > 0) || (len(s.Package) > 0 && len(s.Function) == 0 && strings.ToLower(s.PackageSource) == "merge")
 }
 
 func (s *Step) surveyRuntime() bool {
