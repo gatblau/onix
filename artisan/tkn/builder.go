@@ -1,3 +1,5 @@
+package tkn
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package tkn
-
 import (
 	"bytes"
 	"fmt"
@@ -22,23 +22,24 @@ const (
 	ApiVersionTekton        = "tekton.dev/v1alpha1"
 	ApiVersionTektonTrigger = "triggers.tekton.dev/v1alpha1"
 
-	// account below is created by the tekton operator
+	// ServiceAccountName account below is created by the tekton operator in OpenShift but has to be created manually
+	// if a plain Kubernetes version is used
 	ServiceAccountName = "pipeline"
 )
 
-// tekton builder
+// Builder tekton builder
 type Builder struct {
 	flow *flow.Flow
 }
 
-// creates a new tekton builder
+// NewBuilder creates a new tekton builder
 func NewBuilder(flow *flow.Flow) *Builder {
 	return &Builder{
 		flow: flow,
 	}
 }
 
-// creates a buffer with all K8S resources required to create a tekton pipleine out of an Artisan flow
+// BuildBuffer creates a buffer with all K8S resources required to create a tekton pipleine out of an Artisan flow
 func (b *Builder) BuildBuffer() bytes.Buffer {
 	buffer := bytes.Buffer{}
 	resx, _, _ := b.Build()
@@ -49,7 +50,7 @@ func (b *Builder) BuildBuffer() bytes.Buffer {
 	return buffer
 }
 
-// creates a slice with all K8S resources required to create a tekton pipleine out of an Artisan flow
+// Build creates a slice with all K8S resources required to create a tekton pipleine out of an Artisan flow
 func (b *Builder) Build() ([][]byte, string, bool) {
 	result := make([][]byte, 0)
 	// writes a task
@@ -81,9 +82,9 @@ func (b *Builder) Build() ([][]byte, string, bool) {
 		// need to add git repo in resources of pipeline run
 		pipelineRun.Spec.Resources = []*Resources{
 			{
-				Name: b.codeRepoResourceName(),
+				Name: b.codeRepoResourceName(b.flow.Name),
 				ResourceRef: &ResourceRef{
-					Name: b.codeRepoResourceName(),
+					Name: b.codeRepoResourceName(b.flow.Name),
 				},
 			},
 		}
@@ -118,7 +119,7 @@ func (b *Builder) newTask() *Task {
 	t.APIVersion = ApiVersionTekton
 	t.Kind = "Task"
 	t.Metadata = &Metadata{
-		Name:      b.buildTaskName(),
+		Name:      b.buildTaskName(b.flow.Name),
 		Namespace: b.namespace(),
 	}
 	t.Spec = &TaskSpec{
@@ -151,7 +152,7 @@ func (b *Builder) newSteps() []*Steps {
 		if step.Privileged {
 			s.SecurityContext = &StepSecurityContext{
 				Privileged:   true,
-				RunAsNonRoot: true,
+				RunAsNonRoot: false,
 				RunAsUser:    0,
 			}
 		}
@@ -389,7 +390,7 @@ func (b *Builder) newPipeline() *Pipeline {
 	p.Kind = "Pipeline"
 	p.APIVersion = ApiVersionTekton
 	p.Metadata = &Metadata{
-		Name:      b.pipelineName(),
+		Name:      b.pipelineName(b.flow.Name),
 		Namespace: b.namespace(),
 	}
 	var (
@@ -400,12 +401,12 @@ func (b *Builder) newPipeline() *Pipeline {
 		inputs = []*Inputs{
 			{
 				Name:     "source",
-				Resource: b.codeRepoResourceName(),
+				Resource: b.codeRepoResourceName(b.flow.Name),
 			},
 		}
 		resources = []*Resources{
 			{
-				Name: b.codeRepoResourceName(),
+				Name: b.codeRepoResourceName(b.flow.Name),
 				Type: "git",
 			},
 		}
@@ -421,9 +422,9 @@ func (b *Builder) newPipeline() *Pipeline {
 		},
 		Tasks: []*Tasks{
 			{
-				Name: b.buildTaskName(),
+				Name: b.buildTaskName(b.flow.Name),
 				TaskRef: &TaskRef{
-					Name: b.buildTaskName(),
+					Name: b.buildTaskName(b.flow.Name),
 				},
 				Resources: &Resources{
 					Inputs: inputs,
@@ -440,7 +441,7 @@ func (b *Builder) newPipelineResource() *PipelineResource {
 	r.APIVersion = ApiVersionTekton
 	r.Kind = "PipelineResource"
 	r.Metadata = &Metadata{
-		Name:      b.codeRepoResourceName(),
+		Name:      b.codeRepoResourceName(b.flow.Name),
 		Namespace: b.namespace(),
 	}
 	r.Spec = &Spec{
@@ -457,6 +458,11 @@ func (b *Builder) newPipelineResource() *PipelineResource {
 
 // pipeline run
 func (b *Builder) newPipelineRun() *PipelineRun {
+	return b.NewNamedPipelineRun(b.flow.Name, b.namespace())
+}
+
+// NewNamedPipelineRun create a pipeline run for the passed in name
+func (b *Builder) NewNamedPipelineRun(flowName, namespace string) *PipelineRun {
 	r := new(PipelineRun)
 	r.Kind = "PipelineRun"
 	r.APIVersion = ApiVersionTekton
@@ -464,12 +470,12 @@ func (b *Builder) newPipelineRun() *PipelineRun {
 		// this is the default service account created by the Tekton operator
 		ServiceAccountName: "pipeline",
 		PipelineRef: &PipelineRef{
-			Name: b.pipelineName(),
+			Name: b.pipelineName(flowName),
 		},
 		Params: []*Params{
 			{
 				Name:  "deployment-name",
-				Value: encode(b.flow.Name),
+				Value: flowName,
 			},
 		},
 		// always run the pipeline as non root user using the Artisan user Id for the runtimes (i.e. 100000000)
@@ -484,8 +490,8 @@ func (b *Builder) newPipelineRun() *PipelineRun {
 		},
 	}
 	r.Metadata = &Metadata{
-		Name:      b.pipelineRunName(),
-		Namespace: b.namespace(),
+		Name:      b.pipelineRunName(flowName),
+		Namespace: namespace,
 	}
 	return r
 }
@@ -647,11 +653,11 @@ func (b *Builder) newPipelineRunTriggerTemplate() *PipelineRun {
 	r.Spec = &Spec{
 		ServiceAccountName: ServiceAccountName,
 		PipelineRef: &PipelineRef{
-			Name: b.pipelineName(),
+			Name: b.pipelineName(b.flow.Name),
 		},
 		Resources: []*Resources{
 			{
-				Name: b.codeRepoResourceName(),
+				Name: b.codeRepoResourceName(b.flow.Name),
 				ResourceRef: &ResourceRef{
 					Name: "$(params.git-repo-name)-git-repo-$(uid)",
 				},
@@ -668,23 +674,23 @@ func (b *Builder) newPipelineRunTriggerTemplate() *PipelineRun {
 }
 
 // return the name of the application build task
-func (b *Builder) buildTaskName() string {
-	return fmt.Sprintf("%s-build-task", encode(b.flow.Name))
+func (b *Builder) buildTaskName(flowName string) string {
+	return fmt.Sprintf("%s-build-task", encode(flowName))
 }
 
 // return the name of the code repository resource
-func (b *Builder) codeRepoResourceName() string {
-	return fmt.Sprintf("%s-code-repo", encode(b.flow.Name))
+func (b *Builder) codeRepoResourceName(flowName string) string {
+	return fmt.Sprintf("%s-code-repo", encode(flowName))
 }
 
 // return the name of the code repository resource
-func (b *Builder) pipelineName() string {
-	return fmt.Sprintf("%s-builder", encode(b.flow.Name))
+func (b *Builder) pipelineName(flowName string) string {
+	return fmt.Sprintf("%s-pipe", encode(flowName))
 }
 
 // return the name of the code repository resource
-func (b *Builder) pipelineRunName() string {
-	return fmt.Sprintf("%s-pr-%d", encode(b.flow.Name), time.Now().Nanosecond())
+func (b *Builder) pipelineRunName(flowName string) string {
+	return fmt.Sprintf("%s-pr-%d", encode(flowName), time.Now().Nanosecond())
 }
 
 // return the name of the code repository resource
