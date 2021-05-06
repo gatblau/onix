@@ -39,7 +39,7 @@ func NewBuilder(flow *flow.Flow) *Builder {
 	}
 }
 
-// BuildBuffer creates a buffer with all K8S resources required to create a tekton pipleine out of an Artisan flow
+// BuildBuffer creates a buffer with all K8S resources required to create a tekton pipeline out of an Artisan flow
 func (b *Builder) BuildBuffer() bytes.Buffer {
 	buffer := bytes.Buffer{}
 	resx, _, _ := b.Build()
@@ -93,21 +93,23 @@ func (b *Builder) Build() ([][]byte, string, bool) {
 		pipelineResource := b.newPipelineResource()
 		result = append(result, ToYaml(pipelineResource, "PipelineResource"))
 
-		// tekton event listener
-		eventListener := b.newEventListener()
-		result = append(result, ToYaml(eventListener, "EventListener"))
-
-		// k8s route
-		route := b.newRoute()
-		result = append(result, ToYaml(route, "Route"))
-
-		// tekton trigger binding
-		triggerBinding := b.newTriggerBinding()
-		result = append(result, ToYaml(triggerBinding, "TriggerBinding"))
-
-		// tekton trigger template
-		triggerTemplate := b.newTriggerTemplate()
-		result = append(result, ToYaml(triggerTemplate, "TriggerTemplate"))
+		// NOTE: resources below are OpenShift specific so removing so it is compatible across all K8S implementations
+		//
+		// // tekton event listener
+		// eventListener := b.newEventListener()
+		// result = append(result, ToYaml(eventListener, "EventListener"))
+		//
+		// // k8s route
+		// route := b.newRoute()
+		// result = append(result, ToYaml(route, "Route"))
+		//
+		// // tekton trigger binding
+		// triggerBinding := b.newTriggerBinding()
+		// result = append(result, ToYaml(triggerBinding, "TriggerBinding"))
+		//
+		// // tekton trigger template
+		// triggerTemplate := b.newTriggerTemplate()
+		// result = append(result, ToYaml(triggerTemplate, "TriggerTemplate"))
 	}
 	result = append(result, ToYaml(pipelineRun, "Pipeline Run"))
 	return result, pipelineRun.Metadata.Name, b.flow.RequiresGitSource()
