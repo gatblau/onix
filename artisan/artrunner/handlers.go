@@ -107,6 +107,16 @@ func webhookHandler(w http.ResponseWriter, r *http.Request) {
 	builder := new(tkn.Builder)
 	pr := builder.NewNamedPipelineRun(flowName, namespace)
 
+	// need to add git repo in resources of pipeline run
+	pr.Spec.Resources = []*tkn.Resources{
+		{
+			Name: fmt.Sprintf("%s-code-repo", flowName),
+			ResourceRef: &tkn.ResourceRef{
+				Name: fmt.Sprintf("%s-code-repo", flowName),
+			},
+		},
+	}
+
 	ctx := context.Background()
 	k8s, err := NewK8S()
 	if checkErr(w, "cannot create kubernetes client", err) {
