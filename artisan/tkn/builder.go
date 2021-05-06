@@ -685,7 +685,7 @@ func (b *Builder) codeRepoResourceName(flowName string) string {
 
 // return the name of the code repository resource
 func (b *Builder) pipelineName(flowName string) string {
-	return fmt.Sprintf("%s-pipe", encode(flowName))
+	return fmt.Sprintf("%s-pl", encode(flowName))
 }
 
 // return the name of the code repository resource
