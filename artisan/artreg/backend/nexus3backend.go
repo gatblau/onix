@@ -19,7 +19,6 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -101,16 +100,16 @@ func (r *Nexus3Backend) Download(repoGroup, repoName, fileName, user, pwd string
 	return f, err
 }
 
-func (r *Nexus3Backend) UpdatePackageInfo(name *core.PackageName, packageInfo *registry.Package, user string, pwd string) error {
+func (r *Nexus3Backend) UpdatePackageInfo(group, name string, packageInfo *registry.Package, user string, pwd string) error {
 	// get the repository info
-	repo, err := r.GetRepositoryInfo(name.Group, name.Name, user, pwd)
+	repo, err := r.GetRepositoryInfo(group, name, user, pwd)
 	if err != nil {
 		return err
 	}
 	// update the repository
 	updated := repo.UpdatePackage(packageInfo)
 	if !updated {
-		return fmt.Errorf("package not found in remote repository, not update was made")
+		return fmt.Errorf("package not found in remote repository, no update was made")
 	}
 	// turn the repository into a file to upload
 	// create a repository file
@@ -120,7 +119,7 @@ func (r *Nexus3Backend) UpdatePackageInfo(name *core.PackageName, packageInfo *r
 	}
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
-	err = r.addField(writer, "raw.directory", name.Repository())
+	err = r.addField(writer, "raw.directory", fmt.Sprintf("%s/%s", group, name))
 	if err != nil {
 		return err
 	}
@@ -137,7 +136,7 @@ func (r *Nexus3Backend) UpdatePackageInfo(name *core.PackageName, packageInfo *r
 }
 
 // Upload a package
-func (r *Nexus3Backend) UploadPackage(name *core.PackageName, packageRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error {
+func (r *Nexus3Backend) UploadPackage(group, name, packageRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error {
 	// ensure files are properly closed
 	defer zipfile.Close()
 	defer jsonFile.Close()
@@ -145,8 +144,7 @@ func (r *Nexus3Backend) UploadPackage(name *core.PackageName, packageRef string,
 
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
-	rawDir := name.Repository()
-	err := r.addField(writer, "raw.directory", rawDir)
+	err := r.addField(writer, "raw.directory", fmt.Sprintf("%s/%s", group, name))
 	if err != nil {
 		return err
 	}
@@ -231,11 +229,6 @@ func (r *Nexus3Backend) GetRepositoryInfo(group, name, user, pwd string) (*regis
 	}
 	// if the file is not in JSON format then
 	if !core.IsJSON(string(b)) {
-		// unescape the repository group
-		group, err = url.PathUnescape(group)
-		if err != nil {
-			return nil, err
-		}
 		// assume file not found (404 HTML page)
 		// returns an empty repository
 		return &registry.Repository{

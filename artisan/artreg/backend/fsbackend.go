@@ -36,7 +36,7 @@ func NewFsBackend() *FsBackend {
 }
 
 // upload an package to the remote repository
-func (fs *FsBackend) UploadPackage(name *core.PackageName, packageRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error {
+func (fs *FsBackend) UploadPackage(group, name string, packageRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error {
 	// ensure files are properly closed
 	defer zipfile.Close()
 	defer jsonFile.Close()
@@ -81,7 +81,7 @@ func (fs *FsBackend) GetPackageInfo(group, name, id, user, pwd string) (*registr
 }
 
 // update package information
-func (fs *FsBackend) UpdatePackageInfo(name *core.PackageName, packageInfo *registry.Package, user string, pwd string) error {
+func (fs *FsBackend) UpdatePackageInfo(group, name string, packageInfo *registry.Package, user string, pwd string) error {
 	return nil
 }
 
