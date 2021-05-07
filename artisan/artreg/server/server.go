@@ -251,7 +251,7 @@ func (s *Server) packageUploadHandler(w http.ResponseWriter, r *http.Request) {
 			s.writeError(w, fmt.Errorf("cannot update repository information: %s", backendPackage.Id), http.StatusInternalServerError)
 			return
 		}
-		err = back.UpdatePackageInfo(name, backendPackage, s.conf.HttpUser(), s.conf.HttpPwd())
+		err = back.UpdatePackageInfo(name.Group, name.Name, backendPackage, s.conf.HttpUser(), s.conf.HttpPwd())
 		if err != nil {
 			s.writeError(w, fmt.Errorf("cannot update package information in Nexus backend: %s", err), http.StatusInternalServerError)
 			return
@@ -276,7 +276,7 @@ func (s *Server) packageUploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if locked > 0 {
-		err = back.UploadPackage(name, packageMeta.FileRef, zipFile, jsonFile, repoFile, s.conf.HttpUser(), s.conf.HttpPwd())
+		err = back.UploadPackage(name.Group, name.Name, packageMeta.FileRef, zipFile, jsonFile, repoFile, s.conf.HttpUser(), s.conf.HttpPwd())
 		_, e := s.lock.release(repoPath)
 		if err != nil {
 			log.Printf("error whilst pushing to %s backend: %s", s.conf.Backend(), err)
@@ -311,6 +311,7 @@ func (s *Server) repositoryInfoHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	repoGroup := vars["repository-group"]
 	repoName := vars["repository-name"]
+	repoGroup, _ = url.PathUnescape(repoGroup)
 	// retrieve repository metadata from the backend
 	repo, err := GetBackend().GetRepositoryInfo(repoGroup, repoName, s.conf.HttpUser(), s.conf.HttpPwd())
 	if err != nil {
@@ -335,6 +336,7 @@ func (s *Server) packageInfoGetHandler(w http.ResponseWriter, r *http.Request) {
 	repoGroup := vars["repository-group"]
 	repoName := vars["repository-name"]
 	id := vars["package-id"]
+	repoGroup, _ = url.PathUnescape(repoGroup)
 	// retrieve repository metadata from the backend
 	artie, err := GetBackend().GetPackageInfo(repoGroup, repoName, id, s.conf.HttpUser(), s.conf.HttpPwd())
 	if err != nil {
@@ -363,11 +365,7 @@ func (s *Server) packageInfoUpdateHandler(w http.ResponseWriter, r *http.Request
 	vars := mux.Vars(r)
 	repoGroup := vars["repository-group"]
 	repoName := vars["repository-name"]
-	name, err := core.ParseName(fmt.Sprintf("%s/%s", repoGroup, repoName))
-	if err != nil {
-		s.writeError(w, fmt.Errorf("cannot retrieve package information from request body: %s", err), 500)
-		return
-	}
+	repoGroup, _ = url.PathUnescape(repoGroup)
 	id := vars["package-id"]
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -385,7 +383,7 @@ func (s *Server) packageInfoUpdateHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 	// updates the repository metadata in Nexus
-	if err = GetBackend().UpdatePackageInfo(name, artie, s.conf.HttpUser(), s.conf.HttpPwd()); err != nil {
+	if err = GetBackend().UpdatePackageInfo(repoGroup, repoName, artie, s.conf.HttpUser(), s.conf.HttpPwd()); err != nil {
 		s.writeError(w, fmt.Errorf("cannot update repository information in Nexus backend: %s", err), http.StatusInternalServerError)
 		return
 	}
@@ -406,6 +404,7 @@ func (s *Server) webhookCreateHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	repoGroup := vars["repository-group"]
 	repoName := vars["repository-name"]
+	repoGroup, _ = url.PathUnescape(repoGroup)
 	// read the payload
 	body, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
@@ -458,6 +457,7 @@ func (s *Server) webhookDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	repoGroup := vars["repository-group"]
 	repoName := vars["repository-name"]
+	repoGroup, _ = url.PathUnescape(repoGroup)
 	whId := vars["webhook-id"]
 	wh := NewWebHooks()
 	err := wh.load()
@@ -487,6 +487,7 @@ func (s *Server) webhookGetHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	repoGroup := vars["repository-group"]
 	repoName := vars["repository-name"]
+	repoGroup, _ = url.PathUnescape(repoGroup)
 	wh := NewWebHooks()
 	err := wh.load()
 	if err != nil {
