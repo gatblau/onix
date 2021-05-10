@@ -1,3 +1,5 @@
+package data
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package data
-
 import (
 	"bytes"
 	"fmt"
@@ -544,8 +544,19 @@ func surveyVar(variable *Var) {
 		validator = survey.ComposeValidators(validator, core.IsURI)
 	case "name":
 		validator = survey.ComposeValidators(validator, core.IsPackageName)
+	default:
+		validator = nil
+		if len(variable.Type) > 0 {
+			core.Msg("input '%s' has a type of '%s' which is not valid\n"+
+				"	valid types are path, URI or name\n"+
+				"	skipping type validation", variable.Name, variable.Type)
+		}
 	}
-	core.HandleCtrlC(survey.AskOne(prompt, &variable.Value, survey.WithValidator(validator)))
+	var askOpts survey.AskOpt
+	if validator != nil {
+		askOpts = survey.WithValidator(validator)
+	}
+	core.HandleCtrlC(survey.AskOne(prompt, &variable.Value, askOpts))
 }
 
 func surveySecret(secret *Secret) {
