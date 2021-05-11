@@ -1,0 +1,10 @@
+---
+functions:
+  - name: up
+    run:
+      - sh up.sh
+
+  - name: down
+    run:
+      - sh down.sh
+...
