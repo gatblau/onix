@@ -1,3 +1,5 @@
+package registry
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package registry
-
 import (
 	"encoding/base64"
 	"encoding/json"
@@ -28,13 +28,13 @@ import (
 	"time"
 )
 
-// the default local registry implemented as a file system
+// LocalRegistry the default local registry implemented as a file system
 type LocalRegistry struct {
 	Repositories []*Repository `json:"repositories"`
 }
 
-func (r *LocalRegistry) api(domain string, noTLS bool) *Api {
-	return NewGenericAPI(domain, noTLS)
+func (r *LocalRegistry) api(domain string) *Api {
+	return NewGenericAPI(domain)
 }
 
 // create a localRepo management structure
@@ -291,9 +291,9 @@ func (r *LocalRegistry) ListQ() {
 	core.CheckErr(err, "failed to flush output")
 }
 
-func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS bool) {
+func (r *LocalRegistry) Push(name *core.PackageName, credentials string) {
 	// get a reference to the remote registry
-	api := r.api(name.Domain, noTLS)
+	api := r.api(name.Domain)
 	// get registry credentials
 	uname, pwd := core.UserPwd(credentials)
 	// fetch the package info from the local registry
@@ -302,9 +302,21 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS b
 		fmt.Printf("package %s not found in the local registry\n", name)
 		return
 	}
+	// assume tls enabled
+	tls := true
 	// check the status of the package in the remote registry
-	remoteArt, err := api.GetPackageInfo(name.Group, name.Name, localPackage.Id, uname, pwd)
-	core.CheckErr(err, "cannot retrieve remote package information")
+	remoteArt, err := api.GetPackageInfo(name.Group, name.Name, localPackage.Id, uname, pwd, tls)
+	if err != nil {
+		// try without tls
+		var err2 error
+		remoteArt, err2 = api.GetPackageInfo(name.Group, name.Name, localPackage.Id, uname, pwd, false)
+		if err2 == nil {
+			tls = false
+			core.Msg("WARNING: remote registry does not use TLS - this is a security risk")
+		} else {
+			core.CheckErr(err, "cannot retrieve remote package information")
+		}
+	}
 	// if the package exists in the remote registry
 	if remoteArt != nil {
 		// check if the tag already exist in the remote repository
@@ -315,14 +327,14 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS b
 		} else {
 			// the metadata has to be updated to include the new tag
 			remoteArt.Tags = append(remoteArt.Tags, name.Tag)
-			err = api.UpdatePackageInfo(name, remoteArt, uname, pwd)
+			err = api.UpdatePackageInfo(name, remoteArt, uname, pwd, tls)
 			core.CheckErr(err, "cannot update remote package tags")
 			return
 		}
 	}
 	// if the package does not exist in the remote registry
 	// check if the tag has been applied to another package in the repository
-	repo, err := api.GetRepositoryInfo(name.Group, name.Name, uname, pwd)
+	repo, err := api.GetRepositoryInfo(name.Group, name.Name, uname, pwd, tls)
 	core.CheckErr(err, "cannot retrieve repository information from backend")
 	// if so
 	if a, ok := repo.GetTag(name.Tag); ok {
@@ -333,7 +345,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS b
 			// adds a default tag matching the package file reference
 			a.Tags = append(a.Tags, a.FileRef)
 			// updates the metadata in the remote repo
-			core.CheckErr(api.UpdatePackageInfo(name, a, uname, pwd), "cannot update package info")
+			core.CheckErr(api.UpdatePackageInfo(name, a, uname, pwd, tls), "cannot update package info")
 		}
 	}
 	zipfile := openFile(fmt.Sprintf("%s/%s.zip", r.Path(), localPackage.FileRef))
@@ -342,18 +354,33 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, noTLS b
 	pack := localPackage
 	pack.Tags = []string{name.Tag}
 	// execute the upload
-	err = api.UploadPackage(name, localPackage.FileRef, zipfile, jsonfile, pack, uname, pwd)
+	err = api.UploadPackage(name, localPackage.FileRef, zipfile, jsonfile, pack, uname, pwd, tls)
 	i18n.Err(err, i18n.ERR_CANT_PUSH_PACKAGE)
 }
 
-func (r *LocalRegistry) Pull(name *core.PackageName, credentials string, noTLS bool) *Package {
+func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Package {
 	// get a reference to the remote registry
-	api := r.api(name.Domain, noTLS)
+	api := r.api(name.Domain)
 	// get registry credentials
 	uname, pwd := core.UserPwd(credentials)
+	// assume tls enabled
+	tls := true
 	// get remote repository information
-	repo, err := api.GetRepositoryInfo(name.Group, name.Name, uname, pwd)
-	core.CheckErr(err, "cannot retrieve repository information from backend")
+	repo, err := api.GetRepositoryInfo(name.Group, name.Name, uname, pwd, tls)
+	if err != nil {
+		var err2 error
+		// attempt not to use tls
+		repo, err2 = api.GetRepositoryInfo(name.Group, name.Name, uname, pwd, false)
+		// if successful means remote endpoint in not tls enabled
+		if err2 == nil {
+			// switches tls off
+			tls = false
+			// issue warning
+			core.Msg("WARNING: remote registry does not use TLS - this is a security risk")
+		} else {
+			core.CheckErr(err, "cannot retrieve repository information from backend")
+		}
+	}
 	// find the package to pull in the remote repository
 	remoteArt, exists := repo.GetTag(name.Tag)
 	if !exists {
@@ -365,11 +392,11 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string, noTLS b
 	// if the local registry does not have the package then download it
 	if localPackage == nil {
 		// download package seal file from registry
-		sealFilename, err := api.Download(name.Group, name.Name, fmt.Sprintf("%s.json", remoteArt.FileRef), uname, pwd)
+		sealFilename, err := api.Download(name.Group, name.Name, fmt.Sprintf("%s.json", remoteArt.FileRef), uname, pwd, tls)
 		core.CheckErr(err, "failed to download package seal file")
 
 		// download package file from registry
-		artieFilename, err := api.Download(name.Group, name.Name, fmt.Sprintf("%s.zip", remoteArt.FileRef), uname, pwd)
+		artieFilename, err := api.Download(name.Group, name.Name, fmt.Sprintf("%s.zip", remoteArt.FileRef), uname, pwd, tls)
 		core.CheckErr(err, "failed to download package file")
 
 		// unmarshal the seal
@@ -420,7 +447,7 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 	// if not found locally
 	if artie == nil {
 		// pull it
-		artie = r.Pull(name, credentials, noTLS)
+		artie = r.Pull(name, credentials)
 	}
 	// get the path to the public key
 	if len(pubKeyPath) > 0 {

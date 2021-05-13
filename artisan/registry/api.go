@@ -1,3 +1,5 @@
+package registry
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package registry
-
 import (
 	"bufio"
 	"bytes"
@@ -28,18 +28,16 @@ import (
 	"time"
 )
 
-// Artie's HTTP Registry API
+// Api HTTP Registry API
 type Api struct {
-	https  bool
 	domain string
 	client *http.Client
 	tmp    string
 }
 
-func NewGenericAPI(domain string, noTLS bool) *Api {
+func NewGenericAPI(domain string) *Api {
 	core.TmpExists()
 	return &Api{
-		https:  !noTLS,
 		domain: domain,
 		tmp:    core.TmpPath(),
 		client: &http.Client{
@@ -53,7 +51,7 @@ func NewGenericAPI(domain string, noTLS bool) *Api {
 	}
 }
 
-func (r *Api) UploadPackage(name *core.PackageName, packageRef string, zipfile multipart.File, jsonFile multipart.File, metaInfo *Package, user string, pwd string) error {
+func (r *Api) UploadPackage(name *core.PackageName, packageRef string, zipfile multipart.File, jsonFile multipart.File, metaInfo *Package, user string, pwd string, https bool) error {
 	// ensure files are properly closed
 	defer zipfile.Close()
 	defer jsonFile.Close()
@@ -78,7 +76,7 @@ func (r *Api) UploadPackage(name *core.PackageName, packageRef string, zipfile m
 	// create proxy reader
 	reader := bar.NewProxyReader(&b)
 	// Now that you have a form, you can submit it to your handler.
-	req, err := http.NewRequest("POST", r.packageTagURI(name.Group, name.Name, name.Tag), reader)
+	req, err := http.NewRequest("POST", r.packageTagURI(name.Group, name.Name, name.Tag, https), reader)
 	core.CheckErr(err, "cannot create http request")
 	// Don't forget to set the content type, this will contain the boundary.
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -102,13 +100,13 @@ func (r *Api) UploadPackage(name *core.PackageName, packageRef string, zipfile m
 	return nil
 }
 
-func (r *Api) UpdatePackageInfo(name *core.PackageName, pack *Package, user string, pwd string) error {
+func (r *Api) UpdatePackageInfo(name *core.PackageName, pack *Package, user string, pwd string, https bool) error {
 	b, err := json.Marshal(pack)
 	if err != nil {
 		return err
 	}
 	body := bytes.NewReader([]byte(b))
-	req, err := http.NewRequest("PUT", r.packageIdURI(name.Group, name.Name, pack.Id), body)
+	req, err := http.NewRequest("PUT", r.packageIdURI(name.Group, name.Name, pack.Id, https), body)
 	if err != nil {
 		return err
 	}
@@ -126,9 +124,9 @@ func (r *Api) UpdatePackageInfo(name *core.PackageName, pack *Package, user stri
 	return nil
 }
 
-func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, error) {
+func (r *Api) GetRepositoryInfo(group, name, user, pwd string, https bool) (*Repository, error) {
 	// note: repoURI() escape the group
-	req, err := http.NewRequest("GET", r.repoURI(group, name), nil)
+	req, err := http.NewRequest("GET", r.repoURI(group, name, https), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -171,8 +169,8 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string) (*Repository, err
 	return repo, err
 }
 
-func (r *Api) GetPackageInfo(group, name, id, user, pwd string) (*Package, error) {
-	req, err := http.NewRequest("GET", r.packageIdURI(group, name, id), nil)
+func (r *Api) GetPackageInfo(group, name, id, user, pwd string, https bool) (*Package, error) {
+	req, err := http.NewRequest("GET", r.packageIdURI(group, name, id, https), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -206,8 +204,8 @@ func (r *Api) GetPackageInfo(group, name, id, user, pwd string) (*Package, error
 	return pack, err
 }
 
-func (r *Api) Download(group, name, filename, user, pwd string) (string, error) {
-	req, err := http.NewRequest("GET", r.fileURI(group, name, filename), nil)
+func (r *Api) Download(group, name, filename, user, pwd string, https bool) (string, error) {
+	req, err := http.NewRequest("GET", r.fileURI(group, name, filename, https), nil)
 	if err != nil {
 		return "", err
 	}
@@ -266,36 +264,36 @@ func (r *Api) Download(group, name, filename, user, pwd string) (string, error) 
 	return file.Name(), err
 }
 
-func (r *Api) repoURI(group, name string) string {
+func (r *Api) repoURI(group, name string, https bool) string {
 	scheme := "http"
-	if r.https {
+	if https {
 		scheme = fmt.Sprintf("%ss", scheme)
 	}
 	// {scheme}://{domain}/repository/{repository-group}/{repository-name}
 	return fmt.Sprintf("%s://%s/repository/%s/%s", scheme, r.domain, Escape(group), name)
 }
 
-func (r *Api) packageURI(group, name string) string {
+func (r *Api) packageURI(group, name string, https bool) string {
 	scheme := "http"
-	if r.https {
+	if https {
 		scheme = fmt.Sprintf("%ss", scheme)
 	}
 	// {scheme}://{domain}/package/{repository-group}/{repository-name}/{tag}
 	return fmt.Sprintf("%s://%s/package/%s/%s", scheme, r.domain, Escape(group), name)
 }
 
-func (r *Api) packageTagURI(group, name, tag string) string {
-	return fmt.Sprintf("%s/tag/%s", r.packageURI(group, name), tag)
+func (r *Api) packageTagURI(group, name, tag string, https bool) string {
+	return fmt.Sprintf("%s/tag/%s", r.packageURI(group, name, https), tag)
 }
 
-func (r *Api) packageIdURI(group, name, id string) string {
+func (r *Api) packageIdURI(group, name, id string, https bool) string {
 	// group escaped by packageURI()
-	return fmt.Sprintf("%s/id/%s", r.packageURI(group, name), id)
+	return fmt.Sprintf("%s/id/%s", r.packageURI(group, name, https), id)
 }
 
-func (r *Api) fileURI(group, name, filename string) string {
+func (r *Api) fileURI(group, name, filename string, https bool) string {
 	scheme := "http"
-	if r.https {
+	if https {
 		scheme = fmt.Sprintf("%ss", scheme)
 	}
 	return fmt.Sprintf("%s://%s/file/%s/%s/%s", scheme, r.domain, Escape(group), name, filename)
