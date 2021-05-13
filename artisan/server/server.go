@@ -41,10 +41,13 @@ func New(realm string) *Server {
 		realm: realm,
 	}
 }
-
-// Serve starts the server
-// addHandlers: a function which adds http handlers to the mux router
 func (s *Server) Serve(addHandlers func(*mux.Router)) {
+	s.ServeWithJobs(addHandlers, nil)
+}
+
+// ServeWithJobs starts the server with async jobs
+// addHandlers: a function which adds http handlers to the mux router
+func (s *Server) ServeWithJobs(addHandlers func(*mux.Router), addJobs func() error) {
 	// compute the time the server is called
 	s.start = time.Now()
 
@@ -70,6 +73,14 @@ func (s *Server) Serve(addHandlers func(*mux.Router)) {
 
 	// add the http handlers to the router
 	addHandlers(router)
+
+	// run jobs if there are any
+	if addJobs != nil {
+		err := addJobs()
+		if err != nil {
+			log.Printf(err.Error())
+		}
+	}
 
 	// starts the server
 	s.listen(router)
