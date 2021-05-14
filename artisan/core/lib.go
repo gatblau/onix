@@ -12,7 +12,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
@@ -200,8 +199,17 @@ func UserPwd(creds string) (user, pwd string) {
 		return "", ""
 	}
 	parts := strings.Split(creds, ":")
-	if len(parts) != 2 {
-		log.Fatal(errors.New("credentials in incorrect format, they should be USER:PWD"))
+	if len(parts) == 1 {
+		// tries to get password using interactive mode
+		prompt := &survey.Password{
+			Message: "what is the registry password? ",
+		}
+		var value string
+		HandleCtrlC(survey.AskOne(prompt, &value, survey.WithValidator(survey.Required)))
+		return parts[0], value
+	}
+	if len(parts) > 2 {
+		RaiseErr("incorrect format for credentials, it should be username[:password]")
 	}
 	return parts[0], parts[1]
 }
@@ -210,7 +218,7 @@ func FilenameWithoutExtension(fn string) string {
 	return strings.TrimSuffix(fn, path.Ext(fn))
 }
 
-// return a valid absolute path that exists
+// AbsPath return a valid absolute path that exists
 func AbsPath(filePath string) (string, error) {
 	var p = filePath
 	if !filepath.IsAbs(filePath) {
@@ -229,14 +237,13 @@ func AbsPath(filePath string) (string, error) {
 
 func HandleCtrlC(err error) {
 	if err == terminal.InterruptErr {
-		fmt.Println("\ncommand interrupted")
 		os.Exit(0)
 	} else if err != nil {
 		RaiseErr("run command failed in build.yaml: %s", err)
 	}
 }
 
-// merges environment variables in the arguments
+// MergeEnvironmentVars merges environment variables in the arguments
 // returns the merged command list and the updated environment variables map if interactive mode is used
 func MergeEnvironmentVars(args []string, env map[string]string, interactive bool) ([]string, map[string]string) {
 	var result = make([]string, len(args))
@@ -297,7 +304,7 @@ func HasShell(value string) (bool, string, string) {
 	return false, "", ""
 }
 
-// gets a random string of specified length
+// RandomString gets a random string of specified length
 func RandomString(n int) string {
 	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	rand.Seed(time.Now().UnixNano())
@@ -317,7 +324,7 @@ func ToAbsPath(flowPath string) string {
 	return flowPath
 }
 
-// encode strings to be used in tekton pipelines names
+// Encode strings to be used in tekton pipelines names
 func Encode(value string) string {
 	length := 30
 	value = strings.ToLower(value)
