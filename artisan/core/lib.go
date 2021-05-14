@@ -209,7 +209,7 @@ func UserPwd(creds string) (user, pwd string) {
 		return parts[0], value
 	}
 	if len(parts) > 2 {
-		RaiseErr("incorrect format for credentials, it should be username[:password]")
+		RaiseErr("incorrect credentials format, it should be username[:password]")
 	}
 	return parts[0], parts[1]
 }
