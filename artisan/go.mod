@@ -3,7 +3,7 @@ module github.com/gatblau/onix/artisan
 go 1.15
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.2.5
+	github.com/AlecAivazis/survey/v2 v2.2.12
 	github.com/cheggaaa/pb/v3 v3.0.6
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/go-git/go-git/v5 v5.2.0
