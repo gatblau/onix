@@ -11,6 +11,6 @@ require (
 	github.com/jackc/pgconn v1.8.1
 	github.com/jackc/pgtype v1.7.0
 	github.com/jackc/pgx/v4 v4.11.0
-	github.com/reugn/go-quartz v0.3.4 // indirect
+	github.com/reugn/go-quartz v0.3.4
 	github.com/swaggo/swag v1.7.0
 )

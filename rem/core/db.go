@@ -1,3 +1,5 @@
+package core
+
 /*
   Onix Config Manager - REMote Host Service
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package core
-
 import (
 	"bytes"
 	"context"
@@ -110,7 +110,7 @@ func (db *Db) error(err error) (bool, error) {
 }
 
 func (db *Db) RunCommand(scripts []string) (bytes.Buffer, error) {
-	// create a buffer to write execution output to be passed back to DbMan
+	// create a buffer to write execution output to be passed back to client
 	// use this instead of writing to stdout
 	log := bytes.Buffer{}
 	// acquires a database connection
