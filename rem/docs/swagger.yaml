@@ -1,5 +1,5 @@
 definitions:
-  core.Command:
+  core.Cmd:
     properties:
       function:
         type: string
@@ -26,6 +26,8 @@ definitions:
         type: integer
       hostname:
         type: string
+      key:
+        type: string
       machine_id:
         description: github.com/denisbrodbeck/machineid
         type: string
@@ -50,6 +52,22 @@ info:
   title: Onix Remote Host
   version: 0.0.4
 paths:
+  /:
+    get:
+      description: |-
+        Checks that Artie's HTTP server is listening on the required port.
+        Use a liveliness probe.
+        It does not guarantee the server is ready to accept calls.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Check that Artie's HTTP API is live
+      tags:
+      - General
   /cmd:
     get:
       description: get all command definitions
@@ -75,7 +93,7 @@ paths:
         name: command
         required: true
         schema:
-          $ref: '#/definitions/core.Command'
+          $ref: '#/definitions/core.Cmd'
       produces:
       - text/plain
       responses:
@@ -155,7 +173,7 @@ paths:
         name: command
         required: true
         schema:
-          $ref: '#/definitions/core.Command'
+          $ref: '#/definitions/core.Cmd'
       produces:
       - text/plain
       responses:
@@ -266,6 +284,40 @@ paths:
       summary: Ping
       tags:
       - Host
+  /region:
+    get:
+      description: get a list of regions where hosts are deployed
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Regions
+      tags:
+      - Region
+  /region/{region-key}/location:
+    get:
+      description: get a list of locations within a particular region
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Locations by Region
+      tags:
+      - Region
   /register:
     post:
       description: registers a new host and its technical details with the service

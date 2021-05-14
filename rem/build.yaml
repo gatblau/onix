@@ -29,7 +29,7 @@ functions:
   - name: swagen
     description: generates/refreshes the OpenAPI specifications for REM's HTTP API
     run:
-      - swag init -d ./ -g handlers.go
+      - swag init -d ./ -g handlers.go  --parseDependency core/types.go
 
   - name: build
     description: creates a Remote Host Service image
@@ -49,4 +49,8 @@ functions:
     run:
       - $(build)
       - $(publish)
+
+  - name: up
+    run:
+      - docker run --name rem -d -p 8080:8080 ${REPO_NAME}/${APP_NAME}
 ...

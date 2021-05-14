@@ -18,12 +18,19 @@ package main
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/gatblau/onix/artisan/server"
 	"github.com/gatblau/onix/rem/core"
 	_ "github.com/gatblau/onix/rem/docs"
 	"github.com/gorilla/mux"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"time"
 )
+
+var rem = core.NewReMan()
 
 // @Summary Ping
 // @Description submits a ping from a host to the control plane
@@ -48,6 +55,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
+	lastSeen, _ := time.Parse("2006-Jan-02 Monday 03:04:05", "2020-Jan-29 Wednesday 12:19:25")
 	hosts := []core.Host{
 		{
 			Name:      "HOST-001",
@@ -55,7 +63,7 @@ func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 			Region:    "UK-North-West",
 			Location:  "Manchester",
 			Connected: true,
-			Up:        true,
+			LastSeen:  lastSeen,
 		},
 		{
 			Name:      "HOST-002",
@@ -63,7 +71,7 @@ func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 			Region:    "UK-North-West",
 			Location:  "Manchester",
 			Connected: false,
-			Up:        false,
+			LastSeen:  lastSeen,
 		},
 		{
 			Name:      "HOST-003",
@@ -71,7 +79,7 @@ func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 			Region:    "UK-South-West",
 			Location:  "Devon",
 			Connected: false,
-			Up:        true,
+			LastSeen:  lastSeen,
 		},
 	}
 	server.Write(w, r, hosts)
@@ -87,6 +95,29 @@ func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func registerHandler(w http.ResponseWriter, r *http.Request) {
+	// get http body
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Error reading body: %v", err)
+		http.Error(w, "can't read body", http.StatusBadRequest)
+		return
+	}
+	// unmarshal body
+	reg := &core.Registration{}
+	err = json.Unmarshal(body, reg)
+	if err != nil {
+		log.Printf("Error unmarshalling body: %v", err)
+		http.Error(w, "can't unmarshal body", http.StatusBadRequest)
+		return
+	}
+	db := core.NewDb("localhost", "5432", "rem", "rem", "r3m")
+	_, err = db.RunQuery(fmt.Sprintf("select rem_beat('%s')", reg.Key))
+	if err != nil {
+		log.Printf("Error recording ping: %v", err)
+		http.Error(w, fmt.Sprintf("can't record ping: %s", err), http.StatusInternalServerError)
+		return
+	}
+	log.Printf("ping %s|%s recorded", reg.Key, reg.Hostname)
 }
 
 // @Summary Log Events
@@ -117,7 +148,7 @@ func geLogHandler(w http.ResponseWriter, r *http.Request) {
 // @Description creates a new or updates an existing command definition
 // @Tags Command
 // @Router /cmd [put]
-// @Param command body core.Command true "the command definition"
+// @Param command body core.Cmd true "the command definition"
 // @Accepts json
 // @Produce plain
 // @Failure 500 {string} there was an error in the server, check the server logs
@@ -152,7 +183,7 @@ func getAllCmdHandler(w http.ResponseWriter, r *http.Request) {
 // @Description create a new job for execution on one or more remote hosts
 // @Tags Job
 // @Router /job [post]
-// @Param command body core.Command true "the job definition"
+// @Param command body core.Cmd true "the job definition"
 // @Accepts json
 // @Produce plain
 // @Failure 500 {string} there was an error in the server, check the server logs
@@ -186,4 +217,121 @@ func getJobsHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary Submit a Vulnerability Scan Report
 // @Description submits a vulnerability report for a specific host
 func uploadVulnerabilityReportHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+// @Summary Get Regions
+// @Description get a list of regions where hosts are deployed
+// @Tags Region
+// @Router /region [get]
+// @Produce json
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getRegionsHandler(w http.ResponseWriter, r *http.Request) {
+	regions := []core.Region{
+		{
+			Key:  "NE",
+			Name: "North East",
+		},
+		{
+			Key:  "NW",
+			Name: "North West",
+		},
+		{
+			Key:  "NE",
+			Name: "North East",
+		},
+		{
+			Key:  "YH",
+			Name: "Yorkshire & The Humber",
+		},
+		{
+			Key:  "WM",
+			Name: "West Midlands",
+		},
+		{
+			Key:  "EM",
+			Name: "East Midlands",
+		},
+		{
+			Key:  "EE",
+			Name: "East of England",
+		},
+		{
+			Key:  "LO",
+			Name: "London",
+		},
+		{
+			Key:  "SE",
+			Name: "South East",
+		},
+		{
+			Key:  "SW",
+			Name: "South West",
+		},
+	}
+	server.Write(w, r, regions)
+}
+
+// @Summary Get Locations by Region
+// @Description get a list of locations within a particular region
+// @Tags Region
+// @Router /region/{region-key}/location [get]
+// @Produce json
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func geLocationsByRegionHandler(w http.ResponseWriter, r *http.Request) {
+	regions := []core.Location{
+		{
+			Key:       "CHE",
+			Name:      "Cheshire",
+			RegionKey: "NW",
+		},
+		{
+			Key:       "GM",
+			Name:      "Greater Manchester",
+			RegionKey: "NW",
+		},
+		{
+			Key:       "CU",
+			Name:      "Cumbria",
+			RegionKey: "NW",
+		},
+		{
+			Key:       "LANC",
+			Name:      "Lancashire",
+			RegionKey: "NW",
+		},
+		{
+			Key:       "MER",
+			Name:      "Merseyside",
+			RegionKey: "NW",
+		},
+		// london
+		{
+			Key:       "CITY",
+			Name:      "London City",
+			RegionKey: "LO",
+		},
+		{
+			Key:       "BX",
+			Name:      "Brixton",
+			RegionKey: "LO",
+		},
+		{
+			Key:       "CR",
+			Name:      "Croydon",
+			RegionKey: "LO",
+		},
+		{
+			Key:       "CA",
+			Name:      "Camden",
+			RegionKey: "LO",
+		},
+		{
+			Key:       "GRE",
+			Name:      "Greenwich",
+			RegionKey: "LO",
+		},
+	}
+	server.Write(w, r, regions)
 }

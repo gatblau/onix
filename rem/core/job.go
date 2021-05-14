@@ -1,3 +1,7 @@
+package core
+
+import "fmt"
+
 /*
   Onix Config Manager - REMote Host Service
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,17 +9,30 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package core
+
+func NewUpdateConnStatusJob() *UpdateConnStatusJob {
+	conf := NewConf()
+	return &UpdateConnStatusJob{
+		db:           NewDb(conf.getDbHost(), conf.getDbPort(), conf.getDbName(), conf.getDbUser(), conf.getDbPwd()),
+		pingInterval: conf.GetPingInterval(),
+	}
+}
 
 // UpdateConnStatusJob updates the connection status based on ping age
 type UpdateConnStatusJob struct {
+	db           *Db
+	pingInterval int
 }
 
 func (c *UpdateConnStatusJob) Execute() {
+	_, err := c.db.RunCommand([]string{fmt.Sprintf("select rem_record_conn_status('%d secs')", c.pingInterval)})
+	if err != nil {
+		fmt.Printf("ERROR: cannot check for disconnected events, %s\n", err)
+	}
 }
 
 func (c *UpdateConnStatusJob) Description() string {
-	return "updates the connection status based on ping age"
+	return "updates the disconnected status of hosts based on last seen time"
 }
 
 func (c *UpdateConnStatusJob) Key() int {

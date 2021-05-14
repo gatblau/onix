@@ -1,6 +1,10 @@
 package core
 
-import "time"
+import (
+	"bytes"
+	"encoding/json"
+	"time"
+)
 
 /*
   Onix Config Manager - REMote Host Service
@@ -20,16 +24,17 @@ type Cmd struct {
 
 // Host  host monitoring information
 type Host struct {
-	Name      string `json:"name"`
-	Customer  string `json:"customer"`
-	Region    string `json:"region"`
-	Location  string `json:"location"`
-	Connected bool   `json:"connected"`
-	Up        bool   `json:"up"`
+	Name      string    `json:"name"`
+	Customer  string    `json:"customer"`
+	Region    string    `json:"region"`
+	Location  string    `json:"location"`
+	Connected bool      `json:"connected"`
+	LastSeen  time.Time `json:"last_seen"`
 }
 
 // Registration information for host registration
 type Registration struct {
+	Key      string `json:"key"`
 	Hostname string `json:"hostname"`
 	// github.com/denisbrodbeck/machineid
 	MachineId   string  `json:"machine_id"`
@@ -38,6 +43,21 @@ type Registration struct {
 	Virtual     bool    `json:"virtual"`
 	TotalMemory float64 `json:"total_memory"`
 	CPUs        int     `json:"cpus"`
+}
+
+// Reader Get a JSON bytes reader for the Serializable
+func (r *Registration) Reader() (*bytes.Reader, error) {
+	jsonBytes, err := r.Bytes()
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(*jsonBytes), err
+}
+
+// Bytes Get a []byte representing the Serializable
+func (r *Registration) Bytes() (*[]byte, error) {
+	b, err := ToJson(r)
+	return &b, err
 }
 
 // Event host events
@@ -57,4 +77,26 @@ type Job struct {
 	Created   string   `json:"created,omitempty"`
 	Started   string   `json:"started,omitempty"`
 	Completed string   `json:"completed,omitempty"`
+}
+
+// ToJson convert the passed-in object to a JSON byte slice
+// NOTE: json.Marshal is purposely not used as it will escape any < > characters
+func ToJson(object interface{}) ([]byte, error) {
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	// switch off the escaping!
+	encoder.SetEscapeHTML(false)
+	err := encoder.Encode(object)
+	return buffer.Bytes(), err
+}
+
+type Region struct {
+	Key  string `json:"key"`
+	Name string `json:"name"`
+}
+
+type Location struct {
+	Key       string `json:"key"`
+	Name      string `json:"name"`
+	RegionKey string `json:"region_key"`
 }

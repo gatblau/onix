@@ -32,6 +32,26 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/": {
+            "get": {
+                "description": "Checks that Artie's HTTP server is listening on the required port.\nUse a liveliness probe.\nIt does not guarantee the server is ready to accept calls.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "Check that Artie's HTTP API is live",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/cmd": {
             "get": {
                 "description": "get all command definitions",
@@ -73,7 +93,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core.Command"
+                            "$ref": "#/definitions/core.Cmd"
                         }
                     }
                 ],
@@ -195,7 +215,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core.Command"
+                            "$ref": "#/definitions/core.Cmd"
                         }
                     }
                 ],
@@ -360,6 +380,58 @@ var doc = `{
                 }
             }
         },
+        "/region": {
+            "get": {
+                "description": "get a list of regions where hosts are deployed",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Region"
+                ],
+                "summary": "Get Regions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/region/{region-key}/location": {
+            "get": {
+                "description": "get a list of locations within a particular region",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Region"
+                ],
+                "summary": "Get Locations by Region",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/register": {
             "post": {
                 "description": "registers a new host and its technical details with the service",
@@ -399,7 +471,7 @@ var doc = `{
         }
     },
     "definitions": {
-        "core.Command": {
+        "core.Cmd": {
             "type": "object",
             "properties": {
                 "function": {
@@ -438,6 +510,9 @@ var doc = `{
                     "type": "integer"
                 },
                 "hostname": {
+                    "type": "string"
+                },
+                "key": {
                     "type": "string"
                 },
                 "machine_id": {
