@@ -9,8 +9,6 @@ env:
   CGO_ENABLED: 0
   GOARCH: amd64
   REPO_NAME: quay.io/gatblau
-  APP_VERSION: 0.0.4
-  LIFECYCLE_STAGE: alpha
   ART_RUNNER: artisan-runner
 
 profiles:

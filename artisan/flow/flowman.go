@@ -186,8 +186,8 @@ func (m *Manager) SaveJSON() error {
 	return nil
 }
 
-// merge and send a flow to a runner
-func (m *Manager) Run(runnerName, creds string, interactive, noTLS bool) error {
+// Run merge and send a flow to a runner
+func (m *Manager) Run(runnerName, creds string, interactive bool) error {
 	err := m.Merge(interactive)
 	if err != nil {
 		return err
@@ -197,18 +197,20 @@ func (m *Manager) Run(runnerName, creds string, interactive, noTLS bool) error {
 		return err
 	}
 	token := core.BasicToken(core.UserPwd(creds))
-	var scheme = "https"
-	if noTLS {
-		scheme = "http"
-	}
-	requestURI := fmt.Sprintf("%s://%s/flow", scheme, runnerName)
-	request, err := http.NewRequest("POST", requestURI, bytes.NewReader(body))
+	// assume tls enabled
+	response, err := m.postFlow(runnerName, err, true, body, token)
 	if err != nil {
-		return err
+		// try without using tls
+		var err2 error
+		response, err2 = m.postFlow(runnerName, err, false, body, token)
+		// if succeeded warn the registry is not secured
+		if err2 == nil {
+			core.Msg("WARNING: remote registry does not use TLS - this is a security risk")
+		} else {
+			// if failed not using tls then return the original error
+			return err
+		}
 	}
-	request.Header.Add("Content-Type", "application/json")
-	request.Header.Add("Authorization", token)
-	response, err := http.DefaultClient.Do(request)
 	if response.StatusCode > 300 {
 		bodyBytes, _ := ioutil.ReadAll(response.Body)
 		return fmt.Errorf("%s, %s", response.Status, string(bodyBytes))
@@ -216,6 +218,29 @@ func (m *Manager) Run(runnerName, creds string, interactive, noTLS bool) error {
 	// copy the response body to the stdout
 	_, err = io.Copy(os.Stdout, response.Body)
 	return err
+}
+
+func (m *Manager) postFlow(runnerName string, err error, tls bool, body []byte, token string) (*http.Response, error) {
+	request, err := http.NewRequest("POST", m.flowURI(runnerName, tls), bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("Authorization", token)
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+
+func (m *Manager) flowURI(runnerName string, https bool) string {
+	scheme := "http"
+	if https {
+		scheme = fmt.Sprintf("%ss", scheme)
+	}
+	// {scheme}://{runner-name}/flow
+	return fmt.Sprintf("%s://%s/flow", scheme, runnerName)
 }
 
 func (m *Manager) validate() error {
