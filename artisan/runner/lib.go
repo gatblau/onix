@@ -180,7 +180,8 @@ func toContainerArgs(imageName, dir, containerName string, env *core.Envar) []st
 	}
 	// add a bind mount for the artisan registry folder
 	result = append(result, "-v")
-	result = append(result, fmt.Sprintf("%s:%s", core.RegistryPath(), "/.artisan"))
+	// note: mind the location of the mount in the runtime must align with its user home!
+	result = append(result, fmt.Sprintf("%s:%s", core.RegistryPath(), "/home/runtime/.artisan"))
 	result = append(result, imageName)
 	return result
 }
