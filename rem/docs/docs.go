@@ -512,9 +512,6 @@ var doc = `{
                 "hostname": {
                     "type": "string"
                 },
-                "key": {
-                    "type": "string"
-                },
                 "machine_id": {
                     "description": "github.com/denisbrodbeck/machineid",
                     "type": "string"
