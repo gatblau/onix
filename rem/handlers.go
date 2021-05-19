@@ -27,10 +27,21 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
+	"os"
 )
 
-var rem = core.NewReMan()
+var (
+	rem *core.ReMan
+	err error
+)
+
+func init() {
+	rem, err = core.NewReMan()
+	if err != nil {
+		fmt.Printf("ERROR: fail to create remote manager: %s", err)
+		os.Exit(1)
+	}
+}
 
 // @Summary Ping
 // @Description submits a ping from a host to the control plane
@@ -42,9 +53,19 @@ var rem = core.NewReMan()
 // @Success 200 {string} OK
 func pingHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	_ = vars["host-key"]
-	var commands []core.Cmd
-	server.Write(w, r, commands)
+	host := vars["host-key"]
+	if len(host) == 0 {
+		log.Printf("invalid host value: '%v'", host)
+		http.Error(w, fmt.Sprintf("invalid host value: '%s'", host), http.StatusBadRequest)
+		return
+	}
+	err = rem.Beat(host)
+	if err != nil {
+		log.Printf("Error recording ping: %v", err)
+		http.Error(w, fmt.Sprintf("can't record ping: %s", err), http.StatusInternalServerError)
+		return
+	}
+	log.Printf("host '%s' ping\n", host)
 }
 
 // @Summary Get All Hosts
@@ -55,32 +76,38 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
-	lastSeen, _ := time.Parse("2006-Jan-02 Monday 03:04:05", "2020-Jan-29 Wednesday 12:19:25")
-	hosts := []core.Host{
-		{
-			Name:      "HOST-001",
-			Customer:  "CUST-01",
-			Region:    "UK-North-West",
-			Location:  "Manchester",
-			Connected: true,
-			LastSeen:  lastSeen,
-		},
-		{
-			Name:      "HOST-002",
-			Customer:  "CUST-01",
-			Region:    "UK-North-West",
-			Location:  "Manchester",
-			Connected: false,
-			LastSeen:  lastSeen,
-		},
-		{
-			Name:      "HOST-003",
-			Customer:  "CUST-01",
-			Region:    "UK-South-West",
-			Location:  "Devon",
-			Connected: false,
-			LastSeen:  lastSeen,
-		},
+	// lastSeen, _ := time.Parse("2006-Jan-02 Monday 03:04:05", "2020-Jan-29 Wednesday 12:19:25")
+	// hosts := []core.Host{
+	// 	{
+	// 		Name:      "HOST-001",
+	// 		Customer:  "CUST-01",
+	// 		Region:    "UK-North-West",
+	// 		Location:  "Manchester",
+	// 		Connected: true,
+	// 		LastSeen:  lastSeen,
+	// 	},
+	// 	{
+	// 		Name:      "HOST-002",
+	// 		Customer:  "CUST-01",
+	// 		Region:    "UK-North-West",
+	// 		Location:  "Manchester",
+	// 		Connected: false,
+	// 		LastSeen:  lastSeen,
+	// 	},
+	// 	{
+	// 		Name:      "HOST-003",
+	// 		Customer:  "CUST-01",
+	// 		Region:    "UK-South-West",
+	// 		Location:  "Devon",
+	// 		Connected: false,
+	// 		LastSeen:  lastSeen,
+	// 	},
+	// }
+	hosts, err := rem.GetHostStatus()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 	server.Write(w, r, hosts)
 }
@@ -110,14 +137,13 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "can't unmarshal body", http.StatusBadRequest)
 		return
 	}
-	db := core.NewDb("localhost", "5432", "rem", "rem", "r3m")
-	_, err = db.RunQuery(fmt.Sprintf("select rem_beat('%s')", reg.Key))
+	err = rem.Register(reg)
 	if err != nil {
 		log.Printf("Error recording ping: %v", err)
 		http.Error(w, fmt.Sprintf("can't record ping: %s", err), http.StatusInternalServerError)
 		return
 	}
-	log.Printf("ping %s|%s recorded", reg.Key, reg.Hostname)
+	log.Printf("host %s - %s registered", reg.Hostname, reg.MachineId)
 }
 
 // @Summary Log Events
