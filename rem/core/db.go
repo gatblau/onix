@@ -199,6 +199,8 @@ func (db *Db) RunQuery(query string) (*Table, error) {
 			} else if v, ok := value.(int32); ok {
 				n := strconv.Itoa(int(v))
 				row = append(row, n)
+			} else if v, ok := value.(bool); ok {
+				row = append(row, strconv.FormatBool(v))
 			} else {
 				valueType := reflect.TypeOf(value)
 				if valueType != nil {

@@ -24,12 +24,12 @@ type Cmd struct {
 
 // Host  host monitoring information
 type Host struct {
-	Name      string    `json:"name"`
-	Customer  string    `json:"customer"`
-	Region    string    `json:"region"`
-	Location  string    `json:"location"`
-	Connected bool      `json:"connected"`
-	LastSeen  time.Time `json:"last_seen"`
+	Name      string `json:"name"`
+	Customer  string `json:"customer"`
+	Region    string `json:"region"`
+	Location  string `json:"location"`
+	Connected bool   `json:"connected"`
+	LastSeen  string `json:"last_seen"`
 }
 
 // Registration information for host registration
