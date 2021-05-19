@@ -25,7 +25,7 @@ func NewReMan() *ReMan {
 
 func (r *ReMan) Register(registration *Registration) error {
 	db := NewDb("localhost", "5432", "rem", "rem", "r3m")
-	_, err := db.RunQuery(fmt.Sprintf("select rem_beat('%s')", registration.Key))
+	_, err := db.RunQuery(fmt.Sprintf("select rem_beat('%s')", registration.MachineId))
 	if err != nil {
 		return err
 	}
