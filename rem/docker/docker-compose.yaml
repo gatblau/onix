@@ -81,12 +81,20 @@ services:
       - OX_DBM_REPO_URI=${DBMAN_REM_REPO_URI}
     ports:
       - "8086:8085"
-#  rem:
-#    image: quay.io/gatblau/ox-rem
-#    depends_on:
-#      - oxdb
-#      - dbman_rem
-#    container_name: rem
-#    restart: always
-#    ports:
-#      - "8081:8080"
+  rem:
+    image: quay.io/gatblau/ox-rem
+    depends_on:
+      - oxdb
+      - dbman_rem
+      - onix
+    container_name: rem
+    restart: always
+    environment:
+      - OX_HTTP_PORT=8888
+      - OX_REM_DB_PWD=${REM_DB_PWD}
+      - OX_WAPI_URI=onix
+      - OX_WAPI_USER=${ONIX_HTTP_ADMIN_USER}
+      - OX_WAPI_PWD=${ONIX_HTTP_ADMIN_PWD}
+      - OX_WAPI_INSECURE_SKIP_VERIFY=true
+    ports:
+      - "8081:8080"
