@@ -34,7 +34,6 @@ type Host struct {
 
 // Registration information for host registration
 type Registration struct {
-	Key      string `json:"key"`
 	Hostname string `json:"hostname"`
 	// github.com/denisbrodbeck/machineid
 	MachineId   string  `json:"machine_id"`
