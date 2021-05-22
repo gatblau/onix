@@ -22,6 +22,12 @@ type Cmd struct {
 	Input    map[string]string `json:"input"`
 }
 
+// CmdRequest a command for execution with a job reference
+type CmdRequest struct {
+	cmd *Cmd
+	ref string
+}
+
 // Host  host monitoring information
 type Host struct {
 	Name      string `json:"name"`
