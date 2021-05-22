@@ -5,8 +5,11 @@ This section contains scripts to start up all required REM backend services:
 - PostgreSQL database server
 - Onix database
 - REM database
-- Onix Web API
-- REM Web API
+- Onix Web API Service
+- REM HTTP Service
+- DbMan instances for database provisioning
+
+![setup](rem_setup.png)
 
 ### Start services
 
