@@ -66,11 +66,11 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("host '%s' ping\n", host)
-	// return an empty job list for now
-	jobs := make([]core.Job, 0)
-	bytes, err := json.Marshal(jobs)
+	// return an empty command list for now
+	cmds := make([]core.Cmd, 0)
+	bytes, err := json.Marshal(cmds)
 	if err != nil {
-		fmt.Printf("error: cant marshal jobs: %s", err)
+		fmt.Printf("error: cant marshal commands: %s", err)
 	}
 	w.Write(bytes)
 }
