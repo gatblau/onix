@@ -66,6 +66,13 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("host '%s' ping\n", host)
+	// return an empty job list for now
+	jobs := make([]core.Job, 0)
+	bytes, err := json.Marshal(jobs)
+	if err != nil {
+		fmt.Printf("error: cant marshal jobs: %s", err)
+	}
+	w.Write(bytes)
 }
 
 // @Summary Get All Hosts
