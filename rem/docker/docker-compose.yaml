@@ -90,7 +90,9 @@ services:
     container_name: rem
     restart: always
     environment:
-      - OX_HTTP_PORT=8888
+      - OX_HTTP_UNAME=${REM_HTTP_USER}
+      - OX_HTTP_PWD=${REM_HTTP_PWD}
+      - OX_HTTP_PORT=${REM_HTTP_PORT}
       - OX_REM_DB_PWD=${REM_DB_PWD}
       - OX_WAPI_URI=onix
       - OX_WAPI_USER=${ONIX_HTTP_ADMIN_USER}
