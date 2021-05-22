@@ -31,5 +31,10 @@ $ sh down.sh
 | onix database | postgresql://onix:PWD@localhost:5432/onix |
 | rem database | postgresql://rem:PWD@localhost:5432/rem |
 | onix WAPI | http://localhost:8080 |
-| rem WAPI | http://localhost:8081 |
+| rem WAPI | http://localhost:8088 |
+
+### Configuration Variables
+
+Are held in the file [here](.env)
+
 
