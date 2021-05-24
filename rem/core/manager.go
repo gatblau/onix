@@ -42,23 +42,29 @@ func NewReMan() (*ReMan, error) {
 
 func (r *ReMan) Register(reg *Registration) error {
 	// registers the host with the cmdb
-	_, err := r.ox.PutItem(&oxc.Item{
+	result, err := r.ox.PutItem(&oxc.Item{
 		Key:         reg.MachineId,
 		Name:        reg.Hostname,
 		Description: "Pilot registered remote host",
 		Status:      0,
-		Type:        "",
+		Type:        "U_HOST", // universal model host
 		Tag:         nil,
 		Meta:        nil,
 		Txt:         "",
 		Attribute: map[string]interface{}{
-			"CPU":          reg.CPUs,
-			"OS":           reg.OS,
-			"Total-Memory": reg.TotalMemory,
-			"Platform":     reg.Platform,
-			"Virtual":      reg.Virtual,
+			"CPU":      reg.CPUs,
+			"OS":       reg.OS,
+			"MEMORY":   reg.TotalMemory,
+			"PLATFORM": reg.Platform,
+			"VIRTUAL":  reg.Virtual,
 		},
 	})
+	// business error?
+	if result.Error {
+		// return it
+		return fmt.Errorf(result.Message)
+	}
+	// otherwise return technical error or nil if successful
 	return err
 }
 
