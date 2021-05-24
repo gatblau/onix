@@ -5,27 +5,19 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package host
+package core
 
-import "hash/fnv"
-
-// SubmitJob submits
-type SubmitJob struct {
+// PingJob pings the remote service periodically
+type PingJob struct {
 }
 
-func (c *SubmitJob) Execute() {
+func (c *PingJob) Execute() {
 }
 
-func (c *SubmitJob) Description() string {
-	return "submits a payload to the remote  service"
+func (c *PingJob) Description() string {
+	return "pings the remote service"
 }
 
-func (c *SubmitJob) Key() int {
+func (c *PingJob) Key() int {
 	return hashCode(c.Description())
-}
-
-func hashCode(s string) int {
-	h := fnv.New32a()
-	_, _ = h.Write([]byte(s))
-	return int(h.Sum32())
 }

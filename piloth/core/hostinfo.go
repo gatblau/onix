@@ -1,3 +1,5 @@
+package core
+
 /*
   Onix Config Manager - Pilot
   Copyright (c) 2018-2020 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package host
-
 import (
 	"encoding/json"
 	"github.com/shirou/gopsutil/cpu"
