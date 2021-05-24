@@ -81,22 +81,23 @@ services:
       - OX_DBM_REPO_URI=${DBMAN_REM_REPO_URI}
     ports:
       - "8086:8085"
-  rem:
-    image: quay.io/gatblau/ox-rem
-    depends_on:
-      - oxdb
-      - dbman_rem
-      - onix
-    container_name: rem
-    restart: always
-    environment:
-      - OX_HTTP_UNAME=${REM_HTTP_USER}
-      - OX_HTTP_PWD=${REM_HTTP_PWD}
-      - OX_HTTP_PORT=${REM_HTTP_PORT}
-      - OX_REM_DB_PWD=${REM_DB_PWD}
-      - OX_WAPI_URI=onix
-      - OX_WAPI_USER=${ONIX_HTTP_ADMIN_USER}
-      - OX_WAPI_PWD=${ONIX_HTTP_ADMIN_PWD}
-      - OX_WAPI_INSECURE_SKIP_VERIFY=true
-    ports:
-      - "8081:8080"
+#  rem:
+#    image: quay.io/gatblau/ox-rem
+#    depends_on:
+#      - oxdb
+#      - dbman_rem
+#      - onix
+#    container_name: rem
+#    restart: always
+#    environment:
+#      - OX_HTTP_UNAME=${REM_HTTP_USER}
+#      - OX_HTTP_PWD=${REM_HTTP_PWD}
+#      - OX_HTTP_PORT=${REM_HTTP_PORT}
+#      - OX_REM_DB_HOST=oxdb
+#      - OX_REM_DB_PWD=${REM_DB_PWD}
+#      - OX_WAPI_URI=${WAPI_URI}
+#      - OX_WAPI_USER=${ONIX_HTTP_ADMIN_USER}
+#      - OX_WAPI_PWD=${ONIX_HTTP_ADMIN_PWD}
+#      - OX_WAPI_INSECURE_SKIP_VERIFY=true
+#    ports:
+#      - "8888:8888"
