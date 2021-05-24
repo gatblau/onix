@@ -1,0 +1,33 @@
+---
+env:
+  APP_VERSION: 0.0.4
+
+labels:
+  author: gatblau
+  application: Onix Host Pilot
+  description: configuration management agent for server hosts
+  architecture: amd64
+
+functions:
+  - name: set-version
+    description: set-version on the parent build, updating global version
+    run:
+      - sh version.sh ${APP_VERSION}-${ARTISAN_REF}
+
+  - name: build
+    description: builds the host pilot binary for the linux platform
+    env:
+      GOOS: linux
+    run:
+      - $(set-version)
+      - go build -o bin/pilot -v
+
+profiles:
+  - name: linux
+    default: true
+    type: content/binary
+    license: Apache Version 2
+    run:
+      - $(build)
+    target: bin/pilot
+...
