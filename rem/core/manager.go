@@ -113,7 +113,7 @@ func (r *ReMan) GetAdmissions() ([]Admission, error) {
 		admissions = append(admissions, Admission{
 			Key:    row[0],
 			Active: active,
-			Tag:    nil,
+			Tag:    row[2],
 		})
 	}
 	return admissions, nil

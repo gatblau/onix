@@ -28,6 +28,7 @@ func main() {
 		router.HandleFunc("/cmd/{id}", getCmdHandler).Methods("GET")
 		router.HandleFunc("/region", getRegionsHandler).Methods("GET")
 		router.HandleFunc("/region/{region-key}/location", geLocationsByRegionHandler).Methods("GET")
+		router.HandleFunc("/admission", getAdmissionsHandler).Methods("GET")
 	}, addJobs)
 }
 
