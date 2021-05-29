@@ -367,3 +367,20 @@ func geLocationsByRegionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	server.Write(w, r, regions)
 }
+
+// @Summary Get Host Admissions
+// @Description get a list of keys of the hosts admitted into service
+// @Tags Admission
+// @Router /admission/ [get]
+// @Produce json
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getAdmissionsHandler(w http.ResponseWriter, r *http.Request) {
+	admissions, err := rem.GetAdmissions()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	server.Write(w, r, admissions)
+}
