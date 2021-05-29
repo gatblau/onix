@@ -105,3 +105,9 @@ type Location struct {
 	Name      string `json:"name"`
 	RegionKey string `json:"region_key"`
 }
+
+type Admission struct {
+	Key    string   `json:"key"`
+	Active bool     `json:"active"`
+	Tag    []string `json:"tag"`
+}

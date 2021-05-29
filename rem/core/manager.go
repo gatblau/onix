@@ -98,3 +98,23 @@ func (r *ReMan) GetHostStatus() ([]Host, error) {
 	}
 	return hosts, nil
 }
+
+func (r *ReMan) GetAdmissions() ([]Admission, error) {
+	admissions := make([]Admission, 0)
+	result, err := r.db.RunQuery("select * from rem_get_admissions(NULL)")
+	if err != nil {
+		return nil, fmt.Errorf("cannot get host status '%s'", err)
+	}
+	for _, row := range result.Rows {
+		active, err2 := strconv.ParseBool(row[1])
+		if err2 != nil {
+			fmt.Printf("cannot parse 'active', value was '%s'", row[1])
+		}
+		admissions = append(admissions, Admission{
+			Key:    row[0],
+			Active: active,
+			Tag:    nil,
+		})
+	}
+	return admissions, nil
+}

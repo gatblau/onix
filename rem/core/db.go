@@ -201,6 +201,8 @@ func (db *Db) RunQuery(query string) (*Table, error) {
 				row = append(row, n)
 			} else if v, ok := value.(bool); ok {
 				row = append(row, strconv.FormatBool(v))
+			} else if v, ok := value.([]string); ok {
+				row = append(row, toCSV(v))
 			} else {
 				valueType := reflect.TypeOf(value)
 				if valueType != nil {
@@ -218,6 +220,17 @@ func (db *Db) RunQuery(query string) (*Table, error) {
 		Header: header,
 		Rows:   rows,
 	}, err
+}
+
+func toCSV(v []string) string {
+	str := bytes.Buffer{}
+	for i, s := range v {
+		str.WriteString(s)
+		if i < len(v) {
+			str.WriteString(",")
+		}
+	}
+	return str.String()
 }
 
 // converts microseconds into HH:mm:SS.ms
