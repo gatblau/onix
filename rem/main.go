@@ -24,11 +24,12 @@ func main() {
 		router.HandleFunc("/ping/{host-key}", pingHandler).Methods("POST")
 		router.HandleFunc("/host", hostQueryHandler).Methods("GET")
 		router.HandleFunc("/register", registerHandler).Methods("POST")
-		router.HandleFunc("/cmd", updateCmdHandler).Methods("POST")
+		router.HandleFunc("/cmd", updateCmdHandler).Methods("PUT")
 		router.HandleFunc("/cmd/{id}", getCmdHandler).Methods("GET")
 		router.HandleFunc("/region", getRegionsHandler).Methods("GET")
 		router.HandleFunc("/region/{region-key}/location", geLocationsByRegionHandler).Methods("GET")
 		router.HandleFunc("/admission", getAdmissionsHandler).Methods("GET")
+		router.HandleFunc("/admission", setAdmissionHandler).Methods("PUT")
 	}, addJobs)
 }
 

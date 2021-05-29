@@ -194,7 +194,7 @@ func (db *Db) RunQuery(query string) (*Table, error) {
 				// append the string representation of the value to the row slice
 				row = append(row, v.String())
 			} else if v, ok := value.(pgtype.Interval); ok {
-				t := db.toTime(v.Microseconds)
+				t := toTime(v.Microseconds)
 				row = append(row, t)
 			} else if v, ok := value.(int32); ok {
 				n := strconv.Itoa(int(v))
@@ -220,26 +220,6 @@ func (db *Db) RunQuery(query string) (*Table, error) {
 		Header: header,
 		Rows:   rows,
 	}, err
-}
-
-func toCSV(v pgtype.TextArray) string {
-	str := bytes.Buffer{}
-	for i, s := range v.Elements {
-		str.WriteString(s.String)
-		if i < len(v.Elements)-1 {
-			str.WriteString(",")
-		}
-	}
-	return str.String()
-}
-
-// converts microseconds into HH:mm:SS.ms
-func (db *Db) toTime(microseconds int64) string {
-	milliseconds := (microseconds / 1000) % 1000
-	seconds := (((microseconds / 1000) - milliseconds) / 1000) % 60
-	minutes := (((((microseconds / 1000) - milliseconds) / 1000) - seconds) / 60) % 60
-	hours := ((((((microseconds / 1000) - milliseconds) / 1000) - seconds) / 60) - minutes) / 60
-	return fmt.Sprintf("%02v:%02v:%02v.%03v", hours, minutes, seconds, milliseconds)
 }
 
 // Table generic table used as a serializable result set for queries
