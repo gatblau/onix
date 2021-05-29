@@ -1,4 +1,13 @@
 definitions:
+  core.Admission:
+    properties:
+      active:
+        type: boolean
+      key:
+        type: string
+      tag:
+        type: string
+    type: object
   core.Cmd:
     properties:
       function:
@@ -66,6 +75,31 @@ paths:
       summary: Check that Artie's HTTP API is live
       tags:
       - General
+  /admission:
+    put:
+      description: creates a new or updates an existing host admission by allowing
+        to specify active status and search tags
+      parameters:
+      - description: the admission to be set
+        in: body
+        name: command
+        required: true
+        schema:
+          $ref: '#/definitions/core.Admission'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create or Update a Host Admission
+      tags:
+      - Admission
   /admission/:
     get:
       description: get a list of keys of the hosts admitted into service

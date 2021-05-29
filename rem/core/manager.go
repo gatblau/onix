@@ -118,3 +118,9 @@ func (r *ReMan) GetAdmissions() ([]Admission, error) {
 	}
 	return admissions, nil
 }
+
+func (r *ReMan) SetAdmission(admission *Admission) error {
+	query := fmt.Sprintf("select rem_set_admission('%s', %s, '%s')", admission.Key, strconv.FormatBool(admission.Active), toTextArray(admission.Tag))
+	_, err := r.db.RunCommand([]string{query})
+	return err
+}

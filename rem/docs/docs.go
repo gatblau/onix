@@ -52,6 +52,43 @@ var doc = `{
                 }
             }
         },
+        "/admission": {
+            "put": {
+                "description": "creates a new or updates an existing host admission by allowing to specify active status and search tags",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Admission"
+                ],
+                "summary": "Create or Update a Host Admission",
+                "parameters": [
+                    {
+                        "description": "the admission to be set",
+                        "name": "command",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/core.Admission"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/admission/": {
             "get": {
                 "description": "get a list of keys of the hosts admitted into service",
@@ -497,6 +534,20 @@ var doc = `{
         }
     },
     "definitions": {
+        "core.Admission": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
+                }
+            }
+        },
         "core.Cmd": {
             "type": "object",
             "properties": {

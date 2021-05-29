@@ -384,3 +384,34 @@ func getAdmissionsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	server.Write(w, r, admissions)
 }
+
+// @Summary Create or Update a Host Admission
+// @Description creates a new or updates an existing host admission by allowing to specify active status and search tags
+// @Tags Admission
+// @Router /admission [put]
+// @Param command body core.Admission true "the admission to be set"
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func setAdmissionHandler(w http.ResponseWriter, r *http.Request) {
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	admission := new(core.Admission)
+	err = json.Unmarshal(bytes, admission)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = rem.SetAdmission(admission)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
