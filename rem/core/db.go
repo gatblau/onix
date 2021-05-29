@@ -201,7 +201,7 @@ func (db *Db) RunQuery(query string) (*Table, error) {
 				row = append(row, n)
 			} else if v, ok := value.(bool); ok {
 				row = append(row, strconv.FormatBool(v))
-			} else if v, ok := value.([]string); ok {
+			} else if v, ok := value.(pgtype.TextArray); ok {
 				row = append(row, toCSV(v))
 			} else {
 				valueType := reflect.TypeOf(value)
@@ -222,11 +222,11 @@ func (db *Db) RunQuery(query string) (*Table, error) {
 	}, err
 }
 
-func toCSV(v []string) string {
+func toCSV(v pgtype.TextArray) string {
 	str := bytes.Buffer{}
-	for i, s := range v {
-		str.WriteString(s)
-		if i < len(v) {
+	for i, s := range v.Elements {
+		str.WriteString(s.String)
+		if i < len(v.Elements)-1 {
 			str.WriteString(",")
 		}
 	}
