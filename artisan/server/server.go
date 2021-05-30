@@ -32,6 +32,10 @@ type Server struct {
 	conf *ServerConfig
 	// basic auth realm
 	realm string
+	// http function to register http handlers
+	Http func(*mux.Router)
+	// jobs function to register async jobs
+	Jobs func() error
 }
 
 func New(realm string) *Server {
@@ -41,13 +45,9 @@ func New(realm string) *Server {
 		realm: realm,
 	}
 }
-func (s *Server) Serve(addHandlers func(*mux.Router)) {
-	s.ServeWithJobs(addHandlers, nil)
-}
 
-// ServeWithJobs starts the server with async jobs
-// addHandlers: a function which adds http handlers to the mux router
-func (s *Server) ServeWithJobs(addHandlers func(*mux.Router), addJobs func() error) {
+// Serve starts the server
+func (s *Server) Serve() {
 	// compute the time the server is called
 	s.start = time.Now()
 
@@ -71,12 +71,18 @@ func (s *Server) ServeWithJobs(addHandlers func(*mux.Router), addJobs func() err
 		router.Handle("/metrics", promhttp.Handler()).Methods("GET")
 	}
 
-	// add the http handlers to the router
-	addHandlers(router)
+	// add the http handlers to the router if a registering function has been dclared
+	if s.Http != nil {
+		s.Http(router)
+	} else {
+		// warn that no handler has been provided
+		log.Printf("WARNING: no http handler has been registered, no application specific endpoints will be available\n" +
+			"have you forgotten to set the server Http function?\n")
+	}
 
 	// run jobs if there are any
-	if addJobs != nil {
-		err := addJobs()
+	if s.Jobs != nil {
+		err := s.Jobs()
 		if err != nil {
 			log.Printf(err.Error())
 		}

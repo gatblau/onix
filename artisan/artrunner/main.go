@@ -16,9 +16,10 @@ func main() {
 	// creates a generic http server
 	s := server.New("onix/artisan-runner")
 	// add handlers
-	s.Serve(func(router *mux.Router) {
+	s.Http = func(router *mux.Router) {
 		router.HandleFunc("/flow", runHandler).Methods("POST")
 		router.HandleFunc("/webhook/{namespace}/{flow-name}", webhookHandler).Methods("POST")
 		router.HandleFunc("/list", listHandler).Methods("GET")
-	})
+	}
+	s.Serve()
 }

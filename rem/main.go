@@ -20,7 +20,7 @@ func main() {
 	// creates a generic http server
 	s := server.New("onix/rem")
 	// add handlers
-	s.ServeWithJobs(func(router *mux.Router) {
+	s.Http = func(router *mux.Router) {
 		router.HandleFunc("/ping/{host-key}", pingHandler).Methods("POST")
 		router.HandleFunc("/host", hostQueryHandler).Methods("GET")
 		router.HandleFunc("/register", registerHandler).Methods("POST")
@@ -30,23 +30,24 @@ func main() {
 		router.HandleFunc("/region/{region-key}/location", geLocationsByRegionHandler).Methods("GET")
 		router.HandleFunc("/admission", getAdmissionsHandler).Methods("GET")
 		router.HandleFunc("/admission", setAdmissionHandler).Methods("PUT")
-	}, addJobs)
-}
-
-// starts a job to record events if host connection status changes
-func addJobs() error {
-	conf := core.NewConf()
-	interval := time.Duration(conf.GetPingInterval())
-	// creates a job to check for changes in the base image
-	updateConnStatusJob := core.NewUpdateConnStatusJob()
-	// create a new scheduler
-	sched := quartz.NewStdScheduler()
-	// start the scheduler
-	sched.Start()
-	// schedule the job
-	err := sched.ScheduleJob(updateConnStatusJob, quartz.NewSimpleTrigger(time.Duration(interval*time.Second)))
-	if err != nil {
-		return fmt.Errorf("cannot schedule connection status update job: %s", err)
 	}
-	return nil
+	// add asynchronous jobs
+	// starts a job to record events if host connection status changes
+	s.Jobs = func() error {
+		conf := core.NewConf()
+		interval := time.Duration(conf.GetPingInterval())
+		// creates a job to check for changes in the base image
+		updateConnStatusJob := core.NewUpdateConnStatusJob()
+		// create a new scheduler
+		sched := quartz.NewStdScheduler()
+		// start the scheduler
+		sched.Start()
+		// schedule the job
+		err := sched.ScheduleJob(updateConnStatusJob, quartz.NewSimpleTrigger(time.Duration(interval*time.Second)))
+		if err != nil {
+			return fmt.Errorf("cannot schedule connection status update job: %s", err)
+		}
+		return nil
+	}
+	s.Serve()
 }
