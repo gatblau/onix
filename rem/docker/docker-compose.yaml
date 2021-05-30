@@ -13,7 +13,9 @@
 #    to be licensed under the same terms as the rest of the code.
 #
 version: '3'
+
 services:
+
   oxdb:
     image: postgres:13
     container_name: oxdb
@@ -22,6 +24,9 @@ services:
       - POSTGRES_PASSWORD=${PG_ADMIN_PWD}
     ports:
       - "5432:5432"
+    volumes:
+      - oxdb:/var/lib/postgresql/data
+  
   dbman_ox:
     image: quay.io/gatblau/dbman-snapshot
 #    depends_on:
@@ -101,3 +106,6 @@ services:
       - OX_WAPI_INSECURE_SKIP_VERIFY=true
     ports:
       - "8888:8888"
+
+volumes:
+  oxdb:

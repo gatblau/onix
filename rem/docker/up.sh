@@ -5,7 +5,7 @@
 # source .env file vars
 set -o allexport; source .env; set +o allexport
 # start all services
-docker compose up -d
+docker-compose up -d
 # setup the onix database
 curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1
 curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy 2>&1
@@ -18,5 +18,5 @@ do
   sleep 3
 done
 # stop dbman instances
-docker compose stop dbman_rem
-docker compose stop dbman_ox
+docker-compose stop dbman_rem
+docker-compose stop dbman_ox
