@@ -13,7 +13,7 @@ This section contains scripts to start up all required REM backend services:
 
 ### Start services
 
-In a host with docker and docker-compose installed:
+In a host with Docker and Docker Compose installed:
 
 ```bash
 $ sh up.sh
@@ -21,7 +21,7 @@ $ sh up.sh
 
 ### Stopping services
 
-In a host with docker and docker-compose installed:
+In a host with Docker and Docker Compose installed:
 
 ```bash
 $ sh down.sh
