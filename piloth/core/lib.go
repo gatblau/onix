@@ -8,10 +8,15 @@ package core
   to be licensed under the same terms as the rest of the code.
 */
 import (
+	"encoding/base64"
+	"fmt"
 	"log"
 	"os"
 	"os/user"
 	"path"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // HomeDir pilot's home directory
@@ -41,4 +46,41 @@ func SetRegistered() error {
 
 func regpath() string {
 	return path.Join(HomeDir(), ".pilot_reg")
+}
+
+// reverse the passed0in string
+func reverse(str string) (result string) {
+	for _, v := range str {
+		result = string(v) + result
+	}
+	return
+}
+
+func newToken(hostId string) string {
+	// create an authentication token as follows:
+	// 1. takes machine id & unix time
+	// 2. base 64 encode
+	// 3. reverse string
+	return reverse(
+		base64.StdEncoding.EncodeToString(
+			[]byte(fmt.Sprintf("%s|%d", hostId, time.Now().Unix()))))
+}
+
+func readToken(token string) (string, bool, error) {
+	// read token by:
+	// 1. reverse string
+	// 2. base 64 decode
+	// 3. break down into parts
+	value, err := base64.StdEncoding.DecodeString(reverse(token))
+	if err != nil {
+		return "", false, err
+	}
+	str := string(value)
+	parts := strings.Split(str, "|")
+	tokenTime, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return "", false, err
+	}
+	timeOk := (time.Now().Unix() - tokenTime) < (5 * 60)
+	return parts[0], timeOk, nil
 }
