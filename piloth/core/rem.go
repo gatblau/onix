@@ -13,6 +13,7 @@ import (
 	"fmt"
 	rem "github.com/gatblau/onix/rem/core"
 	"io/ioutil"
+	"net/http"
 )
 
 type Rem struct {
@@ -29,9 +30,9 @@ func NewRem() (*Rem, error) {
 	}
 	cfg := &ClientConf{
 		BaseURI:            conf.Get(PilotRemUri),
+		Username:           "_",
+		Password:           "_",
 		InsecureSkipVerify: false,
-		Username:           conf.Get(PilotRemUsername),
-		Password:           conf.Get(PilotRemPassword),
 		Timeout:            60,
 	}
 	c, err := NewClient(cfg)
@@ -59,7 +60,7 @@ func (r *Rem) Register() error {
 		CPUs:        i.CPUs,
 	}
 	uri := fmt.Sprintf("%s/register", r.cfg.BaseURI)
-	resp, err := r.client.Post(uri, reg, r.client.addHttpHeaders)
+	resp, err := r.client.Post(uri, reg, r.addToken)
 	if err != nil {
 		return err
 	}
@@ -76,19 +77,27 @@ func (r *Rem) Ping() ([]rem.CmdRequest, error) {
 		return nil, fmt.Errorf("can't ping if not registered")
 	}
 	uri := fmt.Sprintf("%s/ping/%s", r.cfg.BaseURI, r.host)
-	resp, err := r.client.Post(uri, nil, r.client.addHttpHeaders)
+	resp, err := r.client.Post(uri, nil, r.addToken)
 	if err != nil {
 		return nil, fmt.Errorf("cannot execute ping: %s", err)
 	}
 	if resp.StatusCode > 299 {
 		return nil, fmt.Errorf("the remote service error: %d - %s", resp.StatusCode, resp.Status)
 	}
-	// get the response body
+	// get the commands to execute from the response body
 	bytes, err := ioutil.ReadAll(resp.Body)
-	commands := make([]rem.CmdRequest, 0)
-	err = json.Unmarshal(bytes, commands)
+	var commands []rem.CmdRequest
+	err = json.Unmarshal(bytes, &commands)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read ping response: %s", err)
 	}
 	return commands, nil
+}
+
+func (r *Rem) addToken(req *http.Request, payload Serializable) error {
+	// add an authentication token to the request
+	req.Header.Set("Authorization", newToken(r.host))
+	// all content type should be in JSON format
+	req.Header.Set("Content-Type", "application/json")
+	return nil
 }

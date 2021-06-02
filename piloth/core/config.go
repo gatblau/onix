@@ -41,10 +41,6 @@ func (k ConfigKey) String() string {
 		return "PILOT_LOG_LEVEL"
 	case PilotRemUri:
 		return "PILOT_REM_URI"
-	case PilotRemUsername:
-		return "PILOT_REM_USERNAME"
-	case PilotRemPassword:
-		return "PILOT_REM_PASSWORD"
 	}
 	return ""
 }
@@ -52,8 +48,6 @@ func (k ConfigKey) String() string {
 const (
 	PilotLogLevel ConfigKey = iota
 	PilotRemUri
-	PilotRemUsername
-	PilotRemPassword
 )
 
 func (c *Config) Get(key ConfigKey) string {
