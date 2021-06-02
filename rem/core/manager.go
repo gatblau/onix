@@ -8,9 +8,12 @@ package core
   to be licensed under the same terms as the rest of the code.
 */
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/gatblau/oxc"
 	"strconv"
+	"strings"
+	"time"
 )
 
 // ReMan remote service manager API
@@ -123,4 +126,44 @@ func (r *ReMan) SetAdmission(admission *Admission) error {
 	query := fmt.Sprintf("select rem_set_admission('%s', %s, '%s')", admission.Key, strconv.FormatBool(admission.Active), toTextArray(admission.Tag))
 	_, err := r.db.RunCommand([]string{query})
 	return err
+}
+
+// Authenticate authenticate a pilot based on its time stamp and machine Id admission status
+func (r *ReMan) Authenticate(token string) bool {
+	value, err := base64.StdEncoding.DecodeString(reverse(token))
+	if err != nil {
+		fmt.Printf("error decoding authentication token: %s\naccess will be denied\n", err)
+		return false
+	}
+	str := string(value)
+	parts := strings.Split(str, "|")
+	tokenTime, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		fmt.Printf("error parsing authentication token: %s\naccess will be denied\n", err)
+		return false
+	}
+	timeOk := (time.Now().Unix() - tokenTime) < (5 * 60)
+	if !timeOk {
+		fmt.Printf("token expired, access will be denied\n")
+		return false
+	}
+	hostId := parts[0]
+	result, err := r.db.RunQuery(fmt.Sprintf("select rem_is_admitted('%s')", hostId))
+	if err != nil {
+		fmt.Printf("cannot query admission table: %s\naccess will be denied\n", err)
+		return false
+	}
+	admitted, err := strconv.ParseBool(result.Rows[0][0])
+	if err != nil {
+		fmt.Printf("cannot parse admission flag: %s\naccess will be denied\n", err)
+		return false
+	}
+	return admitted
+}
+
+func reverse(str string) (result string) {
+	for _, v := range str {
+		result = string(v) + result
+	}
+	return
 }

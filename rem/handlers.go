@@ -67,12 +67,13 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("host '%s' ping\n", host)
 	// return an empty command list for now
-	cmds := make([]core.CmdRequest, 0)
+	var cmds []core.CmdRequest
 	bytes, err := json.Marshal(cmds)
 	if err != nil {
 		fmt.Printf("error: cant marshal commands: %s", err)
 	}
 	w.Write(bytes)
+	w.WriteHeader(http.StatusCreated)
 }
 
 // @Summary Get All Hosts
@@ -150,6 +151,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("host %s - %s registered", reg.Hostname, reg.MachineId)
+	w.WriteHeader(http.StatusCreated)
 }
 
 // @Summary Log Events

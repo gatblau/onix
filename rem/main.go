@@ -49,5 +49,14 @@ func main() {
 		}
 		return nil
 	}
+	// set up specific authentication for host pilot agents
+	s.Auth = map[string]func(string) bool{
+		"/register": pilotAuth,
+		"/ping/.*":  pilotAuth,
+	}
 	s.Serve()
+}
+
+var pilotAuth = func(token string) bool {
+	return rem.Authenticate(token)
 }
