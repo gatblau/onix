@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"time"
 )
 
@@ -29,20 +30,31 @@ type Server struct {
 	// the start time of the server
 	start time.Time
 	// the server configuration
-	conf *ServerConfig
+	Conf *ServerConfig
 	// basic auth realm
 	realm string
 	// http function to register http handlers
 	Http func(*mux.Router)
 	// jobs function to register async jobs
 	Jobs func() error
+	// map of authentication handlers
+	Auth map[string]func(string) bool
+	// default authentication function
+	DefaultAuth func(string) bool
 }
 
 func New(realm string) *Server {
+	conf := new(ServerConfig)
 	return &Server{
 		// the server configuration
-		conf:  new(ServerConfig),
+		Conf:  conf,
 		realm: realm,
+		// defines a default authentication function using Basic Authentication
+		// can be overridden to change the behaviour or made nil to have an unauthenticated service or endpoint
+		DefaultAuth: func(requestToken string) bool {
+			// authenticates if the http request token matches the configured basic authentication token
+			return requestToken == conf.BasicToken()
+		},
 	}
 }
 
@@ -59,13 +71,13 @@ func (s *Server) Serve() {
 	router.HandleFunc("/", s.liveHandler).Methods("GET")
 
 	// swagger configuration
-	if s.conf.SwaggerEnabled() {
+	if s.Conf.SwaggerEnabled() {
 		fmt.Printf("? OpenAPI available at /api\n")
 		router.PathPrefix("/api").Handler(httpSwagger.WrapHandler)
 	}
 
 	// Prometheus endpoint
-	if s.conf.MetricsEnabled() {
+	if s.Conf.MetricsEnabled() {
 		// prometheus metrics
 		fmt.Printf("? /metrics endpoint is enabled\n")
 		router.Handle("/metrics", promhttp.Handler()).Methods("GET")
@@ -110,7 +122,7 @@ func (s *Server) liveHandler(w http.ResponseWriter, _ *http.Request) {
 func (s *Server) listen(handler http.Handler) {
 	// creates an http server listening on the specified TCP port
 	server := &http.Server{
-		Addr:         fmt.Sprintf(":%s", s.conf.HttpPort()),
+		Addr:         fmt.Sprintf(":%s", s.Conf.HttpPort()),
 		WriteTimeout: 180 * time.Second,
 		ReadTimeout:  180 * time.Second,
 		IdleTimeout:  time.Second * 180,
@@ -122,7 +134,7 @@ func (s *Server) listen(handler http.Handler) {
 
 	// runs the server asynchronously
 	go func() {
-		fmt.Printf("server listening on :%s\n", s.conf.HttpPort())
+		fmt.Printf("server listening on :%s\n", s.Conf.HttpPort())
 		fmt.Printf("server started in %v\n", time.Since(s.start))
 		if err := server.ListenAndServe(); err != nil {
 			fmt.Printf("server stopping: %v\n", err)
@@ -166,19 +178,56 @@ func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 // determines if the request is authenticated
 func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") == "" {
-			// if no authorisation header is passed, then it prompts a client browser to authenticate
-			w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, s.realm))
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Printf("! unauthorised http request from: '%v'\n", r.RemoteAddr)
-		} else {
-			// authenticate the request
-			requiredToken := s.conf.BasicToken()
-			providedToken := r.Header.Get("Authorization")
-			// if the authentication fails
-			if providedToken != requiredToken {
+		// get the authentication token in the request
+		providedToken := r.Header.Get("Authorization")
+		// not authenticated yet
+		authenticated := false
+		// loop through specific authentication by URL path
+		for urlPattern, authenticate := range s.Auth {
+			// if the request URL match the authentication function pattern
+			matched, err := regexp.Match(urlPattern, []byte(r.URL.Path))
+			// regex error?
+			if err != nil {
 				// Write an error and stop the handler chain
-				http.Error(w, "Forbidden", http.StatusForbidden)
+				log.Printf("authentication function error: %s\n", err)
+				http.Error(w, "Authentication Error", http.StatusInternalServerError)
+			}
+			// if the regex matched the URL path
+			if matched {
+				// then try and authenticate using the specified function
+				// if authentication fails
+				if !authenticate(providedToken) {
+					// Write an error and stop the handler chain
+					http.Error(w, "Forbidden", http.StatusForbidden)
+					return
+				} else {
+					// authentication succeeded, set flag to true
+					authenticated = true
+					// exit loop
+					break
+				}
+			}
+		}
+		// if not authenticated by a custom handler then use default handler
+		if !authenticated {
+			// no specific authentication function matched the request URL, so tries
+			// the default authentication function if it has been defined
+			// if no function has been defined then do not authenticate the request
+			if s.DefaultAuth != nil {
+				// if no Authorization header is found
+				if r.Header.Get("Authorization") == "" {
+					// prompts a client to authenticate by setting WWW-Authenticate response header
+					w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, s.realm))
+					w.WriteHeader(http.StatusUnauthorized)
+					fmt.Printf("! unauthorised http request from: '%v'\n", r.RemoteAddr)
+				} else {
+					// authenticate the request using the default handler
+					if !s.DefaultAuth(providedToken) {
+						// if the authentication failed, write an error and stop the handler chain
+						http.Error(w, "Forbidden", http.StatusForbidden)
+						return
+					}
+				}
 			}
 		}
 		// Pass down the request to the next middleware (or final handler)
