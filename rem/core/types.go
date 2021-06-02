@@ -24,8 +24,8 @@ type Cmd struct {
 
 // CmdRequest a command for execution with a job reference
 type CmdRequest struct {
-	cmd *Cmd
-	ref string
+	Cmd Cmd    `json:"cmd"`
+	Ref string `json:"ref"`
 }
 
 // Host  host monitoring information
