@@ -30,12 +30,12 @@ type CmdRequest struct {
 
 // Host  host monitoring information
 type Host struct {
-	Name      string `json:"name"`
+	Id        string `json:"id"`
 	Customer  string `json:"customer"`
 	Region    string `json:"region"`
 	Location  string `json:"location"`
 	Connected bool   `json:"connected"`
-	LastSeen  string `json:"last_seen"`
+	Since     string `json:"since"`
 }
 
 // Registration information for host registration

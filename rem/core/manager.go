@@ -92,12 +92,12 @@ func (r *ReMan) GetHostStatus() ([]Host, error) {
 			fmt.Printf("cannot parse 'connected', value was '%s'", row[1])
 		}
 		hosts = append(hosts, Host{
-			Name:      row[0],
+			Id:        row[0],
 			Customer:  "-",
 			Region:    "-",
 			Location:  "-",
 			Connected: conn,
-			LastSeen:  row[2],
+			Since:     row[2],
 		})
 	}
 	return hosts, nil
