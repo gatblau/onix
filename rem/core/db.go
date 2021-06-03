@@ -20,14 +20,20 @@ import (
 	"time"
 )
 
-func NewDb(host, port, db, uname, pwd string) *Db {
-	return &Db{
+func NewDb(host, port, db, uname, pwd string) (*Db, error) {
+	d := &Db{
 		db:    db,
 		host:  host,
 		uname: uname,
 		pwd:   pwd,
 		port:  port,
 	}
+	pool, err := newPool(connStr(uname, pwd, host, port, db))
+	if err != nil {
+		return nil, err
+	}
+	d.pool = pool
+	return d, nil
 }
 
 type Db struct {
@@ -36,6 +42,7 @@ type Db struct {
 	uname string
 	pwd   string
 	port  string
+	pool  *pgxpool.Pool
 }
 
 // this type carries either a connection or an error
@@ -45,17 +52,15 @@ type conn struct {
 	err  error
 }
 
-// create a new database connection
+// create a new database connection pool
 // if it cannot connect within 5 seconds, it returns an error
-func (db *Db) newConn() (*pgxpool.Pool, error) {
+func newPool(connStr string) (*pgxpool.Pool, error) {
 	// this channel receives an connection
 	connect := make(chan conn, 1)
 	// this channel receives a timeout flag
 	timeout := make(chan bool, 1)
 	// launch a go routine to try the database connection
 	go func() {
-		// gets the connection string to use
-		connStr := db.connString()
 		// connects to the database
 		c, e := pgxpool.Connect(context.Background(), connStr)
 		// sends connection through the channel
@@ -86,8 +91,8 @@ func (db *Db) newConn() (*pgxpool.Pool, error) {
 }
 
 // return the connection string
-func (db *Db) connString() string {
-	return fmt.Sprintf("postgresql://%v:%v@%v:%v/%v", db.uname, db.pwd, db.host, db.port, db.db)
+func connStr(uname, pwd, host, port, db string) string {
+	return fmt.Sprintf("postgresql://%v:%v@%v:%v/%v", uname, pwd, host, port, db)
 }
 
 // return an enhanced error
@@ -114,11 +119,13 @@ func (db *Db) RunCommand(scripts []string) (bytes.Buffer, error) {
 	// use this instead of writing to stdout
 	log := bytes.Buffer{}
 	// acquires a database connection
-	conn, err := db.newConn()
+	conn, err := db.pool.Acquire(context.Background())
 	// if cannot connect to the server return with the error
 	if err != nil {
 		return log, err
 	}
+	// release the connection
+	defer conn.Release()
 	// if the command is to be run within a database transaction
 	// acquires a db transaction
 	tx, err := conn.Begin(context.Background())
@@ -146,11 +153,9 @@ func (db *Db) RunCommand(scripts []string) (bytes.Buffer, error) {
 
 func (db *Db) RunQuery(query string) (*Table, error) {
 	// acquires a database connection
-	conn, err := db.newConn()
-	// if cannot connect to the server return with the error
-	if err != nil {
-		return nil, err
-	}
+	conn, err := db.pool.Acquire(context.Background())
+	// release the connection
+	defer conn.Release()
 	// execute the query content
 	result, err := conn.Query(context.Background(), query)
 	// if error then return it

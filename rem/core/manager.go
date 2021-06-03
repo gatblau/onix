@@ -26,7 +26,7 @@ type ReMan struct {
 
 func NewReMan() (*ReMan, error) {
 	cfg := NewConf()
-	db := NewDb(cfg.getDbHost(), cfg.getDbPort(), cfg.getDbName(), cfg.getDbUser(), cfg.getDbPwd())
+	db, err := NewDb(cfg.getDbHost(), cfg.getDbPort(), cfg.getDbName(), cfg.getDbUser(), cfg.getDbPwd())
 	oxcfg := &oxc.ClientConf{
 		BaseURI:            cfg.getOxWapiUrl(),
 		Username:           cfg.getOxWapiUsername(),
