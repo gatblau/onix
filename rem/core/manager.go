@@ -64,7 +64,7 @@ func (r *ReMan) Register(reg *Registration) error {
 		},
 	})
 	// business error?
-	if result.Error {
+	if result != nil && result.Error {
 		// return it
 		return fmt.Errorf(result.Message)
 	}
