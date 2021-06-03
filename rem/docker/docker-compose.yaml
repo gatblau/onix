@@ -12,6 +12,8 @@
 #    Contributors to this project, hereby assign copyright in this code to the project,
 #    to be licensed under the same terms as the rest of the code.
 #
+
+# NOTE: to make storage persistent uncomment the "volumes" sections below
 version: '3'
 
 services:
@@ -24,13 +26,11 @@ services:
       - POSTGRES_PASSWORD=${PG_ADMIN_PWD}
     ports:
       - "5432:5432"
-    volumes:
-      - oxdb:/var/lib/postgresql/data
+#    volumes:
+#      - oxdb:/var/lib/postgresql/data
   
   dbman_ox:
     image: quay.io/gatblau/dbman-snapshot
-#    depends_on:
-#      - oxdb
     container_name: dbman_ox
     restart: always
     environment:
@@ -107,5 +107,5 @@ services:
     ports:
       - "8888:8888"
 
-volumes:
-  oxdb:
+#volumes:
+#  oxdb:
