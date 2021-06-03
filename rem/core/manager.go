@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/gatblau/oxc"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -132,31 +133,35 @@ func (r *ReMan) SetAdmission(admission *Admission) error {
 func (r *ReMan) Authenticate(token string) bool {
 	value, err := base64.StdEncoding.DecodeString(reverse(token))
 	if err != nil {
-		fmt.Printf("error decoding authentication token: %s\naccess will be denied\n", err)
+		log.Printf("error decoding authentication token '%s': %s\n", token, err)
 		return false
 	}
 	str := string(value)
 	parts := strings.Split(str, "|")
 	tokenTime, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
-		fmt.Printf("error parsing authentication token: %s\naccess will be denied\n", err)
+		log.Printf("error parsing authentication token: %s\naccess will be denied\n", err)
 		return false
 	}
 	timeOk := (time.Now().Unix() - tokenTime) < (5 * 60)
+	hostId := parts[0]
 	if !timeOk {
-		fmt.Printf("token expired, access will be denied\n")
+		log.Printf("authentication failed for Machine Id='%s': token has expired\n", hostId)
 		return false
 	}
-	hostId := parts[0]
 	result, err := r.db.RunQuery(fmt.Sprintf("select rem_is_admitted('%s')", hostId))
 	if err != nil {
-		fmt.Printf("cannot query admission table: %s\naccess will be denied\n", err)
+		fmt.Printf("authentication failed for Machine Id='%s': cannot query admission table: %s\n", hostId, err)
 		return false
 	}
 	admitted, err := strconv.ParseBool(result.Rows[0][0])
 	if err != nil {
-		fmt.Printf("cannot parse admission flag: %s\naccess will be denied\n", err)
+		log.Printf("authentication failed for Machine Id='%s': cannot parse admission flag - %s\n", hostId, err)
 		return false
+	}
+	if !admitted {
+		// log an authentication error
+		log.Printf("authentication failed for Machine Id='%s', host has not been admitted to service\n", hostId)
 	}
 	return admitted
 }
