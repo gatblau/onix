@@ -13,8 +13,21 @@ import (
 	"github.com/gatblau/onix/rem/core"
 	"github.com/gorilla/mux"
 	"github.com/reugn/go-quartz/quartz"
+	"os"
 	"time"
 )
+
+var (
+	rem *core.ReMan
+)
+
+func init() {
+	rem, err = core.NewReMan()
+	if err != nil {
+		fmt.Printf("ERROR: fail to create remote manager: %s", err)
+		os.Exit(1)
+	}
+}
 
 func main() {
 	// creates a generic http server

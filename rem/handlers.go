@@ -31,7 +31,6 @@ import (
 )
 
 var (
-	rem *core.ReMan
 	err error
 )
 
