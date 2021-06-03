@@ -9,6 +9,7 @@ package core
 */
 import (
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -83,7 +84,7 @@ func (p *Pilot) ping() error {
 	for {
 		_, err := p.rem.Ping()
 		if err != nil {
-			fmt.Printf("ping failed: %s\n", err)
+			log.Printf("%s\n", err)
 		}
 		time.Sleep(15 * time.Second)
 	}

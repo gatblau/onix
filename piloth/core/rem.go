@@ -72,17 +72,17 @@ func (r *Rem) Register() error {
 
 // Ping send a ping to the remote server
 func (r *Rem) Ping() ([]rem.CmdRequest, error) {
-	// check teh host has been registered
+	// check the host has been registered
 	if len(r.host) == 0 {
 		return nil, fmt.Errorf("can't ping if not registered")
 	}
 	uri := fmt.Sprintf("%s/ping/%s", r.cfg.BaseURI, r.host)
 	resp, err := r.client.Post(uri, nil, r.addToken)
 	if err != nil {
-		return nil, fmt.Errorf("cannot execute ping: %s", err)
+		return nil, fmt.Errorf("ping failed ping: %s", err)
 	}
 	if resp.StatusCode > 299 {
-		return nil, fmt.Errorf("the remote service error: %d - %s", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("call to the remote service failed: %d - %s", resp.StatusCode, resp.Status)
 	}
 	// get the commands to execute from the response body
 	bytes, err := ioutil.ReadAll(resp.Body)
