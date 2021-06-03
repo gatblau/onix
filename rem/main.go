@@ -37,13 +37,16 @@ func main() {
 		conf := core.NewConf()
 		interval := time.Duration(conf.GetPingInterval())
 		// creates a job to check for changes in the base image
-		updateConnStatusJob := core.NewUpdateConnStatusJob()
+		updateConnStatusJob, err := core.NewUpdateConnStatusJob()
+		if err != nil {
+			return fmt.Errorf("cannot create connection status update job: %s", err)
+		}
 		// create a new scheduler
 		sched := quartz.NewStdScheduler()
 		// start the scheduler
 		sched.Start()
 		// schedule the job
-		err := sched.ScheduleJob(updateConnStatusJob, quartz.NewSimpleTrigger(time.Duration(interval*time.Second)))
+		err = sched.ScheduleJob(updateConnStatusJob, quartz.NewSimpleTrigger(time.Duration(interval*time.Second)))
 		if err != nil {
 			return fmt.Errorf("cannot schedule connection status update job: %s", err)
 		}

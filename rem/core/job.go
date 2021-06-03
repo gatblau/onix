@@ -10,12 +10,16 @@ import "fmt"
   to be licensed under the same terms as the rest of the code.
 */
 
-func NewUpdateConnStatusJob() *UpdateConnStatusJob {
+func NewUpdateConnStatusJob() (*UpdateConnStatusJob, error) {
 	conf := NewConf()
-	return &UpdateConnStatusJob{
-		db:           NewDb(conf.getDbHost(), conf.getDbPort(), conf.getDbName(), conf.getDbUser(), conf.getDbPwd()),
-		pingInterval: conf.GetPingInterval(),
+	db, err := NewDb(conf.getDbHost(), conf.getDbPort(), conf.getDbName(), conf.getDbUser(), conf.getDbPwd())
+	if err != nil {
+		return nil, err
 	}
+	return &UpdateConnStatusJob{
+		db:           db,
+		pingInterval: conf.GetPingInterval(),
+	}, nil
 }
 
 // UpdateConnStatusJob updates the connection status based on ping age
