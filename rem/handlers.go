@@ -372,7 +372,7 @@ func geLocationsByRegionHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary Get Host Admissions
 // @Description get a list of keys of the hosts admitted into service
 // @Tags Admission
-// @Router /admission/ [get]
+// @Router /admission [get]
 // @Produce json
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK

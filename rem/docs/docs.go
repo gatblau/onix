@@ -53,6 +53,30 @@ var doc = `{
             }
         },
         "/admission": {
+            "get": {
+                "description": "get a list of keys of the hosts admitted into service",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admission"
+                ],
+                "summary": "Get Host Admissions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "creates a new or updates an existing host admission by allowing to specify active status and search tags",
                 "produces": [
@@ -73,32 +97,6 @@ var doc = `{
                         }
                     }
                 ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/admission/": {
-            "get": {
-                "description": "get a list of keys of the hosts admitted into service",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admission"
-                ],
-                "summary": "Get Host Admissions",
                 "responses": {
                     "200": {
                         "description": "OK",
