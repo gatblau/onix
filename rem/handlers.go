@@ -55,25 +55,24 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	host := vars["host-key"]
 	if len(host) == 0 {
-		log.Printf("invalid host value: '%v'", host)
+		log.Printf("invalid host value: '%v'\n", host)
 		http.Error(w, fmt.Sprintf("invalid host value: '%s'", host), http.StatusBadRequest)
 		return
 	}
 	err = rem.Beat(host)
 	if err != nil {
-		log.Printf("Error recording ping: %v", err)
-		http.Error(w, fmt.Sprintf("can't record ping: %s", err), http.StatusInternalServerError)
+		log.Printf("can't record ping: %v\n", err)
+		http.Error(w, fmt.Sprintf("can't record ping: %s\n", err), http.StatusInternalServerError)
 		return
 	}
-	log.Printf("host '%s' ping\n", host)
 	// return an empty command list for now
 	var cmds []core.CmdRequest
 	bytes, err := json.Marshal(cmds)
 	if err != nil {
-		fmt.Printf("error: cant marshal commands: %s", err)
+		log.Printf("can't marshal commands: %s\n", err)
 	}
-	w.Write(bytes)
 	w.WriteHeader(http.StatusCreated)
+	w.Write(bytes)
 }
 
 // @Summary Get All Hosts
