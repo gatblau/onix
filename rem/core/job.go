@@ -10,26 +10,22 @@ import "fmt"
   to be licensed under the same terms as the rest of the code.
 */
 
-func NewUpdateConnStatusJob() (*UpdateConnStatusJob, error) {
+func NewUpdateConnStatusJob(rem *ReMan) (*UpdateConnStatusJob, error) {
 	conf := NewConf()
-	db, err := NewDb(conf.getDbHost(), conf.getDbPort(), conf.getDbName(), conf.getDbUser(), conf.getDbPwd())
-	if err != nil {
-		return nil, err
-	}
 	return &UpdateConnStatusJob{
-		db:           db,
+		rem:          rem,
 		pingInterval: conf.GetPingInterval(),
 	}, nil
 }
 
 // UpdateConnStatusJob updates the connection status based on ping age
 type UpdateConnStatusJob struct {
-	db           *Db
+	rem          *ReMan
 	pingInterval int
 }
 
 func (c *UpdateConnStatusJob) Execute() {
-	_, err := c.db.RunCommand([]string{fmt.Sprintf("select rem_record_conn_status('%d secs')", c.pingInterval)})
+	err := c.rem.RecordConnStatus(c.pingInterval)
 	if err != nil {
 		fmt.Printf("ERROR: cannot check for disconnected events, %s\n", err)
 	}

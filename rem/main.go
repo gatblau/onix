@@ -37,7 +37,7 @@ func main() {
 		conf := core.NewConf()
 		interval := time.Duration(conf.GetPingInterval())
 		// creates a job to check for changes in the base image
-		updateConnStatusJob, err := core.NewUpdateConnStatusJob()
+		updateConnStatusJob, err := core.NewUpdateConnStatusJob(rem)
 		if err != nil {
 			return fmt.Errorf("cannot create connection status update job: %s", err)
 		}

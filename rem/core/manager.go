@@ -166,6 +166,11 @@ func (r *ReMan) Authenticate(token string) bool {
 	return admitted
 }
 
+func (r *ReMan) RecordConnStatus(interval int) error {
+	_, err := r.db.RunCommand([]string{fmt.Sprintf("select rem_record_conn_status('%d secs')", interval)})
+	return err
+}
+
 func reverse(str string) (result string) {
 	for _, v := range str {
 		result = string(v) + result
