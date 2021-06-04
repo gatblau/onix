@@ -198,6 +198,27 @@ paths:
       summary: Push an package to the configured backend
       tags:
       - Packages
+  /repository:
+    get:
+      consumes:
+      - text/html
+      - ' application/json'
+      - ' application/yaml'
+      - ' application/xml'
+      - ' application/xhtml+xml'
+      description: gets meta data about packages in the specified repository
+      produces:
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Get information about all repositories in the package registry
+      tags:
+      - Repositories
   /repository/{repository-group}/{repository-name}:
     get:
       consumes:

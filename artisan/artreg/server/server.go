@@ -93,6 +93,9 @@ func (s *Server) Serve() {
 	// get repository information
 	router.HandleFunc("/repository/{repository-group}/{repository-name}", s.repositoryInfoHandler).Methods("GET")
 
+	// get information for all repositories
+	router.HandleFunc("/repository", s.repositoryAllInfoHandler).Methods("GET")
+
 	// files download
 	router.HandleFunc("/file/{repository-group}/{repository-name}/{filename}", s.fileDownloadHandler).Methods("GET")
 
@@ -319,6 +322,23 @@ func (s *Server) repositoryInfoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.write(w, r, repo)
+}
+
+// @Summary Get information about all repositories in the package registry
+// @Description gets meta data about packages in the specified repository
+// @Tags Repositories
+// @Accept text/html, application/json, application/yaml, application/xml, application/xhtml+xml
+// @Produce application/json, application/yaml, application/xml
+// @Success 200 {string} OK
+// @Router /repository [get]
+func (s *Server) repositoryAllInfoHandler(w http.ResponseWriter, r *http.Request) {
+	// retrieve repository metadata from the backend
+	repos, err := GetBackend().GetAllRepositoryInfo(s.conf.HttpUser(), s.conf.HttpPwd())
+	if err != nil {
+		s.writeError(w, err, 500)
+		return
+	}
+	s.write(w, r, repos)
 }
 
 // @Summary Get information about the specified package

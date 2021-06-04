@@ -17,7 +17,9 @@ import (
 type Backend interface {
 	// UploadPackage upload an package to the remote repository
 	UploadPackage(group, name, packageRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error
-	// GetRepositoryInfo get repository information
+	// GetAllRepositoryInfo get information for all repositories in the remote repository
+	GetAllRepositoryInfo(user, pwd string) ([]*registry.Repository, error)
+	// GetRepositoryInfo get information for a specific repository in the remote repository
 	GetRepositoryInfo(group, name, user, pwd string) (*registry.Repository, error)
 	// GetPackageInfo get package information
 	GetPackageInfo(group, name, id, user, pwd string) (*registry.Package, error)

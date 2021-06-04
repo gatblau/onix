@@ -241,6 +241,30 @@ func (r *Nexus3Backend) GetRepositoryInfo(group, name, user, pwd string) (*regis
 	return repo, err
 }
 
+func (r *Nexus3Backend) GetAllRepositoryInfo(user, pwd string) ([]*registry.Repository, error) {
+	assets, err := r.getAssets(user, pwd)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get list of assets in Nexus: %s", err)
+	}
+	infos := make([]*registry.Repository, 0)
+	// loop through the assets
+	for _, asset := range assets.Items {
+		// find repository descriptors
+		if strings.HasSuffix(asset.Path, "repository.json") {
+			// get the group
+			path := asset.Path[0 : len(asset.Path)-len("repository.json")-1]
+			group := path[:strings.LastIndex(path, "/")]
+			name := path[strings.LastIndex(path, "/")+1:]
+			repositoryInfo, err := r.GetRepositoryInfo(group, name, user, pwd)
+			if err != nil {
+				return nil, fmt.Errorf("cannot get information for repository %s: %s", asset.Path, err)
+			}
+			infos = append(infos, repositoryInfo)
+		}
+	}
+	return infos, nil
+}
+
 func (r *Nexus3Backend) GetPackageInfo(group, name, id, user, pwd string) (*registry.Package, error) {
 	repo, err := r.GetRepositoryInfo(group, name, user, pwd)
 	if err != nil {
@@ -281,6 +305,10 @@ func (r *Nexus3Backend) componentsURI() string {
 	return fmt.Sprintf("%s/service/rest/v1/components?repository=artisan", r.domain)
 }
 
+func (r *Nexus3Backend) assetsURI() string {
+	return fmt.Sprintf("%s/service/rest/v1/assets?repository=artisan", r.domain)
+}
+
 func (r *Nexus3Backend) fileDownloadURI(group, name, filename string) string {
 	return fmt.Sprintf("%s/repository/artisan/%s/%s/%s", r.domain, group, name, filename)
 }
@@ -308,9 +336,25 @@ func (r *Nexus3Backend) getFile(repoGroup, repoName, filename, user, pwd string)
 	return ioutil.ReadAll(resp.Body)
 }
 
-// get the content of a file from Nexus
+func (r *Nexus3Backend) getAssets(user, pwd string) (*assets, error) {
+	result, err := r.getMeta(user, pwd, r.assetsURI(), new(assets))
+	if err != nil {
+		return nil, err
+	}
+	return result.(*assets), nil
+}
+
 func (r *Nexus3Backend) getComponents(user, pwd string) (*components, error) {
-	req, err := http.NewRequest("GET", r.componentsURI(), nil)
+	result, err := r.getMeta(user, pwd, r.componentsURI(), new(components))
+	if err != nil {
+		return nil, err
+	}
+	return result.(*components), nil
+}
+
+// get metadata from Nexus
+func (r *Nexus3Backend) getMeta(user, pwd, uri string, result interface{}) (interface{}, error) {
+	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -332,9 +376,30 @@ func (r *Nexus3Backend) getComponents(user, pwd string) (*components, error) {
 	if !core.IsJSON(string(b)) {
 		return nil, fmt.Errorf("the response body was in an incorrect format, which suggests \nthe backend URI '%s' is not correct, \nor the server responsed with a bogus payload", r.domain)
 	}
-	comps := new(components)
-	err = json.Unmarshal(b, comps)
-	return comps, err
+	err = json.Unmarshal(b, result)
+	return result, err
+}
+
+// Nexus3 assets in a Repository
+type assets struct {
+	Items []struct {
+		Downloadurl string `json:"downloadUrl"`
+		Path        string `json:"path"`
+		ID          string `json:"id"`
+		Repository  string `json:"repository"`
+		Format      string `json:"format"`
+		Checksum    struct {
+			Sha1   string `json:"sha1"`
+			Sha512 string `json:"sha512"`
+			Sha256 string `json:"sha256"`
+			Md5    string `json:"md5"`
+		} `json:"checksum"`
+		Contenttype    string      `json:"contentType"`
+		Lastmodified   time.Time   `json:"lastModified"`
+		Blobcreated    time.Time   `json:"blobCreated"`
+		Lastdownloaded interface{} `json:"lastDownloaded"`
+	} `json:"items"`
+	Continuationtoken interface{} `json:"continuationToken"`
 }
 
 // Nexus3 components in a Repository
