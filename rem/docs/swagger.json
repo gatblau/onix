@@ -389,6 +389,32 @@
                 }
             }
         },
+        "/package": {
+            "get": {
+                "description": "get a list of packages in the backing Artisan registry",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Registry"
+                ],
+                "summary": "Get Artisan Packages",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/ping/{host-key}": {
             "post": {
                 "description": "submits a ping from a host to the control plane",

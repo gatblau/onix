@@ -9,6 +9,7 @@ package core
 */
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"github.com/jackc/pgtype"
 	"hash/fnv"
@@ -55,4 +56,8 @@ func toTextArray(tag string) string {
 	}
 	buf.WriteString("}")
 	return buf.String()
+}
+
+func basicAuthToken(user, pwd string) string {
+	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
 }

@@ -27,20 +27,11 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 )
 
 var (
 	err error
 )
-
-func init() {
-	rem, err = core.NewReMan()
-	if err != nil {
-		fmt.Printf("ERROR: fail to create remote manager: %s", err)
-		os.Exit(1)
-	}
-}
 
 // @Summary Ping
 // @Description submits a ping from a host to the control plane
@@ -415,4 +406,21 @@ func setAdmissionHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+// @Summary Get Artisan Packages
+// @Description get a list of packages in the backing Artisan registry
+// @Tags Registry
+// @Router /package [get]
+// @Produce json
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getPackagesHandler(w http.ResponseWriter, r *http.Request) {
+	packages, err := rem.GetPackages()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	server.Write(w, r, packages)
 }

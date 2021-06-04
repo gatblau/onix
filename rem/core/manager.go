@@ -9,7 +9,9 @@ package core
 */
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"github.com/gatblau/onix/artisan/registry"
 	"github.com/gatblau/oxc"
 	"log"
 	"strconv"
@@ -172,6 +174,33 @@ func (r *ReMan) Authenticate(token string) bool {
 func (r *ReMan) RecordConnStatus(interval int) error {
 	_, err := r.db.RunCommand([]string{fmt.Sprintf("select rem_record_conn_status('%d secs')", interval)})
 	return err
+}
+
+// GetPackages get a list of packages in the backing Artisan registry
+func (r *ReMan) GetPackages() ([]string, error) {
+	// the URI to connect to the Artisan registry
+	uri := fmt.Sprintf("%s/repository", r.conf.getArtRegUri())
+	bytes, err := makeRequest(uri, "GET", r.conf.getArtRegUser(), r.conf.getArtRegPwd(), nil)
+	if err != nil {
+		return nil, err
+	}
+	var repos []registry.Repository
+	err = json.Unmarshal(bytes, &repos)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, 0)
+	// removes protocol prefix from URI
+	regDomain := r.conf.getArtRegUri()[strings.Index(r.conf.getArtRegUri(), "//")+2:]
+	for _, repo := range repos {
+		for _, p := range repo.Packages {
+			for _, tag := range p.Tags {
+				// append constructed package name
+				result = append(result, fmt.Sprintf("%s/%s:%s", regDomain, repo.Repository, tag))
+			}
+		}
+	}
+	return result, nil
 }
 
 func reverse(str string) (result string) {
