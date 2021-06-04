@@ -19,7 +19,7 @@ import (
 type Rem struct {
 	client *Client
 	cfg    *ClientConf
-	host   string
+	host   *HostInfo
 }
 
 func NewRem() (*Rem, error) {
@@ -39,17 +39,17 @@ func NewRem() (*Rem, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Rem{client: c, cfg: cfg}, nil
+	i, err := NewHostInfo()
+	if err != nil {
+		return nil, err
+	}
+	return &Rem{client: c, cfg: cfg, host: i}, nil
 }
 
 // Register the host
 func (r *Rem) Register() error {
-	i, err := NewHostInfo()
-	if err != nil {
-		return err
-	}
+	i := r.host
 	// set the machine id
-	r.host = i.HostID
 	reg := &rem.Registration{
 		Hostname:    i.HostName,
 		MachineId:   i.HostID,
@@ -72,10 +72,6 @@ func (r *Rem) Register() error {
 
 // Ping send a ping to the remote server
 func (r *Rem) Ping() ([]rem.CmdRequest, error) {
-	// check the host has been registered
-	if len(r.host) == 0 {
-		return nil, fmt.Errorf("can't ping if not registered")
-	}
 	uri := fmt.Sprintf("%s/ping/%s", r.cfg.BaseURI, r.host)
 	resp, err := r.client.Post(uri, nil, r.addToken)
 	if err != nil {
@@ -95,8 +91,9 @@ func (r *Rem) Ping() ([]rem.CmdRequest, error) {
 }
 
 func (r *Rem) addToken(req *http.Request, payload Serializable) error {
+	payload = nil
 	// add an authentication token to the request
-	req.Header.Set("Authorization", newToken(r.host))
+	req.Header.Set("Authorization", newToken(r.host.HostID))
 	// all content type should be in JSON format
 	req.Header.Set("Content-Type", "application/json")
 	return nil
