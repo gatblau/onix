@@ -245,6 +245,35 @@
                 }
             }
         },
+        "/repository": {
+            "get": {
+                "description": "gets meta data about packages in the specified repository",
+                "consumes": [
+                    "text/html",
+                    " application/json",
+                    " application/yaml",
+                    " application/xml",
+                    " application/xhtml+xml"
+                ],
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Repositories"
+                ],
+                "summary": "Get information about all repositories in the package registry",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/repository/{repository-group}/{repository-name}": {
             "get": {
                 "description": "gets meta data about packages in the specified repository",

@@ -23,6 +23,10 @@ type FsBackend struct {
 	path string
 }
 
+func (r *FsBackend) GetAllRepositoryInfo(user, pwd string) ([]*registry.Repository, error) {
+	panic("implement me")
+}
+
 func (r *FsBackend) Name() string {
 	return "FILE_SYSTEM"
 }
