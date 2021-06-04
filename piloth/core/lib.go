@@ -30,8 +30,8 @@ func HomeDir() string {
 
 // IsRegistered is the host registered?
 func IsRegistered() bool {
-	_, err := os.Stat(regpath())
-	return os.IsExist(err)
+	fi, err := os.Stat(regpath())
+	return os.IsExist(err) || fi != nil
 }
 
 // SetRegistered set the host as registered

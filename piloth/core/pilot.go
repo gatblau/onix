@@ -45,19 +45,20 @@ func NewPilot() (*Pilot, error) {
 }
 
 func (p *Pilot) Start() {
+	// https://textkool.com/en/ascii-art-generator?hl=default&vl=default&font=Lean&text=ONIX%20HOST%20PILOT%0A
 	fmt.Println(`
-    _/_/_/    _/_/_/  _/          _/_/    _/_/_/_/_/   
-   _/    _/    _/    _/        _/    _/      _/        
-  _/_/_/      _/    _/        _/    _/      _/         
- _/          _/    _/        _/    _/      _/          
-_/        _/_/_/  _/_/_/_/    _/_/        _/`)
-	fmt.Printf("launching...\n")
+     _/_/    _/      _/  _/_/_/  _/      _/      _/    _/    _/_/      _/_/_/  _/_/_/_/_/      _/_/_/    _/_/_/  _/          _/_/    _/_/_/_/_/   
+  _/    _/  _/_/    _/    _/      _/  _/        _/    _/  _/    _/  _/            _/          _/    _/    _/    _/        _/    _/      _/        
+ _/    _/  _/  _/  _/    _/        _/          _/_/_/_/  _/    _/    _/_/        _/          _/_/_/      _/    _/        _/    _/      _/         
+_/    _/  _/    _/_/    _/      _/  _/        _/    _/  _/    _/        _/      _/          _/          _/    _/        _/    _/      _/          
+ _/_/    _/      _/  _/_/_/  _/      _/      _/    _/    _/_/    _/_/_/        _/          _/        _/_/_/  _/_/_/_/    _/_/        _/`)
+	log.Printf("launching...\n")
 	p.register()
 	p.ping()
 }
 
 // register the host, keep retrying indefinitely until a registration is successful
-func (p *Pilot) register() error {
+func (p *Pilot) register() {
 	// checks if the host is already registered
 	if !IsRegistered() {
 		fmt.Printf("host not registered, attempting registration\n")
@@ -66,21 +67,25 @@ func (p *Pilot) register() error {
 			err := p.rem.Register()
 			// if no error then exit the loop
 			if err == nil {
-				fmt.Printf("registration successful\n")
-				SetRegistered()
+				log.Printf("registration successful\n")
+				err = SetRegistered()
+				if err != nil {
+					log.Printf("failed to cache registration status: %s\n", err)
+				}
 				break
 			} else {
-				fmt.Printf("registration failed: %s\n", err)
+				log.Printf("registration failed: %s\n", err)
 			}
 			// otherwise waits for a period before retrying
 			time.Sleep(1 * time.Minute)
 		}
+	} else {
+		log.Printf("host is already registered\n")
 	}
-	return nil
 }
 
-func (p *Pilot) ping() error {
-	fmt.Printf("starting ping loop\n")
+func (p *Pilot) ping() {
+	log.Printf("starting ping loop\n")
 	for {
 		_, err := p.rem.Ping()
 		if err != nil {
@@ -88,5 +93,4 @@ func (p *Pilot) ping() error {
 		}
 		time.Sleep(15 * time.Second)
 	}
-	return nil
 }
