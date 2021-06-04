@@ -309,6 +309,23 @@ paths:
       summary: Get Events by Host
       tags:
       - Host
+  /package:
+    get:
+      description: get a list of packages in the backing Artisan registry
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Artisan Packages
+      tags:
+      - Registry
   /ping/{host-key}:
     post:
       description: submits a ping from a host to the control plane

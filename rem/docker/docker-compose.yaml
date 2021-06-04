@@ -99,11 +99,15 @@ services:
       - OX_HTTP_PWD=${REM_HTTP_PWD}
       - OX_HTTP_PORT=${REM_HTTP_PORT}
       - OX_REM_DB_HOST=oxdb
+      - OX_REM_DB_USER=${REM_DB_USER}
       - OX_REM_DB_PWD=${REM_DB_PWD}
       - OX_WAPI_URI=${WAPI_URI}
       - OX_WAPI_USER=${ONIX_HTTP_ADMIN_USER}
       - OX_WAPI_PWD=${ONIX_HTTP_ADMIN_PWD}
       - OX_WAPI_INSECURE_SKIP_VERIFY=true
+      - OX_ART_REG_URI=${REM_ART_REG_URI}
+      - OX_ART_REG_USER=${REM_ART_REG_USER}
+      - OX_ART_REG_PWD=${REM_ART_REG_PWD}
     ports:
       - "8888:8888"
 

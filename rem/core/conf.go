@@ -27,6 +27,9 @@ const (
 	ConfOxWapiUser               ConfKey = "OX_WAPI_USER"
 	ConfOxWapiPwd                ConfKey = "OX_WAPI_PWD"
 	ConfOxWapiInsecureSkipVerify ConfKey = "OX_WAPI_INSECURE_SKIP_VERIFY"
+	ConfArtRegURI                ConfKey = "OX_ART_REG_URI"
+	ConfArtRegUser               ConfKey = "OX_ART_REG_USER"
+	ConfArtRegPwd                ConfKey = "OX_ART_REG_PWD"
 )
 
 type Conf struct {
@@ -49,11 +52,7 @@ func (c *Conf) getDbName() string {
 }
 
 func (c *Conf) getDbHost() string {
-	value := os.Getenv(string(ConfDbHost))
-	if len(value) == 0 {
-		return "localhost"
-	}
-	return value
+	return c.getValue(ConfDbHost)
 }
 
 func (c *Conf) getDbPort() string {
@@ -65,19 +64,11 @@ func (c *Conf) getDbPort() string {
 }
 
 func (c *Conf) getDbUser() string {
-	value := os.Getenv(string(ConfDbUser))
-	if len(value) == 0 {
-		return "rem"
-	}
-	return value
+	return c.getValue(ConfDbUser)
 }
 
 func (c *Conf) getDbPwd() string {
-	value := os.Getenv(string(ConfDbPwd))
-	if len(value) == 0 {
-		return "r3m"
-	}
-	return value
+	return c.getValue(ConfDbPwd)
 }
 
 func (c *Conf) getRefreshInterval() int {
@@ -118,6 +109,18 @@ func (c *Conf) getOxWapiUsername() string {
 
 func (c *Conf) getOxWapiPassword() string {
 	return c.getValue(ConfOxWapiPwd)
+}
+
+func (c *Conf) getArtRegUri() string {
+	return c.getValue(ConfArtRegURI)
+}
+
+func (c *Conf) getArtRegUser() string {
+	return c.getValue(ConfArtRegUser)
+}
+
+func (c *Conf) getArtRegPwd() string {
+	return c.getValue(ConfArtRegPwd)
 }
 
 func (c *Conf) getValue(key ConfKey) string {

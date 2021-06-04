@@ -43,6 +43,7 @@ func main() {
 		router.HandleFunc("/region/{region-key}/location", geLocationsByRegionHandler).Methods("GET")
 		router.HandleFunc("/admission", getAdmissionsHandler).Methods("GET")
 		router.HandleFunc("/admission", setAdmissionHandler).Methods("PUT")
+		router.HandleFunc("/package", getPackagesHandler).Methods("GET")
 	}
 	// add asynchronous jobs
 	// starts a job to record events if host connection status changes
