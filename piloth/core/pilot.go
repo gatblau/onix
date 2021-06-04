@@ -45,13 +45,15 @@ func NewPilot() (*Pilot, error) {
 }
 
 func (p *Pilot) Start() {
-	// https://textkool.com/en/ascii-art-generator?hl=default&vl=default&font=Lean&text=ONIX%20HOST%20PILOT%0A
-	fmt.Println(`
-     _/_/    _/      _/  _/_/_/  _/      _/      _/    _/    _/_/      _/_/_/  _/_/_/_/_/      _/_/_/    _/_/_/  _/          _/_/    _/_/_/_/_/   
-  _/    _/  _/_/    _/    _/      _/  _/        _/    _/  _/    _/  _/            _/          _/    _/    _/    _/        _/    _/      _/        
- _/    _/  _/  _/  _/    _/        _/          _/_/_/_/  _/    _/    _/_/        _/          _/_/_/      _/    _/        _/    _/      _/         
-_/    _/  _/    _/_/    _/      _/  _/        _/    _/  _/    _/        _/      _/          _/          _/    _/        _/    _/      _/          
- _/_/    _/      _/  _/_/_/  _/      _/      _/    _/    _/_/    _/_/_/        _/          _/        _/_/_/  _/_/_/_/    _/_/        _/`)
+	// https://textkool.com/en/ascii-art-generator?hl=default&vl=default&font=Lean&text=PILOT%0A
+	fmt.Println(`Onix Configuration Manager Agent
++---------------------------------------------------------+
+|      _/_/_/    _/_/_/  _/          _/_/    _/_/_/_/_/   |
+|     _/    _/    _/    _/        _/    _/      _/        |
+|    _/_/_/      _/    _/        _/    _/      _/         |
+|   _/          _/    _/        _/    _/      _/          |
+|  _/        _/_/_/  _/_/_/_/    _/_/        _/           |
++---------------------------------------------------------+`)
 	log.Printf("launching...\n")
 	p.register()
 	p.ping()
