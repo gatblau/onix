@@ -133,6 +133,13 @@ var doc = `{
                         "name": "repository-name",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package unique Id",
+                        "name": "package-id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
