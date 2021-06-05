@@ -90,6 +90,9 @@ func (s *Server) Serve() {
 	router.HandleFunc("/package/{repository-group}/{repository-name}/id/{package-id}", s.packageInfoUpdateHandler).Methods("PUT")
 	router.HandleFunc("/package/{repository-group}/{repository-name}/id/{package-id}", s.packageInfoGetHandler).Methods("GET")
 
+	// package manifest
+	router.HandleFunc("/package/manifest/{repository-group}/{repository-name}/{tag}", s.getManifestHandler).Methods("GET")
+
 	// get repository information
 	router.HandleFunc("/repository/{repository-group}/{repository-name}", s.repositoryInfoHandler).Methods("GET")
 
@@ -370,6 +373,30 @@ func (s *Server) packageInfoGetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.write(w, r, pack)
+}
+
+// @Summary Get manifest
+// @Description gets the manifest associated with a specific package
+// @Tags Packages
+// @Accept text/html, application/json, application/yaml, application/xml, application/xhtml+xml
+// @Produce application/json, application/yaml, application/xml
+// @Success 200 {string} OK
+// @Router /package/manifest/{repository-group}/{repository-name}/{tag} [get]
+// @Param repository-group path string true "the package repository group name"
+// @Param repository-name path string true "the package repository name"
+// @Param tag path string true "the package tag"
+func (s *Server) getManifestHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	repoGroup := vars["repository-group"]
+	repoName := vars["repository-name"]
+	repoGroup, _ = url.PathUnescape(repoGroup)
+	tag := vars["tag"]
+	manifest, err := GetBackend().GetManifest(repoGroup, repoName, tag, s.conf.HttpUser(), s.conf.HttpPwd())
+	if err != nil {
+		s.writeError(w, err, 500)
+		return
+	}
+	s.write(w, r, manifest)
 }
 
 // @Summary Update information about the specified package

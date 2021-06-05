@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
 	"io"
 	"io/ioutil"
@@ -274,6 +275,46 @@ func (r *Nexus3Backend) GetPackageInfo(group, name, id, user, pwd string) (*regi
 		return repo.FindPackage(id), nil
 	}
 	return nil, nil
+}
+
+func (r *Nexus3Backend) GetManifest(group, name, tag, user, pwd string) (*data.Manifest, error) {
+	repo, err := r.GetRepositoryInfo(group, name, user, pwd)
+	if err != nil {
+		return nil, err
+	}
+	if len(tag) == 0 {
+		tag = "latest"
+	}
+	ref, err := getFileRef(repo, tag)
+	if err != nil {
+		return nil, err
+	}
+	manifestFile, err := r.Download(group, name, fmt.Sprintf("%s.json", ref), user, pwd)
+	if err != nil {
+		return nil, err
+	}
+	defer manifestFile.Close()
+	bytes, err := ioutil.ReadAll(manifestFile)
+	if err != nil {
+		return nil, err
+	}
+	var seal data.Seal
+	err = json.Unmarshal(bytes, &seal)
+	if err != nil {
+		return nil, err
+	}
+	return seal.Manifest, nil
+}
+
+func getFileRef(repo *registry.Repository, tag string) (string, error) {
+	for _, pack := range repo.Packages {
+		for _, t := range pack.Tags {
+			if t == tag {
+				return pack.FileRef, nil
+			}
+		}
+	}
+	return "", fmt.Errorf("package not found using tag %s\n", tag)
 }
 
 // add a field to a multipart form

@@ -203,6 +203,43 @@ paths:
       summary: Push an package to the configured backend
       tags:
       - Packages
+  /package/manifest/{repository-group}/{repository-name}/{tag}:
+    get:
+      consumes:
+      - text/html
+      - ' application/json'
+      - ' application/yaml'
+      - ' application/xml'
+      - ' application/xhtml+xml'
+      description: gets the manifest associated with a specific package
+      parameters:
+      - description: the package repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the package repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the package tag
+        in: path
+        name: tag
+        required: true
+        type: string
+      produces:
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Get manifest
+      tags:
+      - Packages
   /repository:
     get:
       consumes:
