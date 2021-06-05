@@ -23,20 +23,24 @@ type FsBackend struct {
 	path string
 }
 
-func (r *FsBackend) GetAllRepositoryInfo(user, pwd string) ([]*registry.Repository, error) {
-	panic("implement me")
-}
-
-func (r *FsBackend) Name() string {
-	return "FILE_SYSTEM"
-}
-
 func NewFsBackend() *FsBackend {
 	fs := &FsBackend{
 		path: "data",
 	}
 	fs.checkPath()
 	return fs
+}
+
+func (r *FsBackend) GetManifest(group, name, tag, user, pwd string) (*data.Manifest, error) {
+	panic("implement me")
+}
+
+func (r *FsBackend) GetAllRepositoryInfo(user, pwd string) ([]*registry.Repository, error) {
+	panic("implement me")
+}
+
+func (r *FsBackend) Name() string {
+	return "FILE_SYSTEM"
 }
 
 // upload an package to the remote repository

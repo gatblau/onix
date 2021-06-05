@@ -8,6 +8,7 @@ package backend
   to be licensed under the same terms as the rest of the code.
 */
 import (
+	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
 	"mime/multipart"
 	"os"
@@ -25,6 +26,8 @@ type Backend interface {
 	GetPackageInfo(group, name, id, user, pwd string) (*registry.Package, error)
 	// UpdatePackageInfo update package information
 	UpdatePackageInfo(group, name string, packageInfo *registry.Package, user string, pwd string) error
+	// GetManifest get the package manifest
+	GetManifest(group, name, tag, user, pwd string) (*data.Manifest, error)
 	// Download open a file for download
 	Download(repoGroup, repoName, fileName, user, pwd string) (*os.File, error)
 	// Name print usage info

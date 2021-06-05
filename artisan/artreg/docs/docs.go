@@ -100,6 +100,58 @@ var doc = `{
                 }
             }
         },
+        "/package/manifest/{repository-group}/{repository-name}/{tag}": {
+            "get": {
+                "description": "gets the manifest associated with a specific package",
+                "consumes": [
+                    "text/html",
+                    " application/json",
+                    " application/yaml",
+                    " application/xml",
+                    " application/xhtml+xml"
+                ],
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Packages"
+                ],
+                "summary": "Get manifest",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the package repository group name",
+                        "name": "repository-group",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package repository name",
+                        "name": "repository-name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package tag",
+                        "name": "tag",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/package/{repository-group}/{repository-name}/id/{package-id}": {
             "get": {
                 "description": "gets meta data about the package identified by its id",
