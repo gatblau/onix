@@ -350,6 +350,7 @@ func (s *Server) repositoryAllInfoHandler(w http.ResponseWriter, r *http.Request
 // @Router /package/{repository-group}/{repository-name}/id/{package-id} [get]
 // @Param repository-group path string true "the package repository group name"
 // @Param repository-name path string true "the package repository name"
+// @Param package-id path string true "the package unique Id"
 func (s *Server) packageInfoGetHandler(w http.ResponseWriter, r *http.Request) {
 	// get request variables
 	vars := mux.Vars(r)
@@ -358,17 +359,17 @@ func (s *Server) packageInfoGetHandler(w http.ResponseWriter, r *http.Request) {
 	id := vars["package-id"]
 	repoGroup, _ = url.PathUnescape(repoGroup)
 	// retrieve repository metadata from the backend
-	artie, err := GetBackend().GetPackageInfo(repoGroup, repoName, id, s.conf.HttpUser(), s.conf.HttpPwd())
+	pack, err := GetBackend().GetPackageInfo(repoGroup, repoName, id, s.conf.HttpUser(), s.conf.HttpPwd())
 	if err != nil {
 		s.writeError(w, err, http.StatusInternalServerError)
 		return
 	}
 	// if the package is not found send a not found error
-	if artie == nil {
+	if pack == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	s.write(w, r, artie)
+	s.write(w, r, pack)
 }
 
 // @Summary Update information about the specified package
