@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 var (
@@ -423,4 +424,29 @@ func getPackagesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	server.Write(w, r, packages)
+}
+
+// @Summary Get the API of an Artisan Package
+// @Description get a list of exported functions and inputs for the specified package
+// @Tags Registry
+// @Router /package/{name}/api [get]
+// @Produce json
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+// @Param name path string true "the fully qualified name of the artisan package having the required API"
+func getPackagesApiHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+	n, err := url.PathUnescape(name)
+	if err != nil {
+		log.Printf("failed to unescape package name '%s': %s\n", name, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	api, err := rem.GetPackageAPI(n)
+	if err != nil {
+		log.Printf("failed to get package API from registry: %s\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	server.Write(w, r, api)
 }

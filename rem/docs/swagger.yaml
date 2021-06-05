@@ -326,6 +326,30 @@ paths:
       summary: Get Artisan Packages
       tags:
       - Registry
+  /package/{name}/api:
+    get:
+      description: get a list of exported functions and inputs for the specified package
+      parameters:
+      - description: the fully qualified name of the artisan package having the required
+          API
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get the API of an Artisan Package
+      tags:
+      - Registry
   /ping/{host-key}:
     post:
       description: submits a ping from a host to the control plane

@@ -432,6 +432,41 @@ var doc = `{
                 }
             }
         },
+        "/package/{name}/api": {
+            "get": {
+                "description": "get a list of exported functions and inputs for the specified package",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Registry"
+                ],
+                "summary": "Get the API of an Artisan Package",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the fully qualified name of the artisan package having the required API",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/ping/{host-key}": {
             "post": {
                 "description": "submits a ping from a host to the control plane",

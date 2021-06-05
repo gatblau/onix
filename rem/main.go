@@ -34,6 +34,9 @@ func main() {
 	s := server.New("onix/rem")
 	// add handlers
 	s.Http = func(router *mux.Router) {
+		// enable encoded path  vars
+		router.UseEncodedPath()
+		// add http handlers
 		router.HandleFunc("/ping/{host-key}", pingHandler).Methods("POST")
 		router.HandleFunc("/host", hostQueryHandler).Methods("GET")
 		router.HandleFunc("/register", registerHandler).Methods("POST")
@@ -44,6 +47,7 @@ func main() {
 		router.HandleFunc("/admission", getAdmissionsHandler).Methods("GET")
 		router.HandleFunc("/admission", setAdmissionHandler).Methods("PUT")
 		router.HandleFunc("/package", getPackagesHandler).Methods("GET")
+		router.HandleFunc("/package/{name}/api", getPackagesApiHandler).Methods("GET")
 	}
 	// add asynchronous jobs
 	// starts a job to record events if host connection status changes

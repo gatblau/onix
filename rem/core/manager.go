@@ -11,6 +11,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/gatblau/oxc"
 	"log"
@@ -201,6 +203,28 @@ func (r *ReMan) GetPackages() ([]string, error) {
 		}
 	}
 	return result, nil
+}
+
+func (r *ReMan) GetPackageAPI(name string) ([]*data.FxInfo, error) {
+	n, err := core.ParseName(name)
+	if err != nil {
+		return nil, err
+	}
+	// the URI to connect to the Artisan registry
+	uri := fmt.Sprintf("%s/package/manifest/%s/%s/%s", r.conf.getArtRegUri(), n.Group, n.Name, n.Tag)
+	bytes, err := makeRequest(uri, "GET", r.conf.getArtRegUser(), r.conf.getArtRegPwd(), nil)
+	if err != nil {
+		return nil, err
+	}
+	var manif data.Manifest
+	err = json.Unmarshal(bytes, &manif)
+	if err != nil {
+		return nil, err
+	}
+	if manif.Functions == nil {
+		return make([]*data.FxInfo, 0), nil
+	}
+	return manif.Functions, nil
 }
 
 func reverse(str string) (result string) {
