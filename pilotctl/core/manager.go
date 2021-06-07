@@ -1,7 +1,7 @@
 package core
 
 /*
-  Onix Config Manager - REMote Host Service
+  Onix Pilot Host Control Service
   Copyright (c) 2018-2021 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
@@ -80,7 +80,7 @@ func (r *ReMan) Register(reg *Registration) error {
 }
 
 func (r *ReMan) Beat(host string) error {
-	_, err := r.db.RunQuery(fmt.Sprintf("select rem_beat('%s')", host))
+	_, err := r.db.RunQuery(fmt.Sprintf("select pilotctl_beat('%s')", host))
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (r *ReMan) Beat(host string) error {
 
 func (r *ReMan) GetHostStatus() ([]Host, error) {
 	hosts := make([]Host, 0)
-	result, err := r.db.RunQuery("select * from rem_get_conn_status()")
+	result, err := r.db.RunQuery("select * from pilotctl_get_conn_status()")
 	if err != nil {
 		return nil, fmt.Errorf("cannot get host status '%s'", err)
 	}
@@ -112,7 +112,7 @@ func (r *ReMan) GetHostStatus() ([]Host, error) {
 
 func (r *ReMan) GetAdmissions() ([]Admission, error) {
 	admissions := make([]Admission, 0)
-	result, err := r.db.RunQuery("select * from rem_get_admissions(NULL)")
+	result, err := r.db.RunQuery("select * from pilotctl_get_admissions(NULL)")
 	if err != nil {
 		return nil, fmt.Errorf("cannot get host status '%s'", err)
 	}
@@ -131,7 +131,7 @@ func (r *ReMan) GetAdmissions() ([]Admission, error) {
 }
 
 func (r *ReMan) SetAdmission(admission *Admission) error {
-	query := fmt.Sprintf("select rem_set_admission('%s', %s, '%s')", admission.Key, strconv.FormatBool(admission.Active), toTextArray(admission.Tag))
+	query := fmt.Sprintf("select pilotctl_set_admission('%s', %s, '%s')", admission.Key, strconv.FormatBool(admission.Active), toTextArray(admission.Tag))
 	_, err := r.db.RunCommand([]string{query})
 	return err
 }
@@ -156,7 +156,7 @@ func (r *ReMan) Authenticate(token string) bool {
 		log.Printf("authentication failed for Machine Id='%s': token has expired\n", hostId)
 		return false
 	}
-	result, err := r.db.RunQuery(fmt.Sprintf("select rem_is_admitted('%s')", hostId))
+	result, err := r.db.RunQuery(fmt.Sprintf("select pilotctl_is_admitted('%s')", hostId))
 	if err != nil {
 		fmt.Printf("authentication failed for Machine Id='%s': cannot query admission table: %s\n", hostId, err)
 		return false
@@ -174,7 +174,7 @@ func (r *ReMan) Authenticate(token string) bool {
 }
 
 func (r *ReMan) RecordConnStatus(interval int) error {
-	_, err := r.db.RunCommand([]string{fmt.Sprintf("select rem_record_conn_status('%d secs')", interval)})
+	_, err := r.db.RunCommand([]string{fmt.Sprintf("select pilotctl_record_conn_status('%d secs')", interval)})
 	return err
 }
 

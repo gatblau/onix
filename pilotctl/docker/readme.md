@@ -1,15 +1,15 @@
-# Rem Backend
+# Pilot Host Control Service
 
-This section contains scripts to start up all required REM backend services:
+This section contains scripts to start up all required PilotCtl services:
 
 - PostgreSQL database server
 - Onix database
-- REM database
+- PilotCtl database
 - Onix Web API Service
-- REM HTTP Service
+- PilotCtl HTTP Service
 - DbMan instances for database provisioning
 
-![setup](rem_setup.png)
+![setup](pilotctl_setup.png)
 
 ### Start services
 

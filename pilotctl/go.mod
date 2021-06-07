@@ -1,4 +1,4 @@
-module github.com/gatblau/onix/rem
+module github.com/gatblau/onix/pilotctl
 
 go 1.15
 
@@ -15,7 +15,6 @@ require (
 	github.com/jackc/pgtype v1.7.0
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/reugn/go-quartz v0.3.4
-	github.com/rs/zerolog v1.22.0
 	github.com/swaggo/swag v1.7.0
 	golang.org/x/net v0.0.0-20210521195947-fe42d452be8f // indirect
 )

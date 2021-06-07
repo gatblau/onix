@@ -1,7 +1,7 @@
 package core
 
 /*
-  Onix Config Manager - REMote Host Service
+  Onix Pilot Host Control Service
   Copyright (c) 2018-2021 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
@@ -16,13 +16,13 @@ import (
 type ConfKey string
 
 const (
-	ConfDbName                   ConfKey = "OX_REM_DB_NAME"
-	ConfDbHost                   ConfKey = "OX_REM_DB_HOST"
-	ConfDbPort                   ConfKey = "OX_REM_DB_PORT"
-	ConfDbUser                   ConfKey = "OX_REM_DB_USER"
-	ConfDbPwd                    ConfKey = "OX_REM_DB_PWD"
-	ConfRefreshInterval          ConfKey = "OX_REM_REFRESH_INTERVAL"
-	ConfPingInterval             ConfKey = "OX_REM_PING_INTERVAL"
+	ConfDbName                   ConfKey = "OX_PILOTCTL_DB_NAME"
+	ConfDbHost                   ConfKey = "OX_PILOTCTL_DB_HOST"
+	ConfDbPort                   ConfKey = "OX_PILOTCTL_DB_PORT"
+	ConfDbUser                   ConfKey = "OX_PILOTCTL_DB_USER"
+	ConfDbPwd                    ConfKey = "OX_PILOTCTL_DB_PWD"
+	ConfRefreshInterval          ConfKey = "OX_PILOTCTL_REFRESH_INTERVAL"
+	ConfPingInterval             ConfKey = "OX_PILOTCTL_PING_INTERVAL"
 	ConfOxWapiUri                ConfKey = "OX_WAPI_URI"
 	ConfOxWapiUser               ConfKey = "OX_WAPI_USER"
 	ConfOxWapiPwd                ConfKey = "OX_WAPI_PWD"
@@ -46,7 +46,7 @@ func (c *Conf) get(key ConfKey) string {
 func (c *Conf) getDbName() string {
 	value := os.Getenv(string(ConfDbName))
 	if len(value) == 0 {
-		return "rem"
+		return "pilotctl"
 	}
 	return value
 }

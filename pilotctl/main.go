@@ -10,7 +10,7 @@ package main
 import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/server"
-	"github.com/gatblau/onix/rem/core"
+	"github.com/gatblau/onix/pilotctl/core"
 	"github.com/gorilla/mux"
 	"github.com/reugn/go-quartz/quartz"
 	"os"
