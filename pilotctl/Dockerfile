@@ -1,5 +1,5 @@
 #
-#    Onix REMote Host - Remote Host Service for Pilot
+#    Onix Pilot Host Control Service
 #    Copyright (c) 2018-2021 by www.gatblau.org
 #    Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 #    Contributors to this project, hereby assign copyright in this code to the project,
@@ -10,7 +10,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal
 LABEL author="gatblau"
 LABEL maintainer="onix@gatblau.org"
 
-ARG UNAME=remote
+ARG UNAME=pilotctl
 
 ENV UID=100000000
 ENV GID=100000000
@@ -25,10 +25,10 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
 
 WORKDIR /app
 
-COPY ./bin/rem ./
+COPY ./bin/pilotctl ./
 
 USER $UNAME
 
-CMD ["sh", "-c", "/app/rem"]
+CMD ["sh", "-c", "/app/pilotctl"]
 
 EXPOSE 8080/tcp

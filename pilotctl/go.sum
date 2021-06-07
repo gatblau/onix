@@ -88,6 +88,9 @@ github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI
 github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVBjqR7JHJk0brhHOZYGmfBYOrK0ZhYMEtBr4=
 github.com/franela/goreq v0.0.0-20171204163338-bcd34c9993f8/go.mod h1:ZhphrRTfi2rbfLwlschooIH4+wKKDR4Pdxhh+TRoA20=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
+github.com/gatblau/onix v0.0.3 h1:rKPxkQNUo+oGu8N88LGXGqVma+LKgU1JDaL5LIdON6g=
+github.com/gatblau/onix/rem v0.0.0-20210605115117-6b8709b4a45d h1:pPpThY67eX1Gqyreazbsef/2SVvsKqa4jDExkTQiYnk=
+github.com/gatblau/onix/rem v0.0.0-20210605115117-6b8709b4a45d/go.mod h1:tXDHmV8Zaz9LpEIeXLu25u/ycrDUAnhlXHOaWx2mNyw=
 github.com/gatblau/oxc v0.0.0-20201021102807-48791fe073d6 h1:lGsE/GWmhUdc1+5pcOJgR6bSVWRM2JZz+CyUG5DVb3Q=
 github.com/gatblau/oxc v0.0.0-20201021102807-48791fe073d6/go.mod h1:2cOuWfNu1kLsveFl6qLgG5tQFiAvT9TU8UaRTbOZ8TM=
 github.com/gatblau/oxc v0.0.0-20210523084722-f08170feef8e h1:/SXi8EWqOGTyByatSxOhJ7A6V6PggBDMEG+3gxOOimQ=

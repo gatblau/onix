@@ -1,14 +1,7 @@
 #
-#    Onix CMDB - Copyright (c) 2018-2021 by www.gatblau.org
-#
-#    Licensed under the Apache License, Version 2.0 (the "License");
-#    you may not use this file except in compliance with the License.
-#    You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-#    Unless required by applicable law or agreed to in writing, software distributed under
-#    the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-#    either express or implied.
-#    See the License for the specific language governing permissions and limitations under the License.
-#
+#    Onix Pilot Host Control Service
+#    Copyright (c) 2018-2021 by www.gatblau.org
+#    Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 #    Contributors to this project, hereby assign copyright in this code to the project,
 #    to be licensed under the same terms as the rest of the code.
 #
@@ -18,23 +11,23 @@ version: '3'
 
 services:
 
-  oxdb:
+  db:
     image: postgres:13
-    container_name: oxdb
+    container_name: db
     restart: always
     environment:
       - POSTGRES_PASSWORD=${PG_ADMIN_PWD}
     ports:
       - "5432:5432"
 #    volumes:
-#      - oxdb:/var/lib/postgresql/data
+#      - db:/var/lib/postgresql/data
   
   dbman_ox:
     image: quay.io/gatblau/dbman-snapshot
     container_name: dbman_ox
     restart: always
     environment:
-      - OX_DBM_DB_HOST=oxdb
+      - OX_DBM_DB_HOST=db
       - OX_DBM_DB_USERNAME=${ONIX_DB_USER}
       - OX_DBM_DB_PASSWORD=${ONIX_DB_PWD}
       - OX_DBM_DB_ADMINUSERNAME=${PG_ADMIN_USER}
@@ -48,12 +41,12 @@ services:
   onix:
     image: quay.io/gatblau/onix-snapshot
     depends_on:
-      - oxdb
+      - db
       - dbman_ox
     container_name: ox
     restart: always
     environment:
-      - DB_HOST=oxdb
+      - DB_HOST=db
       - DB_USER=${ONIX_DB_USER}
       - DB_PWD=${ONIX_DB_PWD}
       - DB_ADMIN_USER=${PG_ADMIN_USER}
@@ -66,50 +59,50 @@ services:
       - WAPI_EVENTS_SERVER_PORT=${BROKER_PORT}
     ports:
       - "8080:8080"
-  dbman_rem:
+  dbman_pilotctl:
     image: quay.io/gatblau/dbman-snapshot
 #    depends_on:
 #      - oxdb
-    container_name: dbman_rem
+    container_name: dbman_pilotctl
     restart: always
     environment:
-      - OX_DBM_DB_HOST=oxdb
-      - OX_DBM_DB_NAME=rem
-      - OX_DBM_DB_USERNAME=${REM_DB_USER}
-      - OX_DBM_DB_PASSWORD=${REM_DB_PWD}
+      - OX_DBM_DB_HOST=db
+      - OX_DBM_DB_NAME=pilotctl
+      - OX_DBM_DB_USERNAME=${PILOTCTL_DB_USER}
+      - OX_DBM_DB_PASSWORD=${PILOTCTL_DB_PWD}
       - OX_DBM_DB_ADMINUSERNAME=${PG_ADMIN_USER}
       - OX_DBM_DB_ADMINPASSWORD=${PG_ADMIN_PWD}
       - OX_DBM_HTTP_USERNAME=${DBMAN_HTTP_USER}
       - OX_DBM_HTTP_PASSWORD=${DBMAN_HTTP_PWD}
       - OX_DBM_HTTP_AUTHMODE=${DBMAN_AUTH_MODE}
       - OX_DBM_APPVERSION=${DBMAN_APP_VERSION}
-      - OX_DBM_REPO_URI=${DBMAN_REM_REPO_URI}
+      - OX_DBM_REPO_URI=${DBMAN_PILOTCTL_REPO_URI}
     ports:
       - "8086:8085"
-  rem:
-    image: quay.io/gatblau/ox-rem
+  pilotctl:
+    image: quay.io/gatblau/pilotctl
     depends_on:
-      - oxdb
-      - dbman_rem
+      - db
+      - dbman_pilotctl
       - onix
-    container_name: rem
+    container_name: pilotctl
     restart: always
     environment:
-      - OX_HTTP_UNAME=${REM_HTTP_USER}
-      - OX_HTTP_PWD=${REM_HTTP_PWD}
-      - OX_HTTP_PORT=${REM_HTTP_PORT}
-      - OX_REM_DB_HOST=oxdb
-      - OX_REM_DB_USER=${REM_DB_USER}
-      - OX_REM_DB_PWD=${REM_DB_PWD}
+      - OX_HTTP_UNAME=${PILOTCTL_HTTP_USER}
+      - OX_HTTP_PWD=${PILOTCTL_HTTP_PWD}
+      - OX_HTTP_PORT=${PILOTCTL_HTTP_PORT}
+      - OX_PILOTCTL_DB_HOST=db
+      - OX_PILOTCTL_DB_USER=${PILOTCTL_DB_USER}
+      - OX_PILOTCTL_DB_PWD=${PILOTCTL_DB_PWD}
       - OX_WAPI_URI=${WAPI_URI}
       - OX_WAPI_USER=${ONIX_HTTP_ADMIN_USER}
       - OX_WAPI_PWD=${ONIX_HTTP_ADMIN_PWD}
       - OX_WAPI_INSECURE_SKIP_VERIFY=true
-      - OX_ART_REG_URI=${REM_ART_REG_URI}
-      - OX_ART_REG_USER=${REM_ART_REG_USER}
-      - OX_ART_REG_PWD=${REM_ART_REG_PWD}
+      - OX_ART_REG_URI=${PILOTCTL_ART_REG_URI}
+      - OX_ART_REG_USER=${PILOTCTL_ART_REG_USER}
+      - OX_ART_REG_PWD=${PILOTCTL_ART_REG_PWD}
     ports:
       - "8888:8888"
 
 #volumes:
-#  oxdb:
+#  db:
