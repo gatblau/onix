@@ -1,3 +1,5 @@
+<img src="https://github.com/gatblau/piloth/raw/master/pilot.png" width="150" align="right"/>
+
 # Onix Host Pilot
 
 ## Build it
