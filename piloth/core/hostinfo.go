@@ -43,7 +43,7 @@ func NewHostInfo() (*HostInfo, error) {
 	}
 	info.HostName = i.Hostname
 	info.OS = i.OS
-	info.HostID = i.HostID
+	info.HostID = strings.ReplaceAll(i.HostID, "-", "")
 	info.Virtual = strings.ToLower(i.VirtualizationRole) == "guest"
 	m, err := mem.VirtualMemory()
 	if err == nil {
