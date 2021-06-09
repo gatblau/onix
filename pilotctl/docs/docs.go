@@ -622,6 +622,9 @@ var doc = `{
                         "type": "string"
                     }
                 },
+                "name": {
+                    "type": "string"
+                },
                 "package": {
                     "type": "string"
                 }
