@@ -271,9 +271,7 @@ func appendEscaped(sb *strings.Builder, val interface{}) {
 	if val != nil {
 		sb.WriteString("\"")
 		str, ok := val.(string)
-		if ok {
-			sb.WriteString(str)
-		} else {
+		if !ok {
 			log.Printf("WARNING: HStore value could not be cast as string, value might not be persisted correctly in the data source\n")
 		}
 		for pos := 0; pos < len(str); pos++ {
