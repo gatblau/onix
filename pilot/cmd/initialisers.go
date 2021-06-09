@@ -9,8 +9,7 @@ package cmd
 
 func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
-	hostCmd := NewHostCtlCmd()
 	sideCarCmd := NewSideCarCmd()
-	rootCmd.Command.AddCommand(hostCmd.cmd, sideCarCmd.cmd)
+	rootCmd.Command.AddCommand(sideCarCmd.cmd)
 	return rootCmd
 }
