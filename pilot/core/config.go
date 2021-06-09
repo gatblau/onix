@@ -1,3 +1,5 @@
+package core
+
 /*
   Onix Config Manager - Pilot
   Copyright (c) 2018-2020 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package core
-
 import (
 	"crypto/tls"
 	"fmt"
@@ -119,22 +119,11 @@ func (c *Config) Load() error {
 	// set the file path to where pilot is running
 	c.path = currentPath()
 
-	// load configuration from .env file if exist
-	if _, err := os.Stat(fmt.Sprintf("%s/.env", c.path)); err == nil {
-		err := godotenv.Load()
+	cFile := confFile()
+	if _, err := os.Stat(cFile); err == nil {
+		err := godotenv.Load(cFile)
 		if err != nil {
 			log.Fatal().Msg(err.Error())
-		}
-	} else {
-		envPath := os.Getenv("PILOT_ENV_PATH")
-		if len(envPath) > 0 {
-			path := fmt.Sprintf("%s/.env", envPath)
-			if _, err := os.Stat(path); err == nil {
-				err := godotenv.Load(path)
-				if err != nil {
-					log.Fatal().Msg(err.Error())
-				}
-			}
 		}
 	}
 
@@ -180,9 +169,17 @@ func (c *Config) Load() error {
 }
 
 func currentPath() string {
+	path := os.Getenv("PILOT_CFG_PATH")
+	if len(path) > 0 {
+		return path
+	}
 	ex, err := os.Executable()
 	if err != nil {
 		panic(err)
 	}
 	return filepath.Dir(ex)
+}
+
+func confFile() string {
+	return fmt.Sprintf("%s/.pilot", currentPath())
 }
