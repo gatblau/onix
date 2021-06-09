@@ -7,6 +7,8 @@
 #
 
 # NOTE: to make storage persistent uncomment the "volumes" sections below
+# Also note there might be a networking issue trying to connect pilotctl to the external artisan registry that is
+# outside of this compose network
 version: '3'
 
 services:
