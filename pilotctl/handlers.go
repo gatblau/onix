@@ -74,33 +74,6 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
-	// lastSeen, _ := time.Parse("2006-Jan-02 Monday 03:04:05", "2020-Jan-29 Wednesday 12:19:25")
-	// hosts := []core.Host{
-	// 	{
-	// 		Name:      "HOST-001",
-	// 		Customer:  "CUST-01",
-	// 		Region:    "UK-North-West",
-	// 		Location:  "Manchester",
-	// 		Connected: true,
-	// 		LastSeen:  lastSeen,
-	// 	},
-	// 	{
-	// 		Name:      "HOST-002",
-	// 		Customer:  "CUST-01",
-	// 		Region:    "UK-North-West",
-	// 		Location:  "Manchester",
-	// 		Connected: false,
-	// 		LastSeen:  lastSeen,
-	// 	},
-	// 	{
-	// 		Name:      "HOST-003",
-	// 		Customer:  "CUST-01",
-	// 		Region:    "UK-South-West",
-	// 		Location:  "Devon",
-	// 		Connected: false,
-	// 		LastSeen:  lastSeen,
-	// 	},
-	// }
 	hosts, err := rem.GetHostStatus()
 	if err != nil {
 		log.Println(err)
@@ -179,6 +152,26 @@ func geLogHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func updateCmdHandler(w http.ResponseWriter, r *http.Request) {
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("failed to read request body: %s", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	cmd := new(core.Cmd)
+	err = json.Unmarshal(bytes, cmd)
+	if err != nil {
+		log.Printf("failed to unmarshal request: %s", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = rem.SetCommand(cmd)
+	if err != nil {
+		log.Printf("failed to set command: %s", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }
 
 // @Summary Get a Command definition

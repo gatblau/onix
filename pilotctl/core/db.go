@@ -15,8 +15,10 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"log"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -235,3 +237,53 @@ type Table struct {
 
 // Row a row in the table
 type Row []string
+
+func toHStore(m map[string]string) pgtype.Hstore {
+	hstore := pgtype.Hstore{
+		Status: pgtype.Present,
+	}
+	text := func(s string) pgtype.Text {
+		return pgtype.Text{String: s, Status: pgtype.Present}
+	}
+	for key, value := range m {
+		hstore.Map[key] = text(value)
+	}
+	return hstore
+}
+
+func toHStoreString(m map[string]string) string {
+	sb := new(strings.Builder)
+	if len(m) == 0 {
+		return ""
+	} else {
+		for key, value := range m {
+			appendEscaped(sb, key)
+			sb.WriteString("=>")
+			appendEscaped(sb, value)
+			sb.WriteString(", ")
+		}
+	}
+	str := sb.String()
+	return str[:len(str)-2]
+}
+
+func appendEscaped(sb *strings.Builder, val interface{}) {
+	if val != nil {
+		sb.WriteString("\"")
+		str, ok := val.(string)
+		if ok {
+			sb.WriteString(str)
+		} else {
+			log.Printf("WARNING: HStore value could not be cast as string, value might not be persisted correctly in the data source\n")
+		}
+		for pos := 0; pos < len(str); pos++ {
+			if str[pos] == '"' || str[pos] == '\\' {
+				sb.WriteString("\\")
+			}
+			sb.Write([]byte{str[pos]})
+		}
+		sb.WriteString("\"")
+	} else {
+		sb.WriteString("NULL")
+	}
+}

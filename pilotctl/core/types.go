@@ -24,6 +24,7 @@ import (
 // Cmd command information for remote host execution
 type Cmd struct {
 	Id       int               `json:"id"`
+	Name     string            `json:"name"`
 	Package  string            `json:"package"`
 	Function string            `json:"function"`
 	Input    map[string]string `json:"input"`

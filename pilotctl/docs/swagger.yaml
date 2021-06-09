@@ -18,6 +18,8 @@ definitions:
         additionalProperties:
           type: string
         type: object
+      name:
+        type: string
       package:
         type: string
     type: object

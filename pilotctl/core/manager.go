@@ -227,6 +227,12 @@ func (r *ReMan) GetPackageAPI(name string) ([]*data.FxInfo, error) {
 	return manif.Functions, nil
 }
 
+func (r *ReMan) SetCommand(cmd *Cmd) error {
+	inputHS := toHStoreString(cmd.Input)
+	_, err := r.db.RunCommand([]string{fmt.Sprintf("select pilotctl_set_command('%s', '%s', '%s', '%s')", cmd.Name, cmd.Package, cmd.Function, inputHS)})
+	return err
+}
+
 func reverse(str string) (result string) {
 	for _, v := range str {
 		result = string(v) + result
