@@ -177,8 +177,8 @@ func updateCmdHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary Get a Command definition
 // @Description get a specific a command definition
 // @Tags Command
-// @Router /cmd/{id} [get]
-// @Param id path string true "the unique id for the command to retrieve"
+// @Router /cmd/{name} [get]
+// @Param name path string true "the unique name for the command to retrieve"
 // @Accepts json
 // @Produce plain
 // @Failure 500 {string} there was an error in the server, check the server logs
@@ -412,7 +412,7 @@ func setAdmissionHandler(w http.ResponseWriter, r *http.Request) {
 func getPackagesHandler(w http.ResponseWriter, r *http.Request) {
 	packages, err := rem.GetPackages()
 	if err != nil {
-		log.Println(err)
+		log.Printf("failed to retrieve package list from Artisan Registry: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
