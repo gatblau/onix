@@ -115,14 +115,14 @@ var doc = `{
         },
         "/cmd": {
             "get": {
-                "description": "get all command definitions",
+                "description": "get a list of all command definitions",
                 "produces": [
                     "text/plain"
                 ],
                 "tags": [
                     "Command"
                 ],
-                "summary": "Get All Command definitions",
+                "summary": "Get all Command definitions",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -174,7 +174,7 @@ var doc = `{
                 }
             }
         },
-        "/cmd/{id}": {
+        "/cmd/{name}": {
             "get": {
                 "description": "get a specific a command definition",
                 "produces": [
@@ -187,8 +187,8 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "the unique id for the command to retrieve",
-                        "name": "id",
+                        "description": "the unique name for the command to retrieve",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -610,6 +610,9 @@ var doc = `{
         "core.Cmd": {
             "type": "object",
             "properties": {
+                "description": {
+                    "type": "string"
+                },
                 "function": {
                     "type": "string"
                 },

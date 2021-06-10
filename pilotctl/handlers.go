@@ -184,10 +184,19 @@ func updateCmdHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func getCmdHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+	cmd, err := rem.GetCommand(name)
+	if err != nil {
+		log.Printf("can't query command with name '%s': %v\n", name, err)
+		http.Error(w, fmt.Sprintf("can't query command with name '%s': %v\n", name, err), http.StatusInternalServerError)
+		return
+	}
+	server.Write(w, r, cmd)
 }
 
-// @Summary Get All Command definitions
-// @Description get all command definitions
+// @Summary Get all Command definitions
+// @Description get a list of all command definitions
 // @Tags Command
 // @Router /cmd [get]
 // @Accepts json
@@ -195,6 +204,13 @@ func getCmdHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func getAllCmdHandler(w http.ResponseWriter, r *http.Request) {
+	cmds, err := rem.GetAllCommands()
+	if err != nil {
+		log.Printf("can't query list of commands: %v\n", err)
+		http.Error(w, fmt.Sprintf("can't query list of commands: %s\n", err), http.StatusInternalServerError)
+		return
+	}
+	server.Write(w, r, cmds)
 }
 
 // @Summary Create a Job

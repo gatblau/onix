@@ -14,7 +14,7 @@ import (
 )
 
 /*
-  Onix Config Manager - REMote Host Service
+  Onix Config Manager - Pilot Control
   Copyright (c) 2018-2021 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
@@ -23,11 +23,12 @@ import (
 
 // Cmd command information for remote host execution
 type Cmd struct {
-	Id       int               `json:"id"`
-	Name     string            `json:"name"`
-	Package  string            `json:"package"`
-	Function string            `json:"function"`
-	Input    map[string]string `json:"input"`
+	Id          int64             `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Package     string            `json:"package"`
+	Function    string            `json:"function"`
+	Input       map[string]string `json:"input"`
 }
 
 // CmdRequest a command for execution with a job reference

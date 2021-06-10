@@ -229,8 +229,50 @@ func (r *ReMan) GetPackageAPI(name string) ([]*data.FxInfo, error) {
 
 func (r *ReMan) SetCommand(cmd *Cmd) error {
 	inputHS := toHStoreString(cmd.Input)
-	_, err := r.db.RunCommand([]string{fmt.Sprintf("select pilotctl_set_command('%s', '%s', '%s', '%s')", cmd.Name, cmd.Package, cmd.Function, inputHS)})
+	_, err := r.db.RunCommand([]string{fmt.Sprintf("select pilotctl_set_command('%s', '%s', '%s', '%s', '%s')", cmd.Name, cmd.Description, cmd.Package, cmd.Function, inputHS)})
 	return err
+}
+
+func (r *ReMan) GetAllCommands() ([]Cmd, error) {
+	result, err := r.db.RunQuery("select * from pilotctl_get_command(NULL)")
+	if err != nil {
+		return nil, fmt.Errorf("cannot execute query: %s", err)
+	}
+	cmds := make([]Cmd, 0)
+	for _, row := range result.Rows {
+		id, err := strconv.ParseInt(row[0], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		cmds = append(cmds, Cmd{
+			Id:          id,
+			Name:        row[1],
+			Description: row[2],
+			Package:     row[3],
+			Function:    row[4],
+			Input:       fromHStoreString(row[5]),
+		})
+	}
+	return cmds, nil
+}
+
+func (r *ReMan) GetCommand(name string) (*Cmd, error) {
+	result, err := r.db.RunQuery(fmt.Sprintf("select * from pilotctl_get_command('%s')", name))
+	if err != nil {
+		return nil, fmt.Errorf("cannot execute query: %s", err)
+	}
+	id, err := strconv.ParseInt(result.Rows[0][0], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return &Cmd{
+		Id:          id,
+		Name:        result.Rows[0][1],
+		Description: result.Rows[0][2],
+		Package:     result.Rows[0][3],
+		Function:    result.Rows[0][4],
+		Input:       fromHStoreString(result.Rows[0][5]),
+	}, nil
 }
 
 func reverse(str string) (result string) {

@@ -203,6 +203,8 @@ func (db *Db) RunQuery(query string) (*Table, error) {
 			} else if v, ok := value.(pgtype.Interval); ok {
 				t := toTime(v.Microseconds)
 				row = append(row, t)
+			} else if v, ok := value.(int64); ok {
+				row = append(row, strconv.Itoa(int(v)))
 			} else if v, ok := value.(int32); ok {
 				n := strconv.Itoa(int(v))
 				row = append(row, n)
@@ -284,4 +286,20 @@ func appendEscaped(sb *strings.Builder, val interface{}) {
 	} else {
 		sb.WriteString("NULL")
 	}
+}
+
+func fromHStoreString(value string) map[string]string {
+	m := make(map[string]string)
+	parts := strings.Split(value, ",")
+	for _, part := range parts {
+		kv := strings.Split(part, "=>")
+		key := strings.TrimPrefix(kv[0], " ")
+		key = strings.TrimSuffix(key, " ")
+		key = key[1 : len(key)-1]
+		value := strings.TrimPrefix(kv[1], " ")
+		value = strings.TrimSuffix(value, " ")
+		value = value[1 : len(value)-1]
+		m[key] = value
+	}
+	return m
 }
