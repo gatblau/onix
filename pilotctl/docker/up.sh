@@ -4,6 +4,13 @@
 #
 # source .env file vars
 set -o allexport; source .env; set +o allexport
+# if the artisan registry URI is not set then set it to the local hostname
+# this is a hack to connect to a registry running in the localhost outside of the compose network
+if [ -n "${PILOTCTL_ART_REG_URI+x}" ];
+then
+  PILOTCTL_ART_REG_URI=http://${HOSTNAME}:8082
+  echo PILOTCTL_ART_REG_URI not configured, assuming art registry is listening at localhost '${PILOTCTL_ART_REG_URI}'
+fi
 # start all services
 docker-compose up -d --remove-orphans
 # setup the onix database
