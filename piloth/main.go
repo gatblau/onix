@@ -16,7 +16,7 @@ import (
 func main() {
 	p, err := core.NewPilot()
 	if err != nil {
-		fmt.Printf("cannot start pilot: %s", err)
+		fmt.Printf("cannot start pilot: %s\n", err)
 		os.Exit(1)
 	}
 	p.Start()

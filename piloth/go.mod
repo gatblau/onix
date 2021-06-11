@@ -4,7 +4,7 @@ go 1.15
 
 replace (
 	github.com/gatblau/onix/artisan => ../artisan
-	github.com/gatblau/onix/pilotctl => ../pilotctl
+	//github.com/gatblau/onix/pilotctl => ../pilotctl
 )
 
 require (

@@ -1,2 +1,2 @@
 PILOT_LOG_LEVEL=Trace
-PILOT_REM_URI=http://localhost:8888
+PILOTCTL_URI=http://localhost:8888

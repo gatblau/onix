@@ -29,7 +29,7 @@ func NewRem() (*Rem, error) {
 		return nil, err
 	}
 	cfg := &ClientConf{
-		BaseURI:            conf.Get(PilotRemUri),
+		BaseURI:            conf.Get(PilotCtlUri),
 		Username:           "_",
 		Password:           "_",
 		InsecureSkipVerify: false,
@@ -37,7 +37,7 @@ func NewRem() (*Rem, error) {
 	}
 	c, err := NewClient(cfg)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create PilotCtl http client: %s", err)
 	}
 	i, err := NewHostInfo()
 	if err != nil {
@@ -72,7 +72,7 @@ func (r *Rem) Register() error {
 
 // Ping send a ping to the remote server
 func (r *Rem) Ping() ([]rem.CmdRequest, error) {
-	uri := fmt.Sprintf("%s/ping/%s", r.cfg.BaseURI, r.host)
+	uri := fmt.Sprintf("%s/ping/%s", r.cfg.BaseURI, r.host.HostID)
 	resp, err := r.client.Post(uri, nil, r.addToken)
 	if err != nil {
 		return nil, fmt.Errorf("ping failed ping: %s", err)
