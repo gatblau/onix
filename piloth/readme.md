@@ -12,7 +12,7 @@ the binary can be found under the created bin folder.
 
 ## Run it
 
-1. Launch the [Remote Service backend](https://github.com/gatblau/onix/tree/develop/rem/docker)
+1. Launch the [Pilot Control Service](https://github.com/gatblau/onix/tree/develop/pilotctl/docker)
 2. Set up the Pilot [configuration file](.pilot) in the folder where pilot is located
 3. Run the pilot
 
