@@ -116,7 +116,7 @@ type Location struct {
 }
 
 type Admission struct {
-	Key    string `json:"key"`
-	Active bool   `json:"active"`
-	Tag    string `json:"tag"`
+	Key    string   `json:"key"`
+	Active bool     `json:"active"`
+	Tag    []string `json:"tag"`
 }

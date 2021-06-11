@@ -8,6 +8,7 @@ package core
   to be licensed under the same terms as the rest of the code.
 */
 import (
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/gatblau/oxc"
+	"github.com/jackc/pgtype"
 	"log"
 	"strconv"
 	"strings"
@@ -80,7 +82,7 @@ func (r *ReMan) Register(reg *Registration) error {
 }
 
 func (r *ReMan) Beat(host string) error {
-	_, err := r.db.RunQuery(fmt.Sprintf("select pilotctl_beat('%s')", host))
+	_, err := r.db.Query("select pilotctl_beat($1)", host)
 	if err != nil {
 		return err
 	}
@@ -89,50 +91,56 @@ func (r *ReMan) Beat(host string) error {
 
 func (r *ReMan) GetHostStatus() ([]Host, error) {
 	hosts := make([]Host, 0)
-	result, err := r.db.RunQuery("select * from pilotctl_get_conn_status()")
+	rows, err := r.db.Query("select * from pilotctl_get_conn_status()")
 	if err != nil {
 		return nil, fmt.Errorf("cannot get host status '%s'", err)
 	}
-	for _, row := range result.Rows {
-		conn, err2 := strconv.ParseBool(row[1])
-		if err2 != nil {
-			fmt.Printf("cannot parse 'connected', value was '%s'", row[1])
-		}
+	var (
+		id        string
+		connected bool
+		since     time.Time
+		customer  sql.NullString
+		region    sql.NullString
+		location  sql.NullString
+	)
+	for rows.Next() {
+		rows.Scan(&id, &connected, &since, &customer, &region, &location)
 		hosts = append(hosts, Host{
-			Id:        row[0],
-			Customer:  "-",
-			Region:    "-",
-			Location:  "-",
-			Connected: conn,
-			Since:     row[2],
+			Id:        id,
+			Customer:  customer.String,
+			Region:    region.String,
+			Location:  location.String,
+			Connected: connected,
+			Since:     toTime(since.UnixNano()),
 		})
 	}
-	return hosts, nil
+	return hosts, rows.Err()
 }
 
 func (r *ReMan) GetAdmissions() ([]Admission, error) {
 	admissions := make([]Admission, 0)
-	result, err := r.db.RunQuery("select * from pilotctl_get_admissions(NULL)")
+	rows, err := r.db.Query("select * from pilotctl_get_admissions($1)", nil)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get host status '%s'", err)
 	}
-	for _, row := range result.Rows {
-		active, err2 := strconv.ParseBool(row[1])
-		if err2 != nil {
-			fmt.Printf("cannot parse 'active', value was '%s'", row[1])
-		}
+	var (
+		key    string
+		active bool
+		tag    []string
+	)
+	for rows.Next() {
+		rows.Scan(&key, &active, &tag)
 		admissions = append(admissions, Admission{
-			Key:    row[0],
+			Key:    key,
 			Active: active,
-			Tag:    row[2],
+			Tag:    tag,
 		})
 	}
-	return admissions, nil
+	return admissions, rows.Err()
 }
 
 func (r *ReMan) SetAdmission(admission *Admission) error {
-	query := fmt.Sprintf("select pilotctl_set_admission('%s', %s, '%s')", admission.Key, strconv.FormatBool(admission.Active), toTextArray(admission.Tag))
-	return r.db.RunCommand(query)
+	return r.db.RunCommand("select pilotctl_set_admission($1, $2, $3)", admission.Key, admission.Active, admission.Tag)
 }
 
 // Authenticate authenticate a pilot based on its time stamp and machine Id admission status
@@ -155,14 +163,15 @@ func (r *ReMan) Authenticate(token string) bool {
 		log.Printf("authentication failed for Machine Id='%s': token has expired\n", hostId)
 		return false
 	}
-	result, err := r.db.RunQuery(fmt.Sprintf("select pilotctl_is_admitted('%s')", hostId))
+	rows, err := r.db.Query("select pilotctl_is_admitted($1)", hostId)
 	if err != nil {
 		fmt.Printf("authentication failed for Machine Id='%s': cannot query admission table: %s\n", hostId, err)
 		return false
 	}
-	admitted, err := strconv.ParseBool(result.Rows[0][0])
+	var admitted bool
+	err = rows.Scan(&admitted)
 	if err != nil {
-		log.Printf("authentication failed for Machine Id='%s': cannot parse admission flag - %s\n", hostId, err)
+		log.Printf("authentication failed for Machine Id='%s': %s\n", hostId, err)
 		return false
 	}
 	if !admitted {
@@ -173,7 +182,7 @@ func (r *ReMan) Authenticate(token string) bool {
 }
 
 func (r *ReMan) RecordConnStatus(interval int) error {
-	return r.db.RunCommand(fmt.Sprintf("select pilotctl_record_conn_status('%d secs')", interval))
+	return r.db.RunCommand("select pilotctl_record_conn_status($1)", interval)
 }
 
 // GetPackages get a list of packages in the backing Artisan registry
@@ -227,49 +236,58 @@ func (r *ReMan) GetPackageAPI(name string) ([]*data.FxInfo, error) {
 
 func (r *ReMan) SetCommand(cmd *Cmd) error {
 	inputHS := toHStoreString(cmd.Input)
-	return r.db.RunCommand(fmt.Sprintf("select pilotctl_set_command('%s', '%s', '%s', '%s', '%s')", cmd.Name, cmd.Description, cmd.Package, cmd.Function, inputHS))
+	return r.db.RunCommand("select pilotctl_set_command($1, $2, $3, $4, $5)", cmd.Name, cmd.Description, cmd.Package, cmd.Function, inputHS)
 }
 
 func (r *ReMan) GetAllCommands() ([]Cmd, error) {
-	result, err := r.db.RunQuery("select * from pilotctl_get_command(NULL)")
+	rows, err := r.db.Query("select id, name, description, package, fx, input from pilotctl_get_command($1)", nil)
 	if err != nil {
 		return nil, fmt.Errorf("cannot execute query: %s", err)
 	}
 	cmds := make([]Cmd, 0)
-	for _, row := range result.Rows {
-		id, err := strconv.ParseInt(row[0], 10, 64)
-		if err != nil {
-			return nil, err
-		}
+	var (
+		id          int64
+		name        string
+		description sql.NullString
+		pack        string
+		fx          string
+		input       pgtype.Hstore
+	)
+	for rows.Next() {
+		rows.Scan(&id, &name, &description, &pack, &fx, &input)
 		cmds = append(cmds, Cmd{
 			Id:          id,
-			Name:        row[1],
-			Description: row[2],
-			Package:     row[3],
-			Function:    row[4],
-			Input:       fromHStoreString(row[5]),
+			Name:        name,
+			Description: description.String,
+			Package:     pack,
+			Function:    fx,
+			Input:       toMap(input),
 		})
 	}
-	return cmds, nil
+	return cmds, rows.Err()
 }
 
-func (r *ReMan) GetCommand(name string) (*Cmd, error) {
-	result, err := r.db.RunQuery(fmt.Sprintf("select * from pilotctl_get_command('%s')", name))
+func (r *ReMan) GetCommand(cmdName string) (*Cmd, error) {
+	rows, err := r.db.Query("select id, name, description, package, fx, input from pilotctl_get_command($1)", cmdName)
 	if err != nil {
 		return nil, fmt.Errorf("cannot execute query: %s", err)
 	}
-	id, err := strconv.ParseInt(result.Rows[0][0], 10, 64)
-	if err != nil {
-		return nil, err
-	}
+	var (
+		id          int64
+		name        string
+		description sql.NullString
+		pack        string
+		fx          string
+		input       pgtype.Hstore
+	)
 	return &Cmd{
 		Id:          id,
-		Name:        result.Rows[0][1],
-		Description: result.Rows[0][2],
-		Package:     result.Rows[0][3],
-		Function:    result.Rows[0][4],
-		Input:       fromHStoreString(result.Rows[0][5]),
-	}, nil
+		Name:        name,
+		Description: description.String,
+		Package:     pack,
+		Function:    fx,
+		Input:       toMap(input),
+	}, rows.Err()
 }
 
 func reverse(str string) (result string) {
@@ -277,4 +295,12 @@ func reverse(str string) (result string) {
 		result = string(v) + result
 	}
 	return
+}
+
+func toMap(hs pgtype.Hstore) map[string]string {
+	m := make(map[string]string)
+	for k, v := range hs.Map {
+		m[k] = v.String
+	}
+	return m
 }
