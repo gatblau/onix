@@ -8,7 +8,6 @@ package core
   to be licensed under the same terms as the rest of the code.
 */
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -116,15 +115,12 @@ func (db *Db) error(err error) (bool, error) {
 	return isNull, err
 }
 
-func (db *Db) RunCommand(scripts []string) (bytes.Buffer, error) {
-	// create a buffer to write execution output to be passed back to client
-	// use this instead of writing to stdout
-	log := bytes.Buffer{}
+func (db *Db) RunCommand(script string, arguments ...interface{}) error {
 	// acquires a database connection
 	conn, err := db.pool.Acquire(context.Background())
 	// if cannot connect to the server return with the error
 	if err != nil {
-		return log, err
+		return err
 	}
 	// release the connection
 	defer conn.Release()
@@ -133,24 +129,21 @@ func (db *Db) RunCommand(scripts []string) (bytes.Buffer, error) {
 	tx, err := conn.Begin(context.Background())
 	// if error then return
 	if err != nil {
-		return log, err
+		return err
 	}
-	// for each database script in the command
-	for _, script := range scripts {
-		// execute the content of the script
-		_, err := tx.Exec(context.Background(), script)
-		// if we have an error return it
-		if isNull, err := db.error(err); !isNull {
-			// rollback the transaction
-			tx.Rollback(context.Background())
-			// return the error
-			return log, err
-		}
+	// execute the content of the script
+	_, err = tx.Exec(context.Background(), script, arguments)
+	// if we have an error return it
+	if isNull, err := db.error(err); !isNull {
+		// rollback the transaction
+		tx.Rollback(context.Background())
+		// return the error
+		return err
 	}
 	// all good so commit the transaction
 	tx.Commit(context.Background())
 	// return the execution log
-	return log, err
+	return err
 }
 
 func (db *Db) RunQuery(query string) (*Table, error) {
