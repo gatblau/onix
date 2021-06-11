@@ -13,10 +13,9 @@ import (
 	"fmt"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
-	"reflect"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -146,82 +145,17 @@ func (db *Db) RunCommand(script string, arguments ...interface{}) error {
 	return err
 }
 
-func (db *Db) RunQuery(query string) (*Table, error) {
+func (db *Db) Query(query string, args ...interface{}) (pgx.Rows, error) {
 	// acquires a database connection
 	conn, err := db.pool.Acquire(context.Background())
 	// release the connection
 	defer conn.Release()
-	// execute the query content
-	result, err := conn.Query(context.Background(), query)
 	// if error then return it
 	if err != nil {
 		return nil, err
 	}
-	// puts together a generic table result
-	header := make(Row, 0) // the table header
-	rows := make([]Row, 0) // a slice of table rows
-	// for each row in the result
-	for result.Next() {
-		// only the first time round populate the header
-		if len(header) == 0 {
-			// for each field in the result set
-			for _, desc := range result.FieldDescriptions() {
-				headerName := string(desc.Name)
-				if headerName == "?column?" { // the query has not defined a column name
-					headerName = "undefined"
-				}
-				// add a new header
-				header = append(header, headerName)
-			}
-		}
-		// create a new row
-		row := make(Row, 0)
-		// populate the row with returned values from the query
-		values, err := result.Values()
-		// if error return it
-		if err != nil {
-			return nil, err
-		}
-		// for each record in the result set
-		for _, value := range values {
-			// if the value is convertible to string
-			if v, ok := value.(string); ok {
-				// append the value to the row slice
-				row = append(row, v)
-			} else
-			// in the case of time values
-			if v, ok := value.(time.Time); ok {
-				// append the string representation of the value to the row slice
-				row = append(row, v.String())
-			} else if v, ok := value.(pgtype.Interval); ok {
-				t := toTime(v.Microseconds)
-				row = append(row, t)
-			} else if v, ok := value.(int64); ok {
-				row = append(row, strconv.Itoa(int(v)))
-			} else if v, ok := value.(int32); ok {
-				n := strconv.Itoa(int(v))
-				row = append(row, n)
-			} else if v, ok := value.(bool); ok {
-				row = append(row, strconv.FormatBool(v))
-			} else if v, ok := value.(pgtype.TextArray); ok {
-				row = append(row, toCSV(v))
-			} else {
-				valueType := reflect.TypeOf(value)
-				if valueType != nil {
-					row = append(row, fmt.Sprintf("unsupported type '%s.%s'", valueType.PkgPath(), valueType.Name()))
-				}
-			}
-		}
-		// add the row to the row set
-		rows = append(rows, row)
-	}
-	// closes the result set
-	result.Close()
-	// return an instance of the generic table populated with the header and rows
-	return &Table{
-		Header: header,
-		Rows:   rows,
-	}, err
+	// execute the query content
+	return conn.Query(context.Background(), query, args...)
 }
 
 // Table generic table used as a serializable result set for queries
