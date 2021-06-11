@@ -132,8 +132,7 @@ func (r *ReMan) GetAdmissions() ([]Admission, error) {
 
 func (r *ReMan) SetAdmission(admission *Admission) error {
 	query := fmt.Sprintf("select pilotctl_set_admission('%s', %s, '%s')", admission.Key, strconv.FormatBool(admission.Active), toTextArray(admission.Tag))
-	_, err := r.db.RunCommand([]string{query})
-	return err
+	return r.db.RunCommand(query)
 }
 
 // Authenticate authenticate a pilot based on its time stamp and machine Id admission status
@@ -174,8 +173,7 @@ func (r *ReMan) Authenticate(token string) bool {
 }
 
 func (r *ReMan) RecordConnStatus(interval int) error {
-	_, err := r.db.RunCommand([]string{fmt.Sprintf("select pilotctl_record_conn_status('%d secs')", interval)})
-	return err
+	return r.db.RunCommand(fmt.Sprintf("select pilotctl_record_conn_status('%d secs')", interval))
 }
 
 // GetPackages get a list of packages in the backing Artisan registry
@@ -229,8 +227,7 @@ func (r *ReMan) GetPackageAPI(name string) ([]*data.FxInfo, error) {
 
 func (r *ReMan) SetCommand(cmd *Cmd) error {
 	inputHS := toHStoreString(cmd.Input)
-	_, err := r.db.RunCommand([]string{fmt.Sprintf("select pilotctl_set_command('%s', '%s', '%s', '%s', '%s')", cmd.Name, cmd.Description, cmd.Package, cmd.Function, inputHS)})
-	return err
+	return r.db.RunCommand(fmt.Sprintf("select pilotctl_set_command('%s', '%s', '%s', '%s', '%s')", cmd.Name, cmd.Description, cmd.Package, cmd.Function, inputHS))
 }
 
 func (r *ReMan) GetAllCommands() ([]Cmd, error) {
