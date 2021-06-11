@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"github.com/jackc/pgtype"
 	"hash/fnv"
-	"strings"
 )
 
 func hashCode(s string) int {
@@ -40,22 +39,6 @@ func toTime(microseconds int64) string {
 	minutes := (((((microseconds / 1000) - milliseconds) / 1000) - seconds) / 60) % 60
 	hours := ((((((microseconds / 1000) - milliseconds) / 1000) - seconds) / 60) - minutes) / 60
 	return fmt.Sprintf("%02v:%02v:%02v.%03v", hours, minutes, seconds, milliseconds)
-}
-
-func toTextArray(tag string) string {
-	parts := strings.Split(tag, ",")
-	buf := bytes.Buffer{}
-	buf.WriteString("{")
-	for i, part := range parts {
-		buf.WriteString("\"")
-		buf.WriteString(part)
-		buf.WriteString("\"")
-		if i < len(parts)-1 {
-			buf.WriteString(",")
-		}
-	}
-	buf.WriteString("}")
-	return buf.String()
 }
 
 func basicAuthToken(user, pwd string) string {
