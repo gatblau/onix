@@ -33,7 +33,7 @@ func NewPilot() (*Pilot, error) {
 	}
 	r, err := NewRem()
 	if err != nil {
-		return nil, fmt.Errorf("cannot initialise remote control client: %s", err)
+		return nil, err
 	}
 	p := &Pilot{
 		cfg:  cfg,

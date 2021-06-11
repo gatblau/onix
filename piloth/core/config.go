@@ -39,15 +39,15 @@ func (k ConfigKey) String() string {
 	switch k {
 	case PilotLogLevel:
 		return "PILOT_LOG_LEVEL"
-	case PilotRemUri:
-		return "PILOT_REM_URI"
+	case PilotCtlUri:
+		return "PILOTCTL_URI"
 	}
 	return ""
 }
 
 const (
 	PilotLogLevel ConfigKey = iota
-	PilotRemUri
+	PilotCtlUri
 )
 
 func (c *Config) Get(key ConfigKey) string {
