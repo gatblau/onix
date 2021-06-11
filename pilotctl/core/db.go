@@ -132,7 +132,7 @@ func (db *Db) RunCommand(script string, arguments ...interface{}) error {
 		return err
 	}
 	// execute the content of the script
-	_, err = tx.Exec(context.Background(), script, arguments)
+	_, err = tx.Exec(context.Background(), script, arguments...)
 	// if we have an error return it
 	if isNull, err := db.error(err); !isNull {
 		// rollback the transaction
