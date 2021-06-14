@@ -235,8 +235,7 @@ func (r *ReMan) GetPackageAPI(name string) ([]*data.FxInfo, error) {
 }
 
 func (r *ReMan) SetCommand(cmd *Cmd) error {
-	inputHS := toHStoreString(cmd.Input)
-	return r.db.RunCommand("select pilotctl_set_command($1, $2, $3, $4, $5)", cmd.Name, cmd.Description, cmd.Package, cmd.Function, inputHS)
+	return r.db.RunCommand("select pilotctl_set_command($1, $2, $3, $4, $5)", cmd.Name, cmd.Description, cmd.Package, cmd.Function, cmd.Input)
 }
 
 func (r *ReMan) GetAllCommands() ([]Cmd, error) {
@@ -251,7 +250,7 @@ func (r *ReMan) GetAllCommands() ([]Cmd, error) {
 		description sql.NullString
 		pack        string
 		fx          string
-		input       pgtype.Hstore
+		input       data.Input
 	)
 	for rows.Next() {
 		rows.Scan(&id, &name, &description, &pack, &fx, &input)
@@ -261,7 +260,7 @@ func (r *ReMan) GetAllCommands() ([]Cmd, error) {
 			Description: description.String,
 			Package:     pack,
 			Function:    fx,
-			Input:       toMap(input),
+			Input:       &input,
 		})
 	}
 	return cmds, rows.Err()
@@ -278,15 +277,18 @@ func (r *ReMan) GetCommand(cmdName string) (*Cmd, error) {
 		description sql.NullString
 		pack        string
 		fx          string
-		input       pgtype.Hstore
+		input       data.Input
 	)
+	for rows.Next() {
+		rows.Scan(&id, &name, &description, &pack, &fx, &input)
+	}
 	return &Cmd{
 		Id:          id,
 		Name:        name,
 		Description: description.String,
 		Package:     pack,
 		Function:    fx,
-		Input:       toMap(input),
+		Input:       &input,
 	}, rows.Err()
 }
 

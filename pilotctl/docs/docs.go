@@ -623,10 +623,7 @@ var doc = `{
                     "type": "integer"
                 },
                 "input": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "$ref": "#/definitions/data.Input"
                 },
                 "name": {
                     "type": "string"
@@ -672,6 +669,137 @@ var doc = `{
                 },
                 "virtual": {
                     "type": "boolean"
+                }
+            }
+        },
+        "data.File": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "the file content",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "a description of the intended use of this file",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "the unique reference for the file",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "path to the file within the Artisan registry",
+                    "type": "string"
+                }
+            }
+        },
+        "data.Input": {
+            "type": "object",
+            "properties": {
+                "file": {
+                    "description": "reguired by configuration files",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.File"
+                    }
+                },
+                "key": {
+                    "description": "required PGP keys",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.Key"
+                    }
+                },
+                "secret": {
+                    "description": "required string value secrets",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.Secret"
+                    }
+                },
+                "var": {
+                    "description": "required variables",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.Var"
+                    }
+                }
+            }
+        },
+        "data.Key": {
+            "type": "object",
+            "properties": {
+                "aggregate": {
+                    "description": "indicates if this key should be aggregated with other keys",
+                    "type": "boolean"
+                },
+                "description": {
+                    "description": "a description of the intended use of this key",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "the unique reference for the PGP key",
+                    "type": "string"
+                },
+                "package_group": {
+                    "description": "the artisan package group used to select the key",
+                    "type": "string"
+                },
+                "package_name": {
+                    "description": "the artisan package name used to select the key",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "the path to the key in the Artisan registry",
+                    "type": "string"
+                },
+                "private": {
+                    "description": "indicates if the referred key is private or public",
+                    "type": "boolean"
+                },
+                "value": {
+                    "description": "the key content",
+                    "type": "string"
+                }
+            }
+        },
+        "data.Secret": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "a description of the intended use or meaning of this secret",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "the unique reference for the secret",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "the value of the secret",
+                    "type": "string"
+                }
+            }
+        },
+        "data.Var": {
+            "type": "object",
+            "properties": {
+                "default": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
                 }
             }
         }
