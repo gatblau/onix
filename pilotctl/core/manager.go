@@ -182,7 +182,7 @@ func (r *ReMan) Authenticate(token string) bool {
 }
 
 func (r *ReMan) RecordConnStatus(interval int) error {
-	return r.db.RunCommand("select pilotctl_record_conn_status($1)", interval)
+	return r.db.RunCommand("select pilotctl_record_conn_status($1)", time.Duration(interval))
 }
 
 // GetPackages get a list of packages in the backing Artisan registry
