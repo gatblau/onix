@@ -603,7 +603,10 @@ var doc = `{
                     "type": "string"
                 },
                 "tag": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -690,8 +693,8 @@ var SwaggerInfo = swaggerInfo{
 	Host:        "",
 	BasePath:    "",
 	Schemes:     []string{},
-	Title:       "Onix Remote Host",
-	Description: "Remote Ctrl Service for Onix Pilot",
+	Title:       "Pilot Control",
+	Description: "Onix Config Manager Control Service for Pilot Host agent",
 }
 
 type s struct{}

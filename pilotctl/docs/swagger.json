@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Remote Ctrl Service for Onix Pilot",
-        "title": "Onix Remote Host",
+        "description": "Onix Config Manager Control Service for Pilot Host agent",
+        "title": "Pilot Control",
         "contact": {
             "name": "gatblau",
             "url": "http://onix.gatblau.org/",
@@ -586,7 +586,10 @@
                     "type": "string"
                 },
                 "tag": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
