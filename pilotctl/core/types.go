@@ -10,6 +10,7 @@ package core
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/gatblau/onix/artisan/data"
 	"time"
 )
 
@@ -23,12 +24,12 @@ import (
 
 // Cmd command information for remote host execution
 type Cmd struct {
-	Id          int64             `json:"id"`
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Package     string            `json:"package"`
-	Function    string            `json:"function"`
-	Input       map[string]string `json:"input"`
+	Id          int64       `json:"id"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Package     string      `json:"package"`
+	Function    string      `json:"function"`
+	Input       *data.Input `json:"input"`
 }
 
 // CmdRequest a command for execution with a job reference
