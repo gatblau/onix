@@ -6,7 +6,9 @@ definitions:
       key:
         type: string
       tag:
-        type: string
+        items:
+          type: string
+        type: array
     type: object
   core.Cmd:
     properties:
@@ -56,11 +58,11 @@ info:
     email: onix@gatblau.org
     name: gatblau
     url: http://onix.gatblau.org/
-  description: Remote Ctrl Service for Onix Pilot
+  description: Onix Config Manager Control Service for Pilot Host agent
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Onix Remote Host
+  title: Pilot Control
   version: 0.0.4
 paths:
   /:
