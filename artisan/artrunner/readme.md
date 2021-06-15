@@ -16,6 +16,21 @@ The runner provides three distinct endpoints to create or start a flow:
 | `flow/key/{key}/ns/{namespace}` | `POST` | Creates and runs a flow from the flow definition stored in the Onix configuration database. <br>The `key` in the URI is the unique identifier for the flow definition in the database. The `namespace` is the K8S namespace where the flow should run. <br>In addition, if a payload is passed as part of the http request, the runner converts it to a file with the name `payload` and stores it under the files section in the local artisan registry. <br><br>*This endpoint is* typically used to trigger flows from an event, such as the upload of a file to a repository, etc. |
 | `flow/name/{name}/ns/{namespace}` | `POST` | Executes an existing flow by name in the specified namespace. <br>Any http payload is discarded. <br><br>*This endpoint is typically used to trigger flows in CI pipelines from git commits.*|
 
+## Use Cases
+
+### Triggering the Runner from an Event (webhook)
+
+The following figure shows the use case where an event in an external service trigger the Artisan runner:
+
+![event triggered](img/event_trigger.png)
+
+1. Action happened to external service
+2. Service invoke webhook in runner (and optionally pass a payload)
+3. Runner pulls flow specification from Onix configuration
+4. Runner creates Tekton pipeline for the flow and runs it
+5. Pipeline pull required runtimes
+6. Runtimes pull required packages
+
 ## Runner configuration
 
 The runner can be configured with the following variables:
