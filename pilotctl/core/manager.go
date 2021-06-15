@@ -163,16 +163,19 @@ func (r *ReMan) Authenticate(token string) bool {
 		log.Printf("authentication failed for Machine Id='%s': token has expired\n", hostId)
 		return false
 	}
-	rows, err := r.db.Query("select pilotctl_is_admitted($1)", hostId)
+	rows, err := r.db.Query("select * from pilotctl_is_admitted($1)", hostId)
 	if err != nil {
 		fmt.Printf("authentication failed for Machine Id='%s': cannot query admission table: %s\n", hostId, err)
 		return false
 	}
 	var admitted bool
-	err = rows.Scan(&admitted)
-	if err != nil {
-		log.Printf("authentication failed for Machine Id='%s': %s\n", hostId, err)
-		return false
+	for rows.Next() {
+		err = rows.Scan(&admitted)
+		if err != nil {
+			log.Printf("authentication failed for Machine Id='%s': %s\n", hostId, err)
+			return false
+		}
+		break
 	}
 	if !admitted {
 		// log an authentication error
