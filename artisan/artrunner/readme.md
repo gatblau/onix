@@ -4,6 +4,20 @@
 
 Execute Artisan flows as Tekton pipelines.
 
+The runner is a Kubernetes application that converts Artisan flows to Tekton pipelines and run the in Kubernetes.
+
+## Invoking the Runner
+
+The runner provides three distinct endpoints to create or start a flow:
+
+| endpoint | method | description |
+|---|---|---|
+| `/flow` | `POST` | Creates and runs a flow from the flow definition in the http request body. <br><br>*This endpoint is typically used by the artisan CLI to fulfill the `art flow run` command*. |
+| `flow/key/{key}/ns/{namespace}` | `POST` | Creates and runs a flow from the flow definition stored in the Onix configuration database. <br>The `key` in the URI is the unique identifier for the flow definition in the database. The `namespace` is the K8S namespace where the flow should run. <br>In addition, if a payload is passed as part of the http request, the runner converts it to a file with the name `payload` and stores it under the files section in the local artisan registry. <br><br>*This endpoint is* typically used to trigger flows from an event, such as the upload of a file to a repository, etc. |
+| `flow/name/{name}/ns/{namespace}` | `POST` | Executes an existing flow by name in the specified namespace. <br>Any http payload is discarded. <br><br>*This endpoint is typically used to trigger flows in CI pipelines from git commits.*|
+
+## Runner configuration
+
 The runner can be configured with the following variables:
 
 | var | description | default |
@@ -13,6 +27,9 @@ The runner can be configured with the following variables:
 | `OX_HTTP_PORT` | the port on which the server listen for connections | 8080 |
 | `OX_HTTP_UNAME` | the basic authentication username | admin |
 | `OX_HTTP_PWD` | the basic authentication password | adm1n |
+| `OX_WAPI_URI` | the location of the Onix Web API | - |
+| `OX_WAPI_UNAME` | the basic authentication username | admin |
+| `OX_WAPI_PWD` | the basic authentication password | adm1n |
 
 ## Image location
 
