@@ -166,7 +166,8 @@ paths:
       - General
   /flow:
     post:
-      description: uploads an Artisan flow and triggers the flow execution
+      description: creates a new flow from the definition passed in the payload and
+        starts its execution
       parameters:
       - description: the artisan flow to run
         in: body
@@ -185,12 +186,50 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Executes an Artisan flow
+      summary: Creates an Artisan flow
       tags:
       - Flows
-  /webhook/{namespace}/{flow-name}:
+  /flow/key/{flow-key}/ns/{namespace}:
     post:
-      description: starts a flow execution from a commit in a Git repository
+      description: creates a new flow from the definition passed in the payload and
+        starts its execution
+      parameters:
+      - description: the kubernetes namespace where the flow is created
+        in: path
+        name: namespace
+        required: true
+        type: string
+      - description: the unique key of the flow specification in Onix configuration
+          database
+        in: path
+        name: flow-key
+        required: true
+        type: string
+      - description: any configuration information sent by the client to the execution
+          context
+        in: body
+        name: file
+        schema:
+          type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Creates an Artisan flow from a flow spec stored as an Onix configuration
+        item
+      tags:
+      - Flows
+  /flow/name/{flow-name}/ns/{namespace}:
+    post:
+      description: starts the execution of a pre-existing flow based on its name and
+        the namespace where is located
       parameters:
       - description: the kubernetes namespace where the pipeline run is created
         in: path
@@ -213,7 +252,7 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Launch an existing flow from a Git commit
+      summary: Launch an existing flow (typically, from a Git commit hook)
       tags:
       - Flows
 swagger: "2.0"

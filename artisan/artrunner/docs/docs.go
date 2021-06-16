@@ -54,14 +54,14 @@ var doc = `{
         },
         "/flow": {
             "post": {
-                "description": "uploads an Artisan flow and triggers the flow execution",
+                "description": "creates a new flow from the definition passed in the payload and starts its execution",
                 "produces": [
                     "text/plain"
                 ],
                 "tags": [
                     "Flows"
                 ],
-                "summary": "Executes an Artisan flow",
+                "summary": "Creates an Artisan flow",
                 "parameters": [
                     {
                         "description": "the artisan flow to run",
@@ -89,16 +89,66 @@ var doc = `{
                 }
             }
         },
-        "/webhook/{namespace}/{flow-name}": {
+        "/flow/key/{flow-key}/ns/{namespace}": {
             "post": {
-                "description": "starts a flow execution from a commit in a Git repository",
+                "description": "creates a new flow from the definition passed in the payload and starts its execution",
                 "produces": [
                     "text/plain"
                 ],
                 "tags": [
                     "Flows"
                 ],
-                "summary": "Launch an existing flow from a Git commit",
+                "summary": "Creates an Artisan flow from a flow spec stored as an Onix configuration item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the kubernetes namespace where the flow is created",
+                        "name": "namespace",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the unique key of the flow specification in Onix configuration database",
+                        "name": "flow-key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "any configuration information sent by the client to the execution context",
+                        "name": "file",
+                        "in": "body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/flow/name/{flow-name}/ns/{namespace}": {
+            "post": {
+                "description": "starts the execution of a pre-existing flow based on its name and the namespace where is located",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Flows"
+                ],
+                "summary": "Launch an existing flow (typically, from a Git commit hook)",
                 "parameters": [
                     {
                         "type": "string",
