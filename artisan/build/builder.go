@@ -1,3 +1,5 @@
+package build
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package build
-
 import (
 	"archive/zip"
 	"encoding/base64"
@@ -55,7 +55,7 @@ func NewBuilder() *Builder {
 	return builder
 }
 
-// build the package
+// Build build the package
 // from: the source to build, either http based git repository or local system git repository
 // gitToken: if provided it is used to clone a remote repository that has authentication enabled
 // name: the full name of the package to be built including the tag
@@ -94,7 +94,7 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 	b.cleanUp()
 }
 
-// execute the specified function
+// Run execute the specified function
 func (b *Builder) Run(function string, path string, interactive bool, env *core.Envar) {
 	// if no path is specified use .
 	if len(path) == 0 {
@@ -328,7 +328,7 @@ func (b *Builder) getIgnored() []string {
 
 // run a specified function
 func (b *Builder) runFunction(function string, path string, interactive bool, env *core.Envar) {
-	// if insputs are defined for the function then survey for data
+	// if inputs are defined for the function then survey for data
 	i := data.SurveyInputFromBuildFile(function, b.buildFile, interactive, false, env)
 	// merge the collected input with the current environment
 	env.Merge(i.Env(false))
