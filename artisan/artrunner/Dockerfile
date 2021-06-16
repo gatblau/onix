@@ -5,10 +5,6 @@
 #    Contributors to this project, hereby assign copyright in this code to the project,
 #    to be licensed under the same terms as the rest of the code.
 #
-FROM alpine as builder
-WORKDIR /app
-RUN wget https://github.com/tektoncd/cli/releases/download/v0.16.0/tektoncd-cli-0.16.0_Linux-64bit.rpm
-
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 
 LABEL author="gatblau"
@@ -30,8 +26,6 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
 WORKDIR /app
 
 COPY ./bin/linux/runner ./
-COPY --from=builder /app/tektoncd-cli-0.16.0_Linux-64bit.rpm ./
-RUN rpm -i tektoncd-cli-0.16.0_Linux-64bit.rpm && rm tektoncd-cli-0.16.0_Linux-64bit.rpm
 
 USER $UNAME
 

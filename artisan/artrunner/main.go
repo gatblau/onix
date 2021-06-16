@@ -17,8 +17,9 @@ func main() {
 	s := server.New("onix/artisan-runner")
 	// add handlers
 	s.Http = func(router *mux.Router) {
-		router.HandleFunc("/flow", runHandler).Methods("POST")
-		router.HandleFunc("/webhook/{namespace}/{flow-name}", webhookHandler).Methods("POST")
+		router.HandleFunc("/flow", createFlowFromPayloadHandler).Methods("POST")
+		router.HandleFunc("/flow/name/{flow-name}/ns/{namespace}", runFlowHandler).Methods("POST")
+		router.HandleFunc("/flow/key/{flow-key}/ns/{namespace}", createFlowFromConfigHandler).Methods("POST")
 		router.HandleFunc("/list", listHandler).Methods("GET")
 	}
 	s.Serve()

@@ -9,7 +9,9 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
+	"github.com/gatblau/oxc"
 	"net/http"
 	"os/exec"
 	"syscall"
@@ -65,4 +67,40 @@ func handleReader(reader *bufio.Reader, w http.ResponseWriter) {
 		w.Write([]byte(str))
 		fmt.Printf("! %s\n", []byte(str))
 	}
+}
+
+func readFlow(key string) (flow []byte, err error) {
+	cfg := NewConf()
+	oxUri, err := cfg.getOnixWAPIURI()
+	if err != nil {
+		return nil, err
+	}
+	oxUser, err := cfg.getOnixWAPIUser()
+	if err != nil {
+		return nil, err
+	}
+	oxPwd, err := cfg.getOnixWAPIPwd()
+	if err != nil {
+		return nil, err
+	}
+	oxcfg := &oxc.ClientConf{
+		BaseURI:            oxUri,
+		Username:           oxUser,
+		Password:           oxPwd,
+		InsecureSkipVerify: true,
+	}
+	oxcfg.SetAuthMode("basic")
+	ox, err := oxc.NewClient(oxcfg)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create Onix http client: %s", err)
+	}
+	item, err := ox.GetItem(&oxc.Item{Key: key})
+	if err != nil {
+		return nil, fmt.Errorf("cannot retrieve flow specification from Onix: %s", err)
+	}
+	flow, err = json.Marshal(item.Meta)
+	if err != nil {
+		return nil, fmt.Errorf("cannot unmarshal flow specification: %s", err)
+	}
+	return flow, nil
 }
