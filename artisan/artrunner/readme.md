@@ -18,18 +18,42 @@ The runner provides three distinct endpoints to create or start a flow:
 
 ## Use Cases
 
-### Triggering the Runner from an Event (webhook)
+### Triggering the Runner from the CLI
+
+In this case you tell the artisan CLI to execute a flow and pass a runner name:
+
+![cli driven](img/cli_driven.png)
+
+1. Invoke command `art flow run ...` passing flow definition and environment variables
+2. Runner creates Tekton pipeline for the flow and runs it
+3. Pipeline pull required runtimes
+4. Runtimes pull required packages
+
+### Triggering the runner from a Git commit
+
+In this case, the runner starts an existing Tekton pipeline from a git commit:
+
+![commit driven](img/commit_driven.png)
+
+1. Developer commits source to a git repository
+2. The repository invokes the runner
+3. Runner creates Tekton pipeline run for an existing pipeline
+4. Pipeline run starts
+5. Pipeline pulls required runtimes
+6. Runtimes pulls required packages
+
+### Triggering the Runner from a Generic Event (webhook)
 
 The following figure shows the use case where an event in an external service trigger the Artisan runner:
 
-![event triggered](img/event_trigger.png)
+![event driven](img/event_driven.png)
 
 1. Action happened to external service
 2. Service invoke webhook in runner (and optionally pass a payload)
 3. Runner pulls flow specification from Onix configuration
 4. Runner creates Tekton pipeline for the flow and runs it
-5. Pipeline pull required runtimes
-6. Runtimes pull required packages
+5. Pipeline pulls required runtimes
+6. Runtimes pulls required packages
 
 ## Runner configuration
 
