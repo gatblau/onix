@@ -396,7 +396,7 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 		core.CheckErr(err, "failed to download package seal file")
 
 		// download package file from registry
-		artieFilename, err := api.Download(name.Group, name.Name, fmt.Sprintf("%s.zip", remoteArt.FileRef), uname, pwd, tls)
+		packageFilename, err := api.Download(name.Group, name.Name, fmt.Sprintf("%s.zip", remoteArt.FileRef), uname, pwd, tls)
 		core.CheckErr(err, "failed to download package file")
 
 		// unmarshal the seal
@@ -404,12 +404,15 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 		core.CheckErr(err, "cannot read package seal file")
 		seal := new(data.Seal)
 		sealBytes, err := ioutil.ReadAll(sealFile)
+		// exit if it failed to read the seal
 		core.CheckErr(err, "cannot read package seal file")
+		// release the handle on the seal
+		core.CheckErr(sealFile.Close(), "failed to close seal file stream")
+		// unmarshal the seal
 		err = json.Unmarshal(sealBytes, seal)
 		core.CheckErr(err, "cannot unmarshal package seal file")
-
 		// add the package to the local registry
-		r.Add(artieFilename, name, seal)
+		r.Add(packageFilename, name, seal)
 	} else {
 		// the local registry has the package
 		// if the local package does not have the tag
