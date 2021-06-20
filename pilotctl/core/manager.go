@@ -81,8 +81,8 @@ func (r *ReMan) Register(reg *Registration) error {
 	return err
 }
 
-func (r *ReMan) Beat(host string) error {
-	_, err := r.db.Query("select pilotctl_beat($1)", host)
+func (r *ReMan) Beat(machineId string) error {
+	_, err := r.db.Query("select pilotctl_beat($1)", machineId)
 	if err != nil {
 		return err
 	}
@@ -124,23 +124,23 @@ func (r *ReMan) GetAdmissions() ([]Admission, error) {
 		return nil, fmt.Errorf("cannot get host status '%s'", err)
 	}
 	var (
-		key    string
-		active bool
-		tag    []string
+		machineId string
+		active    bool
+		tag       []string
 	)
 	for rows.Next() {
-		rows.Scan(&key, &active, &tag)
+		rows.Scan(&machineId, &active, &tag)
 		admissions = append(admissions, Admission{
-			Key:    key,
-			Active: active,
-			Tag:    tag,
+			MachineId: machineId,
+			Active:    active,
+			Tag:       tag,
 		})
 	}
 	return admissions, rows.Err()
 }
 
 func (r *ReMan) SetAdmission(admission *Admission) error {
-	return r.db.RunCommand("select pilotctl_set_admission($1, $2, $3)", admission.Key, admission.Active, admission.Tag)
+	return r.db.RunCommand("select pilotctl_set_admission($1, $2, $3)", admission.MachineId, admission.Active, admission.Tag)
 }
 
 // Authenticate authenticate a pilot based on its time stamp and machine Id admission status
@@ -158,28 +158,28 @@ func (r *ReMan) Authenticate(token string) bool {
 		return false
 	}
 	timeOk := (time.Now().Unix() - tokenTime) < (5 * 60)
-	hostId := parts[0]
+	machineId := parts[0]
 	if !timeOk {
-		log.Printf("authentication failed for Machine Id='%s': token has expired\n", hostId)
+		log.Printf("authentication failed for Machine Id='%s': token has expired\n", machineId)
 		return false
 	}
-	rows, err := r.db.Query("select * from pilotctl_is_admitted($1)", hostId)
+	rows, err := r.db.Query("select * from pilotctl_is_admitted($1)", machineId)
 	if err != nil {
-		fmt.Printf("authentication failed for Machine Id='%s': cannot query admission table: %s\n", hostId, err)
+		fmt.Printf("authentication failed for Machine Id='%s': cannot query admission table: %s\n", machineId, err)
 		return false
 	}
 	var admitted bool
 	for rows.Next() {
 		err = rows.Scan(&admitted)
 		if err != nil {
-			log.Printf("authentication failed for Machine Id='%s': %s\n", hostId, err)
+			log.Printf("authentication failed for Machine Id='%s': %s\n", machineId, err)
 			return false
 		}
 		break
 	}
 	if !admitted {
 		// log an authentication error
-		log.Printf("authentication failed for Machine Id='%s', host has not been admitted to service\n", hostId)
+		log.Printf("authentication failed for Machine Id='%s', host has not been admitted to service\n", machineId)
 	}
 	return admitted
 }

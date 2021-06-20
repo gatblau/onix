@@ -37,7 +37,7 @@ func main() {
 		// enable encoded path  vars
 		router.UseEncodedPath()
 		// add http handlers
-		router.HandleFunc("/ping/{host-key}", pingHandler).Methods("POST")
+		router.HandleFunc("/ping/{machine-id}", pingHandler).Methods("POST")
 		router.HandleFunc("/host", hostQueryHandler).Methods("GET")
 		router.HandleFunc("/register", registerHandler).Methods("POST")
 		router.HandleFunc("/cmd", updateCmdHandler).Methods("PUT")

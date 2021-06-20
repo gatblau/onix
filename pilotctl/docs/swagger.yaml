@@ -446,7 +446,7 @@ paths:
       summary: Get the API of an Artisan Package
       tags:
       - Registry
-  /ping/{host-key}:
+  /ping/{machine_id}:
     post:
       description: submits a ping from a host to the control plane
       parameters:
