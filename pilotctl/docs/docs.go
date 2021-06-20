@@ -467,7 +467,7 @@ var doc = `{
                 }
             }
         },
-        "/ping/{host-key}": {
+        "/ping/{machine_id}": {
             "post": {
                 "description": "submits a ping from a host to the control plane",
                 "produces": [

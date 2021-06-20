@@ -50,8 +50,7 @@ type Host struct {
 
 // Registration information for host registration
 type Registration struct {
-	Hostname string `json:"hostname"`
-	// github.com/denisbrodbeck/machineid
+	Hostname    string  `json:"hostname"`
 	MachineId   string  `json:"machine_id"`
 	OS          string  `json:"os"`
 	Platform    string  `json:"platform"`
@@ -117,7 +116,7 @@ type Location struct {
 }
 
 type Admission struct {
-	Key    string   `json:"key"`
-	Active bool     `json:"active"`
-	Tag    []string `json:"tag"`
+	MachineId string   `json:"machine_id"`
+	Active    bool     `json:"active"`
+	Tag       []string `json:"tag"`
 }
