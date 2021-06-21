@@ -140,6 +140,9 @@ func (r *ReMan) GetAdmissions() ([]Admission, error) {
 }
 
 func (r *ReMan) SetAdmission(admission *Admission) error {
+	if len(admission.MachineId) == 0 {
+		return fmt.Errorf("machine Id is missing")
+	}
 	return r.db.RunCommand("select pilotctl_set_admission($1, $2, $3)", admission.MachineId, admission.Active, admission.Tag)
 }
 

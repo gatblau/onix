@@ -467,7 +467,7 @@ var doc = `{
                 }
             }
         },
-        "/ping/{machine_id}": {
+        "/ping/{machine-id}": {
             "post": {
                 "description": "submits a ping from a host to the control plane",
                 "produces": [
@@ -480,8 +480,8 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "the unique key for the host",
-                        "name": "host-key",
+                        "description": "the machine Id of the host",
+                        "name": "machine-id",
                         "in": "path",
                         "required": true
                     }
