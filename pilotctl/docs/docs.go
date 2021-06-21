@@ -599,7 +599,7 @@ var doc = `{
                 "active": {
                     "type": "boolean"
                 },
-                "key": {
+                "machine_id": {
                     "type": "string"
                 },
                 "tag": {
@@ -655,7 +655,6 @@ var doc = `{
                     "type": "string"
                 },
                 "machine_id": {
-                    "description": "github.com/denisbrodbeck/machineid",
                     "type": "string"
                 },
                 "os": {
