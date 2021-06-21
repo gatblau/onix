@@ -37,14 +37,14 @@ var (
 // @Summary Ping
 // @Description submits a ping from a host to the control plane
 // @Tags Host
-// @Router /ping/{machine_id} [post]
+// @Router /ping/{machine-id} [post]
 // @Produce json
-// @Param host-key path string true "the unique key for the host"
+// @Param machine-id path string true "the machine Id of the host"
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func pingHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	machineId := vars["machine_id"]
+	machineId := vars["machine-id"]
 	if len(machineId) == 0 {
 		log.Printf("missing machine Id")
 		http.Error(w, "missing machine Id", http.StatusBadRequest)
