@@ -34,3 +34,6 @@ It is based on:
 - OpenShift CLI
 - Kustomize
 - Helm CLI
+
+# Notes
+- Ports 80 and 443 are forwarded to the host by default (to 8080 and 8081 respectively). Additional ports can be forwarded by adding additional lines to the Vagrantfile if needed and the VM re-provisioned or re-created.
