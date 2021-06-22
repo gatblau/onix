@@ -72,7 +72,7 @@ Vagrant.configure("2") do |config|
     v.name = VM_NAME
     v.memory = VM_MEM
     v.cpus = VM_CPU
-    v.gui = true
+    v.gui = false
   end
   config.vm.network "forwarded_port", guest: 80, host: 8080, protocol: "tcp"
   config.vm.network "forwarded_port", guest: 443, host: 8081, protocol: "tcp"
