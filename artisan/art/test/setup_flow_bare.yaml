@@ -1,0 +1,33 @@
+---
+name: quarkus-setup
+description: creates project and tekton pipelines for a Quarkus Java Application
+
+steps:
+  - name: create-project
+    description: create a quarkus scaffold
+    runtime: java
+    package: artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/recipe/java-quarkus
+    source: create
+    function: init-mvn
+
+  - name: push-to-git
+    description: initialise git repo and pushes project
+    runtime: java
+    package: artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/recipe/java-quarkus
+    source: read
+    function: init-git
+
+  - name: create-pipeline
+    description: create tekton pipeline
+    runtime: k8s
+    package: artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/recipe/java-quarkus
+    source: read
+    function: init-tkn
+
+  - name: create-app-deployment
+    description: create application deployment in OpenShift
+    runtime: k8s
+    package: artisan-registry-amosonline-aws-01-sapgatewaycd.apps.amosds.amosonline.io/recipe/java-quarkus
+    source: read
+    function: deploy-app
+...
