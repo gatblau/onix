@@ -19,14 +19,15 @@
 #   $ vagrant ssh
 #
 
-
-############################################################
+####################################################################
 # Change the following as required to suit your requirements
 VM_NAME="dev"
 VM_MEM=4096
 VM_CPU=8
-############################################################
-
+#
+# NB. If you want to modify the default port forwards,
+# check out the "forwarded_port" lines towards the end of the script
+####################################################################
 
 $SCRIPT = <<SCRIPT
 clear
