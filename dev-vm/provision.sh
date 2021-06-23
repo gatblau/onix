@@ -64,4 +64,6 @@ echo Cleaning up ...
 sudo apt -y autoremove
 
 echo ================================================================
-echo Finished - use "vagrant ssh" to connect
+echo Finished
+echo Use "ssh ${VM_USER}@127.0.0.1 -p 2222" to login normally
+echo Use "vagrant ssh" to connect as the standard vagrant user
