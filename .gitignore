@@ -12,3 +12,4 @@ terraform.d
 terraform-provider*
 version
 .settings
+.vagrant

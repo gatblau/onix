@@ -1,0 +1,52 @@
+#
+# pilot - Copyright (c) 2019 by www.gatblau.org
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied.
+# See the License for the specific language governing permissions and limitations under the License.
+#
+# Contributors to this project, hereby assign copyright in this code to the project,
+# to be licensed under the same terms as the rest of the code.
+#
+# NOTE: This vagrant box facilitates development
+#
+# How to use:
+#   $ vagrant up
+#   $ vagrant ssh
+#
+
+####################################################################
+# Change the following as required to suit your requirements
+VM_NAME="vagrant1"
+VM_MEM=2048
+VM_CPU=2
+VM_USER="steve"
+VM_USER_PUBKEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDRXZ0UsAEHWjPD5vezkYdIRLu/4s3ijR7YA7ySc/sJzq/XDR7j/umW9qOROVio2K1icceiwNPUNWXnyIoNwwA9C+RORTCYBrtW5F7YamMH9WAb/V0oxptvPCfV4lsngrvEOmKLswcnwfAb/SoRpgPgshDt29Y+fT5jKmyHvZw6d+ryoSZlHkR9IZGJ/oQfLn1J3xAIy3vF4ioVzeE4KbUY6n823hMhnA36aIvoFyBN5exk2yPk37HqAEclsMsiFJgKw7EqL55wmWnqPht29HIzpPkOFOCALi8gPLQh68ee0QyQr7k+39NI6+CYCTs61CGgTmknypc14ZKm+NpexOo1 steve@dev"
+# Note: the standard vagrant user uses 1000 by default - please do NOT use UID/GID of 1000 !
+VM_UID=1000000
+VM_GID=1000000
+#
+# NB. If you want to modify the default port forwards,
+# check out the "forwarded_port" lines towards the end of the script
+####################################################################
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/ubuntu2004"
+  config.vm.hostname = VM_NAME
+  config.vm.provider "virtualbox" do |v|
+    v.name = VM_NAME
+    v.memory = VM_MEM
+    v.cpus = VM_CPU
+    v.gui = false
+  end
+  config.vm.network "forwarded_port", guest: 80, host: 8080, protocol: "tcp"
+  config.vm.network "forwarded_port", guest: 443, host: 8081, protocol: "tcp"
+  config.vm.provision "shell" do |s|
+    s.args = [VM_USER, VM_USER_PUBKEY, VM_UID, VM_GID, VM_NAME]
+    s.path = "provision.sh"
+  end
+end
