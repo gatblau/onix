@@ -21,50 +21,18 @@
 
 ####################################################################
 # Change the following as required to suit your requirements
-VM_NAME="dev"
-VM_MEM=4096
-VM_CPU=8
+VM_NAME="vagrant1"
+VM_MEM=2048
+VM_CPU=2
+VM_USER="steve"
+VM_USER_PUBKEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDRXZ0UsAEHWjPD5vezkYdIRLu/4s3ijR7YA7ySc/sJzq/XDR7j/umW9qOROVio2K1icceiwNPUNWXnyIoNwwA9C+RORTCYBrtW5F7YamMH9WAb/V0oxptvPCfV4lsngrvEOmKLswcnwfAb/SoRpgPgshDt29Y+fT5jKmyHvZw6d+ryoSZlHkR9IZGJ/oQfLn1J3xAIy3vF4ioVzeE4KbUY6n823hMhnA36aIvoFyBN5exk2yPk37HqAEclsMsiFJgKw7EqL55wmWnqPht29HIzpPkOFOCALi8gPLQh68ee0QyQr7k+39NI6+CYCTs61CGgTmknypc14ZKm+NpexOo1 steve@dev"
+# Note: the standard vagrant user uses 1000 by default - please do NOT use UID/GID of 1000 !
+VM_UID=1000000
+VM_GID=1000000
 #
 # NB. If you want to modify the default port forwards,
 # check out the "forwarded_port" lines towards the end of the script
 ####################################################################
-
-$SCRIPT = <<SCRIPT
-clear
-echo ================================================================
-echo Updating and upgrading base install ...
-sudo apt update && sudo apt upgrade -y
-echo ================================================================
-echo Installing additional tools ...
-sudo apt install -y git docker.io docker-compose gnupg
-sudo usermod -aG docker vagrant
-echo ================================================================
-echo Installing Kubernetes and Tekton CLI ...
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-rm kubectl
-sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3EFE0E0A2F2F60AA
-echo "deb http://ppa.launchpad.net/tektoncd/cli/ubuntu focal main"|sudo tee /etc/apt/sources.list.d/tektoncd-ubuntu-cli.list
-sudo apt update && sudo apt install -y tektoncd-cli
-echo ================================================================
-echo Adding OpenShift CLI ...
-curl -O https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz
-sudo tar xvf openshift-client-linux.tar.gz -C /usr/local/bin/ oc
-rm openshift-client-linux.tar.gz
-echo ================================================================
-echo Adding Kustomize ...
-curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
-sudo install -o root -g root -m 0755 kustomize /usr/local/bin/kustomize
-rm kustomize
-echo ================================================================
-echo Adding Helm ...
-curl -s "https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3" | bash
-echo ================================================================
-echo Cleaning up ...
-sudo apt -y autoremove
-echo ================================================================
-echo Finished - use "vagrant ssh" to connect
-SCRIPT
 
 Vagrant.configure("2") do |config|
   config.vm.box = "generic/ubuntu2004"
@@ -77,5 +45,8 @@ Vagrant.configure("2") do |config|
   end
   config.vm.network "forwarded_port", guest: 80, host: 8080, protocol: "tcp"
   config.vm.network "forwarded_port", guest: 443, host: 8081, protocol: "tcp"
-  config.vm.provision "shell", inline: $SCRIPT
+  config.vm.provision "shell" do |s|
+    s.args = [VM_USER, VM_USER_PUBKEY, VM_UID, VM_GID, VM_NAME]
+    s.path = "provision.sh"
+  end
 end
