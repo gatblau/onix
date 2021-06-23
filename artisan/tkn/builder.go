@@ -176,11 +176,18 @@ func (b *Builder) newSteps() []*Steps {
 			}
 			if len(step.Input.File) > 0 {
 				// add a volume mount for the files
-				s.VolumeMounts = []*VolumeMounts{
-					{
+				if s.VolumeMounts != nil {
+					s.VolumeMounts = append(s.VolumeMounts, &VolumeMounts{
 						Name:      "files-volume",
 						MountPath: "/files",
-					},
+					})
+				} else {
+					s.VolumeMounts = []*VolumeMounts{
+						{
+							Name:      "files-volume",
+							MountPath: "/files",
+						},
+					}
 				}
 			}
 		}
