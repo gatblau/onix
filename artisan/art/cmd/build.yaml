@@ -1,0 +1,16 @@
+---
+input:
+  var:
+    - name: NAME_TO_GREET
+
+functions:
+  - name: deploy
+    description: blah, blah
+    runtime: quay.io/artisan/ubi-min
+    export: true
+    run:
+      - echo hello ${NAME_TO_GREET}
+    input:
+      var:
+        - NAME_TO_GREET
+...

@@ -221,6 +221,43 @@ func runFlowHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @Summary Retrieve a configuration flow from Onix
+// @Description connect to Onix and retrieves a flow using its configuration item natural key in Onix
+// @Tags Flows
+// @Router /flow/key/{flow-key} [get]
+// @Produce plain
+// @Param flow-key path string true "the unique key of the flow specification in Onix configuration database"
+// @Failure 500 {string} the health check failed with an error, check server logs for details
+// @Success 200 {string} OK, the health check succeeded
+func getFlowHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	flowKey := vars["flow-key"]
+	// fetches the flow specification from onix
+	flowSpec, err := readFlow(flowKey)
+	if err != nil {
+		msg := fmt.Sprintf("cannot retrieve Artisan Flow specification from Onix: %s", err)
+		log.Printf("%s\n", msg)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// unmarshal the flow bytes
+	f, err := flow.NewFlow(flowSpec)
+	if err != nil {
+		msg := fmt.Sprintf("cannot create Artisan flow: %s", err)
+		log.Printf("%s\n", msg)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	bytes, err := f.JsonBytes()
+	if err != nil {
+		msg := fmt.Sprintf("cannot serialise Artisan flow before sending response: %s", err)
+		log.Printf("%s\n", msg)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	w.Write(bytes)
+}
+
 func checkErr(w http.ResponseWriter, msg string, err error) bool {
 	if err != nil {
 		msg := fmt.Sprintf("%s: %s\n", msg, err)
@@ -228,8 +265,4 @@ func checkErr(w http.ResponseWriter, msg string, err error) bool {
 		http.Error(w, msg, http.StatusInternalServerError)
 	}
 	return err != nil
-}
-
-func listHandler(w http.ResponseWriter, r *http.Request) {
-	execute("tkn", []string{"resource", "list"}, w)
 }

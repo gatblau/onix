@@ -1,0 +1,7 @@
+---
+labels:
+  author: gatblau
+  application: pilot
+  description: configuration management agent
+  architecture: amd64
+...

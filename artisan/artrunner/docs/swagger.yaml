@@ -189,6 +189,31 @@ paths:
       summary: Creates an Artisan flow
       tags:
       - Flows
+  /flow/key/{flow-key}:
+    get:
+      description: connect to Onix and retrieves a flow using its configuration item
+        natural key in Onix
+      parameters:
+      - description: the unique key of the flow specification in Onix configuration
+          database
+        in: path
+        name: flow-key
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Retrieve a configuration flow from Onix
+      tags:
+      - Flows
   /flow/key/{flow-key}/ns/{namespace}:
     post:
       description: creates a new flow from the definition passed in the payload and

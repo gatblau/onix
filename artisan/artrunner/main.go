@@ -20,7 +20,7 @@ func main() {
 		router.HandleFunc("/flow", createFlowFromPayloadHandler).Methods("POST")
 		router.HandleFunc("/flow/name/{flow-name}/ns/{namespace}", runFlowHandler).Methods("POST")
 		router.HandleFunc("/flow/key/{flow-key}/ns/{namespace}", createFlowFromConfigHandler).Methods("POST")
-		router.HandleFunc("/list", listHandler).Methods("GET")
+		router.HandleFunc("/flow/key/{flow-key}", getFlowHandler).Methods("GET")
 	}
 	s.Serve()
 }

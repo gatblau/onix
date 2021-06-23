@@ -72,6 +72,41 @@
                 }
             }
         },
+        "/flow/key/{flow-key}": {
+            "get": {
+                "description": "connect to Onix and retrieves a flow using its configuration item natural key in Onix",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Flows"
+                ],
+                "summary": "Retrieve a configuration flow from Onix",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the unique key of the flow specification in Onix configuration database",
+                        "name": "flow-key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/flow/key/{flow-key}/ns/{namespace}": {
             "post": {
                 "description": "creates a new flow from the definition passed in the payload and starts its execution",
