@@ -37,3 +37,13 @@ It is based on:
 
 # Notes
 - Ports 80 and 443 are forwarded to the host by default (to 8080 and 8081 respectively). Additional ports can be forwarded by adding additional lines to the Vagrantfile if needed and the VM re-provisioned or re-created.
+
+# Troubleshooting
+
+## Proxy issues blocking download of Vagrant box
+
+If you have issues with your location not being able to pull the Vagrant box down correctly then please download manually and add to Vagrant with the following steps:
+
+1. Browse to the web site hosting the Ubuntu 20.04 box (I.E. https://app.vagrantup.com/generic/boxes/ubuntu2004)
+2. Download the *Virtualbox* version of the box to your local hard drive (note that the default filename is a GUID - this is fine)
+3. At a command prompt in the directory where your downloaded box is, type "vagrant box add generic/ubuntu2004 `GUID`" (where `GUID` is the name of the file downloaded)
