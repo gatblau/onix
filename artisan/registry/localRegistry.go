@@ -299,7 +299,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) {
 	// fetch the package info from the local registry
 	localPackage := r.FindPackage(name)
 	if localPackage == nil {
-		fmt.Printf("package %s not found in the local registry\n", name)
+		fmt.Printf("package '%s' not found in the local registry\n", name)
 		return
 	}
 	// assume tls enabled
@@ -312,9 +312,9 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) {
 		remoteArt, err2 = api.GetPackageInfo(name.Group, name.Name, localPackage.Id, uname, pwd, false)
 		if err2 == nil {
 			tls = false
-			core.Msg("WARNING: remote registry does not use TLS - this is a security risk")
+			core.Msg("WARNING: artisan registry does not use TLS: the connection to the registry is not secure")
 		} else {
-			core.CheckErr(err, "cannot retrieve remote package information")
+			core.CheckErr(err, "art push '%s' cannot retrieve remote package information", name.String())
 		}
 	}
 	// if the package exists in the remote registry
@@ -335,7 +335,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) {
 	// if the package does not exist in the remote registry
 	// check if the tag has been applied to another package in the repository
 	repo, err := api.GetRepositoryInfo(name.Group, name.Name, uname, pwd, tls)
-	core.CheckErr(err, "cannot retrieve repository information from backend")
+	core.CheckErr(err, "art push '%s' cannot retrieve repository information from registry", name.String())
 	// if so
 	if a, ok := repo.GetTag(name.Tag); ok {
 		// remove the tag from the package as it will be applied to the new package
@@ -376,9 +376,9 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 			// switches tls off
 			tls = false
 			// issue warning
-			core.Msg("WARNING: remote registry does not use TLS - this is a security risk")
+			core.Msg("WARNING: artisan registry does not use TLS: the connection to the registry is not secure")
 		} else {
-			core.CheckErr(err, "cannot retrieve repository information from backend")
+			core.CheckErr(err, "art pull '%s' cannot retrieve repository information from registry", name.String())
 		}
 	}
 	// find the package to pull in the remote repository
