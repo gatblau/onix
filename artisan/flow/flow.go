@@ -27,11 +27,11 @@ type Flow struct {
 	Description string `yaml:"description"`
 	// a list of labels to document key aspects of the flow execution
 	// for example using a target namespace if running in Kubernetes
-	Labels  map[string]string `yaml:"labels"`
-	GitURI  string            `yaml:"git_uri,omitempty"`
-	AppIcon string            `yaml:"app_icon,omitempty"`
-	Steps   []*Step           `yaml:"steps"`
-	Input   *data.Input       `yaml:"input,omitempty"`
+	Labels  map[string]string `yaml:"labels" json:"labels"`
+	GitURI  string            `yaml:"git_uri,omitempty" json:"git_uri,omitempty"`
+	AppIcon string            `yaml:"app_icon,omitempty" json:"app_icon,omitempty"`
+	Steps   []*Step           `yaml:"steps" json:"steps"`
+	Input   *data.Input       `yaml:"input,omitempty" json:"input,omitempty"`
 }
 
 func (f *Flow) StepByFx(fxName string) *Step {

@@ -13,15 +13,15 @@ import (
 )
 
 type Step struct {
-	Name            string      `yaml:"name"`
-	Description     string      `yaml:"description,omitempty"`
-	Runtime         string      `yaml:"runtime"`
-	RuntimeManifest string      `yaml:"runtime_manifest,omitempty"`
-	Function        string      `yaml:"function,omitempty"`
-	Package         string      `yaml:"package,omitempty"`
-	PackageSource   string      `yaml:"source,omitempty"`
-	Input           *data.Input `yaml:"input,omitempty"`
-	Privileged      bool        `yaml:"privileged"`
+	Name            string      `yaml:"name" json:"name"`
+	Description     string      `yaml:"description,omitempty" json:"description,omitempty"`
+	Runtime         string      `yaml:"runtime" json:"runtime"`
+	RuntimeManifest string      `yaml:"runtime_manifest,omitempty" json:"runtime_manifest,omitempty"`
+	Function        string      `yaml:"function,omitempty" json:"function,omitempty"`
+	Package         string      `yaml:"package,omitempty" json:"package,omitempty"`
+	PackageSource   string      `yaml:"source,omitempty" json:"source,omitempty"`
+	Input           *data.Input `yaml:"input,omitempty" json:"input,omitempty"`
+	Privileged      bool        `yaml:"privileged" json:"privileged"`
 }
 
 func (s *Step) surveyBuildfile(requiresGitSource bool) bool {
