@@ -32,7 +32,7 @@ echo ${VM_USER_PUBKEY} >> /home/${VM_USER}/.ssh/authorized_keys
 echo ================================================================
 echo Installing additional tools ...
 sudo apt install -y git docker.io docker-compose gnupg
-sudo usermod -aG docker vagrant
+sudo usermod -aG docker ${VM_USER}
 
 echo ================================================================
 echo Installing Kubernetes and Tekton CLI ...
