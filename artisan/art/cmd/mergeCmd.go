@@ -32,5 +32,5 @@ func NewMergeCmd() *MergeCmd {
 }
 
 func (c *MergeCmd) Run(cmd *cobra.Command, args []string) {
-	core.MergeFiles(args, c.envFilename)
+	core.MergeFilesOld(args, c.envFilename)
 }
