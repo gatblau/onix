@@ -14,6 +14,7 @@ echo ================================================================
 echo Adding group/user for ${VM_USER} ...
 groupadd -g ${VM_GID} ${VM_USER}
 useradd -m -u ${VM_UID} -g ${VM_GID} -s "/bin/bash" ${VM_USER}
+echo "${VM_USER} ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/${VM_USER}-override
 
 echo ================================================================
 echo Creating SSH key ...
@@ -32,7 +33,7 @@ echo ${VM_USER_PUBKEY} >> /home/${VM_USER}/.ssh/authorized_keys
 echo ================================================================
 echo Installing additional tools ...
 sudo apt install -y git docker.io docker-compose gnupg
-sudo usermod -aG docker vagrant
+sudo usermod -aG docker ${VM_USER}
 
 echo ================================================================
 echo Installing Kubernetes and Tekton CLI ...
