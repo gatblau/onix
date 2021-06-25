@@ -15,7 +15,7 @@ import (
 
 // clones a remote git LocalRegistry, it only accepts a token if authentication is required
 // if the token is not provided (empty string) then no authentication is used
-func gitClone(repoUrl string, gitToken string, sourceDir string) (*git.Repository, error) {
+func GitClone(repoUrl string, gitToken string, sourceDir string) (*git.Repository, error) {
 	// clone the remote repository
 	opts := &git.CloneOptions{
 		URL:      repoUrl,
