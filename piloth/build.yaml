@@ -14,7 +14,7 @@ functions:
     run:
       - sh version.sh ${APP_VERSION}-${ARTISAN_REF}
 
-  - name: build
+  - name: build-linux
     description: builds the host pilot binary for the linux platform
     env:
       GOOS: linux
@@ -22,12 +22,27 @@ functions:
       - $(set-version)
       - go build -o bin/pilot -v
 
+  - name: build-windows
+    description: builds the host pilot binary for the windows platform
+    env:
+      GOOS: windows
+    run:
+      - $(set-version)
+      - go build -o bin/win/pilot.exe -v
+
 profiles:
   - name: linux
     default: true
     type: content/binary
     license: Apache Version 2
     run:
-      - $(build)
+      - $(build-linux)
+    target: bin/pilot
+
+  - name: windows
+    type: content/binary
+    license: Apache Version 2
+    run:
+      - $(build-windows)
     target: bin/pilot
 ...

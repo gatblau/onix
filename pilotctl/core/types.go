@@ -10,6 +10,7 @@ package core
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/gatblau/onix/artisan/data"
 	"time"
 )
@@ -32,10 +33,47 @@ type Cmd struct {
 	Input       *data.Input `json:"input"`
 }
 
+func NewCmdRequest(jobId int64, pack, fx string, input *data.Input) (*CmdRequest, error) {
+	value := CmdValue{
+		JobId:    jobId,
+		Package:  pack,
+		Function: fx,
+		Input:    input,
+	}
+	// create a signature for the command value
+	signature, err := sign(value)
+	if err != nil {
+		return nil, fmt.Errorf("cannot sign command request: %s", err)
+	}
+	return &CmdRequest{
+		Signature: signature,
+		Value:     value,
+	}, nil
+}
+
 // CmdRequest a command for execution with a job reference
 type CmdRequest struct {
-	Cmd Cmd    `json:"cmd"`
-	Ref string `json:"ref"`
+	Signature string   `json:"signature"`
+	Value     CmdValue `json:"value"`
+}
+
+type CmdValue struct {
+	JobId    int64       `json:"job_id"`
+	Package  string      `json:"package"`
+	Function string      `json:"function"`
+	Input    *data.Input `json:"input"`
+}
+
+func (c *CmdValue) Value(user, pwd string) string {
+	return fmt.Sprintf("art exe -u %s:%s %s %s", user, pwd, c.Package, c.Function)
+}
+
+func (c *CmdValue) Env() []string {
+	var vars []string
+	for _, v := range c.Input.Var {
+		vars = append(vars, fmt.Sprintf("%s=%s", v.Name, v.Value))
+	}
+	return vars
 }
 
 // Host  host monitoring information
