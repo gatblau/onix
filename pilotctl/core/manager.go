@@ -81,12 +81,16 @@ func (r *ReMan) Register(reg *Registration) error {
 	return err
 }
 
-func (r *ReMan) Beat(machineId string) error {
-	_, err := r.db.Query("select pilotctl_beat($1)", machineId)
+func (r *ReMan) Beat(machineId string) (jobId int64, pack, fx string, input data.Input, err error) {
+	rows, err := r.db.Query("select * from pilotctl_beat($1)", machineId)
 	if err != nil {
-		return err
+		return -1, "", "", data.Input{}, err
 	}
-	return nil
+	for rows.Next() {
+		rows.Scan(&jobId, &pack, &fx, &input)
+	}
+	// returns the next job to execute for the machine Id or -1 if no job is available
+	return jobId, pack, fx, input, nil
 }
 
 func (r *ReMan) GetHostStatus() ([]Host, error) {

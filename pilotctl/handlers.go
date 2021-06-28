@@ -30,10 +30,6 @@ import (
 	"net/url"
 )
 
-var (
-	err error
-)
-
 // @Summary Ping
 // @Description submits a ping from a host to the control plane
 // @Tags Host
@@ -50,17 +46,22 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "missing machine Id", http.StatusBadRequest)
 		return
 	}
-	err = rem.Beat(machineId)
+	jobId, pack, fx, input, err := rem.Beat(machineId)
 	if err != nil {
 		log.Printf("can't record ping: %v\n", err)
-		http.Error(w, fmt.Sprintf("can't record ping: %s\n", err), http.StatusInternalServerError)
+		http.Error(w, "can't record ping, check server logs\n", http.StatusInternalServerError)
 		return
 	}
-	// return an empty command list for now
-	var cmds []core.CmdRequest
-	bytes, err := json.Marshal(cmds)
+	cr, err := core.NewCmdRequest(jobId, pack, fx, &input)
 	if err != nil {
-		log.Printf("can't marshal commands: %s\n", err)
+		log.Printf("can't sign command request: %v\n", err)
+		http.Error(w, "can't sign command request, check server logs\n", http.StatusInternalServerError)
+		return
+	}
+	bytes, err := json.Marshal(cr)
+	if err != nil {
+		log.Printf("can't marshal command request: %s\n", err)
+		http.Error(w, "can't marshal command request, check server logs\n", http.StatusInternalServerError)
 	}
 	w.WriteHeader(http.StatusCreated)
 	w.Write(bytes)

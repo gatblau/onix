@@ -9,15 +9,20 @@ package core
 */
 import (
 	"fmt"
+	"github.com/gatblau/onix/piloth/cmd"
 	"log"
+	"log/syslog"
+	"os"
 	"time"
 )
 
 // Pilot host
 type Pilot struct {
-	cfg  *Config
-	info *HostInfo
-	rem  *Rem
+	cfg    *Config
+	info   *HostInfo
+	ctl    *PilotCtl
+	logs   *syslog.Writer
+	worker *cmd.Worker
 }
 
 func NewPilot() (*Pilot, error) {
@@ -31,14 +36,22 @@ func NewPilot() (*Pilot, error) {
 	if err != nil {
 		return nil, err
 	}
-	r, err := NewRem()
+	worker := cmd.NewWorker(cmd.NewQueue("pilot"))
+	worker.Start(cfg.Get(PilotArtRegUser), cfg.Get(PilotArtRegPwd))
+	r, err := NewPilotCtl(worker)
+	if err != nil {
+		return nil, err
+	}
+	logsWriter, err := syslog.New(syslog.LOG_ALERT, "onix-pilot")
 	if err != nil {
 		return nil, err
 	}
 	p := &Pilot{
-		cfg:  cfg,
-		info: info,
-		rem:  r,
+		cfg:    cfg,
+		info:   info,
+		ctl:    r,
+		logs:   logsWriter,
+		worker: worker,
 	}
 	// return a new pilot
 	return p, nil
@@ -59,39 +72,68 @@ func (p *Pilot) Start() {
 	p.ping()
 }
 
+// warn: write a warning in syslog
+func (p *Pilot) warn(msg string, args ...interface{}) {
+	log.SetOutput(p.logs)
+	p.logs.Warning(fmt.Sprintf(msg+"\n", args...))
+}
+
+// stdout: write a message to stdout
+func (p *Pilot) stdout(msg string, args ...interface{}) {
+	log.SetOutput(os.Stdout)
+	log.Printf(msg+"\n", args...)
+}
+
 // register the host, keep retrying indefinitely until a registration is successful
 func (p *Pilot) register() {
 	// checks if the host is already registered
 	if !IsRegistered() {
-		fmt.Printf("host not registered, attempting registration\n")
+		p.stdout("host not registered, attempting registration")
 		// starts a loop
 		for {
-			err := p.rem.Register()
+			err := p.ctl.Register()
 			// if no error then exit the loop
 			if err == nil {
-				log.Printf("registration successful\n")
+				p.stdout("registration successful")
 				err = SetRegistered()
 				if err != nil {
-					log.Printf("failed to cache registration status: %s\n", err)
+					p.stdout("failed to cache registration status: %s", err)
 				}
 				break
 			} else {
-				log.Printf("registration failed: %s\n", err)
+				p.stdout("registration failed: %s", err)
 			}
 			// otherwise waits for a period before retrying
-			time.Sleep(1 * time.Minute)
+			time.Sleep(15 * time.Minute)
 		}
 	} else {
-		log.Printf("host is already registered\n")
+		p.stdout("host is already registered")
 	}
 }
 
 func (p *Pilot) ping() {
-	log.Printf("starting ping loop\n")
+	p.stdout("starting ping loop")
 	for {
-		_, err := p.rem.Ping()
+		cmd, err := p.ctl.Ping()
 		if err != nil {
-			log.Printf("%s\n", err)
+			// write to the console output
+			p.stdout("ping failed: %s\n", err)
+		} else {
+			// verify the host identity and command value integrity using Pretty Good Privacy
+			err = verify(cmd.Value, cmd.Signature)
+			// if the verification fails, it is likely spoofing of pilotctl has happened
+			if err != nil {
+				p.stdout("invalid host signature, cannot trust the pilot control service => %s", err)
+				// as it cannot trust the host writes a warning to syslog
+				p.warn("invalid host signature, cannot trust the pilot control service => %s", err)
+			} else { // if the host can be trusted
+				// do we have a command to process?
+				if cmd.Value.JobId > 0 {
+					// execute the job
+					p.stdout("starting execution of job #%v, package => '%s', fx => '%s'", cmd.Value.JobId, cmd.Value.Package, cmd.Value.Function)
+					p.worker.Queue.AddJob(cmd.Value)
+				}
+			}
 		}
 		time.Sleep(15 * time.Second)
 	}

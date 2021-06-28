@@ -1,2 +1,4 @@
 PILOT_LOG_LEVEL=Trace
 PILOTCTL_URI=http://localhost:8888
+PILOT_ART_REG_USER=admin
+PILOT_ART_REG_PWD=admin
