@@ -28,6 +28,7 @@ func InitialiseRootCmd() *RootCmd {
 	waitCmd := NewWaitCmd()
 	langCmd := InitialiseLangCommand()
 	envCmd := InitialiseEnvCommand()
+	gitSyncCmd := NewGitSyncCmd()
 	rootCmd.Cmd.AddCommand(
 		buildCmd.cmd,
 		lsCmd.cmd,
@@ -48,6 +49,7 @@ func InitialiseRootCmd() *RootCmd {
 		waitCmd.cmd,
 		langCmd.cmd,
 		envCmd.cmd,
+		gitSyncCmd.cmd,
 	)
 	return rootCmd
 }

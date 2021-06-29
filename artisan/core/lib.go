@@ -13,10 +13,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/AlecAivazis/survey/v2/terminal"
-	"github.com/hashicorp/go-uuid"
-	"github.com/ohler55/ojg/jp"
 	"io"
 	"io/ioutil"
 	"log"
@@ -31,6 +27,12 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/AlecAivazis/survey/v2/terminal"
+	t "github.com/google/uuid"
+	"github.com/hashicorp/go-uuid"
+	"github.com/ohler55/ojg/jp"
 )
 
 // check the user id is correct for bind mounts
@@ -479,4 +481,21 @@ func IsPackageName(val interface{}) error {
 		return fmt.Errorf("value must be a string")
 	}
 	return nil
+}
+
+/*
+NewTempDir will create a temp folder with a random name and return the path
+*/
+func NewTempDir() string {
+	// the working directory will be a build folder within the registry directory
+	uid := t.New()
+	folder := strings.Replace(uid.String(), "-", "", -1)[:12]
+	tempDirPath := filepath.Join(TmpPath(), folder)
+	// creates a temporary working directory
+	err := os.MkdirAll(tempDirPath, os.ModePerm)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return tempDirPath
 }

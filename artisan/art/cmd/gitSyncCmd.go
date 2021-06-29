@@ -9,17 +9,12 @@ package cmd
 */
 
 import (
-	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	l "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +26,7 @@ type GitSyncCmd struct {
 	repoURI           string
 	env               *core.Envar
 	token             string
-	recursive         bool
+	recursive         *bool
 	path4Files2BeSync string
 }
 
@@ -41,22 +36,22 @@ func NewGitSyncCmd() *GitSyncCmd {
 		cmd: &cobra.Command{
 			Use:   "sync",
 			Short: "sync local git repo with remote",
-			Long:  ``,
+			Long:  `art sync -p repo/vm-manifest -t mytoken -u https://k-p-ani@bitbucket.org/k-p-ani/vm-auto-deployment.git   . or path/to/.tem files`,
 		},
 	}
 
+	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.repoPath, "repo-path", "p", "", "the git repo to sync")
 	c.cmd.Flags().StringVarP(&c.repoURI, "uri", "u", "", "the git repo uri to use")
 	c.cmd.Flags().StringVarP(&c.token, "token", "t", "", "the token to login to git repo")
-	c.cmd.Flags().BoolVarP(&c.recursive, "recursive", "r", "", "whether to perform recursive sync. true or false (currently not implemented) ")
-	c.cmd.Run = c.Run
+	//c.recursive = c.cmd.Flags().BoolP("recursive", "r", false, "whether to perform recursive sync. true or false (currently not implemented) ")
+	// this is causing problem, the recursive value is coming as args in Run function.
 	return c
 }
 
 //Run to execute git sync
 func (g *GitSyncCmd) Run(cmd *cobra.Command, args []string) {
 	//art sync --repo-uri git-url --repo-path  -u user:password --recursive  .
-	println("Ani is great ..!")
 	switch len(args) {
 	case 0:
 		g.path4Files2BeSync = "."
@@ -65,110 +60,66 @@ func (g *GitSyncCmd) Run(cmd *cobra.Command, args []string) {
 	default:
 		core.RaiseErr("too many arguments")
 	}
-	//Query:- we need two set of input
-	// 1> input to connect git repo like repoURL, assetFolder, git token
-	// 2> environment variable with values for doing art merge
-	// 3> Should we validate inputs parameters provided to below fuctions
 
-	// init(gitURL string, gitToken string)
-	// cloneRepo(repoUrl string, gitToken string)
-	// syncFiles(repo *git.Repository)
-	// commitAndPush(wrkTree *git.Worktree, repo *git.Repository)
-	core.newTempDir()
-}
-
-/*
-init create a temp directory under current user's home directory.
-This temp directory will be used to perform git operations like clone,pull,push
-and finally this will be deleted if required.
-*/
-func (g *GitSyncCmd) init(gitURL string, gitToken string) {
-
-	filepath.Join(core.TempPath(), core.RandomString(10))
-
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal(err)
-	} else {
-		// create a temp directory with name "gitsynccmd" under current user's home directory
-		wrkDir, err := ioutil.TempDir(homeDir, "gitsynccmd")
-		if err != nil {
-			log.Fatal(err)
-		} else {
-			// store this reference back in gitSyncCmd structs
-			g.workingDir = wrkDir
-		}
-	}
-}
-
-/*
-cloneRepo will clone git repo from input repo url to a temp folder "gitsynccmd"
-currents user's home
-*/
-func (g *GitSyncCmd) cloneRepo(repoUrl string, gitToken string) *git.Repository {
-	g.repoURI = repoUrl
-	opts := &git.CloneOptions{
-		URL:      repoUrl,
-		Progress: os.Stdout,
-	}
-	opts.Auth = &http.BasicAuth{
-		Username: "SyncCmd", // yes, this can be anything except an empty string
-		Password: gitToken,
-	}
-	repo, err := git.PlainClone(g.workingDir, false, opts)
+	g.workingDir = core.NewTempDir()
+	l.Debug("GitSyncCmd is [path4Files2BeSync = " + g.path4Files2BeSync + "] [repoPath = " + g.repoPath + "] [repoURI = " + g.repoURI + "] [workingDir = " + g.workingDir + "]")
+	var cmdName = "GitSyncCmd"
+	gitRepo, err := core.GitClone(g.repoURI, g.token, g.workingDir, cmdName)
 	if err != nil {
 		_ = os.RemoveAll(g.workingDir)
-		log.Fatal(err)
-	}
-	return repo
-}
-
-/*
-syncFiles will replace environment variables in the files with the respective value
-and add asset folder into git working tree
-*/
-func (g *GitSyncCmd) syncFiles(repo *git.Repository) *git.Worktree {
-	wrkTree, err := repo.Worktree()
-	if err != nil {
-		_ = os.RemoveAll(g.workingDir)
-		log.Fatal(err)
+		l.Fatal("Run, error occurred during core.GitClone operation ", err)
 	} else {
-		// merge all .yaml.tem files
-		//move .yaml files generated to g.workingDir /g.repoName /g.assetFolder
-
-		//add asset folder to git working tree
-		_, err = wrkTree.Add(filepath.Join(g.workingDir, g.repoName, g.assetFolder))
+		l.Info("Run, core.GitClone completed ...")
+		absPath4TemFiles, err := core.AbsPath(g.path4Files2BeSync)
 		if err != nil {
 			_ = os.RemoveAll(g.workingDir)
-			log.Fatal(err)
+			l.Fatal("Run, error occurred when getting absolute path of relative path "+g.path4Files2BeSync, err)
+		} else {
+			l.Info("Run, absolute path generated for path ", g.path4Files2BeSync)
+			temFilesWithPath, err := getAllTemFilesFromPath(absPath4TemFiles)
+			if err != nil {
+				_ = os.RemoveAll(g.workingDir)
+				l.Fatal("Run, error occurred when getting all tem files from path "+absPath4TemFiles, err)
+			} else {
+				l.Info("successfully call getAllTemFilesFromPath function for fetching tem file from path ", absPath4TemFiles)
+				l.Debug("Run, getAllTemFilesFromPath function returned total tem files ", len(temFilesWithPath))
+				var repoAbsPath = g.workingDir
+				if g.repoPath != "." {
+					repoAbsPath = filepath.Join(repoAbsPath, g.repoPath)
+				}
+				err = core.Sync(temFilesWithPath, absPath4TemFiles, repoAbsPath)
+				if err != nil {
+					_ = os.RemoveAll(g.workingDir)
+					l.Fatal("Run, error occurred while executing core.Sync function using files %s", temFilesWithPath)
+					l.Fatal("Run, error occurred while executing core.Sync function from folder "+absPath4TemFiles+" to folder "+repoAbsPath, err)
+				} else {
+					l.Info("Run, core.Sync function executed successfully ")
+					err = core.CommitAndPush(gitRepo, g.token, cmdName)
+					if err != nil {
+						_ = os.RemoveAll(g.workingDir)
+						l.Fatal("Run, error occurred while executing core.CommitAndPush function from folder ", err)
+					}
+					l.Info("Run, core.CommitAndPush function executed successfully ")
+				}
+			}
 		}
 	}
-
-	return wrkTree
 }
 
-/*
- commitAndPush will commint and push the changes back to remote git repo
-*/
-func (g *GitSyncCmd) commitAndPush(wrkTree *git.Worktree, repo *git.Repository) {
-	//commit changes
-	commit, err := wrkTree.Commit("Changes committed for the ?????", &git.CommitOptions{
-		Author: &object.Signature{
-			Name:  "SyncCmd",
-			Email: "******",
-			When:  time.Now(),
-		},
-	})
-
+func getAllTemFilesFromPath(absPath4TemFiles string) ([]string, error) {
+	var err error
+	var temFilesWithPath []string
+	files, err := ioutil.ReadDir(absPath4TemFiles)
 	if err != nil {
-		_ = os.RemoveAll(g.workingDir)
-		log.Fatal(err)
+		l.Fatal("getAllTemFilesFromPath, error occurred when readDir with abs path "+absPath4TemFiles, err)
+		return temFilesWithPath, err
 	}
-	obj, err := repo.CommitObject(commit)
-	if err != nil {
-		_ = os.RemoveAll(g.workingDir)
-		log.Fatal(err)
+	l.Info("gitSyncCmd, getAllTemFilesFromPath, Read files from path ")
+	for _, file := range files {
+		if filepath.Ext(file.Name()) == ".tem" {
+			temFilesWithPath = append(temFilesWithPath, filepath.Join(absPath4TemFiles, file.Name()))
+		}
 	}
-	err = repo.Push(&git.PushOptions{})
-	fmt.Println(obj)
+	l.Info("gitSyncCmd, getAllTemFilesFromPath, total number of tem files found is %s", len(temFilesWithPath))
+	return temFilesWithPath, err
 }
