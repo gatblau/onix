@@ -46,11 +46,11 @@ func GitClone(repoUrl string, gitToken string, sourceDir string, cmdName string)
 				Password: ps,
 			}
 		} else {*/
-			opts.Auth = &http.BasicAuth{
-				Username: cmdName, // yes, this can be anything except an empty string
-				Password: gitToken,
-			}
-		/*}*
+		opts.Auth = &http.BasicAuth{
+			Username: cmdName, // yes, this can be anything except an empty string
+			Password: gitToken,
+		}
+		/*}*/
 
 	}
 	l.Info("git, GitClone peforming  git.PlainClone ")
