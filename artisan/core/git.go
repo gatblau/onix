@@ -40,7 +40,7 @@ func GitClone(repoUrl string, gitToken string, sourceDir string, cmdName string)
 		/*credentials := strings.Split(gitToken, ":")
 		if len(credentials) == 2 {
 			var un = "k-p-ani"
-			var ps = ""
+			var ps = "MohitAni$28"
 			opts.Auth = &http.BasicAuth{
 				Username: un, // yes, this can be anything except an empty string
 				Password: ps,
@@ -78,6 +78,7 @@ func Sync(temFilesWithPath []string, absPath4TemFilesDirectory string, absPath4R
 		return err
 	} else {
 		l.Info("git, Sync files size is .... ", len(files))
+		os.MkdirAll(absPath4Repo, os.ModePerm)
 		for _, file := range files {
 			if filepath.Ext(file.Name()) == ".yaml" {
 				l.Debug("git, Sync moving file " + file.Name() + " from path = " + absPath4TemFilesDirectory + " to path = " + absPath4Repo)
@@ -128,12 +129,11 @@ func CommitAndPush(repo *git.Repository, token string, cmdName string) error {
 		log.Fatal(err)
 		return err
 	}
-	/*
-		auth := &http.BasicAuth{
-			Username: "k-p-ani", // yes, this can be anything except an empty string
-			Password: "",
-		}
-	*/
+
+	/*auth := &http.BasicAuth{
+		Username: "k-p-ani", // yes, this can be anything except an empty string
+		Password: "",
+	}*/
 
 	auth := &http.BasicAuth{
 		Username: cmdName, // yes, this can be anything except an empty string

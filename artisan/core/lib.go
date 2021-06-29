@@ -486,7 +486,7 @@ func IsPackageName(val interface{}) error {
 /*
 NewTempDir will create a temp folder with a random name and return the path
 */
-func NewTempDir() string {
+func NewTempDir() (string, error) {
 	// the working directory will be a build folder within the registry directory
 	uid := t.New()
 	folder := strings.Replace(uid.String(), "-", "", -1)[:12]
@@ -497,5 +497,5 @@ func NewTempDir() string {
 		log.Fatal(err)
 	}
 
-	return tempDirPath
+	return tempDirPath, err
 }
