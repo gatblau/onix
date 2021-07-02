@@ -11,18 +11,20 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	rem "github.com/gatblau/onix/rem/core"
+	ctl "github.com/gatblau/onix/pilotctl/core"
+	"github.com/gatblau/onix/piloth/cmd"
 	"io/ioutil"
 	"net/http"
 )
 
-type Rem struct {
+type PilotCtl struct {
 	client *Client
 	cfg    *ClientConf
 	host   *HostInfo
+	worker *cmd.Worker
 }
 
-func NewRem() (*Rem, error) {
+func NewPilotCtl(worker *cmd.Worker) (*PilotCtl, error) {
 	conf := &Config{}
 	err := conf.Load()
 	if err != nil {
@@ -43,14 +45,14 @@ func NewRem() (*Rem, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Rem{client: c, cfg: cfg, host: i}, nil
+	return &PilotCtl{client: c, cfg: cfg, host: i, worker: worker}, nil
 }
 
 // Register the host
-func (r *Rem) Register() error {
+func (r *PilotCtl) Register() error {
 	i := r.host
 	// set the machine id
-	reg := &rem.Registration{
+	reg := &ctl.Registration{
 		Hostname:    i.HostName,
 		MachineId:   i.HostID,
 		OS:          i.OS,
@@ -71,26 +73,39 @@ func (r *Rem) Register() error {
 }
 
 // Ping send a ping to the remote server
-func (r *Rem) Ping() ([]rem.CmdRequest, error) {
+func (r *PilotCtl) Ping() (ctl.CmdRequest, error) {
+	// is there a result from a job ready?
+	var (
+		payload Serializable
+		result  cmd.Result
+	)
+	select {
+	case result = <-r.worker.Queue.Results:
+		// a result was received from the channel
+		payload = &result
+	default:
+		// no result is available
+		payload = nil
+	}
 	uri := fmt.Sprintf("%s/ping/%s", r.cfg.BaseURI, r.host.HostID)
-	resp, err := r.client.Post(uri, nil, r.addToken)
+	resp, err := r.client.Post(uri, payload, r.addToken)
 	if err != nil {
-		return nil, fmt.Errorf("ping failed ping: %s", err)
+		return ctl.CmdRequest{}, fmt.Errorf("ping failed ping: %s", err)
 	}
 	if resp.StatusCode > 299 {
-		return nil, fmt.Errorf("call to the remote service failed: %d - %s", resp.StatusCode, resp.Status)
+		return ctl.CmdRequest{}, fmt.Errorf("call to the remote service failed: %d - %s", resp.StatusCode, resp.Status)
 	}
 	// get the commands to execute from the response body
 	bytes, err := ioutil.ReadAll(resp.Body)
-	var commands []rem.CmdRequest
-	err = json.Unmarshal(bytes, &commands)
+	var command ctl.CmdRequest
+	err = json.Unmarshal(bytes, &command)
 	if err != nil {
-		return nil, fmt.Errorf("cannot read ping response: %s", err)
+		return ctl.CmdRequest{}, fmt.Errorf("cannot read ping response: %s", err)
 	}
-	return commands, nil
+	return command, nil
 }
 
-func (r *Rem) addToken(req *http.Request, payload Serializable) error {
+func (r *PilotCtl) addToken(req *http.Request, payload Serializable) error {
 	payload = nil
 	// add an authentication token to the request
 	req.Header.Set("Authorization", newToken(r.host.HostID))

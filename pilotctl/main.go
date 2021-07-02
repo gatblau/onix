@@ -22,6 +22,7 @@ var (
 )
 
 func init() {
+	var err error
 	rem, err = core.NewReMan()
 	if err != nil {
 		fmt.Printf("ERROR: fail to create remote manager: %s", err)
