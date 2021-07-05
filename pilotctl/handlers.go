@@ -36,6 +36,7 @@ import (
 // @Router /ping/{machine-id} [post]
 // @Produce json
 // @Param machine-id path string true "the machine Id of the host"
+// @Param cmd-result body proc.Result false "the result of the execution of the last command or nil if no result is available"
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func pingHandler(w http.ResponseWriter, r *http.Request) {
@@ -45,6 +46,27 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("missing machine Id")
 		http.Error(w, "missing machine Id", http.StatusBadRequest)
 		return
+	}
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("cannot read ping request body: %s\n", err)
+		http.Error(w, "cannot read ping request body, check the server logs\n", http.StatusBadRequest)
+		return
+	}
+	if len(body) > 0 {
+		result := &core.Result{}
+		err = json.Unmarshal(body, result)
+		if err != nil {
+			log.Printf("cannot unmarshal ping request body: %s\n", err)
+			http.Error(w, "cannot unmarshal ping request body, check the server logs\n", http.StatusBadRequest)
+			return
+		}
+		err = rem.CompleteJob(result)
+		if err != nil {
+			log.Printf("cannot set job status: %s\n", err)
+			http.Error(w, "set job status, check the server logs\n", http.StatusBadRequest)
+			return
+		}
 	}
 	jobId, pack, fx, input, err := rem.Beat(machineId)
 	if err != nil {
