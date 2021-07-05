@@ -45,4 +45,8 @@ profiles:
     run:
       - $(build-windows)
     target: bin/pilot
+
+  - name: testpack
+    type: content/test
+    target: ./testpk
 ...
