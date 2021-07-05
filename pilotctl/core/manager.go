@@ -302,6 +302,10 @@ func (r *ReMan) GetCommand(cmdName string) (*Cmd, error) {
 	}, rows.Err()
 }
 
+func (r *ReMan) CompleteJob(status *Result) error {
+	return r.db.RunCommand("select pilotctl_complete_job($1, $2, $3)", status.JobId, status.Log, !status.Success)
+}
+
 func reverse(str string) (result string) {
 	for _, v := range str {
 		result = string(v) + result
