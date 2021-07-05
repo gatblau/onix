@@ -12,7 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	ctl "github.com/gatblau/onix/pilotctl/core"
-	"github.com/gatblau/onix/piloth/cmd"
+	"github.com/gatblau/onix/piloth/job"
 	"io/ioutil"
 	"net/http"
 )
@@ -21,10 +21,10 @@ type PilotCtl struct {
 	client *Client
 	cfg    *ClientConf
 	host   *HostInfo
-	worker *cmd.Worker
+	worker *job.Worker
 }
 
-func NewPilotCtl(worker *cmd.Worker) (*PilotCtl, error) {
+func NewPilotCtl(worker *job.Worker) (*PilotCtl, error) {
 	conf := &Config{}
 	err := conf.Load()
 	if err != nil {
@@ -77,14 +77,13 @@ func (r *PilotCtl) Ping() (ctl.CmdRequest, error) {
 	// is there a result from a job ready?
 	var (
 		payload Serializable
-		result  cmd.Result
+		result  *job.Result
 	)
-	select {
-	case result = <-r.worker.Queue.Results:
-		// a result was received from the channel
-		payload = &result
-	default:
-		// no result is available
+	// check if the worker has a job result to be sent to pilot control
+	result, ok := r.worker.Result()
+	if ok {
+		payload = result
+	} else {
 		payload = nil
 	}
 	uri := fmt.Sprintf("%s/ping/%s", r.cfg.BaseURI, r.host.HostID)

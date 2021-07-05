@@ -9,7 +9,7 @@ package core
 */
 import (
 	"fmt"
-	"github.com/gatblau/onix/piloth/cmd"
+	"github.com/gatblau/onix/piloth/job"
 	"log"
 	"log/syslog"
 	"os"
@@ -22,7 +22,7 @@ type Pilot struct {
 	info   *HostInfo
 	ctl    *PilotCtl
 	logs   *syslog.Writer
-	worker *cmd.Worker
+	worker *job.Worker
 }
 
 func NewPilot() (*Pilot, error) {
@@ -36,8 +36,10 @@ func NewPilot() (*Pilot, error) {
 	if err != nil {
 		return nil, err
 	}
-	worker := cmd.NewWorker(cmd.NewQueue("pilot"))
-	worker.Start(cfg.Get(PilotArtRegUser), cfg.Get(PilotArtRegPwd))
+	// create a new job worker
+	worker := job.NewCmdRequestWorker()
+	// start the worker
+	worker.Start()
 	r, err := NewPilotCtl(worker)
 	if err != nil {
 		return nil, err
@@ -131,7 +133,7 @@ func (p *Pilot) ping() {
 				if cmd.Value.JobId > 0 {
 					// execute the job
 					p.stdout("starting execution of job #%v, package => '%s', fx => '%s'", cmd.Value.JobId, cmd.Value.Package, cmd.Value.Function)
-					p.worker.Queue.AddJob(cmd.Value)
+					p.worker.AddJob(cmd.Value)
 				}
 			}
 		}

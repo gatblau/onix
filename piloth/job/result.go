@@ -1,4 +1,4 @@
-package cmd
+package job
 
 /*
   Onix Config Manager - Pilot
@@ -13,11 +13,18 @@ import (
 	"time"
 )
 
+// Result job result information
 type Result struct {
+	// the unique job id
+	JobId int64
+	// indicates of the job was successful
 	Success bool
-	Log     string
-	Err     *error
-	Time    time.Time
+	// the execution log for the job
+	Log string
+	// the error if any
+	Err *error
+	// the completion time
+	Time time.Time
 }
 
 func (r *Result) Reader() (*bytes.Reader, error) {
