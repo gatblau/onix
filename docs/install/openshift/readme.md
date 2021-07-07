@@ -25,10 +25,10 @@ The following steps use the **oc command line tool** to create a new empty proje
 
 ```bash
 # first, create an empty project
-$ oc oc new-project onix
+$ oc new-project onix
 
 # Deploy Onix using the persistent storage option
-$  oc new-app https://raw.githubusercontent.com/gatblau/onix/develop/install/openshift/onix-persistent.yml
+$  oc new-app https://raw.githubusercontent.com/gatblau/onix/master/docs/install/openshift/onix-all-persistent.yml
 ```
 
 ## Importing the templates

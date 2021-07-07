@@ -13,3 +13,4 @@ terraform-provider*
 version
 .settings
 .vagrant
+artisan/art/art
