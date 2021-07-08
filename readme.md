@@ -1,6 +1,6 @@
 # Onix Configuration Manager 
 
-<<<<<<< HEAD
+
 Onix is a lightweight configuration manager system  designed to support [Infrastructure as a Code](https://en.wikipedia.org/wiki/Infrastructure_as_code) provisioning to ultimately provide a [single source of truth](https://en.wikipedia.org/wiki/Single_source_of_truth) across [multi-cloud](https://en.wikipedia.org/wiki/Multicloud) environments.
 <img src="docs/pics/ox.png" width="200" height="200" align="right">
 
@@ -15,10 +15,9 @@ For a summary of the main **development themes** and features take a look at thi
 Contributions are welcome, see [here](CONTRIBUTING.MD) for more information.
 
 ## Key Features
-=======
+
 Onix is a lightweight configuration management database (CMDB) designed to support [Infrastructure as a Code](https://en.wikipedia.org/wiki/Infrastructure_as_code) provisioning to ultimately provide a [single source of truth](https://en.wikipedia.org/wiki/Single_source_of_truth) across [multi-cloud](https://en.wikipedia.org/wiki/Multicloud) environments.
 <img src="docs/pics/ox.png" width="300" height="300" align="right">
->>>>>>> upstream/master
 
 The key features are:
 - accessible via [RESTful Web API](./docs/wapi.md), [Ansible](https://www.ansible.com/) and [Terraform](https://www.terraform.io/) components ([Connectors](./connectors/readme.md)) and a [Web Console](wc/readme.md).
@@ -43,7 +42,7 @@ The following topics give more insight into Onix:
 
 This software is licensed under the [Apache License - Version 2.0, January 2004](http://www.apache.org/licenses/).
 
-Copyright (c) 2018-2019 by [gatblau.org](http://gatblau.org).
+Copyright (c) 2018-2021 by [gatblau.org](http://gatblau.org).
 
 ## Contributor Notice
 
@@ -53,9 +52,8 @@ Contributors to this project, hereby assign copyright in their code to the proje
 
 <a href="https://www.jetbrains.com/?from=onix"><img src="docs/pics/jetbrains.png" width="150" align="right"></img></a>
 
-<<<<<<< HEAD
 Many thanks to [JetBrains](https://www.jetbrains.com/?from=onix) for providing an open source license for this project.
-=======
+
 Contributors to this project, hereby assign copyright in their code to the 
 project, to be licensed under the same terms as the rest of the code.
->>>>>>> upstream/master
+
