@@ -64,13 +64,13 @@ and add asset folder into git working tree
 func Sync(temFilesWithPath []string, absPath4TemFilesDirectory string, absPath4Repo string) error {
 	var err error
 	l.Info("git, Sync tem file size is ", len(temFilesWithPath))
-	//replace environment variable value with the place holder
+	// replace environment variable value with the place holder
 
 	envVar := NewEnVarFromSlice(os.Environ())
 	MergeFiles(temFilesWithPath, envVar)
 	l.Info("git, Sync tem file merge completed")
-	//move each yaml file generated after merge to absolute repo path, so that it can be commited and
-	//push to remote git
+	// move each yaml file generated after merge to absolute repo path, so that it can be commited and
+	// push to remote git
 	l.Info("git, Sync moving yaml files generated after merge to local git repo path")
 	files, err := ioutil.ReadDir(absPath4TemFilesDirectory)
 	if err != nil {
@@ -97,11 +97,9 @@ func Sync(temFilesWithPath []string, absPath4TemFilesDirectory string, absPath4R
 	return err
 }
 
-/*
- commitAndPush will commint and push the changes back to remote git repo
-*/
+// CommitAndPush will commit and push the changes back to remote git repo
 func CommitAndPush(repo *git.Repository, token string, cmdName string) error {
-	//commit changes
+	// commit changes
 	var err error
 	wrkTree, err := repo.Worktree()
 	if err != nil {
@@ -129,11 +127,6 @@ func CommitAndPush(repo *git.Repository, token string, cmdName string) error {
 		log.Fatal(err)
 		return err
 	}
-
-	/*auth := &http.BasicAuth{
-		Username: "k-p-ani", // yes, this can be anything except an empty string
-		Password: "",
-	}*/
 
 	auth := &http.BasicAuth{
 		Username: cmdName, // yes, this can be anything except an empty string
