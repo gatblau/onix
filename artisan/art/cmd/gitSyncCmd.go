@@ -36,24 +36,29 @@ type GitSyncCmd struct {
 func NewGitSyncCmd() *GitSyncCmd {
 	c := &GitSyncCmd{
 		cmd: &cobra.Command{
-			Use:   "sync",
-			Short: "sync local git repo with remote",
-			Long:  `art sync -p repo/vm-manifest -t mytoken -u https://k-p-ani@bitbucket.org/k-p-ani/vm-auto-deployment.git   . or path/to/.tem files`,
+			Use: "sync [flags] [path/to/template/files]\n" +
+				"  the path to the tem files is optional, if no path is specified, the current path [.] is used",
+			Short: "synchronise a remote git repository with the content of a local folder containing files and/or merged Artisan templates",
+			Long: "\nprogrammatically update the content of a git repository by \n\n" +
+				"a) merging a set of Artisan templates with environment variables\n" +
+				"b) updating a local git repository using the merged files; and \n" +
+				"c) committing and pushing the local git changes back to its remote origin",
+			Example: `art sync -p path/within/git-repo -t the-git-authentication-token -u https://git-host/git-repo.git [. or path/to/.tem files]`,
 		},
 	}
 
 	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.repoPath, "repo-path", "p", "", "the git repo to sync")
-	c.cmd.Flags().StringVarP(&c.repoURI, "uri", "u", "", "the git repo uri to use")
-	c.cmd.Flags().StringVarP(&c.token, "token", "t", "", "the token to login to git repo")
+	c.cmd.Flags().StringVarP(&c.repoPath, "repo-path", "p", "", "the path within the git repository to be synchronised")
+	c.cmd.Flags().StringVarP(&c.repoURI, "uri", "u", "", "the URI of the git repository to synchronise")
+	c.cmd.Flags().StringVarP(&c.token, "token", "t", "", "the token to authenticate with the git repository")
 	//c.recursive = c.cmd.Flags().BoolP("recursive", "r", false, "whether to perform recursive sync. true or false (currently not implemented) ")
 	// this is causing problem, the recursive value is coming as args in Run function.
 	return c
 }
 
-//Run to execute git sync
+// Run to execute git sync
 func (g *GitSyncCmd) Run(cmd *cobra.Command, args []string) {
-	//art sync --repo-uri git-url --repo-path  -u user:password --recursive  .
+	// art sync --repo-uri git-url --repo-path  -u user:password --recursive  .
 	switch len(args) {
 	case 0:
 		g.path4Files2BeSync = "."
@@ -78,9 +83,9 @@ func (g *GitSyncCmd) Run(cmd *cobra.Command, args []string) {
 		} else {
 
 			l.Info("Run, core.GitClone completed ...")
-			//set the absolute paths
+			// set the absolute paths
 			g.setAbsolutePaths()
-			//get all the tem files from the folder provided by calling application
+			// get all the tem files from the folder provided by calling application
 			temFilesWithPath := g.getAllTemFilesFromPath()
 			if len(temFilesWithPath) > 0 && len(g.absPath4Files2BeSync) > 0 && len(g.absRepoPath) > 0 {
 				// perform Sync operation by doing merging of environment variable values and then
