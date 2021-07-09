@@ -30,6 +30,7 @@ type GitSyncCmd struct {
 	path4Files2BeSync    string
 	absRepoPath          string
 	absPath4Files2BeSync string
+	yamlFilePrefix       string
 }
 
 // NewGitSyncCmd create a new GitSyncCmd.
@@ -51,6 +52,7 @@ func NewGitSyncCmd() *GitSyncCmd {
 	c.cmd.Flags().StringVarP(&c.repoPath, "repo-path", "p", "", "the path within the git repository to be synchronised")
 	c.cmd.Flags().StringVarP(&c.repoURI, "uri", "u", "", "the URI of the git repository to synchronise")
 	c.cmd.Flags().StringVarP(&c.token, "token", "t", "", "the token to authenticate with the git repository")
+	c.cmd.Flags().StringVarP(&c.yamlFilePrefix, "yaml-file-prefix", "x", "", "The prefix to be added to yaml file name after merge")
 	//c.recursive = c.cmd.Flags().BoolP("recursive", "r", false, "whether to perform recursive sync. true or false (currently not implemented) ")
 	// this is causing problem, the recursive value is coming as args in Run function.
 	return c
@@ -90,7 +92,7 @@ func (g *GitSyncCmd) Run(cmd *cobra.Command, args []string) {
 			if len(temFilesWithPath) > 0 && len(g.absPath4Files2BeSync) > 0 && len(g.absRepoPath) > 0 {
 				// perform Sync operation by doing merging of environment variable values and then
 				// move the yaml files generated after merging, to repo path
-				err = core.Sync(temFilesWithPath, g.absPath4Files2BeSync, g.absRepoPath)
+				err = core.Sync(temFilesWithPath, g.absPath4Files2BeSync, g.absRepoPath, g.yamlFilePrefix)
 				if err != nil {
 					_ = os.RemoveAll(g.workingDir)
 					l.Fatal("Run, error occurred while executing core.Sync function using files %s", temFilesWithPath)
