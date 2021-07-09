@@ -37,21 +37,10 @@ func GitClone(repoUrl string, gitToken string, sourceDir string, cmdName string)
 		// The intended use of a GitHub personal access token is in replace of your password
 		// because access tokens can easily be revoked.
 		// https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/
-		/*credentials := strings.Split(gitToken, ":")
-		if len(credentials) == 2 {
-			var un = "k-p-ani"
-			var ps = "MohitAni$28"
-			opts.Auth = &http.BasicAuth{
-				Username: un, // yes, this can be anything except an empty string
-				Password: ps,
-			}
-		} else {*/
 		opts.Auth = &http.BasicAuth{
 			Username: cmdName, // yes, this can be anything except an empty string
 			Password: gitToken,
 		}
-		/*}*/
-
 	}
 	l.Info("git, GitClone peforming  git.PlainClone ")
 	return git.PlainClone(sourceDir, false, opts)
@@ -61,7 +50,7 @@ func GitClone(repoUrl string, gitToken string, sourceDir string, cmdName string)
 Sync will replace environment variables in the tem files with the respective value
 and add asset folder into git working tree
 */
-func Sync(temFilesWithPath []string, absPath4TemFilesDirectory string, absPath4Repo string) error {
+func Sync(temFilesWithPath []string, absPath4TemFilesDirectory string, absPath4Repo string, filePrefix string) error {
 	var err error
 	l.Info("git, Sync tem file size is ", len(temFilesWithPath))
 	// replace environment variable value with the place holder
@@ -84,7 +73,11 @@ func Sync(temFilesWithPath []string, absPath4TemFilesDirectory string, absPath4R
 				l.Debug("git, Sync moving file " + file.Name() + " from path = " + absPath4TemFilesDirectory + " to path = " + absPath4Repo)
 				// move yaml files from tem files folder to repo path
 				oldLocation := filepath.Join(absPath4TemFilesDirectory, file.Name())
-				newLocation := filepath.Join(absPath4Repo, file.Name())
+				newFileName := file.Name()
+				if len(filePrefix) > 0 {
+					newFileName = filePrefix + "-" + newFileName
+				}
+				newLocation := filepath.Join(absPath4Repo, newFileName)
 				err := os.Rename(oldLocation, newLocation)
 				if err != nil {
 					l.Fatal("git, Sync ,error while moving file "+file.Name()+" from path = "+absPath4TemFilesDirectory+" to path = "+absPath4Repo, err)
