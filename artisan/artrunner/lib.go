@@ -100,7 +100,7 @@ func readFlow(key string) (flow []byte, err error) {
 	}
 	flow, err = json.Marshal(item.Meta)
 	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal flow specification: %s", err)
+		return nil, fmt.Errorf("cannot marshal flow specification: %s", err)
 	}
 	return flow, nil
 }
