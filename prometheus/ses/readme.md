@@ -10,7 +10,7 @@ In this case, the **up** syntethic function can be used within a Prometheus rule
 For example, take the case of an [etcd](https://github.com/etcd-io/etcd) server cluster. Etcd exposes Prometheus metrics via an http endpoint.
 
 When Prometheus fails to scrape the endpoint, a "service is down" alert is sent to the alertmanager.
-The alertmanager is responsible for deduplicating alerts and forwarding them to the SeS webhook receiver.
+The alertmanager is responsible for deduplicating logs and forwarding them to the SeS webhook receiver.
 
 SeS in turn, stores the service status as a configuration item in Onix. Every time the status changes, the change is added to the item history.
 
@@ -36,7 +36,7 @@ http(s)://ses-host:ses-port/{base-path}/{partition}
 
 where:
 
-a. **base-path**: is "alerts" by default by it can be changed by passing an environment variable.
+a. **base-path**: is "logs" by default by it can be changed by passing an environment variable.
 
 b. **partition**: is the Onix database partition where the status information will be stored.
 
@@ -48,8 +48,8 @@ b. **partition**: is the Onix database partition where the status information wi
 |---|---|---|
 | **OXSES_LOGLEVEL** | set the log level. Possible values are Panic, Fatal, Error, Warn, Info, Debug, Trace | Trace |
 | **OXSES_METRICS** | enable Prometheus metrics | true |
-| **OXSES_AUTHMODE** | the authentication mode for the alerts endpoint. Possible values are none or basic. | none |
-| **OXSES_PATH** | the base path for the alerts endpoint | alerts |
+| **OXSES_AUTHMODE** | the authentication mode for the logs endpoint. Possible values are none or basic. | none |
+| **OXSES_PATH** | the base path for the logs endpoint | logs |
 | **OXSES_PORT** | the port the SeS service listen on | 8888 |
 | **OXSES_USERNAME** | the basic authentication username | admin |
 | **OXSES_PASSWORD** | the basic authentication password | 0n1x |
