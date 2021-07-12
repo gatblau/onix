@@ -10,7 +10,9 @@ package core
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"github.com/gatblau/onix/artisan/data"
 	"github.com/jackc/pgtype"
 	"hash/fnv"
 )
@@ -43,4 +45,18 @@ func toTime(microseconds int64) string {
 
 func basicAuthToken(user, pwd string) string {
 	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
+}
+
+// getInputFromMap transform an input in map format to input struct format
+func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
+	bytes, err := json.Marshal(inputMap)
+	if err != nil {
+		return nil, fmt.Errorf("cannot marshal input map: %s", err)
+	}
+	var input *data.Input
+	err = json.Unmarshal(bytes, input)
+	if err != nil {
+		return nil, fmt.Errorf("cannot unmarshal input bytes: %s", err)
+	}
+	return input, err
 }
