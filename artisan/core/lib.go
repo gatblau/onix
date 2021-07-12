@@ -33,6 +33,7 @@ import (
 	t "github.com/google/uuid"
 	"github.com/hashicorp/go-uuid"
 	"github.com/ohler55/ojg/jp"
+	l "github.com/sirupsen/logrus"
 )
 
 // check the user id is correct for bind mounts
@@ -498,4 +499,34 @@ func NewTempDir() (string, error) {
 	}
 
 	return tempDirPath, err
+}
+
+func GetFiles(absPath string, fileExtension string) ([]string, error) {
+	var filesWithPath []string
+	var err error
+	if filepath.IsAbs(absPath) && len(fileExtension) > 0 {
+		l.Debug("lib, getFiles, using absolute path %s to get tem file %s ", absPath, fileExtension)
+		_, err := os.Stat(absPath)
+		if err != nil {
+			return nil, err
+		}
+		l.Info("lib, getFiles, reading files from given path ")
+		files, err := ioutil.ReadDir(absPath)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, file := range files {
+			if filepath.Ext(file.Name()) == fileExtension {
+				// append file with path to the slice filesWithPath
+				filesWithPath = append(filesWithPath, filepath.Join(absPath, file.Name()))
+			}
+		}
+		err = nil
+		l.Info("lib, GetFiles, total number of tem files found is %s ", len(filesWithPath))
+	} else {
+		RaiseErr("lib, GetFiles , Either file path [ %s ] is not absolute path or fileExtension [ %s ] is missing", absPath, fileExtension)
+	}
+
+	return filesWithPath, err
 }
