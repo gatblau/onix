@@ -50,29 +50,26 @@ func GitClone(repoUrl string, gitToken string, sourceDir string, cmdName string)
 Sync will replace environment variables in the tem files with the respective value
 and add asset folder into git working tree
 */
-func Sync(temFilesWithPath []string, absPath4TemFilesDirectory string, absPath4Repo string, filePrefix string) error {
+func Sync(temFilesWithPath []string, absPath4SrcFiles string, absPath4Repo string, filePrefix string) error {
 	var err error
-	l.Info("git, Sync tem file size is ", len(temFilesWithPath))
+	l.Infof("git, Sync tem file size is  ", len(temFilesWithPath))
 	// replace environment variable value with the place holder
-
 	envVar := NewEnVarFromSlice(os.Environ())
 	MergeFiles(temFilesWithPath, envVar)
 	l.Info("git, Sync tem file merge completed")
 	// move each yaml file generated after merge to absolute repo path, so that it can be commited and
 	// push to remote git
-	l.Info("git, Sync moving yaml files generated after merge to local git repo path")
-	files, err := ioutil.ReadDir(absPath4TemFilesDirectory)
+	l.Infof("git, Sync, moving yaml files generated after merge from path %s to local git repo path %s ", absPath4SrcFiles, absPath4Repo)
+	files, err := ioutil.ReadDir(absPath4SrcFiles)
 	if err != nil {
-		l.Fatal("git, Sync, error while reading files from path "+absPath4TemFilesDirectory, err)
+		l.Fatalf("git, Sync, error while reading files from path %s , Error :- %s ", absPath4SrcFiles, err)
 		return err
 	} else {
-		l.Info("git, Sync files size is .... ", len(files))
 		os.MkdirAll(absPath4Repo, os.ModePerm)
 		for _, file := range files {
 			if filepath.Ext(file.Name()) == ".yaml" {
-				l.Debug("git, Sync moving file " + file.Name() + " from path = " + absPath4TemFilesDirectory + " to path = " + absPath4Repo)
 				// move yaml files from tem files folder to repo path
-				oldLocation := filepath.Join(absPath4TemFilesDirectory, file.Name())
+				oldLocation := filepath.Join(absPath4SrcFiles, file.Name())
 				newFileName := file.Name()
 				if len(filePrefix) > 0 {
 					newFileName = filePrefix + "-" + newFileName
@@ -80,7 +77,7 @@ func Sync(temFilesWithPath []string, absPath4TemFilesDirectory string, absPath4R
 				newLocation := filepath.Join(absPath4Repo, newFileName)
 				err := os.Rename(oldLocation, newLocation)
 				if err != nil {
-					l.Fatal("git, Sync ,error while moving file "+file.Name()+" from path = "+absPath4TemFilesDirectory+" to path = "+absPath4Repo, err)
+					l.Fatalf("git, Sync , error while moving file [ %s ] from path [ %s ] to path [ %s ] \n Error :- %s ", file.Name(), absPath4SrcFiles, absPath4Repo, err)
 					return err
 				}
 			}
@@ -96,7 +93,7 @@ func CommitAndPush(repo *git.Repository, token string, cmdName string) error {
 	var err error
 	wrkTree, err := repo.Worktree()
 	if err != nil {
-		l.Fatal("git, CommitAndPush, error while getting Working tree for git rep", err)
+		l.Fatalf("git, CommitAndPush, error while getting Working tree for git rep", err)
 		return err
 	}
 	wrkTree.Add(".")
@@ -109,14 +106,14 @@ func CommitAndPush(repo *git.Repository, token string, cmdName string) error {
 		},
 	})
 	if err != nil {
-		l.Fatal("git, CommitAndPush, error while creating commit instance from Working tree ", err)
+		l.Fatalf("git, CommitAndPush, error while creating commit instance from Working tree ", err)
 		return err
 	}
 
 	l.Info("git, CommitAndPush creating commit ")
 	_, err = repo.CommitObject(commit)
 	if err != nil {
-		log.Fatal("CommitAndPush, error while committing to git repo ", err)
+		log.Fatalf("CommitAndPush, error while committing to git repo ", err)
 		log.Fatal(err)
 		return err
 	}
