@@ -1,12 +1,12 @@
 package flow
 
 import (
+	"github.com/gatblau/onix/artisan/core"
 	"testing"
 )
 
 func Test(t *testing.T) {
-	// f, _ := NewWithEnv("ci_flow_bare.yaml", ".", ".env")
-	// b := tkn.NewBuilder(f.Flow)
-	// a := b.BuildMap()
-	// print(a)
+	e, _ := core.NewEnVarFromFile(".env")
+	f, _ := NewWithEnv("ci_flow_bare.yaml", ".", e)
+	f.SaveOnixJSON()
 }

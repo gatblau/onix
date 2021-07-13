@@ -1,3 +1,5 @@
+package flow
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,17 +7,16 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package flow
-
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/gatblau/onix/artisan/registry"
 )
 
-// a set of authentication credentials for a package registry
+// Credential a set of authentication credentials for a package registry
 type Credential struct {
 	User     string
 	Password string
@@ -32,6 +33,20 @@ type Flow struct {
 	AppIcon string            `yaml:"app_icon,omitempty" json:"app_icon,omitempty"`
 	Steps   []*Step           `yaml:"steps" json:"steps"`
 	Input   *data.Input       `yaml:"input,omitempty" json:"input,omitempty"`
+}
+
+// Map get the input in map format
+func (f *Flow) Map() (map[string]interface{}, error) {
+	bytes, err := json.Marshal(f)
+	if err != nil {
+		return nil, fmt.Errorf("cannot marshal input map: %s", err)
+	}
+	var input map[string]interface{}
+	err = json.Unmarshal(bytes, &input)
+	if err != nil {
+		return nil, fmt.Errorf("cannot unmarshal input bytes: %s", err)
+	}
+	return input, err
 }
 
 func (f *Flow) StepByFx(fxName string) *Step {
