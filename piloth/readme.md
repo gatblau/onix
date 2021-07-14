@@ -1,6 +1,6 @@
-<img src="https://raw.githubusercontent.com/gatblau/onix/develop/piloth/pilot.png" width="300" align="right"/>
-
 # Onix Host Pilot
+
+<img src="https://raw.githubusercontent.com/gatblau/onix/develop/piloth/pilot.png" width="400" align="right"/>
 
 Host Pilot safely executes automation on remote hosts, typically but not exclusively, in disconnected clouds.
 
