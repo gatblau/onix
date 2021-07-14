@@ -2,7 +2,7 @@
 
 # Onix Host Pilot
 
-Host Pilot safely executes automation on remote hosts typeically but not exclusively in disconnected clouds.
+Host Pilot safely executes automation on remote hosts, typically but not exclusively, in disconnected clouds.
 
 Pilot does not impose requirements on the host such as being connected all the time or exposing an IP address for remote access.
 
