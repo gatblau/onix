@@ -9,7 +9,7 @@ Metrics = "true"
 
 # configuration for SeS Http Service
 AuthMode    = "none"
-Path        = "alerts"
+Path        = "logs"
 Port        = "8888"
 Username    = "admin"
 Password    = "0n1x"

@@ -155,7 +155,7 @@ func run(data interface{}) (string, error) {
 	// create a command parser
 	p := shellwords.NewParser()
 	// parse the command line
-	cmdArr, err := p.Parse(cmd.Value("user", "pwd"))
+	cmdArr, err := p.Parse(cmd.Value())
 	// if we are in windows
 	if runtime.GOOS == "windows" {
 		// prepend "cmd /C" to the command line

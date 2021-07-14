@@ -19,6 +19,8 @@ import (
 	"gopkg.in/yaml.v3"
 	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"os/signal"
 	"regexp"
@@ -41,6 +43,10 @@ type Server struct {
 	Auth map[string]func(string) bool
 	// default authentication function
 	DefaultAuth func(string) bool
+	// log requests?
+	LogRequest bool
+	// dump request payload in logs?
+	DumpPayload bool
 }
 
 func New(realm string) *Server {
@@ -64,7 +70,13 @@ func (s *Server) Serve() {
 	s.start = time.Now()
 
 	router := mux.NewRouter()
-	router.Use(s.loggingMiddleware)
+
+	// add login if required by LogRequest or DumpPayload
+	if s.LogRequest || s.DumpPayload {
+		router.Use(s.loggingMiddleware)
+	}
+
+	// add authentication handling
 	router.Use(s.authenticationMiddleware)
 
 	// registers web handlers
@@ -163,13 +175,17 @@ func (s *Server) listen(handler http.Handler) {
 // log http requests to stdout
 func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("request from: %s %s %s\n", r.RemoteAddr, r.Method, r.URL)
-		// uncomment below to dump request payload to stdout
-		// requestDump, err := httputil.DumpRequest(r, true)
-		// if err != nil {
-		// 	fmt.Println(err)
-		// }
-		// fmt.Println(string(requestDump))
+		if s.LogRequest {
+			path, _ := url.PathUnescape(r.URL.Path)
+			fmt.Printf("request from: %s %s %s\n", r.RemoteAddr, r.Method, path)
+		}
+		if s.DumpPayload {
+			requestDump, err := httputil.DumpRequest(r, true)
+			if err != nil {
+				log.Println(err)
+			}
+			log.Println(string(requestDump))
+		}
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 	})
