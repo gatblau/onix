@@ -426,7 +426,7 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 			fmt.Printf("package already exist, tag '%s' has been added\n", name.Tag)
 		} else {
 			// the package exists and has the requested tag
-			fmt.Printf("package already exist, tag '%s' already exist, nothing to do\n", name.Tag)
+			fmt.Printf("package already exist, tag '%s' already exist, nothing to pull\n", name.Tag)
 		}
 	}
 	return r.FindPackage(name)
