@@ -1,4 +1,4 @@
-package core
+package git
 
 /*
   Onix Config Manager - Artisan
@@ -8,6 +8,7 @@ package core
   to be licensed under the same terms as the rest of the code.
 */
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,7 +18,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	l "github.com/sirupsen/logrus"
+	//	l "github.com/sirupsen/logrus"
 )
 
 /*
@@ -33,7 +34,7 @@ func GitClone(repoUrl string, gitToken string, sourceDir string, cmdName string)
 	}
 	// if authentication token has been provided
 	if len(gitToken) > 0 {
-		l.Debug("git, GitClone token is provided ")
+		Debug("git, GitClone token is provided ")
 		// The intended use of a GitHub personal access token is in replace of your password
 		// because access tokens can easily be revoked.
 		// https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/
@@ -42,7 +43,7 @@ func GitClone(repoUrl string, gitToken string, sourceDir string, cmdName string)
 			Password: gitToken,
 		}
 	}
-	l.Info("git, GitClone peforming  git.PlainClone ")
+	log.Println("git, GitClone peforming  git.PlainClone ")
 	return git.PlainClone(sourceDir, false, opts)
 }
 
@@ -52,17 +53,17 @@ and add asset folder into git working tree
 */
 func Sync(temFilesWithPath []string, absPath4SrcFiles string, absPath4Repo string, filePrefix string) error {
 	var err error
-	l.Infof("git, Sync tem file size is  ", len(temFilesWithPath))
+	log.Printf("git, Sync tem file size is %v ", fmt.Sprintf("%v", len(temFilesWithPath)))
 	// replace environment variable value with the place holder
 	envVar := NewEnVarFromSlice(os.Environ())
 	MergeFiles(temFilesWithPath, envVar)
-	l.Info("git, Sync tem file merge completed")
+	log.Println("git, Sync tem file merge completed")
 	// move each yaml file generated after merge to absolute repo path, so that it can be commited and
 	// push to remote git
-	l.Infof("git, Sync, moving yaml files generated after merge from path %s to local git repo path %s ", absPath4SrcFiles, absPath4Repo)
+	log.Printlf("git, Sync, moving yaml files generated after merge from path %v to local git repo path %v ", absPath4SrcFiles, absPath4Repo)
 	files, err := ioutil.ReadDir(absPath4SrcFiles)
 	if err != nil {
-		l.Fatalf("git, Sync, error while reading files from path %s , Error :- %s ", absPath4SrcFiles, err)
+		log.Fatalf("git, Sync, error while reading files from path %v , Error :- %v ", absPath4SrcFiles, err)
 		return err
 	} else {
 		os.MkdirAll(absPath4Repo, os.ModePerm)
@@ -77,13 +78,13 @@ func Sync(temFilesWithPath []string, absPath4SrcFiles string, absPath4Repo strin
 				newLocation := filepath.Join(absPath4Repo, newFileName)
 				err := os.Rename(oldLocation, newLocation)
 				if err != nil {
-					l.Fatalf("git, Sync , error while moving file [ %s ] from path [ %s ] to path [ %s ] \n Error :- %s ", file.Name(), absPath4SrcFiles, absPath4Repo, err)
+					log.Fatalf("git, Sync , error while moving file [ %v ] from path [ %v ] to path [ %v ] \n Error :- %s ", file.Name(), absPath4SrcFiles, absPath4Repo, err)
 					return err
 				}
 			}
 		}
 	}
-	l.Info("git, Sync completed ")
+	log.Println("git, Sync completed ")
 	return err
 }
 
@@ -93,11 +94,11 @@ func CommitAndPush(repo *git.Repository, token string, cmdName string) error {
 	var err error
 	wrkTree, err := repo.Worktree()
 	if err != nil {
-		l.Fatalf("git, CommitAndPush, error while getting Working tree for git rep", err)
+		log.Fatalf("git, CommitAndPush, error while getting Working tree for git rep %v", err)
 		return err
 	}
 	wrkTree.Add(".")
-	l.Info("git, CommitAndPush added current folder into working tree")
+	log.Println("git, CommitAndPush added current folder into working tree")
 	commit, err := wrkTree.Commit("Changes committed by  GitSyncCmd for the ?????", &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  cmdName,
@@ -106,15 +107,14 @@ func CommitAndPush(repo *git.Repository, token string, cmdName string) error {
 		},
 	})
 	if err != nil {
-		l.Fatalf("git, CommitAndPush, error while creating commit instance from Working tree ", err)
+		log.Fatalf("git, CommitAndPush, error while creating commit instance from Working tree %v ", err)
 		return err
 	}
 
-	l.Info("git, CommitAndPush creating commit ")
+	log.Println("git, CommitAndPush creating commit ")
 	_, err = repo.CommitObject(commit)
 	if err != nil {
-		log.Fatalf("CommitAndPush, error while committing to git repo ", err)
-		log.Fatal(err)
+		log.Fatalf("CommitAndPush, error while committing to git repo %v ", err)
 		return err
 	}
 
@@ -123,12 +123,12 @@ func CommitAndPush(repo *git.Repository, token string, cmdName string) error {
 		Password: token,
 	}
 
-	l.Info("git, CommitAndPush pushing the changes ")
+	log.Println("git, CommitAndPush pushing the changes ")
 	err = repo.Push(&git.PushOptions{Auth: auth})
 	if err != nil {
-		l.Fatal("CommitAndPush, error while pushing changes to git repo ", err)
+		log.Fatal("CommitAndPush, error while pushing changes to git repo %v ", err)
 		return err
 	}
-	l.Info("git, CommitAndPush pushed the changes ")
+	log.Println("git, CommitAndPush pushed the changes ")
 	return err
 }

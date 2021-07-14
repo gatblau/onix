@@ -505,12 +505,12 @@ func GetFiles(absPath string, fileExtension string) ([]string, error) {
 	var filesWithPath []string
 	var err error
 	if filepath.IsAbs(absPath) && len(fileExtension) > 0 {
-		l.Debug("lib, getFiles, using absolute path %s to get tem file %s ", absPath, fileExtension)
+		Debug("lib, getFiles, using absolute path %v to get tem file %v ", absPath, fileExtension)
 		_, err := os.Stat(absPath)
 		if err != nil {
 			return nil, err
 		}
-		l.Info("lib, getFiles, reading files from given path ")
+		log.Println("lib, getFiles, reading files from given path ")
 		files, err := ioutil.ReadDir(absPath)
 		if err != nil {
 			return nil, err
