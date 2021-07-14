@@ -83,6 +83,8 @@ func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool,
 	name, _ := core.ParseName(packageName)
 	// get a local registry handle
 	local := registry.NewLocalRegistry()
+	// ensure the package is in the local registry
+	local.Pull(name, credentials)
 	// get the package manifest
 	m := local.GetManifest(name)
 	// if the manifest exports the function
