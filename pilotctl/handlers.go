@@ -68,13 +68,23 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	jobId, pack, fx, input, err := rem.Beat(machineId)
+	// todo: add support for fx version
+	jobId, fxKey, _, err := rem.Beat(machineId)
 	if err != nil {
 		log.Printf("can't record ping: %v\n", err)
 		http.Error(w, "can't record ping, check server logs\n", http.StatusInternalServerError)
 		return
 	}
-	cr, err := core.NewCmdRequest(jobId, pack, fx, &input)
+	// gets the command value definition from Onix
+	cmdValue, err := rem.GetCommandValue(fxKey)
+	if err != nil {
+		log.Printf("can't retrieve Artisan function definition from Onix: %v\n", err)
+		http.Error(w, "can't retrieve Artisan function definition from Onix, check server logs\n", http.StatusInternalServerError)
+		return
+	}
+	// set the job reference
+	cmdValue.JobId = jobId
+	cr, err := core.NewCmdRequest(*cmdValue)
 	if err != nil {
 		log.Printf("can't sign command request: %v\n", err)
 		http.Error(w, "can't sign command request, check server logs\n", http.StatusInternalServerError)
@@ -188,7 +198,7 @@ func updateCmdHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = rem.SetCommand(cmd)
+	err = rem.PutCommand(cmd)
 	if err != nil {
 		log.Printf("failed to set command: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

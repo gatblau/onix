@@ -16,7 +16,6 @@ import (
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/gatblau/oxc"
-	"github.com/jackc/pgtype"
 	"log"
 	"strconv"
 	"strings"
@@ -81,16 +80,39 @@ func (r *ReMan) Register(reg *Registration) error {
 	return err
 }
 
-func (r *ReMan) Beat(machineId string) (jobId int64, pack, fx string, input data.Input, err error) {
+func (r *ReMan) GetCommandValue(fxKey string) (*CmdValue, error) {
+	item, err := r.ox.GetItem(&oxc.Item{Key: fxKey})
+	if err != nil {
+		return nil, fmt.Errorf("cannot retrieve function specification from Onix: %s", err)
+	}
+	input, err := getInputFromMap(item.Meta)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get input from map: %s", err)
+	}
+	return &CmdValue{
+		Function:      item.GetStringAttr("FX"),
+		Package:       item.GetStringAttr("PACKAGE"),
+		User:          item.GetStringAttr("USER"),
+		Pwd:           item.GetStringAttr("PWD"),
+		Verbose:       item.GetBoolAttr("VERBOSE"),
+		Containerised: item.GetBoolAttr("CONTAINERISED"),
+		Input:         input,
+	}, nil
+}
+
+func (r *ReMan) Beat(machineId string) (jobId int64, fxKey string, fxVersion int64, err error) {
 	rows, err := r.db.Query("select * from pilotctl_beat($1)", machineId)
 	if err != nil {
-		return -1, "", "", data.Input{}, err
+		return -1, "", -1, err
 	}
 	for rows.Next() {
-		rows.Scan(&jobId, &pack, &fx, &input)
+		err = rows.Scan(&jobId, &fxKey, &fxVersion)
+		if err != nil {
+			return 0, "", 0, err
+		}
 	}
 	// returns the next job to execute for the machine Id or -1 if no job is available
-	return jobId, pack, fx, input, nil
+	return jobId, fxKey, fxVersion, nil
 }
 
 func (r *ReMan) GetHostStatus() ([]Host, error) {
@@ -108,7 +130,10 @@ func (r *ReMan) GetHostStatus() ([]Host, error) {
 		location  sql.NullString
 	)
 	for rows.Next() {
-		rows.Scan(&id, &connected, &since, &customer, &region, &location)
+		err := rows.Scan(&id, &connected, &since, &customer, &region, &location)
+		if err != nil {
+			return nil, err
+		}
 		hosts = append(hosts, Host{
 			Id:        id,
 			Customer:  customer.String,
@@ -133,7 +158,10 @@ func (r *ReMan) GetAdmissions() ([]Admission, error) {
 		tag       []string
 	)
 	for rows.Next() {
-		rows.Scan(&machineId, &active, &tag)
+		err := rows.Scan(&machineId, &active, &tag)
+		if err != nil {
+			return nil, err
+		}
 		admissions = append(admissions, Admission{
 			MachineId: machineId,
 			Active:    active,
@@ -244,62 +272,88 @@ func (r *ReMan) GetPackageAPI(name string) ([]*data.FxInfo, error) {
 	return manif.Functions, nil
 }
 
-func (r *ReMan) SetCommand(cmd *Cmd) error {
-	return r.db.RunCommand("select pilotctl_set_command($1, $2, $3, $4, $5)", cmd.Name, cmd.Description, cmd.Package, cmd.Function, cmd.Input)
+// PutCommand put the command in the Onix database
+func (r *ReMan) PutCommand(cmd *Cmd) error {
+	var meta map[string]interface{}
+	inputBytes, err := json.Marshal(cmd.Input)
+	if err != nil {
+		return fmt.Errorf("cannot marshal command input: %s", err)
+	}
+	err = json.Unmarshal(inputBytes, &meta)
+	if err != nil {
+		return fmt.Errorf("cannot unmarshal input bytes: %s", err)
+	}
+	result, err := r.ox.PutItem(&oxc.Item{
+		Key:         fmt.Sprintf("ART_FX_%s", strings.Replace(cmd.Key, " ", "", -1)),
+		Name:        cmd.Key,
+		Description: cmd.Description,
+		Type:        "ART_FX",
+		Meta:        meta,
+		Attribute: map[string]interface{}{
+			"PACKAGE":       cmd.Package,
+			"FX":            cmd.Function,
+			"USER":          cmd.User,
+			"PWD":           cmd.Pwd,
+			"VERBOSE":       cmd.Verbose,
+			"CONTAINERISED": cmd.Containerised,
+		},
+	})
+	if result != nil && result.Error {
+		return fmt.Errorf("cannot set command in Onix: %s\n", result.Message)
+	}
+	if err != nil {
+		return fmt.Errorf("cannot set command in Onix: %s\n", err)
+	}
+	return nil
 }
 
 func (r *ReMan) GetAllCommands() ([]Cmd, error) {
-	rows, err := r.db.Query("select id, name, description, package, fx, input from pilotctl_get_command($1)", nil)
+	items, err := r.ox.GetItemsByType("ART_FX")
 	if err != nil {
-		return nil, fmt.Errorf("cannot execute query: %s", err)
+		return nil, fmt.Errorf("cannot get commands from Onix: %s", err)
 	}
 	cmds := make([]Cmd, 0)
-	var (
-		id          int64
-		name        string
-		description sql.NullString
-		pack        string
-		fx          string
-		input       data.Input
-	)
-	for rows.Next() {
-		rows.Scan(&id, &name, &description, &pack, &fx, &input)
+	for _, item := range items.Values {
+		input, err := getInputFromMap(item.Meta)
+		if err != nil {
+			return nil, fmt.Errorf("cannot transform input map: %s", err)
+		}
 		cmds = append(cmds, Cmd{
-			Id:          id,
-			Name:        name,
-			Description: description.String,
-			Package:     pack,
-			Function:    fx,
-			Input:       &input,
+			Key:           item.Key,
+			Description:   item.Description,
+			Package:       item.GetStringAttr("PACKAGE"),
+			Function:      item.GetStringAttr("FX"),
+			User:          item.GetStringAttr("USER"),
+			Pwd:           item.GetStringAttr("PWD"),
+			Verbose:       item.GetBoolAttr("VERBOSE"),
+			Containerised: item.GetBoolAttr("CONTAINERISED"),
+			Input:         input,
 		})
+
 	}
-	return cmds, rows.Err()
+	return cmds, nil
 }
 
 func (r *ReMan) GetCommand(cmdName string) (*Cmd, error) {
-	rows, err := r.db.Query("select id, name, description, package, fx, input from pilotctl_get_command($1)", cmdName)
+	item, err := r.ox.GetItem(&oxc.Item{Key: cmdName})
 	if err != nil {
-		return nil, fmt.Errorf("cannot execute query: %s", err)
+		return nil, fmt.Errorf("cannot get command with key '%s' from Onix: %s", cmdName, err)
 	}
-	var (
-		id          int64
-		name        string
-		description sql.NullString
-		pack        string
-		fx          string
-		input       data.Input
-	)
-	for rows.Next() {
-		rows.Scan(&id, &name, &description, &pack, &fx, &input)
+	input, err := getInputFromMap(item.Meta)
+	if err != nil {
+		return nil, fmt.Errorf("cannot transform input map: %s", err)
 	}
 	return &Cmd{
-		Id:          id,
-		Name:        name,
-		Description: description.String,
-		Package:     pack,
-		Function:    fx,
-		Input:       &input,
-	}, rows.Err()
+		Key:           item.Key,
+		Description:   item.Description,
+		Package:       item.GetStringAttr("PACKAGE"),
+		Function:      item.GetStringAttr("FX"),
+		User:          item.GetStringAttr("USER"),
+		Pwd:           item.GetStringAttr("PWD"),
+		Verbose:       item.GetBoolAttr("VERBOSE"),
+		Containerised: item.GetBoolAttr("CONTAINERISED"),
+		Input:         input,
+	}, nil
 }
 
 func (r *ReMan) CompleteJob(status *Result) error {
@@ -311,12 +365,4 @@ func reverse(str string) (result string) {
 		result = string(v) + result
 	}
 	return
-}
-
-func toMap(hs pgtype.Hstore) map[string]string {
-	m := make(map[string]string)
-	for k, v := range hs.Map {
-		m[k] = v.String
-	}
-	return m
 }

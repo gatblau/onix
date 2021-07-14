@@ -1,3 +1,5 @@
+package flow
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package flow
-
 import (
 	"bytes"
 	"encoding/json"
@@ -14,6 +14,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
+	"github.com/gatblau/oxc"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -24,6 +25,7 @@ import (
 	"strings"
 )
 
+// Manager manages an Artisan flow
 // the pipeline generator requires at least the flow definition
 // if a build file is passed then step variables can be inferred from it
 type Manager struct {
@@ -167,7 +169,7 @@ func (m *Manager) SaveYAML() error {
 	if err != nil {
 		return fmt.Errorf("cannot marshal bare flow: %s", err)
 	}
-	err = ioutil.WriteFile(m.path(), y, os.ModePerm)
+	err = ioutil.WriteFile(m.path("yaml"), y, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("cannot save merged flow: %s", err)
 	}
@@ -179,9 +181,32 @@ func (m *Manager) SaveJSON() error {
 	if err != nil {
 		return fmt.Errorf("cannot marshal bare flow: %s", err)
 	}
-	err = ioutil.WriteFile(m.path(), y, os.ModePerm)
+	err = ioutil.WriteFile(m.path("json"), y, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("cannot save merged flow: %s", err)
+	}
+	return nil
+}
+
+func (m *Manager) SaveOnixJSON() error {
+	meta, err := m.Flow.Map()
+	if err != nil {
+		return fmt.Errorf("cannot convert flow to map: %s", err)
+	}
+	item := &oxc.Item{
+		Key:         fmt.Sprintf("ART_FLOW_%s", m.Flow.Name),
+		Name:        m.Flow.Name,
+		Description: fmt.Sprintf("defines the execution flow for %s", m.Flow.Name),
+		Type:        "ART_FLOW",
+		Meta:        meta,
+	}
+	y, err := json.MarshalIndent(item, "", "   ")
+	if err != nil {
+		return fmt.Errorf("cannot marshal onix item flow: %s", err)
+	}
+	err = ioutil.WriteFile(m.path("json"), y, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("cannot save onix item flow: %s", err)
 	}
 	return nil
 }
@@ -254,10 +279,10 @@ func (m *Manager) validate() error {
 }
 
 // get the merged Flow path
-func (m *Manager) path() string {
+func (m *Manager) path(extension string) string {
 	dir, file := filepath.Split(m.bareFlowPath)
 	filename := core.FilenameWithoutExtension(file)
-	return filepath.Join(dir, fmt.Sprintf("%s.yaml", filename[0:len(filename)-len("_bare")]))
+	return filepath.Join(dir, fmt.Sprintf("%s.%s", filename[0:len(filename)-len("_bare")], extension))
 }
 
 func (m *Manager) AddLabels(labels []string) {

@@ -20,14 +20,14 @@ func flowHealthCheck(flow *Flow, step *Step) {
 		if s.Input != nil && s.Input.Var != nil {
 			for _, v := range s.Input.Var {
 				if strings.HasPrefix(v.Name, "OXART_") {
-					core.RaiseErr("variable name %s is reserved for Artisan use, choose a different name")
+					core.RaiseErr("variable name %s is reserved for Artisan use, choose a different name", v.Name)
 				}
 			}
 		}
 		if s.Input != nil && s.Input.Secret != nil {
 			for _, s := range s.Input.Secret {
 				if strings.HasPrefix(s.Name, "OXART_") {
-					core.RaiseErr("secret name %s is reserved for Artisan use, choose a different name")
+					core.RaiseErr("secret name %s is reserved for Artisan use, choose a different name", s.Name)
 				}
 			}
 		}
