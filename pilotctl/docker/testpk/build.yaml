@@ -1,0 +1,9 @@
+---
+functions:
+  - name: list
+    description: runs a list command on the current folder
+    export: true
+    runtime: ubi-min
+    run:
+      - ls -la
+...
