@@ -1,0 +1,6 @@
+{
+  "description": "links ACME with OpCo-B",
+  "type": "U_RELATIONSHIP",
+  "startItemKey": "ORG_GRP_ACME",
+  "endItemKey": "ORG_OPCO_B"
+}
