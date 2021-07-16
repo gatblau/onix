@@ -1,7 +1,7 @@
 ---
 profiles:
   - name: testpack
-    type: content/steve
+    type: content/test
     target: ./testpk
 
 functions:

@@ -3,7 +3,7 @@
   "description": "executes a list of the current directory",
   "type": "ART_FX",
   "attribute": {
-    "PACKAGE" : "list:steve",
+    "PACKAGE" : "list",
     "FX" : "list"
   },
   "meta" : {
