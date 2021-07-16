@@ -26,8 +26,8 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
 
 WORKDIR /app
 
-COPY ./bin/pilotctl /.
-COPY boot.sh /.
+COPY ./bin/pilotctl .
+COPY boot.sh .
 
 USER $UNAME
 
