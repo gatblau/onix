@@ -18,17 +18,19 @@ ENV GID=100000000
 RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y && \
     microdnf install shadow-utils.x86_64 && \
     groupadd -g $GID -o $UNAME && \
-    useradd -M -u $UID -g $GID $UNAME && \
-    usermod --home / -u $UID $UNAME && \
+    useradd -m -u $UID -g $GID $UNAME && \
     rm -rf /var/cache/yum && \
-    microdnf clean all
+    microdnf clean all && \
+    # keys volume mount
+    mkdir -p /keys/
 
 WORKDIR /app
 
-COPY ./bin/pilotctl ./
+COPY ./bin/pilotctl /.
+COPY boot.sh /.
 
 USER $UNAME
 
-CMD ["sh", "-c", "/app/pilotctl"]
+CMD ["sh", "-c", "/app/boot.sh"]
 
 EXPOSE 8080/tcp
