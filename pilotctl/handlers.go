@@ -75,15 +75,22 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "can't record ping, check server logs\n", http.StatusInternalServerError)
 		return
 	}
-	// gets the command value definition from Onix
-	cmdValue, err := rem.GetCommandValue(fxKey)
-	if err != nil {
-		log.Printf("can't retrieve Artisan function definition from Onix: %v\n", err)
-		http.Error(w, "can't retrieve Artisan function definition from Onix, check server logs\n", http.StatusInternalServerError)
-		return
+	// create a command with no job
+	var cmdValue = &core.CmdValue{
+		JobId: jobId,
 	}
-	// set the job reference
-	cmdValue.JobId = jobId
+	// if we have a job to execute
+	if jobId > 0 {
+		// fetches the definition for the job function to run from Onix
+		cmdValue, err = rem.GetCommandValue(fxKey)
+		if err != nil {
+			log.Printf("can't retrieve Artisan function definition from Onix: %v\n", err)
+			http.Error(w, "can't retrieve Artisan function definition from Onix, check server logs\n", http.StatusInternalServerError)
+			return
+		}
+		// set the job reference
+		cmdValue.JobId = jobId
+	}
 	cr, err := core.NewCmdRequest(*cmdValue)
 	if err != nil {
 		log.Printf("can't sign command request: %v\n", err)
