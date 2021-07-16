@@ -9,10 +9,8 @@ package cmd
 */
 
 import (
-	"path/filepath"
-
 	"github.com/gatblau/onix/artisan/core"
-	l "github.com/sirupsen/logrus"
+	"github.com/gatblau/onix/artisan/git"
 	"github.com/spf13/cobra"
 )
 
@@ -64,34 +62,8 @@ func (g *GitSyncCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("too many arguments")
 	}
 
-	l.Debug(" Executing gitSyncCmd ")
-
-	var cmdName = "GitSyncCmd"
-	var fileType = ".tem"
-	workingDir, err := core.NewTempDir()
-	core.CheckErr(err, "Run, error occurred during core.NewTempDir operation ")
-	l.Debug("Run, temp file created successfully ")
-
-	gitRepo, err := core.GitClone(g.repoURI, g.token, workingDir, cmdName)
-	core.CheckErr(err, "Run, error occurred during core.GitClone operation")
-	l.Debug("Run, core.GitClone operation completed successfully ")
-
-	absPathOfTemFiles, err := core.AbsPath(g.path4Files2BeSync)
-	core.CheckErr(err, "Run, core.AbsPath, error occurred while getting absolute path for path '%s'", g.path4Files2BeSync)
-	l.Debugf("source folder path detail %s ", absPathOfTemFiles)
-
-	absPathOfRepoFolder := filepath.Join(workingDir, g.repoPath)
-	l.Debugf("target folder path detail %s ", absPathOfRepoFolder)
-
-	filesWithPath, err := core.GetFiles(absPathOfTemFiles, fileType)
-	core.CheckErr(err, "Run, core.GetFiles error while getting '%s' files from path '%s' Error:- '%s'", fileType, absPathOfTemFiles)
-	l.Debug("Run, core.GetFiles operation executed successfully ")
-
-	err = core.Sync(filesWithPath, absPathOfTemFiles, absPathOfRepoFolder, g.yamlFilePrefix)
-	core.CheckErr(err, "Run, error occurred while executing core.Sync function  from folder '%s' to folder '%s' , Error:- '%s'", absPathOfTemFiles, absPathOfRepoFolder)
-	l.Debug("Run, core.Sync operation executed successfully using,Source path,Target path, Target file name prefix %s ", g.yamlFilePrefix)
-
-	err = core.CommitAndPush(gitRepo, g.token, cmdName)
-	core.CheckErr(err, "Run, error occurred while executing core.CommitAndPush function ")
-	l.Debug("Run, core.CommitAndPush function executed successfully ")
+	sm, err := git.NewSyncManagerFromUri(g.repoURI, g.token, ".tem", g.yamlFilePrefix, g.path4Files2BeSync, g.repoPath)
+	core.CheckErr(err, "Failed to initialise SyncManagerFromUri ")
+	err = sm.MergeAndSync()
+	core.CheckErr(err, "Failed to perform sync operation")
 }
