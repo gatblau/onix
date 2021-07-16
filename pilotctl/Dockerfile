@@ -22,15 +22,18 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
     rm -rf /var/cache/yum && \
     microdnf clean all && \
     # keys volume mount
-    mkdir -p /keys/
+    mkdir -p /keys/ && \
+    mkdir /app
 
 WORKDIR /app
 
 COPY ./bin/pilotctl .
 COPY boot.sh .
 
+RUN chown -R pilotctl:pilotctl /app
+
 USER $UNAME
 
-CMD ["sh", "-c", "/app/boot.sh"]
+CMD ["sh", "-c", "bash boot.sh"]
 
 EXPOSE 8080/tcp
