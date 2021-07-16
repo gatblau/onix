@@ -26,12 +26,11 @@ do
   sleep 3
 done
 
-# create a test command
-curl -X PUT "http://localhost:8080/item/ART_FX_LIST" \
-     -u "$ONIX_HTTP_ADMIN_USER:$ONIX_HTTP_ADMIN_PWD" \
-     -H  "accept: application/json" \
-     -H  "Content-Type: application/json" \
-     -d "@cmd.json"
+# create required test items
+curl -X PUT "http://localhost:8080/item/ART_FX_LIST" -u "$ONIX_HTTP_ADMIN_USER:$ONIX_HTTP_ADMIN_PWD" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/fx.json"
+curl -X PUT "http://localhost:8080/item/ORG_GRP_ACME" -u "$ONIX_HTTP_ADMIN_USER:$ONIX_HTTP_ADMIN_PWD" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/org-grp-acme.json"
+curl -X PUT "http://localhost:8080/item/ORG_OPCO_A" -u "$ONIX_HTTP_ADMIN_USER:$ONIX_HTTP_ADMIN_PWD" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/org-opco-a.json"
+curl -X PUT "http://localhost:8080/item/ORG_OPCO_B" -u "$ONIX_HTTP_ADMIN_USER:$ONIX_HTTP_ADMIN_PWD" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/org-opco-b.json"
 
 # stop dbman instances
 docker-compose stop dbman_pilotctl

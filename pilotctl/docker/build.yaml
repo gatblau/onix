@@ -1,4 +1,9 @@
 ---
+profiles:
+  - name: testpack
+    type: content/test
+    target: ./testpk
+
 functions:
   - name: up
     run:
