@@ -1,5 +1,5 @@
 {
-  "name": "ART_FX_LIST",
+  "name": "ART_FX:LIST",
   "description": "executes a list of the current directory",
   "type": "ART_FX",
   "attribute": {
