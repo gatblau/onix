@@ -23,6 +23,7 @@ type GitSyncCmd struct {
 	recursive         *bool
 	path4Files2BeSync string
 	yamlFilePrefix    string
+	strictSync        bool
 }
 
 // NewGitSyncCmd create a new GitSyncCmd.
@@ -45,6 +46,7 @@ func NewGitSyncCmd() *GitSyncCmd {
 	c.cmd.Flags().StringVarP(&c.repoURI, "uri", "u", "", "the URI of the git repository to synchronise")
 	c.cmd.Flags().StringVarP(&c.token, "token", "t", "", "the token to authenticate with the git repository")
 	c.cmd.Flags().StringVarP(&c.yamlFilePrefix, "yaml-file-prefix", "x", "", "The prefix to be added to yaml file name after merge")
+	c.cmd.Flags().BoolVarP(&c.strictSync, "strict", "s", false, "whether strict synchronisation to be followed, by delete existing repo path and create new folder with same name")
 	//c.recursive = c.cmd.Flags().BoolP("recursive", "r", false, "whether to perform recursive sync. true or false (currently not implemented) ")
 	// this is causing problem, the recursive value is coming as args in Run function.
 	return c
@@ -62,7 +64,8 @@ func (g *GitSyncCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("too many arguments")
 	}
 
-	sm, err := git.NewSyncManagerFromUri(g.repoURI, g.token, ".tem", g.yamlFilePrefix, g.path4Files2BeSync, g.repoPath)
+	sm, err := git.NewSyncManagerFromUri(g.repoURI, g.token, ".tem", g.yamlFilePrefix,
+		g.path4Files2BeSync, g.repoPath, g.strictSync)
 	core.CheckErr(err, "Failed to initialise SyncManagerFromUri ")
 	err = sm.MergeAndSync()
 	core.CheckErr(err, "Failed to perform sync operation")

@@ -24,6 +24,8 @@ type RepoManager struct {
 	repoURI    string
 	token      string
 	workingDir string
+	repoPath   string
+	strictSync bool
 }
 
 // NewRepoManager will initialise RepoManager.
@@ -31,9 +33,9 @@ type RepoManager struct {
 // token token required to clone the repository
 // workingDir directory where repo will be cloned
 // It will return initialised RepoManager or any  error occured
-func NewRepoManager(repoURI, token, workingDir string) *RepoManager {
+func NewRepoManager(repoURI, token, workingDir, repoPath string, strictSync bool) *RepoManager {
 	return &RepoManager{
-		repoURI: repoURI, token: token, workingDir: workingDir,
+		repoURI: repoURI, token: token, workingDir: workingDir, repoPath: repoPath, strictSync: strictSync,
 	}
 }
 
@@ -63,6 +65,15 @@ func (g *RepoManager) Clone() error {
 	log.Println("git, GitClone peforming  git.PlainClone ")
 	grepo, err := git.PlainClone(g.workingDir, false, opts)
 	g.repo = grepo
+
+	wrkTree, err := g.repo.Worktree()
+	if err != nil {
+		log.Printf("git, Commit, error while getting Working tree for git rep %v", err)
+		return err
+	}
+	if g.strictSync {
+		wrkTree.Remove(g.repoPath)
+	}
 
 	return err
 }
