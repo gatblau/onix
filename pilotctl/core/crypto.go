@@ -20,27 +20,31 @@ import (
 
 // Sign create a cryptographic signature for the passed-in object
 func sign(obj interface{}) (string, error) {
-	// load the signing key
-	keyFile, err := signingKeyFile()
-	if err != nil {
-		return "", err
+	// only sign if we have an object
+	if obj != nil {
+		// load the signing key
+		keyFile, err := signingKeyFile()
+		if err != nil {
+			return "", err
+		}
+		// retrieve the verification key from the specified location
+		pgp, err := crypto.LoadPGP(keyFile)
+		if err != nil {
+			return "", fmt.Errorf("sign => cannot load signing key: %s", err)
+		}
+		// obtain the object checksum
+		cs, err := checksum(obj)
+		if err != nil {
+			return "", fmt.Errorf("sign => cannot create checksum: %s", err)
+		}
+		signature, err := pgp.Sign(cs)
+		if err != nil {
+			return "", fmt.Errorf("sign => cannot create signature: %s", err)
+		}
+		// return a base64 encoded string with the digital signature
+		return base64.StdEncoding.EncodeToString(signature), nil
 	}
-	// retrieve the verification key from the specified location
-	pgp, err := crypto.LoadPGP(keyFile)
-	if err != nil {
-		return "", fmt.Errorf("sign => cannot load signing key: %s", err)
-	}
-	// obtain the object checksum
-	cs, err := checksum(obj)
-	if err != nil {
-		return "", fmt.Errorf("sign => cannot create checksum: %s", err)
-	}
-	signature, err := pgp.Sign(cs)
-	if err != nil {
-		return "", fmt.Errorf("sign => cannot create signature: %s", err)
-	}
-	// return a base64 encoded string with the digital signature
-	return base64.StdEncoding.EncodeToString(signature), nil
+	return "", nil
 }
 
 // checksum create a checksum of the passed-in object
@@ -68,17 +72,21 @@ func checksum(obj interface{}) ([]byte, error) {
 }
 
 func signingKeyFile() (string, error) {
-	file := filepath.Join(executablePath(), ".pilot_sign.pgp")
-	_, err := os.Stat(filepath.Join(executablePath(), ".pilot_sign.pgp"))
+	path := filepath.Join(executablePath(), ".pilot_sign.pgp")
+	_, err := os.Stat(path)
 	if err != nil {
-		file = filepath.Join(homePath(), ".pilot_sign.pgp")
-		_, err = os.Stat(filepath.Join(homePath(), ".pilot_sign.pgp"))
+		path = filepath.Join(homePath(), ".pilot_sign.pgp")
+		_, err = os.Stat(path)
 		if err != nil {
-			return "", fmt.Errorf("cannot find signing key")
+			path = "/keys/.pilot_sign.pgp"
+			_, err = os.Stat(path)
+			if err != nil {
+				return "", fmt.Errorf("cannot find signing key")
+			}
 		}
-		return file, nil
+		return path, nil
 	}
-	return file, nil
+	return path, nil
 }
 
 func executablePath() string {

@@ -19,15 +19,17 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
     microdnf install shadow-utils.x86_64 && \
     groupadd -g $GID -o $UNAME && \
     useradd -M -u $UID -g $GID $UNAME && \
-    usermod --home / -u $UID $UNAME && \
     rm -rf /var/cache/yum && \
     microdnf clean all
+
+USER $UNAME
 
 WORKDIR /app
 
 COPY ./bin/pilotctl ./
 
-USER $UNAME
+# mount for PGP signing key
+VOLUME /keys
 
 CMD ["sh", "-c", "/app/pilotctl"]
 

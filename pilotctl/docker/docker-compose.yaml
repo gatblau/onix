@@ -108,6 +108,8 @@ services:
       - OX_ART_REG_PWD=${PILOTCTL_ART_REG_PWD}
     ports:
       - "8888:8888"
+    volumes:
+      - ../keys:/keys      
 
 #volumes:
 #  db:
