@@ -24,6 +24,7 @@ type SyncManager struct {
 	fileNamePrefix    string
 	fileType          string
 	workingDir        string
+	strictSync        bool
 }
 
 // NewSyncManagerFromUri will initialise SyncManager by cloning the repo.
@@ -34,17 +35,20 @@ type SyncManager struct {
 // path4Files2BeSync relate path from where the source files must be consider for merge and sync
 // repoPath folder with in repo where the final files to be copied during sync operation
 // It will return initialised SyncManager or any error occured
-func NewSyncManagerFromUri(repoURI, token, fileType, fileNamePrefix, path4Files2BeSync, repoPath string) (*SyncManager, error) {
+func NewSyncManagerFromUri(repoURI, token, fileType, fileNamePrefix, path4Files2BeSync, repoPath string,
+	strictSync bool) (*SyncManager, error) {
 	workingDir, err := core.NewTempDir()
 	if err != nil {
 		log.Printf("GitService,NewSyncManagerFromUri, error while invoking core.NewTempDir operation ", err)
 		return nil, err
 	}
 
-	repoManager := NewRepoManager(repoURI, token, workingDir)
+	repoManager := NewRepoManager(repoURI, token, workingDir, repoPath, strictSync)
 	core.Debug(" GitService,PerformSync, RepoManager structs created ")
 	return &SyncManager{
-		repoManager: repoManager, fileType: fileType, fileNamePrefix: fileNamePrefix, path4Files2BeSync: path4Files2BeSync, repoPath: repoPath, workingDir: workingDir,
+		repoManager: repoManager, fileType: fileType, fileNamePrefix: fileNamePrefix,
+		path4Files2BeSync: path4Files2BeSync, repoPath: repoPath, workingDir: workingDir,
+		strictSync: strictSync,
 	}, nil
 }
 
@@ -102,7 +106,7 @@ func (s *SyncManager) MergeAndSync() error {
 	if err != nil {
 		return err
 	}
-	err = s.merge()
+	err = s.mergeAndCopy()
 	if err != nil {
 		return err
 	}
@@ -136,13 +140,17 @@ func (s *SyncManager) mergeAndCopy() error {
 	}
 	// move each yaml file generated after merge to absolute repo path, so that it can be commited and
 	// push to remote git
-	log.Printf("git, Sync, moving yaml files generated after merge from path %v to local git repo path %v ", absPath4Files2BeSync, absRepoPath)
+	log.Printf("git, mergeAndCopy, moving yaml files generated after merge from path %v to local git repo path %v ", absPath4Files2BeSync, absRepoPath)
 	files, err := ioutil.ReadDir(absPath4Files2BeSync)
 	if err != nil {
-		log.Printf("git, Sync, error while reading files from path %v , Error :- %v ", absPath4Files2BeSync, err)
+		log.Printf("git, mergeAndCopy, error while reading files from path %v , Error :- %v ", absPath4Files2BeSync, err)
 		return err
 	} else {
-		os.MkdirAll(absRepoPath, os.ModePerm)
+		err = os.MkdirAll(absRepoPath, os.ModePerm)
+		if err != nil {
+			log.Printf("git, mergeAndCopy, error while creating folder %v , Error :- %v ", absRepoPath, err)
+			return err
+		}
 		for _, file := range files {
 			if filepath.Ext(file.Name()) == ".yaml" {
 				// move yaml files from tem files folder to repo path
@@ -154,12 +162,12 @@ func (s *SyncManager) mergeAndCopy() error {
 				newLocation := filepath.Join(absRepoPath, newFileName)
 				err := os.Rename(oldLocation, newLocation)
 				if err != nil {
-					log.Printf("git, Sync , error while moving file [ %v ] from path [ %v ] to path [ %v ] \n Error :- %s ", file.Name(), absPath4Files2BeSync, absRepoPath, err)
+					log.Printf("git, mergeAndCopy , error while moving file [ %v ] from path [ %v ] to path [ %v ] \n Error :- %s ", file.Name(), absPath4Files2BeSync, absRepoPath, err)
 					return err
 				}
 			}
 		}
 	}
-	log.Println("git, merge completed ")
+	log.Println("git, merge and copy completed ")
 	return nil
 }
