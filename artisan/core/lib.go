@@ -499,3 +499,32 @@ func NewTempDir() (string, error) {
 
 	return tempDirPath, err
 }
+
+func GetFiles(absPath string, fileExtension string) ([]string, error) {
+	var filesWithPath []string
+	if filepath.IsAbs(absPath) && len(fileExtension) > 0 {
+		Debug("lib, getFiles, using absolute path %v to get tem file %v ", absPath, fileExtension)
+		_, err := os.Stat(absPath)
+		if err != nil {
+			return nil, err
+		}
+		log.Println("lib, getFiles, reading files from given path ")
+		files, err := ioutil.ReadDir(absPath)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, file := range files {
+			if filepath.Ext(file.Name()) == fileExtension {
+				// append file with path to the slice filesWithPath
+				filesWithPath = append(filesWithPath, filepath.Join(absPath, file.Name()))
+			}
+		}
+		err = nil
+		log.Printf("lib, GetFiles, total number of tem files found is %v ", len(filesWithPath))
+	} else {
+		return filesWithPath, fmt.Errorf("lib, GetFiles , Either file path [ %v ] is not absolute path or fileExtension [ %v ] is missing", absPath, fileExtension)
+	}
+
+	return filesWithPath, nil
+}
