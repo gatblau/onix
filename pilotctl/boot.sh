@@ -1,5 +1,4 @@
-# fetch user home directory from /etc/passwd file
-export USER_HOME=$(awk -F":" '{print $6}' /etc/passwd | grep -m1 `whoami`)
-mkdir -p ${USER_HOME}/keys
-cp -R /keys ${USER_HOME}
+# copy private key from RO mount to same dir as pilotctl
+cp /keys/.pilot_sign.pgp /app/.
+# run
 /app/pilotctl
