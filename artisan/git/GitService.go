@@ -24,7 +24,10 @@ type SyncManager struct {
 	fileNamePrefix    string
 	fileType          string
 	workingDir        string
+<<<<<<< HEAD
 	strictSync        bool
+=======
+>>>>>>> 556ebf1fa3a975112b38b30ef8771bd794ddf143
 }
 
 // NewSyncManagerFromUri will initialise SyncManager by cloning the repo.

@@ -53,10 +53,10 @@ func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot marshal input map: %s", err)
 	}
-	var input *data.Input
-	err = json.Unmarshal(bytes, input)
+	var input data.Input
+	err = json.Unmarshal(bytes, &input)
 	if err != nil {
 		return nil, fmt.Errorf("cannot unmarshal input bytes: %s", err)
 	}
-	return input, err
+	return &input, err
 }
