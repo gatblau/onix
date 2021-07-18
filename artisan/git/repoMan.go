@@ -9,11 +9,9 @@ package git
 */
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
-	"github.com/gatblau/onix/artisan/core"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -32,7 +30,7 @@ type RepoManager struct {
 // repoURI location from where repository has to be cloned
 // token token required to clone the repository
 // workingDir directory where repo will be cloned
-// It will return initialised RepoManager or any  error occured
+// It will return initialised RepoManager or any  error occurred
 func NewRepoManager(repoURI, token, workingDir, repoPath string, strictSync bool) *RepoManager {
 	return &RepoManager{
 		repoURI: repoURI, token: token, workingDir: workingDir, repoPath: repoPath, strictSync: strictSync,
@@ -40,7 +38,7 @@ func NewRepoManager(repoURI, token, workingDir, repoPath string, strictSync bool
 }
 
 // Clone will clone git repo from repo uri to a temp folder. It only accepts a token if authentication is required
-// It will return any error if occured
+// It will return any error if occurred
 func (g *RepoManager) Clone() error {
 	if len(g.repoURI) == 0 {
 		return fmt.Errorf("git repo URI is missing in RepoManager ")
@@ -53,7 +51,6 @@ func (g *RepoManager) Clone() error {
 	}
 	// if authentication token has been provided
 	if len(g.token) > 0 {
-		core.Debug("git, GitClone token is provided ")
 		// The intended use of a GitHub personal access token is in replace of your password
 		// because access tokens can easily be revoked.
 		// https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/
@@ -62,13 +59,11 @@ func (g *RepoManager) Clone() error {
 			Password: g.token,
 		}
 	}
-	log.Println("git, GitClone peforming  git.PlainClone ")
 	grepo, err := git.PlainClone(g.workingDir, false, opts)
 	g.repo = grepo
 
 	wrkTree, err := g.repo.Worktree()
 	if err != nil {
-		log.Printf("git, Commit, error while getting Working tree for git rep %v", err)
 		return err
 	}
 	if g.strictSync {
@@ -84,12 +79,10 @@ func (g *RepoManager) Commit() error {
 	var err error
 	wrkTree, err := g.repo.Worktree()
 	if err != nil {
-		log.Printf("git, Commit, error while getting Working tree for git rep %v", err)
 		return err
 	}
 	wrkTree.Add(".")
-	log.Println("git, Commit, added current folder into working tree")
-	commit, err := wrkTree.Commit("Auto generated- Changes committed by  RepoManager ", &git.CommitOptions{
+	commit, err := wrkTree.Commit("automated commit by artisan", &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "******",
 			Email: "******",
@@ -97,36 +90,26 @@ func (g *RepoManager) Commit() error {
 		},
 	})
 	if err != nil {
-		log.Printf("git, Commit, error while creating commit instance from Working tree %v ", err)
 		return err
 	}
-
-	log.Println("git, Commit , creating commit ")
 	_, err = g.repo.CommitObject(commit)
 	if err != nil {
-		log.Printf("Commit ,, error while committing to git repo %v ", err)
 		return err
 	}
-
-	log.Println("git, Commit executed successfully ")
 	return err
 }
 
-// Push will push the local commited changes back to remote git repo.
-// It will return any error if occured
+// Push will push the local committed changes back to remote git repo.
+// It will return any error if occurred
 func (g *RepoManager) Push() error {
 	var err error
 	auth := &http.BasicAuth{
 		Username: "*****", // yes, this can be anything except an empty string
 		Password: g.token,
 	}
-
-	log.Println("git, Push pushing the changes ")
 	err = g.repo.Push(&git.PushOptions{Auth: auth})
 	if err != nil {
-		log.Println("git,Push, error while pushing changes to git repo %v ", err)
 		return err
 	}
-	log.Println("git, pushed local changes to remote successfully")
 	return err
 }
