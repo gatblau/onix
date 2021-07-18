@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// merges environment variables into one or more files
+// MergeCmd merges environment variables into one or more files
 type MergeCmd struct {
 	cmd         *cobra.Command
 	envFilename string
@@ -21,9 +21,12 @@ type MergeCmd struct {
 func NewMergeCmd() *MergeCmd {
 	c := &MergeCmd{
 		cmd: &cobra.Command{
-			Use:   "merge [flags] [files]",
-			Short: "merges environment variables in the specified files",
-			Long:  ``,
+			Use:   "merge [flags] [template1 template2 template3 ...]",
+			Short: "merges environment variables in the specified template files",
+			Long: `
+	merges environment variables in the specified template files
+	merge merges variables stored in an .env file into one or more merge template files
+	merge creates new merged files after the name of the templates without their extension`,
 		},
 	}
 	c.cmd.Run = c.Run
@@ -32,5 +35,7 @@ func NewMergeCmd() *MergeCmd {
 }
 
 func (c *MergeCmd) Run(cmd *cobra.Command, args []string) {
-	core.MergeFilesOld(args, c.envFilename)
+	env, err := core.NewEnVarFromFile(c.envFilename)
+	core.CheckErr(err, "cannot load .env file")
+	core.MergeFiles(args, env)
 }
