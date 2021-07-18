@@ -72,12 +72,12 @@ func MergeFiles(filenames []string, env *Envar) {
 					log.Fatalf("environment variable '%s' required and not defined, cannot merge\n", vname)
 				} else {
 					// merge with the default value
-					content = strings.Replace(content, string(v), defValue, 1000)
+					content = strings.Replace(content, string(v), defValue, -1)
 					merged = true
 				}
 			} else {
 				// merge with the env variable value
-				content = strings.Replace(content, string(v), ev, 1000)
+				content = strings.Replace(content, string(v), ev, -1)
 				merged = true
 			}
 		}
