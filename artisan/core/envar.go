@@ -1,3 +1,5 @@
+package core
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,17 +7,36 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package core
-
 import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"reflect"
+	"strconv"
 	"strings"
 )
 
 type Envar struct {
 	Vars map[string]string
+}
+
+// Group used by golang text.Template to return a map of key / values for vars that whose base name is the same
+// but have been suffixed with an incremental index number
+func (e *Envar) Group(groupName reflect.Value) reflect.Value {
+	result := make(map[string]string)
+	for name, value := range e.Vars {
+		i := strings.LastIndex(name, "_")
+		if i > 0 {
+			prefix := name[0:i]
+			suffix := name[i+1 : len(name)]
+			_, err := strconv.ParseInt(suffix, 10, 16)
+			// if the parsing works it is an index
+			if err == nil && prefix == groupName.String() {
+				result[name] = value
+			}
+		}
+	}
+	return reflect.ValueOf(result)
 }
 
 func NewEnVarFromMap(v map[string]string) *Envar {
