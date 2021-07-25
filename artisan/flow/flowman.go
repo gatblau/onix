@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
+	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/gatblau/oxc"
 	"gopkg.in/yaml.v2"
@@ -32,7 +33,7 @@ type Manager struct {
 	Flow         *Flow
 	buildFile    *data.BuildFile
 	bareFlowPath string
-	env          *core.Envar
+	env          *merge.Envar
 }
 
 func New(bareFlowPath, buildPath string) (*Manager, error) {
@@ -64,7 +65,7 @@ func New(bareFlowPath, buildPath string) (*Manager, error) {
 	return m, nil
 }
 
-func NewWithEnv(bareFlowPath, buildPath string, env *core.Envar) (*Manager, error) {
+func NewWithEnv(bareFlowPath, buildPath string, env *merge.Envar) (*Manager, error) {
 	m, err := New(bareFlowPath, buildPath)
 	core.CheckErr(err, "cannot load flow")
 	m.env = env

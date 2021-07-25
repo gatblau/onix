@@ -1,3 +1,5 @@
+package cmd
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,12 +7,11 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package cmd
-
 import (
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/i18n"
+	"github.com/gatblau/onix/artisan/merge"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -61,9 +62,9 @@ func (c *ExeCmd) Run(cmd *cobra.Command, args []string) {
 	name, err := core.ParseName(pack)
 	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
 	// add the build file level environment variables
-	env := core.NewEnVarFromSlice(os.Environ())
+	env := merge.NewEnVarFromSlice(os.Environ())
 	// load vars from file
-	env2, err := core.NewEnVarFromFile(c.envFilename)
+	env2, err := merge.NewEnVarFromFile(c.envFilename)
 	core.CheckErr(err, "failed to load environment file '%s'", c.envFilename)
 	// merge with existing environment
 	env.Merge(env2)

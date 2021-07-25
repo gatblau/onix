@@ -1,0 +1,16 @@
+---
+title: {{ var "TITLE" }}
+{{ select "PORT" }}
+{{ range .Items }}
+- port:
+    name: {{ item "NAME" . }}
+    description: {{ item "DESC" . }}
+    value: {{ item "VALUE" . }}
+{{end}}
+{{ select "URI" }}
+{{ range .Items }}
+- uri:
+    name: {{ item "NAME" . }}
+    value: {{ item "VALUE" . }}
+{{end}}
+...

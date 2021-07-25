@@ -1,4 +1,4 @@
-package core
+package merge
 
 /*
   Onix Config Manager - Artisan
@@ -10,6 +10,7 @@ package core
 import (
 	"bytes"
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	"io/ioutil"
 	"reflect"
 	"strconv"
@@ -47,7 +48,7 @@ func NewEnVarFromMap(v map[string]string) *Envar {
 
 func NewEnVarFromFile(envFile string) (*Envar, error) {
 	var outMap = make(map[string]string)
-	file := ToAbs(envFile)
+	file := core.ToAbs(envFile)
 	data, err := ioutil.ReadFile(file)
 	// if it managed to find the env file load it
 	// otherwise skip it
@@ -74,7 +75,7 @@ func NewEnVarFromFile(envFile string) (*Envar, error) {
 			outMap[keyValue[0]] = removeTrail(keyValue[1])
 		}
 	} else {
-		Debug("cannot load env file: %s", err.Error())
+		core.Debug("cannot load env file: %s", err.Error())
 	}
 	return &Envar{
 		Vars: outMap,

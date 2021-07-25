@@ -13,6 +13,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/i18n"
+	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/registry"
 )
 
@@ -103,7 +104,7 @@ func (f *Flow) RequiresFile() bool {
 
 // retrieve all input data required by the flow without values
 // interactive mode is off - gets definition only
-func (f *Flow) GetInputDefinition(b *data.BuildFile, env *core.Envar) *data.Input {
+func (f *Flow) GetInputDefinition(b *data.BuildFile, env *merge.Envar) *data.Input {
 	result := &data.Input{
 		Key:    make([]*data.Key, 0),
 		Secret: make([]*data.Secret, 0),

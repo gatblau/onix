@@ -14,6 +14,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/data"
+	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -42,7 +43,7 @@ type Builder struct {
 	localReg         *registry.LocalRegistry
 	shouldCopySource bool
 	loadFrom         string
-	env              *core.Envar
+	env              *merge.Envar
 	zip              bool // if the target is already zipped before packaging (e.g. jar, zip files, etc)
 }
 
@@ -95,7 +96,7 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 }
 
 // Run execute the specified function
-func (b *Builder) Run(function string, path string, interactive bool, env *core.Envar) {
+func (b *Builder) Run(function string, path string, interactive bool, env *merge.Envar) {
 	// if no path is specified use .
 	if len(path) == 0 {
 		path = "."
@@ -327,7 +328,7 @@ func (b *Builder) getIgnored() []string {
 }
 
 // run a specified function
-func (b *Builder) runFunction(function string, path string, interactive bool, env *core.Envar) {
+func (b *Builder) runFunction(function string, path string, interactive bool, env *merge.Envar) {
 	// if inputs are defined for the function then survey for data
 	i := data.SurveyInputFromBuildFile(function, b.buildFile, interactive, false, env)
 	// merge the collected input with the current environment
@@ -383,7 +384,7 @@ func (b *Builder) runFunction(function string, path string, interactive bool, en
 // returns the profile used
 func (b *Builder) runProfile(profileName string, execDir string, interactive bool) *data.Profile {
 	// construct an environment with the vars at build file level
-	env := core.NewEnVarFromSlice(os.Environ())
+	env := merge.NewEnVarFromSlice(os.Environ())
 	// get the build file environment and merge any subshell command
 	vars := b.evalSubshell(b.buildFile.GetEnv(), execDir, env, interactive)
 	// add the merged vars to the env
@@ -442,7 +443,7 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 }
 
 // evaluate sub-shells and replace their values in the variables
-func (b *Builder) evalSubshell(vars map[string]string, execDir string, env *core.Envar, interactive bool) map[string]string {
+func (b *Builder) evalSubshell(vars map[string]string, execDir string, env *merge.Envar, interactive bool) map[string]string {
 	for k, v := range vars {
 		if ok, expr, shell := core.HasShell(v); ok {
 			out, err := executeWithOutput(shell, execDir, env, interactive)
@@ -521,7 +522,7 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 				s.Manifest.Functions = append(s.Manifest.Functions, &data.FxInfo{
 					Name:        fx.Name,
 					Description: fx.Description,
-					Input:       data.SurveyInputFromBuildFile(fx.Name, buildFile, false, true, core.NewEnVarFromSlice(os.Environ())),
+					Input:       data.SurveyInputFromBuildFile(fx.Name, buildFile, false, true, merge.NewEnVarFromSlice(os.Environ())),
 					Runtime:     fx.Runtime,
 				})
 				// a runtime must be specified for exported functions
@@ -593,7 +594,7 @@ func (b *Builder) getBuildEnv() map[string]string {
 }
 
 // execute an exported function in a package
-func (b *Builder) Execute(name *core.PackageName, function string, credentials string, noTLS bool, certPath string, ignoreSignature bool, interactive bool, path string, preserveFiles bool, env *core.Envar) {
+func (b *Builder) Execute(name *core.PackageName, function string, credentials string, noTLS bool, certPath string, ignoreSignature bool, interactive bool, path string, preserveFiles bool, env *merge.Envar) {
 	// get a local registry handle
 	local := registry.NewLocalRegistry()
 	// check the run path exist

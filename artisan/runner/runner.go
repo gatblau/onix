@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
+	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/registry"
 	"path/filepath"
 	"strings"
@@ -42,7 +43,7 @@ func New() (*Runner, error) {
 	return new(Runner), nil
 }
 
-func (r *Runner) RunC(fxName string, interactive bool, env *core.Envar) error {
+func (r *Runner) RunC(fxName string, interactive bool, env *merge.Envar) error {
 	var runtime string
 	fx := r.buildFile.Fx(fxName)
 	// if the runtime is defined at the function level
@@ -78,7 +79,7 @@ func (r *Runner) RunC(fxName string, interactive bool, env *core.Envar) error {
 	return nil
 }
 
-func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool, env *core.Envar) error {
+func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool, env *merge.Envar) error {
 	var runtime string
 	name, _ := core.ParseName(packageName)
 	// get a local registry handle

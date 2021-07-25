@@ -1,3 +1,5 @@
+package cmd
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,14 +7,13 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package cmd
-
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/flow"
+	"github.com/gatblau/onix/artisan/merge"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -22,7 +23,7 @@ import (
 	"strings"
 )
 
-// list local packages
+// EnvFlowCmd collects variables required by a flow
 type EnvFlowCmd struct {
 	cmd           *cobra.Command
 	buildFilePath string
@@ -65,7 +66,7 @@ func (c *EnvFlowCmd) Run(cmd *cobra.Command, args []string) {
 		b, err = data.LoadBuildFile(path.Join(c.buildFilePath, "build.yaml"))
 	}
 	// discover the input required by the flow / build file
-	input := f.GetInputDefinition(b, core.NewEnVarFromSlice([]string{}))
+	input := f.GetInputDefinition(b, merge.NewEnVarFromSlice([]string{}))
 	var output []byte
 	switch strings.ToLower(c.out) {
 	// if the requested format is env
