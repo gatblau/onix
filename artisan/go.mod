@@ -20,6 +20,7 @@ require (
 	github.com/prometheus/client_golang v1.8.0
 	github.com/sirupsen/logrus v1.6.0
 	github.com/swaggo/http-swagger v1.0.0
+	github.com/zclconf/go-cty v1.9.0
 	golang.org/x/crypto v0.0.0-20201208171446-5f87f3452ae9
 	golang.org/x/net v0.0.0-20201216054612-986b41b23924 // indirect
 	golang.org/x/tools v0.0.0-20201215192005-fa10ef0b8743 // indirect

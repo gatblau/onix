@@ -1,3 +1,5 @@
+package cmd
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,14 +7,13 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package cmd
-
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/i18n"
+	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -67,7 +68,7 @@ func (c *EnvPackageCmd) Run(cmd *cobra.Command, args []string) {
 			}
 		}
 		// add the credentials to download the package
-		input.SurveyRegistryCreds(name.Group, name.Name, "", name.Domain, false, true, core.NewEnVarFromSlice([]string{}))
+		input.SurveyRegistryCreds(name.Group, name.Name, "", name.Domain, false, true, merge.NewEnVarFromSlice([]string{}))
 	} else if len(args) < 2 {
 		i18n.Raise(i18n.ERR_INSUFFICIENT_ARGS)
 	} else if len(args) > 2 {

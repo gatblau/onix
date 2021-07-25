@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
+	"github.com/gatblau/onix/artisan/merge"
 	"github.com/mattn/go-shellwords"
 	"io"
 	"io/ioutil"
@@ -285,7 +286,7 @@ func round(val float64, roundOn float64, places int) (newVal float64) {
 }
 
 // executes a command and sends output and error streams to stdout and stderr
-func execute(cmd string, dir string, env *core.Envar, interactive bool) (err error) {
+func execute(cmd string, dir string, env *merge.Envar, interactive bool) (err error) {
 	if cmd == "" {
 		return errors.New("no command provided")
 	}
@@ -352,7 +353,7 @@ func execute(cmd string, dir string, env *core.Envar, interactive bool) (err err
 }
 
 // executes a command and returns ist output
-func executeWithOutput(cmd string, dir string, env *core.Envar, interactive bool) (string, error) {
+func executeWithOutput(cmd string, dir string, env *merge.Envar, interactive bool) (string, error) {
 	if cmd == "" {
 		return "", errors.New("no command provided")
 	}
