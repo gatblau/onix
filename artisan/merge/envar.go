@@ -67,11 +67,6 @@ func NewEnVarFromFile(envFile string) (*Envar, error) {
 			// Required for cases where value contains = sign like base64 values
 			keyValue := strings.SplitN(line, "=", 2)
 
-			// // Checking if value contains invalid data, like <test=  test123>
-			// // if value has spaces, such value is corrupted
-			// if strings.Contains(keyValue[1], " ") {
-			// 	return nil, fmt.Errorf("invalid env file format in line %d: '%s'\n", ix, line)
-			// }
 			outMap[keyValue[0]] = removeTrail(keyValue[1])
 		}
 	} else {
