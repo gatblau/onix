@@ -201,3 +201,14 @@ func (t *TemplMerger) overlayOperators(source []byte) []byte {
 	}
 	return source
 }
+
+func (t *TemplMerger) Save() error {
+	for fileName, bytes := range t.file {
+		// override file with merged values
+		err := writeToFile(fileName, string(bytes))
+		if err != nil {
+			return fmt.Errorf("cannot update config file: %s\n", err)
+		}
+	}
+	return nil
+}

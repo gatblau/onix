@@ -38,5 +38,11 @@ func NewMergeCmd() *MergeCmd {
 func (c *MergeCmd) Run(cmd *cobra.Command, args []string) {
 	env, err := merge.NewEnVarFromFile(c.envFilename)
 	core.CheckErr(err, "cannot load .env file")
-	merge.MergeFiles(args, env)
+	m, _ := merge.NewTemplMerger()
+	err = m.LoadTemplates(args)
+	core.CheckErr(err, "cannot load templates")
+	err = m.Merge(env)
+	core.CheckErr(err, "cannot merge templates")
+	err = m.Save()
+	core.CheckErr(err, "cannot save templates")
 }
