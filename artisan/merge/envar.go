@@ -54,7 +54,7 @@ func NewEnVarFromFile(envFile string) (*Envar, error) {
 	// otherwise skip it
 	content := strings.Split(string(data), "\n")
 	if err == nil {
-		for ix, line := range content {
+		for _, line := range content {
 			// skips comments
 			if strings.HasPrefix(strings.Trim(line, " "), "#") ||
 				len(strings.Trim(line, " ")) == 0 ||
@@ -62,16 +62,16 @@ func NewEnVarFromFile(envFile string) (*Envar, error) {
 				strings.HasPrefix(strings.Trim(line, " "), "\n") {
 				continue
 			}
-			//Splitting exactly on 2 strings
-			//example: VAR=test= Result: val[0] is VAR val[1] is test=
-			//Required for cases where value contains = sign like base64 values
+			// Splitting exactly on 2 strings
+			// example: VAR=test= Result: val[0] is VAR val[1] is test=
+			// Required for cases where value contains = sign like base64 values
 			keyValue := strings.SplitN(line, "=", 2)
 
-			//Checking if value contains invalid data, like <test=  test123>
-			//if value has spaces, such value is corrupted
-			if strings.Contains(keyValue[1], " ") {
-				return nil, fmt.Errorf("invalid env file format in line %d: '%s'\n", ix, line)
-			}
+			// // Checking if value contains invalid data, like <test=  test123>
+			// // if value has spaces, such value is corrupted
+			// if strings.Contains(keyValue[1], " ") {
+			// 	return nil, fmt.Errorf("invalid env file format in line %d: '%s'\n", ix, line)
+			// }
 			outMap[keyValue[0]] = removeTrail(keyValue[1])
 		}
 	} else {
