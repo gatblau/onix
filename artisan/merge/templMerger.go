@@ -1,4 +1,4 @@
-package core
+package merge
 
 /*
   Onix Config Manager - Artisan
@@ -11,6 +11,7 @@ package core
 import (
 	"bytes"
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
@@ -21,18 +22,42 @@ import (
 // TemplMerger merge artisan templates using artisan inputs
 type TemplMerger struct {
 	regex    *regexp.Regexp
+	rexVar   *regexp.Regexp
+	rexRange *regexp.Regexp
+	rexItem  *regexp.Regexp
 	template map[string][]byte
 	file     map[string][]byte
 }
 
 // NewTemplMerger create a new instance of the template merger to merge files
 func NewTemplMerger() (*TemplMerger, error) {
+	// for tem templates:
+	// parse ${NAME} vars
 	regex, err := regexp.Compile("\\${(?P<NAME>[^}]*)}")
 	if err != nil {
 		return nil, fmt.Errorf("cannot compile regex: %s\n", err)
 	}
+	// for art templates:
+	// parse {{ $ "NAME"  }} vars
+	rexVar, err := regexp.Compile("{{[\\s]*\\$[\\s]*\"(?P<NAME>[\\w]+)\"[\\s]*}}")
+	if err != nil {
+		return nil, fmt.Errorf("cannot compile regex: %s\n", err)
+	}
+	// parse {{ range => "GROUP_NAME" }}
+	rexRange, err := regexp.Compile("{{[\\s]*range[\\s]*=>[\\s]*\"(?P<GROUP>[\\w]+)\"[\\s]*}}")
+	if err != nil {
+		return nil, fmt.Errorf("cannot compile regex: %s\n", err)
+	}
+	// parse {{ % "NAME" }}
+	rexItem, err := regexp.Compile("{{[\\s]*\\%[\\s]*\"(?P<ITEM>[\\w]+)\"[\\s]*}}")
+	if err != nil {
+		return nil, fmt.Errorf("cannot compile regex: %s\n", err)
+	}
 	return &TemplMerger{
-		regex: regex,
+		regex:    regex,
+		rexVar:   rexVar,
+		rexRange: rexRange,
+		rexItem:  rexItem,
 	}, nil
 }
 
@@ -41,11 +66,11 @@ func (t *TemplMerger) LoadTemplates(files []string) error {
 	m := make(map[string][]byte)
 	for _, file := range files {
 		// check the file is a template
-		if !(filepath.Ext(file) == ".tem" || filepath.Ext(file) == ".t") {
-			return fmt.Errorf("file '%s' is not a template file, artisan templates are either .tem or .t files\n", file)
+		if !(filepath.Ext(file) == ".tem" || filepath.Ext(file) == ".art") {
+			return fmt.Errorf("file '%s' is not a template file, artisan templates are either .tem or .art files\n", file)
 		}
 		// ensure the template path is absolute
-		path, err := AbsPath(file)
+		path, err := core.AbsPath(file)
 		if err != nil {
 			return fmt.Errorf("path '%s' cannot be converted to absolute path: %s\n", file, err)
 		}
@@ -54,7 +79,7 @@ func (t *TemplMerger) LoadTemplates(files []string) error {
 		if err != nil {
 			return fmt.Errorf("cannot read file %s: %s\n", file, err)
 		}
-		m[path] = bytes
+		m[path] = t.overlayOperators(bytes)
 	}
 	t.template = m
 	return nil
@@ -76,9 +101,9 @@ func (t *TemplMerger) Merge(env *Envar) error {
 			}
 			t.file[path[0:len(path)-len(".tem")]] = merged
 		} else {
-			merged, err = t.mergeT(file, *env)
+			merged, err = t.mergeART(path, file, *env)
 			if err != nil {
-				return fmt.Errorf("cannot merge template '%s': %s\n", path, err)
+				return fmt.Errorf("cannot merge template: %s\n", err)
 			}
 			t.file[path[0:len(path)-len(".t")]] = merged
 		}
@@ -128,18 +153,62 @@ func (t *TemplMerger) mergeTem(tem []byte, env Envar) ([]byte, error) {
 	return []byte(content), nil
 }
 
-// mergeT merges a single template file using go template format and the passed in variables
-func (t *TemplMerger) mergeT(tem []byte, env Envar) ([]byte, error) {
-	tt, err := template.New("t").Funcs(template.FuncMap{
-		"group": env.Group,
-	}).Parse(string(tem))
+// mergeART merges a single template file using go template format and the passed in variables
+func (t *TemplMerger) mergeART(path string, temp []byte, env Envar) ([]byte, error) {
+	ctx, err := NewContext(env)
+	if err != nil {
+		return nil, err
+	}
+	tt, err := template.New(path).Funcs(template.FuncMap{
+		"select": ctx.Select,
+		"item":   ctx.Item,
+		"var":    ctx.Var,
+	}).Parse(string(temp))
 	if err != nil {
 		return nil, err
 	}
 	var tpl bytes.Buffer
-	err = tt.Execute(&tpl, env)
+	err = tt.Execute(&tpl, ctx)
 	if err != nil {
 		return nil, err
 	}
-	return tpl.Bytes(), nil
+	return removeEmptyLines(tpl.String())
+}
+
+func removeEmptyLines(in string) ([]byte, error) {
+	regex, err := regexp.Compile("\n\n")
+	if err != nil {
+		return nil, err
+	}
+	return []byte(regex.ReplaceAllString(in, "\n")), nil
+}
+
+func (t *TemplMerger) overlayOperators(source []byte) []byte {
+	names := t.rexVar.FindAllStringSubmatch(string(source), -1)
+	for _, n := range names {
+		str := strings.ReplaceAll(string(source), n[0], fmt.Sprintf("{{ var \"%s\" }}", n[1]))
+		source = []byte(str)
+	}
+	names = t.rexRange.FindAllStringSubmatch(string(source), -1)
+	for _, n := range names {
+		str := strings.ReplaceAll(string(source), n[0], fmt.Sprintf("{{ select \"%s\"}}\n{{ range .Items }}", n[1]))
+		source = []byte(str)
+	}
+	names = t.rexItem.FindAllStringSubmatch(string(source), -1)
+	for _, n := range names {
+		str := strings.ReplaceAll(string(source), n[0], fmt.Sprintf("{{ item \"%s\" . }}", n[1]))
+		source = []byte(str)
+	}
+	return source
+}
+
+func (t *TemplMerger) Save() error {
+	for fileName, bytes := range t.file {
+		// override file with merged values
+		err := writeToFile(fileName, string(bytes))
+		if err != nil {
+			return fmt.Errorf("cannot update config file: %s\n", err)
+		}
+	}
+	return nil
 }

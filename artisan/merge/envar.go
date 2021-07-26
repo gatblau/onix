@@ -1,4 +1,4 @@
-package core
+package merge
 
 /*
   Onix Config Manager - Artisan
@@ -10,6 +10,7 @@ package core
 import (
 	"bytes"
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	"io/ioutil"
 	"reflect"
 	"strconv"
@@ -47,13 +48,13 @@ func NewEnVarFromMap(v map[string]string) *Envar {
 
 func NewEnVarFromFile(envFile string) (*Envar, error) {
 	var outMap = make(map[string]string)
-	file := ToAbs(envFile)
+	file := core.ToAbs(envFile)
 	data, err := ioutil.ReadFile(file)
 	// if it managed to find the env file load it
 	// otherwise skip it
 	content := strings.Split(string(data), "\n")
 	if err == nil {
-		for ix, line := range content {
+		for _, line := range content {
 			// skips comments
 			if strings.HasPrefix(strings.Trim(line, " "), "#") ||
 				len(strings.Trim(line, " ")) == 0 ||
@@ -61,20 +62,15 @@ func NewEnVarFromFile(envFile string) (*Envar, error) {
 				strings.HasPrefix(strings.Trim(line, " "), "\n") {
 				continue
 			}
-			//Splitting exactly on 2 strings
-			//example: VAR=test= Result: val[0] is VAR val[1] is test=
-			//Required for cases where value contains = sign like base64 values
+			// Splitting exactly on 2 strings
+			// example: VAR=test= Result: val[0] is VAR val[1] is test=
+			// Required for cases where value contains = sign like base64 values
 			keyValue := strings.SplitN(line, "=", 2)
 
-			//Checking if value contains invalid data, like <test=  test123>
-			//if value has spaces, such value is corrupted
-			if strings.Contains(keyValue[1], " ") {
-				return nil, fmt.Errorf("invalid env file format in line %d: '%s'\n", ix, line)
-			}
 			outMap[keyValue[0]] = removeTrail(keyValue[1])
 		}
 	} else {
-		Debug("cannot load env file: %s", err.Error())
+		core.Debug("cannot load env file: %s", err.Error())
 	}
 	return &Envar{
 		Vars: outMap,

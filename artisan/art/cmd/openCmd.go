@@ -1,3 +1,5 @@
+package cmd
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package cmd
-
 import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/i18n"
@@ -15,7 +15,7 @@ import (
 	"log"
 )
 
-// list local packages
+// OpenCmd opens an package in the specified path
 type OpenCmd struct {
 	cmd             *cobra.Command
 	credentials     string

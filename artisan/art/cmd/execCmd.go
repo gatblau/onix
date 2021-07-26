@@ -1,3 +1,5 @@
+package cmd
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,11 +7,10 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package cmd
-
 import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/i18n"
+	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/runner"
 	"github.com/spf13/cobra"
 )
@@ -63,7 +64,7 @@ func (c *ExeCCmd) Run(cmd *cobra.Command, args []string) {
 	core.CheckErr(err, "cannot initialise runner")
 	// load environment variables from file
 	// NOTE: do not load from host environment to prevent clashes in the container
-	env, err := core.NewEnVarFromFile(c.envFilename)
+	env, err := merge.NewEnVarFromFile(c.envFilename)
 	core.CheckErr(err, "failed to load environment file '%s'", c.envFilename)
 	if len(c.credentials) == 0 {
 		core.Msg("no credentials have been provided, if you are connecting to a authenticated registry, you need to pass the -u flag")

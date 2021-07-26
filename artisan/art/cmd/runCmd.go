@@ -1,3 +1,5 @@
+package cmd
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,16 +7,15 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package cmd
-
 import (
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/merge"
 	"github.com/spf13/cobra"
 	"os"
 )
 
-// create a file seal
+// RunCmd runs the function specified in the project's build.yaml file
 type RunCmd struct {
 	cmd         *cobra.Command
 	envFilename string
@@ -46,9 +47,9 @@ func (c *RunCmd) Run(cmd *cobra.Command, args []string) {
 	}
 	builder := build.NewBuilder()
 	// add the build file level environment variables
-	env := core.NewEnVarFromSlice(os.Environ())
+	env := merge.NewEnVarFromSlice(os.Environ())
 	// load vars from file
-	env2, err := core.NewEnVarFromFile(c.envFilename)
+	env2, err := merge.NewEnVarFromFile(c.envFilename)
 	core.CheckErr(err, "failed to load environment file '%s'", c.envFilename)
 	// merge with existing environment
 	env.Merge(env2)

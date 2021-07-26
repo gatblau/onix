@@ -1,4 +1,4 @@
-package core
+package merge
 
 /*
   Onix Config Manager - Artisan
@@ -8,10 +8,12 @@ package core
   to be licensed under the same terms as the rest of the code.
 */
 import (
+	"github.com/gatblau/onix/artisan/core"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -33,7 +35,7 @@ func MergeFiles(filenames []string, env *Envar) {
 	for _, file := range files {
 		merged := false
 		if filepath.Ext(file) != ".tem" {
-			RaiseErr("file '%s' does not have a .tem extension, cannot process it", file)
+			core.RaiseErr("file '%s' does not have a .tem extension, cannot process it", file)
 		}
 		// read the file content
 		bytes, err := ioutil.ReadFile(file)
@@ -94,7 +96,7 @@ func MergeFiles(filenames []string, env *Envar) {
 
 func writeToFile(filename string, data string) error {
 	// create a file without the .tem extension
-	file, err := os.Create(FilenameWithoutExtension(filename))
+	file, err := os.Create(filenameWithoutExtension(filename))
 	if err != nil {
 		return err
 	}
@@ -104,6 +106,10 @@ func writeToFile(filename string, data string) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("'%v' bytes written to file '%s'\n", len(data), FilenameWithoutExtension(filename))
+	log.Printf("'%v' bytes written to file '%s'\n", len(data), filenameWithoutExtension(filename))
 	return file.Sync()
+}
+
+func filenameWithoutExtension(fn string) string {
+	return strings.TrimSuffix(fn, path.Ext(fn))
 }
