@@ -1,0 +1,14 @@
+---
+title: {{ $ "TITLE" }}
+{{ range => "PORT" }}
+- port:
+    name: {{ % "NAME" }}
+    description: {{ % "DESC" }}
+    value: {{ % "VALUE" }}
+{{end}}
+{{ range => "URI" }}
+- uri:
+    name: {{ % "NAME" }}
+    value: {{ % "VALUE" }}
+{{end}}
+...

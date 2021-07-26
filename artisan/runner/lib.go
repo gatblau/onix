@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
+	"github.com/gatblau/onix/artisan/merge"
 	"os"
 	"os/exec"
 	"runtime"
@@ -22,7 +23,7 @@ import (
 
 // launch a container and mount the current directory on the host machine into the container
 // the current directory must contain a build.yaml file where fxName is defined
-func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *core.Envar) error {
+func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *merge.Envar) error {
 	// if the OS is linux and the user id is not 100,000,000, it cannot continue
 	if isWrong, msg := core.WrongUserId(); isWrong {
 		// print warning
@@ -38,7 +39,7 @@ func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *core.En
 			"ensure it is owned by UID=100000000 for the runtime to work")
 	}
 	if env == nil {
-		env = core.NewEnVarFromSlice([]string{})
+		env = merge.NewEnVarFromSlice([]string{})
 	}
 	// determine which container tool is available in the host
 	tool, err := containerCmd()
@@ -90,7 +91,7 @@ func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *core.En
 }
 
 // launch a container and execute a package function
-func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUser, artRegistryPwd string, env *core.Envar) error {
+func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUser, artRegistryPwd string, env *merge.Envar) error {
 	// if the OS is linux and the user id is not 100,000,000, it cannot continue
 	if isWrong, msg := core.WrongUserId(); isWrong {
 		// print warning
@@ -166,7 +167,7 @@ func isCmdAvailable(name string) bool {
 }
 
 // return an array of environment variable arguments to pass to docker
-func toContainerArgs(imageName, dir, containerName string, env *core.Envar) []string {
+func toContainerArgs(imageName, dir, containerName string, env *merge.Envar) []string {
 	var result = []string{"run", "--name", containerName}
 	vars := env.Slice()
 	for _, v := range vars {

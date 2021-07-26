@@ -9,6 +9,7 @@ package git
 */
 import (
 	"fmt"
+	"github.com/gatblau/onix/artisan/merge"
 	"io/ioutil"
 	"log"
 	"os"
@@ -85,8 +86,8 @@ func (s *SyncManager) artMerge() error {
 		return fmt.Errorf("no file found for file type %v in the path %v\n", s.fileType, absSyncPath)
 	}
 	// replace environment variable value with the place holder
-	envVar := core.NewEnVarFromSlice(os.Environ())
-	core.MergeFiles(files, envVar)
+	envVar := merge.NewEnVarFromSlice(os.Environ())
+	merge.MergeFiles(files, envVar)
 	return nil
 }
 

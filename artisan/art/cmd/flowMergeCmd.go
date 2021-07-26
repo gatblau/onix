@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/flow"
+	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/tkn"
 	"github.com/spf13/cobra"
 	"io/ioutil"
@@ -62,9 +63,9 @@ func (c *FlowMergeCmd) Run(_ *cobra.Command, args []string) {
 		core.RaiseErr("too many arguments: only need the path to the bare flow file")
 	}
 	// add the build file level environment variables
-	env := core.NewEnVarFromSlice(os.Environ())
+	env := merge.NewEnVarFromSlice(os.Environ())
 	// load vars from file
-	env2, err := core.NewEnVarFromFile(c.envFilename)
+	env2, err := merge.NewEnVarFromFile(c.envFilename)
 	core.CheckErr(err, "failed to load environment file '%s'", c.envFilename)
 	// merge with existing environment
 	env.Merge(env2)
