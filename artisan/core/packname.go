@@ -54,7 +54,7 @@ func ParseName(packageName string) (*PackageName, error) {
 	}
 	// set defaults if there are missing values
 	if len(n.Domain) == 0 {
-		n.Domain = "artisan.library"
+		n.Domain = "art1san.net"
 	}
 	if len(n.Group) == 0 {
 		n.Group = "root"
