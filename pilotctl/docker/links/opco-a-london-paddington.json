@@ -1,0 +1,6 @@
+{
+  "description": "links OpCo A with Location London Paddington",
+  "type": "U_RELATIONSHIP",
+  "startItemKey": "ORG:OPCO_A",
+  "endItemKey": "LOCATION:LONDON_PADDINGTON"
+}
