@@ -1,0 +1,6 @@
+{
+  "description": "links Acme group with area EAST",
+  "type": "U_RELATIONSHIP",
+  "startItemKey": "ORG_GRP:ACME",
+  "endItemKey": "AREA:WEST"
+}
