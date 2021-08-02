@@ -1,0 +1,6 @@
+{
+  "description": "links Location London Bank with area South",
+  "type": "U_RELATIONSHIP",
+  "startItemKey": "AREA:SOUTH",
+  "endItemKey": "LOCATION:LONDON_EUSTON"
+}
