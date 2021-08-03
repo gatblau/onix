@@ -113,6 +113,41 @@ var doc = `{
                 }
             }
         },
+        "/area/{area}/location": {
+            "get": {
+                "description": "Get a list of locations setup in an area",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Logistics"
+                ],
+                "summary": "Get Locations in an Area",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the unique id for area under which locations are defined",
+                        "name": "area",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/cmd": {
             "get": {
                 "description": "get a list of all command definitions",
@@ -406,6 +441,102 @@ var doc = `{
                 }
             }
         },
+        "/org-group": {
+            "get": {
+                "description": "Get a list of organisation groups",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Logistics"
+                ],
+                "summary": "Get Organisation Groups",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/org-group/{org-group}/area": {
+            "get": {
+                "description": "Get a list of areas setup in an organisation group",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Logistics"
+                ],
+                "summary": "Get Areas in Organisation Group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the unique id for organisation group under which areas are defined",
+                        "name": "org-group",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/org-group/{org-group}/org": {
+            "get": {
+                "description": "Get a list of organisations setup in an organisation group",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Logistics"
+                ],
+                "summary": "Get Organisations in Organisation Group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the unique id for organisation group under which organisations are defined",
+                        "name": "org-group",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/package": {
             "get": {
                 "description": "get a list of packages in the backing Artisan registry",
@@ -484,60 +615,16 @@ var doc = `{
                         "name": "machine-id",
                         "in": "path",
                         "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    {
+                        "description": "the result of the execution of the last command or nil if no result is available",
+                        "name": "cmd-result",
+                        "in": "body",
                         "schema": {
                             "type": "string"
                         }
                     }
-                }
-            }
-        },
-        "/region": {
-            "get": {
-                "description": "get a list of regions where hosts are deployed",
-                "produces": [
-                    "application/json"
                 ],
-                "tags": [
-                    "Region"
-                ],
-                "summary": "Get Regions",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/region/{region-key}/location": {
-            "get": {
-                "description": "get a list of locations within a particular region",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Region"
-                ],
-                "summary": "Get Locations by Region",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -613,23 +700,41 @@ var doc = `{
         "core.Cmd": {
             "type": "object",
             "properties": {
+                "containerised": {
+                    "description": "run command in runtime",
+                    "type": "boolean"
+                },
                 "description": {
+                    "description": "description of the command",
                     "type": "string"
                 },
                 "function": {
+                    "description": "the function in the package to call",
                     "type": "string"
                 },
-                "id": {
-                    "type": "integer"
-                },
                 "input": {
+                    "description": "the function input information",
                     "$ref": "#/definitions/data.Input"
                 },
-                "name": {
+                "key": {
+                    "description": "the natural key uniquely identifying the command",
                     "type": "string"
                 },
                 "package": {
+                    "description": "the package to use",
                     "type": "string"
+                },
+                "pwd": {
+                    "description": "the package registry password",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "the package registry user",
+                    "type": "string"
+                },
+                "verbose": {
+                    "description": "enables verbose output",
+                    "type": "boolean"
                 }
             }
         },

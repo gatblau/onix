@@ -178,7 +178,7 @@ func (r *ReMan) SetAdmission(admission *Admission) error {
 	return r.db.RunCommand("select pilotctl_set_admission($1, $2, $3)", admission.MachineId, admission.Active, admission.Tag)
 }
 
-// Authenticate authenticate a pilot based on its time stamp and machine Id admission status
+// Authenticate a pilot based on its time stamp and machine Id admission status
 func (r *ReMan) Authenticate(token string) bool {
 	value, err := base64.StdEncoding.DecodeString(reverse(token))
 	if err != nil {
@@ -358,6 +358,69 @@ func (r *ReMan) GetCommand(cmdName string) (*Cmd, error) {
 
 func (r *ReMan) CompleteJob(status *Result) error {
 	return r.db.RunCommand("select pilotctl_complete_job($1, $2, $3)", status.JobId, status.Log, !status.Success)
+}
+
+func (r *ReMan) GetAreas(orgGroup string) ([]Area, error) {
+	items, err := r.ox.GetChildrenByType(&oxc.Item{Key: orgGroup}, "U_AREA")
+	if err != nil {
+		return nil, err
+	}
+	var areas []Area
+	for _, item := range items.Values {
+		areas = append(areas, Area{
+			Key:         item.Key,
+			Name:        item.Name,
+			Description: item.Description,
+		})
+	}
+	return areas, nil
+}
+
+func (r *ReMan) GetOrgs(orgGroup string) ([]Org, error) {
+	items, err := r.ox.GetChildrenByType(&oxc.Item{Key: orgGroup}, "U_ORG")
+	if err != nil {
+		return nil, err
+	}
+	var orgs []Org
+	for _, item := range items.Values {
+		orgs = append(orgs, Org{
+			Key:         item.Key,
+			Name:        item.Name,
+			Description: item.Description,
+		})
+	}
+	return orgs, nil
+}
+
+func (r *ReMan) GetLocations(area string) ([]Location, error) {
+	items, err := r.ox.GetChildrenByType(&oxc.Item{Key: area}, "U_LOCATION")
+	if err != nil {
+		return nil, err
+	}
+	var orgs []Location
+	for _, item := range items.Values {
+		orgs = append(orgs, Location{
+			Key:  item.Key,
+			Name: item.Name,
+		})
+	}
+	return orgs, nil
+}
+
+func (r *ReMan) GetOrgGroups() ([]Org, error) {
+	items, err := r.ox.GetItemsByType("U_ORG_GROUP")
+	if err != nil {
+		return nil, err
+	}
+	var orgs []Org
+	for _, item := range items.Values {
+		orgs = append(orgs, Org{
+			Key:         item.Key,
+			Name:        item.Name,
+			Description: item.Description,
+		})
+	}
+	return orgs, nil
 }
 
 func reverse(str string) (result string) {
