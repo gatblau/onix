@@ -251,8 +251,10 @@ public interface DbRepository {
     PrivilegeDataList getPrivilegesByRole(String roleKey, String[] loggedRoleKey);
 
     ItemList getItemChildren(String key, String[] role);
+    ItemList getItemFirstLevelChildren(String itemKey, String childTypeKey, String[] role);
 
     String getGetItemChildrenSQL();
+    String getGetItemFirstLevelChildrenSQL();
 
     /* Enc Keys */
     EncKeyStatusData getKeyStatus(String[] role);

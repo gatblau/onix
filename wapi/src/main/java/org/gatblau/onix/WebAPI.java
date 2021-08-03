@@ -433,6 +433,35 @@ public class WebAPI {
         return ResponseEntity.ok(list);
     }
 
+    @ApiOperation(
+            value = "Gets the first level of children of a specific item that are of a given type.",
+            notes = "Use this function to retrieve a list of items linked to an item.")
+    @RequestMapping(
+            path = "/item/{key}/list/{childType}"
+            , method = RequestMethod.GET
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<Wrapper> getItemFirstLevelChildren(
+            @ApiParam(
+                    name = "key",
+                    value = "A string which uniquely identifies the item and never changes.",
+                    required = true,
+                    example = "item_01_abc"
+            )
+            @PathVariable("key") String key,
+            @ApiParam(
+                    name = "childType",
+                    value = "A string which uniquely identifies the type of the children to retrieve.",
+                    required = true,
+                    example = "U_LOCATION"
+            )
+            @PathVariable("childType") String childType,
+            Authentication authentication
+    ) {
+        ItemList list = data.getItemFirstLevelChildren(key, childType, getRole(authentication));
+        return ResponseEntity.ok(list);
+    }
+
     /*
         PARTITIONS
      */
