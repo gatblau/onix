@@ -1,0 +1,37 @@
+---
+
+env:
+  CGO_ENABLED: 0
+  GOARCH: amd64
+
+profiles:
+  - name: vmdiskfs
+    type: files
+    description: package vmdiskfs
+    target: ./bin/linux
+
+functions:
+  - name: build-mac
+    description: builds tool for MacOS
+    env:
+      GOOS: darwin
+    run:
+      - go build -o bin/darwin/vmdiskfs
+
+  - name: build-linux
+    description: builds tool for Linux
+    env:
+      GOOS: linux
+    run:
+      - go build -o bin/linux/vmdiskfs
+
+  - name: zip
+    description: archiving with zip tool
+    run:
+      - zip vmdiskfs.zip bin/darwin/vmdiskfs bin/linux/vmdiskfs
+
+  - name: tar
+    description: archiving using tar utility, useful for Linux
+    run:
+      - tar czvf vmdiskfs.tar.gz bin/darwin/vmdiskfs bin/linux/vmdiskfs
+...
