@@ -12,18 +12,33 @@ definitions:
     type: object
   core.Cmd:
     properties:
+      containerised:
+        description: run command in runtime
+        type: boolean
       description:
+        description: description of the command
         type: string
       function:
+        description: the function in the package to call
         type: string
-      id:
-        type: integer
       input:
         $ref: '#/definitions/data.Input'
-      name:
+        description: the function input information
+      key:
+        description: the natural key uniquely identifying the command
         type: string
       package:
+        description: the package to use
         type: string
+      pwd:
+        description: the package registry password
+        type: string
+      user:
+        description: the package registry user
+        type: string
+      verbose:
+        description: enables verbose output
+        type: boolean
     type: object
   core.Event:
     properties:
@@ -211,6 +226,29 @@ paths:
       summary: Create or Update a Host Admission
       tags:
       - Admission
+  /area/{area}/location:
+    get:
+      description: Get a list of locations setup in an area
+      parameters:
+      - description: the unique id for area under which locations are defined
+        in: path
+        name: area
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Locations in an Area
+      tags:
+      - Logistics
   /cmd:
     get:
       description: get a list of all command definitions
@@ -404,6 +442,70 @@ paths:
       summary: Get Events by Host
       tags:
       - Host
+  /org-group:
+    get:
+      description: Get a list of organisation groups
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Organisation Groups
+      tags:
+      - Logistics
+  /org-group/{org-group}/area:
+    get:
+      description: Get a list of areas setup in an organisation group
+      parameters:
+      - description: the unique id for organisation group under which areas are defined
+        in: path
+        name: org-group
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Areas in Organisation Group
+      tags:
+      - Logistics
+  /org-group/{org-group}/org:
+    get:
+      description: Get a list of organisations setup in an organisation group
+      parameters:
+      - description: the unique id for organisation group under which organisations
+          are defined
+        in: path
+        name: org-group
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Organisations in Organisation Group
+      tags:
+      - Logistics
   /package:
     get:
       description: get a list of packages in the backing Artisan registry
@@ -454,6 +556,12 @@ paths:
         name: machine-id
         required: true
         type: string
+      - description: the result of the execution of the last command or nil if no
+          result is available
+        in: body
+        name: cmd-result
+        schema:
+          type: string
       produces:
       - application/json
       responses:
@@ -468,40 +576,6 @@ paths:
       summary: Ping
       tags:
       - Host
-  /region:
-    get:
-      description: get a list of regions where hosts are deployed
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Regions
-      tags:
-      - Region
-  /region/{region-key}/location:
-    get:
-      description: get a list of locations within a particular region
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Locations by Region
-      tags:
-      - Region
   /register:
     post:
       description: registers a new host and its technical details with the service
