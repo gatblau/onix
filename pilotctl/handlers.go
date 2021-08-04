@@ -158,30 +158,6 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-// @Summary Log Events
-// @Description log host events (e.g. up, down, connected, disconnected)
-// @Tags Host
-// @Router /log [post]
-// @Param logs body core.Events true "the host logs to post"
-// @Accepts json
-// @Produce plain
-// @Failure 500 {string} there was an error in the server, check the server logs
-// @Success 200 {string} OK
-func newLogHandler(w http.ResponseWriter, r *http.Request) {
-}
-
-// @Summary Get Events by Host
-// @Description get log host events (e.g. up, down, connected, disconnected) by specific host
-// @Tags Host
-// @Router /log/{host-id} [get]
-// @Param host-key path string true "the unique key for the host"
-// @Accepts json
-// @Produce plain
-// @Failure 500 {string} there was an error in the server, check the server logs
-// @Success 200 {string} OK
-func geLogHandler(w http.ResponseWriter, r *http.Request) {
-}
-
 // @Summary Create or Update a Command
 // @Description creates a new or updates an existing command definition
 // @Tags Command
@@ -370,28 +346,12 @@ func getLocationsHandler(w http.ResponseWriter, r *http.Request) {
 	server.Write(w, r, areas)
 }
 
-// @Summary Get Host Admissions
-// @Description get a list of keys of the hosts admitted into service
-// @Tags Admission
-// @Router /admission [get]
-// @Produce json
-// @Failure 500 {string} there was an error in the server, check the server logs
-// @Success 200 {string} OK
-func getAdmissionsHandler(w http.ResponseWriter, r *http.Request) {
-	admissions, err := rem.GetAdmissions()
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	server.Write(w, r, admissions)
-}
-
-// @Summary Create or Update a Host Admission
-// @Description creates a new or updates an existing host admission by allowing to specify active status and search tags
+// @Summary Admits a host into service
+// @Description inform pilotctl to accept management connections coming from a host pilot agent
+// @Description admitting a host also requires associating the relevant logistic information such as org, area and location for the host
 // @Tags Admission
 // @Router /admission [put]
-// @Param command body core.Admission true "the admission to be set"
+// @Param command body core.Admission true "the required admission information"
 // @Accepts json
 // @Produce plain
 // @Failure 500 {string} there was an error in the server, check the server logs

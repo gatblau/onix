@@ -178,7 +178,10 @@ type Location struct {
 
 type Admission struct {
 	MachineId string   `json:"machine_id"`
-	Active    bool     `json:"active"`
+	OrgGroup  string   `json:"org_group"`
+	Org       string   `json:"org"`
+	Area      string   `json:"area"`
+	Location  string   `json:"location"`
 	Tag       []string `json:"tag"`
 }
 

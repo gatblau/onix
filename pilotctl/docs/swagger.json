@@ -36,30 +36,6 @@
             }
         },
         "/admission": {
-            "get": {
-                "description": "get a list of keys of the hosts admitted into service",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admission"
-                ],
-                "summary": "Get Host Admissions",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
             "put": {
                 "description": "creates a new or updates an existing host admission by allowing to specify active status and search tags",
                 "produces": [
@@ -349,81 +325,6 @@
                 }
             }
         },
-        "/log": {
-            "post": {
-                "description": "log host events (e.g. up, down, connected, disconnected)",
-                "produces": [
-                    "text/plain"
-                ],
-                "tags": [
-                    "Host"
-                ],
-                "summary": "Log Events",
-                "parameters": [
-                    {
-                        "description": "the host logs to post",
-                        "name": "logs",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/core.Event"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/log/{host-id}": {
-            "get": {
-                "description": "get log host events (e.g. up, down, connected, disconnected) by specific host",
-                "produces": [
-                    "text/plain"
-                ],
-                "tags": [
-                    "Host"
-                ],
-                "summary": "Get Events by Host",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "the unique key for the host",
-                        "name": "host-key",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/org-group": {
             "get": {
                 "description": "Get a list of organisation groups",
@@ -666,10 +567,19 @@
         "core.Admission": {
             "type": "object",
             "properties": {
-                "active": {
-                    "type": "boolean"
+                "area": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
                 },
                 "machine_id": {
+                    "type": "string"
+                },
+                "org": {
+                    "type": "string"
+                },
+                "org_group": {
                     "type": "string"
                 },
                 "tag": {
@@ -718,18 +628,6 @@
                 "verbose": {
                     "description": "enables verbose output",
                     "type": "boolean"
-                }
-            }
-        },
-        "core.Event": {
-            "type": "object",
-            "properties": {
-                "time": {
-                    "type": "string"
-                },
-                "type": {
-                    "description": "0: host up, 1: host down, 2: network up, 3: network down",
-                    "type": "integer"
                 }
             }
         },

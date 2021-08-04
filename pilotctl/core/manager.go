@@ -146,36 +146,17 @@ func (r *ReMan) GetHostStatus() ([]Host, error) {
 	return hosts, rows.Err()
 }
 
-func (r *ReMan) GetAdmissions() ([]Admission, error) {
-	admissions := make([]Admission, 0)
-	rows, err := r.db.Query("select * from pilotctl_get_admissions($1)", nil)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get host status '%s'", err)
-	}
-	var (
-		machineId string
-		active    bool
-		tag       []string
-	)
-	for rows.Next() {
-		err := rows.Scan(&machineId, &active, &tag)
-		if err != nil {
-			return nil, err
-		}
-		admissions = append(admissions, Admission{
-			MachineId: machineId,
-			Active:    active,
-			Tag:       tag,
-		})
-	}
-	return admissions, rows.Err()
-}
-
 func (r *ReMan) SetAdmission(admission *Admission) error {
 	if len(admission.MachineId) == 0 {
 		return fmt.Errorf("machine Id is missing")
 	}
-	return r.db.RunCommand("select pilotctl_set_admission($1, $2, $3)", admission.MachineId, admission.Active, admission.Tag)
+	return r.db.RunCommand("select pilotctl_set_admission($1, $2, $3, $4, $5, $6)",
+		admission.MachineId,
+		admission.OrgGroup,
+		admission.Org,
+		admission.Area,
+		admission.Location,
+		admission.Tag)
 }
 
 // Authenticate a pilot based on its time stamp and machine Id admission status

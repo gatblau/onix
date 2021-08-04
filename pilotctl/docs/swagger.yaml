@@ -1,9 +1,15 @@
 definitions:
   core.Admission:
     properties:
-      active:
-        type: boolean
+      area:
+        type: string
+      location:
+        type: string
       machine_id:
+        type: string
+      org:
+        type: string
+      org_group:
         type: string
       tag:
         items:
@@ -39,14 +45,6 @@ definitions:
       verbose:
         description: enables verbose output
         type: boolean
-    type: object
-  core.Event:
-    properties:
-      time:
-        type: string
-      type:
-        description: '0: host up, 1: host down, 2: network up, 3: network down'
-        type: integer
     type: object
   core.Registration:
     properties:
@@ -186,22 +184,6 @@ paths:
       tags:
       - General
   /admission:
-    get:
-      description: get a list of keys of the hosts admitted into service
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Host Admissions
-      tags:
-      - Admission
     put:
       description: creates a new or updates an existing host admission by allowing
         to specify active status and search tags
@@ -392,56 +374,6 @@ paths:
       summary: Get Job Information
       tags:
       - Job
-  /log:
-    post:
-      description: log host events (e.g. up, down, connected, disconnected)
-      parameters:
-      - description: the host logs to post
-        in: body
-        name: logs
-        required: true
-        schema:
-          items:
-            $ref: '#/definitions/core.Event'
-          type: array
-      produces:
-      - text/plain
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Log Events
-      tags:
-      - Host
-  /log/{host-id}:
-    get:
-      description: get log host events (e.g. up, down, connected, disconnected) by
-        specific host
-      parameters:
-      - description: the unique key for the host
-        in: path
-        name: host-key
-        required: true
-        type: string
-      produces:
-      - text/plain
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Events by Host
-      tags:
-      - Host
   /org-group:
     get:
       description: Get a list of organisation groups
