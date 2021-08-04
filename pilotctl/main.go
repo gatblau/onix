@@ -48,7 +48,6 @@ func main() {
 		router.HandleFunc("/org-group/{org-group}/area", getAreasHandler).Methods("GET")
 		router.HandleFunc("/org-group/{org-group}/org", getOrgHandler).Methods("GET")
 		router.HandleFunc("/area/{area}/location", getLocationsHandler).Methods("GET")
-		router.HandleFunc("/admission", getAdmissionsHandler).Methods("GET")
 		router.HandleFunc("/admission", setAdmissionHandler).Methods("PUT")
 		router.HandleFunc("/package", getPackagesHandler).Methods("GET")
 		router.HandleFunc("/package/{name}/api", getPackagesApiHandler).Methods("GET")
