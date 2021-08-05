@@ -146,7 +146,7 @@ func (r *ReMan) GetHostStatus() ([]Host, error) {
 	return hosts, rows.Err()
 }
 
-func (r *ReMan) SetAdmission(admission *Admission) error {
+func (r *ReMan) SetAdmission(admission Admission) error {
 	if len(admission.MachineId) == 0 {
 		return fmt.Errorf("machine Id is missing")
 	}
