@@ -7,6 +7,11 @@
 */
 package data
 
+import (
+	"bytes"
+	"fmt"
+)
+
 type Manifest struct {
 	// the package type
 	Type string `json:"type,omitempty"`
@@ -58,4 +63,32 @@ type FxInfo struct {
 	Input       *Input `json:"input,omitempty"`
 	// runtime image that should be used to execute functions in the package
 	Runtime string `json:"runtime,omitempty"`
+}
+
+func (m *Manifest) ToMarkDownBytes(name string) []byte {
+	var b bytes.Buffer
+	b.WriteString(fmt.Sprintf("# Package %s Manifest\n", name))
+	for _, fx := range m.Functions {
+		b.WriteString(fmt.Sprintf("## Function: %s\n", fx.Name))
+		b.WriteString(fmt.Sprintf("%s\n", fx.Description))
+		if len(fx.Input.Var) > 0 {
+			b.WriteString(fmt.Sprintf("### Variables:\n"))
+			b.WriteString(fmt.Sprintf("|name|description|default|\n"))
+			b.WriteString(fmt.Sprintf("|---|---|---|\n"))
+			for _, v := range fx.Input.Var {
+				b.WriteString(fmt.Sprintf("|%s|%s|%s|\n", v.Name, v.Description, v.Default))
+			}
+			b.WriteString(fmt.Sprintf("|---|---|---|\n"))
+		}
+		if len(fx.Input.Secret) > 0 {
+			b.WriteString(fmt.Sprintf("### Secrets:\n"))
+			b.WriteString(fmt.Sprintf("|name|description|\n"))
+			b.WriteString(fmt.Sprintf("|---|---|\n"))
+			for _, s := range fx.Input.Secret {
+				b.WriteString(fmt.Sprintf("|%s|%s|\n", s.Name, s.Description))
+			}
+			b.WriteString(fmt.Sprintf("|---|---|\n"))
+		}
+	}
+	return b.Bytes()
 }
