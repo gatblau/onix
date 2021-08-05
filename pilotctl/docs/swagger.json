@@ -37,22 +37,25 @@
         },
         "/admission": {
             "put": {
-                "description": "creates a new or updates an existing host admission by allowing to specify active status and search tags",
+                "description": "inform pilotctl to accept management connections coming from a host pilot agent\nadmitting a host also requires associating the relevant logistic information such as org, area and location for the host",
                 "produces": [
                     "text/plain"
                 ],
                 "tags": [
                     "Admission"
                 ],
-                "summary": "Create or Update a Host Admission",
+                "summary": "Admits a host into service",
                 "parameters": [
                     {
-                        "description": "the admission to be set",
+                        "description": "the required admission information",
                         "name": "command",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core.Admission"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/core.Admission"
+                            }
                         }
                     }
                 ],

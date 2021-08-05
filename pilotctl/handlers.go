@@ -351,7 +351,7 @@ func getLocationsHandler(w http.ResponseWriter, r *http.Request) {
 // @Description admitting a host also requires associating the relevant logistic information such as org, area and location for the host
 // @Tags Admission
 // @Router /admission [put]
-// @Param command body core.Admission true "the required admission information"
+// @Param command body []core.Admission true "the required admission information"
 // @Accepts json
 // @Produce plain
 // @Failure 500 {string} there was an error in the server, check the server logs
@@ -363,18 +363,20 @@ func setAdmissionHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	admission := new(core.Admission)
-	err = json.Unmarshal(bytes, admission)
+	var admissions []core.Admission
+	err = json.Unmarshal(bytes, &admissions)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = rem.SetAdmission(admission)
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	for _, admission := range admissions {
+		err = rem.SetAdmission(admission)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
