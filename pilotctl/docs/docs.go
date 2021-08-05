@@ -233,6 +233,32 @@ var doc = `{
                     "Host"
                 ],
                 "summary": "Get All Hosts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the organisation group key to filter the query",
+                        "name": "og",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the organisation key to filter the query",
+                        "name": "or",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the area key to filter the query",
+                        "name": "ar",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the location key to filter the query",
+                        "name": "lo",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",

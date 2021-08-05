@@ -110,11 +110,19 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 // @Description Returns a list of remote hosts
 // @Tags Host
 // @Router /host [get]
+// @Param og query string false "the organisation group key to filter the query"
+// @Param or query string false "the organisation key to filter the query"
+// @Param ar query string false "the area key to filter the query"
+// @Param lo query string false "the location key to filter the query"
 // @Produce json
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
-	hosts, err := rem.GetHostStatus()
+	orgGroup := r.FormValue("og")
+	org := r.FormValue("or")
+	area := r.FormValue("ar")
+	location := r.FormValue("loc")
+	hosts, err := rem.GetHosts(orgGroup, org, area, location)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)

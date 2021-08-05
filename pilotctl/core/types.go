@@ -95,9 +95,10 @@ func (c *CmdValue) Env() []string {
 
 // Host monitoring information
 type Host struct {
-	Id        string `json:"id"`
-	Customer  string `json:"customer"`
-	Region    string `json:"region"`
+	MachineId string `json:"machine_id"`
+	OrgGroup  string `json:"org_group"`
+	Org       string `json:"org"`
+	Area      string `json:"area"`
 	Location  string `json:"location"`
 	Connected bool   `json:"connected"`
 	Since     string `json:"since"`

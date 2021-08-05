@@ -115,32 +115,45 @@ func (r *ReMan) Beat(machineId string) (jobId int64, fxKey string, fxVersion int
 	return jobId, fxKey, fxVersion, nil
 }
 
-func (r *ReMan) GetHostStatus() ([]Host, error) {
+// GetHosts get a list of hosts filtered by
+// oGroup: organisation group key
+// or: organisation key
+// ar: area key
+// loc: location key
+func (r *ReMan) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 	hosts := make([]Host, 0)
-	rows, err := r.db.Query("select * from pilotctl_get_conn_status()")
+	rows, err := r.db.Query("select * from pilotctl_get_host($1, $2, $3, $4)", oGroup, or, ar, loc)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get host status '%s'", err)
+		return nil, fmt.Errorf("cannot get hosts: %s\n", err)
 	}
 	var (
-		id        string
+		machineId string
 		connected bool
-		since     time.Time
-		customer  sql.NullString
-		region    sql.NullString
+		since     sql.NullTime
+		orgGroup  sql.NullString
+		org       sql.NullString
+		area      sql.NullString
 		location  sql.NullString
+		inService bool
+		tag       []string
 	)
 	for rows.Next() {
-		err := rows.Scan(&id, &connected, &since, &customer, &region, &location)
+		err := rows.Scan(&machineId, &connected, &since, &orgGroup, &org, &area, &location, &inService, &tag)
 		if err != nil {
 			return nil, err
 		}
+		var time int64 = 0
+		if since.Valid {
+			time = since.Time.UnixNano()
+		}
 		hosts = append(hosts, Host{
-			Id:        id,
-			Customer:  customer.String,
-			Region:    region.String,
+			MachineId: machineId,
+			OrgGroup:  orgGroup.String,
+			Org:       org.String,
+			Area:      area.String,
 			Location:  location.String,
 			Connected: connected,
-			Since:     toTime(since.UnixNano()),
+			Since:     toTime(time),
 		})
 	}
 	return hosts, rows.Err()

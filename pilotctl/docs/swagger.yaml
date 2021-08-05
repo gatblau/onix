@@ -300,6 +300,23 @@ paths:
   /host:
     get:
       description: Returns a list of remote hosts
+      parameters:
+      - description: the organisation group key to filter the query
+        in: query
+        name: og
+        type: string
+      - description: the organisation key to filter the query
+        in: query
+        name: or
+        type: string
+      - description: the area key to filter the query
+        in: query
+        name: ar
+        type: string
+      - description: the location key to filter the query
+        in: query
+        name: lo
+        type: string
       produces:
       - application/json
       responses:
