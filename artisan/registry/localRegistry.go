@@ -503,11 +503,12 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 		err = CopyFile(src, dst)
 		core.CheckErr(err, "cannot rename package %s", fmt.Sprintf("%s.zip", artie.FileRef))
 	} else {
-		// otherwise unzip the target
+		// otherwise, unzip the target
 		err = unzip(path.Join(r.Path(), fmt.Sprintf("%s.zip", artie.FileRef)), targetPath)
 		core.CheckErr(err, "cannot unzip package %s", fmt.Sprintf("%s.zip", artie.FileRef))
 		// check if the target path is a folder
-		info, _ := os.Stat(targetPath)
+		info, err := os.Stat(targetPath)
+		core.CheckErr(err, "cannot stat path %s", targetPath)
 		// only get rid of the target folder if there is one
 		if info.IsDir() {
 			srcPath := path.Join(targetPath, seal.Manifest.Target)
