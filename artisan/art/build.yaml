@@ -66,14 +66,14 @@ functions:
     run:
       - zip art.zip bin/windows/art.exe bin/linux/art bin/darwin/art
 
-  - name: zip-all
+  - name: release-bin
     description: creates zip files with the cli binaries for the different platforms
     run:
       - $(set-version)
       - $(build-linux)
       - $(build-mac)
       - $(build-win)
-      - zip -r -j art_linux_${ARTISAN_REF}.zip bin/linux/art
-      - zip -r -j art_darwin_${ARTISAN_REF}.zip bin/darwin/art
-      - zip -r -j art_win_${ARTISAN_REF}.zip bin/windows/art.exe
+      - tar -zcvf art_linux.tar.gz -C bin/linux .
+      - tar -zcvf art_darwin.tar.gz -C bin/darwin .
+      - zip -r -j art_win.zip bin/windows/art.exe
 ...
