@@ -2233,6 +2233,28 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public synchronized ItemList getItemFirstLevelChildren(String itemKey, String childTypeKey, String[] role) {
+        ItemList items = new ItemList();
+        try {
+            db.prepare(getGetItemFirstLevelChildrenSQL());
+            db.setString(1, itemKey);
+            db.setString(2, childTypeKey);
+            db.setArray(3, role);
+            ResultSet set = db.executeQuery();
+            while (set.next()) {
+                ItemData item = util.toItemData(set);
+                item.setTypeName(set.getString("item_type_name"));
+                items.getValues().add(item);
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to get child items.", ex);
+        } finally {
+            db.close();
+        }
+        return items;
+    }
+
+    @Override
     public synchronized EncKeyStatusData getKeyStatus(String[] role) {
         EncKeyStatusData data = new EncKeyStatusData();
         try {
@@ -2572,6 +2594,15 @@ public class PgSqlRepository implements DbRepository {
     public String getGetItemChildrenSQL() {
         return "SELECT * FROM ox_get_item_children(" +
                 "?::character varying," + // item_key_param
+                "?::character varying[]" + // role_key_param
+                ")";
+    }
+
+    @Override
+    public String getGetItemFirstLevelChildrenSQL() {
+        return "SELECT * FROM ox_get_item_first_level_children(" +
+                "?::character varying," + // item_key_param
+                "?::character varying," + // child_item_type_key_param
                 "?::character varying[]" + // role_key_param
                 ")";
     }

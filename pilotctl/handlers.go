@@ -36,7 +36,7 @@ import (
 // @Router /ping/{machine-id} [post]
 // @Produce json
 // @Param machine-id path string true "the machine Id of the host"
-// @Param cmd-result body proc.Result false "the result of the execution of the last command or nil if no result is available"
+// @Param cmd-result body string false "the result of the execution of the last command or nil if no result is available"
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func pingHandler(w http.ResponseWriter, r *http.Request) {
@@ -110,11 +110,19 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 // @Description Returns a list of remote hosts
 // @Tags Host
 // @Router /host [get]
+// @Param og query string false "the organisation group key to filter the query"
+// @Param or query string false "the organisation key to filter the query"
+// @Param ar query string false "the area key to filter the query"
+// @Param lo query string false "the location key to filter the query"
 // @Produce json
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
-	hosts, err := rem.GetHostStatus()
+	orgGroup := r.FormValue("og")
+	org := r.FormValue("or")
+	area := r.FormValue("ar")
+	location := r.FormValue("loc")
+	hosts, err := rem.GetHosts(orgGroup, org, area, location)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -156,30 +164,6 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("host %s - %s registered", reg.Hostname, reg.MachineId)
 	w.WriteHeader(http.StatusCreated)
-}
-
-// @Summary Log Events
-// @Description log host events (e.g. up, down, connected, disconnected)
-// @Tags Host
-// @Router /log [post]
-// @Param logs body core.Events true "the host logs to post"
-// @Accepts json
-// @Produce plain
-// @Failure 500 {string} there was an error in the server, check the server logs
-// @Success 200 {string} OK
-func newLogHandler(w http.ResponseWriter, r *http.Request) {
-}
-
-// @Summary Get Events by Host
-// @Description get log host events (e.g. up, down, connected, disconnected) by specific host
-// @Tags Host
-// @Router /log/{host-id} [get]
-// @Param host-key path string true "the unique key for the host"
-// @Accepts json
-// @Produce plain
-// @Failure 500 {string} there was an error in the server, check the server logs
-// @Success 200 {string} OK
-func geLogHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // @Summary Create or Update a Command
@@ -293,145 +277,89 @@ func getJobsHandler(w http.ResponseWriter, r *http.Request) {
 func uploadVulnerabilityReportHandler(w http.ResponseWriter, r *http.Request) {
 }
 
-// @Summary Get Regions
-// @Description get a list of regions where hosts are deployed
-// @Tags Region
-// @Router /region [get]
+// @Summary Get Areas in Organisation Group
+// @Description Get a list of areas setup in an organisation group
+// @Tags Logistics
+// @Router /org-group/{org-group}/area [get]
+// @Param org-group path string true "the unique id for organisation group under which areas are defined"
 // @Produce json
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
-func getRegionsHandler(w http.ResponseWriter, r *http.Request) {
-	regions := []core.Region{
-		{
-			Key:  "NE",
-			Name: "North East",
-		},
-		{
-			Key:  "NW",
-			Name: "North West",
-		},
-		{
-			Key:  "NE",
-			Name: "North East",
-		},
-		{
-			Key:  "YH",
-			Name: "Yorkshire & The Humber",
-		},
-		{
-			Key:  "WM",
-			Name: "West Midlands",
-		},
-		{
-			Key:  "EM",
-			Name: "East Midlands",
-		},
-		{
-			Key:  "EE",
-			Name: "East of England",
-		},
-		{
-			Key:  "LO",
-			Name: "London",
-		},
-		{
-			Key:  "SE",
-			Name: "South East",
-		},
-		{
-			Key:  "SW",
-			Name: "South West",
-		},
-	}
-	server.Write(w, r, regions)
-}
-
-// @Summary Get Locations by Region
-// @Description get a list of locations within a particular region
-// @Tags Region
-// @Router /region/{region-key}/location [get]
-// @Produce json
-// @Failure 500 {string} there was an error in the server, check the server logs
-// @Success 200 {string} OK
-func geLocationsByRegionHandler(w http.ResponseWriter, r *http.Request) {
-	regions := []core.Location{
-		{
-			Key:       "CHE",
-			Name:      "Cheshire",
-			RegionKey: "NW",
-		},
-		{
-			Key:       "GM",
-			Name:      "Greater Manchester",
-			RegionKey: "NW",
-		},
-		{
-			Key:       "CU",
-			Name:      "Cumbria",
-			RegionKey: "NW",
-		},
-		{
-			Key:       "LANC",
-			Name:      "Lancashire",
-			RegionKey: "NW",
-		},
-		{
-			Key:       "MER",
-			Name:      "Merseyside",
-			RegionKey: "NW",
-		},
-		// london
-		{
-			Key:       "CITY",
-			Name:      "London City",
-			RegionKey: "LO",
-		},
-		{
-			Key:       "BX",
-			Name:      "Brixton",
-			RegionKey: "LO",
-		},
-		{
-			Key:       "CR",
-			Name:      "Croydon",
-			RegionKey: "LO",
-		},
-		{
-			Key:       "CA",
-			Name:      "Camden",
-			RegionKey: "LO",
-		},
-		{
-			Key:       "GRE",
-			Name:      "Greenwich",
-			RegionKey: "LO",
-		},
-	}
-	server.Write(w, r, regions)
-}
-
-// @Summary Get Host Admissions
-// @Description get a list of keys of the hosts admitted into service
-// @Tags Admission
-// @Router /admission [get]
-// @Produce json
-// @Failure 500 {string} there was an error in the server, check the server logs
-// @Success 200 {string} OK
-func getAdmissionsHandler(w http.ResponseWriter, r *http.Request) {
-	admissions, err := rem.GetAdmissions()
+func getAreasHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	orgGroup := vars["org-group"]
+	areas, err := rem.GetAreas(orgGroup)
 	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("failed to retrieve areas: %s\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	server.Write(w, r, admissions)
+	server.Write(w, r, areas)
 }
 
-// @Summary Create or Update a Host Admission
-// @Description creates a new or updates an existing host admission by allowing to specify active status and search tags
+// @Summary Get Organisation Groups
+// @Description Get a list of organisation groups
+// @Tags Logistics
+// @Router /org-group [get]
+// @Produce json
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getOrgGroupsHandler(w http.ResponseWriter, r *http.Request) {
+	areas, err := rem.GetOrgGroups()
+	if err != nil {
+		log.Printf("failed to retrieve org groups: %s\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	server.Write(w, r, areas)
+}
+
+// @Summary Get Organisations in Organisation Group
+// @Description Get a list of organisations setup in an organisation group
+// @Tags Logistics
+// @Router /org-group/{org-group}/org [get]
+// @Param org-group path string true "the unique id for organisation group under which organisations are defined"
+// @Produce json
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getOrgHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	orgGroup := vars["org-group"]
+	areas, err := rem.GetOrgs(orgGroup)
+	if err != nil {
+		log.Printf("failed to retrieve organisations: %s\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	server.Write(w, r, areas)
+}
+
+// @Summary Get Locations in an Area
+// @Description Get a list of locations setup in an area
+// @Tags Logistics
+// @Router /area/{area}/location [get]
+// @Param area path string true "the unique id for area under which locations are defined"
+// @Produce json
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getLocationsHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	area := vars["area"]
+	areas, err := rem.GetLocations(area)
+	if err != nil {
+		log.Printf("failed to retrieve organisations: %s\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	server.Write(w, r, areas)
+}
+
+// @Summary Admits a host into service
+// @Description inform pilotctl to accept management connections coming from a host pilot agent
+// @Description admitting a host also requires associating the relevant logistic information such as org, area and location for the host
 // @Tags Admission
 // @Router /admission [put]
-// @Param command body core.Admission true "the admission to be set"
+// @Param command body []core.Admission true "the required admission information"
 // @Accepts json
 // @Produce plain
 // @Failure 500 {string} there was an error in the server, check the server logs
@@ -443,18 +371,20 @@ func setAdmissionHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	admission := new(core.Admission)
-	err = json.Unmarshal(bytes, admission)
+	var admissions []core.Admission
+	err = json.Unmarshal(bytes, &admissions)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = rem.SetAdmission(admission)
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	for _, admission := range admissions {
+		err = rem.SetAdmission(admission)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 

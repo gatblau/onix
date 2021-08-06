@@ -46,7 +46,6 @@ functions:
     env:
       GOOS: darwin
     run:
-      - $(set-version)
       - go build -o bin/darwin/art -v
 
   - name: build-linux
@@ -54,7 +53,6 @@ functions:
     env:
       GOOS: linux
     run:
-      - $(set-version)
       - go build -o bin/linux/art -v
 
   - name: build-win
@@ -62,10 +60,20 @@ functions:
     env:
       GOOS: windows
     run:
-      - $(set-version)
       - go build -o bin/windows/art.exe -v
 
   - name: zip
     run:
       - zip art.zip bin/windows/art.exe bin/linux/art bin/darwin/art
+
+  - name: zip-all
+    description: creates zip files with the cli binaries for the different platforms
+    run:
+      - $(set-version)
+      - $(build-linux)
+      - $(build-mac)
+      - $(build-win)
+      - zip -r -j art_linux_${ARTISAN_REF}.zip bin/linux/art
+      - zip -r -j art_darwin_${ARTISAN_REF}.zip bin/darwin/art
+      - zip -r -j art_win_${ARTISAN_REF}.zip bin/windows/art.exe
 ...

@@ -32,7 +32,7 @@ func init() {
 
 func main() {
 	// creates a generic http server
-	s := server.New("onix/rem")
+	s := server.New("onix/pilotctl")
 	// add handlers
 	s.Http = func(router *mux.Router) {
 		// enable encoded path  vars
@@ -44,9 +44,10 @@ func main() {
 		router.HandleFunc("/cmd", updateCmdHandler).Methods("PUT")
 		router.HandleFunc("/cmd", getAllCmdHandler).Methods("GET")
 		router.HandleFunc("/cmd/{name}", getCmdHandler).Methods("GET")
-		router.HandleFunc("/region", getRegionsHandler).Methods("GET")
-		router.HandleFunc("/region/{region-key}/location", geLocationsByRegionHandler).Methods("GET")
-		router.HandleFunc("/admission", getAdmissionsHandler).Methods("GET")
+		router.HandleFunc("/org-group", getOrgGroupsHandler).Methods("GET")
+		router.HandleFunc("/org-group/{org-group}/area", getAreasHandler).Methods("GET")
+		router.HandleFunc("/org-group/{org-group}/org", getOrgHandler).Methods("GET")
+		router.HandleFunc("/area/{area}/location", getLocationsHandler).Methods("GET")
 		router.HandleFunc("/admission", setAdmissionHandler).Methods("PUT")
 		router.HandleFunc("/package", getPackagesHandler).Methods("GET")
 		router.HandleFunc("/package/{name}/api", getPackagesApiHandler).Methods("GET")

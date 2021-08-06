@@ -1,0 +1,6 @@
+{
+  "description": "links OpCo B with Location Manchester Chorlton",
+  "type": "U_RELATIONSHIP",
+  "startItemKey": "ORG:OPCO_B",
+  "endItemKey": "LOCATION:MANCHESTER_CHORLTON"
+}

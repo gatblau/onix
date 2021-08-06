@@ -53,15 +53,29 @@ var doc = `{
             }
         },
         "/admission": {
-            "get": {
-                "description": "get a list of keys of the hosts admitted into service",
+            "put": {
+                "description": "inform pilotctl to accept management connections coming from a host pilot agent\nadmitting a host also requires associating the relevant logistic information such as org, area and location for the host",
                 "produces": [
-                    "application/json"
+                    "text/plain"
                 ],
                 "tags": [
                     "Admission"
                 ],
-                "summary": "Get Host Admissions",
+                "summary": "Admits a host into service",
+                "parameters": [
+                    {
+                        "description": "the required admission information",
+                        "name": "command",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/core.Admission"
+                            }
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -76,25 +90,25 @@ var doc = `{
                         }
                     }
                 }
-            },
-            "put": {
-                "description": "creates a new or updates an existing host admission by allowing to specify active status and search tags",
+            }
+        },
+        "/area/{area}/location": {
+            "get": {
+                "description": "Get a list of locations setup in an area",
                 "produces": [
-                    "text/plain"
+                    "application/json"
                 ],
                 "tags": [
-                    "Admission"
+                    "Logistics"
                 ],
-                "summary": "Create or Update a Host Admission",
+                "summary": "Get Locations in an Area",
                 "parameters": [
                     {
-                        "description": "the admission to be set",
-                        "name": "command",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/core.Admission"
-                        }
+                        "type": "string",
+                        "description": "the unique id for area under which locations are defined",
+                        "name": "area",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -219,6 +233,32 @@ var doc = `{
                     "Host"
                 ],
                 "summary": "Get All Hosts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the organisation group key to filter the query",
+                        "name": "og",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the organisation key to filter the query",
+                        "name": "or",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the area key to filter the query",
+                        "name": "ar",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the location key to filter the query",
+                        "name": "lo",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -331,28 +371,49 @@ var doc = `{
                 }
             }
         },
-        "/log": {
-            "post": {
-                "description": "log host events (e.g. up, down, connected, disconnected)",
+        "/org-group": {
+            "get": {
+                "description": "Get a list of organisation groups",
                 "produces": [
-                    "text/plain"
+                    "application/json"
                 ],
                 "tags": [
-                    "Host"
+                    "Logistics"
                 ],
-                "summary": "Log Events",
+                "summary": "Get Organisation Groups",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/org-group/{org-group}/area": {
+            "get": {
+                "description": "Get a list of areas setup in an organisation group",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Logistics"
+                ],
+                "summary": "Get Areas in Organisation Group",
                 "parameters": [
                     {
-                        "description": "the host logs to post",
-                        "name": "logs",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/core.Event"
-                            }
-                        }
+                        "type": "string",
+                        "description": "the unique id for organisation group under which areas are defined",
+                        "name": "org-group",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -371,21 +432,21 @@ var doc = `{
                 }
             }
         },
-        "/log/{host-id}": {
+        "/org-group/{org-group}/org": {
             "get": {
-                "description": "get log host events (e.g. up, down, connected, disconnected) by specific host",
+                "description": "Get a list of organisations setup in an organisation group",
                 "produces": [
-                    "text/plain"
+                    "application/json"
                 ],
                 "tags": [
-                    "Host"
+                    "Logistics"
                 ],
-                "summary": "Get Events by Host",
+                "summary": "Get Organisations in Organisation Group",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "the unique key for the host",
-                        "name": "host-key",
+                        "description": "the unique id for organisation group under which organisations are defined",
+                        "name": "org-group",
                         "in": "path",
                         "required": true
                     }
@@ -484,60 +545,16 @@ var doc = `{
                         "name": "machine-id",
                         "in": "path",
                         "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    {
+                        "description": "the result of the execution of the last command or nil if no result is available",
+                        "name": "cmd-result",
+                        "in": "body",
                         "schema": {
                             "type": "string"
                         }
                     }
-                }
-            }
-        },
-        "/region": {
-            "get": {
-                "description": "get a list of regions where hosts are deployed",
-                "produces": [
-                    "application/json"
                 ],
-                "tags": [
-                    "Region"
-                ],
-                "summary": "Get Regions",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/region/{region-key}/location": {
-            "get": {
-                "description": "get a list of locations within a particular region",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Region"
-                ],
-                "summary": "Get Locations by Region",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -596,10 +613,19 @@ var doc = `{
         "core.Admission": {
             "type": "object",
             "properties": {
-                "active": {
-                    "type": "boolean"
+                "area": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
                 },
                 "machine_id": {
+                    "type": "string"
+                },
+                "org": {
+                    "type": "string"
+                },
+                "org_group": {
                     "type": "string"
                 },
                 "tag": {
@@ -613,35 +639,41 @@ var doc = `{
         "core.Cmd": {
             "type": "object",
             "properties": {
+                "containerised": {
+                    "description": "run command in runtime",
+                    "type": "boolean"
+                },
                 "description": {
+                    "description": "description of the command",
                     "type": "string"
                 },
                 "function": {
+                    "description": "the function in the package to call",
                     "type": "string"
                 },
-                "id": {
-                    "type": "integer"
-                },
                 "input": {
+                    "description": "the function input information",
                     "$ref": "#/definitions/data.Input"
                 },
-                "name": {
+                "key": {
+                    "description": "the natural key uniquely identifying the command",
                     "type": "string"
                 },
                 "package": {
-                    "type": "string"
-                }
-            }
-        },
-        "core.Event": {
-            "type": "object",
-            "properties": {
-                "time": {
+                    "description": "the package to use",
                     "type": "string"
                 },
-                "type": {
-                    "description": "0: host up, 1: host down, 2: network up, 3: network down",
-                    "type": "integer"
+                "pwd": {
+                    "description": "the package registry password",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "the package registry user",
+                    "type": "string"
+                },
+                "verbose": {
+                    "description": "enables verbose output",
+                    "type": "boolean"
                 }
             }
         },

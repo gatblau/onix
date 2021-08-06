@@ -115,70 +115,64 @@ func (r *ReMan) Beat(machineId string) (jobId int64, fxKey string, fxVersion int
 	return jobId, fxKey, fxVersion, nil
 }
 
-func (r *ReMan) GetHostStatus() ([]Host, error) {
+// GetHosts get a list of hosts filtered by
+// oGroup: organisation group key
+// or: organisation key
+// ar: area key
+// loc: location key
+func (r *ReMan) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 	hosts := make([]Host, 0)
-	rows, err := r.db.Query("select * from pilotctl_get_conn_status()")
+	rows, err := r.db.Query("select * from pilotctl_get_host($1, $2, $3, $4)", oGroup, or, ar, loc)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get host status '%s'", err)
+		return nil, fmt.Errorf("cannot get hosts: %s\n", err)
 	}
 	var (
-		id        string
+		machineId string
 		connected bool
-		since     time.Time
-		customer  sql.NullString
-		region    sql.NullString
+		since     sql.NullTime
+		orgGroup  sql.NullString
+		org       sql.NullString
+		area      sql.NullString
 		location  sql.NullString
+		inService bool
+		tag       []string
 	)
 	for rows.Next() {
-		err := rows.Scan(&id, &connected, &since, &customer, &region, &location)
+		err := rows.Scan(&machineId, &connected, &since, &orgGroup, &org, &area, &location, &inService, &tag)
 		if err != nil {
 			return nil, err
 		}
+		var time int64 = 0
+		if since.Valid {
+			time = since.Time.UnixNano()
+		}
 		hosts = append(hosts, Host{
-			Id:        id,
-			Customer:  customer.String,
-			Region:    region.String,
+			MachineId: machineId,
+			OrgGroup:  orgGroup.String,
+			Org:       org.String,
+			Area:      area.String,
 			Location:  location.String,
 			Connected: connected,
-			Since:     toTime(since.UnixNano()),
+			Since:     toTime(time),
 		})
 	}
 	return hosts, rows.Err()
 }
 
-func (r *ReMan) GetAdmissions() ([]Admission, error) {
-	admissions := make([]Admission, 0)
-	rows, err := r.db.Query("select * from pilotctl_get_admissions($1)", nil)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get host status '%s'", err)
-	}
-	var (
-		machineId string
-		active    bool
-		tag       []string
-	)
-	for rows.Next() {
-		err := rows.Scan(&machineId, &active, &tag)
-		if err != nil {
-			return nil, err
-		}
-		admissions = append(admissions, Admission{
-			MachineId: machineId,
-			Active:    active,
-			Tag:       tag,
-		})
-	}
-	return admissions, rows.Err()
-}
-
-func (r *ReMan) SetAdmission(admission *Admission) error {
+func (r *ReMan) SetAdmission(admission Admission) error {
 	if len(admission.MachineId) == 0 {
 		return fmt.Errorf("machine Id is missing")
 	}
-	return r.db.RunCommand("select pilotctl_set_admission($1, $2, $3)", admission.MachineId, admission.Active, admission.Tag)
+	return r.db.RunCommand("select pilotctl_set_admission($1, $2, $3, $4, $5, $6)",
+		admission.MachineId,
+		admission.OrgGroup,
+		admission.Org,
+		admission.Area,
+		admission.Location,
+		admission.Tag)
 }
 
-// Authenticate authenticate a pilot based on its time stamp and machine Id admission status
+// Authenticate a pilot based on its time stamp and machine Id admission status
 func (r *ReMan) Authenticate(token string) bool {
 	value, err := base64.StdEncoding.DecodeString(reverse(token))
 	if err != nil {
@@ -358,6 +352,69 @@ func (r *ReMan) GetCommand(cmdName string) (*Cmd, error) {
 
 func (r *ReMan) CompleteJob(status *Result) error {
 	return r.db.RunCommand("select pilotctl_complete_job($1, $2, $3)", status.JobId, status.Log, !status.Success)
+}
+
+func (r *ReMan) GetAreas(orgGroup string) ([]Area, error) {
+	items, err := r.ox.GetChildrenByType(&oxc.Item{Key: orgGroup}, "U_AREA")
+	if err != nil {
+		return nil, err
+	}
+	var areas []Area
+	for _, item := range items.Values {
+		areas = append(areas, Area{
+			Key:         item.Key,
+			Name:        item.Name,
+			Description: item.Description,
+		})
+	}
+	return areas, nil
+}
+
+func (r *ReMan) GetOrgs(orgGroup string) ([]Org, error) {
+	items, err := r.ox.GetChildrenByType(&oxc.Item{Key: orgGroup}, "U_ORG")
+	if err != nil {
+		return nil, err
+	}
+	var orgs []Org
+	for _, item := range items.Values {
+		orgs = append(orgs, Org{
+			Key:         item.Key,
+			Name:        item.Name,
+			Description: item.Description,
+		})
+	}
+	return orgs, nil
+}
+
+func (r *ReMan) GetLocations(area string) ([]Location, error) {
+	items, err := r.ox.GetChildrenByType(&oxc.Item{Key: area}, "U_LOCATION")
+	if err != nil {
+		return nil, err
+	}
+	var orgs []Location
+	for _, item := range items.Values {
+		orgs = append(orgs, Location{
+			Key:  item.Key,
+			Name: item.Name,
+		})
+	}
+	return orgs, nil
+}
+
+func (r *ReMan) GetOrgGroups() ([]Org, error) {
+	items, err := r.ox.GetItemsByType("U_ORG_GROUP")
+	if err != nil {
+		return nil, err
+	}
+	var orgs []Org
+	for _, item := range items.Values {
+		orgs = append(orgs, Org{
+			Key:         item.Key,
+			Name:        item.Name,
+			Description: item.Description,
+		})
+	}
+	return orgs, nil
 }
 
 func reverse(str string) (result string) {
