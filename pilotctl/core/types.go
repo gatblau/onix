@@ -93,11 +93,12 @@ func (c *CmdValue) Env() []string {
 	return vars
 }
 
-// Host  host monitoring information
+// Host monitoring information
 type Host struct {
-	Id        string `json:"id"`
-	Customer  string `json:"customer"`
-	Region    string `json:"region"`
+	MachineId string `json:"machine_id"`
+	OrgGroup  string `json:"org_group"`
+	Org       string `json:"org"`
+	Area      string `json:"area"`
 	Location  string `json:"location"`
 	Connected bool   `json:"connected"`
 	Since     string `json:"since"`
@@ -159,19 +160,49 @@ func ToJson(object interface{}) ([]byte, error) {
 	return buffer.Bytes(), err
 }
 
-type Region struct {
+type Area struct {
+	Key         string `json:"key"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type Org struct {
+	Key         string `json:"key"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type Location struct {
 	Key  string `json:"key"`
 	Name string `json:"name"`
 }
 
-type Location struct {
-	Key       string `json:"key"`
-	Name      string `json:"name"`
-	RegionKey string `json:"region_key"`
-}
-
 type Admission struct {
 	MachineId string   `json:"machine_id"`
-	Active    bool     `json:"active"`
+	OrgGroup  string   `json:"org_group"`
+	Org       string   `json:"org"`
+	Area      string   `json:"area"`
+	Location  string   `json:"location"`
 	Tag       []string `json:"tag"`
+}
+
+type Result struct {
+	JobId   int64
+	Success bool
+	Log     string
+	Err     *error
+	Time    time.Time
+}
+
+func (r *Result) Reader() (*bytes.Reader, error) {
+	jsonBytes, err := r.Bytes()
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(*jsonBytes), err
+}
+
+func (r *Result) Bytes() (*[]byte, error) {
+	b, err := ToJson(r)
+	return &b, err
 }

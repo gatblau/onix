@@ -14,7 +14,7 @@
 #
 
 # the name of the container registry repository
-REPO_NAME=gatblau
+REPO_NAME=quay.io/gatblau
 
 # the name of the ox-kube binary file
 APP_NAME=onix
