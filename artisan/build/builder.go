@@ -25,6 +25,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -484,6 +485,7 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 		Type:    profile.Type,
 		License: profile.License,
 		Ref:     filename,
+		OS:      runtime.GOOS,
 		Profile: profile.Name,
 		Labels:  labels,
 		Source:  b.repoURI,

@@ -19,6 +19,8 @@ type Manifest struct {
 	Type string `json:"type,omitempty"`
 	// the license associated to the package
 	License string `json:"license"`
+	// the target OS for the package
+	OS string `json:"os"`
 	// the name of the package file
 	Ref string `json:"ref"`
 	// the build profile used
