@@ -436,6 +436,7 @@ func (r *ReMan) GetJobs(oGroup, or, ar, loc string) ([]Job, error) {
 	var (
 		id        int64
 		machineId string
+		jobRef    string
 		fxKey     string
 		fxVersion int64
 		created   sql.NullTime
@@ -450,13 +451,14 @@ func (r *ReMan) GetJobs(oGroup, or, ar, loc string) ([]Job, error) {
 		tag       []string
 	)
 	for rows.Next() {
-		err = rows.Scan(&id, &machineId, &fxKey, &fxVersion, &created, &started, &completed, &log, &e, &orgGroup, &org, &area, &location, &tag)
+		err = rows.Scan(&id, &machineId, &jobRef, &fxKey, &fxVersion, &created, &started, &completed, &log, &e, &orgGroup, &org, &area, &location, &tag)
 		if err != nil {
 			return nil, fmt.Errorf("cannot scan job row: %e\n", err)
 		}
 		jobs = append(jobs, Job{
 			Id:        id,
 			MachineId: machineId,
+			JobRef:    jobRef,
 			FxKey:     fxKey,
 			FxVersion: fxVersion,
 			Created:   timeF(created),
