@@ -51,6 +51,8 @@ func main() {
 		router.HandleFunc("/admission", setAdmissionHandler).Methods("PUT")
 		router.HandleFunc("/package", getPackagesHandler).Methods("GET")
 		router.HandleFunc("/package/{name}/api", getPackagesApiHandler).Methods("GET")
+		router.HandleFunc("/job", newJobHandler).Methods("POST")
+		router.HandleFunc("/job", getJobsHandler).Methods("GET")
 	}
 	// add asynchronous jobs
 	// starts a job to record events if host connection status changes

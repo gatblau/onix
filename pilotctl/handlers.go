@@ -241,35 +241,58 @@ func getAllCmdHandler(w http.ResponseWriter, r *http.Request) {
 // @Description create a new job for execution on one or more remote hosts
 // @Tags Job
 // @Router /job [post]
-// @Param command body core.Cmd true "the job definition"
+// @Param command body core.NewJobInfo true "the information required to create a new job"
 // @Accepts json
 // @Produce plain
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func newJobHandler(w http.ResponseWriter, r *http.Request) {
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("can't read http body: %v\n", err)
+		http.Error(w, fmt.Sprintf("can't read http body: check server logs\n"), http.StatusInternalServerError)
+		return
+	}
+	var job = new(core.NewJobInfo)
+	err = json.Unmarshal(bytes, job)
+	if err != nil {
+		log.Printf("can't unmarshal http body: %v\n", err)
+		http.Error(w, fmt.Sprintf("can't unmarshal http body, check the server logs\n"), http.StatusInternalServerError)
+		return
+	}
+	for _, id := range job.MachineId {
+		err = rem.CreateJob(job.JobRef, id, job.FxKey, job.FxVersion)
+		if err != nil {
+			log.Printf("can't create job: %v\n", err)
+			http.Error(w, fmt.Sprintf("can't create job, check the server logs\n"), http.StatusInternalServerError)
+			return
+		}
+	}
 }
 
-// @Summary Get Job Information
-// @Description get a specific a job information
-// @Tags Job
-// @Router /job/{id} [get]
-// @Param id path string true "the unique id for the job to retrieve"
-// @Accepts json
-// @Produce plain
-// @Failure 500 {string} there was an error in the server, check the server logs
-// @Success 200 {string} OK
-func getJobHandler(w http.ResponseWriter, r *http.Request) {
-}
-
-// @Summary Get All Jobs Information
-// @Description get all jobs
+// @Summary Get Jobs
+// @Description Returns a list of jobs filtered by the specified logistics tags
 // @Tags Job
 // @Router /job [get]
-// @Accepts json
-// @Produce plain
+// @Param og query string false "the organisation group key to filter the query"
+// @Param or query string false "the organisation key to filter the query"
+// @Param ar query string false "the area key to filter the query"
+// @Param lo query string false "the location key to filter the query"
+// @Produce json
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func getJobsHandler(w http.ResponseWriter, r *http.Request) {
+	orgGroup := r.FormValue("og")
+	org := r.FormValue("or")
+	area := r.FormValue("ar")
+	location := r.FormValue("loc")
+	jobs, err := rem.GetJobs(orgGroup, org, area, location)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	server.Write(w, r, jobs)
 }
 
 // @Summary Submit a Vulnerability Scan Report

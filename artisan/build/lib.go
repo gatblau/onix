@@ -1,3 +1,5 @@
+package build
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package build
-
 import (
 	"archive/zip"
 	"bufio"
@@ -115,7 +115,7 @@ func zipSource(source, target string, excludeSource []string) error {
 	return err
 }
 
-// detect the content type of a given file
+// detect the content type of given file
 func findContentType(f *os.File) (string, error) {
 	// get the first 512 bytes to sniff the content type
 	buffer := make([]byte, 512)

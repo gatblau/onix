@@ -10,14 +10,46 @@ package main
 import (
 	"fmt"
 	"github.com/gatblau/onix/piloth/core"
+	hostUtil "github.com/shirou/gopsutil/host"
 	"os"
+	"strings"
 )
 
 func main() {
+	printMachineId()
 	p, err := core.NewPilot()
 	if err != nil {
 		fmt.Printf("cannot start pilot: %s\n", err)
 		os.Exit(1)
 	}
 	p.Start()
+}
+
+func printMachineId() {
+	i, err := hostUtil.Info()
+	if err != nil {
+		panic(err)
+	}
+	// if machineid is passed as a command line argument
+	switch len(os.Args[1:]) {
+	case 0:
+		// do nothing
+	case 1:
+		if os.Args[1] == "info" {
+			// prints the machine id
+			fmt.Printf("%s\n", i)
+			// terminates programme
+			os.Exit(0)
+		} else if os.Args[1] == "machineid" {
+			// prints the machine id
+			fmt.Printf("%s\n", strings.Replace(i.HostID, "-", "", -1))
+			// terminates programme
+			os.Exit(0)
+		}
+	default:
+		// prints the machine id
+		fmt.Printf("unknown argument '%s', valid argument is 'machineid' or 'info' or nothing\n", os.Args[1])
+		// terminates programme
+		os.Exit(0)
+	}
 }
