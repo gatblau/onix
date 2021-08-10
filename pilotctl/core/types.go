@@ -143,11 +143,12 @@ type Events []Event
 type Job struct {
 	Id        int64    `json:"id"`
 	MachineId string   `json:"machine_id"`
+	JobRef    string   `json:"job_ref"`
 	FxKey     string   `json:"fx_key"`
 	FxVersion int64    `json:"fx_version"`
-	Created   string   `json:"created,omitempty"`
-	Started   string   `json:"started,omitempty"`
-	Completed string   `json:"completed,omitempty"`
+	Created   string   `json:"created"`
+	Started   string   `json:"started"`
+	Completed string   `json:"completed"`
 	Log       string   `json:"log"`
 	Error     bool     `json:"error"`
 	OrgGroup  string   `json:"org_group"`
