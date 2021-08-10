@@ -46,6 +46,19 @@ definitions:
         description: enables verbose output
         type: boolean
     type: object
+  core.NewJobInfo:
+    properties:
+      fxKey:
+        type: string
+      fxVersion:
+        type: integer
+      jobRef:
+        type: string
+      machineId:
+        items:
+          type: string
+        type: array
+    type: object
   core.Registration:
     properties:
       cpus:
@@ -333,9 +346,26 @@ paths:
       - Host
   /job:
     get:
-      description: get all jobs
+      description: Returns a list of jobs filtered by the specified logistics tags
+      parameters:
+      - description: the organisation group key to filter the query
+        in: query
+        name: og
+        type: string
+      - description: the organisation key to filter the query
+        in: query
+        name: or
+        type: string
+      - description: the area key to filter the query
+        in: query
+        name: ar
+        type: string
+      - description: the location key to filter the query
+        in: query
+        name: lo
+        type: string
       produces:
-      - text/plain
+      - application/json
       responses:
         "200":
           description: OK
@@ -345,18 +375,18 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Get All Jobs Information
+      summary: Get Jobs
       tags:
       - Job
     post:
       description: create a new job for execution on one or more remote hosts
       parameters:
-      - description: the job definition
+      - description: the information required to create a new job
         in: body
         name: command
         required: true
         schema:
-          $ref: '#/definitions/core.Cmd'
+          $ref: '#/definitions/core.NewJobInfo'
       produces:
       - text/plain
       responses:
@@ -369,29 +399,6 @@ paths:
           schema:
             type: string
       summary: Create a Job
-      tags:
-      - Job
-  /job/{id}:
-    get:
-      description: get a specific a job information
-      parameters:
-      - description: the unique id for the job to retrieve
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - text/plain
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get Job Information
       tags:
       - Job
   /org-group:

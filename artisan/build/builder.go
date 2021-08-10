@@ -25,6 +25,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -82,6 +83,10 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 	mergedTarget, _ := core.MergeEnvironmentVars([]string{buildProfile.Target}, b.env.Vars, interactive)
 	// set the merged target for later use
 	buildProfile.MergedTarget = mergedTarget[0]
+	// if target is a file or subdirectory in current folder
+	if buildProfile.MergedTarget == "." || strings.HasPrefix(buildProfile.MergedTarget, "..") || strings.HasPrefix(buildProfile.MergedTarget, "/") {
+		core.RaiseErr("invalid build target, target is a file or subdirectory in current folder\n")
+	}
 	// wait for the target to be created in the file system
 	targetPath := filepath.Join(b.loadFrom, mergedTarget[0])
 	waitForTargetToBeCreated(targetPath)
@@ -480,6 +485,7 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 		Type:    profile.Type,
 		License: profile.License,
 		Ref:     filename,
+		OS:      runtime.GOOS,
 		Profile: profile.Name,
 		Labels:  labels,
 		Source:  b.repoURI,
@@ -620,6 +626,11 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 	seal, err := local.GetSeal(a)
 	core.CheckErr(err, "cannot get package seal")
 	m := seal.Manifest
+	// stop execution if the package was built in an OS different from the executing OS
+	if m.OS != runtime.GOOS {
+		core.RaiseErr("cannot run package, as it was built in '%s' OS and is trying to execute in '%s' OS\n"+
+			"ensure the package is built under the executing OS\n", m.OS, runtime.GOOS)
+	}
 	// check the function is exported
 	if isExported(m, function) {
 		// run the function on the open package

@@ -31,19 +31,19 @@ func NewFsBackend() *FsBackend {
 	return fs
 }
 
-func (r *FsBackend) GetManifest(group, name, tag, user, pwd string) (*data.Manifest, error) {
+func (fs *FsBackend) GetManifest(group, name, tag, user, pwd string) (*data.Manifest, error) {
 	panic("implement me")
 }
 
-func (r *FsBackend) GetAllRepositoryInfo(user, pwd string) ([]*registry.Repository, error) {
+func (fs *FsBackend) GetAllRepositoryInfo(user, pwd string) ([]*registry.Repository, error) {
 	panic("implement me")
 }
 
-func (r *FsBackend) Name() string {
+func (fs *FsBackend) Name() string {
 	return "FILE_SYSTEM"
 }
 
-// upload an package to the remote repository
+// UploadPackage upload a package to the remote repository
 func (fs *FsBackend) UploadPackage(group, name string, packageRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error {
 	// ensure files are properly closed
 	defer zipfile.Close()
@@ -74,7 +74,7 @@ func (fs *FsBackend) UploadPackage(group, name string, packageRef string, zipfil
 	return nil
 }
 
-// get repository information
+// GetRepositoryInfo get repository information
 func (fs *FsBackend) GetRepositoryInfo(group, name, user, pwd string) (*registry.Repository, error) {
 	// return an empty repository
 	return &registry.Repository{
@@ -83,17 +83,17 @@ func (fs *FsBackend) GetRepositoryInfo(group, name, user, pwd string) (*registry
 	}, nil
 }
 
-// get package information
+// GetPackageInfo get package information
 func (fs *FsBackend) GetPackageInfo(group, name, id, user, pwd string) (*registry.Package, error) {
 	return nil, nil
 }
 
-// update package information
+// UpdatePackageInfo update package information
 func (fs *FsBackend) UpdatePackageInfo(group, name string, packageInfo *registry.Package, user string, pwd string) error {
 	return nil
 }
 
-// open a file for download
+// Download open a file for download
 func (fs *FsBackend) Download(repoGroup, repoName, fileName, user, pwd string) (*os.File, error) {
 	return nil, nil
 }

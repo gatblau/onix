@@ -508,11 +508,12 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 		core.CheckErr(err, "cannot unzip package %s", fmt.Sprintf("%s.zip", artie.FileRef))
 		// check if the target path is a folder
 		info, err := os.Stat(targetPath)
-		core.CheckErr(err, "cannot stat path %s", targetPath)
+		core.CheckErr(err, "cannot stat target path %s", targetPath)
 		// only get rid of the target folder if there is one
 		if info.IsDir() {
 			srcPath := path.Join(targetPath, seal.Manifest.Target)
-			info, _ = os.Stat(srcPath)
+			info, err = os.Stat(srcPath)
+			core.CheckErr(err, "cannot stat source path %s", srcPath)
 			// if the source path is a folder
 			if info.IsDir() {
 				// unwrap the folder

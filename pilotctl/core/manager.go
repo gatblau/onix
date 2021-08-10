@@ -417,9 +417,89 @@ func (r *ReMan) GetOrgGroups() ([]Org, error) {
 	return orgs, nil
 }
 
+func (r *ReMan) CreateJob(ref, machineId, fxId string, fxVersion int64) error {
+	if len(machineId) == 0 {
+		return fmt.Errorf("machine Id is missing\n")
+	}
+	if len(fxId) == 0 {
+		return fmt.Errorf("fx Id is missing\n")
+	}
+	return r.db.RunCommand("select pilotctl_create_job($1, $2, $3, $4)", ref, machineId, fxId, fxVersion)
+}
+
+func (r *ReMan) GetJobs(oGroup, or, ar, loc string) ([]Job, error) {
+	jobs := make([]Job, 0)
+	rows, err := r.db.Query("select * from pilotctl_get_jobs($1, $2, $3, $4)", oGroup, or, ar, loc)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get jobs: %s\n", err)
+	}
+	var (
+		id        int64
+		machineId string
+		jobRef    string
+		fxKey     string
+		fxVersion int64
+		created   sql.NullTime
+		started   sql.NullTime
+		completed sql.NullTime
+		log       sql.NullString
+		e         sql.NullBool
+		orgGroup  sql.NullString
+		org       sql.NullString
+		area      sql.NullString
+		location  sql.NullString
+		tag       []string
+	)
+	for rows.Next() {
+		err = rows.Scan(&id, &machineId, &jobRef, &fxKey, &fxVersion, &created, &started, &completed, &log, &e, &orgGroup, &org, &area, &location, &tag)
+		if err != nil {
+			return nil, fmt.Errorf("cannot scan job row: %e\n", err)
+		}
+		jobs = append(jobs, Job{
+			Id:        id,
+			MachineId: machineId,
+			JobRef:    jobRef,
+			FxKey:     fxKey,
+			FxVersion: fxVersion,
+			Created:   timeF(created),
+			Started:   timeF(started),
+			Completed: timeF(completed),
+			Log:       stringF(log),
+			Error:     boolF(e),
+			OrgGroup:  orgGroup.String,
+			Org:       org.String,
+			Area:      area.String,
+			Location:  location.String,
+			Tag:       tag,
+		})
+	}
+	return jobs, rows.Err()
+}
+
 func reverse(str string) (result string) {
 	for _, v := range str {
 		result = string(v) + result
 	}
 	return
+}
+
+func timeF(t sql.NullTime) string {
+	if t.Valid {
+		return t.Time.Format(time.RFC822Z)
+	}
+	return ""
+}
+
+func stringF(t sql.NullString) string {
+	if t.Valid {
+		return t.String
+	}
+	return ""
+}
+
+func boolF(t sql.NullBool) bool {
+	if t.Valid {
+		return t.Bool
+	}
+	return false
 }
