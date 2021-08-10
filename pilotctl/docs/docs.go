@@ -277,14 +277,40 @@ var doc = `{
         },
         "/job": {
             "get": {
-                "description": "get all jobs",
+                "description": "Returns a list of jobs filtered by the specified logistics tags",
                 "produces": [
-                    "text/plain"
+                    "application/json"
                 ],
                 "tags": [
                     "Job"
                 ],
-                "summary": "Get All Jobs Information",
+                "summary": "Get Jobs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the organisation group key to filter the query",
+                        "name": "og",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the organisation key to filter the query",
+                        "name": "or",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the area key to filter the query",
+                        "name": "ar",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the location key to filter the query",
+                        "name": "lo",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -311,48 +337,13 @@ var doc = `{
                 "summary": "Create a Job",
                 "parameters": [
                     {
-                        "description": "the job definition",
+                        "description": "the information required to create a new job",
                         "name": "command",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core.Cmd"
+                            "$ref": "#/definitions/core.NewJobInfo"
                         }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/job/{id}": {
-            "get": {
-                "description": "get a specific a job information",
-                "produces": [
-                    "text/plain"
-                ],
-                "tags": [
-                    "Job"
-                ],
-                "summary": "Get Job Information",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "the unique id for the job to retrieve",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -674,6 +665,26 @@ var doc = `{
                 "verbose": {
                     "description": "enables verbose output",
                     "type": "boolean"
+                }
+            }
+        },
+        "core.NewJobInfo": {
+            "type": "object",
+            "properties": {
+                "fxKey": {
+                    "type": "string"
+                },
+                "fxVersion": {
+                    "type": "integer"
+                },
+                "jobRef": {
+                    "type": "string"
+                },
+                "machineId": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

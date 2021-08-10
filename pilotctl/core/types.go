@@ -141,12 +141,27 @@ type Events []Event
 
 // Job a job to be executed on one or more hosts
 type Job struct {
-	Id        int      `json:"id"`
-	HostId    []string `json:"host_id"`
-	CmdId     string   `json:"cmd_id"`
+	Id        int64    `json:"id"`
+	MachineId string   `json:"machine_id"`
+	FxKey     string   `json:"fx_key"`
+	FxVersion int64    `json:"fx_version"`
 	Created   string   `json:"created,omitempty"`
 	Started   string   `json:"started,omitempty"`
 	Completed string   `json:"completed,omitempty"`
+	Log       string   `json:"log"`
+	Error     bool     `json:"error"`
+	OrgGroup  string   `json:"org_group"`
+	Org       string   `json:"org"`
+	Area      string   `json:"area"`
+	Location  string   `json:"location"`
+	Tag       []string `json:"tag"`
+}
+
+type NewJobInfo struct {
+	JobRef    string
+	MachineId []string
+	FxKey     string
+	FxVersion int64
 }
 
 // ToJson convert the passed-in object to a JSON byte slice
