@@ -118,6 +118,8 @@ func (c *FlowMergeCmd) Run(_ *cobra.Command, args []string) {
 				err = f.SaveJSON()
 			} else if c.out == "ojson" {
 				err = f.SaveOnixJSON()
+			} else {
+				core.RaiseErr("invalid format '%s'", c.out)
 			}
 			core.CheckErr(err, "cannot save bare flow")
 		}
