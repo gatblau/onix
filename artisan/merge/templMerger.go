@@ -85,7 +85,7 @@ func (t *TemplMerger) LoadTemplates(files []string) error {
 	return nil
 }
 
-// Merge merge templates with the passed in environment
+// Merge templates with the passed in environment
 func (t *TemplMerger) Merge(env *Envar) error {
 	t.file = make(map[string][]byte)
 	for path, file := range t.template {
@@ -105,7 +105,7 @@ func (t *TemplMerger) Merge(env *Envar) error {
 			if err != nil {
 				return fmt.Errorf("cannot merge template: %s\n", err)
 			}
-			t.file[path[0:len(path)-len(".t")]] = merged
+			t.file[path[0:len(path)-len(".art")]] = merged
 		}
 	}
 	return nil
