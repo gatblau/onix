@@ -1,0 +1,9 @@
+---
+profiles:
+  - name: test1
+    type: lib/test
+    target: test
+
+  - name: pilot
+    target: pilot
+...
