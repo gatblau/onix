@@ -87,8 +87,19 @@ func (s *SyncManager) artMerge() error {
 	}
 	// replace environment variable value with the place holder
 	envVar := merge.NewEnVarFromSlice(os.Environ())
-	merge.MergeFiles(files, envVar)
-	return nil
+	merger, err := merge.NewTemplMerger()
+	if err != nil {
+		return err
+	}
+	err = merger.LoadTemplates(files)
+	if err != nil {
+		return err
+	}
+	err = merger.Merge(envVar)
+	if err != nil {
+		return err
+	}
+	return merger.Save()
 }
 
 // MergeAndSync will clone the repo at target path and then perform merging of tem files and finally push the changes back to remote git repo
