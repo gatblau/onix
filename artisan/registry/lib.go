@@ -1,3 +1,5 @@
+package registry
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package registry
-
 import (
 	"archive/zip"
 	"bytes"
@@ -23,10 +23,10 @@ import (
 	"strings"
 )
 
-// use instead of os.Rename() to avoid issues moving a file whose source and destination paths are
+// MoveFile use instead of os.Rename() to avoid issues moving a file whose source and destination paths are
 // on different file systems or drive
 // e.g. when running in Kubernetes by Tekton
-func RenameFile(src string, dst string, force bool) (err error) {
+func MoveFile(src string, dst string) (err error) {
 	err = CopyFile(src, dst)
 	if err != nil {
 		return fmt.Errorf("failed to copy source file %s to %s: %s", src, dst, err)

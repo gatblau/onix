@@ -10,6 +10,7 @@ package git
 import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/merge"
+	"github.com/gatblau/onix/artisan/registry"
 	"io/ioutil"
 	"log"
 	"os"
@@ -155,7 +156,7 @@ func (s *SyncManager) mergeAndCopy() error {
 					newFileName = s.fileNamePrefix + "_" + newFileName
 				}
 				newLocation := filepath.Join(absRepoPath, newFileName)
-				err := os.Rename(oldLocation, newLocation)
+				err = registry.MoveFile(oldLocation, newLocation)
 				if err != nil {
 					return err
 				}
