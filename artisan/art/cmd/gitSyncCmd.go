@@ -31,13 +31,13 @@ func NewGitSyncCmd() *GitSyncCmd {
 	c := &GitSyncCmd{
 		cmd: &cobra.Command{
 			Use: "sync [flags] [path/to/template/files]\n" +
-				"  the path to the tem files is optional, if no path is specified, the current path [.] is used",
+				"  the path to the *.tem or *.art files is optional, if no path is specified, the current path [.] is used",
 			Short: "synchronise a remote git repository with the content of a local folder containing files and/or merged Artisan templates",
 			Long: "\nprogrammatically update the content of a git repository by \n\n" +
 				"a) merging a set of Artisan templates with environment variables\n" +
 				"b) updating a local git repository using the merged files; and \n" +
 				"c) committing and pushing the local git changes back to its remote origin",
-			Example: `art sync -p path/within/git-repo -t the-git-authentication-token -u https://git-host/git-repo.git [. or path/to/.tem files]`,
+			Example: `art sync -p path/within/git-repo -t the-git-authentication-token -u https://git-host/git-repo.git [. or path/to/.tem or .art files]`,
 		},
 	}
 
@@ -63,9 +63,7 @@ func (g *GitSyncCmd) Run(cmd *cobra.Command, args []string) {
 	default:
 		core.RaiseErr("too many arguments")
 	}
-
-	sm, err := git.NewSyncManagerFromUri(g.repoURI, g.token, ".tem", g.yamlFilePrefix,
-		g.path4Files2BeSync, g.repoPath, g.strictSync)
+	sm, err := git.NewSyncManagerFromUri(g.repoURI, g.token, g.yamlFilePrefix, g.path4Files2BeSync, g.repoPath, g.strictSync)
 	core.CheckErr(err, "Failed to initialise SyncManagerFromUri ")
 	err = sm.MergeAndSync()
 	core.CheckErr(err, "Failed to perform sync operation")
