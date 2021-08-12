@@ -131,9 +131,9 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 		log.Fatal(errors.New(fmt.Sprintf("the localRepo can only accept zip files, the extension provided was %s", basenameExt)))
 	}
 	// move the zip file to the localRepo folder
-	core.CheckErr(RenameFile(filename, filepath.Join(r.Path(), basename), false), "failed to move package zip file to the local registry")
+	core.CheckErr(MoveFile(filename, filepath.Join(r.Path(), basename)), "failed to move package zip file to the local registry")
 	// now move the seal file to the localRepo folder
-	core.CheckErr(RenameFile(filepath.Join(basenameDir, fmt.Sprintf("%s.json", basenameNoExt)), filepath.Join(r.Path(), fmt.Sprintf("%s.json", basenameNoExt)), false), "failed to move package seal file to the local registry")
+	core.CheckErr(MoveFile(filepath.Join(basenameDir, fmt.Sprintf("%s.json", basenameNoExt)), filepath.Join(r.Path(), fmt.Sprintf("%s.json", basenameNoExt))), "failed to move package seal file to the local registry")
 	// untag package package (if any)
 	r.unTag(name, name.Tag)
 	// remove any dangling packages
