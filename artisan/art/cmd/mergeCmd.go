@@ -11,6 +11,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/merge"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // MergeCmd merges environment variables into one or more files
@@ -36,8 +37,10 @@ func NewMergeCmd() *MergeCmd {
 }
 
 func (c *MergeCmd) Run(cmd *cobra.Command, args []string) {
-	env, err := merge.NewEnVarFromFile(c.envFilename)
+	env := merge.NewEnVarFromSlice(os.Environ())
+	env2, err := merge.NewEnVarFromFile(c.envFilename)
 	core.CheckErr(err, "cannot load .env file")
+	env.Merge(env2)
 	m, _ := merge.NewTemplMerger()
 	err = m.LoadTemplates(args)
 	core.CheckErr(err, "cannot load templates")

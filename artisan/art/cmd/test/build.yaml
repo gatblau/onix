@@ -1,0 +1,20 @@
+---
+labels:
+  application: Test 1
+  description: Very simple test!
+
+runtime: ubi-min
+
+functions:
+  - name: t1
+    export: true
+    description: run test 1
+    run:
+      - echo "Hello World"
+
+  - name: t2
+    export: true
+    description: run test 2
+    run:
+      - echo "Goodbye World"
+...

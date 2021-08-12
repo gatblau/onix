@@ -1,0 +1,3 @@
+This is a "tem" template for testing merge of variables.
+
+Hello ${VAR1}!
