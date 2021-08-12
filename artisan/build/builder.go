@@ -627,8 +627,8 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 	core.CheckErr(err, "cannot get package seal")
 	m := seal.Manifest
 	// stop execution if the package was built in an OS different from the executing OS
-	if m.OS != runtime.GOOS {
-		core.RaiseErr("cannot run package, as it was built in '%s' OS and is trying to execute in '%s' OS\n"+
+	if runtime.GOOS == "windows" && m.OS != "windows" {
+		core.RaiseErr("cannot run package, as it was built in '%s' OS and it is trying to execute in '%s' OS\n"+
 			"ensure the package is built under the executing OS\n", m.OS, runtime.GOOS)
 	}
 	// check the function is exported

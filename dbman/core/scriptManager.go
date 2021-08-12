@@ -41,14 +41,16 @@ func NewOxClientConf(cfg *Config) *oxc.ClientConf {
 	}
 }
 
-// fetches the getReleaseInfo plan
+// fetchPlan fetches the getReleaseInfo plan
 func (s *ScriptManager) fetchPlan() (*Plan, error) {
 	// get the base uri to retrieve scripts (includes credentials if set)
 	baseUri, err := s.getRepoUri()
 	if err != nil {
 		return nil, err
 	}
-	response, err := s.client.Get(fmt.Sprintf("%s/plan.json", baseUri), s.addHttpHeaders)
+	// note: passing http headers results in 503 on gitlab.com when using credentials on URI
+	// response, err := s.client.Get(fmt.Sprintf("%s/plan.json", baseUri), s.addHttpHeaders)
+	response, err := s.client.Get(fmt.Sprintf("%s/plan.json", baseUri), nil)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("! cannot retrieve release plan: %v", err))
 	}
@@ -62,7 +64,7 @@ func (s *ScriptManager) fetchPlan() (*Plan, error) {
 	return p, err
 }
 
-// reads a file stored in the remote repository
+// FetchFile reads a file stored in the remote repository
 // path: the relative path to the file in the repository
 func (s *ScriptManager) FetchFile(path string) (*string, error) {
 	// get the base uri to retrieve scripts (includes credentials if set)
@@ -73,7 +75,9 @@ func (s *ScriptManager) FetchFile(path string) (*string, error) {
 	// builds a uri to the specific file
 	uri := fmt.Sprintf("%s%s", baseUri, path)
 	// fetch the file
-	response, err := s.client.Get(uri, s.addHttpHeaders)
+	// note: passing http headers results in 503 on gitlab.com when using credentials on URI
+	// response, err := s.client.Get(uri, s.addHttpHeaders)
+	response, err := s.client.Get(uri, nil)
 	// if the request was unsuccessful then return the error
 	if err != nil {
 		return nil, err
@@ -117,7 +121,9 @@ func (s *ScriptManager) fetchManifest(appVersion string) (*Info, *Manifest, erro
 	// builds a uri to fetchManifest the specific release manifest
 	uri := fmt.Sprintf("%s/%s/manifest.json", baseUri, release.Path)
 	// fetchManifest the manifest
-	response, err := s.client.Get(uri, s.addHttpHeaders)
+	// note: passing http headers results in 503 on gitlab.com when using credentials on URI
+	// response, err := s.client.Get(uri, s.addHttpHeaders)
+	response, err := s.client.Get(uri, nil)
 	// if the request was unsuccessful then return the error
 	if err != nil {
 		return nil, nil, err
@@ -240,7 +246,9 @@ func (s *ScriptManager) getContent(baseUri string, path string, file string) (st
 	// get the uri of the script
 	uri := fmt.Sprintf("%v/%v/%v", baseUri, path, file)
 	// issue an http request for the content
-	response, err := s.client.Get(uri, s.addHttpHeaders)
+	// note: passing http headers results in 503 on gitlab.com when using credentials on URI
+	// response, err := s.client.Get(uri, s.addHttpHeaders)
+	response, err := s.client.Get(uri, nil)
 	switch response.StatusCode {
 	case 401:
 		fallthrough

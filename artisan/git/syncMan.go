@@ -23,7 +23,6 @@ type SyncManager struct {
 	path4Files2BeSync string
 	repoPath          string
 	fileNamePrefix    string
-	fileType          string
 	workingDir        string
 	strictSync        bool
 }
@@ -31,13 +30,11 @@ type SyncManager struct {
 // NewSyncManagerFromUri will initialise SyncManager by cloning the repo.
 // repoUrl location from where repository has to be cloned
 // gitToken token required to clone the repository
-// fileType type of source files to be considered for merge and sync
-// fileNamePrefix string to be append to the file's name, example when tem file is converted to yaml append this to file name.
-// path4Files2BeSync relate path from where the source files must be consider for merge and sync
+// fileNamePrefix string to be appended to the file's name, example when tem file is converted to yaml append this to file name.
+// path4Files2BeSync relate path from where the source files must be considered for merge and sync
 // repoPath folder with in repo where the final files to be copied during sync operation
 // It will return initialised SyncManager or any error occurred
-func NewSyncManagerFromUri(repoURI, token, fileType, fileNamePrefix, path4Files2BeSync, repoPath string,
-	strictSync bool) (*SyncManager, error) {
+func NewSyncManagerFromUri(repoURI, token, fileNamePrefix, path4Files2BeSync, repoPath string, strictSync bool) (*SyncManager, error) {
 	workingDir, err := core.NewTempDir()
 	if err != nil {
 		return nil, err
@@ -45,7 +42,6 @@ func NewSyncManagerFromUri(repoURI, token, fileType, fileNamePrefix, path4Files2
 	repoManager := NewRepoManager(repoURI, token, workingDir, repoPath, strictSync)
 	return &SyncManager{
 		repoManager:       repoManager,
-		fileType:          fileType,
 		fileNamePrefix:    fileNamePrefix,
 		path4Files2BeSync: path4Files2BeSync,
 		repoPath:          repoPath,
@@ -78,17 +74,29 @@ func (s *SyncManager) artMerge() error {
 	if err != nil {
 		return err
 	}
-	files, err := core.GetFiles(absSyncPath, s.fileType)
+	// find all file names with extension .tem or .art
+	files, err := core.FindFiles(absSyncPath, "^.*\\.(tem|art)$")
 	if err != nil {
 		return err
 	}
 	if len(files) == 0 {
-		return fmt.Errorf("no file found for file type %v in the path %v\n", s.fileType, absSyncPath)
+		return fmt.Errorf("no template files (*.tem/*art) found in the path %v\n", absSyncPath)
 	}
 	// replace environment variable value with the place holder
 	envVar := merge.NewEnVarFromSlice(os.Environ())
-	merge.MergeFiles(files, envVar)
-	return nil
+	merger, err := merge.NewTemplMerger()
+	if err != nil {
+		return err
+	}
+	err = merger.LoadTemplates(files)
+	if err != nil {
+		return err
+	}
+	err = merger.Merge(envVar)
+	if err != nil {
+		return err
+	}
+	return merger.Save()
 }
 
 // MergeAndSync will clone the repo at target path and then perform merging of tem files and finally push the changes back to remote git repo
