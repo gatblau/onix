@@ -93,7 +93,7 @@ func NewEnVarFromSlice(v []string) *Envar {
 		Vars: make(map[string]string),
 	}
 	for _, s := range v {
-		kv := strings.Split(s, "=")
+		kv := strings.SplitN(s, "=", 2)
 		ev.Add(kv[0], kv[1])
 	}
 	return ev
