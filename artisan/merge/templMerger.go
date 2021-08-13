@@ -172,15 +172,7 @@ func (t *TemplMerger) mergeART(path string, temp []byte, env Envar) ([]byte, err
 	if err != nil {
 		return nil, err
 	}
-	return removeEmptyLines(tpl.String())
-}
-
-func removeEmptyLines(in string) ([]byte, error) {
-	regex, err := regexp.Compile("\n\n")
-	if err != nil {
-		return nil, err
-	}
-	return []byte(regex.ReplaceAllString(in, "\n")), nil
+	return tpl.Bytes(), nil
 }
 
 func (t *TemplMerger) transpileOperators(source []byte) []byte {
