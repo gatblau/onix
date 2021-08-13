@@ -1,0 +1,13 @@
+---
+is_debug: true
+listen:
+  type: port
+  bind_ip: 0.0.0.0 #if specific ip only please replace 0.0.0.0
+  port: <SYSLOG_PORT> #Default is 514 tcp/udp, but can be any other free port
+mongodb:
+  host: <MogoHost>
+  port: <MongoPort>
+  username: <MongoUser>
+  password: <MongoPWD>
+  database: <MongoDB>
+  collection: <MongoCollection>
