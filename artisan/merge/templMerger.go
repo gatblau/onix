@@ -79,7 +79,7 @@ func (t *TemplMerger) LoadTemplates(files []string) error {
 		if err != nil {
 			return fmt.Errorf("cannot read file %s: %s\n", file, err)
 		}
-		m[path] = t.overlayOperators(bytes)
+		m[path] = t.transpileOperators(bytes)
 	}
 	t.template = m
 	return nil
@@ -183,7 +183,7 @@ func removeEmptyLines(in string) ([]byte, error) {
 	return []byte(regex.ReplaceAllString(in, "\n")), nil
 }
 
-func (t *TemplMerger) overlayOperators(source []byte) []byte {
+func (t *TemplMerger) transpileOperators(source []byte) []byte {
 	names := t.rexVar.FindAllStringSubmatch(string(source), -1)
 	for _, n := range names {
 		str := strings.ReplaceAll(string(source), n[0], fmt.Sprintf("{{ var \"%s\" }}", n[1]))
@@ -191,7 +191,7 @@ func (t *TemplMerger) overlayOperators(source []byte) []byte {
 	}
 	names = t.rexRange.FindAllStringSubmatch(string(source), -1)
 	for _, n := range names {
-		str := strings.ReplaceAll(string(source), n[0], fmt.Sprintf("{{ select \"%s\"}}\n{{ range .Items }}", n[1]))
+		str := strings.ReplaceAll(string(source), n[0], fmt.Sprintf("{{ select \"%s\"}}{{ range .Items }}", n[1]))
 		source = []byte(str)
 	}
 	names = t.rexItem.FindAllStringSubmatch(string(source), -1)
