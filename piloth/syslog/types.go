@@ -1,12 +1,12 @@
-package event_store
+package syslog
 
-const layout = "2006-01-02T15:04:05.0000"
-
-type SyslogListener struct {
-	Type   string
-	BindIP string
-	Port   string
-}
+/*
+  Onix Config Manager - Pilot
+  Copyright (c) 2018-2021 by www.gatblau.org
+  Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
+  Contributors to this project, hereby assign copyright in this code to the project,
+  to be licensed under the same terms as the rest of the code.
+*/
 
 type RsyslogLogRFC3164 struct {
 	Client    string `json:"client" bson:"client"`

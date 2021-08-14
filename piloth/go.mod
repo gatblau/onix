@@ -19,4 +19,5 @@ require (
 	github.com/rs/zerolog v1.23.0
 	github.com/shirou/gopsutil v3.21.4+incompatible
 	github.com/tklauser/go-sysconf v0.3.6 // indirect
+	gopkg.in/mcuadros/go-syslog.v2 v2.3.0 // indirect
 )
