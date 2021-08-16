@@ -233,6 +233,10 @@ func (r *ReMan) GetPackages() ([]string, error) {
 	result := make([]string, 0)
 	// removes protocol prefix from URI
 	regDomain := r.conf.getArtRegUri()[strings.Index(r.conf.getArtRegUri(), "//")+2:]
+	// removes forward slash at the end if it finds one
+	if strings.HasSuffix(regDomain, "/") {
+		regDomain = regDomain[0 : len(regDomain)-1]
+	}
 	for _, repo := range repos {
 		for _, p := range repo.Packages {
 			for _, tag := range p.Tags {
