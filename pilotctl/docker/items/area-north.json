@@ -1,5 +1,5 @@
 {
-  "name": "EAST",
-  "description": "Represents the West region.",
+  "name": "NORTH",
+  "description": "Represents the North region.",
   "type": "U_AREA"
 }
