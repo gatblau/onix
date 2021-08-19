@@ -30,13 +30,13 @@ func HomeDir() string {
 
 // IsRegistered is the host registered?
 func IsRegistered() bool {
-	fi, err := os.Stat(regpath())
+	fi, err := os.Stat(registrationFilePath())
 	return os.IsExist(err) || fi != nil
 }
 
 // SetRegistered set the host as registered
 func SetRegistered() error {
-	regFile, err := os.Create(regpath())
+	regFile, err := os.Create(registrationFilePath())
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func SetRegistered() error {
 	return nil
 }
 
-func regpath() string {
+func registrationFilePath() string {
 	return path.Join(HomeDir(), ".pilot_reg")
 }
 

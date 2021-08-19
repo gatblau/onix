@@ -9,10 +9,12 @@ package core
 */
 import (
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -97,6 +99,10 @@ func (c *Config) Load() error {
 func currentPath() string {
 	path := os.Getenv("PILOT_CFG_PATH")
 	if len(path) > 0 {
+		path, err := core.AbsPath(path)
+		if err != nil {
+			panic(err)
+		}
 		return path
 	}
 	ex, err := os.Executable()
@@ -108,4 +114,40 @@ func currentPath() string {
 
 func confFile() string {
 	return fmt.Sprintf("%s/.pilot", currentPath())
+}
+
+func DataPath() string {
+	return filepath.Join(currentPath(), "data")
+}
+
+func SubmitPath() string {
+	return filepath.Join(DataPath(), "submit")
+}
+
+func ProcessPath() string {
+	return filepath.Join(DataPath(), "process")
+}
+
+func CheckPaths() {
+	_, err := os.Stat(DataPath())
+	if err != nil {
+		err = os.MkdirAll(DataPath(), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
+	_, err = os.Stat(path.Join(DataPath(), "submit"))
+	if err != nil {
+		err = os.MkdirAll(path.Join(DataPath(), "submit"), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
+	_, err = os.Stat(path.Join(DataPath(), "process"))
+	if err != nil {
+		err = os.MkdirAll(path.Join(DataPath(), "process"), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
 }

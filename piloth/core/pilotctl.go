@@ -54,7 +54,7 @@ func (r *PilotCtl) Register() error {
 	// set the machine id
 	reg := &ctl.Registration{
 		Hostname:    i.HostName,
-		MachineId:   i.HostID,
+		MachineId:   i.MachineId,
 		OS:          i.OS,
 		Platform:    fmt.Sprintf("%s, %s, %s", i.Platform, i.PlatformFamily, i.PlatformVersion),
 		Virtual:     i.Virtual,
@@ -86,7 +86,7 @@ func (r *PilotCtl) Ping() (ctl.CmdRequest, error) {
 	} else {
 		payload = nil
 	}
-	uri := fmt.Sprintf("%s/ping/%s", r.cfg.BaseURI, r.host.HostID)
+	uri := fmt.Sprintf("%s/ping/%s", r.cfg.BaseURI, r.host.MachineId)
 	resp, err := r.client.Post(uri, payload, r.addToken)
 	if err != nil {
 		return ctl.CmdRequest{}, fmt.Errorf("ping failed ping: %s", err)
@@ -107,7 +107,7 @@ func (r *PilotCtl) Ping() (ctl.CmdRequest, error) {
 func (r *PilotCtl) addToken(req *http.Request, payload Serializable) error {
 	payload = nil
 	// add an authentication token to the request
-	req.Header.Set("Authorization", newToken(r.host.HostID))
+	req.Header.Set("Authorization", newToken(r.host.MachineId))
 	// all content type should be in JSON format
 	req.Header.Set("Content-Type", "application/json")
 	return nil
