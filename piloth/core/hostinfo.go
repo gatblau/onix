@@ -9,49 +9,69 @@ package core
 */
 import (
 	"encoding/json"
+	"errors"
 	"github.com/shirou/gopsutil/cpu"
 	hostUtil "github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
 	"math"
+	"net"
 	"strings"
+	"time"
 )
 
+const TimeLayout = "02-01-2006 03:04:05.000-0700"
+
+// HostInfo abstracts host information
 type HostInfo struct {
-	// unique identifier for the host
-	HostID string
-	// a host label (domain name) to uniquely identify it in various forms of electronic communication
-	HostName string
-	// the host Operating System
-	OS string
-	// OS parameters
+	MachineId       string
+	HostName        string
+	OS              string
 	Platform        string
 	PlatformFamily  string
 	PlatformVersion string
-	// is the host a virtual or physical machine?
-	Virtual bool
-	// Memory
-	TotalMemory float64
-	// CPU
-	CPUs int
+	Virtual         bool
+	TotalMemory     float64
+	CPUs            int
+	HostIP          string
+	BootTime        string
 }
 
 func NewHostInfo() (*HostInfo, error) {
-	info := new(HostInfo)
 	i, err := hostUtil.Info()
 	if err != nil {
 		return nil, err
 	}
-	info.HostName = i.Hostname
-	info.OS = i.OS
-	info.HostID = strings.ReplaceAll(i.HostID, "-", "")
-	info.Virtual = strings.ToLower(i.VirtualizationRole) == "guest"
+	// get the host IP address
+	hostIp, err := externalIP()
+	if err != nil {
+		// if it failed to retrieve IP set to unknown
+		hostIp = "unknown"
+	}
+	var (
+		memory float64
+		cpus   int
+	)
 	m, err := mem.VirtualMemory()
 	if err == nil {
-		info.TotalMemory = math.Round(float64(m.Total) * 9.31 * math.Pow(10, -10))
+		memory = math.Round(float64(m.Total) * 9.31 * math.Pow(10, -10))
+	} else {
+		memory = -1
 	}
 	c, err := cpu.Info()
 	if err == nil {
-		info.CPUs = len(c)
+		cpus = len(c)
+	} else {
+		cpus = -1
+	}
+	info := &HostInfo{
+		MachineId:   strings.ReplaceAll(i.HostID, "-", ""),
+		HostIP:      hostIp,
+		HostName:    i.Hostname,
+		OS:          i.OS,
+		Virtual:     strings.ToLower(i.VirtualizationRole) == "guest",
+		BootTime:    time.Unix(int64(i.BootTime), 0).Format(TimeLayout),
+		TotalMemory: memory,
+		CPUs:        cpus,
 	}
 	return info, nil
 }
@@ -62,4 +82,42 @@ func (h *HostInfo) String() string {
 		return err.Error()
 	}
 	return string(bytes)
+}
+
+// externalIP return host external IP
+func externalIP() (string, error) {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return "", err
+	}
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 {
+			continue // interface down
+		}
+		if iface.Flags&net.FlagLoopback != 0 {
+			continue // loop back interface
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			return "", err
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			if ip == nil || ip.IsLoopback() {
+				continue
+			}
+			ip = ip.To4()
+			if ip == nil {
+				continue // not an ipv4 address
+			}
+			return ip.String(), nil
+		}
+	}
+	return "", errors.New("are you connected to the network?\n")
 }
