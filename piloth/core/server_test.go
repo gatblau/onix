@@ -1,4 +1,4 @@
-package syslog
+package core
 
 /*
   Onix Config Manager - Pilot
@@ -18,7 +18,7 @@ func TestSyslogCollector(t *testing.T) {
 	// set the config path to this folder
 	os.Setenv("PILOT_CFG_PATH", ".")
 	// create the syslog collector on port 534
-	collector, err := NewServer("0.0.0.0", "534")
+	collector, err := NewCollector("0.0.0.0", "534")
 	if err != nil {
 		t.Fatal(err)
 		t.FailNow()
@@ -46,4 +46,20 @@ func TestSyslogCollector(t *testing.T) {
 	// wait for the collector to write the event to disk
 	time.Sleep(time.Millisecond * 1500)
 	// check event has been written
+}
+
+func TestNewLog(t *testing.T) {
+	logWriter, err := syslog.Dial("udp", "127.0.0.1:534", syslog.LOG_ERR, "Test")
+	defer logWriter.Close()
+	if err != nil {
+		t.Fatal(err)
+		t.FailNow()
+	}
+	// write directly to the collector
+	// note: in a real scenario, it should write to syslogs and let syslog forward to the collector
+	err = logWriter.Err("error information here")
+	if err != nil {
+		t.Fatal(err)
+		t.FailNow()
+	}
 }

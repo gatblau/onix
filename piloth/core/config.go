@@ -14,6 +14,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -115,14 +116,36 @@ func confFile() string {
 	return fmt.Sprintf("%s/.pilot", currentPath())
 }
 
-func CachePath() string {
-	return filepath.Join(currentPath(), "cache")
+func DataPath() string {
+	return filepath.Join(currentPath(), "data")
 }
 
-func CheckCachePath() {
-	_, err := os.Stat(CachePath())
+func SubmitPath() string {
+	return filepath.Join(DataPath(), "submit")
+}
+
+func ProcessPath() string {
+	return filepath.Join(DataPath(), "process")
+}
+
+func CheckPaths() {
+	_, err := os.Stat(DataPath())
 	if err != nil {
-		err = os.MkdirAll(CachePath(), os.ModePerm)
+		err = os.MkdirAll(DataPath(), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
+	_, err = os.Stat(path.Join(DataPath(), "submit"))
+	if err != nil {
+		err = os.MkdirAll(path.Join(DataPath(), "submit"), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
+	_, err = os.Stat(path.Join(DataPath(), "process"))
+	if err != nil {
+		err = os.MkdirAll(path.Join(DataPath(), "process"), os.ModePerm)
 		if err != nil {
 			panic(err)
 		}

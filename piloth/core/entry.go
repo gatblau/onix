@@ -1,4 +1,4 @@
-package syslog
+package core
 
 /*
   Onix Config Manager - Pilot
@@ -10,7 +10,6 @@ package syslog
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gatblau/onix/piloth/core"
 	"gopkg.in/mcuadros/go-syslog.v2/format"
 	"io/ioutil"
 	"os"
@@ -19,8 +18,8 @@ import (
 	"time"
 )
 
-// EventEntry a pilot event to be sent to piloctl service
-type EventEntry struct {
+// Entry a pilot event to be sent to piloctl service
+type Entry struct {
 	// internal time id
 	timeId            string
 	EventID           string `json:"event_id,omitempty" yaml:"event_id,omitempty" bson:"event_id,omitempty"`
@@ -43,16 +42,16 @@ type EventEntry struct {
 }
 
 // NewEvent create a new serializable event from a syslog entry in RFC 3164
-func NewEvent(logPart format.LogParts, info core.HostInfo) (*EventEntry, error) {
+func NewEvent(logPart format.LogParts, info HostInfo) (*Entry, error) {
 	tId := timeBasedId()
-	entry := &EventEntry{timeId: tId}
+	entry := &Entry{timeId: tId}
 	entry.Priority = logPart["priority"].(int)
 	entry.Severity = logPart["severity"].(int)
 	entry.Hostname = logPart["hostname"].(string)
 	entry.Client = logPart["client"].(string)
 	entry.TLSPeer = logPart["tls_peer"].(string)
 	entry.Facility = logPart["facility"].(int)
-	entry.Time = logPart["timestamp"].(time.Time).Format(core.TimeLayout)
+	entry.Time = logPart["timestamp"].(time.Time).Format(TimeLayout)
 	entry.EventID = fmt.Sprintf("%s:%s", info.MachineId, tId)
 	entry.BootTime = info.BootTime
 	entry.MachineId = info.MachineId
@@ -63,7 +62,7 @@ func NewEvent(logPart format.LogParts, info core.HostInfo) (*EventEntry, error) 
 }
 
 // Save the event to the file system
-func (e *EventEntry) Save() error {
+func (e *Entry) Save() error {
 	bytes, err := json.Marshal(e)
 	if err != nil {
 		return err
@@ -73,7 +72,7 @@ func (e *EventEntry) Save() error {
 
 // eventFilename works out a filename for the event based on a timeBasedId
 func eventFilename(timestamp string) string {
-	return filepath.Join(core.CachePath(), fmt.Sprintf("%s.ev", timestamp))
+	return filepath.Join(SubmitPath(), fmt.Sprintf("%s.ev", timestamp))
 }
 
 // timeBasedId generates a time based event timeBasedId
