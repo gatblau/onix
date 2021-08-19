@@ -174,6 +174,10 @@ func (r *ReMan) SetAdmission(admission Admission) error {
 
 // Authenticate a pilot based on its time stamp and machine Id admission status
 func (r *ReMan) Authenticate(token string) bool {
+	if len(token) == 0 {
+		log.Println("authentication token is required and not provided")
+		return false
+	}
 	value, err := base64.StdEncoding.DecodeString(reverse(token))
 	if err != nil {
 		log.Printf("error decoding authentication token '%s': %s\n", token, err)
