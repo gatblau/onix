@@ -15,6 +15,7 @@ import (
 	"github.com/gatblau/onix/piloth/job"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 type PilotCtl struct {
@@ -34,8 +35,8 @@ func NewPilotCtl(worker *job.Worker) (*PilotCtl, error) {
 		BaseURI:            conf.Get(PilotCtlUri),
 		Username:           "_",
 		Password:           "_",
-		InsecureSkipVerify: false,
-		Timeout:            60,
+		InsecureSkipVerify: true,
+		Timeout:            60 * time.Second,
 	}
 	c, err := NewClient(cfg)
 	if err != nil {
