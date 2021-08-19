@@ -70,7 +70,7 @@ func (p *Pilot) Start() {
 |  _/        _/_/_/  _/_/_/_/    _/_/        _/           |
 +---------------------------------------------------------+`)
 	log.Printf("launching...\n")
-	collector, err := NewCollector("0.0.0.0", "534")
+	collector, err := NewCollector("0.0.0.0", p.cfg.getSyslogPort())
 	if err != nil {
 		fmt.Printf("cannot create pilot syslog collector: %s\n", err)
 		os.Exit(1)

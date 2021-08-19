@@ -20,10 +20,6 @@ import (
 	"strings"
 )
 
-const (
-	LogLevel = "LogLevel"
-)
-
 // create a logger with added contextual info
 // to differentiate pilot logging from application logging
 var logger = log.With().Str("agent", "pilot").Logger()
@@ -47,6 +43,8 @@ func (k ConfigKey) String() string {
 		return "PILOT_ART_REG_USER"
 	case PilotArtRegPwd:
 		return "PILOT_ART_REG_PWD"
+	case PilotSyslogPort:
+		return "PILOT_SYSLOG_PORT"
 	}
 	return ""
 }
@@ -56,7 +54,17 @@ const (
 	PilotCtlUri
 	PilotArtRegUser
 	PilotArtRegPwd
+	PilotSyslogPort
 )
+
+func (c *Config) getSyslogPort() string {
+	port := c.Get(PilotSyslogPort)
+	if len(port) == 0 {
+		// set default
+		port = "1514"
+	}
+	return port
+}
 
 func (c *Config) Get(key ConfigKey) string {
 	return os.Getenv(key.String())
@@ -116,18 +124,22 @@ func confFile() string {
 	return fmt.Sprintf("%s/.pilot", currentPath())
 }
 
+// DataPath returns the path of the root local folder where files are cached
 func DataPath() string {
 	return filepath.Join(currentPath(), "data")
 }
 
+// SubmitPath returns the path of the local folder used to cache information to be submitted to pilotctl
 func SubmitPath() string {
 	return filepath.Join(DataPath(), "submit")
 }
 
+// ProcessPath returns the path of the local folder used to cache jobs to be processed by pilot
 func ProcessPath() string {
 	return filepath.Join(DataPath(), "process")
 }
 
+// CheckPaths check all required local folders used by the pilot to cache data exist and if not creates them
 func CheckPaths() {
 	_, err := os.Stat(DataPath())
 	if err != nil {
