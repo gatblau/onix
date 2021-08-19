@@ -8,89 +8,62 @@ package syslog
   to be licensed under the same terms as the rest of the code.
 */
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/gatblau/onix/piloth/core"
 	"gopkg.in/mcuadros/go-syslog.v2"
-	"io/ioutil"
 	"log"
-	"math/rand"
-	"os"
-	"strconv"
-	"time"
 )
 
+// Server syslog log collection service that wraps a syslog server
 type Server struct {
-	bindIP string
-	port   string
+	server *syslog.Server
 }
 
-const timeFormat = "2006-01-02T15:04:05.0000"
-
-func NewServer(bindIP, port string) *syslog.Server {
+// NewServer creates an instance of a syslog collection service
+func NewServer(bindIP, port string) (*Server, error) {
+	// create local cache folder in pilot's current location
+	core.CheckCachePath()
 	channel := make(syslog.LogPartsChannel)
-	handler := syslog.NewChannelHandler(channel)
-	server := syslog.NewServer()
-	server.SetFormat(syslog.RFC3164)
-
-	server.SetHandler(handler)
-	server.ListenUDP(fmt.Sprintf("%s:%s", bindIP, port))
-	server.ListenTCP(fmt.Sprintf("%s:%s", bindIP, port))
+	sysServ := syslog.NewServer()
+	sysServ.SetHandler(syslog.NewChannelHandler(channel))
+	// uses RFC3164 because it is default for rsyslog
+	sysServ.SetFormat(syslog.RFC3164)
+	err := sysServ.ListenUDP(fmt.Sprintf("%s:%s", bindIP, port))
+	if err != nil {
+		return nil, err
+	}
 	go func(channel syslog.LogPartsChannel) {
 		for logEntry := range channel {
-			event, err := format(logEntry)
+			info, err := core.NewHostInfo()
 			if err != nil {
-				log.Printf("failed to format log enrty: %s\n", err)
+				info = &core.HostInfo{}
 			}
-			err = save(event)
+			event, err := NewEvent(logEntry, *info)
 			if err != nil {
-				log.Printf("cannot save syslog event: %s\n", "")
+				log.Printf("cannot format syslog enrty: %s\n", err)
+			}
+			err = event.Save()
+			if err != nil {
+				log.Printf("cannot save syslog entry to file: %s\n", err)
 			}
 		}
 	}(channel)
-	server.Wait()
-	server.Boot()
-	return server
+	return &Server{
+		server: sysServ,
+	}, nil
 }
 
-func format(logPart interface{}) (elog EventLog, err error) {
-	logRFC3164 := RsyslogLogRFC3164{}
-	logByte, err := json.Marshal(logPart)
-	if err != nil {
-		return elog, fmt.Errorf("failed to convert interface to byte due to error %w", err)
-	}
-
-	if err = json.Unmarshal(logByte, &logRFC3164); err != nil {
-		return elog, fmt.Errorf("failed to convert byte to struct due to error %w", err)
-	}
-
-	rand.Seed(time.Now().UnixNano())
-	randEventID := rand.Intn(99999) * 999999
-	elog.EventID = strconv.Itoa(randEventID)
-	elog.Client = logRFC3164.Client
-	elog.CreateTimeStamp = time.Now().Format(timeFormat)
-	elog.Hostname = logRFC3164.Hostname
-	elog.HostID = ""
-	elog.HostAddress = logRFC3164.Hostname
-	elog.Location = ""
-	elog.Facility = logRFC3164.Facility
-	elog.Priority = logRFC3164.Priority
-	elog.Severity = logRFC3164.Severity
-	elog.Tag = logRFC3164.Tag
-	elog.EventTimestamp = logRFC3164.Timestamp
-	elog.Content = logRFC3164.Content
-	elog.Details = ""
-	return elog, nil
+// Start the server
+func (s *Server) Start() error {
+	return s.server.Boot()
 }
 
-func save(ev EventLog) error {
-	bytes, err := json.Marshal(ev)
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(filename(ev.EventID), bytes, os.ModePerm)
+// Wait the server
+func (s *Server) Wait() {
+	s.server.Wait()
 }
 
-func filename(id string) string {
-	// TODO: save to specific logs folder
-	return fmt.Sprintf("%s.json", id)
+// Stop the server
+func (s *Server) Stop() error {
+	return s.server.Kill()
 }
