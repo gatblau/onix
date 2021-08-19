@@ -1,4 +1,4 @@
-package syslog
+package core
 
 /*
   Onix Config Manager - Pilot
@@ -9,20 +9,20 @@ package syslog
 */
 import (
 	"fmt"
-	"github.com/gatblau/onix/piloth/core"
 	"gopkg.in/mcuadros/go-syslog.v2"
 	"log"
 )
 
-// Server syslog log collection service that wraps a syslog server
-type Server struct {
+// SyslogCollector syslog log collection service that wraps a syslog server
+type SyslogCollector struct {
 	server *syslog.Server
+	port   string
 }
 
-// NewServer creates an instance of a syslog collection service
-func NewServer(bindIP, port string) (*Server, error) {
+// NewCollector creates an instance of a syslog collection service
+func NewCollector(bindIP, port string) (*SyslogCollector, error) {
 	// create local cache folder in pilot's current location
-	core.CheckCachePath()
+	CheckPaths()
 	channel := make(syslog.LogPartsChannel)
 	sysServ := syslog.NewServer()
 	sysServ.SetHandler(syslog.NewChannelHandler(channel))
@@ -34,9 +34,9 @@ func NewServer(bindIP, port string) (*Server, error) {
 	}
 	go func(channel syslog.LogPartsChannel) {
 		for logEntry := range channel {
-			info, err := core.NewHostInfo()
+			info, err := NewHostInfo()
 			if err != nil {
-				info = &core.HostInfo{}
+				info = &HostInfo{}
 			}
 			event, err := NewEvent(logEntry, *info)
 			if err != nil {
@@ -48,22 +48,24 @@ func NewServer(bindIP, port string) (*Server, error) {
 			}
 		}
 	}(channel)
-	return &Server{
+	return &SyslogCollector{
 		server: sysServ,
+		port:   port,
 	}, nil
 }
 
 // Start the server
-func (s *Server) Start() error {
+func (s *SyslogCollector) Start() error {
+	log.Printf("starting syslog collector on port %s\n", s.port)
 	return s.server.Boot()
 }
 
 // Wait the server
-func (s *Server) Wait() {
+func (s *SyslogCollector) Wait() {
 	s.server.Wait()
 }
 
 // Stop the server
-func (s *Server) Stop() error {
+func (s *SyslogCollector) Stop() error {
 	return s.server.Kill()
 }
