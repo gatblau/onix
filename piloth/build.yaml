@@ -20,7 +20,7 @@ functions:
       GOOS: linux
     run:
       - $(set-version)
-      - go build -o bin/pilot -v
+      - go build -o bin/linux/pilot -v
 
   - name: build-windows
     description: builds the host pilot binary for the windows platform
@@ -28,7 +28,15 @@ functions:
       GOOS: windows
     run:
       - $(set-version)
-      - go build -o bin/win/pilot.exe -v
+      - go build -o bin/windows/pilot.exe -v
+
+  - name: build-mac
+    description: builds the host pilot binary for the macos platform
+    env:
+      GOOS: darwin
+    run:
+      - $(set-version)
+      - go build -o bin/darwin/pilot -v
 
 profiles:
   - name: linux
@@ -37,12 +45,20 @@ profiles:
     license: Apache Version 2
     run:
       - $(build-linux)
-    target: bin/pilot
+    target: bin/linux
+
+  - name: mac
+    default: true
+    type: content/binary
+    license: Apache Version 2
+    run:
+      - $(build-mac)
+    target: bin/darwin
 
   - name: windows
     type: content/binary
     license: Apache Version 2
     run:
       - $(build-windows)
-    target: bin/pilot
+    target: bin/windows
 ...
