@@ -9,6 +9,7 @@ package core
 */
 import (
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -97,6 +98,10 @@ func (c *Config) Load() error {
 func currentPath() string {
 	path := os.Getenv("PILOT_CFG_PATH")
 	if len(path) > 0 {
+		path, err := core.AbsPath(path)
+		if err != nil {
+			panic(err)
+		}
 		return path
 	}
 	ex, err := os.Executable()
@@ -108,4 +113,18 @@ func currentPath() string {
 
 func confFile() string {
 	return fmt.Sprintf("%s/.pilot", currentPath())
+}
+
+func CachePath() string {
+	return filepath.Join(currentPath(), "cache")
+}
+
+func CheckCachePath() {
+	_, err := os.Stat(CachePath())
+	if err != nil {
+		err = os.MkdirAll(CachePath(), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
