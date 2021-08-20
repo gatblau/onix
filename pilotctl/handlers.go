@@ -285,7 +285,7 @@ func getJobsHandler(w http.ResponseWriter, r *http.Request) {
 	orgGroup := r.FormValue("og")
 	org := r.FormValue("or")
 	area := r.FormValue("ar")
-	location := r.FormValue("loc")
+	location := r.FormValue("lo")
 	jobs, err := api.GetJobs(orgGroup, org, area, location)
 	if err != nil {
 		log.Println(err)
