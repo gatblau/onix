@@ -30,15 +30,7 @@ import (
 	"net/url"
 )
 
-// @Summary Ping
-// @Description submits a ping from a host to the control plane
-// @Tags Host
-// @Router /ping/{machine-id} [post]
-// @Produce json
-// @Param machine-id path string true "the machine Id of the host"
-// @Param cmd-result body string false "the result of the execution of the last command or nil if no result is available"
-// @Failure 500 {string} there was an error in the server, check the server logs
-// @Success 200 {string} OK
+// pingHandler excluded from swagger as it is accessed by pilot with a special time-bound access token
 func pingHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	machineId := vars["machine-id"]
@@ -131,15 +123,7 @@ func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 	server.Write(w, r, hosts)
 }
 
-// @Summary Register a Host
-// @Description registers a new host and its technical details with the service
-// @Tags Host
-// @Router /register [post]
-// @Param registration-info body core.Registration true "the host registration configuration"
-// @Accepts json
-// @Produce plain
-// @Failure 500 {string} there was an error in the server, check the server logs
-// @Success 200 {string} OK
+// registerHandler excluded from swagger as it is accessed by pilot with a special time-bound access token
 func registerHandler(w http.ResponseWriter, r *http.Request) {
 	// get http body
 	body, err := ioutil.ReadAll(r.Body)
