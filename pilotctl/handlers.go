@@ -61,7 +61,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "cannot unmarshal ping request body, check the server logs\n", http.StatusBadRequest)
 			return
 		}
-		err = rem.CompleteJob(result)
+		err = api.CompleteJob(result)
 		if err != nil {
 			log.Printf("cannot set job status: %s\n", err)
 			http.Error(w, "set job status, check the server logs\n", http.StatusBadRequest)
@@ -69,7 +69,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// todo: add support for fx version
-	jobId, fxKey, _, err := rem.Beat(machineId)
+	jobId, fxKey, _, err := api.Beat(machineId)
 	if err != nil {
 		log.Printf("can't record ping: %v\n", err)
 		http.Error(w, "can't record ping, check server logs\n", http.StatusInternalServerError)
@@ -82,7 +82,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	// if we have a job to execute
 	if jobId > 0 {
 		// fetches the definition for the job function to run from Onix
-		cmdValue, err = rem.GetCommandValue(fxKey)
+		cmdValue, err = api.GetCommandValue(fxKey)
 		if err != nil {
 			log.Printf("can't retrieve Artisan function definition from Onix: %v\n", err)
 			http.Error(w, "can't retrieve Artisan function definition from Onix, check server logs\n", http.StatusInternalServerError)
@@ -122,7 +122,7 @@ func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 	org := r.FormValue("or")
 	area := r.FormValue("ar")
 	location := r.FormValue("loc")
-	hosts, err := rem.GetHosts(orgGroup, org, area, location)
+	hosts, err := api.GetHosts(orgGroup, org, area, location)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -156,7 +156,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "can't unmarshal body", http.StatusBadRequest)
 		return
 	}
-	err = rem.Register(reg)
+	err = api.Register(reg)
 	if err != nil {
 		log.Printf("Failed to register host, Onix responded with an error: %v", err)
 		http.Error(w, "Failed to register host, Onix responded with an error", http.StatusInternalServerError)
@@ -189,7 +189,7 @@ func updateCmdHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = rem.PutCommand(cmd)
+	err = api.PutCommand(cmd)
 	if err != nil {
 		log.Printf("failed to set command: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -210,7 +210,7 @@ func updateCmdHandler(w http.ResponseWriter, r *http.Request) {
 func getCmdHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
-	cmd, err := rem.GetCommand(name)
+	cmd, err := api.GetCommand(name)
 	if err != nil {
 		log.Printf("can't query command with name '%s': %v\n", name, err)
 		http.Error(w, fmt.Sprintf("can't query command with name '%s': %v\n", name, err), http.StatusInternalServerError)
@@ -228,7 +228,7 @@ func getCmdHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func getAllCmdHandler(w http.ResponseWriter, r *http.Request) {
-	cmds, err := rem.GetAllCommands()
+	cmds, err := api.GetAllCommands()
 	if err != nil {
 		log.Printf("can't query list of commands: %v\n", err)
 		http.Error(w, fmt.Sprintf("can't query list of commands: %s\n", err), http.StatusInternalServerError)
@@ -261,7 +261,7 @@ func newJobHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, id := range job.MachineId {
-		err = rem.CreateJob(job.JobRef, id, job.FxKey, job.FxVersion)
+		err = api.CreateJob(job.JobRef, id, job.FxKey, job.FxVersion)
 		if err != nil {
 			log.Printf("can't create job: %v\n", err)
 			http.Error(w, fmt.Sprintf("can't create job, check the server logs\n"), http.StatusInternalServerError)
@@ -286,7 +286,7 @@ func getJobsHandler(w http.ResponseWriter, r *http.Request) {
 	org := r.FormValue("or")
 	area := r.FormValue("ar")
 	location := r.FormValue("loc")
-	jobs, err := rem.GetJobs(orgGroup, org, area, location)
+	jobs, err := api.GetJobs(orgGroup, org, area, location)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -311,7 +311,7 @@ func uploadVulnerabilityReportHandler(w http.ResponseWriter, r *http.Request) {
 func getAreasHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	orgGroup := vars["org-group"]
-	areas, err := rem.GetAreas(orgGroup)
+	areas, err := api.GetAreas(orgGroup)
 	if err != nil {
 		log.Printf("failed to retrieve areas: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -328,7 +328,7 @@ func getAreasHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func getOrgGroupsHandler(w http.ResponseWriter, r *http.Request) {
-	areas, err := rem.GetOrgGroups()
+	areas, err := api.GetOrgGroups()
 	if err != nil {
 		log.Printf("failed to retrieve org groups: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -348,7 +348,7 @@ func getOrgGroupsHandler(w http.ResponseWriter, r *http.Request) {
 func getOrgHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	orgGroup := vars["org-group"]
-	areas, err := rem.GetOrgs(orgGroup)
+	areas, err := api.GetOrgs(orgGroup)
 	if err != nil {
 		log.Printf("failed to retrieve organisations: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -368,7 +368,7 @@ func getOrgHandler(w http.ResponseWriter, r *http.Request) {
 func getLocationsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	area := vars["area"]
-	areas, err := rem.GetLocations(area)
+	areas, err := api.GetLocations(area)
 	if err != nil {
 		log.Printf("failed to retrieve organisations: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -402,7 +402,7 @@ func setAdmissionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, admission := range admissions {
-		err = rem.SetAdmission(admission)
+		err = api.SetAdmission(admission)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -419,7 +419,7 @@ func setAdmissionHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func getPackagesHandler(w http.ResponseWriter, r *http.Request) {
-	packages, err := rem.GetPackages()
+	packages, err := api.GetPackages()
 	if err != nil {
 		log.Printf("failed to retrieve package list from Artisan Registry: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -444,7 +444,7 @@ func getPackagesApiHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("failed to unescape package name '%s': %s\n", name, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	api, err := rem.GetPackageAPI(n)
+	api, err := api.GetPackageAPI(n)
 	if err != nil {
 		log.Printf("failed to get package API from registry: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
