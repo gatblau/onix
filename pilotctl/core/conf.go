@@ -21,8 +21,7 @@ const (
 	ConfDbPort                   ConfKey = "OX_PILOTCTL_DB_PORT"
 	ConfDbUser                   ConfKey = "OX_PILOTCTL_DB_USER"
 	ConfDbPwd                    ConfKey = "OX_PILOTCTL_DB_PWD"
-	ConfRefreshInterval          ConfKey = "OX_PILOTCTL_REFRESH_INTERVAL"
-	ConfPingInterval             ConfKey = "OX_PILOTCTL_PING_INTERVAL"
+	ConfDisconnectedAfterSecs    ConfKey = "OX_PILOTCTL_DISCONNECTED_AFTER_SECS"
 	ConfOxWapiUri                ConfKey = "OX_WAPI_URI"
 	ConfOxWapiUser               ConfKey = "OX_WAPI_USER"
 	ConfOxWapiPwd                ConfKey = "OX_WAPI_PWD"
@@ -71,29 +70,16 @@ func (c *Conf) getDbPwd() string {
 	return c.getValue(ConfDbPwd)
 }
 
-func (c *Conf) getRefreshInterval() int {
-	defaultValue := 120
-	value := os.Getenv(string(ConfRefreshInterval))
+func (c *Conf) GetDisconnectedAfterSecs() int {
+	// default ping is 15 secs, needs to be greater than it
+	defaultValue := 20
+	value := os.Getenv(string(ConfDisconnectedAfterSecs))
 	if len(value) == 0 {
 		return defaultValue
 	}
 	v, err := strconv.Atoi(value)
 	if err != nil {
-		fmt.Printf("WARNING: %s is not a number, defaulting to %d\n", ConfRefreshInterval, defaultValue)
-		return defaultValue
-	}
-	return v
-}
-
-func (c *Conf) GetPingInterval() int {
-	defaultValue := 60
-	value := os.Getenv(string(ConfPingInterval))
-	if len(value) == 0 {
-		return defaultValue
-	}
-	v, err := strconv.Atoi(value)
-	if err != nil {
-		fmt.Printf("WARNING: %s is not a number, defaulting to %d\n", ConfPingInterval, defaultValue)
+		fmt.Printf("WARNING: %s is not a number, defaulting to %d\n", ConfDisconnectedAfterSecs, defaultValue)
 		return defaultValue
 	}
 	return v

@@ -101,7 +101,7 @@ type Host struct {
 	Area      string `json:"area"`
 	Location  string `json:"location"`
 	Connected bool   `json:"connected"`
-	Since     string `json:"since"`
+	LastSeen  string `json:"last_seen"`
 }
 
 // Registration information for host registration
