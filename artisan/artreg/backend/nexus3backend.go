@@ -346,7 +346,10 @@ func (r *Nexus3Backend) componentsURI() string {
 	return fmt.Sprintf("%s/service/rest/v1/components?repository=artisan", r.domain)
 }
 
-func (r *Nexus3Backend) assetsURI() string {
+func (r *Nexus3Backend) assetsURI(continuationToken string) string {
+	if len(continuationToken) > 0 {
+		return fmt.Sprintf("%s/service/rest/v1/assets?repository=artisan&continuationToken=%s", r.domain, continuationToken)
+	}
 	return fmt.Sprintf("%s/service/rest/v1/assets?repository=artisan", r.domain)
 }
 
@@ -377,12 +380,42 @@ func (r *Nexus3Backend) getFile(repoGroup, repoName, filename, user, pwd string)
 	return ioutil.ReadAll(resp.Body)
 }
 
-func (r *Nexus3Backend) getAssets(user, pwd string) (*assets, error) {
-	result, err := r.getMeta(user, pwd, r.assetsURI(), new(assets))
+func (r *Nexus3Backend) getAssetsPages(user, pwd, continuationToken string) (*assets, error) {
+	result, err := r.getMeta(user, pwd, r.assetsURI(continuationToken), new(assets))
 	if err != nil {
 		return nil, err
 	}
 	return result.(*assets), nil
+}
+
+func (r *Nexus3Backend) getAssets(user, pwd string) (*assets, error) {
+	// first time no continuation token no required
+	a, err := r.getAssetsPages(user, pwd, "")
+	if err != nil {
+		return nil, err
+	}
+	// if there are more pages
+	token := a.Continuationtoken.(string)
+	// starts a loop to fetch all pages
+	for len(token) > 0 {
+		// query the next page using the continuation token
+		a2, err2 := r.getAssetsPages(user, pwd, token)
+		if err2 != nil {
+			return nil, err
+		}
+		// append the items in second page to the items in first page
+		a.Items = append(a.Items, a2.Items...)
+		// if there is a continuation token
+		if a2.Continuationtoken != nil {
+			// set the token to the value of the continuation token in the second page
+			// to allow the loop to fetch the next page
+			token = a2.Continuationtoken.(string)
+		} else {
+			// otherwise set the token to empty to finish the loop
+			token = ""
+		}
+	}
+	return a, nil
 }
 
 func (r *Nexus3Backend) getComponents(user, pwd string) (*components, error) {
