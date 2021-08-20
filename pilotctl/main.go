@@ -18,14 +18,14 @@ import (
 )
 
 var (
-	rem *core.ReMan
+	api *core.API
 )
 
 func init() {
 	var err error
-	rem, err = core.NewReMan()
+	api, err = core.NewAPI(new(core.Conf))
 	if err != nil {
-		fmt.Printf("ERROR: fail to create remote manager: %s", err)
+		fmt.Printf("ERROR: fail to create backedn services API: %s", err)
 		os.Exit(1)
 	}
 }
@@ -60,7 +60,7 @@ func main() {
 		conf := core.NewConf()
 		interval := time.Duration(conf.GetPingInterval())
 		// creates a job to check for changes in the base image
-		updateConnStatusJob, err := core.NewUpdateConnStatusJob(rem)
+		updateConnStatusJob, err := core.NewUpdateConnStatusJob(api)
 		if err != nil {
 			return fmt.Errorf("cannot create connection status update job: %s", err)
 		}
@@ -84,5 +84,5 @@ func main() {
 }
 
 var pilotAuth = func(token string) bool {
-	return rem.Authenticate(token)
+	return api.Authenticate(token)
 }
