@@ -36,7 +36,7 @@ func NewManifestCmd() *ManifestCmd {
 		},
 	}
 	c.cmd.Flags().StringVarP(&c.filter, "filter", "f", "", "--filter=JSONPath or -f=JSONPath")
-	c.cmd.Flags().StringVarP(&c.format, "format", "o", "json", "--format=md or -f=md\n"+
+	c.cmd.Flags().StringVarP(&c.format, "format", "o", "json", "--format=mdf or -o=mdf\n"+
 		"available formats are 'json' (in std output) or 'mdf' (creates a markdown file)\n")
 	c.cmd.Run = c.Run
 	return c
