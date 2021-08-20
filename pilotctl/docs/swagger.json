@@ -501,86 +501,6 @@
                     }
                 }
             }
-        },
-        "/ping/{machine-id}": {
-            "post": {
-                "description": "submits a ping from a host to the control plane",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Host"
-                ],
-                "summary": "Ping",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "the machine Id of the host",
-                        "name": "machine-id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "the result of the execution of the last command or nil if no result is available",
-                        "name": "cmd-result",
-                        "in": "body",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/register": {
-            "post": {
-                "description": "registers a new host and its technical details with the service",
-                "produces": [
-                    "text/plain"
-                ],
-                "tags": [
-                    "Host"
-                ],
-                "summary": "Register a Host",
-                "parameters": [
-                    {
-                        "description": "the host registration configuration",
-                        "name": "registration-info",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/core.Registration"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
@@ -668,32 +588,6 @@
                     "items": {
                         "type": "string"
                     }
-                }
-            }
-        },
-        "core.Registration": {
-            "type": "object",
-            "properties": {
-                "cpus": {
-                    "type": "integer"
-                },
-                "hostname": {
-                    "type": "string"
-                },
-                "machine_id": {
-                    "type": "string"
-                },
-                "os": {
-                    "type": "string"
-                },
-                "platform": {
-                    "type": "string"
-                },
-                "total_memory": {
-                    "type": "number"
-                },
-                "virtual": {
-                    "type": "boolean"
                 }
             }
         },

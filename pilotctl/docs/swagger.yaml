@@ -59,23 +59,6 @@ definitions:
           type: string
         type: array
     type: object
-  core.Registration:
-    properties:
-      cpus:
-        type: integer
-      hostname:
-        type: string
-      machine_id:
-        type: string
-      os:
-        type: string
-      platform:
-        type: string
-      total_memory:
-        type: number
-      virtual:
-        type: boolean
-    type: object
   data.File:
     properties:
       content:
@@ -506,57 +489,4 @@ paths:
       summary: Get the API of an Artisan Package
       tags:
       - Registry
-  /ping/{machine-id}:
-    post:
-      description: submits a ping from a host to the control plane
-      parameters:
-      - description: the machine Id of the host
-        in: path
-        name: machine-id
-        required: true
-        type: string
-      - description: the result of the execution of the last command or nil if no
-          result is available
-        in: body
-        name: cmd-result
-        schema:
-          type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Ping
-      tags:
-      - Host
-  /register:
-    post:
-      description: registers a new host and its technical details with the service
-      parameters:
-      - description: the host registration configuration
-        in: body
-        name: registration-info
-        required: true
-        schema:
-          $ref: '#/definitions/core.Registration'
-      produces:
-      - text/plain
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Register a Host
-      tags:
-      - Host
 swagger: "2.0"
