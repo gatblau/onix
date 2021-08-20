@@ -121,7 +121,7 @@ func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 	orgGroup := r.FormValue("og")
 	org := r.FormValue("or")
 	area := r.FormValue("ar")
-	location := r.FormValue("loc")
+	location := r.FormValue("lo")
 	hosts, err := api.GetHosts(orgGroup, org, area, location)
 	if err != nil {
 		log.Println(err)
