@@ -12,9 +12,7 @@ import (
 	"github.com/gatblau/onix/artisan/server"
 	"github.com/gatblau/onix/pilotctl/core"
 	"github.com/gorilla/mux"
-	"github.com/reugn/go-quartz/quartz"
 	"os"
-	"time"
 )
 
 var (
@@ -53,27 +51,6 @@ func main() {
 		router.HandleFunc("/package/{name}/api", getPackagesApiHandler).Methods("GET")
 		router.HandleFunc("/job", newJobHandler).Methods("POST")
 		router.HandleFunc("/job", getJobsHandler).Methods("GET")
-	}
-	// add asynchronous jobs
-	// starts a job to record events if host connection status changes
-	s.Jobs = func() error {
-		conf := core.NewConf()
-		interval := time.Duration(conf.GetPingInterval())
-		// creates a job to check for changes in the base image
-		updateConnStatusJob, err := core.NewUpdateConnStatusJob(api)
-		if err != nil {
-			return fmt.Errorf("cannot create connection status update job: %s", err)
-		}
-		// create a new scheduler
-		sched := quartz.NewStdScheduler()
-		// start the scheduler
-		sched.Start()
-		// schedule the job
-		err = sched.ScheduleJob(updateConnStatusJob, quartz.NewSimpleTrigger(time.Duration(interval*time.Second)))
-		if err != nil {
-			return fmt.Errorf("cannot schedule connection status update job: %s", err)
-		}
-		return nil
 	}
 	// set up specific authentication for host pilot agents
 	s.Auth = map[string]func(string) bool{
