@@ -222,3 +222,9 @@ func (r *Result) Bytes() (*[]byte, error) {
 	b, err := ToJson(r)
 	return &b, err
 }
+
+// Package describes a package and all its tags
+type Package struct {
+	Name string   `json:"name"`
+	Tags []string `json:"tags,omitempty"`
+}

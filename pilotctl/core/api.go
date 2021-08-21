@@ -217,7 +217,7 @@ func (r *API) Authenticate(token string) bool {
 }
 
 // GetPackages get a list of packages in the backing Artisan registry
-func (r *API) GetPackages() ([]string, error) {
+func (r *API) GetPackages() ([]Package, error) {
 	// the URI to connect to the Artisan registry
 	uri := fmt.Sprintf("%s/repository", r.conf.getArtRegUri())
 	bytes, err := makeRequest(uri, "GET", r.conf.getArtRegUser(), r.conf.getArtRegPwd(), nil)
@@ -229,19 +229,20 @@ func (r *API) GetPackages() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	result := make([]string, 0)
 	// removes protocol prefix from URI
 	regDomain := r.conf.getArtRegUri()[strings.Index(r.conf.getArtRegUri(), "//")+2:]
 	// removes forward slash at the end if it finds one
 	if strings.HasSuffix(regDomain, "/") {
 		regDomain = regDomain[0 : len(regDomain)-1]
 	}
+	result := make([]Package, 0)
 	for _, repo := range repos {
 		for _, p := range repo.Packages {
+			pack := Package{Name: fmt.Sprintf("%s/%s", regDomain, repo.Repository)}
 			for _, tag := range p.Tags {
-				// append constructed package name
-				result = append(result, fmt.Sprintf("%s/%s:%s", regDomain, repo.Repository, tag))
+				pack.Tags = append(pack.Tags, tag)
 			}
+			result = append(result, pack)
 		}
 	}
 	return result, nil
