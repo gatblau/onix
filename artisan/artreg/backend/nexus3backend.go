@@ -390,12 +390,16 @@ func (r *Nexus3Backend) getAssetsPages(user, pwd, continuationToken string) (*as
 
 func (r *Nexus3Backend) getAssets(user, pwd string) (*assets, error) {
 	// first time no continuation token no required
-	a, err := r.getAssetsPages(user, pwd, "")
+	token := ""
+	a, err := r.getAssetsPages(user, pwd, token)
 	if err != nil {
 		return nil, err
 	}
-	// if there are more pages
-	token := a.Continuationtoken.(string)
+	// if a continuation token exists then there are more pages
+	if a.Continuationtoken != nil {
+		// get the token
+		token = a.Continuationtoken.(string)
+	}
 	// starts a loop to fetch all pages
 	for len(token) > 0 {
 		// query the next page using the continuation token
