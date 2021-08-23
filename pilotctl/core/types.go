@@ -223,8 +223,10 @@ func (r *Result) Bytes() (*[]byte, error) {
 	return &b, err
 }
 
-// Package describes a package and all its tags
-type Package struct {
+// PackageInfo describes a package and all its tags
+type PackageInfo struct {
+	Id   string   `json:"id"`
 	Name string   `json:"name"`
 	Tags []string `json:"tags,omitempty"`
+	Ref  string   `json:"ref"`
 }
