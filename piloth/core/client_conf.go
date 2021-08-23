@@ -56,8 +56,8 @@ func checkConf(cfg *ClientConf) error {
 
 	// if timeout is zero, it never timeout so is not good
 	if cfg.Timeout == 0*time.Second {
-		// set a default timeout of 5 secs
-		cfg.Timeout = 5 * time.Second
+		// set a default timeout of 30 secs
+		cfg.Timeout = 30 * time.Second
 	}
 	return nil
 }

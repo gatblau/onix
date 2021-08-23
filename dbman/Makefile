@@ -17,7 +17,7 @@
 BUILD_FOLDER=build
 
 # the name of the container registry repository
-REPO_NAME=gatblau
+REPO_NAME=quay.io/gatblau
 
 # the name of the terra binary file
 BINARY_NAME=dbman

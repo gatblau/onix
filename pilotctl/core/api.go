@@ -22,15 +22,14 @@ import (
 	"time"
 )
 
-// ReMan remote service manager API
-type ReMan struct {
+// API backend services API
+type API struct {
 	conf *Conf
 	db   *Db
 	ox   *oxc.Client
 }
 
-func NewReMan() (*ReMan, error) {
-	cfg := NewConf()
+func NewAPI(cfg *Conf) (*API, error) {
 	db, err := NewDb(cfg.getDbHost(), cfg.getDbPort(), cfg.getDbName(), cfg.getDbUser(), cfg.getDbPwd())
 	if err != nil {
 		return nil, err
@@ -46,13 +45,13 @@ func NewReMan() (*ReMan, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot create onix http client: %s", err)
 	}
-	return &ReMan{
+	return &API{
 		db:   db,
 		conf: cfg,
 		ox:   ox}, nil
 }
 
-func (r *ReMan) Register(reg *Registration) error {
+func (r *API) Register(reg *Registration) error {
 	// registers the host with the cmdb
 	result, err := r.ox.PutItem(&oxc.Item{
 		Key:         reg.MachineId,
@@ -80,7 +79,7 @@ func (r *ReMan) Register(reg *Registration) error {
 	return err
 }
 
-func (r *ReMan) GetCommandValue(fxKey string) (*CmdValue, error) {
+func (r *API) GetCommandValue(fxKey string) (*CmdValue, error) {
 	item, err := r.ox.GetItem(&oxc.Item{Key: fxKey})
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve function specification from Onix: %s", err)
@@ -100,7 +99,7 @@ func (r *ReMan) GetCommandValue(fxKey string) (*CmdValue, error) {
 	}, nil
 }
 
-func (r *ReMan) Beat(machineId string) (jobId int64, fxKey string, fxVersion int64, err error) {
+func (r *API) Beat(machineId string) (jobId int64, fxKey string, fxVersion int64, err error) {
 	rows, err := r.db.Query("select * from pilotctl_beat($1)", machineId)
 	if err != nil {
 		return -1, "", -1, err
@@ -120,16 +119,16 @@ func (r *ReMan) Beat(machineId string) (jobId int64, fxKey string, fxVersion int
 // or: organisation key
 // ar: area key
 // loc: location key
-func (r *ReMan) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
+func (r *API) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 	hosts := make([]Host, 0)
-	rows, err := r.db.Query("select * from pilotctl_get_host($1, $2, $3, $4)", oGroup, or, ar, loc)
+	rows, err := r.db.Query("select * from pilotctl_get_host($1, $2, $3, $4, $5)", fmt.Sprintf("%d secs", r.conf.GetDisconnectedAfterSecs()), oGroup, or, ar, loc)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get hosts: %s\n", err)
 	}
 	var (
 		machineId string
 		connected bool
-		since     sql.NullTime
+		lastSeen  sql.NullTime
 		orgGroup  sql.NullString
 		org       sql.NullString
 		area      sql.NullString
@@ -138,13 +137,13 @@ func (r *ReMan) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 		tag       []string
 	)
 	for rows.Next() {
-		err := rows.Scan(&machineId, &connected, &since, &orgGroup, &org, &area, &location, &inService, &tag)
+		err := rows.Scan(&machineId, &connected, &lastSeen, &orgGroup, &org, &area, &location, &inService, &tag)
 		if err != nil {
 			return nil, err
 		}
 		var time int64 = 0
-		if since.Valid {
-			time = since.Time.UnixNano()
+		if lastSeen.Valid {
+			time = lastSeen.Time.UnixNano()
 		}
 		hosts = append(hosts, Host{
 			MachineId: machineId,
@@ -153,13 +152,13 @@ func (r *ReMan) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 			Area:      area.String,
 			Location:  location.String,
 			Connected: connected,
-			Since:     toTime(time),
+			LastSeen:  toTime(time),
 		})
 	}
 	return hosts, rows.Err()
 }
 
-func (r *ReMan) SetAdmission(admission Admission) error {
+func (r *API) SetAdmission(admission Admission) error {
 	if len(admission.MachineId) == 0 {
 		return fmt.Errorf("machine Id is missing")
 	}
@@ -173,7 +172,11 @@ func (r *ReMan) SetAdmission(admission Admission) error {
 }
 
 // Authenticate a pilot based on its time stamp and machine Id admission status
-func (r *ReMan) Authenticate(token string) bool {
+func (r *API) Authenticate(token string) bool {
+	if len(token) == 0 {
+		log.Println("authentication token is required and not provided")
+		return false
+	}
 	value, err := base64.StdEncoding.DecodeString(reverse(token))
 	if err != nil {
 		log.Printf("error decoding authentication token '%s': %s\n", token, err)
@@ -213,12 +216,8 @@ func (r *ReMan) Authenticate(token string) bool {
 	return admitted
 }
 
-func (r *ReMan) RecordConnStatus(interval int) error {
-	return r.db.RunCommand("select pilotctl_record_conn_status($1)", time.Duration(interval))
-}
-
 // GetPackages get a list of packages in the backing Artisan registry
-func (r *ReMan) GetPackages() ([]string, error) {
+func (r *API) GetPackages() ([]PackageInfo, error) {
 	// the URI to connect to the Artisan registry
 	uri := fmt.Sprintf("%s/repository", r.conf.getArtRegUri())
 	bytes, err := makeRequest(uri, "GET", r.conf.getArtRegUser(), r.conf.getArtRegPwd(), nil)
@@ -230,25 +229,30 @@ func (r *ReMan) GetPackages() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	result := make([]string, 0)
 	// removes protocol prefix from URI
 	regDomain := r.conf.getArtRegUri()[strings.Index(r.conf.getArtRegUri(), "//")+2:]
 	// removes forward slash at the end if it finds one
 	if strings.HasSuffix(regDomain, "/") {
 		regDomain = regDomain[0 : len(regDomain)-1]
 	}
+	result := make([]PackageInfo, 0)
 	for _, repo := range repos {
 		for _, p := range repo.Packages {
-			for _, tag := range p.Tags {
-				// append constructed package name
-				result = append(result, fmt.Sprintf("%s/%s:%s", regDomain, repo.Repository, tag))
+			pack := PackageInfo{
+				Id:   p.Id,
+				Name: fmt.Sprintf("%s/%s", regDomain, repo.Repository),
+				Ref:  p.FileRef,
 			}
+			for _, tag := range p.Tags {
+				pack.Tags = append(pack.Tags, tag)
+			}
+			result = append(result, pack)
 		}
 	}
 	return result, nil
 }
 
-func (r *ReMan) GetPackageAPI(name string) ([]*data.FxInfo, error) {
+func (r *API) GetPackageAPI(name string) ([]*data.FxInfo, error) {
 	n, err := core.ParseName(name)
 	if err != nil {
 		return nil, err
@@ -271,7 +275,7 @@ func (r *ReMan) GetPackageAPI(name string) ([]*data.FxInfo, error) {
 }
 
 // PutCommand put the command in the Onix database
-func (r *ReMan) PutCommand(cmd *Cmd) error {
+func (r *API) PutCommand(cmd *Cmd) error {
 	var meta map[string]interface{}
 	inputBytes, err := json.Marshal(cmd.Input)
 	if err != nil {
@@ -305,7 +309,7 @@ func (r *ReMan) PutCommand(cmd *Cmd) error {
 	return nil
 }
 
-func (r *ReMan) GetAllCommands() ([]Cmd, error) {
+func (r *API) GetAllCommands() ([]Cmd, error) {
 	items, err := r.ox.GetItemsByType("ART_FX")
 	if err != nil {
 		return nil, fmt.Errorf("cannot get commands from Onix: %s", err)
@@ -332,7 +336,7 @@ func (r *ReMan) GetAllCommands() ([]Cmd, error) {
 	return cmds, nil
 }
 
-func (r *ReMan) GetCommand(cmdName string) (*Cmd, error) {
+func (r *API) GetCommand(cmdName string) (*Cmd, error) {
 	item, err := r.ox.GetItem(&oxc.Item{Key: cmdName})
 	if err != nil {
 		return nil, fmt.Errorf("cannot get command with key '%s' from Onix: %s", cmdName, err)
@@ -354,11 +358,11 @@ func (r *ReMan) GetCommand(cmdName string) (*Cmd, error) {
 	}, nil
 }
 
-func (r *ReMan) CompleteJob(status *Result) error {
+func (r *API) CompleteJob(status *Result) error {
 	return r.db.RunCommand("select pilotctl_complete_job($1, $2, $3)", status.JobId, status.Log, !status.Success)
 }
 
-func (r *ReMan) GetAreas(orgGroup string) ([]Area, error) {
+func (r *API) GetAreas(orgGroup string) ([]Area, error) {
 	items, err := r.ox.GetChildrenByType(&oxc.Item{Key: orgGroup}, "U_AREA")
 	if err != nil {
 		return nil, err
@@ -374,7 +378,7 @@ func (r *ReMan) GetAreas(orgGroup string) ([]Area, error) {
 	return areas, nil
 }
 
-func (r *ReMan) GetOrgs(orgGroup string) ([]Org, error) {
+func (r *API) GetOrgs(orgGroup string) ([]Org, error) {
 	items, err := r.ox.GetChildrenByType(&oxc.Item{Key: orgGroup}, "U_ORG")
 	if err != nil {
 		return nil, err
@@ -390,7 +394,7 @@ func (r *ReMan) GetOrgs(orgGroup string) ([]Org, error) {
 	return orgs, nil
 }
 
-func (r *ReMan) GetLocations(area string) ([]Location, error) {
+func (r *API) GetLocations(area string) ([]Location, error) {
 	items, err := r.ox.GetChildrenByType(&oxc.Item{Key: area}, "U_LOCATION")
 	if err != nil {
 		return nil, err
@@ -405,7 +409,7 @@ func (r *ReMan) GetLocations(area string) ([]Location, error) {
 	return orgs, nil
 }
 
-func (r *ReMan) GetOrgGroups() ([]Org, error) {
+func (r *API) GetOrgGroups() ([]Org, error) {
 	items, err := r.ox.GetItemsByType("U_ORG_GROUP")
 	if err != nil {
 		return nil, err
@@ -421,7 +425,7 @@ func (r *ReMan) GetOrgGroups() ([]Org, error) {
 	return orgs, nil
 }
 
-func (r *ReMan) CreateJob(ref, machineId, fxId string, fxVersion int64) error {
+func (r *API) CreateJob(ref, machineId, fxId string, fxVersion int64) error {
 	if len(machineId) == 0 {
 		return fmt.Errorf("machine Id is missing\n")
 	}
@@ -431,7 +435,7 @@ func (r *ReMan) CreateJob(ref, machineId, fxId string, fxVersion int64) error {
 	return r.db.RunCommand("select pilotctl_create_job($1, $2, $3, $4)", ref, machineId, fxId, fxVersion)
 }
 
-func (r *ReMan) GetJobs(oGroup, or, ar, loc string) ([]Job, error) {
+func (r *API) GetJobs(oGroup, or, ar, loc string) ([]Job, error) {
 	jobs := make([]Job, 0)
 	rows, err := r.db.Query("select * from pilotctl_get_jobs($1, $2, $3, $4)", oGroup, or, ar, loc)
 	if err != nil {

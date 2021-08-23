@@ -10,6 +10,7 @@ package merge
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
 // Context the merge context for artisan templates .art
@@ -52,4 +53,12 @@ func (c *Context) Item(name reflect.Value, set reflect.Value) reflect.Value {
 		panic("Item function requires a set for the first parameter\n")
 	}
 	return reflect.ValueOf(s.Value[name.String()])
+}
+
+func (c *Context) GroupExists(group reflect.Value) reflect.Value {
+	ix := c.loader.indices(group.String())
+	if ix == 0 {
+		reflect.ValueOf("")
+	}
+	return reflect.ValueOf(strconv.Itoa(ix))
 }

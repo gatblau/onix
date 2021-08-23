@@ -12,20 +12,18 @@ import (
 	"github.com/gatblau/onix/artisan/server"
 	"github.com/gatblau/onix/pilotctl/core"
 	"github.com/gorilla/mux"
-	"github.com/reugn/go-quartz/quartz"
 	"os"
-	"time"
 )
 
 var (
-	rem *core.ReMan
+	api *core.API
 )
 
 func init() {
 	var err error
-	rem, err = core.NewReMan()
+	api, err = core.NewAPI(new(core.Conf))
 	if err != nil {
-		fmt.Printf("ERROR: fail to create remote manager: %s", err)
+		fmt.Printf("ERROR: fail to create backedn services API: %s", err)
 		os.Exit(1)
 	}
 }
@@ -54,27 +52,6 @@ func main() {
 		router.HandleFunc("/job", newJobHandler).Methods("POST")
 		router.HandleFunc("/job", getJobsHandler).Methods("GET")
 	}
-	// add asynchronous jobs
-	// starts a job to record events if host connection status changes
-	s.Jobs = func() error {
-		conf := core.NewConf()
-		interval := time.Duration(conf.GetPingInterval())
-		// creates a job to check for changes in the base image
-		updateConnStatusJob, err := core.NewUpdateConnStatusJob(rem)
-		if err != nil {
-			return fmt.Errorf("cannot create connection status update job: %s", err)
-		}
-		// create a new scheduler
-		sched := quartz.NewStdScheduler()
-		// start the scheduler
-		sched.Start()
-		// schedule the job
-		err = sched.ScheduleJob(updateConnStatusJob, quartz.NewSimpleTrigger(time.Duration(interval*time.Second)))
-		if err != nil {
-			return fmt.Errorf("cannot schedule connection status update job: %s", err)
-		}
-		return nil
-	}
 	// set up specific authentication for host pilot agents
 	s.Auth = map[string]func(string) bool{
 		"/register": pilotAuth,
@@ -84,5 +61,5 @@ func main() {
 }
 
 var pilotAuth = func(token string) bool {
-	return rem.Authenticate(token)
+	return api.Authenticate(token)
 }
