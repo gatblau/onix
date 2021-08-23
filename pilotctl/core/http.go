@@ -43,6 +43,10 @@ func makeRequest(uri, method, user, pwd string, body io.Reader) ([]byte, error) 
 	req.Header.Set("Authorization", basicAuthToken(user, pwd))
 	// submits the request
 	resp, err := client.Do(req)
+	// check for error first
+	if err != nil {
+		return nil, err
+	}
 	// do we have a nil response?
 	if resp == nil {
 		return nil, errors.New(fmt.Sprintf("error: response was empty for resource: %s, check the service is up and running", uri))

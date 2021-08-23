@@ -101,7 +101,7 @@ type Host struct {
 	Area      string `json:"area"`
 	Location  string `json:"location"`
 	Connected bool   `json:"connected"`
-	Since     string `json:"since"`
+	LastSeen  string `json:"last_seen"`
 }
 
 // Registration information for host registration
@@ -221,4 +221,12 @@ func (r *Result) Reader() (*bytes.Reader, error) {
 func (r *Result) Bytes() (*[]byte, error) {
 	b, err := ToJson(r)
 	return &b, err
+}
+
+// PackageInfo describes a package and all its tags
+type PackageInfo struct {
+	Id   string   `json:"id"`
+	Name string   `json:"name"`
+	Tags []string `json:"tags,omitempty"`
+	Ref  string   `json:"ref"`
 }
