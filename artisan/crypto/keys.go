@@ -42,10 +42,12 @@ func GeneratePGPKeys(path, prefix, name, comment, email string, size int) {
 	keyFilename, pubFilename := KeyNames(path, prefix, "pgp")
 	// create a new PGP entity
 	pgp := NewPGP(name, comment, email, size)
+	// get artisan version
+	version := fmt.Sprintf("artisan-%s", core.Version)
 	// save the public key part
-	core.CheckErr(pgp.SavePublicKey(pubFilename), "cannot save public key")
+	core.CheckErr(pgp.SavePublicKey(pubFilename, version), "cannot save public key")
 	// save the private key part
-	core.CheckErr(pgp.SavePrivateKey(keyFilename), "cannot save private key")
+	core.CheckErr(pgp.SavePrivateKey(keyFilename, version), "cannot save private key")
 }
 
 func LoadPGPPrivateKey(group, name string) (*PGP, error) {

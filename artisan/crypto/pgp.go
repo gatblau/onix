@@ -1,3 +1,5 @@
+package crypto
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package crypto
-
 import (
 	"bytes"
 	"compress/gzip"
@@ -210,8 +210,8 @@ func (p *PGP) Decrypt(encrypted []byte) ([]byte, error) {
 	return out, nil
 }
 
-func (p *PGP) SavePublicKey(keyFilename string) error {
-	keyBytes, err := p.toPublicKey()
+func (p *PGP) SavePublicKey(keyFilename, version string) error {
+	keyBytes, err := p.toPublicKey(version)
 	if err != nil {
 		return fmt.Errorf("cannot save public key: %s", err)
 	}
@@ -223,8 +223,8 @@ func (p *PGP) SavePublicKey(keyFilename string) error {
 	return nil
 }
 
-func (p *PGP) SavePrivateKey(keyFilename string) error {
-	keyBytes, err := p.toPrivateKey()
+func (p *PGP) SavePrivateKey(keyFilename, version string) error {
+	keyBytes, err := p.toPrivateKey(version)
 	if err != nil {
 		return fmt.Errorf("cannot save private key: %s", err)
 	}
@@ -236,13 +236,13 @@ func (p *PGP) SavePrivateKey(keyFilename string) error {
 	return nil
 }
 
-func (p *PGP) toPrivateKey() (privateKey []byte, err error) {
+func (p *PGP) toPrivateKey(version string) (privateKey []byte, err error) {
 	// the buffer to contain the serialised key pair
 	privateBuf := new(bytes.Buffer)
 	// serialises the private key into the buffer
 	p.entity.SerializePrivate(privateBuf, p.conf)
 	// create PEM headers for the PGP key
-	headers := pemHeaders(cipherToString(p.conf.DefaultCipher), p.conf.DefaultHash.String(), p.conf.RSABits, p.conf.Time())
+	headers := pemHeaders(version, cipherToString(p.conf.DefaultCipher), p.conf.DefaultHash.String(), p.conf.RSABits, p.conf.Time())
 	// encode the buffer containing the serialised private key into Armor ASCII format
 	privateKey, err = armorEncode(privateBuf, openpgp.PrivateKeyType, headers)
 	if err != nil {
@@ -251,13 +251,13 @@ func (p *PGP) toPrivateKey() (privateKey []byte, err error) {
 	return privateKey, nil
 }
 
-func (p *PGP) toPublicKey() (publicKey []byte, err error) {
+func (p *PGP) toPublicKey(version string) (publicKey []byte, err error) {
 	// the buffer to contain the serialised public key
 	publicBuf := new(bytes.Buffer)
 	// serialises the public key into the buffer
 	p.entity.Serialize(publicBuf)
 	// create PEM headers for the PGP key
-	headers := pemHeaders(cipherToString(p.conf.DefaultCipher), p.conf.DefaultHash.String(), p.conf.RSABits, p.conf.Time())
+	headers := pemHeaders(version, cipherToString(p.conf.DefaultCipher), p.conf.DefaultHash.String(), p.conf.RSABits, p.conf.Time())
 	// encode the buffer containing the serialised public key into Armor ASCII format
 	publicKey, err = armorEncode(publicBuf, openpgp.PublicKeyType, headers)
 	if err != nil {
@@ -267,9 +267,9 @@ func (p *PGP) toPublicKey() (publicKey []byte, err error) {
 }
 
 // create PEM headers for the PGP key
-func pemHeaders(cipher, hash string, rsaBits int, time time.Time) map[string]string {
+func pemHeaders(version, cipher, hash string, rsaBits int, time time.Time) map[string]string {
 	headers := map[string]string{
-		"Version": fmt.Sprintf("golang.org/x/crypto/openpgp - artisan-%s", core.Version),
+		"Version": fmt.Sprintf("golang.org/x/crypto/openpgp - %s", version),
 		"Comment": fmt.Sprintf("Cipher: %s, Hash: %s, RSA Bits: %s, Created: %s", cipher, hash, strconv.Itoa(rsaBits), time.String()),
 		"Hash":    fmt.Sprintf("%s/%s", cipher, hash),
 	}
