@@ -141,9 +141,13 @@ func (r *API) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 		if err != nil {
 			return nil, err
 		}
-		var time int64 = 0
+		since := ""
 		if lastSeen.Valid {
-			time = lastSeen.Time.UnixNano()
+			tt := lastSeen.Time.Format(time.RFC850)
+			since, err = ToElapsedLabel(tt)
+			if err != nil {
+				return nil, err
+			}
 		}
 		hosts = append(hosts, Host{
 			MachineId: machineId,
@@ -152,7 +156,7 @@ func (r *API) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 			Area:      area.String,
 			Location:  location.String,
 			Connected: connected,
-			LastSeen:  toTime(time),
+			LastSeen:  since,
 		})
 	}
 	return hosts, rows.Err()
