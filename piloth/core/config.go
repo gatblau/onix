@@ -57,6 +57,18 @@ const (
 	PilotSyslogPort
 )
 
+func (c *Config) getPilotCtlURI() string {
+	uri := c.Get(PilotCtlUri)
+	if len(uri) == 0 {
+		panic("PILOTCTL_URI not defined\n")
+	}
+	uri = strings.ToLower(uri)
+	if !strings.HasPrefix(uri, "http") {
+		panic("PILOTCTL_URI does not define a protocol (preferably use https:// - http links are not secure\n")
+	}
+	return uri
+}
+
 func (c *Config) getSyslogPort() string {
 	port := c.Get(PilotSyslogPort)
 	if len(port) == 0 {

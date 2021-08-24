@@ -32,7 +32,7 @@ func NewPilotCtl(worker *job.Worker) (*PilotCtl, error) {
 		return nil, err
 	}
 	cfg := &ClientConf{
-		BaseURI:            conf.Get(PilotCtlUri),
+		BaseURI:            conf.getPilotCtlURI(),
 		Username:           "_",
 		Password:           "_",
 		InsecureSkipVerify: true,
