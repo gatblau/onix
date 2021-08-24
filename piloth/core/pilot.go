@@ -115,7 +115,8 @@ func (p *Pilot) register() {
 				p.connected = false
 			}
 			// otherwise, waits for a period before retrying
-			time.Sleep(15 * time.Minute)
+			p.stdout("waiting 60s before attempting registration again")
+			time.Sleep(1 * time.Minute)
 		}
 	} else {
 		p.stdout("host is already registered")
