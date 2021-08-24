@@ -141,10 +141,14 @@ func (r *API) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 		if err != nil {
 			return nil, err
 		}
-		since := ""
+		var (
+			tt        int64
+			since     int
+			sinceType string
+		)
 		if lastSeen.Valid {
-			tt := lastSeen.Time.Format(time.RFC850)
-			since, err = ToElapsedLabel(tt)
+			tt = lastSeen.Time.UnixNano()
+			since, sinceType, err = toElapsedValues(lastSeen.Time.Format(time.RFC850))
 			if err != nil {
 				return nil, err
 			}
@@ -156,7 +160,9 @@ func (r *API) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 			Area:      area.String,
 			Location:  location.String,
 			Connected: connected,
-			LastSeen:  since,
+			LastSeen:  tt,
+			Since:     since,
+			SinceType: sinceType,
 		})
 	}
 	return hosts, rows.Err()

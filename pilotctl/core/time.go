@@ -8,18 +8,17 @@ package core
   to be licensed under the same terms as the rest of the code.
 */
 import (
-	"fmt"
 	"math"
 	"time"
 )
 
-func ToElapsedLabel(rfc850time string) (string, error) {
+func toElapsedValues(rfc850time string) (int, string, error) {
 	if len(rfc850time) == 0 {
-		return "", nil
+		return 0, "", nil
 	}
 	created, err := time.Parse(time.RFC850, rfc850time)
 	if err != nil {
-		return rfc850time, err
+		return 0, "", err
 	}
 	elapsed := time.Since(created)
 	seconds := elapsed.Seconds()
@@ -31,25 +30,17 @@ func ToElapsedLabel(rfc850time string) (string, error) {
 	years := months / 12
 
 	if math.Trunc(years) > 0 {
-		return fmt.Sprintf("%d %s ago", int64(years), plural(int64(years), "year")), nil
+		return int(years), "y", nil
 	} else if math.Trunc(months) > 0 {
-		return fmt.Sprintf("%d %s ago", int64(months), plural(int64(months), "month")), nil
+		return int(months), "M", nil
 	} else if math.Trunc(weeks) > 0 {
-		return fmt.Sprintf("%d %s ago", int64(weeks), plural(int64(weeks), "week")), nil
+		return int(weeks), "w", nil
 	} else if math.Trunc(days) > 0 {
-		return fmt.Sprintf("%d %s ago", int64(days), plural(int64(days), "day")), nil
+		return int(days), "d", nil
 	} else if math.Trunc(hours) > 0 {
-		return fmt.Sprintf("%d %s ago", int64(hours), plural(int64(hours), "hour")), nil
+		return int(hours), "H", nil
 	} else if math.Trunc(minutes) > 0 {
-		return fmt.Sprintf("%d %s ago", int64(minutes), plural(int64(minutes), "minute")), nil
+		return int(minutes), "m", nil
 	}
-	return fmt.Sprintf("%d %s ago", int64(seconds), plural(int64(seconds), "second")), nil
-}
-
-// turn label into plural if value is greater than one
-func plural(value int64, label string) string {
-	if value > 1 {
-		return fmt.Sprintf("%ss", label)
-	}
-	return label
+	return int(seconds), "s", nil
 }
