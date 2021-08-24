@@ -64,7 +64,7 @@ func (c *Config) getPilotCtlURI() string {
 	}
 	uri = strings.ToLower(uri)
 	if !strings.HasPrefix(uri, "http") {
-		panic("PILOTCTL_URI does not define a protocol (preferably use https:// - http links are not secure\n")
+		panic("PILOTCTL_URI does not define a protocol (preferably use https:// - http links are not secure)\n")
 	}
 	return uri
 }
