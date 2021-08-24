@@ -18,11 +18,12 @@ import (
 
 // Pilot host
 type Pilot struct {
-	cfg    *Config
-	info   *HostInfo
-	ctl    *PilotCtl
-	logs   *syslog.Writer
-	worker *job.Worker
+	cfg       *Config
+	info      *HostInfo
+	ctl       *PilotCtl
+	logs      *syslog.Writer
+	worker    *job.Worker
+	connected bool
 }
 
 func NewPilot() (*Pilot, error) {
@@ -104,14 +105,16 @@ func (p *Pilot) register() {
 			if err == nil {
 				p.stdout("registration successful")
 				err = SetRegistered()
+				p.connected = true
 				if err != nil {
 					p.stdout("failed to cache registration status: %s", err)
 				}
 				break
 			} else {
 				p.stdout("registration failed: %s", err)
+				p.connected = false
 			}
-			// otherwise waits for a period before retrying
+			// otherwise, waits for a period before retrying
 			time.Sleep(15 * time.Minute)
 		}
 	} else {
@@ -126,7 +129,12 @@ func (p *Pilot) ping() {
 		if err != nil {
 			// write to the console output
 			p.stdout("ping failed: %s\n", err)
+			p.connected = false
 		} else {
+			if !p.connected {
+				p.stdout("ping loop operational")
+			}
+			p.connected = true
 			// verify the host identity and command value integrity using Pretty Good Privacy
 			err = verify(cmd.Value, cmd.Signature)
 			// if the verification fails, it is likely spoofing of pilotctl has happened
@@ -144,5 +152,11 @@ func (p *Pilot) ping() {
 			}
 		}
 		time.Sleep(15 * time.Second)
+	}
+}
+
+func (p *Pilot) debug(msg string, a ...interface{}) {
+	if len(os.Getenv("PILOT_DEBUG")) > 0 {
+		p.stdout(fmt.Sprintf("DEBUG: %s", msg), a...)
 	}
 }
