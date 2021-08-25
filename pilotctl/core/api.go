@@ -193,8 +193,9 @@ func (r *API) Authenticate(token string) bool {
 		return false
 	}
 	str := string(value)
+	// token is: machineId (0) | hostIP (1) | hostName (2) | timestamp (3)
 	parts := strings.Split(str, "|")
-	tokenTime, err := strconv.ParseInt(parts[1], 10, 64)
+	tokenTime, err := strconv.ParseInt(parts[3], 10, 64)
 	if err != nil {
 		log.Printf("error parsing authentication token: %s\naccess will be denied\n", err)
 		return false
@@ -207,7 +208,10 @@ func (r *API) Authenticate(token string) bool {
 	}
 	rows, err := r.db.Query("select * from pilotctl_is_admitted($1)", machineId)
 	if err != nil {
-		fmt.Printf("authentication failed for Machine Id='%s': cannot query admission table: %s\n", machineId, err)
+		hostIP := parts[1]
+		hostName := parts[2]
+		fmt.Printf("authentication failed for Machine Id='%s': cannot query admission table: %s\n"+
+			"additional info: host IP = '%s', hostname = '%s'\n", machineId, err, hostIP, hostName)
 		return false
 	}
 	var admitted bool
