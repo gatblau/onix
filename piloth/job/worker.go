@@ -97,11 +97,15 @@ func (w *Worker) Start() {
 					// remove job from the queue
 					w.jobs.Remove(jobElement)
 					// collect result
+					var errorMsg string
+					if err != nil {
+						errorMsg = err.Error()
+					}
 					result := &Result{
 						JobId:   cmd.JobId,
 						Success: err == nil,
 						Log:     out,
-						Err:     &err,
+						Err:     errorMsg,
 						Time:    time.Now(),
 					}
 					// add the last result to the list
