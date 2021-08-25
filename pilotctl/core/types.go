@@ -93,6 +93,16 @@ func (c *CmdValue) Env() []string {
 	return vars
 }
 
+func (c *CmdValue) PrintEnv() string {
+	var vars bytes.Buffer
+	vars.WriteString("printing variables passed to the shell\n{\n")
+	for _, v := range c.Input.Var {
+		vars.WriteString(fmt.Sprintf("%s=%s\n", v.Name, v.Value))
+	}
+	vars.WriteString("}\n")
+	return vars.String()
+}
+
 // Host monitoring information
 type Host struct {
 	MachineId string `json:"machine_id"`
