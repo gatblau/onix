@@ -14,6 +14,8 @@ import (
 	"github.com/gatblau/onix/pilotctl/core"
 	"github.com/mattn/go-shellwords"
 	"log"
+	"log/syslog"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -49,11 +51,13 @@ type Worker struct {
 	cancel context.CancelFunc
 	// the logic that carries the instructions to process each job
 	run Runnable
+	// syslog writer
+	logs *syslog.Writer
 }
 
 // NewWorker create new worker using the specified runnable function
 // Runnable: the function that processes each job
-func NewWorker(run Runnable) *Worker {
+func NewWorker(run Runnable, logger *syslog.Writer) *Worker {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Worker{
 		status:  stopped,
@@ -62,12 +66,13 @@ func NewWorker(run Runnable) *Worker {
 		ctx:     ctx,
 		cancel:  cancel,
 		run:     run,
+		logs:    logger,
 	}
 }
 
 // NewCmdRequestWorker create a new worker to process pilotctl command requests
-func NewCmdRequestWorker() *Worker {
-	return NewWorker(run)
+func NewCmdRequestWorker(logger *syslog.Writer) *Worker {
+	return NewWorker(run, logger)
 }
 
 // Start starts the worker execution loop
@@ -88,16 +93,16 @@ func (w *Worker) Start() {
 					// unbox the job
 					cmd, ok := jobElement.Value.(core.CmdValue)
 					if !ok {
-						log.Printf("invalid job format")
+						w.stdout("invalid job format")
 						continue
 					}
-					log.Printf("starting job %d, %s -> %s\n", cmd.JobId, cmd.Package, cmd.Function)
+					w.stdout("starting job %d, %s -> %s", cmd.JobId, cmd.Package, cmd.Function)
 					// execute the job
 					out, err := w.run(cmd)
 					if err != nil {
-						log.Printf("job %d, %s -> %s failed: %s\n", cmd.JobId, cmd.Package, cmd.Function, err)
+						w.stdout("job %d, %s -> %s failed: %s", cmd.JobId, cmd.Package, cmd.Function, err)
 					} else {
-						log.Printf("job %d, %s -> %s succeeded\n", cmd.JobId, cmd.Package, cmd.Function)
+						w.stdout("job %d, %s -> %s succeeded", cmd.JobId, cmd.Package, cmd.Function)
 					}
 					// remove job from the queue
 					w.jobs.Remove(jobElement)
@@ -119,7 +124,7 @@ func (w *Worker) Start() {
 			}
 		}()
 	} else {
-		log.Printf("worker has already started\n")
+		w.stdout("worker has already started")
 	}
 }
 
@@ -148,7 +153,7 @@ func (w *Worker) Result() (*Result, bool) {
 			// return the job status
 			return r, true
 		}
-		log.Printf("cannot unbox result\n")
+		w.stdout("cannot unbox result")
 	}
 	// no result are available
 	return nil, false
@@ -182,4 +187,16 @@ func run(data interface{}) (string, error) {
 		return "", err
 	}
 	return strings.TrimRight(string(result), "\n"), nil
+}
+
+// warn: write a warning in syslog
+func (w *Worker) warn(msg string, args ...interface{}) {
+	log.SetOutput(w.logs)
+	w.logs.Warning(fmt.Sprintf(msg+"\n", args...))
+}
+
+// stdout: write a message to stdout
+func (w *Worker) stdout(msg string, args ...interface{}) {
+	log.SetOutput(os.Stdout)
+	log.Printf(msg+"\n", args...)
 }

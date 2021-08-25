@@ -37,15 +37,15 @@ func NewPilot() (*Pilot, error) {
 	if err != nil {
 		return nil, err
 	}
-	// create a new job worker
-	worker := job.NewCmdRequestWorker()
-	// start the worker
-	worker.Start()
-	r, err := NewPilotCtl(worker)
+	logsWriter, err := syslog.New(syslog.LOG_ALERT, "onix-pilot")
 	if err != nil {
 		return nil, err
 	}
-	logsWriter, err := syslog.New(syslog.LOG_ALERT, "onix-pilot")
+	// create a new job worker
+	worker := job.NewCmdRequestWorker(logsWriter)
+	// start the worker
+	worker.Start()
+	r, err := NewPilotCtl(worker)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (p *Pilot) ping() {
 		cmd, err := p.ctl.Ping()
 		if err != nil {
 			// write to the console output
-			p.stdout("ping failed: %s\n", err)
+			p.stdout("ping failed: %s", err)
 			p.connected = false
 		} else {
 			if !p.connected {
