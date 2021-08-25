@@ -56,14 +56,14 @@ func reverse(str string) (result string) {
 	return
 }
 
-func newToken(hostId string) string {
+func newToken(machineId, hostIP, hostName string) string {
 	// create an authentication token as follows:
 	// 1. takes machine id & unix time
 	// 2. base 64 encode
 	// 3. reverse string
 	return reverse(
 		base64.StdEncoding.EncodeToString(
-			[]byte(fmt.Sprintf("%s|%d", hostId, time.Now().Unix()))))
+			[]byte(fmt.Sprintf("%s|%s|%s|%d", machineId, hostIP, hostName, time.Now().Unix()))))
 }
 
 func readToken(token string) (string, bool, error) {
