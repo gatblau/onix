@@ -11,14 +11,11 @@ import (
 	"container/list"
 	"context"
 	"fmt"
+	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/pilotctl/core"
-	"github.com/mattn/go-shellwords"
 	"log"
 	"log/syslog"
 	"os"
-	"os/exec"
-	"runtime"
-	"strings"
 	"time"
 )
 
@@ -161,35 +158,14 @@ func (w *Worker) Result() (*Result, bool) {
 	return nil, false
 }
 
-// run executes a command and returns its output
 func run(data interface{}) (string, error) {
 	// unbox the data
 	cmd, ok := data.(core.CmdValue)
 	if !ok {
 		return "", fmt.Errorf("Runnable data is not of the correct type\n")
 	}
-	// create a command parser
-	p := shellwords.NewParser()
-	// parse the command line
-	cmdArr, err := p.Parse(cmd.Value())
-	// if we are in windows
-	if runtime.GOOS == "windows" {
-		// prepend "cmd /C" to the command line
-		cmdArr = append([]string{"cmd", "/C"}, cmdArr...)
-	}
-	name := cmdArr[0]
-	var args []string
-	if len(cmdArr) > 1 {
-		args = cmdArr[1:]
-	}
-	command := exec.Command(name, args...)
-	command.Env = cmd.Env()
-
-	result, err := command.Output()
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimRight(string(result), "\n"), nil
+	cmdString := fmt.Sprintf("art exe -u %s:%s %s %s", cmd.User, cmd.Pwd, cmd.Package, cmd.Function)
+	return build.Exe(cmdString, ".", cmd.Envar(), false)
 }
 
 // warn: write a warning in syslog
