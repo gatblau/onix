@@ -204,12 +204,19 @@ type Admission struct {
 	Tag       []string `json:"tag"`
 }
 
+// Result
+// note: ensure it is aligned with the same struct in piloth
 type Result struct {
-	JobId   int64
+	// the unique job id
+	JobId int64
+	// indicates of the job was successful
 	Success bool
-	Log     string
-	Err     *error
-	Time    time.Time
+	// the execution log for the job
+	Log string
+	// the error if any
+	Err string
+	// the completion time
+	Time time.Time
 }
 
 func (r *Result) Reader() (*bytes.Reader, error) {

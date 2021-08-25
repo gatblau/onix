@@ -14,6 +14,7 @@ import (
 )
 
 // Result job result information
+// note: ensure it is aligned with the same struct in pilotctl
 type Result struct {
 	// the unique job id
 	JobId int64
