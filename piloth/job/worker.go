@@ -97,6 +97,8 @@ func (w *Worker) Start() {
 						continue
 					}
 					w.stdout("starting job %d, %s -> %s", cmd.JobId, cmd.Package, cmd.Function)
+					// dump env vars if in debug mode
+					w.debug(cmd.PrintEnv())
 					// execute the job
 					out, err := w.run(cmd)
 					if err != nil {
@@ -182,6 +184,7 @@ func run(data interface{}) (string, error) {
 	}
 	command := exec.Command(name, args...)
 	command.Env = cmd.Env()
+
 	result, err := command.Output()
 	if err != nil {
 		return "", err
@@ -199,4 +202,10 @@ func (w *Worker) warn(msg string, args ...interface{}) {
 func (w *Worker) stdout(msg string, args ...interface{}) {
 	log.SetOutput(os.Stdout)
 	log.Printf(msg+"\n", args...)
+}
+
+func (w *Worker) debug(msg string, a ...interface{}) {
+	if len(os.Getenv("PILOT_DEBUG")) > 0 {
+		w.stdout(fmt.Sprintf("DEBUG: %s", msg), a...)
+	}
 }
