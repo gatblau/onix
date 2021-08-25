@@ -291,7 +291,9 @@ func (r *API) GetPackageAPI(name string) ([]*data.FxInfo, error) {
 // PutCommand put the command in the Onix database
 func (r *API) PutCommand(cmd *Cmd) error {
 	var meta map[string]interface{}
-	inputBytes, err := json.Marshal(cmd.Input)
+	m := make(map[string]interface{}, 0)
+	m["input"] = cmd.Input
+	inputBytes, err := json.Marshal(m)
 	if err != nil {
 		return fmt.Errorf("cannot marshal command input: %s", err)
 	}
@@ -300,7 +302,7 @@ func (r *API) PutCommand(cmd *Cmd) error {
 		return fmt.Errorf("cannot unmarshal input bytes: %s", err)
 	}
 	result, err := r.ox.PutItem(&oxc.Item{
-		Key:         fmt.Sprintf("ART_FX_%s", strings.Replace(cmd.Key, " ", "", -1)),
+		Key:         strings.Replace(cmd.Key, " ", "", -1),
 		Name:        cmd.Key,
 		Description: cmd.Description,
 		Type:        "ART_FX",
