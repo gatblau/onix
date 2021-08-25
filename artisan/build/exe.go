@@ -64,9 +64,10 @@ func Exe(cmd string, dir string, env *merge.Envar, interactive bool) (string, er
 
 	// wait for the command to complete
 	if err := command.Wait(); err != nil {
+		// only happens if the command exits with code > 0
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if _, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-				core.RaiseErr("run command failed: '%s' - '%s'", cmd, exitErr.Error())
+				core.RaiseErr("run command failed: '%s' - '%s'\n", cmd, exitErr.Error())
 			}
 		}
 		return "", err
