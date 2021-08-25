@@ -373,7 +373,12 @@ func (r *API) GetCommand(cmdName string) (*Cmd, error) {
 }
 
 func (r *API) CompleteJob(status *Result) error {
-	return r.db.RunCommand("select pilotctl_complete_job($1, $2, $3)", status.JobId, status.Log, !status.Success)
+	logMsg := status.Log
+	// if there was a failure, and we have an error message, add it to the log
+	if !status.Success && len(status.Err) > 0 {
+		logMsg = fmt.Sprintf("%s !!! ERROR: %s\n", logMsg, status.Err)
+	}
+	return r.db.RunCommand("select pilotctl_complete_job($1, $2, $3)", status.JobId, logMsg, !status.Success)
 }
 
 func (r *API) GetAreas(orgGroup string) ([]Area, error) {
