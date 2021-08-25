@@ -87,8 +87,13 @@ func (c *CmdValue) Value() string {
 
 func (c *CmdValue) Env() []string {
 	var vars []string
+	// append vars
 	for _, v := range c.Input.Var {
 		vars = append(vars, fmt.Sprintf("%s=%s", v.Name, v.Value))
+	}
+	// append secrets
+	for _, s := range c.Input.Secret {
+		vars = append(vars, fmt.Sprintf("%s=%s", s.Name, s.Value))
 	}
 	return vars
 }
