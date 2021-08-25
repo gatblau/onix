@@ -22,7 +22,7 @@ type Result struct {
 	// the execution log for the job
 	Log string
 	// the error if any
-	Err *error
+	Err string
 	// the completion time
 	Time time.Time
 }
