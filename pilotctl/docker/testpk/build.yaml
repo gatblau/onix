@@ -22,4 +22,11 @@ functions:
     runtime: ubi-min
     run:
       - ls -la
+
+  - name: printenv
+    description: prints the current env vars
+    export: true
+    runtime: ubi-min
+    run:
+      - printenv
 ...
