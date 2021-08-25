@@ -108,7 +108,7 @@ func (r *PilotCtl) Ping() (ctl.CmdRequest, error) {
 func (r *PilotCtl) addToken(req *http.Request, payload Serializable) error {
 	payload = nil
 	// add an authentication token to the request
-	req.Header.Set("Authorization", newToken(r.host.MachineId))
+	req.Header.Set("Authorization", newToken(r.host.MachineId, r.host.HostIP, r.host.HostName))
 	// all content type should be in JSON format
 	req.Header.Set("Content-Type", "application/json")
 	return nil
