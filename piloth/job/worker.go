@@ -94,6 +94,11 @@ func (w *Worker) Start() {
 					log.Printf("starting job %d, %s -> %s\n", cmd.JobId, cmd.Package, cmd.Function)
 					// execute the job
 					out, err := w.run(cmd)
+					if err != nil {
+						log.Printf("job %d, %s -> %s failed: %s\n", cmd.JobId, cmd.Package, cmd.Function, err)
+					} else {
+						log.Printf("job %d, %s -> %s succeeded\n", cmd.JobId, cmd.Package, cmd.Function)
+					}
 					// remove job from the queue
 					w.jobs.Remove(jobElement)
 					// collect result
