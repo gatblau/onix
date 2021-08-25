@@ -15,4 +15,11 @@ functions:
     input:
       var:
         - LS_DIR
+
+  - name: list2
+    description: runs a list command on the current folder - no inputs
+    export: true
+    runtime: ubi-min
+    run:
+      - ls -la
 ...
