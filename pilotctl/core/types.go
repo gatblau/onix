@@ -87,10 +87,25 @@ func (c *CmdValue) Value() string {
 
 func (c *CmdValue) Env() []string {
 	var vars []string
+	// append vars
 	for _, v := range c.Input.Var {
 		vars = append(vars, fmt.Sprintf("%s=%s", v.Name, v.Value))
 	}
+	// append secrets
+	for _, s := range c.Input.Secret {
+		vars = append(vars, fmt.Sprintf("%s=%s", s.Name, s.Value))
+	}
 	return vars
+}
+
+func (c *CmdValue) PrintEnv() string {
+	var vars bytes.Buffer
+	vars.WriteString("printing variables passed to the shell\n{\n")
+	for _, v := range c.Input.Var {
+		vars.WriteString(fmt.Sprintf("%s=%s\n", v.Name, v.Value))
+	}
+	vars.WriteString("}\n")
+	return vars.String()
 }
 
 // Host monitoring information
@@ -101,7 +116,9 @@ type Host struct {
 	Area      string `json:"area"`
 	Location  string `json:"location"`
 	Connected bool   `json:"connected"`
-	LastSeen  string `json:"last_seen"`
+	LastSeen  int64  `json:"last_seen"`
+	Since     int    `json:"since"`
+	SinceType string `json:"since_type"`
 }
 
 // Registration information for host registration
@@ -202,12 +219,19 @@ type Admission struct {
 	Tag       []string `json:"tag"`
 }
 
+// Result
+// note: ensure it is aligned with the same struct in piloth
 type Result struct {
-	JobId   int64
+	// the unique job id
+	JobId int64
+	// indicates of the job was successful
 	Success bool
-	Log     string
-	Err     *error
-	Time    time.Time
+	// the execution log for the job
+	Log string
+	// the error if any
+	Err string
+	// the completion time
+	Time time.Time
 }
 
 func (r *Result) Reader() (*bytes.Reader, error) {

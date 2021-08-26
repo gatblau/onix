@@ -141,9 +141,17 @@ func (r *API) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 		if err != nil {
 			return nil, err
 		}
-		var time int64 = 0
+		var (
+			tt        int64
+			since     int
+			sinceType string
+		)
 		if lastSeen.Valid {
-			time = lastSeen.Time.UnixNano()
+			tt = lastSeen.Time.UnixNano()
+			since, sinceType, err = toElapsedValues(lastSeen.Time.Format(time.RFC850))
+			if err != nil {
+				return nil, err
+			}
 		}
 		hosts = append(hosts, Host{
 			MachineId: machineId,
@@ -152,7 +160,9 @@ func (r *API) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 			Area:      area.String,
 			Location:  location.String,
 			Connected: connected,
-			LastSeen:  toTime(time),
+			LastSeen:  tt,
+			Since:     since,
+			SinceType: sinceType,
 		})
 	}
 	return hosts, rows.Err()
@@ -183,8 +193,9 @@ func (r *API) Authenticate(token string) bool {
 		return false
 	}
 	str := string(value)
+	// token is: machineId (0) | hostIP (1) | hostName (2) | timestamp (3)
 	parts := strings.Split(str, "|")
-	tokenTime, err := strconv.ParseInt(parts[1], 10, 64)
+	tokenTime, err := strconv.ParseInt(parts[3], 10, 64)
 	if err != nil {
 		log.Printf("error parsing authentication token: %s\naccess will be denied\n", err)
 		return false
@@ -197,7 +208,10 @@ func (r *API) Authenticate(token string) bool {
 	}
 	rows, err := r.db.Query("select * from pilotctl_is_admitted($1)", machineId)
 	if err != nil {
-		fmt.Printf("authentication failed for Machine Id='%s': cannot query admission table: %s\n", machineId, err)
+		hostIP := parts[1]
+		hostName := parts[2]
+		fmt.Printf("authentication failed for Machine Id='%s': cannot query admission table: %s\n"+
+			"additional info: host IP = '%s', hostname = '%s'\n", machineId, err, hostIP, hostName)
 		return false
 	}
 	var admitted bool
@@ -277,7 +291,9 @@ func (r *API) GetPackageAPI(name string) ([]*data.FxInfo, error) {
 // PutCommand put the command in the Onix database
 func (r *API) PutCommand(cmd *Cmd) error {
 	var meta map[string]interface{}
-	inputBytes, err := json.Marshal(cmd.Input)
+	m := make(map[string]interface{}, 0)
+	m["input"] = cmd.Input
+	inputBytes, err := json.Marshal(m)
 	if err != nil {
 		return fmt.Errorf("cannot marshal command input: %s", err)
 	}
@@ -286,7 +302,7 @@ func (r *API) PutCommand(cmd *Cmd) error {
 		return fmt.Errorf("cannot unmarshal input bytes: %s", err)
 	}
 	result, err := r.ox.PutItem(&oxc.Item{
-		Key:         fmt.Sprintf("ART_FX_%s", strings.Replace(cmd.Key, " ", "", -1)),
+		Key:         strings.Replace(cmd.Key, " ", "", -1),
 		Name:        cmd.Key,
 		Description: cmd.Description,
 		Type:        "ART_FX",
@@ -359,7 +375,12 @@ func (r *API) GetCommand(cmdName string) (*Cmd, error) {
 }
 
 func (r *API) CompleteJob(status *Result) error {
-	return r.db.RunCommand("select pilotctl_complete_job($1, $2, $3)", status.JobId, status.Log, !status.Success)
+	logMsg := status.Log
+	// if there was a failure, and we have an error message, add it to the log
+	if !status.Success && len(status.Err) > 0 {
+		logMsg = fmt.Sprintf("%s !!! ERROR: %s\n", logMsg, status.Err)
+	}
+	return r.db.RunCommand("select pilotctl_complete_job($1, $2, $3)", status.JobId, logMsg, !status.Success)
 }
 
 func (r *API) GetAreas(orgGroup string) ([]Area, error) {

@@ -1,9 +1,32 @@
 ---
+input:
+  var:
+    - name: LS_DIR
+      description: the directory to list
+      default: /tmp
+
 functions:
   - name: list
     description: runs a list command on the current folder
     export: true
     runtime: ubi-min
     run:
+      - ls -la ${LS_DIR}
+    input:
+      var:
+        - LS_DIR
+
+  - name: list2
+    description: runs a list command on the current folder - no inputs
+    export: true
+    runtime: ubi-min
+    run:
       - ls -la
+
+  - name: printenv
+    description: prints the current env vars
+    export: true
+    runtime: ubi-min
+    run:
+      - printenv
 ...

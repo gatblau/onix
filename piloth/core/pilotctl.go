@@ -32,7 +32,7 @@ func NewPilotCtl(worker *job.Worker) (*PilotCtl, error) {
 		return nil, err
 	}
 	cfg := &ClientConf{
-		BaseURI:            conf.Get(PilotCtlUri),
+		BaseURI:            conf.getPilotCtlURI(),
 		Username:           "_",
 		Password:           "_",
 		InsecureSkipVerify: true,
@@ -108,7 +108,7 @@ func (r *PilotCtl) Ping() (ctl.CmdRequest, error) {
 func (r *PilotCtl) addToken(req *http.Request, payload Serializable) error {
 	payload = nil
 	// add an authentication token to the request
-	req.Header.Set("Authorization", newToken(r.host.MachineId))
+	req.Header.Set("Authorization", newToken(r.host.MachineId, r.host.HostIP, r.host.HostName))
 	// all content type should be in JSON format
 	req.Header.Set("Content-Type", "application/json")
 	return nil

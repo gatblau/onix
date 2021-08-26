@@ -10,7 +10,6 @@ package core
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/jackc/pgtype"
@@ -49,14 +48,42 @@ func basicAuthToken(user, pwd string) string {
 
 // getInputFromMap transform an input in map format to input struct format
 func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
-	bytes, err := json.Marshal(inputMap)
-	if err != nil {
-		return nil, fmt.Errorf("cannot marshal input map: %s", err)
+	input := &data.Input{}
+	in := inputMap["input"]
+	if in != nil {
+		// load vars
+		vars := in.(map[string]interface{})["var"]
+		if vars != nil {
+			input.Var = data.Vars{}
+			v := vars.([]interface{})
+			for _, i := range v {
+				varMap := i.(map[string]interface{})
+				vv := &data.Var{
+					Name:        varMap["name"].(string),
+					Description: varMap["description"].(string),
+					Required:    varMap["required"].(bool),
+					Type:        varMap["type"].(string),
+					Value:       varMap["value"].(string),
+					Default:     varMap["default"].(string),
+				}
+				input.Var = append(input.Var, vv)
+			}
+		}
+		// load secrets
+		secrets := in.(map[string]interface{})["secret"]
+		if secrets != nil {
+			input.Secret = data.Secrets{}
+			v := secrets.([]interface{})
+			for _, i := range v {
+				varMap := i.(map[string]interface{})
+				vv := &data.Secret{
+					Name:        varMap["name"].(string),
+					Description: varMap["description"].(string),
+					Value:       varMap["value"].(string),
+				}
+				input.Secret = append(input.Secret, vv)
+			}
+		}
 	}
-	var input data.Input
-	err = json.Unmarshal(bytes, &input)
-	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal input bytes: %s", err)
-	}
-	return &input, err
+	return input, nil
 }

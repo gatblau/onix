@@ -11,12 +11,11 @@ import (
 	"container/list"
 	"context"
 	"fmt"
+	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/pilotctl/core"
-	"github.com/mattn/go-shellwords"
 	"log"
-	"os/exec"
-	"runtime"
-	"strings"
+	"log/syslog"
+	"os"
 	"time"
 )
 
@@ -49,11 +48,13 @@ type Worker struct {
 	cancel context.CancelFunc
 	// the logic that carries the instructions to process each job
 	run Runnable
+	// syslog writer
+	logs *syslog.Writer
 }
 
 // NewWorker create new worker using the specified runnable function
 // Runnable: the function that processes each job
-func NewWorker(run Runnable) *Worker {
+func NewWorker(run Runnable, logger *syslog.Writer) *Worker {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Worker{
 		status:  stopped,
@@ -62,12 +63,13 @@ func NewWorker(run Runnable) *Worker {
 		ctx:     ctx,
 		cancel:  cancel,
 		run:     run,
+		logs:    logger,
 	}
 }
 
 // NewCmdRequestWorker create a new worker to process pilotctl command requests
-func NewCmdRequestWorker() *Worker {
-	return NewWorker(run)
+func NewCmdRequestWorker(logger *syslog.Writer) *Worker {
+	return NewWorker(run, logger)
 }
 
 // Start starts the worker execution loop
@@ -88,20 +90,31 @@ func (w *Worker) Start() {
 					// unbox the job
 					cmd, ok := jobElement.Value.(core.CmdValue)
 					if !ok {
-						log.Printf("invalid job format")
+						w.stdout("invalid job format")
 						continue
 					}
-					log.Printf("starting job %d, %s -> %s\n", cmd.JobId, cmd.Package, cmd.Function)
+					w.stdout("starting job %d, %s -> %s", cmd.JobId, cmd.Package, cmd.Function)
+					// dump env vars if in debug mode
+					w.debug(cmd.PrintEnv())
 					// execute the job
 					out, err := w.run(cmd)
+					if err != nil {
+						w.stdout("job %d, %s -> %s failed: %s", cmd.JobId, cmd.Package, cmd.Function, err)
+					} else {
+						w.stdout("job %d, %s -> %s succeeded", cmd.JobId, cmd.Package, cmd.Function)
+					}
 					// remove job from the queue
 					w.jobs.Remove(jobElement)
 					// collect result
+					var errorMsg string
+					if err != nil {
+						errorMsg = err.Error()
+					}
 					result := &Result{
 						JobId:   cmd.JobId,
 						Success: err == nil,
 						Log:     out,
-						Err:     &err,
+						Err:     errorMsg,
 						Time:    time.Now(),
 					}
 					// add the last result to the list
@@ -110,7 +123,7 @@ func (w *Worker) Start() {
 			}
 		}()
 	} else {
-		log.Printf("worker has already started\n")
+		w.stdout("worker has already started")
 	}
 }
 
@@ -139,38 +152,36 @@ func (w *Worker) Result() (*Result, bool) {
 			// return the job status
 			return r, true
 		}
-		log.Printf("cannot unbox result\n")
+		w.stdout("cannot unbox result")
 	}
 	// no result are available
 	return nil, false
 }
 
-// run executes a command and returns its output
 func run(data interface{}) (string, error) {
 	// unbox the data
 	cmd, ok := data.(core.CmdValue)
 	if !ok {
 		return "", fmt.Errorf("Runnable data is not of the correct type\n")
 	}
-	// create a command parser
-	p := shellwords.NewParser()
-	// parse the command line
-	cmdArr, err := p.Parse(cmd.Value())
-	// if we are in windows
-	if runtime.GOOS == "windows" {
-		// prepend "cmd /C" to the command line
-		cmdArr = append([]string{"cmd", "/C"}, cmdArr...)
+	cmdString := fmt.Sprintf("art exe -u %s:%s %s %s", cmd.User, cmd.Pwd, cmd.Package, cmd.Function)
+	return build.Exe(cmdString, ".", cmd.Envar(), false)
+}
+
+// warn: write a warning in syslog
+func (w *Worker) warn(msg string, args ...interface{}) {
+	log.SetOutput(w.logs)
+	w.logs.Warning(fmt.Sprintf(msg+"\n", args...))
+}
+
+// stdout: write a message to stdout
+func (w *Worker) stdout(msg string, args ...interface{}) {
+	log.SetOutput(os.Stdout)
+	log.Printf(msg+"\n", args...)
+}
+
+func (w *Worker) debug(msg string, a ...interface{}) {
+	if len(os.Getenv("PILOT_DEBUG")) > 0 {
+		w.stdout(fmt.Sprintf("DEBUG: %s", msg), a...)
 	}
-	name := cmdArr[0]
-	var args []string
-	if len(cmdArr) > 1 {
-		args = cmdArr[1:]
-	}
-	command := exec.Command(name, args...)
-	command.Env = cmd.Env()
-	result, err := command.Output()
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimRight(string(result), "\n"), nil
 }
