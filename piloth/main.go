@@ -10,7 +10,6 @@ package main
 import (
 	"fmt"
 	"github.com/gatblau/onix/piloth/core"
-	hostUtil "github.com/shirou/gopsutil/host"
 	"os"
 	"strings"
 )
@@ -26,7 +25,7 @@ func main() {
 }
 
 func printMachineId() {
-	i, err := hostUtil.Info()
+	i, err := core.NewHostInfo()
 	if err != nil {
 		panic(err)
 	}
@@ -42,7 +41,12 @@ func printMachineId() {
 			os.Exit(0)
 		} else if os.Args[1] == "machineid" {
 			// prints the machine id
-			fmt.Printf("%s\n", strings.Replace(i.HostID, "-", "", -1))
+			fmt.Printf("%s\n", strings.Replace(i.MachineId, "-", "", -1))
+			// terminates programme
+			os.Exit(0)
+		} else if os.Args[1] == "uuid" {
+			// prints the machine id
+			fmt.Printf("%s\n", strings.Replace(i.HostUUID, "-", "", -1))
 			// terminates programme
 			os.Exit(0)
 		}
