@@ -158,13 +158,13 @@ func RemoveElement(a []string, value string) []string {
 func CheckErr(err error, msg string, a ...interface{}) {
 	if err != nil {
 		fmt.Printf("error: %s - %s\n", fmt.Sprintf(msg, a...), err)
-		os.Exit(1)
+		os.Exit(0)
 	}
 }
 
 func RaiseErr(msg string, a ...interface{}) {
 	fmt.Printf("error!\n* %s\n", fmt.Sprintf(msg, a...))
-	os.Exit(1)
+	os.Exit(0)
 }
 
 func Exist(name, value string) error {

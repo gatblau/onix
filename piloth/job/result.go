@@ -14,6 +14,7 @@ import (
 )
 
 // Result job result information
+// note: ensure it is aligned with the same struct in pilotctl
 type Result struct {
 	// the unique job id
 	JobId int64
@@ -22,7 +23,7 @@ type Result struct {
 	// the execution log for the job
 	Log string
 	// the error if any
-	Err *error
+	Err string
 	// the completion time
 	Time time.Time
 }
