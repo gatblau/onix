@@ -312,7 +312,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) {
 		remoteArt, err2 = api.GetPackageInfo(name.Group, name.Name, localPackage.Id, uname, pwd, false)
 		if err2 == nil {
 			tls = false
-			core.Msg("WARNING: artisan registry does not use TLS: the connection to the registry is not secure")
+			core.WarningLogger.Printf("artisan registry does not use TLS: the connection to the registry is not secure\n")
 		} else {
 			core.CheckErr(err, "art push '%s' cannot retrieve remote package information", name.String())
 		}
@@ -376,7 +376,7 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 			// switches tls off
 			tls = false
 			// issue warning
-			core.Msg("WARNING: artisan registry does not use TLS: the connection to the registry is not secure")
+			core.WarningLogger.Printf("artisan registry does not use TLS: the connection to the registry is not secure\n")
 		} else {
 			core.CheckErr(err, "art pull '%s' cannot retrieve repository information from registry", name.String())
 		}
@@ -873,9 +873,9 @@ func (r *LocalRegistry) checkRegistryDir() {
 	// if it does not
 	if os.IsNotExist(err) {
 		if runtime.GOOS == "linux" && os.Geteuid() == 0 {
-			core.Msg("WARNING: if the root user creates the local registry then runc commands will fail\n" +
+			core.WarningLogger.Printf("if the root user creates the local registry then runc commands will fail\n" +
 				"as the runtime user will not be able to access its content when it is bind mounted\n" +
-				"ensure the local registry path is not owned by the root user")
+				"ensure the local registry path is not owned by the root user\n")
 		}
 		err = os.Mkdir(r.Path(), os.ModePerm)
 		i18n.Err(err, i18n.ERR_CANT_CREATE_REGISTRY_FOLDER, r.Path(), core.HomeDir())

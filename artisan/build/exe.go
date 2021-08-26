@@ -64,10 +64,12 @@ func Exe(cmd string, dir string, env *merge.Envar, interactive bool) (string, er
 
 	// wait for the command to complete
 	if err := command.Wait(); err != nil {
-		// only happens if the command exits with code > 0
+		// only happens if the command exits with os.Exit(>0)
+		// if this happens then the only error available is the exit error code
+		// for this reason artisan exit with code 0 and fills the stderr buffer
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if _, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-				core.RaiseErr("run command failed: '%s' - '%s'\n", cmd, exitErr.Error())
+				core.RaiseErr("run command failed: '%s'\n%s (%s)", cmd, errbuf.String(), exitErr.Error())
 			}
 		}
 		return "", err
@@ -81,5 +83,6 @@ func Exe(cmd string, dir string, env *merge.Envar, interactive bool) (string, er
 		// otherwise, make the error nil
 		err = nil
 	}
+
 	return outbuf.String(), err
 }
