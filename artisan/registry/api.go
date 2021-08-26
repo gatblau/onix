@@ -73,6 +73,7 @@ func (r *Api) UploadPackage(name *core.PackageName, packageRef string, zipfile m
 	// create and start bar
 	bar := pb.Simple.New(b.Len()).Start()
 	bar.Set("prefix", "package > ")
+	bar.SetWriter(os.Stdout)
 	// create proxy reader
 	reader := bar.NewProxyReader(&b)
 	// Now that you have a form, you can submit it to your handler.
