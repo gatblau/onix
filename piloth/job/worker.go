@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gatblau/onix/artisan/build"
+	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/pilotctl/core"
 	"log"
 	"log/syslog"
@@ -164,8 +165,15 @@ func run(data interface{}) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("Runnable data is not of the correct type\n")
 	}
+	// create the command to run
 	cmdString := fmt.Sprintf("art exe -u %s:%s %s %s", cmd.User, cmd.Pwd, cmd.Package, cmd.Function)
-	return build.Exe(cmdString, ".", cmd.Envar(), false)
+	// capture the PATH variable
+	path := os.Getenv("PATH")
+	env := cmd.Envar()
+	// inject the PATH into the process
+	env.Merge(merge.NewEnVarFromSlice([]string{fmt.Sprintf("PATH=%s", path)}))
+	// run and return
+	return build.Exe(cmdString, ".", env, false)
 }
 
 // warn: write a warning in syslog
