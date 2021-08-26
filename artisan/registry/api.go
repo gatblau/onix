@@ -221,13 +221,16 @@ func (r *Api) Download(group, name, filename, user, pwd string, https bool) (str
 	defer res.Body.Close()
 
 	// download progress bar
-	// retireve the content lenght to download from the http reader
+	// retrieve the content length to download from the http reader
 	limit, err := strconv.ParseInt(res.Header.Get("Content-Length"), 0, 64)
 	if err != nil {
 		return "", err
 	}
 	// start simple new progress bar
 	bar := pb.Simple.Start64(limit)
+	// NOTE: must set to stdout as default is stderr to prevent downstream code to think there is an error when
+	// the bar is writing its progress to the stream
+	bar.SetWriter(os.Stdout)
 	// adjust the prefix in the progress bar according to the file being downloaded
 	if filepath.Ext(filename) == ".json" {
 		bar.Set("prefix", "seal    > ")
