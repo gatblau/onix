@@ -67,7 +67,7 @@ func (c *ExeCCmd) Run(cmd *cobra.Command, args []string) {
 	env, err := merge.NewEnVarFromFile(c.envFilename)
 	core.CheckErr(err, "failed to load environment file '%s'", c.envFilename)
 	if len(c.credentials) == 0 {
-		core.Msg("no credentials have been provided, if you are connecting to a authenticated registry, you need to pass the -u flag")
+		core.InfoLogger.Printf("no credentials have been provided, if you are connecting to a authenticated registry, you need to pass the -u flag\n")
 	}
 	// launch a runtime to execute the function
 	err = run.ExeC(packageName, fxName, c.credentials, *c.interactive, env)

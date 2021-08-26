@@ -231,7 +231,7 @@ func (m *Manager) Run(runnerName, creds string, interactive bool) error {
 		response, err2 = m.postFlow(runnerName, err, false, body, token)
 		// if succeeded warn the registry is not secured
 		if err2 == nil {
-			core.Msg("WARNING: remote registry does not use TLS - this is a security risk")
+			core.WarningLogger.Printf("remote registry does not use TLS - this is a security risk\n")
 		} else {
 			// if failed not using tls then return the original error
 			return err

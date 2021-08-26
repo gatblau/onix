@@ -1,11 +1,5 @@
 package build
 
-import (
-	"fmt"
-	"github.com/gatblau/onix/artisan/merge"
-	"testing"
-)
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -13,11 +7,16 @@ import (
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+import (
+	"fmt"
+	"github.com/gatblau/onix/artisan/merge"
+	"testing"
+)
 
 func TestExe(t *testing.T) {
-	out, err := Exe("art exe -u admin:admin localhost:8082/test/list printenv", ".", merge.NewEnVarFromSlice([]string{}), false)
+	out, err := Exe("art exe -u admin:admin localhost:8082/test/list printenvs", ".", merge.NewEnVarFromSlice([]string{}), false)
 	if err != nil {
-		t.FailNow()
+		t.Fatal(err)
 	}
 	fmt.Println(out)
 }

@@ -1,3 +1,5 @@
+package runner
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package runner
-
 import (
 	"bufio"
 	"fmt"
@@ -26,9 +26,8 @@ import (
 func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *merge.Envar) error {
 	// if the OS is linux and the user id is not 100,000,000, it cannot continue
 	if isWrong, msg := core.WrongUserId(); isWrong {
-		// print warning
-		fmt.Println(msg)
-		os.Exit(1)
+		// print error
+		core.RaiseErr("%s\n", msg)
 	}
 	// check the local registry path has not been created by the root user othewise the runtime will error
 	registryPath := core.RegistryPath()
@@ -219,7 +218,7 @@ func removeContainer(containerName string) {
 	rm := exec.Command(tool, "rm", containerName)
 	out, err := rm.Output()
 	if err != nil {
-		core.Msg(string(out))
+		core.InfoLogger.Printf("%s\n", string(out))
 		core.CheckErr(err, "cannot remove temporary container %s", containerName)
 	}
 }

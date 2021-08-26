@@ -641,6 +641,6 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 			os.RemoveAll(path)
 		}
 	} else {
-		core.RaiseErr("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile", function)
+		core.RaiseErr("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile\n", function)
 	}
 }
