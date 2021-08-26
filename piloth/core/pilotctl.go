@@ -87,7 +87,7 @@ func (r *PilotCtl) Ping() (ctl.CmdRequest, error) {
 	} else {
 		payload = nil
 	}
-	uri := fmt.Sprintf("%s/ping/%s", r.cfg.BaseURI, r.host.MachineId)
+	uri := fmt.Sprintf("%s/ping/%s", r.cfg.BaseURI, r.host.HostUUID)
 	resp, err := r.client.Post(uri, payload, r.addToken)
 	if err != nil {
 		return ctl.CmdRequest{}, fmt.Errorf("ping failed ping: %s", err)
