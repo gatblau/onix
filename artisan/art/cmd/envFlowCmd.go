@@ -9,6 +9,7 @@ package cmd
 */
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/flow"
@@ -80,7 +81,7 @@ func (c *EnvFlowCmd) Run(cmd *cobra.Command, args []string) {
 	}
 	if *c.stdout {
 		// print to console
-		core.Infof("%\n", string(output))
+		os.Stdout.WriteString(fmt.Sprintf("%s\n", string(output)))
 	} else {
 		// save to disk
 		dir := filepath.Dir(c.flowPath)

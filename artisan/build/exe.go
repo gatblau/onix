@@ -75,13 +75,17 @@ func Exe(cmd string, dir string, env *merge.Envar, interactive bool) (string, er
 		return "", err
 	}
 
-	// if we have characters in the error buffer
+	// NOTE: I have observed that some programs exit with no error (code 0) but write to stderr instead of stdout
+	// probably due to misuse of the print() function in golang or lack mistake
+	// this condition can be found if we reach this point and the errbuf contains bytes
+	// at this point I have to assume that as the exit code is 0 there is no actual error and whatever is in stderr
+	// it should be in stdout, therefore code below
 	if len(errbuf.String()) > 0 {
-		// create an error object
-		err = fmt.Errorf(errbuf.String())
-	} else {
-		// otherwise, make the error nil
-		err = nil
+		// append to stdout
+		outbuf.WriteString(errbuf.String())
+		// issue a warning to alert people just in case
+		core.WarningLogger.Printf("command %s returned successfully but data was found in stderr\n"+
+			"it is assumed that it is not an error and therefore, it has been added to stdout\n", cmd)
 	}
 
 	return outbuf.String(), err

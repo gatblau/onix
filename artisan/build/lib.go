@@ -221,11 +221,11 @@ func copyFolder(src string, dst string) error {
 		dstFp := path.Join(dst, fd.Name())
 		if fd.IsDir() {
 			if err = copyFolder(srcFp, dstFp); err != nil {
-				fmt.Println(err)
+				core.ErrorLogger.Printf(err.Error())
 			}
 		} else {
 			if err = copyFile(srcFp, dstFp); err != nil {
-				fmt.Println(err)
+				core.ErrorLogger.Printf(err.Error())
 			}
 		}
 	}
@@ -340,7 +340,7 @@ func handleReader(reader *bufio.Reader) {
 		if err != nil {
 			break
 		}
-		fmt.Print(str)
+		os.Stdout.WriteString(str)
 	}
 }
 
