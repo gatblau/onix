@@ -140,7 +140,7 @@ func exitMsg(exitCode int) string {
 	case 130:
 		return "error 130 - script terminated by CTRL-C"
 	default:
-		return fmt.Sprintf("exist code %d", exitCode)
+		return fmt.Sprintf("exit code %d", exitCode)
 	}
 }
 
