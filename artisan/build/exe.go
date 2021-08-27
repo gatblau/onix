@@ -69,7 +69,7 @@ func Exe(cmd string, dir string, env *merge.Envar, interactive bool) (string, er
 		// for this reason artisan exit with code 0 and fills the stderr buffer
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if _, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-				return "", fmt.Errorf("run command failed: '%s'\n%s (%s)", cmd, errbuf.String(), exitErr.Error())
+				return "", fmt.Errorf("run command failed: '%s'\n%s (%s)", cmd, errbuf.String(), exitMsg(exitErr.ExitCode()))
 			}
 		}
 		return "", err
