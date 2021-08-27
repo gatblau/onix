@@ -20,10 +20,6 @@ import (
 	"strings"
 )
 
-// create a logger with added contextual info
-// to differentiate pilot logging from application logging
-var logger = log.With().Str("agent", "pilot").Logger()
-
 // Config pilot configuration
 type Config struct {
 	LogLevel string
@@ -88,8 +84,6 @@ func (c *Config) GetBool(key ConfigKey) bool {
 }
 
 func (c *Config) Load() error {
-	logger.Info().Msg("Loading configuration.")
-
 	// set the file path to where pilot is running
 	c.path = currentPath()
 
