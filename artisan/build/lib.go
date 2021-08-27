@@ -9,7 +9,6 @@ package build
 */
 import (
 	"archive/zip"
-	"bufio"
 	"errors"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
@@ -232,18 +231,6 @@ func copyFolder(src string, dst string) error {
 	return nil
 }
 
-func renameFolder(src string, dst string, force bool) (err error) {
-	err = copyFolder(src, dst)
-	if err != nil {
-		return fmt.Errorf("failed to copy source dir %s to %s: %s", src, dst, err)
-	}
-	err = os.RemoveAll(src)
-	if err != nil {
-		return fmt.Errorf("failed to cleanup source dir %s: %s", src, err)
-	}
-	return nil
-}
-
 func renameFile(src string, dst string) (err error) {
 	err = copyFile(src, dst)
 	if err != nil {
@@ -332,16 +319,6 @@ func executeWithOutput(cmd string, dir string, env *merge.Envar, interactive boo
 		return "", err
 	}
 	return strings.TrimRight(string(result), "\n"), nil
-}
-
-func handleReader(reader *bufio.Reader) {
-	for {
-		str, err := reader.ReadString('\n')
-		if err != nil {
-			break
-		}
-		os.Stdout.WriteString(str)
-	}
 }
 
 func contains(value string, list []string) bool {
