@@ -29,4 +29,25 @@ functions:
     runtime: ubi-min
     run:
       - printenv
+
+  - name: cpu
+    description: gets host CPU information (only works on linux)
+    export: true
+    runtime: ubi-min
+    run:
+      - cat /proc/cpuinfo
+
+  - name: partitions
+    description: gets host partitions information (only works on linux)
+    export: true
+    runtime: ubi-min
+    run:
+      - cat /proc/partitions
+
+  - name: retrieve-file
+    description: retrieves the content of a file
+    export: true
+    runtime: ubi-min
+    run:
+      - cat /tmp/info.txt
 ...
