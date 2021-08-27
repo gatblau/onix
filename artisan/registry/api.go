@@ -72,7 +72,7 @@ func (r *Api) UploadPackage(name *core.PackageName, packageRef string, zipfile m
 	core.CheckErr(err, "cannot close writer")
 	// create and start bar
 	bar := pb.Simple.New(b.Len()).Start()
-	bar.Set("prefix", "package > ")
+	bar.Set("prefix", "package + seal > ")
 	bar.SetWriter(os.Stdout)
 	// create proxy reader
 	reader := bar.NewProxyReader(&b)
