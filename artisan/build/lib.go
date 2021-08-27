@@ -134,7 +134,7 @@ func exitMsg(exitCode int) string {
 	case 126:
 		return "error 126 - command invoked cannot execute (check for permission problem)"
 	case 127:
-		return "error 127 - command not found (check for typos)"
+		return "error 127 - command not found (check for typos or missing commands)"
 	case 128:
 		return "error 128 - invalid argument to exit (check when you are not returning something that is not integer args in the range 0 – 255)"
 	case 130:
