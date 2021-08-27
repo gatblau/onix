@@ -62,8 +62,7 @@ func NewPilot() (*Pilot, error) {
 
 func (p *Pilot) Start() {
 	// https://textkool.com/en/ascii-art-generator?hl=default&vl=default&font=Lean&text=PILOT%0A
-	fmt.Println(`Onix Configuration Manager Agent
-+---------------------------------------------------------+
+	fmt.Println(`+-------------( ONIX CONFIGURATION MANAGER )--------------+
 |      _/_/_/    _/_/_/  _/          _/_/    _/_/_/_/_/   |
 |     _/    _/    _/    _/        _/    _/      _/        |
 |    _/_/_/      _/    _/        _/    _/      _/         |
@@ -73,10 +72,14 @@ func (p *Pilot) Start() {
 	log.Printf("launching...\n")
 	collector, err := NewCollector("0.0.0.0", p.cfg.getSyslogPort())
 	if err != nil {
-		fmt.Printf("cannot create pilot syslog collector: %s\n", err)
+		p.stdout("cannot create pilot syslog collector: %s\n", err)
 		os.Exit(1)
 	}
 	collector.Start()
+	if !commandExists("art") {
+		p.stdout("cannot find artisan CLI, ensure it is installed before running pilot\n")
+		os.Exit(127)
+	}
 	p.register()
 	p.ping()
 }
