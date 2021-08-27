@@ -28,7 +28,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -287,68 +286,15 @@ func round(val float64, roundOn float64, places int) (newVal float64) {
 
 // executes a command and sends output and error streams to stdout and stderr
 func execute(cmd string, dir string, env *merge.Envar, interactive bool) (err error) {
-	if cmd == "" {
-		return errors.New("no command provided")
-	}
-	// create a command parser
-	p := shellwords.NewParser()
-	// parse the command line
-	cmdArr, err := p.Parse(cmd)
-
-	// if we are in windows
-	if runtime.GOOS == "windows" {
-		// prepend "cmd /C" to the command line
-		cmdArr = append([]string{"cmd", "/C"}, cmdArr...)
-		core.Debug("windows cmd => %s", cmdArr)
-	}
-	name := cmdArr[0]
-
-	var args []string
-	if len(cmdArr) > 1 {
-		args = cmdArr[1:]
-	}
-
-	args, _ = core.MergeEnvironmentVars(args, env.Vars, interactive)
-
-	command := exec.Command(name, args...)
-	command.Dir = dir
-	command.Env = env.Slice()
-
-	stdout, err := command.StdoutPipe()
+	// executes the command
+	out, err := Exe(cmd, dir, env, interactive)
+	// if there is an error return it
 	if err != nil {
-		log.Printf("failed creating command stdoutpipe: %s", err)
 		return err
 	}
-	defer func() {
-		_ = stdout.Close()
-	}()
-	stdoutReader := bufio.NewReader(stdout)
-
-	stderr, err := command.StderrPipe()
-	if err != nil {
-		log.Printf("failed creating command stderrpipe: %s", err)
-		return err
-	}
-	defer func() {
-		_ = stderr.Close()
-	}()
-	stderrReader := bufio.NewReader(stderr)
-
-	if err := command.Start(); err != nil {
-		return err
-	}
-
-	go handleReader(stdoutReader)
-	go handleReader(stderrReader)
-
-	if err := command.Wait(); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			if _, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-				core.RaiseErr("run command failed: '%s' - '%s'", cmd, exitErr.Error())
-			}
-		}
-		return err
-	}
+	// write the command output to stdout
+	os.Stdout.WriteString(out)
+	// return without error
 	return nil
 }
 
