@@ -40,7 +40,7 @@ const (
 	defaultCipher = packet.CipherAES128
 )
 
-// creates a new PGP entity
+// NewPGP creates a new PGP entity
 func NewPGP(name, comment, email string, bits int) *PGP {
 	var p = &PGP{
 		name:    name,
@@ -65,7 +65,7 @@ func NewPGP(name, comment, email string, bits int) *PGP {
 	return p
 }
 
-// load a PGP entity from file
+// LoadPGP load a PGP entity from file
 func LoadPGP(filename string) (*PGP, error) {
 	if !filepath.IsAbs(filename) {
 		abs, err := filepath.Abs(filename)
@@ -106,7 +106,7 @@ func LoadPGP(filename string) (*PGP, error) {
 	}, nil
 }
 
-// check if the PGP entity has a private key, if not an error is returned
+// HasPrivate check if the PGP entity has a private key, if not an error is returned
 func (p *PGP) HasPrivate() bool {
 	if p.entity == nil {
 		core.RaiseErr("PGP object does not contain entity")
@@ -114,7 +114,7 @@ func (p *PGP) HasPrivate() bool {
 	return p.entity.PrivateKey != nil
 }
 
-// signs the specified message (requires loading a private key)
+// Sign signs the specified message (requires loading a private key)
 func (p *PGP) Sign(message []byte) ([]byte, error) {
 	writer := new(bytes.Buffer)
 	reader := bytes.NewReader(message)
@@ -125,7 +125,7 @@ func (p *PGP) Sign(message []byte) ([]byte, error) {
 	return writer.Bytes(), nil
 }
 
-// verifies the message using a specified signature (requires loading a public key)
+// Verify verifies the message using a specified signature (requires loading a public key)
 func (p *PGP) Verify(message []byte, signature []byte) error {
 	sig, err := parseSignature(signature)
 	if err != nil {
@@ -141,7 +141,7 @@ func (p *PGP) Verify(message []byte, signature []byte) error {
 	return nil
 }
 
-// encrypts the specified message
+// Encrypt encrypts the specified message
 func (p *PGP) Encrypt(message []byte) ([]byte, error) {
 	// create buffer to write output to
 	buf := new(bytes.Buffer)
@@ -173,7 +173,7 @@ func (p *PGP) Encrypt(message []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// decrypts the specified message
+// Decrypt decrypts the specified message
 func (p *PGP) Decrypt(encrypted []byte) ([]byte, error) {
 	// Decode message
 	block, err := armor.Decode(bytes.NewReader(encrypted))
@@ -210,6 +210,8 @@ func (p *PGP) Decrypt(encrypted []byte) ([]byte, error) {
 	return out, nil
 }
 
+// SavePublicKey save the public key to  file
+// version: the version to show in the key PEM header
 func (p *PGP) SavePublicKey(keyFilename, version string) error {
 	keyBytes, err := p.toPublicKey(version)
 	if err != nil {
@@ -223,6 +225,8 @@ func (p *PGP) SavePublicKey(keyFilename, version string) error {
 	return nil
 }
 
+// SavePrivateKey save the public key to  file
+// version: the version to show in the key PEM header
 func (p *PGP) SavePrivateKey(keyFilename, version string) error {
 	keyBytes, err := p.toPrivateKey(version)
 	if err != nil {

@@ -22,7 +22,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -37,19 +36,17 @@ func (r *LocalRegistry) api(domain string) *Api {
 	return NewGenericAPI(domain)
 }
 
-// create a localRepo management structure
+// NewLocalRegistry create a localRepo management structure
 func NewLocalRegistry() *LocalRegistry {
 	r := &LocalRegistry{
 		Repositories: []*Repository{},
 	}
-	// check the registry directory is in place
-	r.checkRegistryDir()
 	// load local registry
 	r.load()
 	return r
 }
 
-// return all the packages within the same repository
+// GetPackagesByName return all the packages within the same repository
 func (r *LocalRegistry) GetPackagesByName(name *core.PackageName) ([]*Package, bool) {
 	var packages = make([]*Package, 0)
 	for _, repository := range r.Repositories {
@@ -66,7 +63,7 @@ func (r *LocalRegistry) GetPackagesByName(name *core.PackageName) ([]*Package, b
 	return nil, false
 }
 
-// return the package that matches the specified:
+// FindPackage return the package that matches the specified:
 // - domain/group/name:tag
 // nil if not found in the LocalRegistry
 func (r *LocalRegistry) FindPackage(name *core.PackageName) *Package {
@@ -88,7 +85,7 @@ func (r *LocalRegistry) FindPackage(name *core.PackageName) *Package {
 	return nil
 }
 
-// return the packages that matches the specified:
+// FindPackagesById return the packages that matches the specified:
 // - package id substring
 func (r *LocalRegistry) FindPackagesById(id string) []*core.PackageName {
 	// go through the packages in the repository and check for Id matches
@@ -111,11 +108,6 @@ func (r *LocalRegistry) FindPackagesById(id string) []*core.PackageName {
 	return names
 }
 
-// the local Path to the local LocalRegistry
-func (r *LocalRegistry) Path() string {
-	return core.RegistryPath()
-}
-
 // Add the package and seal to the LocalRegistry
 func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Seal) {
 	// gets the full base name (with extension)
@@ -131,9 +123,9 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 		log.Fatal(errors.New(fmt.Sprintf("the localRepo can only accept zip files, the extension provided was %s", basenameExt)))
 	}
 	// move the zip file to the localRepo folder
-	core.CheckErr(MoveFile(filename, filepath.Join(r.Path(), basename)), "failed to move package zip file to the local registry")
+	core.CheckErr(MoveFile(filename, filepath.Join(core.RegistryPath(), basename)), "failed to move package zip file to the local registry")
 	// now move the seal file to the localRepo folder
-	core.CheckErr(MoveFile(filepath.Join(basenameDir, fmt.Sprintf("%s.json", basenameNoExt)), filepath.Join(r.Path(), fmt.Sprintf("%s.json", basenameNoExt))), "failed to move package seal file to the local registry")
+	core.CheckErr(MoveFile(filepath.Join(basenameDir, fmt.Sprintf("%s.json", basenameNoExt)), filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", basenameNoExt))), "failed to move package seal file to the local registry")
 	// untag package package (if any)
 	r.unTag(name, name.Tag)
 	// remove any dangling packages
@@ -348,8 +340,8 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) {
 			core.CheckErr(api.UpdatePackageInfo(name, a, uname, pwd, tls), "cannot update package info")
 		}
 	}
-	zipfile := openFile(fmt.Sprintf("%s/%s.zip", r.Path(), localPackage.FileRef))
-	jsonfile := openFile(fmt.Sprintf("%s/%s.json", r.Path(), localPackage.FileRef))
+	zipfile := openFile(fmt.Sprintf("%s/%s.zip", core.RegistryPath(), localPackage.FileRef))
+	jsonfile := openFile(fmt.Sprintf("%s/%s.json", core.RegistryPath(), localPackage.FileRef))
 	// prepare the package to upload
 	pack := localPackage
 	pack.Tags = []string{name.Tag}
@@ -498,13 +490,13 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 			err = os.MkdirAll(targetPath, os.ModePerm)
 			core.CheckErr(err, "cannot create path to open package: %s", targetPath)
 		}
-		src := path.Join(r.Path(), fmt.Sprintf("%s.zip", artie.FileRef))
+		src := path.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef))
 		dst := path.Join(targetPath, filename)
 		err = CopyFile(src, dst)
 		core.CheckErr(err, "cannot rename package %s", fmt.Sprintf("%s.zip", artie.FileRef))
 	} else {
 		// otherwise, unzip the target
-		err = unzip(path.Join(r.Path(), fmt.Sprintf("%s.zip", artie.FileRef)), targetPath)
+		err = unzip(path.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef)), targetPath)
 		core.CheckErr(err, "cannot unzip package %s", fmt.Sprintf("%s.zip", artie.FileRef))
 		// check if the target path is a folder
 		info, err := os.Stat(targetPath)
@@ -581,7 +573,7 @@ func (r *LocalRegistry) Remove(names []*core.PackageName) {
 }
 
 func (r *LocalRegistry) GetSeal(name *Package) (*data.Seal, error) {
-	sealFilename := path.Join(r.Path(), fmt.Sprintf("%s.json", name.FileRef))
+	sealFilename := path.Join(core.RegistryPath(), fmt.Sprintf("%s.json", name.FileRef))
 	sealFile, err := os.Open(sealFilename)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open seal file %s: %s", sealFilename, err)
@@ -648,15 +640,15 @@ func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
 func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string) (destPath string, prefix string) {
 	if len(repoName) > 0 {
 		// use the repo name location
-		destPath = path.Join(r.Path(), "keys", repoGroup, repoName)
+		destPath = path.Join(core.RegistryPath(), "keys", repoGroup, repoName)
 		prefix = fmt.Sprintf("%s_%s", repoGroup, repoName)
 	} else if len(repoGroup) > 0 {
 		// use the repo group location
-		destPath = path.Join(r.Path(), "keys", repoGroup)
+		destPath = path.Join(core.RegistryPath(), "keys", repoGroup)
 		prefix = repoGroup
 	} else {
 		// use the registry root location
-		destPath = path.Join(r.Path(), "keys")
+		destPath = path.Join(core.RegistryPath(), "keys")
 		prefix = "root"
 	}
 	_, err := os.Stat(destPath)
@@ -686,12 +678,12 @@ func (r *LocalRegistry) removeDangling(name *core.PackageName) {
 // remove the files associated with an Package
 func (r *LocalRegistry) removeFiles(artie *Package) {
 	// remove the zip file
-	err := os.Remove(fmt.Sprintf("%s/%s.zip", r.Path(), artie.FileRef))
+	err := os.Remove(fmt.Sprintf("%s/%s.zip", core.RegistryPath(), artie.FileRef))
 	if err != nil {
 		log.Fatal(err)
 	}
 	// remove the json file
-	err = os.Remove(fmt.Sprintf("%s/%s.json", r.Path(), artie.FileRef))
+	err = os.Remove(fmt.Sprintf("%s/%s.json", core.RegistryPath(), artie.FileRef))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -738,12 +730,12 @@ func plural(value int64, label string) string {
 
 // the fully qualified name of the json Seal file in the local localReg
 func (r *LocalRegistry) regDirJsonFilename(uniqueIdName string) string {
-	return fmt.Sprintf("%s/%s.json", r.Path(), uniqueIdName)
+	return fmt.Sprintf("%s/%s.json", core.RegistryPath(), uniqueIdName)
 }
 
 // the fully qualified name of the zip file in the local localReg
 func (r *LocalRegistry) regDirZipFilename(uniqueIdName string) string {
-	return fmt.Sprintf("%s/%s.zip", r.Path(), uniqueIdName)
+	return fmt.Sprintf("%s/%s.zip", core.RegistryPath(), uniqueIdName)
 }
 
 // find the package specified by ist id
@@ -838,7 +830,7 @@ func (r *LocalRegistry) removeRepoByName(a []*Repository, name *core.PackageName
 
 // return the LocalRegistry full file name
 func (r *LocalRegistry) file() string {
-	return filepath.Join(r.Path(), "repository.json")
+	return filepath.Join(core.RegistryPath(), "repository.json")
 }
 
 // save the state of the LocalRegistry
@@ -860,46 +852,6 @@ func (r *LocalRegistry) load() {
 			log.Fatal(err)
 		}
 		err = json.Unmarshal(regBytes, r)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-// check the local localReg directory exists and if not creates it
-func (r *LocalRegistry) checkRegistryDir() {
-	// check the home directory exists
-	_, err := os.Stat(r.Path())
-	// if it does not
-	if os.IsNotExist(err) {
-		if runtime.GOOS == "linux" && os.Geteuid() == 0 {
-			core.WarningLogger.Printf("if the root user creates the local registry then runc commands will fail\n" +
-				"as the runtime user will not be able to access its content when it is bind mounted\n" +
-				"ensure the local registry path is not owned by the root user\n")
-		}
-		err = os.Mkdir(r.Path(), os.ModePerm)
-		i18n.Err(err, i18n.ERR_CANT_CREATE_REGISTRY_FOLDER, r.Path(), core.HomeDir())
-	}
-	keysPath := path.Join(r.Path(), "keys")
-	// check the keys directory exists
-	_, err = os.Stat(keysPath)
-	// if it does not
-	if os.IsNotExist(err) {
-		// create a key pair
-		err = os.Mkdir(keysPath, os.ModePerm)
-		if err != nil {
-			log.Fatal(err)
-		}
-		host, _ := os.Hostname()
-		crypto.GeneratePGPKeys(keysPath, "root", fmt.Sprintf("root-%s", host), "", "", 2048)
-	}
-	filesPath := core.FilesPath()
-	// check the files directory exists
-	_, err = os.Stat(filesPath)
-	// if it does not
-	if os.IsNotExist(err) {
-		// create a key pair
-		err = os.Mkdir(filesPath, os.ModePerm)
 		if err != nil {
 			log.Fatal(err)
 		}
