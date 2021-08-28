@@ -62,12 +62,13 @@ func NewPilot() (*Pilot, error) {
 
 func (p *Pilot) Start() {
 	// https://textkool.com/en/ascii-art-generator?hl=default&vl=default&font=Lean&text=PILOT%0A
-	fmt.Println(`+-------------( ONIX CONFIGURATION MANAGER )--------------+
+	fmt.Println(`+-----------------| ONIX CONFIG MANAGER |-----------------+
 |      _/_/_/    _/_/_/  _/          _/_/    _/_/_/_/_/   |
 |     _/    _/    _/    _/        _/    _/      _/        |
 |    _/_/_/      _/    _/        _/    _/      _/         |
 |   _/          _/    _/        _/    _/      _/          |
 |  _/        _/_/_/  _/_/_/_/    _/_/        _/           |
+|                     Host Controller                     | 
 +---------------------------------------------------------+`)
 	log.Printf("launching...\n")
 	collector, err := NewCollector("0.0.0.0", p.cfg.getSyslogPort())
