@@ -38,7 +38,6 @@ type Builder struct {
 	repoURI          string
 	commit           string
 	from             string
-	signer           *crypto.Signer
 	repoName         *core.PackageName
 	buildFile        *data.BuildFile
 	localReg         *registry.LocalRegistry
@@ -52,7 +51,6 @@ func NewBuilder() *Builder {
 	// create the builder instance
 	builder := new(Builder)
 	// check the localRepo directory is there
-	builder.signer = new(crypto.Signer)
 	builder.localReg = registry.NewLocalRegistry()
 	return builder
 }

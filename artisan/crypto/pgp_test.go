@@ -18,11 +18,11 @@ func TestGenerateKeys(t *testing.T) {
 
 	// saves private and public keys
 	pkName, pubName := KeyNames(".", "root", "pgp")
-	err := p.SavePublicKey(pubName)
+	err := p.SavePublicKey(pubName, "xxx")
 	if err != nil {
 		t.FailNow()
 	}
-	err = p.SavePrivateKey(pkName)
+	err = p.SavePrivateKey(pkName, "xxx")
 	if err != nil {
 		t.FailNow()
 	}
