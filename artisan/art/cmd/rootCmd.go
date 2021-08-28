@@ -31,6 +31,7 @@ func NewRootCmd() *RootCmd {
 |       /_/--\ |_| \  |_|  |_| _)_) /_/--\ |_| \|       |
 |           the DevOps command line interface           |
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 version: %s`, Version),
 			Version: Version,
 		},
