@@ -83,9 +83,10 @@ func Exe(cmd string, dir string, env *merge.Envar, interactive bool) (string, er
 	if len(errbuf.String()) > 0 {
 		// append to stdout
 		outbuf.WriteString(errbuf.String())
-		// issue a warning to alert people just in case
-		core.WarningLogger.Printf("command %s returned successfully but data was found in stderr\n"+
-			"it is assumed that it is not an error and therefore, it has been added to stdout\n", cmd)
+		if core.InDebugMode() {
+			// issue a warning to alert people just in case
+			core.WarningLogger.Printf("command %s returned successfully but data was found in stderr. it is assumed that it is not an error and therefore, it has been added to stdout\n", cmd)
+		}
 	}
 
 	return outbuf.String(), err
