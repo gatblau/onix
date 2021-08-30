@@ -9,19 +9,16 @@ package build
 */
 import (
 	"archive/zip"
-	"errors"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/merge"
-	"github.com/mattn/go-shellwords"
 	"io"
 	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -283,42 +280,6 @@ func execute(cmd string, dir string, env *merge.Envar, interactive bool) (err er
 	os.Stdout.WriteString(out)
 	// return without error
 	return nil
-}
-
-// executes a command and returns ist output
-func executeWithOutput(cmd string, dir string, env *merge.Envar, interactive bool) (string, error) {
-	if cmd == "" {
-		return "", errors.New("no command provided")
-	}
-	// create a command parser
-	p := shellwords.NewParser()
-	// parse the command line
-	cmdArr, err := p.Parse(cmd)
-
-	// if we are in windows
-	if runtime.GOOS == "windows" {
-		// prepend "cmd /C" to the command line
-		cmdArr = append([]string{"cmd", "/C"}, cmdArr...)
-		core.Debug("windows cmd => %s", cmdArr)
-	}
-	name := cmdArr[0]
-
-	var args []string
-	if len(cmdArr) > 1 {
-		args = cmdArr[1:]
-	}
-
-	args, _ = core.MergeEnvironmentVars(args, env.Vars, interactive)
-
-	command := exec.Command(name, args...)
-	command.Dir = dir
-	command.Env = env.Slice()
-
-	result, err := command.Output()
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimRight(string(result), "\n"), nil
 }
 
 func contains(value string, list []string) bool {
