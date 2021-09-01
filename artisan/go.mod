@@ -17,9 +17,10 @@ require (
 	github.com/ohler55/ojg v1.4.0
 	github.com/pelletier/go-toml v1.8.1
 	github.com/prometheus/client_golang v1.8.0
+	github.com/schollz/progressbar/v3 v3.8.2 // indirect
 	github.com/swaggo/http-swagger v1.0.0
-	golang.org/x/crypto v0.0.0-20201208171446-5f87f3452ae9
-	golang.org/x/net v0.0.0-20201216054612-986b41b23924 // indirect
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf // indirect
 	golang.org/x/tools v0.0.0-20201215192005-fa10ef0b8743 // indirect
 	google.golang.org/protobuf v1.25.1-0.20200805231151-a709e31e5d12 // indirect
 	gopkg.in/yaml.v2 v2.4.0
