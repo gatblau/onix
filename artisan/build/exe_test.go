@@ -14,7 +14,7 @@ import (
 )
 
 func TestExe(t *testing.T) {
-	out, err := Exe("art exe -u admin:admin localhost:8082/test/list printenvs", ".", merge.NewEnVarFromSlice([]string{}), false)
+	out, err := Exe("printenv", ".", merge.NewEnVarFromSlice([]string{}), false)
 	if err != nil {
 		t.Fatal(err)
 	}

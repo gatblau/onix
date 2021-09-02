@@ -52,8 +52,6 @@ func Exe(cmd string, dir string, env *merge.Envar, interactive bool) (string, er
 	command.Dir = dir
 	// set the command environment
 	command.Env = env.Slice()
-	// if in debug mode, print environment variables
-	env.Debug()
 	// capture the command output and error streams in a buffer
 	var outbuf, errbuf strings.Builder // or bytes.Buffer
 	command.Stdout = &outbuf
