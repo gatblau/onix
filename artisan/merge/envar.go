@@ -72,6 +72,7 @@ func NewEnVarFromFile(envFile string) (*Envar, error) {
 	} else {
 		core.Debug("cannot load env file: %s", err.Error())
 	}
+	core.Debug("loaded environment file: %s\n", envFile)
 	return &Envar{
 		Vars: outMap,
 	}, nil
@@ -132,4 +133,13 @@ func (e *Envar) String() string {
 		buffer.WriteString(fmt.Sprintf("%s=%s\n", key, value))
 	}
 	return buffer.String()
+}
+
+func (e *Envar) Debug() {
+	if core.InDebugMode() {
+		core.DebugLogger.Printf("environment variables:\n")
+		for key, value := range e.Vars {
+			core.DebugLogger.Printf("%s=%s\n", key, value)
+		}
+	}
 }
