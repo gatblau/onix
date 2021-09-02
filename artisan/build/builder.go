@@ -332,6 +332,8 @@ func (b *Builder) getIgnored() []string {
 
 // run a specified function
 func (b *Builder) runFunction(function string, path string, interactive bool, env *merge.Envar) {
+	// if in debug mode, print environment variables
+	env.Debug(fmt.Sprintf("executing function: %s\n", function))
 	// if inputs are defined for the function then survey for data
 	i := data.SurveyInputFromBuildFile(function, b.buildFile, interactive, false, env)
 	// merge the collected input with the current environment
