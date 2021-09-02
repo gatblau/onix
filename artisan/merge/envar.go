@@ -135,9 +135,9 @@ func (e *Envar) String() string {
 	return buffer.String()
 }
 
-func (e *Envar) Debug() {
+func (e *Envar) Debug(processName string) {
 	if core.InDebugMode() {
-		core.DebugLogger.Printf("environment variables:\n")
+		core.DebugLogger.Printf("%s => environment variables:\n", processName)
 		for key, value := range e.Vars {
 			core.DebugLogger.Printf("%s=%s\n", key, value)
 		}
