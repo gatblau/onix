@@ -1,3 +1,5 @@
+package core
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,11 +7,10 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package core
-
 import (
 	"bytes"
 	"crypto/sha256"
+	_ "embed"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -36,7 +37,21 @@ import (
 	"github.com/ohler55/ojg/jp"
 )
 
-// check the user id is correct for bind mounts
+var (
+	WarningLogger *log.Logger
+	InfoLogger    *log.Logger
+	ErrorLogger   *log.Logger
+	DebugLogger   *log.Logger
+)
+
+func init() {
+	InfoLogger = log.New(os.Stdout, "ART INFO: ", log.Ldate|log.Ltime|log.Lmsgprefix|log.LUTC|log.Lmicroseconds)
+	WarningLogger = log.New(os.Stdout, "ART WARNING: ", log.Ldate|log.Ltime|log.Lmsgprefix|log.LUTC|log.Lmicroseconds)
+	ErrorLogger = log.New(os.Stderr, "ART ERROR: ", log.Ldate|log.Ltime|log.Lmsgprefix|log.LUTC|log.Lmicroseconds)
+	DebugLogger = log.New(os.Stdout, "ART DEBUG: ", log.Ldate|log.Ltime|log.Lmsgprefix|log.LUTC|log.Lmicroseconds)
+}
+
+// WrongUserId check the user id is correct for bind mounts
 func WrongUserId() (bool, string) {
 	// if running in linux docker does not run in a VM and uid and gid of bind mounts must
 	// match the one in the runtime
@@ -65,7 +80,7 @@ For example, assuming the user is called "runtime", you can:
 	return false, ""
 }
 
-// converts the path to absolute path
+// ToAbs converts the path to absolute path
 func ToAbs(path string) string {
 	if !filepath.IsAbs(path) {
 		abs, err := filepath.Abs(path)
@@ -75,7 +90,7 @@ func ToAbs(path string) string {
 	return path
 }
 
-// convert the passed in parameter to a Json Byte Array
+// ToJsonBytes convert the passed in parameter to a Json Byte Array
 func ToJsonBytes(s interface{}) []byte {
 	// serialise the seal to json
 	source, err := json.Marshal(s)
@@ -155,16 +170,20 @@ func RemoveElement(a []string, value string) []string {
 	return a
 }
 
+func Infof(msg string, a ...interface{}) {
+	InfoLogger.Printf(msg, a...)
+}
+
 func CheckErr(err error, msg string, a ...interface{}) {
 	if err != nil {
-		fmt.Printf("error: %s - %s\n", fmt.Sprintf(msg, a...), err)
-		os.Exit(0)
+		ErrorLogger.Printf("%s - %s\n", fmt.Sprintf(msg, a...), err)
+		os.Exit(1)
 	}
 }
 
 func RaiseErr(msg string, a ...interface{}) {
-	fmt.Printf("error!\n* %s\n", fmt.Sprintf(msg, a...))
-	os.Exit(0)
+	ErrorLogger.Printf(msg, a...)
+	os.Exit(1)
 }
 
 func Exist(name, value string) error {
@@ -179,15 +198,7 @@ func IsJSON(s string) bool {
 	return json.Unmarshal([]byte(s), &js) == nil
 }
 
-func Msg(msg string, a ...interface{}) {
-	if len(a) > 0 {
-		fmt.Printf("info: %s\n", fmt.Sprintf(msg, a...))
-	} else {
-		fmt.Printf("info: %s\n", msg)
-	}
-}
-
-// gets the checksum of the passed string
+// StringCheckSum gets the checksum of the passed string
 func StringCheckSum(value string) string {
 	hash := sha256.New()
 	if _, err := io.Copy(hash, bytes.NewReader([]byte(value))); err != nil {

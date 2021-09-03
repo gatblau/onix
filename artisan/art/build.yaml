@@ -10,7 +10,6 @@ env:
   GOARCH: amd64
   REPO_NAME: quay.io/gatblau
   APP_VERSION: 0.0.4
-  LIFECYCLE_STAGE: alpha
 
 profiles:
   - name: linux
@@ -40,6 +39,7 @@ functions:
     description: set-version on the parent build, updating global version
     run:
       - art run set-version ../
+      - cp ../version ../core
 
   - name: build-mac
     description: builds the Artisan CLI for MacOS

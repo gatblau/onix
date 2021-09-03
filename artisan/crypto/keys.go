@@ -1,3 +1,5 @@
+package crypto
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -5,8 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package crypto
-
 import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
@@ -16,8 +16,8 @@ import (
 	"time"
 )
 
-// generates a private and public RSA keys for signing and verifying packages
-func GeneratePGPKeys(path, prefix, name, comment, email string, size int) {
+// GeneratePGPKeys generates a private and public RSA keys for signing and verifying packages
+func GeneratePGPKeys(path, prefix, name, comment, email, version string, size int) {
 	if size > 4500 {
 		core.RaiseErr("maximum bit size 4500 exceeded")
 	}
@@ -42,8 +42,6 @@ func GeneratePGPKeys(path, prefix, name, comment, email string, size int) {
 	keyFilename, pubFilename := KeyNames(path, prefix, "pgp")
 	// create a new PGP entity
 	pgp := NewPGP(name, comment, email, size)
-	// get artisan version
-	version := fmt.Sprintf("artisan-%s", core.Version)
 	// save the public key part
 	core.CheckErr(pgp.SavePublicKey(pubFilename, version), "cannot save public key")
 	// save the private key part
