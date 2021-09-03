@@ -59,7 +59,7 @@ func (b *PGPDecryptCmd) Run(cmd *cobra.Command, args []string) {
 	}
 	if len(b.keyPath) > 0 {
 		// load the crypto key
-		pgp, err = crypto.LoadPGP(core.ToAbs(b.keyPath))
+		pgp, err = crypto.LoadPGP(core.ToAbs(b.keyPath), "")
 		i18n.Err(err, i18n.ERR_CANT_LOAD_PRIV_KEY)
 	} else
 	// load the key based on the local repository resolution process

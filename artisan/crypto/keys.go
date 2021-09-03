@@ -43,23 +43,23 @@ func GeneratePGPKeys(path, prefix, name, comment, email, version string, size in
 	// create a new PGP entity
 	pgp := NewPGP(name, comment, email, size)
 	// save the public key part
-	core.CheckErr(pgp.SavePublicKey(pubFilename, version), "cannot save public key")
+	core.CheckErr(pgp.SavePublicKey(pubFilename, version, ""), "cannot save public key")
 	// save the private key part
-	core.CheckErr(pgp.SavePrivateKey(keyFilename, version), "cannot save private key")
+	core.CheckErr(pgp.SavePrivateKey(keyFilename, version, ""), "cannot save private key")
 }
 
 func LoadPGPPrivateKey(group, name string) (*PGP, error) {
 	// first attempt to load the key from the registry/keys/group/name path
 	private, _ := KeyNames(path.Join(core.RegistryPath(), "keys", group, name), fmt.Sprintf("%s_%s", group, name), "pgp")
-	key, err := LoadPGP(private)
+	key, err := LoadPGP(private, "")
 	if err != nil {
 		// if no luck, attempt to load the key from the registry/keys/group path
 		private, _ = KeyNames(path.Join(core.RegistryPath(), "keys", group), group, "pgp")
-		key, err = LoadPGP(private)
+		key, err = LoadPGP(private, "")
 		if err != nil {
 			// final attempt to load the key from the registry/keys/ path
 			private, _ = KeyNames(path.Join(core.RegistryPath(), "keys"), "root", "pgp")
-			key, err = LoadPGP(private)
+			key, err = LoadPGP(private, "")
 			if err != nil {
 				return nil, fmt.Errorf("cannot read private pgp key: %s", err)
 			}
@@ -71,15 +71,15 @@ func LoadPGPPrivateKey(group, name string) (*PGP, error) {
 func LoadPGPPublicKey(group, name string) (*PGP, error) {
 	// first attempt to load the key from the registry/keys/group/name path
 	_, public := KeyNames(path.Join(core.RegistryPath(), "keys", group, name), fmt.Sprintf("%s_%s", group, name), "pgp")
-	key, err := LoadPGP(public)
+	key, err := LoadPGP(public, "")
 	if err != nil {
 		// if no luck, attempt to load the key from the registry/keys/group path
 		_, public = KeyNames(path.Join(core.RegistryPath(), "keys", group), group, "pgp")
-		key, err = LoadPGP(public)
+		key, err = LoadPGP(public, "")
 		if err != nil {
 			// final attempt to load the key from the registry/keys/ path
 			_, public = KeyNames(path.Join(core.RegistryPath(), "keys"), "root", "pgp")
-			key, err = LoadPGP(public)
+			key, err = LoadPGP(public, "")
 			if err != nil {
 				return nil, fmt.Errorf("cannot read public pgp key: %s", err)
 			}

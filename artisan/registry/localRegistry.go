@@ -459,7 +459,7 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 		var pgp *crypto.PGP
 		if len(pubKeyPath) > 0 {
 			// retrieve the verification key from the specified location
-			pgp, err = crypto.LoadPGP(pubKeyPath)
+			pgp, err = crypto.LoadPGP(pubKeyPath, "")
 			core.CheckErr(err, "cannot load public key, cannot verify signature")
 		} else {
 			// otherwise load it from the registry store
@@ -594,7 +594,7 @@ func (r *LocalRegistry) ImportKey(keyPath string, isPrivate bool, repoGroup stri
 	}
 	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
 	// only check it can read the key
-	_, err := crypto.LoadPGP(keyPath)
+	_, err := crypto.LoadPGP(keyPath, "")
 	core.CheckErr(err, "cannot read pgp key '%s'", keyPath)
 	// if so, then move the key to the correct location to preserve PEM block data
 	if isPrivate {
