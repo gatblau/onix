@@ -163,28 +163,54 @@ type Events []Event
 
 // Job a job to be executed on one or more hosts
 type Job struct {
-	Id        int64    `json:"id"`
-	MachineId string   `json:"machine_id"`
-	JobRef    string   `json:"job_ref"`
-	FxKey     string   `json:"fx_key"`
-	FxVersion int64    `json:"fx_version"`
-	Created   string   `json:"created"`
-	Started   string   `json:"started"`
-	Completed string   `json:"completed"`
-	Log       string   `json:"log"`
-	Error     bool     `json:"error"`
-	OrgGroup  string   `json:"org_group"`
-	Org       string   `json:"org"`
-	Area      string   `json:"area"`
-	Location  string   `json:"location"`
-	Tag       []string `json:"tag"`
+	Id         int64    `json:"id"`
+	HostUUID   string   `json:"host_uuid"`
+	JobBatchId int64    `json:"job_batch_id"`
+	FxKey      string   `json:"fx_key"`
+	FxVersion  int64    `json:"fx_version"`
+	Created    string   `json:"created"`
+	Started    string   `json:"started"`
+	Completed  string   `json:"completed"`
+	Log        string   `json:"log"`
+	Error      bool     `json:"error"`
+	OrgGroup   string   `json:"org_group"`
+	Org        string   `json:"org"`
+	Area       string   `json:"area"`
+	Location   string   `json:"location"`
+	Tag        []string `json:"tag"`
 }
 
-type NewJobInfo struct {
-	JobRef    string
-	MachineId []string
-	FxKey     string
-	FxVersion int64
+// JobBatchInfo information required to create a new job batch
+type JobBatchInfo struct {
+	// the name of the batch (not unique, a user-friendly name)
+	Name string `json:"name"`
+	// a description for the batch (not mandatory)
+	Description string `json:"description,omitempty"`
+	// one or more search labels
+	Label []string `json:"label,omitempty"`
+	// the universally unique host identifier created by pilot
+	HostUUID []string `json:"host_uuid"`
+	// the unique key of the function to run
+	FxKey string `json:"fx_key"`
+	// the version of the function to run
+	FxVersion int64 `json:"fx_version"`
+}
+
+type JobBatch struct {
+	// the id of the job batch
+	BatchId int64 `json:"batch_id"`
+	// the name of the batch (not unique, a user-friendly name)
+	Name string `json:"name"`
+	// a description for the batch (not mandatory)
+	Description string `json:"description,omitempty"`
+	// creation time
+	Created time.Time `json:"created"`
+	// one or more search labels
+	Label []string `json:"label,omitempty"`
+	// owner
+	Owner string `json:"owner"`
+	// jobs
+	Jobs int `json:"jobs"`
 }
 
 // ToJson convert the passed-in object to a JSON byte slice
@@ -216,12 +242,12 @@ type Location struct {
 }
 
 type Admission struct {
-	MachineId string   `json:"machine_id"`
-	OrgGroup  string   `json:"org_group"`
-	Org       string   `json:"org"`
-	Area      string   `json:"area"`
-	Location  string   `json:"location"`
-	Tag       []string `json:"tag"`
+	HostUUID string   `json:"host_uuid"`
+	OrgGroup string   `json:"org_group"`
+	Org      string   `json:"org"`
+	Area     string   `json:"area"`
+	Location string   `json:"location"`
+	Label    []string `json:"label"`
 }
 
 // Result

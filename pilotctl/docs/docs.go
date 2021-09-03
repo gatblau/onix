@@ -287,6 +287,12 @@ var doc = `{
                 "summary": "Get Jobs",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "description": "the unique identifier (number) of the job batch to retrieve",
+                        "name": "bid",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "the organisation group key to filter the query",
                         "name": "og",
@@ -342,8 +348,66 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core.NewJobInfo"
+                            "$ref": "#/definitions/core.JobBatchInfo"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/job/batch": {
+            "get": {
+                "description": "Returns a list of jobs batches with various filters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Job"
+                ],
+                "summary": "Get Job Batches",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the name of the batch as in name% format",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the creator of the batch",
+                        "name": "owner",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "a pipe | separated list of labels associated to the batch",
+                        "name": "label",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the time from which to get batches (format should be dd-MM-yyyy)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the time to which to get batches (format should be dd-MM-yyyy)",
+                        "name": "to",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -527,10 +591,16 @@ var doc = `{
                 "area": {
                     "type": "string"
                 },
-                "location": {
+                "host_uuid": {
                     "type": "string"
                 },
-                "machine_id": {
+                "label": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "location": {
                     "type": "string"
                 },
                 "org": {
@@ -538,12 +608,6 @@ var doc = `{
                 },
                 "org_group": {
                     "type": "string"
-                },
-                "tag": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 }
             }
         },
@@ -588,23 +652,38 @@ var doc = `{
                 }
             }
         },
-        "core.NewJobInfo": {
+        "core.JobBatchInfo": {
             "type": "object",
             "properties": {
-                "fxKey": {
+                "description": {
+                    "description": "a description for the batch (not mandatory)",
                     "type": "string"
                 },
-                "fxVersion": {
+                "fx_key": {
+                    "description": "the unique key of the function to run",
+                    "type": "string"
+                },
+                "fx_version": {
+                    "description": "the version of the function to run",
                     "type": "integer"
                 },
-                "jobRef": {
-                    "type": "string"
-                },
-                "machineId": {
+                "host_uuid": {
+                    "description": "the universally unique host identifier created by pilot",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
+                },
+                "label": {
+                    "description": "one or more search labels",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "description": "the name of the batch (not unique, a user-friendly name)",
+                    "type": "string"
                 }
             }
         },
