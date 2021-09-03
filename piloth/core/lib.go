@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"os/user"
 	"path"
 	"strconv"
@@ -83,4 +84,9 @@ func readToken(token string) (string, bool, error) {
 	}
 	timeOk := (time.Now().Unix() - tokenTime) < (5 * 60)
 	return parts[0], timeOk, nil
+}
+
+func commandExists(cmd string) bool {
+	_, err := exec.LookPath(cmd)
+	return err == nil
 }

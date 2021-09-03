@@ -8,11 +8,14 @@ package core
   to be licensed under the same terms as the rest of the code.
 */
 import (
+	"crypto/sha1"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/shirou/gopsutil/cpu"
 	hostUtil "github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
+	"io"
 	"math"
 	"net"
 	"strings"
@@ -23,6 +26,7 @@ const TimeLayout = "02-01-2006 03:04:05.000-0700"
 
 // HostInfo abstracts host information
 type HostInfo struct {
+	HostUUID        string
 	MachineId       string
 	HostName        string
 	OS              string
@@ -64,6 +68,7 @@ func NewHostInfo() (*HostInfo, error) {
 		cpus = -1
 	}
 	info := &HostInfo{
+		HostUUID:    hostUUID(i.HostID, i.Hostname),
 		MachineId:   strings.ReplaceAll(i.HostID, "-", ""),
 		HostIP:      hostIp,
 		HostName:    i.Hostname,
@@ -120,4 +125,14 @@ func externalIP() (string, error) {
 		}
 	}
 	return "", errors.New("are you connected to the network?\n")
+}
+
+// hostUUID works out a unique reference for the host that is not the machine id, as machine id is not unique
+// e.g. cloning a VM will have the same machine-id, hence using a combination of hostname and machine id for uniqueness
+// not using system UUID as it requires administrative privileges
+func hostUUID(machineId, hostname string) string {
+	uuidString := fmt.Sprintf("%s-%s", machineId, hostname)
+	hash := sha1.New()
+	io.WriteString(hash, uuidString)
+	return fmt.Sprintf("%x", hash.Sum(nil))
 }

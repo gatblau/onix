@@ -548,7 +548,7 @@ func surveyVar(variable *Var) {
 	default:
 		validator = nil
 		if len(variable.Type) > 0 {
-			core.Msg("input '%s' has a type of '%s' which is not valid\n"+
+			core.InfoLogger.Printf("input '%s' has a type of '%s' which is not valid\n"+
 				"	valid types are path, URI or name\n"+
 				"	skipping type validation", variable.Name, variable.Type)
 		}

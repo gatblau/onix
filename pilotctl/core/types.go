@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/artisan/data"
+	"github.com/gatblau/onix/artisan/merge"
 	"time"
 )
 
@@ -96,6 +97,10 @@ func (c *CmdValue) Env() []string {
 		vars = append(vars, fmt.Sprintf("%s=%s", s.Name, s.Value))
 	}
 	return vars
+}
+
+func (c *CmdValue) Envar() *merge.Envar {
+	return merge.NewEnVarFromSlice(c.Env())
 }
 
 func (c *CmdValue) PrintEnv() string {

@@ -23,7 +23,7 @@ env:
 #  alpha: Alpha release, typically used for work-in-progress and experimentation
 #  beta: Beta release, typically one that is feature complete for the next planned release, but may contain known bugs.
 #  rc: Release candidate, typically a release that's potentially final (stable) unless significant bugs emerge.
-  LIFECYCLE_STAGE: beta
+  LIFECYCLE_STAGE: RC1
 profiles:
   - name: linux
     default: true

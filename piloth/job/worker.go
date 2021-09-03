@@ -12,10 +12,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/gatblau/onix/artisan/build"
+	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/pilotctl/core"
 	"log"
 	"log/syslog"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -99,7 +101,7 @@ func (w *Worker) Start() {
 					// execute the job
 					out, err := w.run(cmd)
 					if err != nil {
-						w.stdout("job %d, %s -> %s failed: %s", cmd.JobId, cmd.Package, cmd.Function, err)
+						w.stdout("job %d, %s -> %s failed: %s", cmd.JobId, cmd.Package, cmd.Function, mask(err.Error(), cmd.User, cmd.Pwd))
 					} else {
 						w.stdout("job %d, %s -> %s succeeded", cmd.JobId, cmd.Package, cmd.Function)
 					}
@@ -108,7 +110,7 @@ func (w *Worker) Start() {
 					// collect result
 					var errorMsg string
 					if err != nil {
-						errorMsg = err.Error()
+						errorMsg = mask(err.Error(), cmd.User, cmd.Pwd)
 					}
 					result := &Result{
 						JobId:   cmd.JobId,
@@ -164,8 +166,15 @@ func run(data interface{}) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("Runnable data is not of the correct type\n")
 	}
+	// create the command to run
 	cmdString := fmt.Sprintf("art exe -u %s:%s %s %s", cmd.User, cmd.Pwd, cmd.Package, cmd.Function)
-	return build.Exe(cmdString, ".", cmd.Envar(), false)
+	// capture the PATH variable
+	path := os.Getenv("PATH")
+	env := cmd.Envar()
+	// inject the PATH into the process
+	env.Merge(merge.NewEnVarFromSlice([]string{fmt.Sprintf("PATH=%s", path)}))
+	// run and return
+	return build.Exe(cmdString, ".", env, false)
 }
 
 // warn: write a warning in syslog
@@ -184,4 +193,10 @@ func (w *Worker) debug(msg string, a ...interface{}) {
 	if len(os.Getenv("PILOT_DEBUG")) > 0 {
 		w.stdout(fmt.Sprintf("DEBUG: %s", msg), a...)
 	}
+}
+
+func mask(value, user, pwd string) string {
+	str := strings.Replace(value, user, "****", -1)
+	str = strings.Replace(str, pwd, "xxxx", -1)
+	return str
 }

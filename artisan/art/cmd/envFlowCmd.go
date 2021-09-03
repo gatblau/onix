@@ -81,7 +81,7 @@ func (c *EnvFlowCmd) Run(cmd *cobra.Command, args []string) {
 	}
 	if *c.stdout {
 		// print to console
-		fmt.Println(string(output))
+		os.Stdout.WriteString(fmt.Sprintf("%s\n", string(output)))
 	} else {
 		// save to disk
 		dir := filepath.Dir(c.flowPath)

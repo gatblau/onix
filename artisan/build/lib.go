@@ -9,26 +9,21 @@ package build
 */
 import (
 	"archive/zip"
-	"bufio"
-	"errors"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/merge"
-	"github.com/mattn/go-shellwords"
 	"io"
 	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -132,17 +127,17 @@ func exitMsg(exitCode int) string {
 	case 1:
 		return "error 1 - general error"
 	case 2:
-		return "error 2 - misuse of shell built-ins"
+		return "error 2 - misuse of shell built-ins (check for permission or access problem)"
 	case 126:
-		return "error 126 - command invoked cannot execute"
+		return "error 126 - command invoked cannot execute (check for permission problem)"
 	case 127:
-		return "error 127 - command not found"
+		return "error 127 - command not found (check for typos or missing commands)"
 	case 128:
-		return "error 128 - invalid argument to exit"
+		return "error 128 - invalid argument to exit (check when you are not returning something that is not integer args in the range 0 – 255)"
 	case 130:
 		return "error 130 - script terminated by CTRL-C"
 	default:
-		return fmt.Sprintf("exist code %d", exitCode)
+		return fmt.Sprintf("exit code %d", exitCode)
 	}
 }
 
@@ -222,25 +217,13 @@ func copyFolder(src string, dst string) error {
 		dstFp := path.Join(dst, fd.Name())
 		if fd.IsDir() {
 			if err = copyFolder(srcFp, dstFp); err != nil {
-				fmt.Println(err)
+				core.ErrorLogger.Printf(err.Error())
 			}
 		} else {
 			if err = copyFile(srcFp, dstFp); err != nil {
-				fmt.Println(err)
+				core.ErrorLogger.Printf(err.Error())
 			}
 		}
-	}
-	return nil
-}
-
-func renameFolder(src string, dst string, force bool) (err error) {
-	err = copyFolder(src, dst)
-	if err != nil {
-		return fmt.Errorf("failed to copy source dir %s to %s: %s", src, dst, err)
-	}
-	err = os.RemoveAll(src)
-	if err != nil {
-		return fmt.Errorf("failed to cleanup source dir %s: %s", src, err)
 	}
 	return nil
 }
@@ -287,115 +270,16 @@ func round(val float64, roundOn float64, places int) (newVal float64) {
 
 // executes a command and sends output and error streams to stdout and stderr
 func execute(cmd string, dir string, env *merge.Envar, interactive bool) (err error) {
-	if cmd == "" {
-		return errors.New("no command provided")
-	}
-	// create a command parser
-	p := shellwords.NewParser()
-	// parse the command line
-	cmdArr, err := p.Parse(cmd)
-
-	// if we are in windows
-	if runtime.GOOS == "windows" {
-		// prepend "cmd /C" to the command line
-		cmdArr = append([]string{"cmd", "/C"}, cmdArr...)
-		core.Debug("windows cmd => %s", cmdArr)
-	}
-	name := cmdArr[0]
-
-	var args []string
-	if len(cmdArr) > 1 {
-		args = cmdArr[1:]
-	}
-
-	args, _ = core.MergeEnvironmentVars(args, env.Vars, interactive)
-
-	command := exec.Command(name, args...)
-	command.Dir = dir
-	command.Env = env.Slice()
-
-	stdout, err := command.StdoutPipe()
+	// executes the command
+	out, err := Exe(cmd, dir, env, interactive)
+	// if there is an error return it
 	if err != nil {
-		log.Printf("failed creating command stdoutpipe: %s", err)
 		return err
 	}
-	defer func() {
-		_ = stdout.Close()
-	}()
-	stdoutReader := bufio.NewReader(stdout)
-
-	stderr, err := command.StderrPipe()
-	if err != nil {
-		log.Printf("failed creating command stderrpipe: %s", err)
-		return err
-	}
-	defer func() {
-		_ = stderr.Close()
-	}()
-	stderrReader := bufio.NewReader(stderr)
-
-	if err := command.Start(); err != nil {
-		return err
-	}
-
-	go handleReader(stdoutReader)
-	go handleReader(stderrReader)
-
-	if err := command.Wait(); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			if _, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-				core.RaiseErr("run command failed: '%s' - '%s'", cmd, exitErr.Error())
-			}
-		}
-		return err
-	}
+	// write the command output to stdout
+	os.Stdout.WriteString(out)
+	// return without error
 	return nil
-}
-
-// executes a command and returns ist output
-func executeWithOutput(cmd string, dir string, env *merge.Envar, interactive bool) (string, error) {
-	if cmd == "" {
-		return "", errors.New("no command provided")
-	}
-	// create a command parser
-	p := shellwords.NewParser()
-	// parse the command line
-	cmdArr, err := p.Parse(cmd)
-
-	// if we are in windows
-	if runtime.GOOS == "windows" {
-		// prepend "cmd /C" to the command line
-		cmdArr = append([]string{"cmd", "/C"}, cmdArr...)
-		core.Debug("windows cmd => %s", cmdArr)
-	}
-	name := cmdArr[0]
-
-	var args []string
-	if len(cmdArr) > 1 {
-		args = cmdArr[1:]
-	}
-
-	args, _ = core.MergeEnvironmentVars(args, env.Vars, interactive)
-
-	command := exec.Command(name, args...)
-	command.Dir = dir
-	command.Env = env.Slice()
-
-	result, err := command.Output()
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimRight(string(result), "\n"), nil
-}
-
-func handleReader(reader *bufio.Reader) {
-	for {
-		str, err := reader.ReadString('\n')
-		if err != nil {
-			break
-		}
-		fmt.Print(str)
-	}
 }
 
 func contains(value string, list []string) bool {

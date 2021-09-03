@@ -38,7 +38,6 @@ type Builder struct {
 	repoURI          string
 	commit           string
 	from             string
-	signer           *crypto.Signer
 	repoName         *core.PackageName
 	buildFile        *data.BuildFile
 	localReg         *registry.LocalRegistry
@@ -52,7 +51,6 @@ func NewBuilder() *Builder {
 	// create the builder instance
 	builder := new(Builder)
 	// check the localRepo directory is there
-	builder.signer = new(crypto.Signer)
 	builder.localReg = registry.NewLocalRegistry()
 	return builder
 }
@@ -334,6 +332,8 @@ func (b *Builder) getIgnored() []string {
 
 // run a specified function
 func (b *Builder) runFunction(function string, path string, interactive bool, env *merge.Envar) {
+	// if in debug mode, print environment variables
+	env.Debug(fmt.Sprintf("executing function: %s\n", function))
 	// if inputs are defined for the function then survey for data
 	i := data.SurveyInputFromBuildFile(function, b.buildFile, interactive, false, env)
 	// merge the collected input with the current environment
@@ -365,7 +365,7 @@ func (b *Builder) runFunction(function string, path string, interactive bool, en
 		buildEnv = buildEnv.Append(fx.GetEnv())
 		// if the statement has a function call
 		if ok, expr, shell := core.HasShell(cmd); ok {
-			out, err := executeWithOutput(shell, path, buildEnv, interactive)
+			out, err := Exe(shell, path, buildEnv, interactive)
 			core.CheckErr(err, "cannot execute subshell command: %s", cmd)
 			// merges the output of the subshell in the original command
 			cmd = strings.Replace(cmd, expr, out, -1)
@@ -410,7 +410,7 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 			for _, cmd := range profile.Run {
 				// execute the statement
 				if ok, expr, shell := core.HasShell(cmd); ok {
-					out, err := executeWithOutput(shell, execDir, buildEnv, interactive)
+					out, err := Exe(shell, execDir, buildEnv, interactive)
 					core.CheckErr(err, "cannot execute subshell command: %s", cmd)
 					// merges the output of the subshell in the original command
 					cmd = strings.Replace(cmd, expr, out, -1)
@@ -451,7 +451,7 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 func (b *Builder) evalSubshell(vars map[string]string, execDir string, env *merge.Envar, interactive bool) map[string]string {
 	for k, v := range vars {
 		if ok, expr, shell := core.HasShell(v); ok {
-			out, err := executeWithOutput(shell, execDir, env, interactive)
+			out, err := Exe(shell, execDir, env, interactive)
 			core.CheckErr(err, "cannot execute subshell command: %s", v)
 			// merges the output of the subshell in the original variable
 			vars[k] = strings.Replace(v, expr, out, -1)
@@ -641,6 +641,6 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 			os.RemoveAll(path)
 		}
 	} else {
-		core.RaiseErr("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile", function)
+		core.RaiseErr("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile\n", function)
 	}
 }

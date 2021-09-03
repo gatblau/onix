@@ -10,7 +10,6 @@ package core
 import (
 	"fmt"
 	"gopkg.in/mcuadros/go-syslog.v2"
-	"log"
 )
 
 // SyslogCollector syslog log collection service that wraps a syslog server
@@ -40,11 +39,11 @@ func NewCollector(bindIP, port string) (*SyslogCollector, error) {
 			}
 			event, err := NewEvent(logEntry, *info)
 			if err != nil {
-				log.Printf("cannot format syslog enrty: %s\n", err)
+				ErrorLogger.Printf("cannot format syslog entry: %s\n", err)
 			}
 			err = event.Save()
 			if err != nil {
-				log.Printf("cannot save syslog entry to file: %s\n", err)
+				ErrorLogger.Printf("cannot save syslog entry to file: %s\n", err)
 			}
 		}
 	}(channel)
@@ -56,7 +55,7 @@ func NewCollector(bindIP, port string) (*SyslogCollector, error) {
 
 // Start the server
 func (s *SyslogCollector) Start() error {
-	log.Printf("starting syslog collector on port %s\n", s.port)
+	InfoLogger.Printf("starting syslog collector on port %s\n", s.port)
 	return s.server.Boot()
 }
 
