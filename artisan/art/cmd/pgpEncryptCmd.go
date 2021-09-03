@@ -53,7 +53,7 @@ func (b *PGPEncryptCmd) Run(cmd *cobra.Command, args []string) {
 	path := core.ToAbs(args[0])
 	if len(b.keyPath) > 0 {
 		// load the crypto key
-		pgp, err = crypto.LoadPGP(core.ToAbs(b.keyPath))
+		pgp, err = crypto.LoadPGP(core.ToAbs(b.keyPath), "")
 		core.CheckErr(err, "cannot load public key")
 		if pgp.HasPrivate() {
 			core.RaiseErr("the specified key is private, a public key is required")

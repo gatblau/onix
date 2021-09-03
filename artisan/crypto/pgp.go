@@ -66,7 +66,7 @@ func NewPGP(name, comment, email string, bits int) *PGP {
 }
 
 // LoadPGP load a PGP entity from file
-func LoadPGP(filename string) (*PGP, error) {
+func LoadPGP(filename, passphrase string) (*PGP, error) {
 	if !filepath.IsAbs(filename) {
 		abs, err := filepath.Abs(filename)
 		if err != nil {
@@ -74,12 +74,31 @@ func LoadPGP(filename string) (*PGP, error) {
 		}
 		filename = abs
 	}
-	// read the key file
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("cannot open key file %s: %s", filename, err)
+	var reader io.Reader
+	// if key is encrypted
+	if len(passphrase) > 0 {
+		c := &AesCrypto{
+			CipherMode: CBC,
+			Padding:    NoPadding,
+		}
+		bb, err := ioutil.ReadFile(filename)
+		if err != nil {
+			return nil, err
+		}
+		decrypted, err := c.Decrypt(string(bb), []byte(passphrase))
+		if err != nil {
+			return nil, err
+		}
+		reader = bytes.NewReader([]byte(decrypted))
+	} else {
+		// read the key file
+		f, err := os.Open(filename)
+		if err != nil {
+			return nil, fmt.Errorf("cannot open key file %s: %s", filename, err)
+		}
+		reader = f
 	}
-	entityList, err := openpgp.ReadArmoredKeyRing(f)
+	entityList, err := openpgp.ReadArmoredKeyRing(reader)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read PGP entity: %s", err)
 	}
@@ -103,6 +122,14 @@ func LoadPGP(filename string) (*PGP, error) {
 
 	return &PGP{
 		entity: entity,
+		conf: &packet.Config{
+			DefaultCipher: defaultCipher,
+			DefaultHash:   defaultDigest,
+			RSABits:       2048,
+			Time: func() time.Time {
+				return time.Now()
+			},
+		},
 	}, nil
 }
 
@@ -212,10 +239,21 @@ func (p *PGP) Decrypt(encrypted []byte) ([]byte, error) {
 
 // SavePublicKey save the public key to  file
 // version: the version to show in the key PEM header
-func (p *PGP) SavePublicKey(keyFilename, version string) error {
+func (p *PGP) SavePublicKey(keyFilename, version, passphrase string) (err error) {
 	keyBytes, err := p.toPublicKey(version)
 	if err != nil {
 		return fmt.Errorf("cannot save public key: %s", err)
+	}
+	if len(passphrase) > 0 {
+		c := &AesCrypto{
+			CipherMode: CBC,
+			Padding:    NoPadding,
+		}
+		encStr, err := c.Encrypt(string(keyBytes[:]), []byte(passphrase))
+		if err != nil {
+			return err
+		}
+		keyBytes = []byte(encStr)
 	}
 	// write the public key to a file
 	err = ioutil.WriteFile(keyFilename, keyBytes, os.ModePerm)
@@ -227,10 +265,25 @@ func (p *PGP) SavePublicKey(keyFilename, version string) error {
 
 // SavePrivateKey save the public key to  file
 // version: the version to show in the key PEM header
-func (p *PGP) SavePrivateKey(keyFilename, version string) error {
+func (p *PGP) SavePrivateKey(keyFilename, version, passphrase string) error {
 	keyBytes, err := p.toPrivateKey(version)
 	if err != nil {
 		return fmt.Errorf("cannot save private key: %s", err)
+	}
+	if len(passphrase) > 0 {
+		if len(passphrase) == 16 || len(passphrase) == 24 || len(passphrase) == 32 {
+			c := &AesCrypto{
+				CipherMode: CBC,
+				Padding:    NoPadding,
+			}
+			encStr, err := c.Encrypt(string(keyBytes[:]), []byte(passphrase))
+			if err != nil {
+				return err
+			}
+			keyBytes = []byte(encStr)
+		} else {
+			return fmt.Errorf("passphrase length incorrect, valid lengths are 0, 16, 24 or 32 characters")
+		}
 	}
 	// write the private key to a file
 	err = ioutil.WriteFile(keyFilename, keyBytes, os.ModePerm)

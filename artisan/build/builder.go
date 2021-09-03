@@ -546,7 +546,7 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 		pk, err = crypto.LoadPGPPrivateKey(packageName.Group, packageName.Name)
 		core.CheckErr(err, "cannot load signing key")
 	} else {
-		pk, err = crypto.LoadPGP(pkPath)
+		pk, err = crypto.LoadPGP(pkPath, "")
 		core.CheckErr(err, "cannot load signing key")
 	}
 	// create a PGP cryptographic signature

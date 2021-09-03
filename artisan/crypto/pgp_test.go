@@ -18,11 +18,11 @@ func TestGenerateKeys(t *testing.T) {
 
 	// saves private and public keys
 	pkName, pubName := KeyNames(".", "root", "pgp")
-	err := p.SavePublicKey(pubName, "xxx")
+	err := p.SavePublicKey(pubName, "xxx", "")
 	if err != nil {
 		t.FailNow()
 	}
-	err = p.SavePrivateKey(pkName, "xxx")
+	err = p.SavePrivateKey(pkName, "xxx", "")
 	if err != nil {
 		t.FailNow()
 	}
@@ -30,7 +30,7 @@ func TestGenerateKeys(t *testing.T) {
 
 func TestLoadKeySignAndVerify(t *testing.T) {
 	// load the private key for signing
-	priv, err := LoadPGP("id_rsa_key.pgp")
+	priv, err := LoadPGP("id_rsa_key.pgp", "")
 	if err != nil {
 		t.Fatal(err)
 		t.FailNow()
@@ -42,7 +42,7 @@ func TestLoadKeySignAndVerify(t *testing.T) {
 		t.FailNow()
 	}
 	// load the public key for verification of the signature
-	pub, err := LoadPGP("id_rsa_pub.pgp")
+	pub, err := LoadPGP("id_rsa_pub.pgp", "")
 	if err != nil {
 		t.Fatal(err)
 		t.FailNow()
@@ -58,7 +58,7 @@ func TestLoadKeySignAndVerify(t *testing.T) {
 func TestEncryptAndDecrypt(t *testing.T) {
 	// anyone can encrypt with the public key
 	// load the public key for encryption of the message
-	pub, err := LoadPGP("pub.key")
+	pub, err := LoadPGP("pub.key", "")
 	if err != nil {
 		t.Fatal(err)
 		t.FailNow()
@@ -70,7 +70,7 @@ func TestEncryptAndDecrypt(t *testing.T) {
 	}
 	// only the holder of the private key can decrypt
 	// load the private key for decryption of the message
-	priv, err := LoadPGP("priv.key")
+	priv, err := LoadPGP("priv.key", "")
 	if err != nil {
 		t.Fatal(err)
 		t.FailNow()
@@ -81,4 +81,32 @@ func TestEncryptAndDecrypt(t *testing.T) {
 		t.FailNow()
 	}
 	fmt.Print(msg)
+}
+
+func TestGenerateEncryptedPrivateKey(t *testing.T) {
+	// creates a new PGP object
+	p := NewPGP("gatblau/boot", "an artisan pgp key for digital signatures", "onix@gatblau.org", 2048)
+
+	// defines a 16-digit passphrase (AES-128)
+	// for AES-192 use a 24-digit passphrase
+	// for AES-256 use a 32-digit passphrase
+	aes_128_passphrase := "0123456789012345"
+
+	// save encrypted key as *.asc file using passphrase
+	err := p.SavePrivateKey("myprivatekey.asc", "0.0.1", aes_128_passphrase)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// now try and load file and decrypt it using passphrase
+	p2, err := LoadPGP("myprivatekey.asc", aes_128_passphrase)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// now save pgp key unencrypted, hence no passphrase
+	err = p2.SavePrivateKey("myprivatekey.pgp", "0.0.1", "")
+	if err != nil {
+		t.Fatal(err)
+	}
 }
