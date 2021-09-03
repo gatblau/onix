@@ -3,18 +3,18 @@ definitions:
     properties:
       area:
         type: string
-      location:
+      host_uuid:
         type: string
-      machine_id:
+      label:
+        items:
+          type: string
+        type: array
+      location:
         type: string
       org:
         type: string
       org_group:
         type: string
-      tag:
-        items:
-          type: string
-        type: array
     type: object
   core.Cmd:
     properties:
@@ -46,18 +46,30 @@ definitions:
         description: enables verbose output
         type: boolean
     type: object
-  core.NewJobInfo:
+  core.JobBatchInfo:
     properties:
-      fxKey:
+      description:
+        description: a description for the batch (not mandatory)
         type: string
-      fxVersion:
+      fx_key:
+        description: the unique key of the function to run
+        type: string
+      fx_version:
+        description: the version of the function to run
         type: integer
-      jobRef:
-        type: string
-      machineId:
+      host_uuid:
+        description: the universally unique host identifier created by pilot
         items:
           type: string
         type: array
+      label:
+        description: one or more search labels
+        items:
+          type: string
+        type: array
+      name:
+        description: the name of the batch (not unique, a user-friendly name)
+        type: string
     type: object
   data.File:
     properties:
@@ -331,6 +343,10 @@ paths:
     get:
       description: Returns a list of jobs filtered by the specified logistics tags
       parameters:
+      - description: the unique identifier (number) of the job batch to retrieve
+        in: query
+        name: bid
+        type: integer
       - description: the organisation group key to filter the query
         in: query
         name: og
@@ -369,7 +385,7 @@ paths:
         name: command
         required: true
         schema:
-          $ref: '#/definitions/core.NewJobInfo'
+          $ref: '#/definitions/core.JobBatchInfo'
       produces:
       - text/plain
       responses:
@@ -382,6 +398,44 @@ paths:
           schema:
             type: string
       summary: Create a Job
+      tags:
+      - Job
+  /job/batch:
+    get:
+      description: Returns a list of jobs batches with various filters
+      parameters:
+      - description: the name of the batch as in name% format
+        in: query
+        name: name
+        type: string
+      - description: the creator of the batch
+        in: query
+        name: owner
+        type: string
+      - description: a pipe | separated list of labels associated to the batch
+        in: query
+        name: label
+        type: string
+      - description: the time from which to get batches (format should be dd-MM-yyyy)
+        in: query
+        name: from
+        type: string
+      - description: the time to which to get batches (format should be dd-MM-yyyy)
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Job Batches
       tags:
       - Job
   /org-group:

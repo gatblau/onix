@@ -51,6 +51,7 @@ func main() {
 		router.HandleFunc("/package/{name}/api", getPackagesApiHandler).Methods("GET")
 		router.HandleFunc("/job", newJobHandler).Methods("POST")
 		router.HandleFunc("/job", getJobsHandler).Methods("GET")
+		router.HandleFunc("/job/batch", getJobBatchHandler).Methods("GET")
 	}
 	// set up specific authentication for host pilot agents
 	s.Auth = map[string]func(string) bool{

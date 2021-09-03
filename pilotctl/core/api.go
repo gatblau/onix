@@ -169,16 +169,16 @@ func (r *API) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 }
 
 func (r *API) SetAdmission(admission Admission) error {
-	if len(admission.MachineId) == 0 {
-		return fmt.Errorf("machine Id is missing")
+	if len(admission.HostUUID) == 0 {
+		return fmt.Errorf("host UUID is missing")
 	}
 	return r.db.RunCommand("select pilotctl_set_admission($1, $2, $3, $4, $5, $6)",
-		admission.MachineId,
+		admission.HostUUID,
 		admission.OrgGroup,
 		admission.Org,
 		admission.Area,
 		admission.Location,
-		admission.Tag)
+		admission.Label)
 }
 
 // Authenticate a pilot based on its time stamp and machine Id admission status
@@ -446,63 +446,122 @@ func (r *API) GetOrgGroups() ([]Org, error) {
 	return orgs, nil
 }
 
-func (r *API) CreateJob(ref, machineId, fxId string, fxVersion int64) error {
-	if len(machineId) == 0 {
-		return fmt.Errorf("machine Id is missing\n")
+func (r *API) CreateJobBatch(info JobBatchInfo) (int64, error) {
+	if len(info.HostUUID) == 0 {
+		return -1, fmt.Errorf("host UUID is missing\n")
 	}
-	if len(fxId) == 0 {
-		return fmt.Errorf("fx Id is missing\n")
+	if len(info.FxKey) == 0 {
+		return -1, fmt.Errorf("fx is missing\n")
 	}
-	return r.db.RunCommand("select pilotctl_create_job($1, $2, $3, $4)", ref, machineId, fxId, fxVersion)
+	// create a job batch identifier
+	rows, err := r.db.Query("select * from pilotctl_create_job_batch($1, $2, $3, $4)", info.Name, info.Description, "???", info.Label)
+	if err != nil {
+		return -1, fmt.Errorf("cannot create job batch: %s\n", err)
+	}
+	var batchId int64 = -1
+	for rows.Next() {
+		rows.Scan(&batchId)
+	}
+	if batchId == -1 {
+		return -1, fmt.Errorf("cannot retrieve job batch Id\n")
+	}
+	// add jobs to the batch using the batch ID
+	var returnError error
+	for _, uuid := range info.HostUUID {
+		err = r.db.RunCommand("select pilotctl_create_job($1, $2, $3, $4)", batchId, uuid, info.FxKey, info.FxVersion)
+		// if there is an error creating the job
+		if err != nil {
+			if returnError == nil {
+				returnError = err
+			}
+			// accumulates the error and continue with the next job
+			returnError = fmt.Errorf("can't create job: %s\n", returnError)
+		}
+	}
+	// return any job creation error
+	return batchId, returnError
 }
 
-func (r *API) GetJobs(oGroup, or, ar, loc string) ([]Job, error) {
+func (r *API) GetJobs(oGroup, or, ar, loc string, batchId *int64) ([]Job, error) {
 	jobs := make([]Job, 0)
-	rows, err := r.db.Query("select * from pilotctl_get_jobs($1, $2, $3, $4)", oGroup, or, ar, loc)
+	rows, err := r.db.Query("select * from pilotctl_get_jobs($1, $2, $3, $4, $5)", oGroup, or, ar, loc, batchId)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get jobs: %s\n", err)
 	}
 	var (
-		id        int64
-		machineId string
-		jobRef    string
-		fxKey     string
-		fxVersion int64
-		created   sql.NullTime
-		started   sql.NullTime
-		completed sql.NullTime
-		log       sql.NullString
-		e         sql.NullBool
-		orgGroup  sql.NullString
-		org       sql.NullString
-		area      sql.NullString
-		location  sql.NullString
-		tag       []string
+		id         int64
+		hostUUID   string
+		jobBatchId int64
+		fxKey      string
+		fxVersion  int64
+		created    sql.NullTime
+		started    sql.NullTime
+		completed  sql.NullTime
+		log        sql.NullString
+		e          sql.NullBool
+		orgGroup   sql.NullString
+		org        sql.NullString
+		area       sql.NullString
+		location   sql.NullString
+		tag        []string
 	)
 	for rows.Next() {
-		err = rows.Scan(&id, &machineId, &jobRef, &fxKey, &fxVersion, &created, &started, &completed, &log, &e, &orgGroup, &org, &area, &location, &tag)
+		err = rows.Scan(&id, &hostUUID, &jobBatchId, &fxKey, &fxVersion, &created, &started, &completed, &log, &e, &orgGroup, &org, &area, &location, &tag)
 		if err != nil {
 			return nil, fmt.Errorf("cannot scan job row: %e\n", err)
 		}
 		jobs = append(jobs, Job{
-			Id:        id,
-			MachineId: machineId,
-			JobRef:    jobRef,
-			FxKey:     fxKey,
-			FxVersion: fxVersion,
-			Created:   timeF(created),
-			Started:   timeF(started),
-			Completed: timeF(completed),
-			Log:       stringF(log),
-			Error:     boolF(e),
-			OrgGroup:  orgGroup.String,
-			Org:       org.String,
-			Area:      area.String,
-			Location:  location.String,
-			Tag:       tag,
+			Id:         id,
+			HostUUID:   hostUUID,
+			JobBatchId: jobBatchId,
+			FxKey:      fxKey,
+			FxVersion:  fxVersion,
+			Created:    timeF(created),
+			Started:    timeF(started),
+			Completed:  timeF(completed),
+			Log:        stringF(log),
+			Error:      boolF(e),
+			OrgGroup:   orgGroup.String,
+			Org:        org.String,
+			Area:       area.String,
+			Location:   location.String,
+			Tag:        tag,
 		})
 	}
 	return jobs, rows.Err()
+}
+
+func (r *API) GetJobBatches(name, owner *string, from, to *time.Time, label *[]string) ([]JobBatch, error) {
+	batches := make([]JobBatch, 0)
+	rows, err := r.db.Query("select * from pilotctl_get_job_batches($1, $2, $3, $4, $5)", name, from, to, label, owner)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get job batches: %s\n", err)
+	}
+	var (
+		id          int64
+		name2       string
+		description string
+		created     sql.NullTime
+		owner2      string
+		labels      []string
+		jobs        int
+	)
+	for rows.Next() {
+		err = rows.Scan(&id, &name2, &description, &labels, &created, &owner2, &jobs)
+		if err != nil {
+			return nil, fmt.Errorf("cannot scan job batch row: %e\n", err)
+		}
+		batches = append(batches, JobBatch{
+			BatchId:     id,
+			Name:        name2,
+			Description: description,
+			Label:       labels,
+			Owner:       owner2,
+			Jobs:        jobs,
+			Created:     created.Time,
+		})
+	}
+	return batches, rows.Err()
 }
 
 func reverse(str string) (result string) {

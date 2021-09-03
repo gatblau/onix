@@ -28,6 +28,9 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // pingHandler excluded from swagger as it is accessed by pilot with a special time-bound access token
@@ -225,7 +228,7 @@ func getAllCmdHandler(w http.ResponseWriter, r *http.Request) {
 // @Description create a new job for execution on one or more remote hosts
 // @Tags Job
 // @Router /job [post]
-// @Param command body core.NewJobInfo true "the information required to create a new job"
+// @Param command body core.JobBatchInfo true "the information required to create a new job"
 // @Accepts json
 // @Produce plain
 // @Failure 500 {string} there was an error in the server, check the server logs
@@ -237,27 +240,28 @@ func newJobHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("can't read http body: check server logs\n"), http.StatusInternalServerError)
 		return
 	}
-	var job = new(core.NewJobInfo)
-	err = json.Unmarshal(bytes, job)
+	var batch = new(core.JobBatchInfo)
+	err = json.Unmarshal(bytes, batch)
 	if err != nil {
 		log.Printf("can't unmarshal http body: %v\n", err)
 		http.Error(w, fmt.Sprintf("can't unmarshal http body, check the server logs\n"), http.StatusInternalServerError)
 		return
 	}
-	for _, id := range job.MachineId {
-		err = api.CreateJob(job.JobRef, id, job.FxKey, job.FxVersion)
-		if err != nil {
-			log.Printf("can't create job: %v\n", err)
-			http.Error(w, fmt.Sprintf("can't create job, check the server logs\n"), http.StatusInternalServerError)
-			return
-		}
+	jobBatchId, err := api.CreateJobBatch(*batch)
+	if err != nil {
+		log.Printf("can't create job batch: %v\n", err)
+		http.Error(w, fmt.Sprintf("can't create job batch, check the server logs\n"), http.StatusInternalServerError)
+		return
 	}
+	// return the batch ID
+	w.Write([]byte(strconv.FormatInt(jobBatchId, 10)))
 }
 
 // @Summary Get Jobs
 // @Description Returns a list of jobs filtered by the specified logistics tags
 // @Tags Job
 // @Router /job [get]
+// @Param bid query int64 false "the unique identifier (number) of the job batch to retrieve"
 // @Param og query string false "the organisation group key to filter the query"
 // @Param or query string false "the organisation key to filter the query"
 // @Param ar query string false "the area key to filter the query"
@@ -266,17 +270,98 @@ func newJobHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func getJobsHandler(w http.ResponseWriter, r *http.Request) {
+	var (
+		bid *int64
+		id  int64
+		err error
+	)
+	batchId := r.FormValue("bid")
+	// if a batch id was provided
+	if len(batchId) > 0 {
+		// try and parse to int64
+		id, err = strconv.ParseInt(batchId, 10, 64)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		// update pointer variable
+		bid = &id
+	}
 	orgGroup := r.FormValue("og")
 	org := r.FormValue("or")
 	area := r.FormValue("ar")
 	location := r.FormValue("lo")
-	jobs, err := api.GetJobs(orgGroup, org, area, location)
+
+	jobs, err := api.GetJobs(orgGroup, org, area, location, bid)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	server.Write(w, r, jobs)
+}
+
+// @Summary Get Job Batches
+// @Description Returns a list of jobs batches with various filters
+// @Tags Job
+// @Router /job/batch [get]
+// @Param name query string false "the name of the batch as in name% format"
+// @Param owner query string false "the creator of the batch"
+// @Param label query string false "a pipe | separated list of labels associated to the batch"
+// @Param from query string false "the time from which to get batches (format should be dd-MM-yyyy)"
+// @Param to query string false "the time to which to get batches (format should be dd-MM-yyyy)"
+// @Produce json
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getJobBatchHandler(w http.ResponseWriter, r *http.Request) {
+	nameParam := r.FormValue("name")
+	ownerParam := r.FormValue("owner")
+	labelParam := r.FormValue("label")
+	fromParam := r.FormValue("from")
+	toParam := r.FormValue("to")
+
+	var fromTime *time.Time
+	if len(fromParam) > 0 {
+		from, err := time.Parse("02-01-2006", fromParam)
+		if err != nil {
+			log.Printf("failed to parse FROM date '%s': %s\n", fromParam, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fromTime = &from
+	}
+
+	var toTime *time.Time
+	if len(toParam) > 0 {
+		to, err := time.Parse("02-01-2006", toParam)
+		if err != nil {
+			log.Printf("failed to parse TO date '%s': %s\n", toParam, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		toTime = &to
+	}
+
+	var label []string
+	if len(labelParam) > 0 {
+		label = strings.Split(labelParam, "|")
+	}
+
+	var name, owner *string
+	if len(nameParam) > 0 {
+		name = &nameParam
+	}
+	if len(ownerParam) > 0 {
+		owner = &ownerParam
+	}
+	batches, err := api.GetJobBatches(name, owner, fromTime, toTime, &label)
+	if err != nil {
+		log.Printf("failed to retrieve job batches: %s\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	server.Write(w, r, batches)
 }
 
 // @Summary Submit a Vulnerability Scan Report
