@@ -35,7 +35,7 @@ func verify(obj interface{}, signature string) error {
 	if err != nil {
 		return fmt.Errorf("verify => cannot find host verification key: %s", err)
 	}
-	pgp, err := crypto.LoadPGP(keyFile)
+	pgp, err := crypto.LoadPGP(keyFile, "")
 	if err != nil {
 		return fmt.Errorf("verify => cannot load host verification key: %s", err)
 	}
