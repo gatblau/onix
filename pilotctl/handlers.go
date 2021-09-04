@@ -35,13 +35,6 @@ import (
 
 // pingHandler excluded from swagger as it is accessed by pilot with a special time-bound access token
 func pingHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	machineId := vars["machine-id"]
-	if len(machineId) == 0 {
-		log.Printf("missing machine Id")
-		http.Error(w, "missing machine Id", http.StatusBadRequest)
-		return
-	}
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("cannot read ping request body: %s\n", err)
@@ -64,7 +57,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// todo: add support for fx version
-	jobId, fxKey, _, err := api.Beat(machineId)
+	jobId, fxKey, _, err := api.Beat()
 	if err != nil {
 		log.Printf("can't record ping: %v\n", err)
 		http.Error(w, "can't record ping, check server logs\n", http.StatusInternalServerError)

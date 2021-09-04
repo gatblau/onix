@@ -36,7 +36,7 @@ func main() {
 		// enable encoded path  vars
 		router.UseEncodedPath()
 		// add http handlers
-		router.HandleFunc("/ping/{machine-id}", pingHandler).Methods("POST")
+		router.HandleFunc("/ping", pingHandler).Methods("POST")
 		router.HandleFunc("/host", hostQueryHandler).Methods("GET")
 		router.HandleFunc("/register", registerHandler).Methods("POST")
 		router.HandleFunc("/cmd", updateCmdHandler).Methods("PUT")
@@ -56,7 +56,7 @@ func main() {
 	// set up specific authentication for host pilot agents
 	s.Auth = map[string]func(string) bool{
 		"/register": pilotAuth,
-		"/ping/.*":  pilotAuth,
+		"/ping":     pilotAuth,
 	}
 	s.Serve()
 }

@@ -28,7 +28,7 @@ func sign(obj interface{}) (string, error) {
 			return "", err
 		}
 		// retrieve the verification key from the specified location
-		pgp, err := crypto.LoadPGP(keyFile)
+		pgp, err := crypto.LoadPGP(keyFile, "")
 		if err != nil {
 			return "", fmt.Errorf("sign => cannot load signing key: %s", err)
 		}
