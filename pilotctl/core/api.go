@@ -27,6 +27,10 @@ type API struct {
 	conf *Conf
 	db   *Db
 	ox   *oxc.Client
+	// host information
+	hostUUID string
+	hostname string
+	hostIP   string
 }
 
 func NewAPI(cfg *Conf) (*API, error) {
@@ -99,8 +103,8 @@ func (r *API) GetCommandValue(fxKey string) (*CmdValue, error) {
 	}, nil
 }
 
-func (r *API) Beat(machineId string) (jobId int64, fxKey string, fxVersion int64, err error) {
-	rows, err := r.db.Query("select * from pilotctl_beat($1)", machineId)
+func (r *API) Beat() (jobId int64, fxKey string, fxVersion int64, err error) {
+	rows, err := r.db.Query("select * from pilotctl_beat($1)", r.hostUUID)
 	if err != nil {
 		return -1, "", -1, err
 	}
@@ -193,7 +197,7 @@ func (r *API) Authenticate(token string) bool {
 		return false
 	}
 	str := string(value)
-	// token is: machineId (0) | hostIP (1) | hostName (2) | timestamp (3)
+	// token is: hostUUID (0) | hostIP (1) | hostName (2) | timestamp (3)
 	parts := strings.Split(str, "|")
 	tokenTime, err := strconv.ParseInt(parts[3], 10, 64)
 	if err != nil {
@@ -201,32 +205,41 @@ func (r *API) Authenticate(token string) bool {
 		return false
 	}
 	timeOk := (time.Now().Unix() - tokenTime) < (5 * 60)
-	machineId := parts[0]
+	hostUUId := parts[0]
 	if !timeOk {
-		log.Printf("authentication failed for Machine Id='%s': token has expired\n", machineId)
+		log.Printf("authentication failed for Host UUID='%s': token has expired\n", hostUUId)
 		return false
 	}
-	rows, err := r.db.Query("select * from pilotctl_is_admitted($1)", machineId)
+	rows, err := r.db.Query("select * from pilotctl_is_admitted($1)", hostUUId)
+	var hostname, hostIP string
 	if err != nil {
-		hostIP := parts[1]
-		hostName := parts[2]
-		fmt.Printf("authentication failed for Machine Id='%s': cannot query admission table: %s\n"+
-			"additional info: host IP = '%s', hostname = '%s'\n", machineId, err, hostIP, hostName)
+		hostIP = parts[1]
+		hostname = parts[2]
+		fmt.Printf("authentication failed for Host UUID='%s': cannot query admission table: %s\n"+
+			"additional info: host IP = '%s', hostname = '%s'\n", hostUUId, err, hostIP, hostname)
 		return false
 	}
 	var admitted bool
 	for rows.Next() {
 		err = rows.Scan(&admitted)
 		if err != nil {
-			log.Printf("authentication failed for Machine Id='%s': %s\n", machineId, err)
+			log.Printf("authentication failed for Host UUID='%s': %s\n", hostUUId, err)
 			return false
 		}
 		break
 	}
+
 	if !admitted {
 		// log an authentication error
-		log.Printf("authentication failed for Machine Id='%s', host has not been admitted to service\n", machineId)
+		log.Printf("authentication failed for Host UUID='%s', host has not been admitted to service\n", hostUUId)
 	}
+
+	// captures token information for remote host
+	r.hostUUID = hostUUId
+	r.hostname = hostname
+	r.hostIP = hostIP
+
+	// returns authentication status
 	return admitted
 }
 
