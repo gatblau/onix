@@ -55,11 +55,11 @@ func NewAPI(cfg *Conf) (*API, error) {
 		ox:   ox}, nil
 }
 
-func (r *API) Register(reg *Registration) error {
+func (r *API) Register(reg *Registration) (string, error) {
 	// registers the host with the cmdb
 	result, err := r.ox.PutItem(&oxc.Item{
-		Key:         reg.MachineId,
-		Name:        reg.Hostname,
+		Key:         strings.ToUpper(fmt.Sprintf("HOST:%s:%s", reg.MachineId, reg.Hostname)),
+		Name:        strings.ToUpper(fmt.Sprintf("HOST_%s", strings.Replace(reg.Hostname, " ", "_", -1))),
 		Description: "Pilot registered remote host",
 		Status:      0,
 		Type:        "U_HOST", // universal model host
@@ -67,20 +67,23 @@ func (r *API) Register(reg *Registration) error {
 		Meta:        nil,
 		Txt:         "",
 		Attribute: map[string]interface{}{
-			"CPU":      reg.CPUs,
-			"OS":       reg.OS,
-			"MEMORY":   reg.TotalMemory,
-			"PLATFORM": reg.Platform,
-			"VIRTUAL":  reg.Virtual,
+			"CPU":        reg.CPUs,
+			"OS":         reg.OS,
+			"MEMORY":     reg.TotalMemory,
+			"PLATFORM":   reg.Platform,
+			"VIRTUAL":    reg.Virtual,
+			"IP":         reg.HostIP,
+			"MACHINE-ID": reg.MachineId,
+			"HOSTNAME":   reg.Hostname,
 		},
 	})
 	// business error?
 	if result != nil && result.Error {
 		// return it
-		return fmt.Errorf(result.Message)
+		return result.Operation, fmt.Errorf(result.Message)
 	}
-	// otherwise return technical error or nil if successful
-	return err
+	// otherwise, return technical error or nil if successful
+	return result.Operation, err
 }
 
 func (r *API) GetCommandValue(fxKey string) (*CmdValue, error) {

@@ -129,6 +129,7 @@ type Host struct {
 // Registration information for host registration
 type Registration struct {
 	Hostname    string  `json:"hostname"`
+	HostIP      string  `json:"host_ip"`
 	MachineId   string  `json:"machine_id"`
 	OS          string  `json:"os"`
 	Platform    string  `json:"platform"`

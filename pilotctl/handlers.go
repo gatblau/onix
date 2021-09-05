@@ -136,13 +136,14 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "can't unmarshal body", http.StatusBadRequest)
 		return
 	}
-	err = api.Register(reg)
+	op, err := api.Register(reg)
 	if err != nil {
 		log.Printf("Failed to register host, Onix responded with an error: %v", err)
 		http.Error(w, "Failed to register host, Onix responded with an error", http.StatusInternalServerError)
 		return
 	}
 	log.Printf("host %s - %s registered", reg.Hostname, reg.MachineId)
+	w.Write([]byte(op))
 	w.WriteHeader(http.StatusCreated)
 }
 
