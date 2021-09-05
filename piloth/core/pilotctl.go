@@ -50,7 +50,7 @@ func NewPilotCtl(worker *job.Worker) (*PilotCtl, error) {
 }
 
 // Register the host
-func (r *PilotCtl) Register() error {
+func (r *PilotCtl) Register() (string, error) {
 	i := r.host
 	// set the machine id
 	reg := &ctl.Registration{
@@ -61,16 +61,21 @@ func (r *PilotCtl) Register() error {
 		Virtual:     i.Virtual,
 		TotalMemory: i.TotalMemory,
 		CPUs:        i.CPUs,
+		HostIP:      i.HostIP,
 	}
 	uri := fmt.Sprintf("%s/register", r.cfg.BaseURI)
 	resp, err := r.client.Post(uri, reg, r.addToken)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if resp.StatusCode > 299 {
-		return fmt.Errorf("the request failed with error: %d - %s", resp.StatusCode, resp.Status)
+		return "", fmt.Errorf("the request failed with error: %d - %s", resp.StatusCode, resp.Status)
 	}
-	return nil
+	op, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(op), nil
 }
 
 // Ping send a ping to the remote server
