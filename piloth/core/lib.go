@@ -11,10 +11,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 	"os/user"
-	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -29,27 +27,7 @@ func HomeDir() string {
 	return usr.HomeDir
 }
 
-// IsRegistered is the host registered?
-func IsRegistered() bool {
-	fi, err := os.Stat(registrationFilePath())
-	return os.IsExist(err) || fi != nil
-}
-
-// SetRegistered set the host as registered
-func SetRegistered() error {
-	regFile, err := os.Create(registrationFilePath())
-	if err != nil {
-		return err
-	}
-	regFile.Close()
-	return nil
-}
-
-func registrationFilePath() string {
-	return path.Join(HomeDir(), ".pilot_reg")
-}
-
-// reverse the passed0in string
+// reverse the passed-in string
 func reverse(str string) (result string) {
 	for _, v := range str {
 		result = string(v) + result
@@ -57,14 +35,14 @@ func reverse(str string) (result string) {
 	return
 }
 
-func newToken(machineId, hostIP, hostName string) string {
+func newToken(hostUUID, hostIP, hostName string) string {
 	// create an authentication token as follows:
-	// 1. takes machine id & unix time
+	// 1. takes host uuid (i.e. machine Id + hostname hash), host ip, name and unix time
 	// 2. base 64 encode
 	// 3. reverse string
 	return reverse(
 		base64.StdEncoding.EncodeToString(
-			[]byte(fmt.Sprintf("%s|%s|%s|%d", machineId, hostIP, hostName, time.Now().Unix()))))
+			[]byte(fmt.Sprintf("%s|%s|%s|%d", hostUUID, hostIP, hostName, time.Now().Unix()))))
 }
 
 func readToken(token string) (string, bool, error) {

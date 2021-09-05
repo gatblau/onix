@@ -12,6 +12,7 @@ import (
 	"github.com/gatblau/onix/piloth/job"
 	"log/syslog"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -85,31 +86,28 @@ func (p *Pilot) Start() {
 
 // register the host, keep retrying indefinitely until a registration is successful
 func (p *Pilot) register() {
-	// checks if the host is already registered
-	if !IsRegistered() {
-		InfoLogger.Printf("host not registered, attempting registration\n")
-		// starts a loop
-		for {
-			err := p.ctl.Register()
-			// if no error then exit the loop
-			if err == nil {
-				InfoLogger.Printf("registration successful\n")
-				err = SetRegistered()
-				p.connected = true
-				if err != nil {
-					ErrorLogger.Printf("failed to cache registration status: %s\n", err)
-				}
-				break
-			} else {
-				ErrorLogger.Printf("registration failed: %s\n", err)
-				p.connected = false
+	// starts a loop
+	for {
+		op, err := p.ctl.Register()
+		// if no error then exit the loop
+		if err == nil {
+			switch strings.ToUpper(op) {
+			case "I":
+				InfoLogger.Printf("new host registration created successfully\n")
+			case "U":
+				InfoLogger.Printf("host registration updated successfully\n")
+			case "N":
+				InfoLogger.Printf("host already registered\n")
 			}
-			// otherwise, waits for a period before retrying
-			InfoLogger.Printf("waiting 60s before attempting registration again")
-			time.Sleep(1 * time.Minute)
+			p.connected = true
+			// break the loop
+			break
 		}
-	} else {
-		InfoLogger.Printf("host is already registered\n")
+		// assume connectivity is down
+		p.connected = false
+		// the registration call failed, need to retry
+		ErrorLogger.Printf("registration failed: %s, waiting 60 secs before attempting registration again\n", err)
+		time.Sleep(1 * time.Minute)
 	}
 }
 
