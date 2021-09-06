@@ -2,14 +2,17 @@
 labels:
   author: onix@gatblau.org
   application: Onix Artisan Command Line Interface
-  description: Package manager that build, package, sign and publish packages; and execute package  functions.
-  architecture: amd64
+  description: The DevOps command line interface
+  architecture: AMD64
 
 env:
   CGO_ENABLED: 0
   GOARCH: amd64
   REPO_NAME: quay.io/gatblau
+  # the application version
   APP_VERSION: 0.0.4
+  # a unique build number
+  BUILD_VERSION: ${APP_VERSION}-${ARTISAN_REF}
 
 profiles:
   - name: linux
@@ -35,32 +38,26 @@ profiles:
     target: bin/windows/art.exe
 
 functions:
-  - name: set-version
-    description: set-version on the parent build, updating global version
-    run:
-      - art run set-version ../
-      - cp ../version ../core
-
   - name: build-mac
     description: builds the Artisan CLI for MacOS
     env:
       GOOS: darwin
     run:
-      - go build -o bin/darwin/art -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/darwin/art -v
 
   - name: build-linux
     description: builds the Artisan CLI for the linux platform
     env:
       GOOS: linux
     run:
-      - go build -o bin/linux/art -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/linux/art -v
 
   - name: build-win
     description: builds the Artisan CLI for the linux platform
     env:
       GOOS: windows
     run:
-      - go build -o bin/windows/art.exe -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/windows/art.exe -v
 
   - name: zip
     run:
@@ -69,7 +66,6 @@ functions:
   - name: release-bin
     description: creates zip files with the cli binaries for the different platforms
     run:
-      - $(set-version)
       - $(build-linux)
       - $(build-mac)
       - $(build-win)

@@ -63,5 +63,5 @@ func ensureRegistryDir() {
 }
 
 func versionLabel() string {
-	return fmt.Sprintf("onix-artisan-%s", Version)
+	return fmt.Sprintf("onix-artisan-%s", core.Version)
 }
