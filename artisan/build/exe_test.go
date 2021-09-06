@@ -20,3 +20,10 @@ func TestExe(t *testing.T) {
 	}
 	fmt.Println(out)
 }
+
+func TestExeAsync(t *testing.T) {
+	err := ExeAsync("printenv", ".", merge.NewEnVarFromSlice([]string{}), false)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}

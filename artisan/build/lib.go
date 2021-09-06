@@ -271,13 +271,11 @@ func round(val float64, roundOn float64, places int) (newVal float64) {
 // executes a command and sends output and error streams to stdout and stderr
 func execute(cmd string, dir string, env *merge.Envar, interactive bool) (err error) {
 	// executes the command
-	out, err := Exe(cmd, dir, env, interactive)
+	err = ExeAsync(cmd, dir, env, interactive)
 	// if there is an error return it
 	if err != nil {
 		return err
 	}
-	// write the command output to stdout
-	os.Stdout.WriteString(out)
 	// return without error
 	return nil
 }
