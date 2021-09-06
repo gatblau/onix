@@ -1,42 +1,38 @@
 ---
 env:
+  # the application version
   APP_VERSION: 0.0.4
+  # a unique build number
+  BUILD_VERSION: ${APP_VERSION}-${ARTISAN_REF}
 
 labels:
-  author: gatblau
-  application: Onix Host Pilot
-  description: configuration management agent for server hosts
-  architecture: amd64
+  author: gatblau.org
+  application: Pilot
+  product: Onix Configuration Manager
+  description: Onix agent for managing remote host configuration
+  architecture: AMD64
 
 functions:
-  - name: set-version
-    description: set-version on the parent build, updating global version
-    run:
-      - sh version.sh ${APP_VERSION}-${ARTISAN_REF}
-
   - name: build-linux
     description: builds the host pilot binary for the linux platform
     env:
       GOOS: linux
     run:
-      - $(set-version)
-      - go build -o bin/linux/pilot -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/piloth/core.Version=${BUILD_VERSION}'" -o bin/linux/pilot -v
 
   - name: build-windows
     description: builds the host pilot binary for the windows platform
     env:
       GOOS: windows
     run:
-      - $(set-version)
-      - go build -o bin/windows/pilot.exe -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/piloth/core.Version=${BUILD_VERSION}'" -o bin/windows/pilot -v
 
   - name: build-mac
     description: builds the host pilot binary for the macos platform
     env:
       GOOS: darwin
     run:
-      - $(set-version)
-      - go build -o bin/darwin/pilot -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/piloth/core.Version=${BUILD_VERSION}'" -o bin/darwin/pilot -v
 
 profiles:
   - name: linux
