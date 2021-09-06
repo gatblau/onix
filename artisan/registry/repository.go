@@ -10,6 +10,7 @@ package registry
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 )
 
@@ -69,6 +70,10 @@ type Package struct {
 	Size string `json:"size"`
 	// the creation time
 	Created string `json:"created"`
+}
+
+func (a *Package) String() string {
+	return fmt.Sprintf("%s-%s", a.Id[0:12], a.FileRef)
 }
 
 // determines if the package has the specified tag

@@ -285,3 +285,23 @@ func unzip(src, dest string) error {
 	}
 	return nil
 }
+
+// remove an item from a slice
+func removeItem(slice []string, item string) []string {
+	var ix int = -1
+	for i := 0; i < len(slice); i++ {
+		if slice[i] == item {
+			ix = i
+			break
+		}
+	}
+	if ix > -1 {
+		return remove(slice, ix)
+	}
+	return slice
+}
+
+func remove(slice []string, ix int) []string {
+	slice[ix] = slice[len(slice)-1]
+	return slice[:len(slice)-1]
+}
