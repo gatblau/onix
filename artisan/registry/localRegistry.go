@@ -42,7 +42,7 @@ func NewLocalRegistry() *LocalRegistry {
 		Repositories: []*Repository{},
 	}
 	// load local registry
-	r.load()
+	r.Load()
 	return r
 }
 
@@ -163,6 +163,16 @@ func (r *LocalRegistry) Tag(sourceName *core.PackageName, targetName *core.Packa
 	if targetName.IsInTheSameRepositoryAs(sourceName) {
 		if !sourcePackage.HasTag(targetName.Tag) {
 			sourcePackage.Tags = append(sourcePackage.Tags, targetName.Tag)
+			// if the source package has the target name tag
+			targetPackage := r.FindPackage(targetName)
+			if targetPackage.HasTag(targetName.Tag) {
+				// remove the tag
+				targetPackage.Tags = removeItem(targetPackage.Tags, targetName.Tag)
+				// if no tags are left, add a default tag equal to the package file reference
+				if len(targetPackage.Tags) == 0 {
+					targetPackage.Tags = append(targetPackage.Tags, targetPackage.FileRef)
+				}
+			}
 			r.save()
 			return
 		} else {
@@ -839,8 +849,8 @@ func (r *LocalRegistry) save() {
 	core.CheckErr(ioutil.WriteFile(r.file(), regBytes, os.ModePerm), "fail to update local registry metadata")
 }
 
-// load the content of the LocalRegistry
-func (r *LocalRegistry) load() {
+// Load the content of the LocalRegistry
+func (r *LocalRegistry) Load() {
 	// check if localRepo file exist
 	_, err := os.Stat(r.file())
 	if err != nil {
