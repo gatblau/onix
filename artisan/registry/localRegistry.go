@@ -244,7 +244,7 @@ func (r *LocalRegistry) List() {
 				_, err := fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s",
 					repo.Repository,
 					"<none>",
-					a.Id[7:19],
+					a.Id[0:12],
 					a.Type,
 					toElapsedLabel(a.Created),
 					a.Size),
@@ -255,7 +255,7 @@ func (r *LocalRegistry) List() {
 				_, err := fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s",
 					repo.Repository,
 					tag,
-					a.Id[7:19],
+					a.Id[0:12],
 					a.Type,
 					toElapsedLabel(a.Created),
 					a.Size),
@@ -275,7 +275,7 @@ func (r *LocalRegistry) ListQ() {
 	// repository, tag, package id, created, size
 	for _, repo := range r.Repositories {
 		for _, a := range repo.Packages {
-			_, err := fmt.Fprintln(w, fmt.Sprintf("%s", a.Id[7:19]))
+			_, err := fmt.Fprintln(w, fmt.Sprintf("%s", a.Id[0:12]))
 			core.CheckErr(err, "failed to write package Id")
 		}
 	}
