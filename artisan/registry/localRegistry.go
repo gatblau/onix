@@ -94,7 +94,7 @@ func (r *LocalRegistry) FindPackagesById(id string) []*core.PackageName {
 	for _, repository := range r.Repositories {
 		for _, packag := range repository.Packages {
 			// try and match against the package ID substring
-			if strings.Contains(packag.Id, id) {
+			if strings.HasPrefix(packag.Id, id) {
 				for _, tag := range packag.Tags {
 					name, err := core.ParseName(fmt.Sprintf("%s:%s", repository.Repository, tag))
 					if err != nil {
