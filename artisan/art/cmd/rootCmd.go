@@ -10,6 +10,7 @@ package cmd
 import (
 	_ "embed"
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	"github.com/spf13/cobra"
 )
 
@@ -32,8 +33,8 @@ func NewRootCmd() *RootCmd {
 |           the DevOps command line interface           |
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-version: %s`, Version),
-			Version: Version,
+version: %s`, core.Version),
+			Version: core.Version,
 		},
 	}
 	c.Cmd.SetVersionTemplate("Onix Artisan version: {{.Version}}\n")
