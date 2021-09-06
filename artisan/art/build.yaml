@@ -28,6 +28,18 @@ profiles:
       - $(build-linux)
     target: bin/linux/art
 
+  - name: mac
+    application: artisan
+    type: content/binary
+    license: Apache Version 2
+    labels:
+      platform: darwin
+    env:
+      GOOS: darwin
+    run:
+      - $(build-mac)
+    target: bin/darwin/art
+
   - name: windows
     application: artisan
     type: content/binary
