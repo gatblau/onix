@@ -21,16 +21,16 @@ import (
 )
 
 // ExeAsync executes a command and sends output and error streams asynchronously
-func ExeAsync(cmd string, dir string, env *merge.Envar, interactive bool) error {
+func ExeAsync(cmd string, dir string, env *merge.Envar, interactive bool) (string, error) {
 	if cmd == "" {
-		return errors.New("no command provided")
+		return "", errors.New("no command provided")
 	}
 	// create a command parser
 	p := shellwords.NewParser()
 	// parse the command line
 	cmdArr, err := p.Parse(cmd)
 	if err != nil {
-		return err
+		return "", err
 	}
 	// if we are in windows
 	if runtime.GOOS == "windows" {
@@ -56,7 +56,7 @@ func ExeAsync(cmd string, dir string, env *merge.Envar, interactive bool) error 
 
 	stdout, err := command.StdoutPipe()
 	if err != nil {
-		return fmt.Errorf("failed creating command stdoutpipe: %s", err)
+		return "", fmt.Errorf("failed creating command stdoutpipe: %s", err)
 	}
 	defer func() {
 		_ = stdout.Close()
@@ -65,7 +65,7 @@ func ExeAsync(cmd string, dir string, env *merge.Envar, interactive bool) error 
 
 	stderr, err := command.StderrPipe()
 	if err != nil {
-		return fmt.Errorf("failed creating command stderrpipe: %s", err)
+		return "", fmt.Errorf("failed creating command stderrpipe: %s", err)
 	}
 	defer func() {
 		_ = stderr.Close()
@@ -74,24 +74,26 @@ func ExeAsync(cmd string, dir string, env *merge.Envar, interactive bool) error 
 
 	// start the execution of the command
 	if err := command.Start(); err != nil {
-		return err
+		return "", err
 	}
 
 	// asynchronous print output
-	go printInfo(stdoutReader)
-	go printInfo(stderrReader)
+	sOut := &strings.Builder{}
+	go printInfo(stdoutReader, sOut)
+	sErr := &strings.Builder{}
+	go printInfo(stderrReader, sErr)
 
 	// wait for the command to complete
-	if err := command.Wait(); err != nil {
+	if err = command.Wait(); err != nil {
 		// only happens if the command exits with os.Exit(>0)
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if _, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-				return fmt.Errorf("run command failed: '%s' (%s)", cmd, exitMsg(exitErr.ExitCode()))
+				return sOut.String(), fmt.Errorf("run command failed: '%s' (%s) - %s\n", cmd, exitMsg(exitErr.ExitCode()), sErr.String())
 			}
 		}
-		return err
+		return sOut.String(), err
 	}
-	return nil
+	return sOut.String(), nil
 }
 
 // Exe executes a command and sends output and error streams to stdout and stderr
@@ -166,13 +168,16 @@ func Exe(cmd string, dir string, env *merge.Envar, interactive bool) (string, er
 }
 
 // print the content of the reader to stdout
-func printInfo(reader *bufio.Reader) {
+func printInfo(reader *bufio.Reader, out *strings.Builder) {
 	for {
 		str, err := reader.ReadString('\n')
 		if err != nil {
 			break
 		}
+		// write to stdout
 		core.InfoLogger.Print(str)
+		// and collect the output for further use
+		out.WriteString(str)
 	}
 }
 
