@@ -8,6 +8,7 @@ package build
   to be licensed under the same terms as the rest of the code.
 */
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
@@ -18,6 +19,80 @@ import (
 	"strings"
 	"syscall"
 )
+
+// ExeAsync executes a command and sends output and error streams asynchronously
+func ExeAsync(cmd string, dir string, env *merge.Envar, interactive bool) error {
+	if cmd == "" {
+		return errors.New("no command provided")
+	}
+	// create a command parser
+	p := shellwords.NewParser()
+	// parse the command line
+	cmdArr, err := p.Parse(cmd)
+	if err != nil {
+		return err
+	}
+	// if we are in windows
+	if runtime.GOOS == "windows" {
+		// prepend "cmd /C" to the command line
+		cmdArr = append([]string{"cmd", "/C"}, cmdArr...)
+		core.Debug("windows cmd => %s", cmdArr)
+	}
+	name := cmdArr[0]
+
+	var args []string
+	if len(cmdArr) > 1 {
+		args = cmdArr[1:]
+	}
+
+	args, _ = core.MergeEnvironmentVars(args, env.Vars, interactive)
+
+	// create the command to execute
+	command := exec.Command(name, args...)
+	// set the command working directory
+	command.Dir = dir
+	// set the command environment
+	command.Env = env.Slice()
+
+	stdout, err := command.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("failed creating command stdoutpipe: %s", err)
+	}
+	defer func() {
+		_ = stdout.Close()
+	}()
+	stdoutReader := bufio.NewReader(stdout)
+
+	stderr, err := command.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("failed creating command stderrpipe: %s", err)
+	}
+	defer func() {
+		_ = stderr.Close()
+	}()
+	stderrReader := bufio.NewReader(stderr)
+
+	// start the execution of the command
+	if err := command.Start(); err != nil {
+		return err
+	}
+
+	// asynchronous print output
+	go printInfo(stdoutReader)
+	go printInfo(stderrReader)
+
+	// wait for the command to complete
+	if err := command.Wait(); err != nil {
+		// only happens if the command exits with os.Exit(>0)
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			if _, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+				return fmt.Errorf("run command failed: '%s' (%s)", cmd, exitMsg(exitErr.ExitCode()))
+			}
+		}
+		return err
+	}
+	return nil
+}
 
 // Exe executes a command and sends output and error streams to stdout and stderr
 func Exe(cmd string, dir string, env *merge.Envar, interactive bool) (string, error) {
@@ -65,8 +140,6 @@ func Exe(cmd string, dir string, env *merge.Envar, interactive bool) (string, er
 	// wait for the command to complete
 	if err := command.Wait(); err != nil {
 		// only happens if the command exits with os.Exit(>0)
-		// if this happens then the only error available is the exit error code
-		// for this reason artisan exit with code 0 and fills the stderr buffer
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if _, ok := exitErr.Sys().(syscall.WaitStatus); ok {
 				return "", fmt.Errorf("run command failed: '%s'\n%s (%s)", cmd, errbuf.String(), exitMsg(exitErr.ExitCode()))
@@ -90,4 +163,26 @@ func Exe(cmd string, dir string, env *merge.Envar, interactive bool) (string, er
 	}
 
 	return outbuf.String(), err
+}
+
+// print the content of the reader to stdout
+func printInfo(reader *bufio.Reader) {
+	for {
+		str, err := reader.ReadString('\n')
+		if err != nil {
+			break
+		}
+		core.InfoLogger.Print(str)
+	}
+}
+
+// print the content of the reader to stderr
+func printErr(reader *bufio.Reader) {
+	for {
+		str, err := reader.ReadString('\n')
+		if err != nil {
+			break
+		}
+		core.ErrorLogger.Print(str)
+	}
 }
