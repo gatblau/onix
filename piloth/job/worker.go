@@ -174,7 +174,7 @@ func run(data interface{}) (string, error) {
 	// inject the PATH into the process
 	env.Merge(merge.NewEnVarFromSlice([]string{fmt.Sprintf("PATH=%s", path)}))
 	// run and return
-	return build.Exe(cmdString, ".", env, false)
+	return build.ExeAsync(cmdString, ".", env, false)
 }
 
 // warn: write a warning in syslog
