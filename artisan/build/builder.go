@@ -349,6 +349,13 @@ func (b *Builder) runFunction(function string, path string, interactive bool, en
 	if len(b.from) == 0 {
 		b.from = path
 	}
+	// if env is nil then create one injecting the artisan build environment variables
+	if env == nil {
+		env = merge.NewEnVarFromMap(b.getBuildEnv())
+	} else {
+		// otherwise, add the artisan build environment variables to the existing environment
+		env.Merge(merge.NewEnVarFromMap(b.getBuildEnv()))
+	}
 	// get the build file environment and merge any subshell command
 	vars := b.evalSubshell(b.buildFile.GetEnv(), path, env, interactive)
 	// add the merged vars to the env
@@ -449,7 +456,13 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 
 // evaluate sub-shells and replace their values in the variables
 func (b *Builder) evalSubshell(vars map[string]string, execDir string, env *merge.Envar, interactive bool) map[string]string {
+	// ensures env contains the variables in vars
+	env.Vars = mergeMaps(env.Vars, vars)
 	for k, v := range vars {
+		// merge any existing variables in the variable
+		s, _ := core.MergeEnvironmentVars([]string{v}, env.Vars, false)
+		// update the value with merged expression
+		vars[k] = s[0]
 		if ok, expr, shell := core.HasShell(v); ok {
 			out, err := Exe(shell, execDir, env, interactive)
 			core.CheckErr(err, "cannot execute subshell command: %s", v)
