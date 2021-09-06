@@ -69,7 +69,7 @@ func (p *Pilot) Start() {
 |  _/        _/_/_/  _/_/_/_/    _/_/        _/           |
 |                     Host Controller                     | 
 +---------------------------------------------------------+`)
-	InfoLogger.Printf("launching...\n")
+	InfoLogger.Printf("launching pilot version %s\n", Version)
 	collector, err := NewCollector("0.0.0.0", p.cfg.getSyslogPort())
 	if err != nil {
 		ErrorLogger.Printf("cannot create pilot syslog collector: %s\n", err)
