@@ -23,7 +23,7 @@ func TestWorker(t *testing.T) {
 		// define the processing logic
 		func(data interface{}) (string, error) {
 			// unbox the data
-			c, _ := data.(core.CmdValue)
+			c, _ := data.(core.CmdInfo)
 			// print start of job message
 			log.Printf("processing job %d, %s -> %s\n", c.JobId, c.Package, c.Function)
 			// simulate process with delay
@@ -34,13 +34,13 @@ func TestWorker(t *testing.T) {
 	// start the worker loop
 	w.Start()
 	// add a couple of jobs
-	w.AddJob(core.CmdValue{
+	w.AddJob(core.CmdInfo{
 		JobId:    1111,
 		Package:  "package_01",
 		Function: "function_01",
 		Input:    &data.Input{},
 	})
-	w.AddJob(core.CmdValue{
+	w.AddJob(core.CmdInfo{
 		JobId:    2222,
 		Package:  "package_02",
 		Function: "function_02",

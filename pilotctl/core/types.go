@@ -38,25 +38,40 @@ type Cmd struct {
 	Containerised bool `json:"containerised"`
 }
 
-func NewCmdRequest(value CmdValue) (*CmdRequest, error) {
-	// create a signature for the command value
-	signature, err := sign(value)
-	if err != nil {
-		return nil, fmt.Errorf("cannot sign command request: %s", err)
+// NewPingResponse creates a new ping response
+func NewPingResponse(cmdInfo CmdInfo, pingInterval time.Duration) (*PingResponse, error) {
+	// create a signature for the envelope
+	envelope := PingResponseEnvelope{
+		Command:  cmdInfo,
+		Interval: pingInterval,
 	}
-	return &CmdRequest{
+	signature, err := sign(envelope)
+	if err != nil {
+		return nil, fmt.Errorf("cannot sign ping response: %s", err)
+	}
+	return &PingResponse{
 		Signature: signature,
-		Value:     value,
+		Envelope:  envelope,
 	}, nil
 }
 
-// CmdRequest a command for execution with a job reference
-type CmdRequest struct {
-	Signature string   `json:"signature"`
-	Value     CmdValue `json:"value"`
+// PingResponse a command for execution with a job reference
+type PingResponse struct {
+	// the envelope signature
+	Signature string `json:"signature"`
+	// the signed content sent to pilot
+	Envelope PingResponseEnvelope `json:"envelope"`
 }
 
-type CmdValue struct {
+// PingResponseEnvelope contains the signed content sent to pilot
+type PingResponseEnvelope struct {
+	// the information about the command to execute
+	Command CmdInfo `json:"value"`
+	// the ping interval
+	Interval time.Duration `json:"interval"`
+}
+
+type CmdInfo struct {
 	JobId         int64       `json:"job_id"`
 	Package       string      `json:"package"`
 	Function      string      `json:"function"`
@@ -67,7 +82,7 @@ type CmdValue struct {
 	Input         *data.Input `json:"input,omitempty"`
 }
 
-func (c *CmdValue) Value() string {
+func (c *CmdInfo) Value() string {
 	var artCmd string
 	// if command is to run in a runtime
 	if c.Containerised {
@@ -86,7 +101,7 @@ func (c *CmdValue) Value() string {
 	return fmt.Sprintf("art %s %s %s", artCmd, c.Package, c.Function)
 }
 
-func (c *CmdValue) Env() []string {
+func (c *CmdInfo) Env() []string {
 	var vars []string
 	// append vars
 	for _, v := range c.Input.Var {
@@ -99,11 +114,11 @@ func (c *CmdValue) Env() []string {
 	return vars
 }
 
-func (c *CmdValue) Envar() *merge.Envar {
+func (c *CmdInfo) Envar() *merge.Envar {
 	return merge.NewEnVarFromSlice(c.Env())
 }
 
-func (c *CmdValue) PrintEnv() string {
+func (c *CmdInfo) PrintEnv() string {
 	var vars bytes.Buffer
 	vars.WriteString("printing variables passed to the shell\n{\n")
 	for _, v := range c.Input.Var {
@@ -115,7 +130,7 @@ func (c *CmdValue) PrintEnv() string {
 
 // Host monitoring information
 type Host struct {
-	MachineId string `json:"machine_id"`
+	HostUUID  string `json:"host_uuid"`
 	OrgGroup  string `json:"org_group"`
 	Org       string `json:"org"`
 	Area      string `json:"area"`
@@ -285,4 +300,10 @@ type PackageInfo struct {
 	Name string   `json:"name"`
 	Tags []string `json:"tags,omitempty"`
 	Ref  string   `json:"ref"`
+}
+
+// InitialConfig data returned to pilot upon registration
+type InitialConfig struct {
+	// the status of the registration - I: created, U: updated, N: already exist
+	Operation string `json:"operation"`
 }

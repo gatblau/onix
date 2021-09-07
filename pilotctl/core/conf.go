@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 )
 
 type ConfKey string
@@ -21,7 +22,7 @@ const (
 	ConfDbPort                   ConfKey = "OX_PILOTCTL_DB_PORT"
 	ConfDbUser                   ConfKey = "OX_PILOTCTL_DB_USER"
 	ConfDbPwd                    ConfKey = "OX_PILOTCTL_DB_PWD"
-	ConfDisconnectedAfterSecs    ConfKey = "OX_PILOTCTL_DISCONNECTED_AFTER_SECS"
+	ConfPingIntervalSecs         ConfKey = "OX_PILOCTL_PING_INTERVAL_SECS"
 	ConfOxWapiUri                ConfKey = "OX_WAPI_URI"
 	ConfOxWapiUser               ConfKey = "OX_WAPI_USER"
 	ConfOxWapiPwd                ConfKey = "OX_WAPI_PWD"
@@ -70,19 +71,31 @@ func (c *Conf) getDbPwd() string {
 	return c.getValue(ConfDbPwd)
 }
 
-func (c *Conf) GetDisconnectedAfterSecs() int {
-	// default ping is 15 secs, needs to be greater than it
-	defaultValue := 20
-	value := os.Getenv(string(ConfDisconnectedAfterSecs))
+// PingIntervalSecs the pilot ping interval
+func (c *Conf) PingIntervalSecs() time.Duration {
+	defaultValue, _ := time.ParseDuration("15s")
+	value := os.Getenv(string(ConfPingIntervalSecs))
 	if len(value) == 0 {
 		return defaultValue
 	}
 	v, err := strconv.Atoi(value)
 	if err != nil {
-		fmt.Printf("WARNING: %s is not a number, defaulting to %d\n", ConfDisconnectedAfterSecs, defaultValue)
+		fmt.Printf("WARNING: %s is invalid, defaulting to %d\n", ConfPingIntervalSecs, defaultValue)
 		return defaultValue
 	}
-	return v
+	interval, err := time.ParseDuration(fmt.Sprintf("%ds", v))
+	if err != nil {
+		fmt.Printf("WARNING: %s is invalid, defaulting to %d\n", ConfPingIntervalSecs, defaultValue)
+		return defaultValue
+	}
+	return interval
+}
+
+// DisconnectedAfterSecs the period after which pilotctl considers a host disconnected if the last seen time is not updated
+func (c *Conf) DisconnectedAfterSecs() int {
+	in := int(c.PingIntervalSecs())
+	after := in + 5
+	return after
 }
 
 func (c *Conf) getOxWapiUrl() string {

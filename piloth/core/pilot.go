@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/piloth/job"
 	"log/syslog"
+	"math"
 	"os"
 	"strings"
 	"time"
@@ -24,6 +25,11 @@ type Pilot struct {
 	logs      *syslog.Writer
 	worker    *job.Worker
 	connected bool
+	// A duration string is a possibly signed sequence of
+	// decimal numbers, each with optional fraction and a unit suffix,
+	// such as "300ms", "-1.5h" or "2h45m".
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	pingInterval time.Duration
 }
 
 func NewPilot() (*Pilot, error) {
@@ -86,12 +92,13 @@ func (p *Pilot) Start() {
 
 // register the host, keep retrying indefinitely until a registration is successful
 func (p *Pilot) register() {
+	var failures float64 = 0
 	// starts a loop
 	for {
 		op, err := p.ctl.Register()
 		// if no error then exit the loop
 		if err == nil {
-			switch strings.ToUpper(op) {
+			switch strings.ToUpper(op.Operation) {
 			case "I":
 				InfoLogger.Printf("new host registration created successfully\n")
 			case "U":
@@ -99,22 +106,56 @@ func (p *Pilot) register() {
 			case "N":
 				InfoLogger.Printf("host already registered\n")
 			}
+			// set connectivity status
 			p.connected = true
+
+			// set the fallback ping interval, this will be automatically adjusted with the first ping response
+			p.pingInterval, _ = time.ParseDuration("15s")
+
 			// break the loop
 			break
 		}
 		// assume connectivity is down
 		p.connected = false
+
+		// calculates next retry interval
+		interval := p.nextInterval(failures)
+
+		// set the ping interval
 		// the registration call failed, need to retry
-		ErrorLogger.Printf("registration failed: %s, waiting 60 secs before attempting registration again\n", err)
-		time.Sleep(1 * time.Minute)
+		ErrorLogger.Printf("registration failed: %s, waiting %.2f minutes before attempting registration again\n", err, interval.Seconds()/60)
+
+		// sleep until next ping
+		time.Sleep(interval)
+
+		// increment count
+		failures = failures + 1
 	}
 }
 
+// nextInterval calculates the next retry interval using exponential backoff strategy
+// exponential backoff interval for registration retries
+// waitInterval = base * multiplier ^ n
+//   - base is the initial interval, ie, wait for the first retry
+//   - n is the number of failures that have occurred
+//   - multiplier is an arbitrary multiplier that can be replaced with any suitable value
+func (p *Pilot) nextInterval(failureCount float64) time.Duration {
+	// multiplier 2.0 yields 15s, 60s, 135s, 240s, 375s, 540s, etc
+	interval := 15 * math.Pow(2.0, failureCount)
+	// puts a maximum limit of 1 hour
+	if interval > 3600 {
+		interval = 3600
+	}
+	duration, err := time.ParseDuration(fmt.Sprintf("%fs", interval))
+	if err != nil {
+		ErrorLogger.Printf(err.Error())
+	}
+	return duration
+}
+
 func (p *Pilot) ping() {
-	InfoLogger.Printf("starting ping loop\n")
 	for {
-		cmd, err := p.ctl.Ping()
+		resp, err := p.ctl.Ping()
 		if err != nil {
 			// write to the console output
 			InfoLogger.Printf("ping failed: %s\n", err)
@@ -124,21 +165,30 @@ func (p *Pilot) ping() {
 				InfoLogger.Printf("ping loop operational\n")
 			}
 			p.connected = true
-			// verify the host identity and command value integrity using Pretty Good Privacy
-			err = verify(cmd.Value, cmd.Signature)
+			// verify the host identity and response integrity using Pretty Good Privacy (PGP
+			err = verify(resp.Envelope, resp.Signature)
 			// if the verification fails, it is likely spoofing of pilotctl has happened
 			if err != nil {
 				WarningLogger.Printf("invalid host signature, cannot trust the pilot control service => %s\n", err)
 			} else { // if the host can be trusted
+				cmd := resp.Envelope.Command
 				// do we have a command to process?
-				if cmd.Value.JobId > 0 {
+				if cmd.JobId > 0 {
 					// execute the job
-					InfoLogger.Printf("starting execution of job #%v, package => '%s', fx => '%s'\n", cmd.Value.JobId, cmd.Value.Package, cmd.Value.Function)
-					p.worker.AddJob(cmd.Value)
+					InfoLogger.Printf("starting execution of job #%v, package => '%s', fx => '%s'\n", cmd.JobId, cmd.Package, cmd.Function)
+					p.worker.AddJob(cmd)
 				}
 			}
 		}
-		time.Sleep(15 * time.Second)
+		// if the  pilot interval is different from the interval requested by pilot control
+		if resp.Envelope.Interval.Seconds() > 0 && p.pingInterval != resp.Envelope.Interval {
+			// issue a notice about the ping interval adjustment
+			InfoLogger.Printf("adjusting ping interval to %.0f seconds\n", resp.Envelope.Interval.Seconds())
+			// update the local interval value
+			p.pingInterval = resp.Envelope.Interval
+		}
+		// waits for the requested interval
+		time.Sleep(p.pingInterval)
 	}
 }
 
