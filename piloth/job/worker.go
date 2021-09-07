@@ -90,7 +90,7 @@ func (w *Worker) Start() {
 					// pick the next job from the queue
 					jobElement := w.jobs.Front()
 					// unbox the job
-					cmd, ok := jobElement.Value.(core.CmdValue)
+					cmd, ok := jobElement.Value.(core.CmdInfo)
 					if !ok {
 						w.stdout("invalid job format")
 						continue
@@ -136,7 +136,7 @@ func (w *Worker) Stop() {
 }
 
 // AddJob add a new job for processing to the worker
-func (w *Worker) AddJob(job core.CmdValue) {
+func (w *Worker) AddJob(job core.CmdInfo) {
 	w.jobs.PushBack(job)
 }
 
@@ -162,7 +162,7 @@ func (w *Worker) Result() (*Result, bool) {
 
 func run(data interface{}) (string, error) {
 	// unbox the data
-	cmd, ok := data.(core.CmdValue)
+	cmd, ok := data.(core.CmdInfo)
 	if !ok {
 		return "", fmt.Errorf("Runnable data is not of the correct type\n")
 	}

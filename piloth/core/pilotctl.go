@@ -50,7 +50,7 @@ func NewPilotCtl(worker *job.Worker) (*PilotCtl, error) {
 }
 
 // Register the host
-func (r *PilotCtl) Register() (string, error) {
+func (r *PilotCtl) Register() (*ctl.InitialConfig, error) {
 	i := r.host
 	// set the machine id
 	reg := &ctl.Registration{
@@ -66,20 +66,22 @@ func (r *PilotCtl) Register() (string, error) {
 	uri := fmt.Sprintf("%s/register", r.cfg.BaseURI)
 	resp, err := r.client.Post(uri, reg, r.addToken)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if resp.StatusCode > 299 {
-		return "", fmt.Errorf("the request failed with error: %d - %s", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("the request failed with error: %d - %s", resp.StatusCode, resp.Status)
 	}
+	var result ctl.InitialConfig
 	op, err := ioutil.ReadAll(resp.Body)
+	err = json.Unmarshal(op, &result)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(op), nil
+	return &result, nil
 }
 
 // Ping send a ping to the remote server
-func (r *PilotCtl) Ping() (ctl.CmdRequest, error) {
+func (r *PilotCtl) Ping() (ctl.PingResponse, error) {
 	// is there a result from a job ready?
 	var (
 		payload Serializable
@@ -95,19 +97,19 @@ func (r *PilotCtl) Ping() (ctl.CmdRequest, error) {
 	uri := fmt.Sprintf("%s/ping", r.cfg.BaseURI)
 	resp, err := r.client.Post(uri, payload, r.addToken)
 	if err != nil {
-		return ctl.CmdRequest{}, fmt.Errorf("ping failed ping: %s", err)
+		return ctl.PingResponse{}, fmt.Errorf("ping failed ping: %s", err)
 	}
 	if resp.StatusCode > 299 {
-		return ctl.CmdRequest{}, fmt.Errorf("call to the remote service failed: %d - %s", resp.StatusCode, resp.Status)
+		return ctl.PingResponse{}, fmt.Errorf("call to the remote service failed: %d - %s", resp.StatusCode, resp.Status)
 	}
 	// get the commands to execute from the response body
 	bytes, err := ioutil.ReadAll(resp.Body)
-	var command ctl.CmdRequest
-	err = json.Unmarshal(bytes, &command)
+	var pingResponse ctl.PingResponse
+	err = json.Unmarshal(bytes, &pingResponse)
 	if err != nil {
-		return ctl.CmdRequest{}, fmt.Errorf("cannot read ping response: %s", err)
+		return ctl.PingResponse{}, fmt.Errorf("cannot read ping response: %s", err)
 	}
-	return command, nil
+	return pingResponse, nil
 }
 
 func (r *PilotCtl) addToken(req *http.Request, payload Serializable) error {

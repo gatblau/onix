@@ -59,12 +59,12 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	// todo: add support for fx version
 	jobId, fxKey, _, err := api.Beat()
 	if err != nil {
-		log.Printf("can't record ping: %v\n", err)
-		http.Error(w, "can't record ping, check server logs\n", http.StatusInternalServerError)
+		log.Printf("can't record ping time: %v\n", err)
+		http.Error(w, "can't record ping time, check the server logs\n", http.StatusInternalServerError)
 		return
 	}
 	// create a command with no job
-	var cmdValue = &core.CmdValue{
+	var cmdValue = &core.CmdInfo{
 		JobId: jobId,
 	}
 	// if we have a job to execute
@@ -79,16 +79,16 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		// set the job reference
 		cmdValue.JobId = jobId
 	}
-	cr, err := core.NewCmdRequest(*cmdValue)
+	cr, err := core.NewPingResponse(*cmdValue, api.PingInterval())
 	if err != nil {
-		log.Printf("can't sign command request: %v\n", err)
-		http.Error(w, "can't sign command request, check server logs\n", http.StatusInternalServerError)
+		log.Printf("can't sign ping response: %v\n", err)
+		http.Error(w, "can't sign ping response, check the server logs\n", http.StatusInternalServerError)
 		return
 	}
 	bytes, err := json.Marshal(cr)
 	if err != nil {
-		log.Printf("can't marshal command request: %s\n", err)
-		http.Error(w, "can't marshal command request, check server logs\n", http.StatusInternalServerError)
+		log.Printf("can't marshal ping response: %s\n", err)
+		http.Error(w, "can't marshal ping response, check the server logs\n", http.StatusInternalServerError)
 	}
 	w.WriteHeader(http.StatusCreated)
 	w.Write(bytes)
@@ -125,7 +125,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Error reading body: %v", err)
-		http.Error(w, "can't read body", http.StatusBadRequest)
+		http.Error(w, "can't read body, check the server logs for more details", http.StatusBadRequest)
 		return
 	}
 	// unmarshal body
@@ -133,17 +133,23 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(body, reg)
 	if err != nil {
 		log.Printf("Error unmarshalling body: %v", err)
-		http.Error(w, "can't unmarshal body", http.StatusBadRequest)
+		http.Error(w, "can't unmarshal body, check the server logs for more details", http.StatusBadRequest)
 		return
 	}
-	op, err := api.Register(reg)
+	regInfo, err := api.Register(reg)
 	if err != nil {
 		log.Printf("Failed to register host, Onix responded with an error: %v", err)
-		http.Error(w, "Failed to register host, Onix responded with an error", http.StatusInternalServerError)
+		http.Error(w, "Failed to register host, Onix responded with an error, check the server logs for more details", http.StatusInternalServerError)
 		return
 	}
 	log.Printf("host %s - %s registered", reg.Hostname, reg.MachineId)
-	w.Write([]byte(op))
+	bytes, err := json.Marshal(regInfo)
+	if err != nil {
+		log.Printf("Failed to marshal registration configuration: %v", err)
+		http.Error(w, "Failed to marshal registration configuration, check the server logs for more details", http.StatusInternalServerError)
+		return
+	}
+	w.Write(bytes)
 	w.WriteHeader(http.StatusCreated)
 }
 

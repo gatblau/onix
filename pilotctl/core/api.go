@@ -55,7 +55,11 @@ func NewAPI(cfg *Conf) (*API, error) {
 		ox:   ox}, nil
 }
 
-func (r *API) Register(reg *Registration) (string, error) {
+func (r *API) PingInterval() time.Duration {
+	return r.conf.PingIntervalSecs()
+}
+
+func (r *API) Register(reg *Registration) (*InitialConfig, error) {
 	// registers the host with the cmdb
 	result, err := r.ox.PutItem(&oxc.Item{
 		Key:         strings.ToUpper(fmt.Sprintf("HOST:%s:%s", reg.MachineId, reg.Hostname)),
@@ -80,13 +84,15 @@ func (r *API) Register(reg *Registration) (string, error) {
 	// business error?
 	if result != nil && result.Error {
 		// return it
-		return result.Operation, fmt.Errorf(result.Message)
+		return nil, fmt.Errorf(result.Message)
 	}
 	// otherwise, return technical error or nil if successful
-	return result.Operation, err
+	return &InitialConfig{
+		Operation: result.Operation,
+	}, err
 }
 
-func (r *API) GetCommandValue(fxKey string) (*CmdValue, error) {
+func (r *API) GetCommandValue(fxKey string) (*CmdInfo, error) {
 	item, err := r.ox.GetItem(&oxc.Item{Key: fxKey})
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve function specification from Onix: %s", err)
@@ -95,7 +101,7 @@ func (r *API) GetCommandValue(fxKey string) (*CmdValue, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot get input from map: %s", err)
 	}
-	return &CmdValue{
+	return &CmdInfo{
 		Function:      item.GetStringAttr("FX"),
 		Package:       item.GetStringAttr("PACKAGE"),
 		User:          item.GetStringAttr("USER"),
@@ -128,12 +134,12 @@ func (r *API) Beat() (jobId int64, fxKey string, fxVersion int64, err error) {
 // loc: location key
 func (r *API) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 	hosts := make([]Host, 0)
-	rows, err := r.db.Query("select * from pilotctl_get_host($1, $2, $3, $4, $5)", fmt.Sprintf("%d secs", r.conf.GetDisconnectedAfterSecs()), oGroup, or, ar, loc)
+	rows, err := r.db.Query("select * from pilotctl_get_host($1, $2, $3, $4, $5)", fmt.Sprintf("%d secs", r.conf.DisconnectedAfterSecs()), oGroup, or, ar, loc)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get hosts: %s\n", err)
 	}
 	var (
-		machineId string
+		uuId      string
 		connected bool
 		lastSeen  sql.NullTime
 		orgGroup  sql.NullString
@@ -144,7 +150,7 @@ func (r *API) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 		tag       []string
 	)
 	for rows.Next() {
-		err := rows.Scan(&machineId, &connected, &lastSeen, &orgGroup, &org, &area, &location, &inService, &tag)
+		err := rows.Scan(&uuId, &connected, &lastSeen, &orgGroup, &org, &area, &location, &inService, &tag)
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +167,7 @@ func (r *API) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 			}
 		}
 		hosts = append(hosts, Host{
-			MachineId: machineId,
+			HostUUID:  uuId,
 			OrgGroup:  orgGroup.String,
 			Org:       org.String,
 			Area:      area.String,
