@@ -85,7 +85,7 @@ func (r *PilotCtl) Ping() (ctl.PingResponse, error) {
 	// is there a result from a job ready?
 	var (
 		payload Serializable
-		result  *job.Result
+		result  *ctl.JobResult
 	)
 	// check if the worker has a job result to be sent to pilot control
 	result, ok := r.worker.Result()

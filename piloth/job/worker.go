@@ -112,7 +112,7 @@ func (w *Worker) Start() {
 					if err != nil {
 						errorMsg = mask(err.Error(), cmd.User, cmd.Pwd)
 					}
-					result := &Result{
+					result := &ctl.JobResult{
 						JobId:   cmd.JobId,
 						Success: err == nil,
 						Log:     out,
@@ -141,11 +141,11 @@ func (w *Worker) AddJob(job ctl.CmdInfo) {
 }
 
 // Result get the next available result
-func (w *Worker) Result() (*Result, bool) {
+func (w *Worker) Result() (*ctl.JobResult, bool) {
 	e := w.results.Front()
 	// if there is a result in the list
 	if e != nil {
-		r := e.Value.(*Result)
+		r := e.Value.(*ctl.JobResult)
 		if r != nil {
 			// remove the result from the list after having read it
 			w.results.Remove(e)
