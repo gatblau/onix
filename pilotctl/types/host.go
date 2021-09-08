@@ -10,13 +10,14 @@ package types
 
 // Host monitoring information
 type Host struct {
-	HostUUID  string `json:"host_uuid"`
-	OrgGroup  string `json:"org_group"`
-	Org       string `json:"org"`
-	Area      string `json:"area"`
-	Location  string `json:"location"`
-	Connected bool   `json:"connected"`
-	LastSeen  int64  `json:"last_seen"`
-	Since     int    `json:"since"`
-	SinceType string `json:"since_type"`
+	HostUUID  string   `json:"host_uuid"`
+	OrgGroup  string   `json:"org_group"`
+	Org       string   `json:"org"`
+	Area      string   `json:"area"`
+	Location  string   `json:"location"`
+	Connected bool     `json:"connected"`
+	LastSeen  int64    `json:"last_seen"`
+	Since     int      `json:"since"`
+	SinceType string   `json:"since_type"`
+	Label     []string `json:"label"`
 }

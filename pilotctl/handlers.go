@@ -102,6 +102,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 // @Param or query string false "the organisation key to filter the query"
 // @Param ar query string false "the area key to filter the query"
 // @Param lo query string false "the location key to filter the query"
+// @Param label query string false "a pipe | separated list of labels associated to the host(s) to retrieve"
 // @Produce json
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
@@ -110,7 +111,12 @@ func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 	org := r.FormValue("or")
 	area := r.FormValue("ar")
 	location := r.FormValue("lo")
-	hosts, err := api.GetHosts(orgGroup, org, area, location)
+	labels := r.FormValue("label")
+	var label []string
+	if len(labels) > 0 {
+		label = strings.Split(labels, "|")
+	}
+	hosts, err := api.GetHosts(orgGroup, org, area, location, label)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -157,7 +163,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 // @Description creates a new or updates an existing command definition
 // @Tags Command
 // @Router /cmd [put]
-// @Param command body core.Cmd true "the command definition"
+// @Param command body types.Cmd true "the command definition"
 // @Accepts json
 // @Produce plain
 // @Failure 500 {string} there was an error in the server, check the server logs
@@ -228,7 +234,7 @@ func getAllCmdHandler(w http.ResponseWriter, r *http.Request) {
 // @Description create a new job for execution on one or more remote hosts
 // @Tags Job
 // @Router /job [post]
-// @Param command body core.JobBatchInfo true "the information required to create a new job"
+// @Param command body types.JobBatchInfo true "the information required to create a new job"
 // @Accepts json
 // @Produce plain
 // @Failure 500 {string} there was an error in the server, check the server logs
@@ -364,11 +370,6 @@ func getJobBatchHandler(w http.ResponseWriter, r *http.Request) {
 	server.Write(w, r, batches)
 }
 
-// @Summary Submit a Vulnerability Scan Report
-// @Description submits a vulnerability report for a specific host
-func uploadVulnerabilityReportHandler(w http.ResponseWriter, r *http.Request) {
-}
-
 // @Summary Get Areas in Organisation Group
 // @Description Get a list of areas setup in an organisation group
 // @Tags Logistics
@@ -451,7 +452,7 @@ func getLocationsHandler(w http.ResponseWriter, r *http.Request) {
 // @Description admitting a host also requires associating the relevant logistic information such as org, area and location for the host
 // @Tags Admission
 // @Router /admission [put]
-// @Param command body []core.Admission true "the required admission information"
+// @Param command body []types.Admission true "the required admission information"
 // @Accepts json
 // @Produce plain
 // @Failure 500 {string} there was an error in the server, check the server logs
