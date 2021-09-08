@@ -11,7 +11,7 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	ctl "github.com/gatblau/onix/pilotctl/core"
+	ctl "github.com/gatblau/onix/pilotctl/types"
 	"github.com/gatblau/onix/piloth/job"
 	"io/ioutil"
 	"net/http"
@@ -50,10 +50,10 @@ func NewPilotCtl(worker *job.Worker) (*PilotCtl, error) {
 }
 
 // Register the host
-func (r *PilotCtl) Register() (*ctl.InitialConfig, error) {
+func (r *PilotCtl) Register() (*ctl.RegistrationResponse, error) {
 	i := r.host
 	// set the machine id
-	reg := &ctl.Registration{
+	reg := &ctl.RegistrationRequest{
 		Hostname:    i.HostName,
 		MachineId:   i.MachineId,
 		OS:          i.OS,
@@ -71,7 +71,7 @@ func (r *PilotCtl) Register() (*ctl.InitialConfig, error) {
 	if resp.StatusCode > 299 {
 		return nil, fmt.Errorf("the request failed with error: %d - %s", resp.StatusCode, resp.Status)
 	}
-	var result ctl.InitialConfig
+	var result ctl.RegistrationResponse
 	op, err := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(op, &result)
 	if err != nil {

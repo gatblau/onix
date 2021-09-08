@@ -21,8 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/artisan/server"
-	"github.com/gatblau/onix/pilotctl/core"
 	_ "github.com/gatblau/onix/pilotctl/docs"
+	. "github.com/gatblau/onix/pilotctl/types"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"log"
@@ -42,7 +42,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(body) > 0 {
-		result := &core.Result{}
+		result := &JobResult{}
 		err = json.Unmarshal(body, result)
 		if err != nil {
 			log.Printf("cannot unmarshal ping request body: %s\n", err)
@@ -64,7 +64,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// create a command with no job
-	var cmdValue = &core.CmdInfo{
+	var cmdValue = &CmdInfo{
 		JobId: jobId,
 	}
 	// if we have a job to execute
@@ -79,7 +79,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		// set the job reference
 		cmdValue.JobId = jobId
 	}
-	cr, err := core.NewPingResponse(*cmdValue, api.PingInterval())
+	cr, err := NewPingResponse(*cmdValue, api.PingInterval())
 	if err != nil {
 		log.Printf("can't sign ping response: %v\n", err)
 		http.Error(w, "can't sign ping response, check the server logs\n", http.StatusInternalServerError)
@@ -129,7 +129,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// unmarshal body
-	reg := &core.Registration{}
+	reg := &RegistrationRequest{}
 	err = json.Unmarshal(body, reg)
 	if err != nil {
 		log.Printf("Error unmarshalling body: %v", err)
@@ -169,7 +169,7 @@ func updateCmdHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	cmd := new(core.Cmd)
+	cmd := new(Cmd)
 	err = json.Unmarshal(bytes, cmd)
 	if err != nil {
 		log.Printf("failed to unmarshal request: %s", err)
@@ -240,7 +240,7 @@ func newJobHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("can't read http body: check server logs\n"), http.StatusInternalServerError)
 		return
 	}
-	var batch = new(core.JobBatchInfo)
+	var batch = new(JobBatchInfo)
 	err = json.Unmarshal(bytes, batch)
 	if err != nil {
 		log.Printf("can't unmarshal http body: %v\n", err)
@@ -463,7 +463,7 @@ func setAdmissionHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var admissions []core.Admission
+	var admissions []Admission
 	err = json.Unmarshal(bytes, &admissions)
 	if err != nil {
 		log.Println(err)

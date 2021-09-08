@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/merge"
-	"github.com/gatblau/onix/pilotctl/core"
+	ctl "github.com/gatblau/onix/pilotctl/types"
 	"log"
 	"log/syslog"
 	"os"
@@ -90,7 +90,7 @@ func (w *Worker) Start() {
 					// pick the next job from the queue
 					jobElement := w.jobs.Front()
 					// unbox the job
-					cmd, ok := jobElement.Value.(core.CmdInfo)
+					cmd, ok := jobElement.Value.(ctl.CmdInfo)
 					if !ok {
 						w.stdout("invalid job format")
 						continue
@@ -136,7 +136,7 @@ func (w *Worker) Stop() {
 }
 
 // AddJob add a new job for processing to the worker
-func (w *Worker) AddJob(job core.CmdInfo) {
+func (w *Worker) AddJob(job ctl.CmdInfo) {
 	w.jobs.PushBack(job)
 }
 
@@ -162,17 +162,35 @@ func (w *Worker) Result() (*Result, bool) {
 
 func run(data interface{}) (string, error) {
 	// unbox the data
-	cmd, ok := data.(core.CmdInfo)
+	cmd, ok := data.(ctl.CmdInfo)
 	if !ok {
 		return "", fmt.Errorf("Runnable data is not of the correct type\n")
 	}
+
 	// create the command to run
-	cmdString := fmt.Sprintf("art exe -u %s:%s %s %s", cmd.User, cmd.Pwd, cmd.Package, cmd.Function)
-	// capture the PATH variable
-	path := os.Getenv("PATH")
+	var (
+		vars   []string
+		artCmd = "exe"
+	)
+	// if the execution is containerised
+	if cmd.Containerised {
+		// use the exec command instead
+		artCmd = fmt.Sprintf("%sc", artCmd)
+	} else {
+		// if not containerised add PATH to execution environment
+		vars = append(vars, fmt.Sprintf("PATH=%s", os.Getenv("PATH")))
+	}
+	// if running in verbose mode
+	if cmd.Verbose {
+		// add ARTISAN_DEBUG to execution environment
+		vars = append(vars, "ARTISAN_DEBUG=true")
+	}
+	// get the variables in the command
 	env := cmd.Envar()
-	// inject the PATH into the process
-	env.Merge(merge.NewEnVarFromSlice([]string{fmt.Sprintf("PATH=%s", path)}))
+	// inject the additional vars into the process
+	env.Merge(merge.NewEnVarFromSlice(vars))
+	// create the command statement to run
+	cmdString := fmt.Sprintf("art %s -u %s:%s %s %s", artCmd, cmd.User, cmd.Pwd, cmd.Package, cmd.Function)
 	// run and return
 	return build.ExeAsync(cmdString, ".", env, false)
 }
