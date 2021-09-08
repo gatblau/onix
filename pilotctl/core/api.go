@@ -133,9 +133,10 @@ func (r *API) Beat() (jobId int64, fxKey string, fxVersion int64, err error) {
 // or: organisation key
 // ar: area key
 // loc: location key
-func (r *API) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
+func (r *API) GetHosts(oGroup, or, ar, loc string, label []string) ([]Host, error) {
 	hosts := make([]Host, 0)
-	rows, err := r.db.Query("select * from pilotctl_get_host($1, $2, $3, $4, $5)", fmt.Sprintf("%d secs", r.conf.DisconnectedAfterSecs()), oGroup, or, ar, loc)
+	pingInterval := r.PingInterval().Seconds()
+	rows, err := r.db.Query("select * from pilotctl_get_host($1, $2, $3, $4, $5, $6)", fmt.Sprintf("%.0f secs", pingInterval+5), oGroup, or, ar, loc, label)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get hosts: %s\n", err)
 	}
@@ -148,10 +149,10 @@ func (r *API) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 		area      sql.NullString
 		location  sql.NullString
 		inService bool
-		tag       []string
+		labels    []string
 	)
 	for rows.Next() {
-		err := rows.Scan(&uuId, &connected, &lastSeen, &orgGroup, &org, &area, &location, &inService, &tag)
+		err = rows.Scan(&uuId, &connected, &lastSeen, &orgGroup, &org, &area, &location, &inService, &labels)
 		if err != nil {
 			return nil, err
 		}
@@ -177,6 +178,7 @@ func (r *API) GetHosts(oGroup, or, ar, loc string) ([]Host, error) {
 			LastSeen:  tt,
 			Since:     since,
 			SinceType: sinceType,
+			Label:     labels,
 		})
 	}
 	return hosts, rows.Err()

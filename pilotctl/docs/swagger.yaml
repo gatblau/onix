@@ -1,76 +1,4 @@
 definitions:
-  core.Admission:
-    properties:
-      area:
-        type: string
-      host_uuid:
-        type: string
-      label:
-        items:
-          type: string
-        type: array
-      location:
-        type: string
-      org:
-        type: string
-      org_group:
-        type: string
-    type: object
-  core.Cmd:
-    properties:
-      containerised:
-        description: run command in runtime
-        type: boolean
-      description:
-        description: description of the command
-        type: string
-      function:
-        description: the function in the package to call
-        type: string
-      input:
-        $ref: '#/definitions/data.Input'
-        description: the function input information
-      key:
-        description: the natural key uniquely identifying the command
-        type: string
-      package:
-        description: the package to use
-        type: string
-      pwd:
-        description: the package registry password
-        type: string
-      user:
-        description: the package registry user
-        type: string
-      verbose:
-        description: enables verbose output
-        type: boolean
-    type: object
-  core.JobBatchInfo:
-    properties:
-      description:
-        description: a description for the batch (not mandatory)
-        type: string
-      fx_key:
-        description: the unique key of the function to run
-        type: string
-      fx_version:
-        description: the version of the function to run
-        type: integer
-      host_uuid:
-        description: the universally unique host identifier created by pilot
-        items:
-          type: string
-        type: array
-      label:
-        description: one or more search labels
-        items:
-          type: string
-        type: array
-      name:
-        description: the name of the batch (not unique, a user-friendly name)
-        type: string
-    type: object
   data.File:
     properties:
       content:
@@ -163,6 +91,78 @@ definitions:
       value:
         type: string
     type: object
+  types.Admission:
+    properties:
+      area:
+        type: string
+      host_uuid:
+        type: string
+      label:
+        items:
+          type: string
+        type: array
+      location:
+        type: string
+      org:
+        type: string
+      org_group:
+        type: string
+    type: object
+  types.Cmd:
+    properties:
+      containerised:
+        description: run command in runtime
+        type: boolean
+      description:
+        description: description of the command
+        type: string
+      function:
+        description: the function in the package to call
+        type: string
+      input:
+        $ref: '#/definitions/data.Input'
+        description: the function input information
+      key:
+        description: the natural key uniquely identifying the command
+        type: string
+      package:
+        description: the package to use
+        type: string
+      pwd:
+        description: the package registry password
+        type: string
+      user:
+        description: the package registry user
+        type: string
+      verbose:
+        description: enables verbose output
+        type: boolean
+    type: object
+  types.JobBatchInfo:
+    properties:
+      description:
+        description: a description for the batch (not mandatory)
+        type: string
+      fx_key:
+        description: the unique key of the function to run
+        type: string
+      fx_version:
+        description: the version of the function to run
+        type: integer
+      host_uuid:
+        description: the universally unique host identifier created by pilot
+        items:
+          type: string
+        type: array
+      label:
+        description: one or more search labels
+        items:
+          type: string
+        type: array
+      name:
+        description: the name of the batch (not unique, a user-friendly name)
+        type: string
+    type: object
 info:
   contact:
     email: onix@gatblau.org
@@ -203,7 +203,7 @@ paths:
         required: true
         schema:
           items:
-            $ref: '#/definitions/core.Admission'
+            $ref: '#/definitions/types.Admission'
           type: array
       produces:
       - text/plain
@@ -267,7 +267,7 @@ paths:
         name: command
         required: true
         schema:
-          $ref: '#/definitions/core.Cmd'
+          $ref: '#/definitions/types.Cmd'
       produces:
       - text/plain
       responses:
@@ -324,6 +324,11 @@ paths:
       - description: the location key to filter the query
         in: query
         name: lo
+        type: string
+      - description: a pipe | separated list of labels associated to the host(s) to
+          retrieve
+        in: query
+        name: label
         type: string
       produces:
       - application/json
@@ -385,7 +390,7 @@ paths:
         name: command
         required: true
         schema:
-          $ref: '#/definitions/core.JobBatchInfo'
+          $ref: '#/definitions/types.JobBatchInfo'
       produces:
       - text/plain
       responses:

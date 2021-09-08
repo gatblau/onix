@@ -71,7 +71,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/core.Admission"
+                                "$ref": "#/definitions/types.Admission"
                             }
                         }
                     }
@@ -168,7 +168,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core.Cmd"
+                            "$ref": "#/definitions/types.Cmd"
                         }
                     }
                 ],
@@ -256,6 +256,12 @@ var doc = `{
                         "type": "string",
                         "description": "the location key to filter the query",
                         "name": "lo",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "a pipe | separated list of labels associated to the host(s) to retrieve",
+                        "name": "label",
                         "in": "query"
                     }
                 ],
@@ -348,7 +354,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core.JobBatchInfo"
+                            "$ref": "#/definitions/types.JobBatchInfo"
                         }
                     }
                 ],
@@ -585,108 +591,6 @@ var doc = `{
         }
     },
     "definitions": {
-        "core.Admission": {
-            "type": "object",
-            "properties": {
-                "area": {
-                    "type": "string"
-                },
-                "host_uuid": {
-                    "type": "string"
-                },
-                "label": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "location": {
-                    "type": "string"
-                },
-                "org": {
-                    "type": "string"
-                },
-                "org_group": {
-                    "type": "string"
-                }
-            }
-        },
-        "core.Cmd": {
-            "type": "object",
-            "properties": {
-                "containerised": {
-                    "description": "run command in runtime",
-                    "type": "boolean"
-                },
-                "description": {
-                    "description": "description of the command",
-                    "type": "string"
-                },
-                "function": {
-                    "description": "the function in the package to call",
-                    "type": "string"
-                },
-                "input": {
-                    "description": "the function input information",
-                    "$ref": "#/definitions/data.Input"
-                },
-                "key": {
-                    "description": "the natural key uniquely identifying the command",
-                    "type": "string"
-                },
-                "package": {
-                    "description": "the package to use",
-                    "type": "string"
-                },
-                "pwd": {
-                    "description": "the package registry password",
-                    "type": "string"
-                },
-                "user": {
-                    "description": "the package registry user",
-                    "type": "string"
-                },
-                "verbose": {
-                    "description": "enables verbose output",
-                    "type": "boolean"
-                }
-            }
-        },
-        "core.JobBatchInfo": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "description": "a description for the batch (not mandatory)",
-                    "type": "string"
-                },
-                "fx_key": {
-                    "description": "the unique key of the function to run",
-                    "type": "string"
-                },
-                "fx_version": {
-                    "description": "the version of the function to run",
-                    "type": "integer"
-                },
-                "host_uuid": {
-                    "description": "the universally unique host identifier created by pilot",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "label": {
-                    "description": "one or more search labels",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "description": "the name of the batch (not unique, a user-friendly name)",
-                    "type": "string"
-                }
-            }
-        },
         "data.File": {
             "type": "object",
             "properties": {
@@ -814,6 +718,108 @@ var doc = `{
                     "type": "string"
                 },
                 "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.Admission": {
+            "type": "object",
+            "properties": {
+                "area": {
+                    "type": "string"
+                },
+                "host_uuid": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "location": {
+                    "type": "string"
+                },
+                "org": {
+                    "type": "string"
+                },
+                "org_group": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.Cmd": {
+            "type": "object",
+            "properties": {
+                "containerised": {
+                    "description": "run command in runtime",
+                    "type": "boolean"
+                },
+                "description": {
+                    "description": "description of the command",
+                    "type": "string"
+                },
+                "function": {
+                    "description": "the function in the package to call",
+                    "type": "string"
+                },
+                "input": {
+                    "description": "the function input information",
+                    "$ref": "#/definitions/data.Input"
+                },
+                "key": {
+                    "description": "the natural key uniquely identifying the command",
+                    "type": "string"
+                },
+                "package": {
+                    "description": "the package to use",
+                    "type": "string"
+                },
+                "pwd": {
+                    "description": "the package registry password",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "the package registry user",
+                    "type": "string"
+                },
+                "verbose": {
+                    "description": "enables verbose output",
+                    "type": "boolean"
+                }
+            }
+        },
+        "types.JobBatchInfo": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "a description for the batch (not mandatory)",
+                    "type": "string"
+                },
+                "fx_key": {
+                    "description": "the unique key of the function to run",
+                    "type": "string"
+                },
+                "fx_version": {
+                    "description": "the version of the function to run",
+                    "type": "integer"
+                },
+                "host_uuid": {
+                    "description": "the universally unique host identifier created by pilot",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "label": {
+                    "description": "one or more search labels",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "description": "the name of the batch (not unique, a user-friendly name)",
                     "type": "string"
                 }
             }

@@ -91,13 +91,6 @@ func (c *Conf) PingIntervalSecs() time.Duration {
 	return interval
 }
 
-// DisconnectedAfterSecs the period after which pilotctl considers a host disconnected if the last seen time is not updated
-func (c *Conf) DisconnectedAfterSecs() int {
-	in := int(c.PingIntervalSecs())
-	after := in + 5
-	return after
-}
-
 func (c *Conf) getOxWapiUrl() string {
 	return c.getValue(ConfOxWapiUri)
 }
