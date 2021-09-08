@@ -29,23 +29,24 @@ func printMachineId() {
 	if err != nil {
 		panic(err)
 	}
-	// if machineid is passed as a command line argument
 	switch len(os.Args[1:]) {
 	case 0:
 		// do nothing
 	case 1:
 		if os.Args[1] == "info" {
-			// prints the machine id
+			i.InitHostUUID()
+			// prints the host information
 			fmt.Printf("%s\n", i)
 			// terminates programme
 			os.Exit(0)
 		} else if os.Args[1] == "machineid" {
-			// prints the machine id
+			// prints the host machine id
 			fmt.Printf("%s\n", strings.Replace(i.MachineId, "-", "", -1))
 			// terminates programme
 			os.Exit(0)
 		} else if os.Args[1] == "uuid" {
-			// prints the machine id
+			i.InitHostUUID()
+			// prints the host UUID
 			fmt.Printf("%s\n", strings.Replace(i.HostUUID, "-", "", -1))
 			// terminates programme
 			os.Exit(0)
