@@ -1,7 +1,7 @@
 package core
 
 /*
-  Onix Pilot Host Control Service
+  Onix Pilot Host Control
   Copyright (c) 2018-2021 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
@@ -15,6 +15,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
+	. "github.com/gatblau/onix/pilotctl/types"
 	"github.com/gatblau/oxc"
 	"log"
 	"strconv"
@@ -59,7 +60,7 @@ func (r *API) PingInterval() time.Duration {
 	return r.conf.PingIntervalSecs()
 }
 
-func (r *API) Register(reg *Registration) (*InitialConfig, error) {
+func (r *API) Register(reg *RegistrationRequest) (*RegistrationResponse, error) {
 	// registers the host with the cmdb
 	result, err := r.ox.PutItem(&oxc.Item{
 		Key:         strings.ToUpper(fmt.Sprintf("HOST:%s:%s", reg.MachineId, reg.Hostname)),
@@ -87,7 +88,7 @@ func (r *API) Register(reg *Registration) (*InitialConfig, error) {
 		return nil, fmt.Errorf(result.Message)
 	}
 	// otherwise, return technical error or nil if successful
-	return &InitialConfig{
+	return &RegistrationResponse{
 		Operation: result.Operation,
 	}, err
 }
@@ -396,7 +397,7 @@ func (r *API) GetCommand(cmdName string) (*Cmd, error) {
 	}, nil
 }
 
-func (r *API) CompleteJob(status *Result) error {
+func (r *API) CompleteJob(status *JobResult) error {
 	logMsg := status.Log
 	// if there was a failure, and we have an error message, add it to the log
 	if !status.Success && len(status.Err) > 0 {
