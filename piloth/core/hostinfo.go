@@ -8,16 +8,17 @@ package core
   to be licensed under the same terms as the rest of the code.
 */
 import (
-	"crypto/sha1"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/shirou/gopsutil/cpu"
 	hostUtil "github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
-	"io"
+	"io/ioutil"
 	"math"
 	"net"
+	"os"
 	"strings"
 	"time"
 )
@@ -68,7 +69,6 @@ func NewHostInfo() (*HostInfo, error) {
 		cpus = -1
 	}
 	info := &HostInfo{
-		HostUUID:    hostUUID(i.HostID, i.Hostname),
 		MachineId:   strings.ReplaceAll(i.HostID, "-", ""),
 		HostIP:      hostIp,
 		HostName:    i.Hostname,
@@ -79,6 +79,14 @@ func NewHostInfo() (*HostInfo, error) {
 		CPUs:        cpus,
 	}
 	return info, nil
+}
+
+// InitHostUUID check if there is a hostUUID file and if not generates one
+// loads the UUID value in host info
+func (h *HostInfo) InitHostUUID() (bool, string) {
+	var created bool
+	created, h.HostUUID = hostUUID()
+	return created, h.HostUUID
 }
 
 func (h *HostInfo) String() string {
@@ -130,9 +138,36 @@ func externalIP() (string, error) {
 // hostUUID works out a unique reference for the host that is not the machine id, as machine id is not unique
 // e.g. cloning a VM will have the same machine-id, hence using a combination of hostname and machine id for uniqueness
 // not using system UUID as it requires administrative privileges
-func hostUUID(machineId, hostname string) string {
-	uuidString := fmt.Sprintf("%s-%s", machineId, hostname)
-	hash := sha1.New()
-	io.WriteString(hash, uuidString)
-	return fmt.Sprintf("%x", hash.Sum(nil))
+func hostUUID() (created bool, hostUUID string) {
+	// check if .hostUUID exists
+	_, err := os.Stat(".hostUUID")
+	// if not, creates one
+	if err != nil {
+		hostUUID = newUUID()
+		err = os.WriteFile(".hostUUID", []byte(hostUUID), os.ModePerm)
+		// if file could not be created
+		if err != nil {
+			// it should not continue
+			ErrorLogger.Printf("cannot create .hostUUID file: %s", err)
+			os.Exit(1)
+		}
+		// UUID was created
+		created = true
+	} else {
+		// if the file exists
+		bytes, err := ioutil.ReadFile(".hostUUID")
+		if err != nil {
+			// it should not continue
+			ErrorLogger.Printf("cannot read .hostUUID file: %s", err)
+			os.Exit(1)
+		}
+		hostUUID = fmt.Sprintf("%s", bytes[:])
+		created = false
+	}
+	return created, hostUUID
+}
+
+// create a Universally Unique Identifier without hyphens
+func newUUID() string {
+	return strings.Replace(uuid.New().String(), "-", "", -1)
 }
