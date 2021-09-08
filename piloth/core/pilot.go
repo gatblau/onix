@@ -76,17 +76,28 @@ func (p *Pilot) Start() {
 |                     Host Controller                     | 
 +---------------------------------------------------------+`)
 	InfoLogger.Printf("launching pilot version %s\n", Version)
+	// initialises the host universally unique identifier
+	if created, uuid := p.info.InitHostUUID(); created {
+		InfoLogger.Printf("created Host UUID = '%s'\n", uuid)
+	} else {
+		InfoLogger.Printf("using Host UUID = '%s'\n", uuid)
+	}
+	// creates a new SysLog collector
 	collector, err := NewCollector("0.0.0.0", p.cfg.getSyslogPort())
 	if err != nil {
 		ErrorLogger.Printf("cannot create pilot syslog collector: %s\n", err)
 		os.Exit(1)
 	}
+	// starts the collector service
 	collector.Start()
+	// check artisan cli is installed
 	if !commandExists("art") {
 		ErrorLogger.Printf("cannot find artisan CLI, ensure it is installed before running pilot\n")
 		os.Exit(127)
 	}
+	// registers the host
 	p.register()
+	// initiates the ping loop
 	p.ping()
 }
 
