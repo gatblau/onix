@@ -792,10 +792,6 @@ var doc = `{
         "types.JobBatchInfo": {
             "type": "object",
             "properties": {
-                "description": {
-                    "description": "a description for the batch (not mandatory)",
-                    "type": "string"
-                },
                 "fx_key": {
                     "description": "the unique key of the function to run",
                     "type": "string"
@@ -820,6 +816,10 @@ var doc = `{
                 },
                 "name": {
                     "description": "the name of the batch (not unique, a user-friendly name)",
+                    "type": "string"
+                },
+                "notes": {
+                    "description": "any relevant notes for the batch (not mandatory)",
                     "type": "string"
                 }
             }
