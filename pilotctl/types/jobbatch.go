@@ -16,8 +16,8 @@ type JobBatch struct {
 	BatchId int64 `json:"batch_id"`
 	// the name of the batch (not unique, a user-friendly name)
 	Name string `json:"name"`
-	// a description for the batch (not mandatory)
-	Description string `json:"description,omitempty"`
+	// any relevant notes for the batch (not mandatory)
+	Notes string `json:"notes,omitempty"`
 	// creation time
 	Created time.Time `json:"created"`
 	// one or more search labels
