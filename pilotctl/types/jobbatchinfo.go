@@ -12,8 +12,8 @@ package types
 type JobBatchInfo struct {
 	// the name of the batch (not unique, a user-friendly name)
 	Name string `json:"name"`
-	// a description for the batch (not mandatory)
-	Description string `json:"description,omitempty"`
+	// any relevant notes for the batch (not mandatory)
+	Notes string `json:"notes,omitempty"`
 	// one or more search labels
 	Label []string `json:"label,omitempty"`
 	// the universally unique host identifier created by pilot

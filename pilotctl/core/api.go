@@ -479,7 +479,7 @@ func (r *API) CreateJobBatch(info JobBatchInfo) (int64, error) {
 		return -1, fmt.Errorf("fx is missing\n")
 	}
 	// create a job batch identifier
-	rows, err := r.db.Query("select * from pilotctl_create_job_batch($1, $2, $3, $4)", info.Name, info.Description, "???", info.Label)
+	rows, err := r.db.Query("select * from pilotctl_create_job_batch($1, $2, $3, $4)", info.Name, info.Notes, "???", info.Label)
 	if err != nil {
 		return -1, fmt.Errorf("cannot create job batch: %s\n", err)
 	}
