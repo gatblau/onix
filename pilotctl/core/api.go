@@ -563,27 +563,27 @@ func (r *API) GetJobBatches(name, owner *string, from, to *time.Time, label *[]s
 		return nil, fmt.Errorf("cannot get job batches: %s\n", err)
 	}
 	var (
-		id          int64
-		name2       string
-		description string
-		created     sql.NullTime
-		owner2      string
-		labels      []string
-		jobs        int
+		id      int64
+		name2   string
+		notes   string
+		created sql.NullTime
+		owner2  string
+		labels  []string
+		jobs    int
 	)
 	for rows.Next() {
-		err = rows.Scan(&id, &name2, &description, &labels, &created, &owner2, &jobs)
+		err = rows.Scan(&id, &name2, &notes, &labels, &created, &owner2, &jobs)
 		if err != nil {
 			return nil, fmt.Errorf("cannot scan job batch row: %e\n", err)
 		}
 		batches = append(batches, JobBatch{
-			BatchId:     id,
-			Name:        name2,
-			Description: description,
-			Label:       labels,
-			Owner:       owner2,
-			Jobs:        jobs,
-			Created:     created.Time,
+			BatchId: id,
+			Name:    name2,
+			Notes:   notes,
+			Label:   labels,
+			Owner:   owner2,
+			Jobs:    jobs,
+			Created: created.Time,
 		})
 	}
 	return batches, rows.Err()
