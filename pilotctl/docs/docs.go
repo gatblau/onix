@@ -129,7 +129,7 @@ var doc = `{
         },
         "/cmd": {
             "get": {
-                "description": "get a list of all command definitions",
+                "description": "gets a list of all command definitions",
                 "produces": [
                     "text/plain"
                 ],
@@ -202,6 +202,39 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "the unique name for the command to retrieve",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "deletes a specific a command definition using the command name",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Command"
+                ],
+                "summary": "Delete a Command definition",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the unique name for the command to delete",
                         "name": "name",
                         "in": "path",
                         "required": true

@@ -244,7 +244,7 @@ paths:
       - Logistics
   /cmd:
     get:
-      description: get a list of all command definitions
+      description: gets a list of all command definitions
       produces:
       - text/plain
       responses:
@@ -283,6 +283,28 @@ paths:
       tags:
       - Command
   /cmd/{name}:
+    delete:
+      description: deletes a specific a command definition using the command name
+      parameters:
+      - description: the unique name for the command to delete
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete a Command definition
+      tags:
+      - Command
     get:
       description: get a specific a command definition
       parameters:
