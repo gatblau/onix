@@ -212,8 +212,29 @@ func getCmdHandler(w http.ResponseWriter, r *http.Request) {
 	server.Write(w, r, cmd)
 }
 
+// @Summary Delete a Command definition
+// @Description deletes a specific a command definition using the command name
+// @Tags Command
+// @Router /cmd/{name} [delete]
+// @Param name path string true "the unique name for the command to delete"
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func deleteCmdHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+	resultingOperation, err := api.DeleteCommand(name)
+	if err != nil {
+		log.Printf("can't delete command with name '%s': %v\n", name, err)
+		http.Error(w, fmt.Sprintf("can't delete command with name '%s', check server logs for more details\n", name), http.StatusInternalServerError)
+		return
+	}
+	server.Write(w, r, resultingOperation)
+}
+
 // @Summary Get all Command definitions
-// @Description get a list of all command definitions
+// @Description gets a list of all command definitions
 // @Tags Command
 // @Router /cmd [get]
 // @Accepts json

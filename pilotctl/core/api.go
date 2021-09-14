@@ -399,6 +399,14 @@ func (r *API) GetCommand(cmdName string) (*Cmd, error) {
 	}, nil
 }
 
+func (r *API) DeleteCommand(cmdName string) (string, error) {
+	result, err := r.ox.DeleteItem(&oxc.Item{Key: cmdName})
+	if err != nil {
+		return "", fmt.Errorf("cannot delete command with key '%s' from Onix: %s", cmdName, err)
+	}
+	return result.Operation, nil
+}
+
 func (r *API) CompleteJob(status *JobResult) error {
 	logMsg := status.Log
 	// if there was a failure, and we have an error message, add it to the log

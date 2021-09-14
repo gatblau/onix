@@ -42,6 +42,7 @@ func main() {
 		router.HandleFunc("/cmd", updateCmdHandler).Methods("PUT")
 		router.HandleFunc("/cmd", getAllCmdHandler).Methods("GET")
 		router.HandleFunc("/cmd/{name}", getCmdHandler).Methods("GET")
+		router.HandleFunc("/cmd/{name}", deleteCmdHandler).Methods("DELETE")
 		router.HandleFunc("/org-group", getOrgGroupsHandler).Methods("GET")
 		router.HandleFunc("/org-group/{org-group}/area", getAreasHandler).Methods("GET")
 		router.HandleFunc("/org-group/{org-group}/org", getOrgHandler).Methods("GET")
