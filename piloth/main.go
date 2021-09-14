@@ -9,9 +9,10 @@ package main
 */
 import (
 	"fmt"
-	"github.com/gatblau/onix/piloth/core"
 	"os"
 	"strings"
+
+	"github.com/gatblau/onix/piloth/core"
 )
 
 func main() {
@@ -50,10 +51,15 @@ func printMachineId() {
 			fmt.Printf("%s\n", strings.Replace(i.HostUUID, "-", "", -1))
 			// terminates programme
 			os.Exit(0)
+		} else if os.Args[1] == "version" {
+			// prints the program version
+			fmt.Printf("%s\n", core.Version)
+			// terminates programme
+			os.Exit(0)
 		}
 	default:
 		// prints the machine id
-		fmt.Printf("unknown argument '%s', valid argument is 'machineid' or 'info' or nothing\n", os.Args[1])
+		fmt.Printf("unknown argument '%s', valid arguments are 'machineid', 'info', 'version' or nothing\n", os.Args[1])
 		// terminates programme
 		os.Exit(0)
 	}
