@@ -15,20 +15,27 @@ import (
 )
 
 func main() {
-	printMachineId()
-	p, err := core.NewPilot()
+	// collects host information
+	hostInfo, err := core.NewHostInfo()
+	if err != nil {
+		panic(err)
+	}
+	// check for and execute any command line arguments
+	if handleCommands(hostInfo) {
+		os.Exit(0)
+	}
+	// creates pilot instance
+	p, err := core.NewPilot(hostInfo)
 	if err != nil {
 		fmt.Printf("cannot start pilot: %s\n", err)
 		os.Exit(1)
 	}
+	// start the pilot
 	p.Start()
 }
 
-func printMachineId() {
-	i, err := core.NewHostInfo()
-	if err != nil {
-		panic(err)
-	}
+// handleCommands handle any command line arguments and return true if a command has been handled
+func handleCommands(i *core.HostInfo) bool {
 	switch len(os.Args[1:]) {
 	case 0:
 		// do nothing
@@ -37,24 +44,17 @@ func printMachineId() {
 			i.InitHostUUID()
 			// prints the host information
 			fmt.Printf("%s\n", i)
-			// terminates programme
-			os.Exit(0)
-		} else if os.Args[1] == "machineid" {
-			// prints the host machine id
-			fmt.Printf("%s\n", strings.Replace(i.MachineId, "-", "", -1))
-			// terminates programme
-			os.Exit(0)
 		} else if os.Args[1] == "uuid" {
 			i.InitHostUUID()
 			// prints the host UUID
 			fmt.Printf("%s\n", strings.Replace(i.HostUUID, "-", "", -1))
-			// terminates programme
-			os.Exit(0)
+		} else if os.Args[1] == "version" {
+			// prints the program version
+			fmt.Printf("%s\n", core.Version)
 		}
 	default:
-		// prints the machine id
-		fmt.Printf("unknown argument '%s', valid argument is 'machineid' or 'info' or nothing\n", os.Args[1])
-		// terminates programme
-		os.Exit(0)
+		// shows usage message
+		fmt.Printf("unknown argument '%s', valid arguments are 'uuid, 'version', 'info' or nothing to launch pilot\n", os.Args[1])
 	}
+	return len(os.Args[1:]) > 0
 }

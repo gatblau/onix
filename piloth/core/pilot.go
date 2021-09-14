@@ -32,14 +32,10 @@ type Pilot struct {
 	pingInterval time.Duration
 }
 
-func NewPilot() (*Pilot, error) {
+func NewPilot(hostInfo *HostInfo) (*Pilot, error) {
 	// read configuration
 	cfg := &Config{}
 	err := cfg.Load()
-	if err != nil {
-		return nil, err
-	}
-	info, err := NewHostInfo()
 	if err != nil {
 		return nil, err
 	}
@@ -51,13 +47,13 @@ func NewPilot() (*Pilot, error) {
 	worker := job.NewCmdRequestWorker(logsWriter)
 	// start the worker
 	worker.Start()
-	r, err := NewPilotCtl(worker)
+	r, err := NewPilotCtl(worker, hostInfo)
 	if err != nil {
 		return nil, err
 	}
 	p := &Pilot{
 		cfg:    cfg,
-		info:   info,
+		info:   hostInfo,
 		ctl:    r,
 		worker: worker,
 	}

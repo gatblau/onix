@@ -25,7 +25,7 @@ type PilotCtl struct {
 	worker *job.Worker
 }
 
-func NewPilotCtl(worker *job.Worker) (*PilotCtl, error) {
+func NewPilotCtl(worker *job.Worker, hostInfo *HostInfo) (*PilotCtl, error) {
 	conf := &Config{}
 	err := conf.Load()
 	if err != nil {
@@ -42,11 +42,7 @@ func NewPilotCtl(worker *job.Worker) (*PilotCtl, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create PilotCtl http client: %s", err)
 	}
-	i, err := NewHostInfo()
-	if err != nil {
-		return nil, err
-	}
-	return &PilotCtl{client: c, cfg: cfg, host: i, worker: worker}, nil
+	return &PilotCtl{client: c, cfg: cfg, host: hostInfo, worker: worker}, nil
 }
 
 // Register the host
