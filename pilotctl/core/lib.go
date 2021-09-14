@@ -64,7 +64,8 @@ func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
 					Required:    varMap["required"].(bool),
 					Type:        varMap["type"].(string),
 					Value:       varMap["value"].(string),
-					Default:     varMap["default"].(string),
+					// default value is not needed as value must be stored in cmdb
+					// Default:     varMap["default"].(string),
 				}
 				input.Var = append(input.Var, vv)
 			}
