@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/piloth/core"
 	"os"
-	"strings"
 )
 
 func main() {
@@ -41,13 +40,11 @@ func handleCommands(i *core.HostInfo) bool {
 		// do nothing
 	case 1:
 		if os.Args[1] == "info" {
-			i.InitHostUUID()
 			// prints the host information
 			fmt.Printf("%s\n", i)
 		} else if os.Args[1] == "uuid" {
-			i.InitHostUUID()
 			// prints the host UUID
-			fmt.Printf("%s\n", strings.Replace(i.HostUUID, "-", "", -1))
+			fmt.Printf("%s\n", i.HostUUID)
 		} else if os.Args[1] == "version" {
 			// prints the program version
 			fmt.Printf("%s\n", core.Version)
