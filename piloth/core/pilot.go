@@ -72,12 +72,7 @@ func (p *Pilot) Start() {
 |                     Host Controller                     | 
 +---------------------------------------------------------+`)
 	InfoLogger.Printf("launching pilot version %s\n", Version)
-	// initialises the host universally unique identifier
-	if created, uuid := p.info.InitHostUUID(); created {
-		InfoLogger.Printf("created Host UUID = '%s'\n", uuid)
-	} else {
-		InfoLogger.Printf("using Host UUID = '%s'\n", uuid)
-	}
+	InfoLogger.Printf("using Host UUID = '%s'\n", p.info.HostUUID)
 	// creates a new SysLog collector
 	collector, err := NewCollector("0.0.0.0", p.cfg.getSyslogPort())
 	if err != nil {

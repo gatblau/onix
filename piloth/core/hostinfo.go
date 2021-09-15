@@ -78,6 +78,8 @@ func NewHostInfo() (*HostInfo, error) {
 		TotalMemory: memory,
 		CPUs:        cpus,
 	}
+	// initialises host uuid
+	info.InitHostUUID()
 	return info, nil
 }
 
