@@ -169,30 +169,30 @@ func run(data interface{}) (string, error) {
 
 	// create the command to run
 	var (
-		vars   []string
 		artCmd = "exe"
 	)
+	// get the variables in the host environment
+	hostEnv := merge.NewEnVarFromSlice(os.Environ())
+	// get the variables in the command
+	cmdEnv := merge.NewEnVarFromSlice(cmd.Env())
 	// if the execution is containerised
 	if cmd.Containerised {
 		// use the exec command instead
 		artCmd = fmt.Sprintf("%sc", artCmd)
 	} else {
 		// if not containerised add PATH to execution environment
-		vars = append(vars, fmt.Sprintf("PATH=%s", os.Getenv("PATH")))
+		hostEnv.Merge(cmdEnv)
+		cmdEnv = hostEnv
 	}
 	// if running in verbose mode
 	if cmd.Verbose {
 		// add ARTISAN_DEBUG to execution environment
-		vars = append(vars, "ARTISAN_DEBUG=true")
+		cmdEnv.Vars["ARTISAN_DEBUG"] = "true"
 	}
-	// get the variables in the command
-	env := cmd.Envar()
-	// inject the additional vars into the process
-	env.Merge(merge.NewEnVarFromSlice(vars))
 	// create the command statement to run
 	cmdString := fmt.Sprintf("art %s -u %s:%s %s %s", artCmd, cmd.User, cmd.Pwd, cmd.Package, cmd.Function)
 	// run and return
-	return build.ExeAsync(cmdString, ".", env, false)
+	return build.ExeAsync(cmdString, ".", cmdEnv, false)
 }
 
 // warn: write a warning in syslog
