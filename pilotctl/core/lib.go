@@ -64,7 +64,7 @@ func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
 				}
 				descValue, ok := varMap["description"].(string)
 				if !ok {
-					return nil, fmt.Errorf("variable DESCRIPTION not provided, can't process payload\n")
+					return nil, fmt.Errorf("variable %s DESCRIPTION not provided, can't process payload\n", nameValue)
 				}
 				typeValue, ok := varMap["type"].(string)
 				if !ok || len(typeValue) == 0 {
@@ -72,7 +72,7 @@ func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
 				}
 				valueValue, ok := varMap["value"].(string)
 				if !ok {
-					return nil, fmt.Errorf("variable VALUE not provided, can't process payload\n")
+					return nil, fmt.Errorf("variable %s VALUE not provided, can't process payload\n", nameValue)
 				}
 				vv := &data.Var{
 					Name:        nameValue,
@@ -90,10 +90,22 @@ func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
 			v := secrets.([]interface{})
 			for _, i := range v {
 				varMap := i.(map[string]interface{})
+				nameValue, ok := varMap["name"].(string)
+				if !ok {
+					return nil, fmt.Errorf("secret NAME not provided, can't process payload\n")
+				}
+				descValue, ok := varMap["description"].(string)
+				if !ok {
+					return nil, fmt.Errorf("secret %s DESCRIPTION not provided, can't process payload\n", nameValue)
+				}
+				valueValue, ok := varMap["value"].(string)
+				if !ok {
+					return nil, fmt.Errorf("secret %s VALUE not provided, can't process payload\n", nameValue)
+				}
 				vv := &data.Secret{
-					Name:        varMap["name"].(string),
-					Description: varMap["description"].(string),
-					Value:       varMap["value"].(string),
+					Name:        nameValue,
+					Description: descValue,
+					Value:       valueValue,
 				}
 				input.Secret = append(input.Secret, vv)
 			}
