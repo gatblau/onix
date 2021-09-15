@@ -58,14 +58,27 @@ func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
 			v := vars.([]interface{})
 			for _, i := range v {
 				varMap := i.(map[string]interface{})
+				nameValue, ok := varMap["name"].(string)
+				if !ok {
+					return nil, fmt.Errorf("variable NAME not provided, can't process payload\n")
+				}
+				descValue, ok := varMap["description"].(string)
+				if !ok {
+					return nil, fmt.Errorf("variable DESCRIPTION not provided, can't process payload\n")
+				}
+				typeValue, ok := varMap["type"].(string)
+				if !ok || len(typeValue) == 0 {
+					typeValue = "string"
+				}
+				valueValue, ok := varMap["value"].(string)
+				if !ok {
+					return nil, fmt.Errorf("variable VALUE not provided, can't process payload\n")
+				}
 				vv := &data.Var{
-					Name:        varMap["name"].(string),
-					Description: varMap["description"].(string),
-					Required:    varMap["required"].(bool),
-					Type:        varMap["type"].(string),
-					Value:       varMap["value"].(string),
-					// default value is not needed as value must be stored in cmdb
-					// Default:     varMap["default"].(string),
+					Name:        nameValue,
+					Description: descValue,
+					Value:       valueValue,
+					Type:        typeValue,
 				}
 				input.Var = append(input.Var, vv)
 			}
