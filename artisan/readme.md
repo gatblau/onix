@@ -2,22 +2,21 @@
 
 # ARTISAN - One stop shop for building, packaging, signing, tagging and distributing any application.
 
-Artisan is part of Onix Configuration Manager build system, an effort to standardise the process of building and packaging software
-to run in container platforms, so that tasks such as automated patching of security vulnerabilities can be realised.
+Artisan is part of Onix Configuration Manager build system, an effort to standardise the process of building and packaging software to run in container platforms, so that tasks such as automated patching of security vulnerabilities can be realised.
 
 Artisan is a command line tool like docker that allows you to:
 
 - build any type of application (e.g. java, node/javascript, golang, etc)
-- package any application in a consistent way, and prepare it for easily embedding them into container images
+- package any application in a consistent way, and prepare it for easily embedding into container images
 - automatically add metadata and digital signatures to the packages
 - tag artefacts as you do with container images
 - push and pull packages to and from artefact registries
-- open packages automatically verify their digital signature and prompting for tampering
+- open packages automatically verifying their digital signature and prompting for tampering
 - use it in linux, windows, and mac os
 - run it as an artefact registry which connects to backends such as Nexus, Artifactory, S3 and file systems.
-- facilitate creation of automation commands by creating complex command-based functions and calling functions within functions
+- facilitate creation of automation commands by allowing creation of complex command-based functions and calling functions within functions
 
-## Why decoupling the building of applications from the  creation of container images?
+## Why decoupling the building of applications from the creation of container images?
 
 1. So that automated runtime patching of production container images can be facilitated
 2. So that applications do not have to go through complex build processes every time their base image has to be updated
@@ -29,8 +28,7 @@ Artisan is a command line tool like docker that allows you to:
 
 ## Building, packaging, and distributing artefacts
 
-Building an artefact is as easy as running the command below, Artie relies on a [build.yaml](build.yaml) file in the git
-project root.
+Building an artefact is as easy as running the command below, Artisan relies on a [build.yaml](build.yaml) file in the git project root.
 
 ```sh
 # build from a git repo
@@ -59,7 +57,7 @@ project root.
 ./art list
 
 # delete all artefacts
-./art rm $(./artie list -q)
+./art rm $(./art list -q)
 ```
 
 ## Building Artisan with Artisan
