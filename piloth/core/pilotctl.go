@@ -84,10 +84,14 @@ func (r *PilotCtl) Ping() (ctl.PingResponse, error) {
 		result  *ctl.JobResult
 	)
 	// check if the worker has a job result to be sent to pilot control
-	result, ok := r.worker.Result()
-	if ok {
+	result, err := r.worker.Result()
+	if err != nil {
+		return ctl.PingResponse{}, err
+	}
+	if result != nil {
 		payload = result
 	} else {
+		// TODO: if we do not have any job result to post, can post event information
 		payload = nil
 	}
 	uri := fmt.Sprintf("%s/ping", r.cfg.BaseURI)
@@ -97,6 +101,13 @@ func (r *PilotCtl) Ping() (ctl.PingResponse, error) {
 	}
 	if resp.StatusCode > 299 {
 		return ctl.PingResponse{}, fmt.Errorf("call to the remote service failed: %d - %s", resp.StatusCode, resp.Status)
+	}
+	// if a result was posted to control, remove it from the local cache
+	if result != nil {
+		err = r.worker.RemoveResult(result)
+		if err != nil {
+			ErrorLogger.Printf("failed to remove job result from local queue: %s\n", err)
+		}
 	}
 	// get the commands to execute from the response body
 	bytes, err := ioutil.ReadAll(resp.Body)
