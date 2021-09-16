@@ -14,9 +14,10 @@ import (
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/merge"
 	ctl "github.com/gatblau/onix/pilotctl/types"
-	"log"
+	"io/ioutil"
 	"log/syslog"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -56,7 +57,7 @@ type Worker struct {
 
 // NewWorker create new worker using the specified runnable function
 // Runnable: the function that processes each job
-func NewWorker(run Runnable, logger *syslog.Writer) *Worker {
+func NewWorker(run Runnable) *Worker {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Worker{
 		status:  stopped,
@@ -65,13 +66,12 @@ func NewWorker(run Runnable, logger *syslog.Writer) *Worker {
 		ctx:     ctx,
 		cancel:  cancel,
 		run:     run,
-		logs:    logger,
 	}
 }
 
 // NewCmdRequestWorker create a new worker to process pilotctl command requests
 func NewCmdRequestWorker(logger *syslog.Writer) *Worker {
-	return NewWorker(run, logger)
+	return NewWorker(run)
 }
 
 // Start starts the worker execution loop
@@ -83,49 +83,61 @@ func (w *Worker) Start() {
 		// launches the worker loop
 		go func() {
 			for {
+				// peek the next job to be processed
+				job, err := peekJob()
+				// if it can't peek the next job
+				if err != nil {
+					// write an error
+					ErrorLogger.Printf("cannot peek next job to process: %s\n", err)
+					// sleep before trying again
+					time.Sleep(1 * time.Minute)
+					// restart the loop
+					continue
+				}
 				// if the worker is ready to process a job and there are jobs waiting to start
-				if w.status == ready && w.jobs.Len() > 0 {
+				if w.status == ready && job != nil {
 					// set the worker as busy
 					w.status = busy
-					// pick the next job from the queue
-					jobElement := w.jobs.Front()
-					// unbox the job
-					cmd, ok := jobElement.Value.(ctl.CmdInfo)
-					if !ok {
-						w.stdout("invalid job format")
-						continue
-					}
-					w.stdout("starting job %d, %s -> %s", cmd.JobId, cmd.Package, cmd.Function)
+					InfoLogger.Printf("starting job %d, %s -> %s", job.cmd.JobId, job.cmd.Package, job.cmd.Function)
 					// dump env vars if in debug mode
-					w.debug(cmd.PrintEnv())
+					w.debug(job.cmd.PrintEnv())
 					// execute the job
-					out, err := w.run(cmd)
+					out, err := w.run(*job.cmd)
 					if err != nil {
-						w.stdout("job %d, %s -> %s failed: %s", cmd.JobId, cmd.Package, cmd.Function, mask(err.Error(), cmd.User, cmd.Pwd))
+						InfoLogger.Printf("job %d, %s -> %s failed: %s", job.cmd.JobId, job.cmd.Package, job.cmd.Function, mask(err.Error(), job.cmd.User, job.cmd.Pwd))
 					} else {
-						w.stdout("job %d, %s -> %s succeeded", cmd.JobId, cmd.Package, cmd.Function)
+						InfoLogger.Printf("job %d, %s -> %s succeeded", job.cmd.JobId, job.cmd.Package, job.cmd.Function)
 					}
-					// remove job from the queue
-					w.jobs.Remove(jobElement)
 					// collect result
 					var errorMsg string
 					if err != nil {
-						errorMsg = mask(err.Error(), cmd.User, cmd.Pwd)
+						errorMsg = mask(err.Error(), job.cmd.User, job.cmd.Pwd)
 					}
 					result := &ctl.JobResult{
-						JobId:   cmd.JobId,
+						JobId:   job.cmd.JobId,
 						Success: err == nil,
 						Log:     out,
 						Err:     errorMsg,
 						Time:    time.Now(),
 					}
-					// add the last result to the list
-					w.results.PushBack(result)
+					// add the last result to the submit queue
+					err = submitJobResult(*result)
+					// if the job result could not be saved
+					if err != nil {
+						SyslogWriter.Err(fmt.Sprintf("cannot persist result for Job Id = %d: %s\n", job.cmd.JobId, err))
+					}
+					// remove job from the queue
+					err = removeJob(*job)
+					// if the job could not be removed
+					if err != nil {
+						SyslogWriter.Err(fmt.Sprintf("cannot remove Job Id = %d from local queue: %s\n", job.cmd.JobId, err))
+					}
+					w.status = ready
 				}
 			}
 		}()
 	} else {
-		w.stdout("worker has already started")
+		InfoLogger.Printf("worker has already started\n")
 	}
 }
 
@@ -135,29 +147,32 @@ func (w *Worker) Stop() {
 	w.status = stopped
 }
 
-// AddJob add a new job for processing to the worker
-func (w *Worker) AddJob(job ctl.CmdInfo) {
-	w.jobs.PushBack(job)
+func (w *Worker) Jobs() int {
+	dir := processDir("")
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		panic(fmt.Sprintf("cannot read directory: %s", err))
+	}
+	count := 0
+	for _, f := range files {
+		if filepath.Ext(f.Name()) == ".job" {
+			count = count + 1
+		}
+	}
+	return count
 }
 
-// Result get the next available result
-func (w *Worker) Result() (*ctl.JobResult, bool) {
-	e := w.results.Front()
-	// if there is a result in the list
-	if e != nil {
-		r := e.Value.(*ctl.JobResult)
-		if r != nil {
-			// remove the result from the list after having read it
-			w.results.Remove(e)
-			// release the worker so that it can work on the next job
-			w.status = ready
-			// return the job status
-			return r, true
-		}
-		w.stdout("cannot unbox result")
+// AddJob add a new job for processing to the worker
+func (w *Worker) AddJob(job ctl.CmdInfo) {
+	err := addJob(Job{cmd: &job})
+	if err != nil {
+		ErrorLogger.Printf("%s\n", err)
 	}
-	// no result are available
-	return nil, false
+}
+
+// Result returns the next
+func (w *Worker) Result() (*ctl.JobResult, error) {
+	return peekJobResult()
 }
 
 func run(data interface{}) (string, error) {
@@ -195,22 +210,14 @@ func run(data interface{}) (string, error) {
 	return build.ExeAsync(cmdString, ".", cmdEnv, false)
 }
 
-// warn: write a warning in syslog
-func (w *Worker) warn(msg string, args ...interface{}) {
-	log.SetOutput(w.logs)
-	w.logs.Warning(fmt.Sprintf(msg+"\n", args...))
-}
-
-// stdout: write a message to stdout
-func (w *Worker) stdout(msg string, args ...interface{}) {
-	log.SetOutput(os.Stdout)
-	log.Printf(msg+"\n", args...)
-}
-
 func (w *Worker) debug(msg string, a ...interface{}) {
 	if len(os.Getenv("PILOT_DEBUG")) > 0 {
-		w.stdout(fmt.Sprintf("DEBUG: %s", msg), a...)
+		DebugLogger.Printf(fmt.Sprintf("DEBUG: %s", msg), a...)
 	}
+}
+
+func (w *Worker) RemoveResult(result *ctl.JobResult) error {
+	return removeJobResult(*result)
 }
 
 func mask(value, user, pwd string) string {
