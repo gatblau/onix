@@ -15,7 +15,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"sort"
+	"strconv"
 )
 
 type Job struct {
@@ -44,7 +46,23 @@ func peekJob() (job *Job, err error) {
 			var cmdInfo ctl.CmdInfo
 			err = json.Unmarshal(bytes, &cmdInfo)
 			if err != nil {
-				return nil, err
+				// try and extract job it from file name
+				// regex to extract job Id number from filename
+				re := regexp.MustCompile(`\d[\d,]*`)
+				// extract the job id
+				jobIdString := re.FindString(file.Name())
+				// parse string to int64
+				jobId, err2 := strconv.ParseInt(jobIdString, 10, 64)
+				// if we have an error we cannot get the Id
+				if err2 != nil {
+					// return a job with the file reference, so it can be dealt with by the caller
+					return &Job{file: file}, fmt.Errorf(fmt.Sprintf("cannot read file '%s', possibly due to a corruption: %s, also failed to retrieve the job Id from file name: %s, and therefore cannot report back to pilot control\n", file.Name(), err, err2))
+				}
+				// if we managed to get a jobId, return a job with the Job Id and file reference
+				return &Job{
+					file: file,
+					cmd:  &ctl.CmdInfo{JobId: jobId},
+				}, err
 			}
 			job = &Job{
 				file: file,
@@ -53,7 +71,7 @@ func peekJob() (job *Job, err error) {
 			if submittedMarkerExists(job.cmd.JobId) {
 				// it means that the host halted after submitting job result but could not remove job from the queue
 				// therefore removes job from the queue
-				err = removeJob(*job)
+				err = removeJob(job.cmd.JobId)
 				if err != nil {
 					return nil, err
 				}
@@ -70,15 +88,15 @@ func peekJob() (job *Job, err error) {
 
 // removeJob remove the specified job from the directory it is in
 // failsafe: removes the submitted marker
-func removeJob(job Job) error {
-	dir := dataDir(fmt.Sprintf("job_%d.submitted", job.cmd.JobId))
+func removeJob(jobId int64) error {
+	dir := dataDir(fmt.Sprintf("job_%d.submitted", jobId))
 	// remove submitted marker
 	err := os.Remove(dir)
 	if err != nil {
 		return err
 	}
 	// remove job from queue
-	dir = processDir(fmt.Sprintf("job_%d.job", job.cmd.JobId))
+	dir = processDir(fmt.Sprintf("job_%d.job", jobId))
 	return os.Remove(dir)
 }
 

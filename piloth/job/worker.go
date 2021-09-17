@@ -85,13 +85,25 @@ func (w *Worker) Start() {
 			for {
 				// peek the next job to be processed
 				job, err := peekJob()
-				// if it can't peek the next job
+				// if it can't peek the next job, it must consider it as a failure as, if not, pilot could
+				// continue to repeat the failure forever
 				if err != nil {
-					// write an error
-					ErrorLogger.Printf("cannot peek next job to process: %s\n", err)
-					// sleep before trying again
-					time.Sleep(1 * time.Minute)
-					// restart the loop
+					errorMsg := fmt.Sprintf("pilot could not read the next job to process from the local queue, possibly due to the file '%s' being corrupted: %s\n", job.file.Name(), err)
+					// logs the error
+					ErrorLogger.Printf(errorMsg)
+					// if a Job Id is known
+					if job.cmd != nil && job.cmd.JobId > 0 {
+						// send the error result for that job
+						sendResult(job.cmd.JobId, "", errorMsg)
+					} else {
+						// if no Job could be found, remove the job from the local queue to avoid retrying over and over
+						err = os.Remove(processDir(job.file.Name()))
+						// and write to syslog
+						if err == nil {
+							SyslogWriter.Err(fmt.Sprintf("forcedly removed file %s from local queue, due to being unable to read it to avoid retrying\n", err))
+						}
+					}
+					// restart the loop to avoid retrying execution all over
 					continue
 				}
 				// if the worker is ready to process a job and there are jobs waiting to start
@@ -108,30 +120,14 @@ func (w *Worker) Start() {
 					} else {
 						InfoLogger.Printf("job %d, %s -> %s succeeded", job.cmd.JobId, job.cmd.Package, job.cmd.Function)
 					}
-					// collect result
+					// check for an error
 					var errorMsg string
 					if err != nil {
+						// build an error message masking registry credentials
 						errorMsg = mask(err.Error(), job.cmd.User, job.cmd.Pwd)
 					}
-					result := &ctl.JobResult{
-						JobId:   job.cmd.JobId,
-						Success: err == nil,
-						Log:     out,
-						Err:     errorMsg,
-						Time:    time.Now(),
-					}
-					// add the last result to the submit queue
-					err = submitJobResult(*result)
-					// if the job result could not be saved
-					if err != nil {
-						SyslogWriter.Err(fmt.Sprintf("cannot persist result for Job Id = %d: %s\n", job.cmd.JobId, err))
-					}
-					// remove job from the queue
-					err = removeJob(*job)
-					// if the job could not be removed
-					if err != nil {
-						SyslogWriter.Err(fmt.Sprintf("cannot remove Job Id = %d from local queue: %s\n", job.cmd.JobId, err))
-					}
+					// send the result to control
+					sendResult(job.cmd.JobId, out, errorMsg)
 					w.status = ready
 				}
 			}
@@ -224,4 +220,33 @@ func mask(value, user, pwd string) string {
 	str := strings.Replace(value, user, "****", -1)
 	str = strings.Replace(str, pwd, "xxxx", -1)
 	return str
+}
+
+func sendResult(jobId int64, log, errorMsg string) {
+	result := &ctl.JobResult{
+		JobId:   jobId,
+		Success: len(errorMsg) == 0,
+		Log:     log,
+		Err:     errorMsg,
+		Time:    time.Now(),
+	}
+	// add the last result to the submit queue
+	err := submitJobResult(*result)
+	// if the job result could not be saved
+	if err != nil {
+		// writes an error to Syslog, and do nothing
+		// if the error cannot be serialised to file it could never reach the control plane
+		// it means the control plane will not record the job as complete and the job will stay as started
+		// with the syslog error sent to the control plane separately it should be possible to find the cause of the issue
+		SyslogWriter.Err(fmt.Sprintf("cannot persist result for Job Id = %d: %s\n", jobId, err))
+	}
+	// remove job from the queue
+	err = removeJob(jobId)
+	// if the job could not be removed
+	if err != nil {
+		// writes an error to Syslog, and do nothing else
+		SyslogWriter.Err(fmt.Sprintf("cannot remove Job Id = %d from local queue: %s, "+
+			"this could lead to Pilot trying to run it over and over again. "+
+			"Manual access to host is required to clean the job queue.\n", jobId, err))
+	}
 }
