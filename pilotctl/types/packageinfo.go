@@ -10,8 +10,15 @@ Onix Config Manager - Pilot Control
 
 // PackageInfo describes a package and all its tags
 type PackageInfo struct {
-	Id   string   `json:"id"`
-	Name string   `json:"name"`
-	Tags []string `json:"tags,omitempty"`
-	Ref  string   `json:"ref"`
+	Name string    `json:"name"`
+	Tags []TagInfo `json:"tags,omitempty"`
+}
+
+type TagInfo struct {
+	Id      string `json:"id"`
+	Name    string `json:"name"`
+	Ref     string `json:"ref"`
+	Created string `json:"created"`
+	Type    string `json:"type"`
+	Size    string `json:"size"`
 }
