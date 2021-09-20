@@ -276,17 +276,23 @@ func (r *API) GetPackages() ([]PackageInfo, error) {
 	}
 	result := make([]PackageInfo, 0)
 	for _, repo := range repos {
-		for _, p := range repo.Packages {
-			pack := PackageInfo{
-				Id:   p.Id,
-				Name: fmt.Sprintf("%s/%s", regDomain, repo.Repository),
-				Ref:  p.FileRef,
-			}
-			for _, tag := range p.Tags {
-				pack.Tags = append(pack.Tags, tag)
-			}
-			result = append(result, pack)
+		pack := PackageInfo{
+			Name: fmt.Sprintf("%s/%s", regDomain, repo.Repository),
+			Tags: []TagInfo{},
 		}
+		for _, p := range repo.Packages {
+			for _, tag := range p.Tags {
+				pack.Tags = append(pack.Tags, TagInfo{
+					Id:      p.Id,
+					Name:    tag,
+					Ref:     p.FileRef,
+					Created: p.Created,
+					Type:    p.Type,
+					Size:    p.Size,
+				})
+			}
+		}
+		result = append(result, pack)
 	}
 	return result, nil
 }
