@@ -116,8 +116,8 @@ func (s *Server) Serve() {
 	s.listen(router)
 }
 
-// @Summary Check that Artie's HTTP API is live
-// @Description Checks that Artie's HTTP server is listening on the required port.
+// @Summary Check that the HTTP API is live
+// @Description Checks that the HTTP server is listening on the required port.
 // @Description Use a liveliness probe.
 // @Description It does not guarantee the server is ready to accept calls.
 // @Tags General
