@@ -1,0 +1,102 @@
+definitions:
+  types.Event:
+    properties:
+      area:
+        type: string
+      boot_time:
+        type: string
+      client:
+        type: string
+      content:
+        type: string
+      event_id:
+        type: string
+      facility:
+        type: integer
+      host_address:
+        type: string
+      hostname:
+        type: string
+      location:
+        type: string
+      machine_id:
+        type: string
+      organisation:
+        type: string
+      organisation_group:
+        type: string
+      priority:
+        type: integer
+      severity:
+        type: integer
+      tag:
+        type: string
+      time:
+        type: string
+      tls_peer:
+        type: string
+    type: object
+  types.Events:
+    properties:
+      events:
+        items:
+          $ref: '#/definitions/types.Event'
+        type: array
+    type: object
+info:
+  contact:
+    email: onix@gatblau.org
+    name: gatblau
+    url: http://onix.gatblau.org/
+  description: Onix Config Manager Event Receiver for Pilot Control using MongoDb
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: MongoDB Event Receiver for Pilot Control
+  version: 0.0.4
+paths:
+  /:
+    get:
+      description: |-
+        Checks that the HTTP server is listening on the required port.
+        Use a liveliness probe.
+        It does not guarantee the server is ready to accept calls.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Check that the HTTP API is live
+      tags:
+      - General
+  /events:
+    post:
+      description: submits syslog events to be persisted for further use
+      parameters:
+      - description: the events to submit
+        in: body
+        name: command
+        required: true
+        schema:
+          $ref: '#/definitions/types.Events'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Submit Syslog Events
+      tags:
+      - Receiver
+swagger: "2.0"

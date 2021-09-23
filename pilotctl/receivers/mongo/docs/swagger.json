@@ -1,0 +1,151 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Onix Config Manager Event Receiver for Pilot Control using MongoDb",
+        "title": "MongoDB Event Receiver for Pilot Control",
+        "contact": {
+            "name": "gatblau",
+            "url": "http://onix.gatblau.org/",
+            "email": "onix@gatblau.org"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "0.0.4"
+    },
+    "paths": {
+        "/": {
+            "get": {
+                "description": "Checks that the HTTP server is listening on the required port.\nUse a liveliness probe.\nIt does not guarantee the server is ready to accept calls.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "Check that the HTTP API is live",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/events": {
+            "post": {
+                "description": "submits syslog events to be persisted for further use",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Receiver"
+                ],
+                "summary": "Submit Syslog Events",
+                "parameters": [
+                    {
+                        "description": "the events to submit",
+                        "name": "command",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.Events"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "types.Event": {
+            "type": "object",
+            "properties": {
+                "area": {
+                    "type": "string"
+                },
+                "boot_time": {
+                    "type": "string"
+                },
+                "client": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "event_id": {
+                    "type": "string"
+                },
+                "facility": {
+                    "type": "integer"
+                },
+                "host_address": {
+                    "type": "string"
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "machine_id": {
+                    "type": "string"
+                },
+                "organisation": {
+                    "type": "string"
+                },
+                "organisation_group": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "severity": {
+                    "type": "integer"
+                },
+                "tag": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                },
+                "tls_peer": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.Events": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.Event"
+                    }
+                }
+            }
+        }
+    }
+}
