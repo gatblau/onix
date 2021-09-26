@@ -1,10 +1,5 @@
 package core
 
-import (
-	"log"
-	"os"
-)
-
 /*
   Onix Config Manager - Pilot
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -12,12 +7,18 @@ import (
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+import (
+	"log"
+	"log/syslog"
+	"os"
+)
 
 var (
 	WarningLogger *log.Logger
 	InfoLogger    *log.Logger
 	ErrorLogger   *log.Logger
 	DebugLogger   *log.Logger
+	SyslogWriter  *syslog.Writer
 )
 
 func init() {
@@ -25,4 +26,9 @@ func init() {
 	WarningLogger = log.New(os.Stdout, "PILOT WARNING: ", log.Ldate|log.Ltime|log.Lmsgprefix|log.LUTC|log.Lmicroseconds)
 	ErrorLogger = log.New(os.Stderr, "PILOT ERROR: ", log.Ldate|log.Ltime|log.Lmsgprefix|log.LUTC|log.Lmicroseconds)
 	DebugLogger = log.New(os.Stdout, "PILOT DEBUG: ", log.Ldate|log.Ltime|log.Lmsgprefix|log.LUTC|log.Lmicroseconds)
+	w, err := syslog.New(syslog.LOG_ERR, "pilot")
+	if err != nil {
+		ErrorLogger.Printf("cannot create syslog writer: %s\n", err)
+	}
+	SyslogWriter = w
 }

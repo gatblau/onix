@@ -56,11 +56,13 @@ const (
 func (c *Config) getPilotCtlURI() string {
 	uri := c.Get(PilotCtlUri)
 	if len(uri) == 0 {
-		panic("PILOTCTL_URI not defined\n")
+		ErrorLogger.Printf("PILOTCTL_URI not defined\n")
+		os.Exit(1)
 	}
 	uri = strings.ToLower(uri)
 	if !strings.HasPrefix(uri, "http") {
-		panic("PILOTCTL_URI does not define a protocol (preferably use https:// - http links are not secure)\n")
+		ErrorLogger.Printf("PILOTCTL_URI does not define a protocol (preferably use https:// - http links are not secure)\n")
+		os.Exit(1)
 	}
 	return uri
 }
@@ -85,6 +87,7 @@ func (c *Config) GetBool(key ConfigKey) bool {
 
 func (c *Config) Load() error {
 	// set the file path to where pilot is running
+	// c.path = currentPath()
 	c.path = currentPath()
 
 	cFile := confFile()
@@ -111,19 +114,25 @@ func (c *Config) Load() error {
 }
 
 func currentPath() string {
+	// check if the current path is overridden
 	path := os.Getenv("PILOT_CFG_PATH")
+	// if so
 	if len(path) > 0 {
+		// works out the absolute path and return
 		path, err := core.AbsPath(path)
 		if err != nil {
-			panic(err)
+			ErrorLogger.Printf(err.Error())
+			os.Exit(1)
 		}
 		return path
 	}
-	ex, err := os.Executable()
+	// otherwise, get the path where pilot is located
+	path, err := core.AbsPath(".")
 	if err != nil {
-		panic(err)
+		ErrorLogger.Printf(err.Error())
+		os.Exit(1)
 	}
-	return filepath.Dir(ex)
+	return path
 }
 
 func confFile() string {

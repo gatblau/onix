@@ -1,13 +1,15 @@
-package core
+package types
 
 /*
-  Onix Config Manager - Pilot
+  Onix Config Manager - Pilot Control
   Copyright (c) 2018-2021 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"gopkg.in/mcuadros/go-syslog.v2/format"
@@ -18,8 +20,8 @@ import (
 	"time"
 )
 
-// Entry a pilot event to be sent to piloctl service
-type Entry struct {
+// Event a pilot event to be sent to piloctl service
+type Event struct {
 	// internal time id
 	timeId            string
 	EventID           string `json:"event_id,omitempty" yaml:"event_id,omitempty" bson:"event_id,omitempty"`
@@ -42,9 +44,9 @@ type Entry struct {
 }
 
 // NewEvent create a new serializable event from a syslog entry in RFC 3164
-func NewEvent(logPart format.LogParts, info HostInfo) (*Entry, error) {
+func NewEvent(logPart format.LogParts, info HostInfo) (*Event, error) {
 	tId := timeBasedId()
-	entry := &Entry{timeId: tId}
+	entry := &Event{timeId: tId}
 	entry.Priority = logPart["priority"].(int)
 	entry.Severity = logPart["severity"].(int)
 	entry.Hostname = logPart["hostname"].(string)
@@ -62,21 +64,35 @@ func NewEvent(logPart format.LogParts, info HostInfo) (*Entry, error) {
 }
 
 // Save the event to the file system
-func (e *Entry) Save() error {
+// path: is the folder where events will be saved
+func (e *Event) Save(path string) error {
 	bytes, err := json.Marshal(e)
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(eventFilename(e.timeId), bytes, os.ModePerm)
-}
-
-// eventFilename works out a filename for the event based on a timeBasedId
-func eventFilename(timestamp string) string {
-	return filepath.Join(SubmitPath(), fmt.Sprintf("%s.ev", timestamp))
+	filename := filepath.Join(path, fmt.Sprintf("%s.ev", timeBasedId()))
+	return ioutil.WriteFile(filename, bytes, os.ModePerm)
 }
 
 // timeBasedId generates a time based event timeBasedId
 func timeBasedId() string {
 	t := time.Now()
 	return fmt.Sprintf("%02d%02d%02s%02d%02d%02d%s", t.Day(), t.Month(), strconv.Itoa(t.Year())[2:], t.Hour(), t.Minute(), t.Second(), strconv.Itoa(t.Nanosecond())[:5])
+}
+
+type Events struct {
+	Events []Event `json:"events"`
+}
+
+func (r *Events) Reader() (*bytes.Reader, error) {
+	jsonBytes, err := r.Bytes()
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(*jsonBytes), err
+}
+
+func (r *Events) Bytes() (*[]byte, error) {
+	b, err := ToJson(r)
+	return &b, err
 }

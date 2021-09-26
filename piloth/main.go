@@ -9,13 +9,14 @@ package main
 */
 import (
 	"fmt"
+	ctl "github.com/gatblau/onix/pilotctl/types"
 	"github.com/gatblau/onix/piloth/core"
 	"os"
 )
 
 func main() {
 	// collects host information
-	hostInfo, err := core.NewHostInfo()
+	hostInfo, err := ctl.NewHostInfo()
 	if err != nil {
 		panic(err)
 	}
@@ -34,7 +35,7 @@ func main() {
 }
 
 // handleCommands handle any command line arguments and return true if a command has been handled
-func handleCommands(i *core.HostInfo) bool {
+func handleCommands(i *ctl.HostInfo) bool {
 	switch len(os.Args[1:]) {
 	case 0:
 		// do nothing

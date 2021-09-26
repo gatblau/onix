@@ -1,4 +1,4 @@
-package job
+package core
 
 /*
   Onix Config Manager - Pilot
@@ -56,13 +56,13 @@ func peekJob() (job *Job, err error) {
 				// if we have an error we cannot get the Id
 				if err2 != nil {
 					// return a job with the file reference, so it can be dealt with by the caller
-					return &Job{file: file}, fmt.Errorf(fmt.Sprintf("cannot read file '%s', possibly due to a corruption: %s, also failed to retrieve the job Id from file name: %s, and therefore cannot report back to pilot control\n", file.Name(), err, err2))
+					return &Job{file: file}, fmt.Errorf(fmt.Sprintf("cannot unmarshal file '%s', possibly due to a corruption: %s, also failed to retrieve the job Id from file name: %s, and therefore cannot report back to pilot control; the file content was '%s'\n", file.Name(), err, err2, string(bytes)))
 				}
 				// if we managed to get a jobId, return a job with the Job Id and file reference
 				return &Job{
 					file: file,
 					cmd:  &ctl.CmdInfo{JobId: jobId},
-				}, err
+				}, fmt.Errorf("cannot unmarhsal file '%s', possibly due to a corruption: %s; the file content was '%s'\n", file.Name(), err, string(bytes))
 			}
 			job = &Job{
 				file: file,

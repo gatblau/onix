@@ -12,14 +12,15 @@ import "bytes"
 
 // RegistrationRequest information sent by pilot upon host registration
 type RegistrationRequest struct {
-	Hostname    string  `json:"hostname"`
-	HostIP      string  `json:"host_ip"`
-	MachineId   string  `json:"machine_id"`
-	OS          string  `json:"os"`
-	Platform    string  `json:"platform"`
-	Virtual     bool    `json:"virtual"`
-	TotalMemory float64 `json:"total_memory"`
-	CPUs        int     `json:"cpus"`
+	Hostname    string   `json:"hostname"`
+	HostIP      string   `json:"host_ip"`
+	MachineId   string   `json:"machine_id"`
+	OS          string   `json:"os"`
+	Platform    string   `json:"platform"`
+	Virtual     bool     `json:"virtual"`
+	TotalMemory float64  `json:"total_memory"`
+	CPUs        int      `json:"cpus"`
+	MacAddress  []string `json:"mac_address"`
 }
 
 // Reader Get a JSON bytes reader for the Serializable
