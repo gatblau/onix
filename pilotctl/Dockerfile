@@ -31,6 +31,9 @@ COPY ./bin/pilotctl ./
 # mount for PGP signing key
 VOLUME /keys
 
+# mount for event receivers configuration file
+VOLUME /conf
+
 CMD ["sh", "-c", "/app/pilotctl"]
 
 EXPOSE 8080/tcp
