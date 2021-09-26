@@ -9,7 +9,6 @@ package types
 */
 
 import (
-	"bytes"
 	"time"
 )
 
@@ -26,17 +25,4 @@ type JobResult struct {
 	Err string
 	// the completion time
 	Time time.Time
-}
-
-func (r *JobResult) Reader() (*bytes.Reader, error) {
-	jsonBytes, err := r.Bytes()
-	if err != nil {
-		return nil, err
-	}
-	return bytes.NewReader(*jsonBytes), err
-}
-
-func (r *JobResult) Bytes() (*[]byte, error) {
-	b, err := ToJson(r)
-	return &b, err
 }

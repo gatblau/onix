@@ -9,6 +9,7 @@ package core
 */
 import (
 	"fmt"
+	ctl "github.com/gatblau/onix/pilotctl/types"
 	"gopkg.in/mcuadros/go-syslog.v2"
 )
 
@@ -33,15 +34,15 @@ func NewCollector(bindIP, port string) (*SyslogCollector, error) {
 	}
 	go func(channel syslog.LogPartsChannel) {
 		for logEntry := range channel {
-			info, err := NewHostInfo()
+			info, err := ctl.NewHostInfo()
 			if err != nil {
-				info = &HostInfo{}
+				info = &ctl.HostInfo{}
 			}
-			event, err := NewEvent(logEntry, *info)
+			event, err := ctl.NewEvent(logEntry, *info)
 			if err != nil {
 				ErrorLogger.Printf("cannot format syslog entry: %s\n", err)
 			}
-			err = event.Save()
+			err = event.Save(SubmitPath())
 			if err != nil {
 				ErrorLogger.Printf("cannot save syslog entry to file: %s\n", err)
 			}

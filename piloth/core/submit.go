@@ -1,4 +1,4 @@
-package job
+package core
 
 /*
   Onix Config Manager - Pilot
@@ -42,7 +42,12 @@ func submittedMarker(jobId int64) error {
 	}
 	// remove the started marker
 	dir = dataDir(fmt.Sprintf("job_%d.started", jobId))
-	return os.Remove(dir)
+	err = os.Remove(dir)
+	// started marker might not exist if the job failed to start
+	if err != nil {
+		// do nothing
+	}
+	return nil
 }
 
 func submittedMarkerExists(jobId int64) bool {

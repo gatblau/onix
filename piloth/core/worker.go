@@ -1,4 +1,4 @@
-package job
+package core
 
 /*
   Onix Config Manager - Pilot

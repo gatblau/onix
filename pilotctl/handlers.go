@@ -42,22 +42,31 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(body) > 0 {
-		result := &JobResult{}
-		err = json.Unmarshal(body, result)
+		pingRequest := &PingRequest{}
+		err = json.Unmarshal(body, pingRequest)
 		if err != nil {
 			log.Printf("cannot unmarshal ping request body: %s\n", err)
 			http.Error(w, "cannot unmarshal ping request body, check the server logs\n", http.StatusBadRequest)
 			return
 		}
-		err = api.CompleteJob(result)
-		if err != nil {
-			log.Printf("cannot set job status: %s\n", err)
-			http.Error(w, "set job status, check the server logs\n", http.StatusBadRequest)
-			return
+		// if the ping request contains a job result
+		if pingRequest.Result != nil {
+			// persist the result of the job
+			err = api.CompleteJob(pingRequest.Result)
+			if err != nil {
+				log.Printf("cannot set job status: %s\n", err)
+				http.Error(w, "set job status, check the server logs\n", http.StatusBadRequest)
+				return
+			}
+		}
+		// if the ping request contains syslog events
+		if pingRequest.Events != nil && len(pingRequest.Events.Events) > 0 {
+			// publish those events to registered sources
+			api.PublishEvents(pingRequest.Events)
 		}
 	}
 	// todo: add support for fx version
-	jobId, fxKey, _, err := api.Beat()
+	jobId, fxKey, _, err := api.Ping()
 	if err != nil {
 		log.Printf("can't record ping time: %v\n", err)
 		http.Error(w, "can't record ping time, check the server logs\n", http.StatusInternalServerError)
@@ -155,8 +164,8 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to marshal registration configuration, check the server logs for more details", http.StatusInternalServerError)
 		return
 	}
-	w.Write(bytes)
 	w.WriteHeader(http.StatusCreated)
+	w.Write(bytes)
 }
 
 // @Summary Create or Update a Command

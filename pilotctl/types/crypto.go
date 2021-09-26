@@ -14,6 +14,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/crypto"
 	"os"
 	"path/filepath"
@@ -88,6 +89,29 @@ func signingKeyFile() (string, error) {
 		return path, nil
 	}
 	return path, nil
+}
+
+func receiverConfigFile() string {
+	filename := "ev_receive.json"
+	path := filepath.Join(executablePath(), filename)
+	_, err := os.Stat(path)
+	if err != nil {
+		path = filepath.Join(homePath(), filename)
+		_, err = os.Stat(path)
+		if err != nil {
+			path = fmt.Sprintf("/conf/%s", filename)
+			_, err = os.Stat(path)
+			if err != nil {
+				path, err := core.AbsPath(filename)
+				if err != nil {
+					return ""
+				}
+				return path
+			}
+		}
+		return path
+	}
+	return path
 }
 
 func executablePath() string {

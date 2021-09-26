@@ -9,7 +9,7 @@ package core
 */
 import (
 	"fmt"
-	"github.com/gatblau/onix/piloth/job"
+	ctl "github.com/gatblau/onix/pilotctl/types"
 	"log/syslog"
 	"math"
 	"os"
@@ -20,10 +20,10 @@ import (
 // Pilot host
 type Pilot struct {
 	cfg       *Config
-	info      *HostInfo
+	info      *ctl.HostInfo
 	ctl       *PilotCtl
 	logs      *syslog.Writer
-	worker    *job.Worker
+	worker    *Worker
 	connected bool
 	// A duration string is a possibly signed sequence of
 	// decimal numbers, each with optional fraction and a unit suffix,
@@ -32,7 +32,7 @@ type Pilot struct {
 	pingInterval time.Duration
 }
 
-func NewPilot(hostInfo *HostInfo) (*Pilot, error) {
+func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
 	// read configuration
 	cfg := &Config{}
 	err := cfg.Load()
@@ -44,7 +44,7 @@ func NewPilot(hostInfo *HostInfo) (*Pilot, error) {
 		return nil, err
 	}
 	// create a new job worker
-	worker := job.NewCmdRequestWorker(logsWriter)
+	worker := NewCmdRequestWorker(logsWriter)
 	// start the worker
 	worker.Start()
 	r, err := NewPilotCtl(worker, hostInfo)
@@ -108,8 +108,6 @@ func (p *Pilot) register() {
 			case "N":
 				InfoLogger.Printf("host already registered\n")
 			}
-			// set connectivity status
-			p.connected = true
 
 			// set the fallback ping interval, this will be automatically adjusted with the first ping response
 			p.pingInterval, _ = time.ParseDuration("15s")
@@ -117,9 +115,6 @@ func (p *Pilot) register() {
 			// break the loop
 			break
 		}
-		// assume connectivity is down
-		p.connected = false
-
 		// calculates next retry interval
 		interval := p.nextInterval(failures)
 

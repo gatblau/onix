@@ -1,0 +1,9 @@
+{
+  "event_receivers": [
+    {
+      "uri": "http://localhost:8885/events",
+      "user": "admin",
+      "pwd": "adm1n"
+    }
+  ]
+}

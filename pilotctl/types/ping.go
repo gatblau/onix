@@ -9,6 +9,7 @@ Onix Config Manager - Pilot Control
 */
 
 import (
+	"bytes"
 	"fmt"
 	"time"
 )
@@ -44,4 +45,22 @@ type PingResponseEnvelope struct {
 	Command CmdInfo `json:"value"`
 	// the ping interval
 	Interval time.Duration `json:"interval"`
+}
+
+type PingRequest struct {
+	Result *JobResult `json:"result,omitempty"`
+	Events *Events    `json:"events,omitempty"`
+}
+
+func (r *PingRequest) Reader() (*bytes.Reader, error) {
+	jsonBytes, err := r.Bytes()
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(*jsonBytes), err
+}
+
+func (r *PingRequest) Bytes() (*[]byte, error) {
+	b, err := ToJson(r)
+	return &b, err
 }

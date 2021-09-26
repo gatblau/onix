@@ -32,6 +32,8 @@ type API struct {
 	hostUUID string
 	hostname string
 	hostIP   string
+	// event publisher
+	pub *EventPublisher
 }
 
 func NewAPI(cfg *Conf) (*API, error) {
@@ -53,11 +55,17 @@ func NewAPI(cfg *Conf) (*API, error) {
 	return &API{
 		db:   db,
 		conf: cfg,
-		ox:   ox}, nil
+		ox:   ox,
+		pub:  NewEventPublisher(),
+	}, nil
 }
 
 func (r *API) PingInterval() time.Duration {
 	return r.conf.PingIntervalSecs()
+}
+
+func (r *API) PublishEvents(events *Events) {
+	r.pub.Publish(events)
 }
 
 func (r *API) Register(reg *RegistrationRequest) (*RegistrationResponse, error) {
@@ -71,6 +79,7 @@ func (r *API) Register(reg *RegistrationRequest) (*RegistrationResponse, error) 
 		Tag:         nil,
 		Meta:        nil,
 		Txt:         "",
+		// TODO: add mac address attribute
 		Attribute: map[string]interface{}{
 			"CPU":        reg.CPUs,
 			"OS":         reg.OS,
@@ -113,7 +122,7 @@ func (r *API) GetCommandValue(fxKey string) (*CmdInfo, error) {
 	}, nil
 }
 
-func (r *API) Beat() (jobId int64, fxKey string, fxVersion int64, err error) {
+func (r *API) Ping() (jobId int64, fxKey string, fxVersion int64, err error) {
 	rows, err := r.db.Query("select * from pilotctl_beat($1)", r.hostUUID)
 	if err != nil {
 		return -1, "", -1, err

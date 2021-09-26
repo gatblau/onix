@@ -34,6 +34,15 @@ functions:
     run:
       - go build -ldflags="-X 'github.com/gatblau/onix/piloth/core.Version=${BUILD_VERSION}'" -o bin/darwin/pilot -v
 
+  - name: build-arm
+    description: builds the host pilot binary for the linux platform
+    env:
+      GOOS: linux
+      GOARCH: arm
+      GOARM: 5
+    run:
+      - go build -ldflags="-X 'github.com/gatblau/onix/piloth/core.Version=${BUILD_VERSION}'" -o bin/arm/pilot -v
+
 profiles:
   - name: linux
     default: true

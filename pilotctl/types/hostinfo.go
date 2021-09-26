@@ -1,12 +1,13 @@
-package core
+package types
 
 /*
-  Onix Config Manager - Pilot
+  Onix Config Manager - Pilot Control
   Copyright (c) 2018-2021 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 import (
 	"encoding/json"
 	"errors"
@@ -39,6 +40,7 @@ type HostInfo struct {
 	CPUs            int
 	HostIP          string
 	BootTime        string
+	MacAddress      []string
 }
 
 func NewHostInfo() (*HostInfo, error) {
@@ -51,6 +53,11 @@ func NewHostInfo() (*HostInfo, error) {
 	if err != nil {
 		// if it failed to retrieve IP set to unknown
 		hostIp = "unknown"
+	}
+	macAddr, err := macAddr()
+	if err != nil {
+		// if it failed to retrieve media access control addresses set to unknown
+		macAddr = []string{"unknown"}
 	}
 	var (
 		memory float64
@@ -77,6 +84,7 @@ func NewHostInfo() (*HostInfo, error) {
 		BootTime:    time.Unix(int64(i.BootTime), 0).Format(TimeLayout),
 		TotalMemory: memory,
 		CPUs:        cpus,
+		MacAddress:  macAddr,
 	}
 	// initialises host uuid
 	info.InitHostUUID()
@@ -85,10 +93,34 @@ func NewHostInfo() (*HostInfo, error) {
 
 // InitHostUUID check if there is a hostUUID file and if not generates one
 // loads the UUID value in host info
-func (h *HostInfo) InitHostUUID() (bool, string) {
-	var created bool
-	created, h.HostUUID = hostUUID()
-	return created, h.HostUUID
+// and works out a unique reference for the host that is not the machine id, as machine id is not unique
+// e.g. cloning a VM will have the same machine-id, hence using a combination of hostname and machine id for uniqueness
+// not using system UUID as it requires administrative privileges
+func (h *HostInfo) InitHostUUID() (created bool, hostUUID string, err error) {
+	// check if .hostUUID exists
+	_, err = os.Stat(".hostUUID")
+	// if not, creates one
+	if err != nil {
+		hostUUID = newUUID()
+		err = os.WriteFile(".hostUUID", []byte(hostUUID), os.ModePerm)
+		// if file could not be created
+		if err != nil {
+			// it should not continue
+			return false, "", fmt.Errorf("cannot create .hostUUID file: %s", err)
+		}
+		// UUID was created
+		created = true
+	} else {
+		// if the file exists
+		bytes, err := ioutil.ReadFile(".hostUUID")
+		if err != nil {
+			// it should not continue
+			return false, "", fmt.Errorf("cannot create .hostUUID file: %s", err)
+		}
+		hostUUID = fmt.Sprintf("%s", bytes[:])
+		created = false
+	}
+	return created, hostUUID, nil
 }
 
 func (h *HostInfo) String() string {
@@ -137,39 +169,25 @@ func externalIP() (string, error) {
 	return "", errors.New("are you connected to the network?\n")
 }
 
-// hostUUID works out a unique reference for the host that is not the machine id, as machine id is not unique
-// e.g. cloning a VM will have the same machine-id, hence using a combination of hostname and machine id for uniqueness
-// not using system UUID as it requires administrative privileges
-func hostUUID() (created bool, hostUUID string) {
-	// check if .hostUUID exists
-	_, err := os.Stat(".hostUUID")
-	// if not, creates one
-	if err != nil {
-		hostUUID = newUUID()
-		err = os.WriteFile(".hostUUID", []byte(hostUUID), os.ModePerm)
-		// if file could not be created
-		if err != nil {
-			// it should not continue
-			ErrorLogger.Printf("cannot create .hostUUID file: %s", err)
-			os.Exit(1)
-		}
-		// UUID was created
-		created = true
-	} else {
-		// if the file exists
-		bytes, err := ioutil.ReadFile(".hostUUID")
-		if err != nil {
-			// it should not continue
-			ErrorLogger.Printf("cannot read .hostUUID file: %s", err)
-			os.Exit(1)
-		}
-		hostUUID = fmt.Sprintf("%s", bytes[:])
-		created = false
-	}
-	return created, hostUUID
-}
-
 // create a Universally Unique Identifier without hyphens
 func newUUID() string {
 	return strings.Replace(uuid.New().String(), "-", "", -1)
+}
+
+// retrieve a list of mac addresses for the host
+func macAddr() ([]string, error) {
+	// get all network interfaces
+	ifas, err := net.Interfaces()
+	if err != nil {
+		return nil, err
+	}
+	// fetch mac addresses from all interfaces
+	var as []string
+	for _, ifa := range ifas {
+		a := ifa.HardwareAddr.String()
+		if a != "" {
+			as = append(as, a)
+		}
+	}
+	return as, nil
 }
