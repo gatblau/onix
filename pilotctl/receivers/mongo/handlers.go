@@ -79,6 +79,7 @@ func eventReceiverHandler(w http.ResponseWriter, r *http.Request) {
 // @Description Returns a list of syslog entries following the specified filter
 // @Tags Query
 // @Router /events [get]
+// @Param uuid query string false "the host UUID of the entries to retrieve"
 // @Param og query string false "the organisation of the device where the syslog entry was created"
 // @Param or query string false "the organisation of the device where the syslog entry was created"
 // @Param ar query string false "the area of the device where the syslog entry was created"
@@ -86,12 +87,14 @@ func eventReceiverHandler(w http.ResponseWriter, r *http.Request) {
 // @Param tag query string false "syslog entry tag"
 // @Param pri query string false "the syslog entry priority"
 // @Param sev query string false "the syslog entry severity"
-// @Param time query string false "the syslog entry time following the format ddMMyyyyHHmmSS"
+// @Param from query string false "the time FROM which syslog entries are shown (time format must be ddMMyyyyHHmmSS)"
+// @Param to query string false "the time TO which syslog entries are shown (time format must be ddMMyyyyHHmmSS)"
 // @Produce json
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func eventQueryHandler(w http.ResponseWriter, r *http.Request) {
 	filter := make(map[string]interface{})
+	filter = appendString(r, filter, "uuid", "host_uuid")
 	filter = appendString(r, filter, "og", "org_group")
 	filter = appendString(r, filter, "or", "org")
 	filter = appendString(r, filter, "ar", "area")
@@ -99,7 +102,7 @@ func eventQueryHandler(w http.ResponseWriter, r *http.Request) {
 	filter = appendString(r, filter, "tag", "tag")
 	filter = appendInt(r, filter, "pri", "priority")
 	filter = appendInt(r, filter, "sev", "severity")
-	filter = appendGtDate(r, filter, "time", "time")
+	filter = appendDateRange(r, filter, "from", "to", "time")
 
 	events, err := db.Query(filter)
 	if err != nil {
@@ -131,7 +134,47 @@ func appendInt(r *http.Request, filter map[string]interface{}, formKey, keyName 
 	return filter
 }
 
-func appendGtDate(r *http.Request, filter map[string]interface{}, formKey, keyName string) map[string]interface{} {
+func appendDateRange(r *http.Request, filter map[string]interface{}, fromKey, toKey, filterKey string) map[string]interface{} {
+	// date format to use
+	layout := "02012006030405"
+	fromValue := r.FormValue(fromKey)
+	toValue := r.FormValue(toKey)
+	if len(fromValue) > 0 && len(toValue) == 0 {
+		dateValue, err := time.Parse(layout, fromValue)
+		if err != nil {
+			log.Printf("WARNING: filter '%s' discarded: %s\n", fromKey, err)
+			return filter
+		}
+		filter[filterKey] = bson.M{"$gte": dateValue}
+		return filter
+	}
+	if len(fromValue) == 0 && len(toValue) > 0 {
+		dateValue, err := time.Parse(layout, toValue)
+		if err != nil {
+			log.Printf("WARNING: filter '%s' discarded: %s\n", toKey, err)
+			return filter
+		}
+		filter[filterKey] = bson.M{"$lte": dateValue}
+		return filter
+	}
+	dateFromValue, err := time.Parse(layout, fromValue)
+	if err != nil {
+		log.Printf("WARNING: filter '%s' discarded: %s\n", fromKey, err)
+		return filter
+	}
+	dateToValue, err := time.Parse(layout, toValue)
+	if err != nil {
+		log.Printf("WARNING: filter '%s' discarded: %s\n", toKey, err)
+		return filter
+	}
+	filter["$and"] = []bson.M{
+		{filterKey: bson.M{"$gte": dateFromValue}},
+		{filterKey: bson.M{"$lte": dateToValue}},
+	}
+	return filter
+}
+
+func appendLteDate(r *http.Request, filter map[string]interface{}, formKey, keyName string) map[string]interface{} {
 	// date format to use
 	layout := "02012006030405"
 	keyValue := r.FormValue(formKey)
@@ -141,7 +184,7 @@ func appendGtDate(r *http.Request, filter map[string]interface{}, formKey, keyNa
 			log.Printf("WARNING: filter '%s' discarded: %s\n", formKey, err)
 			return filter
 		}
-		filter[keyName] = bson.M{"$gte": dateValue}
+		filter[keyName] = bson.M{"$lte": dateValue}
 	}
 	return filter
 }
