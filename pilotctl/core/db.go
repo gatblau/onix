@@ -55,10 +55,11 @@ type conn struct {
 // create a new database connection pool
 // if it cannot connect within 5 seconds, it returns an error
 func newPool(connStr string) (*pgxpool.Pool, error) {
-	// this channel receives an connection
+	// this channel receives a connection
 	connect := make(chan conn, 1)
 	// this channel receives a timeout flag
 	timeout := make(chan bool, 1)
+
 	// launch a go routine to try the database connection
 	go func() {
 		// connects to the database
@@ -68,8 +69,8 @@ func newPool(connStr string) (*pgxpool.Pool, error) {
 	}()
 	// launch a go routine
 	go func() {
-		// timeout period is 4 secs
-		time.Sleep(4e9)
+		// timeout period is 5 secs
+		time.Sleep(5e9)
 		timeout <- true
 	}()
 
@@ -85,7 +86,7 @@ func newPool(connStr string) (*pgxpool.Pool, error) {
 	// the connection has not yet returned when the timeout happens
 	case <-timeout:
 		{
-			return nil, errors.New("!!! I cannot connect to the database, the timed out period has elapsed\n")
+			return nil, errors.New("cannot connect to pilotctl database, the timed out period has elapsed\n")
 		}
 	}
 }
