@@ -579,6 +579,28 @@ func (r *API) GetJobs(oGroup, or, ar, loc string, batchId *int64) ([]Job, error)
 	return jobs, rows.Err()
 }
 
+func (r *API) GetHost(uuid string) (*Host, error) {
+	rows, err := r.db.Query("select * from pilotctl_get_host($1)", uuid)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get host data: %s\n", err)
+	}
+	var (
+		orgGroup string
+		org      string
+		area     string
+		location string
+		labels   []string
+	)
+	for rows.Next() {
+		err = rows.Scan(&orgGroup, &org, &area, &location, &labels)
+		if err != nil {
+			return nil, fmt.Errorf("cannot scan host row: %e\n", err)
+		}
+		return &Host{HostUUID: uuid, OrgGroup: orgGroup, Org: org, Area: area, Location: location, Label: labels}, nil
+	}
+	return nil, fmt.Errorf("host uuid '%s' cannot be found in data source\n", uuid)
+}
+
 func (r *API) GetJobBatches(name, owner *string, from, to *time.Time, label *[]string) ([]JobBatch, error) {
 	batches := make([]JobBatch, 0)
 	rows, err := r.db.Query("select * from pilotctl_get_job_batches($1, $2, $3, $4, $5)", name, from, to, label, owner)
@@ -610,6 +632,44 @@ func (r *API) GetJobBatches(name, owner *string, from, to *time.Time, label *[]s
 		})
 	}
 	return batches, rows.Err()
+}
+
+func (r *API) Augment(events *Events) (*Events, error) {
+	// as all events come from the same host get the host UUID from the first event
+	hostUUID := events.Events[0].HostUUID
+	// retrieve host information
+	host, err := r.GetHost(hostUUID)
+	if err != nil {
+		return events, err
+	}
+	// add info to events
+	var result []Event
+	for _, event := range events.Events {
+		ev := Event{
+			EventID:           event.EventID,
+			Client:            event.Client,
+			Hostname:          event.Hostname,
+			HostUUID:          event.HostUUID,
+			MachineId:         event.MachineId,
+			HostAddress:       event.HostAddress,
+			Organisation:      host.Org,
+			OrganisationGroup: host.OrgGroup,
+			Area:              host.Area,
+			Location:          host.Location,
+			Facility:          event.Facility,
+			Priority:          event.Priority,
+			Severity:          event.Severity,
+			Time:              event.Time,
+			TLSPeer:           event.TLSPeer,
+			BootTime:          event.BootTime,
+			Content:           event.Content,
+			Tag:               event.Tag,
+			MacAddress:        event.MacAddress,
+			HostLabel:         host.Label,
+		}
+		result = append(result, ev)
+	}
+	return &Events{Events: result}, nil
 }
 
 func reverse(str string) (result string) {

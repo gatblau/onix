@@ -61,8 +61,15 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		// if the ping request contains syslog events
 		if pingRequest.Events != nil && len(pingRequest.Events.Events) > 0 {
+			// adds extra information to the events
+			events, err := api.Augment(pingRequest.Events)
+			// if the augmentation fails
+			if err != nil && len(events.Events) > 0 {
+				// log a warning but continue
+				log.Printf("WARNING: event augmentation failed for host uuid '%s': %s", events.Events[0].HostUUID, err)
+			}
 			// publish those events to registered sources
-			api.PublishEvents(pingRequest.Events)
+			api.PublishEvents(events)
 		}
 	}
 	// todo: add support for fx version
