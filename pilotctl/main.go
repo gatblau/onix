@@ -23,7 +23,7 @@ func init() {
 	var err error
 	api, err = core.NewAPI(new(core.Conf))
 	if err != nil {
-		fmt.Printf("ERROR: fail to create backedn services API: %s", err)
+		fmt.Printf("ERROR: fail to create backend services API: %s", err)
 		os.Exit(1)
 	}
 }
