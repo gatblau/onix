@@ -2377,9 +2377,10 @@ public class PgSqlRepository implements DbRepository {
             db.setString(5, newSalt); // salt_param
             db.setObject(6, user.getExpires()); // expires_param
             db.setBoolean(7, user.isService()); // service_param
-            db.setObject(8, user.getVersion()); // version_param
-            db.setString(9, getUser()); // changed_by_param
-            db.setArray(10, role);
+            db.setString(8, user.getAcl()); // acl_param
+            db.setObject(9, user.getVersion()); // version_param
+            db.setString(10, getUser()); // changed_by_param
+            db.setArray(11, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_user"));
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -2554,6 +2555,7 @@ public class PgSqlRepository implements DbRepository {
                 "?::character varying," + // salt_param
                 "?::timestamp with time zone," + // expires_param
                 "?::boolean," + // service_param
+                "?::text," + // acl_param
                 "?::bigint," + // version_param
                 "?::character varying," + // changed_by_param
                 "?::character varying[]" + // logged_role_key_param

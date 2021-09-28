@@ -23,6 +23,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 @ApiModel
 public class UserData implements Serializable {
@@ -35,6 +36,7 @@ public class UserData implements Serializable {
     private String salt;
     private String expires;
     private boolean service;
+    private String acl;
     private String created;
     private String updated;
     private Integer version;
@@ -168,5 +170,13 @@ public class UserData implements Serializable {
 
     public void setService(boolean service) {
         this.service = service;
+    }
+
+    public String getAcl() {
+        return acl;
+    }
+
+    public void setAcl(String acl) {
+        this.acl = acl;
     }
 }
