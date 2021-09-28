@@ -15,10 +15,20 @@ definitions:
         type: integer
       host_address:
         type: string
+      host_label:
+        items:
+          type: string
+        type: array
+      host_uuid:
+        type: string
       hostname:
         type: string
       location:
         type: string
+      mac_address:
+        items:
+          type: string
+        type: array
       machine_id:
         type: string
       org:
@@ -75,6 +85,10 @@ paths:
     get:
       description: Returns a list of syslog entries following the specified filter
       parameters:
+      - description: the host UUID of the entries to retrieve
+        in: query
+        name: uuid
+        type: string
       - description: the organisation of the device where the syslog entry was created
         in: query
         name: og
@@ -103,9 +117,15 @@ paths:
         in: query
         name: sev
         type: string
-      - description: the syslog entry time following the format ddMMyyyyHHmmSS
+      - description: the time FROM which syslog entries are shown (time format must
+          be ddMMyyyyHHmmSS)
         in: query
-        name: time
+        name: from
+        type: string
+      - description: the time TO which syslog entries are shown (time format must
+          be ddMMyyyyHHmmSS)
+        in: query
+        name: to
         type: string
       produces:
       - application/json

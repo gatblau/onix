@@ -65,6 +65,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "the host UUID of the entries to retrieve",
+                        "name": "uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "the organisation of the device where the syslog entry was created",
                         "name": "og",
                         "in": "query"
@@ -107,8 +113,14 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "the syslog entry time following the format ddMMyyyyHHmmSS",
-                        "name": "time",
+                        "description": "the time FROM which syslog entries are shown (time format must be ddMMyyyyHHmmSS)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the time TO which syslog entries are shown (time format must be ddMMyyyyHHmmSS)",
+                        "name": "to",
                         "in": "query"
                     }
                 ],
@@ -195,11 +207,26 @@ var doc = `{
                 "host_address": {
                     "type": "string"
                 },
+                "host_label": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "host_uuid": {
+                    "type": "string"
+                },
                 "hostname": {
                     "type": "string"
                 },
                 "location": {
                     "type": "string"
+                },
+                "mac_address": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "machine_id": {
                     "type": "string"
