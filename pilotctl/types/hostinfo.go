@@ -24,7 +24,7 @@ import (
 	"time"
 )
 
-const TimeLayout = "02-01-2006 03:04:05.000-0700"
+// const TimeLayout = "02-01-2006 03:04:05.000-0700"
 
 // HostInfo abstracts host information
 type HostInfo struct {
@@ -39,7 +39,7 @@ type HostInfo struct {
 	TotalMemory     float64
 	CPUs            int
 	HostIP          string
-	BootTime        string
+	BootTime        time.Time
 	MacAddress      []string
 }
 
@@ -81,13 +81,19 @@ func NewHostInfo() (*HostInfo, error) {
 		HostName:    i.Hostname,
 		OS:          i.OS,
 		Virtual:     strings.ToLower(i.VirtualizationRole) == "guest",
-		BootTime:    time.Unix(int64(i.BootTime), 0).Format(TimeLayout),
+		BootTime:    time.Unix(int64(i.BootTime), 0),
 		TotalMemory: memory,
 		CPUs:        cpus,
 		MacAddress:  macAddr,
 	}
 	// initialises host uuid
-	info.InitHostUUID()
+	_, hostuuid, err := info.InitHostUUID()
+	if err != nil {
+		return nil, fmt.Errorf("cannot initialise host UUID: %s\n", err)
+	}
+	// set the uuid value
+	info.HostUUID = hostuuid
+	// return
 	return info, nil
 }
 

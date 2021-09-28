@@ -9,12 +9,16 @@ package main
 */
 import (
 	"encoding/json"
+	"github.com/gatblau/onix/artisan/server"
 	"github.com/gatblau/onix/pilotctl/receivers/mongo/core"
 	_ "github.com/gatblau/onix/pilotctl/receivers/mongo/docs"
 	"github.com/gatblau/onix/pilotctl/types"
+	"go.mongodb.org/mongo-driver/bson"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 var (
@@ -26,7 +30,7 @@ func init() {
 	db, err = core.NewDb()
 	if err != nil {
 		// TODO: add retry
-		log.Printf("cannot connect to database: '%s'\n", err)
+		log.Printf("ERROR: cannot connect to database: '%s'\n", err)
 	}
 }
 
@@ -69,4 +73,75 @@ func eventReceiverHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+// @Summary Get filtered events
+// @Description Returns a list of syslog entries following the specified filter
+// @Tags Query
+// @Router /events [get]
+// @Param og query string false "the organisation of the device where the syslog entry was created"
+// @Param or query string false "the organisation of the device where the syslog entry was created"
+// @Param ar query string false "the area of the device where the syslog entry was created"
+// @Param lo query string false "the location of the device where the syslog entry was created"
+// @Param tag query string false "syslog entry tag"
+// @Param pri query string false "the syslog entry priority"
+// @Param sev query string false "the syslog entry severity"
+// @Param time query string false "the syslog entry time following the format ddMMyyyyHHmmSS"
+// @Produce json
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func eventQueryHandler(w http.ResponseWriter, r *http.Request) {
+	filter := make(map[string]interface{})
+	filter = appendString(r, filter, "og", "org_group")
+	filter = appendString(r, filter, "or", "org")
+	filter = appendString(r, filter, "ar", "area")
+	filter = appendString(r, filter, "lo", "location")
+	filter = appendString(r, filter, "tag", "tag")
+	filter = appendInt(r, filter, "pri", "priority")
+	filter = appendInt(r, filter, "sev", "severity")
+	filter = appendGtDate(r, filter, "time", "time")
+
+	events, err := db.Query(filter)
+	if err != nil {
+		log.Printf("failed to query events: %s\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	server.Write(w, r, events)
+}
+
+func appendString(r *http.Request, filter map[string]interface{}, formKey, keyName string) map[string]interface{} {
+	keyValue := r.FormValue(formKey)
+	if len(keyValue) > 0 {
+		filter[keyName] = keyValue
+	}
+	return filter
+}
+
+func appendInt(r *http.Request, filter map[string]interface{}, formKey, keyName string) map[string]interface{} {
+	keyValue := r.FormValue(formKey)
+	if len(keyValue) > 0 {
+		intValue, err := strconv.Atoi(keyValue)
+		if err != nil {
+			log.Printf("WARNING: filter '%s' discarded: %s\n", formKey, err)
+			return filter
+		}
+		filter[keyName] = intValue
+	}
+	return filter
+}
+
+func appendGtDate(r *http.Request, filter map[string]interface{}, formKey, keyName string) map[string]interface{} {
+	// date format to use
+	layout := "02012006030405"
+	keyValue := r.FormValue(formKey)
+	if len(keyValue) > 0 {
+		dateValue, err := time.Parse(layout, keyValue)
+		if err != nil {
+			log.Printf("WARNING: filter '%s' discarded: %s\n", formKey, err)
+			return filter
+		}
+		filter[keyName] = bson.M{"$gte": dateValue}
+	}
+	return filter
 }

@@ -21,6 +21,7 @@ func main() {
 		router.UseEncodedPath()
 		// add http handlers
 		router.HandleFunc("/events", eventReceiverHandler).Methods("POST")
+		router.HandleFunc("/events", eventQueryHandler).Methods("GET")
 	}
 
 	s.Serve()

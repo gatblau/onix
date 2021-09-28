@@ -10,6 +10,7 @@ package core
 import (
 	"context"
 	"github.com/gatblau/onix/pilotctl/types"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
@@ -47,6 +48,25 @@ func (db *Db) Insert(events *types.Events) error {
 	// insert payload in events collection
 	_, err = db.Events(client).InsertMany(ctx(), documents)
 	return err
+}
+
+func (db *Db) Query(filter bson.M) (*types.Events, error) {
+	client, err := mongo.Connect(ctx(), db.options)
+	if err != nil {
+		return nil, err
+	}
+	defer client.Disconnect(ctx())
+	// create a cursor over the whole collection
+	cursor, err := db.Events(client).Find(ctx(), filter)
+	if err != nil {
+		return nil, err
+	}
+	var results []types.Event
+	// return elements that match the criteria
+	if err = cursor.All(ctx(), &results); err != nil {
+		return nil, err
+	}
+	return &types.Events{Events: results}, nil
 }
 
 // ctx create a context with timeout of 10 seconds

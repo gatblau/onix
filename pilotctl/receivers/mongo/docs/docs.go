@@ -53,6 +53,80 @@ var doc = `{
             }
         },
         "/events": {
+            "get": {
+                "description": "Returns a list of syslog entries following the specified filter",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Get filtered events",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the organisation of the device where the syslog entry was created",
+                        "name": "og",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the organisation of the device where the syslog entry was created",
+                        "name": "or",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the area of the device where the syslog entry was created",
+                        "name": "ar",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the location of the device where the syslog entry was created",
+                        "name": "lo",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "syslog entry tag",
+                        "name": "tag",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the syslog entry priority",
+                        "name": "pri",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the syslog entry severity",
+                        "name": "sev",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the syslog entry time following the format ddMMyyyyHHmmSS",
+                        "name": "time",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "submits syslog events to be persisted for further use",
                 "produces": [
@@ -130,10 +204,10 @@ var doc = `{
                 "machine_id": {
                     "type": "string"
                 },
-                "organisation": {
+                "org": {
                     "type": "string"
                 },
-                "organisation_group": {
+                "org_group": {
                     "type": "string"
                 },
                 "priority": {
