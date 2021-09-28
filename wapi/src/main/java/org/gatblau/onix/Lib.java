@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -193,6 +194,7 @@ public class Lib implements InitializingBean {
             user.setUpdated((updated != null) ? dateFormat.format(updated) : null);
             user.setExpires((expires != null) ? dateFormat.format(expires) : null);
             user.setService(set.getBoolean("service"));
+            user.setAcl(set.getString("acl"));
             user.setVersion(set.getInt("version"));
             user.setChangedBy(set.getString("changed_by"));
         }
