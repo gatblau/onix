@@ -21,6 +21,8 @@
 */
 package org.gatblau.onix.security;
 
+import org.gatblau.onix.data.UserData;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKeyFactory;
@@ -29,10 +31,15 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Base64;
+import java.util.Date;
 
 @Service
 public class PwdBasedEncryptor {
+    private final DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss Z");
 
     public boolean authenticate(String attemptedPassword, String encryptedPassword, String salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
         // Encrypt the clear-text password using the same salt that was used to
@@ -81,5 +88,33 @@ public class PwdBasedEncryptor {
         random.nextBytes(salt);
 
         return salt;
+    }
+
+    // authenticate user using username and password credentials
+    public boolean AuthenticateUser(String username, String password, UserData user) {
+        // if there is a password expiration date set
+        if (user.getExpires() != null) {
+            try {
+                // checks it has not expired
+                Date now = new Date();
+                Date expiry = dateFormat.parse(user.getExpires());
+                // if the expiry date is in the past
+                if (expiry.before(now)) {
+                    throw new RuntimeException(String.format("password expired for user: %s", user.getName()));
+                }
+            } catch (ParseException pe) {
+                throw new RuntimeException(String.format("cannot parse valuntil date in the user record: %s", pe.getMessage()));
+            }
+        }
+
+        boolean authenticated = false;
+        try {
+            // check the user provided password matches the one stored in the database
+            authenticated = authenticate(password, user.getPwd(), user.getSalt());
+        } catch (Exception ex) {
+            // something went wrong with the encryption of the password in the database
+            throw new RuntimeException(String.format("Failed to check credentials for %s", username), ex);
+        }
+        return authenticated;
     }
 }
