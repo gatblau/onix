@@ -180,6 +180,7 @@ public interface DbRepository {
     /* User */
     Result createOrUpdateUser(String key, UserData user, boolean notifyUser, String[] role);
     UserData getUser(String key, String[] role);
+    UserData getUserByEmail(String username, String[] role);
     Result deleteUser(String key, String[] role);
     UserDataList getUsers(String[] role);
     Result changePassword(String email, PwdResetData pwdResetData);
@@ -188,6 +189,7 @@ public interface DbRepository {
     
     String getSetUserSQL();
     String getGetUserSQL();
+    String getGetUserByEmailSQL();
     String getGetUsersSQL();
     String getDeleteUserSQL();
 
