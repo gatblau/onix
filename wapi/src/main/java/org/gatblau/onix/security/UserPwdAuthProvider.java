@@ -31,11 +31,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /*
@@ -63,7 +59,7 @@ public class UserPwdAuthProvider implements AuthenticationProvider {
             throw new UsernameNotFoundException(String.format("User details not found for username: %s", username));
         }
 
-        boolean authenticated = enc.AuthenticateUser(username, pwd, user);
+        boolean authenticated = enc.authenticateUser(username, pwd, user);
         
         // if the user failed the authentication 
         if (!authenticated) {
