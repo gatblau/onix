@@ -91,7 +91,7 @@ public class PwdBasedEncryptor {
     }
 
     // authenticate user using username and password credentials
-    public boolean AuthenticateUser(String username, String password, UserData user) {
+    public boolean authenticateUser(String username, String password, UserData user) {
         // if there is a password expiration date set
         if (user.getExpires() != null) {
             try {
