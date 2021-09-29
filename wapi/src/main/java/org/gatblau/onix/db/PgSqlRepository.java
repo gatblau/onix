@@ -2546,6 +2546,14 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public String getGetUserByEmailSQL() {
+        return "SELECT * FROM ox_user_by_email(" +
+                "?::character varying," + // email_param
+                "?::character varying[]" + // role_key_param
+                ")";
+    }
+
+    @Override
     public String getSetUserSQL() {
         return "SELECT ox_set_user(" +
                 "?::character varying," + // key
@@ -2682,13 +2690,6 @@ public class PgSqlRepository implements DbRepository {
             db.close();
         }
         return userData;
-    }
-
-    public String getGetUserByEmailSQL() {
-        return "SELECT * FROM ox_user_by_email(" +
-                "?::character varying," + // email_param
-                "?::character varying[]" + // role_key_param
-                ")";
     }
 
     private void checkItemEncryptedFields(ItemData item) throws ParseException, IOException {

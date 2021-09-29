@@ -27,7 +27,7 @@ import java.io.Serializable;
 public class LoginData implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String username;
+    private String email;
     private String password;
 
     public LoginData() {
@@ -36,13 +36,13 @@ public class LoginData implements Serializable {
     @ApiModelProperty(
             position = 1,
             required = true,
-            value = "The user name used to login.")
-    public String getUsername() {
-        return username;
+            value = "The user email used to login.")
+    public String getEmail() {
+        return email;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     @ApiModelProperty(

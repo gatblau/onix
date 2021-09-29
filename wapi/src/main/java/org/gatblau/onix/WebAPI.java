@@ -1551,7 +1551,7 @@ public class WebAPI {
     }
 
     @ApiOperation(
-            value = "Authenticate a user using credentials passed in the payload and return the user information if succeeds." +
+            value = "Authenticate a user using email and password passed in the payload and return the user information if succeeds." +
                     "An HTTP 401 error is returned if the user does not exist or the authentication failed.",
             notes = "Use this endpoint to authenticate users for client devices such as web browsers.")
     @RequestMapping(
@@ -1579,7 +1579,7 @@ public class WebAPI {
         }
         // now ready to process the request
         // retrieve the user information from the database
-        UserData user = data.getUser(loginData.getUsername(), getRole(authentication));
+        UserData user = data.getUserByEmail(loginData.getEmail(), getRole(authentication));
 
         // if no user is found return 401
         if (user == null) {
@@ -1587,7 +1587,7 @@ public class WebAPI {
         }
 
         // match user credentials with the ones received in the request
-        boolean authenticated = encryptor.authenticateUser(loginData.getUsername(), loginData.getPassword(), user);
+        boolean authenticated = encryptor.authenticateUser(loginData.getEmail(), loginData.getPassword(), user);
 
         // if not authenticated return 401
         if (!authenticated) {
