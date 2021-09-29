@@ -26,6 +26,7 @@ import org.gatblau.onix.data.*;
 import org.gatblau.onix.db.DbRepository;
 import org.gatblau.onix.security.Crypto;
 import org.gatblau.onix.security.Jwt;
+import org.gatblau.onix.security.PwdBasedEncryptor;
 import org.json.simple.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -1548,6 +1549,55 @@ public class WebAPI {
     public ResponseEntity<UserDataList> getUsers(Authentication authentication) {
         return ResponseEntity.ok(data.getUsers(getRole(authentication)));
     }
+
+    @ApiOperation(
+            value = "Authenticate a user using credentials passed in the payload and return the user information if succeeds." +
+                    "An HTTP 401 error is returned if the user does not exist or the authentication failed.",
+            notes = "Use this endpoint to authenticate users for client devices such as web browsers.")
+    @RequestMapping(
+            path = "/login"
+            , method = RequestMethod.POST
+            , produces = {"application/json", "application/x-yaml"}
+    )
+    public ResponseEntity<UserData> login(
+            @RequestBody String payloadStr, // required to compute MD5 checksum and de-serialise data
+            HttpServletRequest request, // required to check on http headers
+            Authentication authentication,
+            PwdBasedEncryptor encryptor) {
+        // if the payload checksum does not match the one provided in the header
+        if (!validateMD5Checksum(request, payloadStr)) {
+            // does not attempt to process the request as the integrity checksum does not match
+            // assume http body integrity has been compromised
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build();
+        }
+        LoginData loginData = null;
+        try {
+            // tries to de-serialise payload
+            loginData = mapper.readValue(payloadStr, LoginData.class);
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+        // now ready to process the request
+        // retrieve the user information from the database
+        UserData user = data.getUser(loginData.getUsername(), getRole(authentication));
+
+        // if no user is found return 401
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // match user credentials with the ones received in the request
+        boolean authenticated = encryptor.authenticateUser(loginData.getUsername(), loginData.getPassword(), user);
+
+        // if not authenticated return 401
+        if (!authenticated) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // otherwise, return the user data
+        return ResponseEntity.ok(user);
+    }
+
     /*
         MODEL
      */
