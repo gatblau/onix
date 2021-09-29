@@ -43,7 +43,6 @@ import java.util.List;
  */
 @Service
 public class UserPwdAuthProvider implements AuthenticationProvider {
-    private final DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss Z");
     private final DbRepository db;
     private final PwdBasedEncryptor enc;
     public UserPwdAuthProvider(DbRepository db, PwdBasedEncryptor enc) {
@@ -58,35 +57,13 @@ public class UserPwdAuthProvider implements AuthenticationProvider {
 
         // retrieve the user
         UserData user = db.getUser(username, new String[]{"ADMIN"});
-        
+
         // if the user was not found
         if (user == null) {
             throw new UsernameNotFoundException(String.format("User details not found for username: %s", username));
         }
 
-        // if there is a password expiration date set
-        if (user.getExpires() != null) {
-            try {
-                // checks it has not expired
-                Date now = new Date();
-                Date expiry = dateFormat.parse(user.getExpires());
-                // if the expiry date is in the past
-                if (expiry.before(now)) {
-                    throw new RuntimeException(String.format("password expired for user: %s", user.getName()));
-                }
-            } catch (ParseException pe) {
-                throw new RuntimeException(String.format("cannot parse valuntil date in the user record: %s", pe.getMessage()));
-            }
-        }
-
-        boolean authenticated = false;
-        try {
-            // check the user provided password matches the one stored in the database
-            authenticated = enc.authenticate(pwd, user.getPwd(), user.getSalt());
-        } catch (Exception ex) {
-            // something went wrong with the encryption of the password in the database
-            throw new RuntimeException(String.format("Failed to check credentials for %s", username), ex);
-        }
+        boolean authenticated = enc.AuthenticateUser(username, pwd, user);
         
         // if the user failed the authentication 
         if (!authenticated) {
