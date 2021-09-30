@@ -25,10 +25,10 @@ VM_NAME="vagrant1"
 VM_MEM=2048
 VM_CPU=2
 VM_USER="steve"
-VM_USER_PUBKEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDRXZ0UsAEHWjPD5vezkYdIRLu/4s3ijR7YA7ySc/sJzq/XDR7j/umW9qOROVio2K1icceiwNPUNWXnyIoNwwA9C+RORTCYBrtW5F7YamMH9WAb/V0oxptvPCfV4lsngrvEOmKLswcnwfAb/SoRpgPgshDt29Y+fT5jKmyHvZw6d+ryoSZlHkR9IZGJ/oQfLn1J3xAIy3vF4ioVzeE4KbUY6n823hMhnA36aIvoFyBN5exk2yPk37HqAEclsMsiFJgKw7EqL55wmWnqPht29HIzpPkOFOCALi8gPLQh68ee0QyQr7k+39NI6+CYCTs61CGgTmknypc14ZKm+NpexOo1 steve@dev"
+VM_USER_PUBKEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC/JpczYgVKtmNB4728Q49ihGQ3uXVJm976pf9d0aZVEKdA7KxoX/vMN027SZmuI7p73jVgC1fFB7Ryf+swssj5CMwsR9IFm8WrrGqWjUNayU7At2+RJlyVNXIpp4QSuIjFokogpbKccZFJXNVhZBL1LCtpKW3qzvzhS3iM+f1AJKQmZJOYtgJngvA1mBPyImZyxs/I8JW/ly2nW7JylhHG5SDGaFQ2dQx2GpEgjm15RK+QTMQTK5Wsdcwp6wlhPpq2zYkJLjWNtNkO/cjiXbWG8u1BhZRrIJZFU6YAK66dK+C9qFgA6mdrzEyVqDU51/Gb2sJayO5rH4bVqruWW39tI+8XnyBM8iq/auQSs+By7KtaatA8oaEZZdlU0Szxsee/zka4HL5dZch3X7eO4aik0ssNxOHMeoKUqm3gUJ3rmCjc/hvFHiBdqJTLx4itka3CwpLFYx7l7/Kb1kavOrK2q9kgLb3AUOodxAcXa0rn6DyDWTk8Opf1RrHWViT+7V0= steve@PC1L"
 # Note: the standard vagrant user uses 1000 by default - please do NOT use UID/GID of 1000 !
-VM_UID=1000000
-VM_GID=1000000
+VM_UID=1001
+VM_GID=1001
 #
 # NB. If you want to modify the default port forwards,
 # check out the "forwarded_port" lines towards the end of the script
