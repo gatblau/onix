@@ -15,9 +15,10 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
+	oxc "github.com/gatblau/onix/client"
 	. "github.com/gatblau/onix/pilotctl/types"
-	"github.com/gatblau/oxc"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -34,6 +35,8 @@ type API struct {
 	hostIP   string
 	// event publisher
 	pub *EventPublisher
+	// user access controls
+	ACL *oxc.Controls
 }
 
 func NewAPI(cfg *Conf) (*API, error) {
@@ -206,8 +209,8 @@ func (r *API) SetAdmission(admission Admission) error {
 		admission.Label)
 }
 
-// Authenticate a pilot based on its time stamp and machine Id admission status
-func (r *API) Authenticate(token string) bool {
+// AuthenticatePilot a pilot based on its time stamp and machine Id admission status
+func (r *API) AuthenticatePilot(token string) bool {
 	if len(token) == 0 {
 		log.Println("authentication token is required and not provided")
 		return false
@@ -262,6 +265,23 @@ func (r *API) Authenticate(token string) bool {
 
 	// returns authentication status
 	return admitted
+}
+
+func (r *API) AuthenticateUser(request http.Request) bool {
+	// get the credentials from the request header
+	user, pwd := getCredentials(request)
+	// validate the credentials and retrieve user access controls
+	acl, err := r.ox.Login(&oxc.Login{
+		Email:    user,
+		Password: pwd,
+	})
+	if err != nil {
+		fmt.Printf("WARNING: user authentication failed, %s\n", err)
+		return false
+	}
+	// update the control list
+	r.ACL = acl
+	return true
 }
 
 // GetPackages get a list of packages in the backing Artisan registry
@@ -672,6 +692,25 @@ func (r *API) Augment(events *Events) (*Events, error) {
 	return &Events{Events: result}, nil
 }
 
+// Login if the user is authenticated returns a list of access controls otherwise an error is returned
+func (r *API) Login(username string) ([]oxc.AccessControl, error) {
+	user, err := r.ox.GetUser(&oxc.User{Key: username})
+	if err != nil {
+		return nil, fmt.Errorf("login failed for user '%s': %s\n", username, err)
+	}
+	// filter the controls using the realm
+	var (
+		controls = user.Controls()
+		result   []oxc.AccessControl
+	)
+	for _, control := range controls {
+		if control.Realm == "pilotcl" {
+			result = append(result, control)
+		}
+	}
+	return result, nil
+}
+
 func reverse(str string) (result string) {
 	for _, v := range str {
 		result = string(v) + result
@@ -698,4 +737,25 @@ func boolF(t sql.NullBool) bool {
 		return t.Bool
 	}
 	return false
+}
+
+// getUser retrieve the username from the basic authentication token in the http request
+func getCredentials(r http.Request) (user, pwd string) {
+	// get the token from the authorization header
+	token := r.Header.Get("Authorization")
+	if len(token) == 0 {
+		return "", ""
+	}
+	decoded, err := base64.StdEncoding.DecodeString(token[len("Basic "):])
+	if err != nil {
+		log.Printf("WARNING: failed to decode Authorization header: %s, cannot retrieve username\n", err)
+		return "", ""
+	}
+	parts := strings.Split(string(decoded[:]), ":")
+	if len(parts) != 2 {
+		log.Printf("WARNING: failed to parse Authorization header: invalid format '%s' assuming a Basic Authentication Token\n", string(decoded[:]))
+		return "", ""
+	}
+	// retrieve the username part (i.e. #0: username:password => 0:1)
+	return parts[0], parts[1]
 }

@@ -5,6 +5,7 @@ go 1.16
 replace (
 	github.com/gatblau/onix/artisan => ../../../artisan
 	github.com/gatblau/onix/pilotctl => ../../../pilotctl
+	github.com/gatblau/onix/client => ../../../client // needed as it is a pilotctl dependency
 )
 
 require (

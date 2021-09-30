@@ -12,6 +12,7 @@ import (
 	"github.com/gatblau/onix/artisan/server"
 	"github.com/gatblau/onix/pilotctl/core"
 	"github.com/gorilla/mux"
+	"net/http"
 	"os"
 )
 
@@ -53,15 +54,22 @@ func main() {
 		router.HandleFunc("/job", newJobHandler).Methods("POST")
 		router.HandleFunc("/job", getJobsHandler).Methods("GET")
 		router.HandleFunc("/job/batch", getJobBatchHandler).Methods("GET")
+		router.HandleFunc("/acl", getACLHandler).Methods("GET")
 	}
 	// set up specific authentication for host pilot agents
-	s.Auth = map[string]func(string) bool{
+	s.Auth = map[string]func(http.Request) bool{
 		"/register": pilotAuth,
 		"/ping":     pilotAuth,
 	}
+	s.DefaultAuth = defaultAuth
 	s.Serve()
 }
 
-var pilotAuth = func(token string) bool {
-	return api.Authenticate(token)
+var pilotAuth = func(r http.Request) bool {
+	token := r.Header.Get("Authorization")
+	return api.AuthenticatePilot(token)
+}
+
+var defaultAuth = func(r http.Request) bool {
+	return api.AuthenticateUser(r)
 }
