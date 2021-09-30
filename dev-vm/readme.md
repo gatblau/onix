@@ -17,6 +17,9 @@ It is based on:
     - Download and run the install from the [VMWare site](https://www.vmware.com/uk/products/workstation-pro/workstation-pro-evaluation.html)
 - Working install of Vagrant
   - Download and run the install from the [Vagrant site](https://www.vagrantup.com)
+  - For VMWare only:
+    - Download and run the VMWare service install from the [Vagrant site](https://www.vagrantup.com/vmware/downloads)
+    - Install the VMWare plugin by running `vagrant plugin install vagrant-vmware-desktop`
 
 # Installation
 - Download the relevant Vagrantfile from this repo (either the Virtualbox or VMWare version) into an empty local directory on your Windows PC and rename it to `Vagrantfile`
