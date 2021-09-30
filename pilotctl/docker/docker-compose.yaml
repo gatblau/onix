@@ -21,8 +21,8 @@ services:
       - POSTGRES_PASSWORD=${PG_ADMIN_PWD}
     ports:
       - "5432:5432"
-#    volumes:
-#      - db:/var/lib/postgresql/data
+    volumes:
+      - pgdb:/var/lib/postgresql/data
   
   dbman_ox:
     image: quay.io/gatblau/dbman-snapshot
@@ -109,7 +109,35 @@ services:
     ports:
       - "8888:8888"
     volumes:
-      - ../keys:/keys      
+      - ./keys:/keys
+      - ./conf:/conf
 
-#volumes:
-#  db:
+  evr-mongo:
+    image: quay.io/gatblau/pilotctl-evr-mongodb
+    depends_on:
+      - pilotctl
+      - mongodb
+    container_name: evr-mongo
+    restart: always
+    environment:
+      - OX_MONGO_EVR_CONN=${PILOTCTL_EVR_MONGO_CONN}
+      - OX_HTTP_PORT=8885
+    ports:
+      - "8885:8885"
+
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    restart: always
+    environment:
+      - MONGO_INITDB_DATABASE=syslog
+#      - MONGO_INITDB_ROOT_USERNAME=admin
+#      - MONGO_INITDB_ROOT_PASSWORD=adm1n
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+
+volumes:
+  mongodata:
+  pgdb:

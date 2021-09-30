@@ -19,7 +19,7 @@ func TestGetEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Printf("processing %d events\n", len(events))
+	fmt.Printf("processing %d events\n", len(events.Events))
 	err = removeEvents()
 	if err != nil {
 		t.Fatal(err)

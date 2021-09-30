@@ -26,6 +26,9 @@ do
   sleep 3
 done
 
+# create pilotctl user
+curl -H "Authorization: Basic $(printf '%s:%s' $ONIX_HTTP_ADMIN_USER $ONIX_HTTP_ADMIN_PWD | base64)" -H "Content-Type: application/json" -X PUT http://localhost:8080/user/ONIX_PILOTCTL -d "{\"email\":\"admin@pilotctl.com\", \"name\":\"pilotctl\", \"pwd\":\"P1l0tctl\", \"service\":\"false\"}"
+
 # create required test items
 curl -X PUT "http://localhost:8080/item/ART_FX:LIST" -u "$ONIX_HTTP_ADMIN_USER:$ONIX_HTTP_ADMIN_PWD" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/fx.json" && printf "\n"
 curl -X PUT "http://localhost:8080/item/ORG_GRP:ACME" -u "$ONIX_HTTP_ADMIN_USER:$ONIX_HTTP_ADMIN_PWD" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/org-grp-acme.json" && printf "\n"
