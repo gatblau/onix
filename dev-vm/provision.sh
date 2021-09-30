@@ -8,7 +8,8 @@ export VM_NAME=$5
 echo ================================================================
 echo Updating and upgrading base OS ...
 sudo apt update
-sudo apt upgrade -y
+# DBG tmp disable
+#sudo apt upgrade -y
 
 echo ================================================================
 echo Adding group/user for ${VM_USER} ...
