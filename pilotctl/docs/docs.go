@@ -34,17 +34,49 @@ var doc = `{
     "paths": {
         "/": {
             "get": {
-                "description": "Checks that Artie's HTTP server is listening on the required port.\nUse a liveliness probe.\nIt does not guarantee the server is ready to accept calls.",
+                "description": "Checks that the HTTP server is listening on the required port.\nUse a liveliness probe.\nIt does not guarantee the server is ready to accept calls.",
                 "produces": [
                     "text/plain"
                 ],
                 "tags": [
                     "General"
                 ],
-                "summary": "Check that Artie's HTTP API is live",
+                "summary": "Check that the HTTP API is live",
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/acl": {
+            "get": {
+                "description": "Retrieve the list of access controls for the logged user\nuse it primarily to log in user interface services and retrieve a list of access controls to inform which\noperations are available to the user via the user interface",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Access Control"
+                ],
+                "summary": "Retrieve the list of access controls for the logged user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "string"
                         }
@@ -243,6 +275,135 @@ var doc = `{
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/events": {
+            "get": {
+                "description": "Returns a list of syslog entries following the specified filter",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Get filtered events",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the host UUID of the entries to retrieve",
+                        "name": "uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the organisation of the device where the syslog entry was created",
+                        "name": "og",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the organisation of the device where the syslog entry was created",
+                        "name": "or",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the area of the device where the syslog entry was created",
+                        "name": "ar",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the location of the device where the syslog entry was created",
+                        "name": "lo",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "syslog entry tag",
+                        "name": "tag",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the syslog entry priority",
+                        "name": "pri",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the syslog entry severity",
+                        "name": "sev",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the time FROM which syslog entries are shown (time format must be ddMMyyyyHHmmSS)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the time TO which syslog entries are shown (time format must be ddMMyyyyHHmmSS)",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "submits syslog events to be persisted for further use",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Receiver"
+                ],
+                "summary": "Submit Syslog Events",
+                "parameters": [
+                    {
+                        "description": "the events to submit",
+                        "name": "command",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.Events"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "string"
                         }
@@ -819,6 +980,88 @@ var doc = `{
                 "verbose": {
                     "description": "enables verbose output",
                     "type": "boolean"
+                }
+            }
+        },
+        "types.Event": {
+            "type": "object",
+            "properties": {
+                "area": {
+                    "type": "string"
+                },
+                "boot_time": {
+                    "type": "string"
+                },
+                "client": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "event_id": {
+                    "type": "string"
+                },
+                "facility": {
+                    "type": "integer"
+                },
+                "host_address": {
+                    "type": "string"
+                },
+                "host_label": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "host_uuid": {
+                    "type": "string"
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "mac_address": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "machine_id": {
+                    "type": "string"
+                },
+                "org": {
+                    "type": "string"
+                },
+                "org_group": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "severity": {
+                    "type": "integer"
+                },
+                "tag": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                },
+                "tls_peer": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.Events": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.Event"
+                    }
                 }
             }
         },
