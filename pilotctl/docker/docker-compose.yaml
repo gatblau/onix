@@ -138,6 +138,16 @@ services:
     volumes:
       - mongodata:/data/db
 
+  artreg:
+    image: quay.io/gatblau/artisan-registry
+    container_name: artreg
+    restart: always
+    environment:
+      - OXA_HTTP_UNAME=${ART_REG_USER}
+      - OXA_HTTP_PORT=${ART_REG_PORT}
+      - OXA_HTTP_PWD=${ART_REG_PWD}
+      - OXA_HTTP_BACKEND_DOMAIN=${ART_REG_BACKEND_URI}:${ART_REG_BACKEND_PORT}
+
 volumes:
   mongodata:
   pgdb:
