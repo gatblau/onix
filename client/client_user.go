@@ -16,7 +16,7 @@ package client
    to be licensed under the same terms as the rest of the code.
 */
 
-// issue a Put http request with the User data as payload to the resource URI
+// PutUser issue a Put http request with the User data as payload to the resource URI
 // notify: if true, emails new users to make them aware of the new account
 //   requires the service to have email integration enabled
 func (c *Client) PutUser(user *User, notify bool) (*Result, error) {
@@ -37,7 +37,7 @@ func (c *Client) PutUser(user *User, notify bool) (*Result, error) {
 	return result(resp, err)
 }
 
-// issue a Delete http request to the resource URI
+// DeleteUser issue a Delete http request to the resource URI
 func (c *Client) DeleteUser(user *User) (*Result, error) {
 	uri, err := user.uri(c.conf.BaseURI)
 	if err != nil {
@@ -47,7 +47,7 @@ func (c *Client) DeleteUser(user *User) (*Result, error) {
 	return result(resp, err)
 }
 
-// issue a Get http request to the resource URI
+// GetUser issue a Get http request to the resource URI
 func (c *Client) GetUser(user *User) (*User, error) {
 	uri, err := user.uri(c.conf.BaseURI)
 	if err != nil {

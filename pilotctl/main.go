@@ -9,7 +9,8 @@ package main
 */
 import (
 	"fmt"
-	"github.com/gatblau/onix/artisan/server"
+	"github.com/gatblau/onix/client"
+	"github.com/gatblau/onix/client/server"
 	"github.com/gatblau/onix/pilotctl/core"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -31,11 +32,16 @@ func init() {
 
 func main() {
 	// creates a generic http server
-	s := server.New("onix/pilotctl")
+	s := server.New("pilotctl")
 	// add handlers
 	s.Http = func(router *mux.Router) {
 		// enable encoded path  vars
 		router.UseEncodedPath()
+		// middleware
+		// router.Use(s.LoggingMiddleware)
+		router.Use(s.AuthenticationMiddleware)
+		router.Use(s.AuthorisationMiddleware)
+
 		// add http handlers
 		router.HandleFunc("/ping", pingHandler).Methods("POST")
 		router.HandleFunc("/host", hostQueryHandler).Methods("GET")
@@ -54,10 +60,12 @@ func main() {
 		router.HandleFunc("/job", newJobHandler).Methods("POST")
 		router.HandleFunc("/job", getJobsHandler).Methods("GET")
 		router.HandleFunc("/job/batch", getJobBatchHandler).Methods("GET")
+
+		// router.Handle("/acl", s.AuthorisationMiddleware(http.HandlerFunc(getACLHandler))).Methods("GET")
 		router.HandleFunc("/acl", getACLHandler).Methods("GET")
 	}
 	// set up specific authentication for host pilot agents
-	s.Auth = map[string]func(http.Request) bool{
+	s.Auth = map[string]func(http.Request) *client.UserPrincipal{
 		"/register": pilotAuth,
 		"/ping":     pilotAuth,
 	}
@@ -65,11 +73,14 @@ func main() {
 	s.Serve()
 }
 
-var pilotAuth = func(r http.Request) bool {
+// the overridden authentication mechanism used by the authentication middleware for specific routes
+// specified in server.Auth map
+var pilotAuth = func(r http.Request) *client.UserPrincipal {
 	token := r.Header.Get("Authorization")
 	return api.AuthenticatePilot(token)
 }
 
-var defaultAuth = func(r http.Request) bool {
+// the default authentication mechanism user by the authentication middleware
+var defaultAuth = func(r http.Request) *client.UserPrincipal {
 	return api.AuthenticateUser(r)
 }

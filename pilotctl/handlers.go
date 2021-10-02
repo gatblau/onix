@@ -20,7 +20,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gatblau/onix/artisan/server"
+	"github.com/gatblau/onix/client/server"
 	_ "github.com/gatblau/onix/pilotctl/docs"
 	. "github.com/gatblau/onix/pilotctl/types"
 	"github.com/gorilla/mux"
@@ -574,5 +574,8 @@ func getPackagesApiHandler(w http.ResponseWriter, r *http.Request) {
 func getACLHandler(w http.ResponseWriter, r *http.Request) {
 	// if we got this far is because the user is authenticated
 	// then return the access controls for the user
-	server.Write(w, r, api.ACL)
+	user := server.GetUserPrincipal(r)
+	if user != nil {
+		server.Write(w, r, user)
+	}
 }

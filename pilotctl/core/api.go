@@ -16,6 +16,7 @@ import (
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
 	oxc "github.com/gatblau/onix/client"
+	"github.com/gatblau/onix/client/server"
 	. "github.com/gatblau/onix/pilotctl/types"
 	"log"
 	"net/http"
@@ -35,8 +36,6 @@ type API struct {
 	hostIP   string
 	// event publisher
 	pub *EventPublisher
-	// user access controls
-	ACL *oxc.Controls
 }
 
 func NewAPI(cfg *Conf) (*API, error) {
@@ -209,16 +208,16 @@ func (r *API) SetAdmission(admission Admission) error {
 		admission.Label)
 }
 
-// AuthenticatePilot a pilot based on its time stamp and machine Id admission status
-func (r *API) AuthenticatePilot(token string) bool {
+// AuthenticatePilot authenticates pilot requests
+func (r *API) AuthenticatePilot(token string) *oxc.UserPrincipal {
 	if len(token) == 0 {
 		log.Println("authentication token is required and not provided")
-		return false
+		return nil
 	}
 	value, err := base64.StdEncoding.DecodeString(reverse(token))
 	if err != nil {
 		log.Printf("error decoding authentication token '%s': %s\n", token, err)
-		return false
+		return nil
 	}
 	str := string(value)
 	// token is: hostUUID (0) | hostIP (1) | hostName (2) | timestamp (3)
@@ -226,13 +225,13 @@ func (r *API) AuthenticatePilot(token string) bool {
 	tokenTime, err := strconv.ParseInt(parts[3], 10, 64)
 	if err != nil {
 		log.Printf("error parsing authentication token: %s\naccess will be denied\n", err)
-		return false
+		return nil
 	}
 	timeOk := (time.Now().Unix() - tokenTime) < (5 * 60)
 	hostUUId := parts[0]
 	if !timeOk {
 		log.Printf("authentication failed for Host UUID='%s': token has expired\n", hostUUId)
-		return false
+		return nil
 	}
 	rows, err := r.db.Query("select * from pilotctl_is_admitted($1)", hostUUId)
 	var hostname, hostIP string
@@ -241,14 +240,14 @@ func (r *API) AuthenticatePilot(token string) bool {
 		hostname = parts[2]
 		fmt.Printf("authentication failed for Host UUID='%s': cannot query admission table: %s\n"+
 			"additional info: host IP = '%s', hostname = '%s'\n", hostUUId, err, hostIP, hostname)
-		return false
+		return nil
 	}
 	var admitted bool
 	for rows.Next() {
 		err = rows.Scan(&admitted)
 		if err != nil {
 			log.Printf("authentication failed for Host UUID='%s': %s\n", hostUUId, err)
-			return false
+			return nil
 		}
 		break
 	}
@@ -264,24 +263,29 @@ func (r *API) AuthenticatePilot(token string) bool {
 	r.hostIP = hostIP
 
 	// returns authentication status
-	return admitted
+	return &oxc.UserPrincipal{
+		Username: fmt.Sprintf("%s@pilot.com", hostUUId),
+		Rights:   nil,
+		Created:  time.Now(),
+	}
 }
 
-func (r *API) AuthenticateUser(request http.Request) bool {
+// AuthenticateUser authenticate user requests
+// TODO: move to the server library, need to have instance of onox client configured in server library
+func (r *API) AuthenticateUser(request http.Request) *oxc.UserPrincipal {
 	// get the credentials from the request header
-	user, pwd := getCredentials(request)
+	user, pwd := server.ParseBasicToken(request)
 	// validate the credentials and retrieve user access controls
-	acl, err := r.ox.Login(&oxc.Login{
+	userPrincipal, err := r.ox.Login(&oxc.Login{
 		Email:    user,
 		Password: pwd,
 	})
 	if err != nil {
 		fmt.Printf("WARNING: user authentication failed, %s\n", err)
-		return false
+		return nil
 	}
-	// update the control list
-	r.ACL = acl
-	return true
+	// return the user principal
+	return userPrincipal
 }
 
 // GetPackages get a list of packages in the backing Artisan registry
@@ -737,25 +741,4 @@ func boolF(t sql.NullBool) bool {
 		return t.Bool
 	}
 	return false
-}
-
-// getUser retrieve the username from the basic authentication token in the http request
-func getCredentials(r http.Request) (user, pwd string) {
-	// get the token from the authorization header
-	token := r.Header.Get("Authorization")
-	if len(token) == 0 {
-		return "", ""
-	}
-	decoded, err := base64.StdEncoding.DecodeString(token[len("Basic "):])
-	if err != nil {
-		log.Printf("WARNING: failed to decode Authorization header: %s, cannot retrieve username\n", err)
-		return "", ""
-	}
-	parts := strings.Split(string(decoded[:]), ":")
-	if len(parts) != 2 {
-		log.Printf("WARNING: failed to parse Authorization header: invalid format '%s' assuming a Basic Authentication Token\n", string(decoded[:]))
-		return "", ""
-	}
-	// retrieve the username part (i.e. #0: username:password => 0:1)
-	return parts[0], parts[1]
 }

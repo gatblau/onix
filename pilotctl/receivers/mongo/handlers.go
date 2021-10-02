@@ -9,7 +9,7 @@ package main
 */
 import (
 	"encoding/json"
-	"github.com/gatblau/onix/artisan/server"
+	"github.com/gatblau/onix/client/server"
 	"github.com/gatblau/onix/pilotctl/receivers/mongo/core"
 	_ "github.com/gatblau/onix/pilotctl/receivers/mongo/docs"
 	"github.com/gatblau/onix/pilotctl/types"
