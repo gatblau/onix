@@ -23,7 +23,7 @@ import (
 
 // Login information for users authenticating with client devices such as web browsers
 type Login struct {
-	Email    string `json:"email"`
+	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
@@ -48,8 +48,8 @@ func (login *Login) uri(baseUrl string) (string, error) {
 }
 
 func (login *Login) valid() error {
-	if len(login.Email) == 0 {
-		return fmt.Errorf("user email is missing")
+	if len(login.Username) == 0 {
+		return fmt.Errorf("username is missing")
 	}
 	if len(login.Password) == 0 {
 		return fmt.Errorf("user password is missing")
