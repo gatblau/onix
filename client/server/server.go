@@ -1,18 +1,18 @@
 package server
 
 /*
-  Onix Config Manager - Artisan
+  Onix Config Manager - Http Client
   Copyright (c) 2018-2021 by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-
 import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/gatblau/onix/client"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -40,13 +40,9 @@ type Server struct {
 	// jobs function to register async jobs
 	Jobs func() error
 	// map of authentication handlers
-	Auth map[string]func(string) bool
+	Auth map[string]func(http.Request) *client.UserPrincipal
 	// default authentication function
-	DefaultAuth func(string) bool
-	// log requests?
-	LogRequest bool
-	// dump request payload in logs?
-	DumpPayload bool
+	DefaultAuth func(http.Request) *client.UserPrincipal
 }
 
 func New(realm string) *Server {
@@ -57,9 +53,20 @@ func New(realm string) *Server {
 		realm: realm,
 		// defines a default authentication function using Basic Authentication
 		// can be overridden to change the behaviour or made nil to have an unauthenticated service or endpoint
-		DefaultAuth: func(requestToken string) bool {
+		DefaultAuth: func(r http.Request) *client.UserPrincipal {
+			requestToken := r.Header.Get("Authorization")
 			// authenticates if the http request token matches the configured basic authentication token
-			return requestToken == conf.BasicToken()
+			if requestToken == conf.BasicToken() {
+				user, _ := ParseBasicToken(r)
+				// return the user principal
+				return &client.UserPrincipal{
+					Username: user,
+					Rights:   nil,
+					Created:  time.Now(),
+				}
+			}
+			// otherwise, return nil meaning that authentication has failed
+			return nil
 		},
 	}
 }
@@ -70,14 +77,6 @@ func (s *Server) Serve() {
 	s.start = time.Now()
 
 	router := mux.NewRouter()
-
-	// add login if required by LogRequest or DumpPayload
-	if s.LogRequest || s.DumpPayload {
-		router.Use(s.loggingMiddleware)
-	}
-
-	// add authentication handling
-	router.Use(s.authenticationMiddleware)
 
 	// registers web handlers
 	router.HandleFunc("/", s.liveHandler).Methods("GET")
@@ -172,32 +171,26 @@ func (s *Server) listen(handler http.Handler) {
 	}
 }
 
-// log http requests to stdout
-func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
+// LoggingMiddleware log http requests to stdout
+func (s *Server) LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s.LogRequest {
-			path, _ := url.PathUnescape(r.URL.Path)
-			fmt.Printf("request from: %s %s %s\n", r.RemoteAddr, r.Method, path)
+		path, _ := url.PathUnescape(r.URL.Path)
+		fmt.Printf("request from: %s %s %s\n", r.RemoteAddr, r.Method, path)
+		requestDump, err := httputil.DumpRequest(r, true)
+		if err != nil {
+			log.Println(err)
 		}
-		if s.DumpPayload {
-			requestDump, err := httputil.DumpRequest(r, true)
-			if err != nil {
-				log.Println(err)
-			}
-			log.Println(string(requestDump))
-		}
+		log.Println(string(requestDump))
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 	})
 }
 
-// determines if the request is authenticated
-func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
+// AuthenticationMiddleware determines if the request is authenticated
+func (s *Server) AuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// get the authentication token in the request
-		providedToken := r.Header.Get("Authorization")
-		// not authenticated yet
-		authenticated := false
+		// holds user principal
+		var user *client.UserPrincipal
 		// loop through specific authentication by URL path
 		for urlPattern, authenticate := range s.Auth {
 			// if the request URL match the authentication function pattern
@@ -211,21 +204,20 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 			// if the regex matched the URL path
 			if matched {
 				// then try and authenticate using the specified function
-				// if authentication fails
-				if !authenticate(providedToken) {
+				user = authenticate(*r)
+				// if authentication fails the there is no user principal returned
+				if user == nil {
 					// Write an error and stop the handler chain
 					http.Error(w, "Forbidden", http.StatusForbidden)
 					return
 				} else {
-					// authentication succeeded, set flag to true
-					authenticated = true
 					// exit loop
 					break
 				}
 			}
 		}
 		// if not authenticated by a custom handler then use default handler
-		if !authenticated {
+		if user == nil {
 			// no specific authentication function matched the request URL, so tries
 			// the default authentication function if it has been defined
 			// if no function has been defined then do not authenticate the request
@@ -238,7 +230,8 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 					fmt.Printf("! unauthorised http request from: '%v'\n", r.RemoteAddr)
 				} else {
 					// authenticate the request using the default handler
-					if !s.DefaultAuth(providedToken) {
+					user = s.DefaultAuth(*r)
+					if user == nil {
 						// if the authentication failed, write an error and stop the handler chain
 						http.Error(w, "Forbidden", http.StatusForbidden)
 						return
@@ -246,7 +239,24 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 				}
 			}
 		}
-		// Pass down the request to the next middleware (or final handler)
+		// create a user context containing the user principal
+		userContext := context.WithValue(r.Context(), "User", user)
+		// create a shallow copy of the request with the user context added to it
+		req := r.WithContext(userContext)
+		// pass down the request to the next middleware (or final handler)
+		next.ServeHTTP(w, req)
+	})
+}
+
+// AuthorisationMiddleware authorises the http request based on the rights in user principal in the request context
+func (s *Server) AuthorisationMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := GetUserPrincipal(r)
+		// if no principal is found reject the request
+		if user == nil || !user.Rights.RequestAllowed(s.realm, r) {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }

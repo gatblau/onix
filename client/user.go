@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 type UserList struct {
@@ -32,7 +33,7 @@ func (list *UserList) reader() (*bytes.Reader, error) {
 	return bytes.NewReader(jsonBytes), err
 }
 
-// the Role resource
+// User the user resource
 type User struct {
 	Key       string `json:"key"`
 	Name      string `json:"name"`
@@ -40,6 +41,7 @@ type User struct {
 	Pwd       string `json:"pwd"`
 	Expires   string `json:"expires"`
 	Service   bool   `json:"service"`
+	ACL       string `json:"acl"`
 	Version   int64  `json:"version"`
 	Created   string `json:"created"`
 	Updated   string `json:"updated"`
@@ -93,4 +95,40 @@ func (user *User) valid() error {
 		}
 	}
 	return nil
+}
+
+func (user *User) Controls() []AccessControl {
+	controls := make([]AccessControl, 0)
+	acList := strings.Split(user.ACL, ",")
+	for _, c := range acList {
+		parts := strings.Split(c, ":")
+		if len(parts) != 3 {
+			// cannot process then skip
+			continue
+		}
+		controls = append(controls, AccessControl{
+			Realm:  parts[0],
+			URI:    parts[1],
+			Method: parts[2],
+		})
+	}
+	return controls
+}
+
+func (user *User) Allowed(acRealm, acURI, acMethod string) bool {
+	controls := user.Controls()
+	for _, control := range controls {
+		if (control.Realm == acRealm || control.Realm == "*") &&
+			(control.URI == acURI || control.URI == "*") &&
+			(control.Method == acMethod || control.Method == "*") {
+			return true
+		}
+	}
+	return false
+}
+
+type AccessControl struct {
+	Realm  string
+	URI    string
+	Method string
 }
