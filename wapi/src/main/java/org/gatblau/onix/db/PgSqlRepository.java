@@ -2554,6 +2554,14 @@ public class PgSqlRepository implements DbRepository {
     }
 
     @Override
+    public String getGetUserByUsernameSQL() {
+        return "SELECT * FROM ox_user_by_username(" +
+                "?::character varying," + // username_param
+                "?::character varying[]" + // role_key_param
+                ")";
+    }
+
+    @Override
     public String getSetUserSQL() {
         return "SELECT ox_set_user(" +
                 "?::character varying," + // key
@@ -2686,6 +2694,22 @@ public class PgSqlRepository implements DbRepository {
             userData = util.toUserData(set);
         } catch (Exception ex) {
             throw new RuntimeException(String.format("Failed to get user with email '%s': %s", email, ex.getMessage()), ex);
+        } finally {
+            db.close();
+        }
+        return userData;
+    }
+
+    public synchronized UserData getUserByUsername(String username, String[] role) {
+        UserData userData = null;
+        try {
+            db.prepare(getGetUserByUsernameSQL());
+            db.setString(1, username);
+            db.setArray(2, role);
+            ResultSet set = db.executeQuerySingleRow();
+            userData = util.toUserData(set);
+        } catch (Exception ex) {
+            throw new RuntimeException(String.format("Failed to get user with username '%s': %s", username, ex.getMessage()), ex);
         } finally {
             db.close();
         }

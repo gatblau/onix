@@ -1579,7 +1579,7 @@ public class WebAPI {
         }
         // now ready to process the request
         // retrieve the user information from the database
-        UserData user = data.getUserByEmail(loginData.getEmail(), getRole(authentication));
+        UserData user = data.getUserByUsername(loginData.getUsername(), getRole(authentication));
 
         // if no user is found return 401
         if (user == null) {
@@ -1587,7 +1587,7 @@ public class WebAPI {
         }
 
         // match user credentials with the ones received in the request
-        boolean authenticated = encryptor.authenticateUser(loginData.getEmail(), loginData.getPassword(), user);
+        boolean authenticated = encryptor.authenticateUser(loginData.getUsername(), loginData.getPassword(), user);
 
         // if not authenticated return 401
         if (!authenticated) {
