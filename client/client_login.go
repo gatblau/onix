@@ -39,29 +39,29 @@ func (c *Client) Login(credentials *Login) (*UserPrincipal, error) {
 	resp, err := c.Post(uri, credentials, c.addHttpHeaders)
 	// if there is a technical error
 	if err != nil {
-		return nil, fmt.Errorf("login failed for user '%s' due to error: '%s'\n", credentials.Email, err)
+		return nil, fmt.Errorf("login failed for user '%s' due to error: '%s'\n", credentials.Username, err)
 	}
 	// if the response was unauthorised, login failed
 	if resp.StatusCode == 401 {
-		return nil, fmt.Errorf("authentication failed for user '%s'\n", credentials.Email)
+		return nil, fmt.Errorf("authentication failed for user '%s'\n", credentials.Username)
 	}
 	// otherwise, get the list of controls from the user information
 	bytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("user was authenticated but failed to read response body for user '%s'; cannot return list of access controls; error: '%s'\n", credentials.Email, err)
+		return nil, fmt.Errorf("user was authenticated but failed to read response body for user '%s'; cannot return list of access controls; error: '%s'\n", credentials.Username, err)
 	}
 	var user User
 	err = json.Unmarshal(bytes, &user)
 	if err != nil {
-		return nil, fmt.Errorf("user was authenticated but failed to unmarhsal response body for user '%s'; cannot return list of access controls; error: '%s'\n", credentials.Email, err)
+		return nil, fmt.Errorf("user was authenticated but failed to unmarhsal response body for user '%s'; cannot return list of access controls; error: '%s'\n", credentials.Username, err)
 	}
 	controls, err := newControls(user.ACL)
 	if err != nil {
-		return nil, fmt.Errorf("user was authenticated but failed to parse access controls for user '%s': '%s'\n", credentials.Email, err)
+		return nil, fmt.Errorf("user was authenticated but failed to parse access controls for user '%s': '%s'\n", credentials.Username, err)
 	}
 	// constructs a principal and returns
 	return &UserPrincipal{
-		Username: credentials.Email,
+		Username: credentials.Username,
 		Rights:   controls,
 		Created:  time.Now(),
 	}, nil
