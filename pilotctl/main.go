@@ -62,7 +62,7 @@ func main() {
 		router.HandleFunc("/job/batch", getJobBatchHandler).Methods("GET")
 
 		// router.Handle("/acl", s.AuthorisationMiddleware(http.HandlerFunc(getACLHandler))).Methods("GET")
-		router.HandleFunc("/acl", getACLHandler).Methods("GET")
+		router.HandleFunc("/user", getUserHandler).Methods("GET")
 	}
 	// set up specific authentication for host pilot agents
 	s.Auth = map[string]func(http.Request) *client.UserPrincipal{
