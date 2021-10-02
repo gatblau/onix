@@ -277,7 +277,7 @@ func (r *API) AuthenticateUser(request http.Request) *oxc.UserPrincipal {
 	user, pwd := server.ParseBasicToken(request)
 	// validate the credentials and retrieve user access controls
 	userPrincipal, err := r.ox.Login(&oxc.Login{
-		Email:    user,
+		Username: user,
 		Password: pwd,
 	})
 	if err != nil {
