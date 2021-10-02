@@ -35,38 +35,6 @@
                 }
             }
         },
-        "/acl": {
-            "get": {
-                "description": "Retrieve the list of access controls for the logged user\nuse it primarily to log in user interface services and retrieve a list of access controls to inform which\noperations are available to the user via the user interface",
-                "produces": [
-                    "text/plain"
-                ],
-                "tags": [
-                    "Access Control"
-                ],
-                "summary": "Retrieve the list of access controls for the logged user",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/admission": {
             "put": {
                 "description": "inform pilotctl to accept management connections coming from a host pilot agent\nadmitting a host also requires associating the relevant logistic information such as org, area and location for the host",
@@ -753,6 +721,38 @@
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/user": {
+            "get": {
+                "description": "Retrieve the logged user principal containing a list of access controls granted to the user\nuse it primarily to log in user interface services and retrieve a list of access controls to inform which\noperations are available to the user via the user interface",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Access Control"
+                ],
+                "summary": "Retrieve the logged user principal",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "string"
                         }

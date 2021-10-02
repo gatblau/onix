@@ -245,30 +245,6 @@ paths:
       summary: Check that the HTTP API is live
       tags:
       - General
-  /acl:
-    get:
-      description: |-
-        Retrieve the list of access controls for the logged user
-        use it primarily to log in user interface services and retrieve a list of access controls to inform which
-        operations are available to the user via the user interface
-      produces:
-      - text/plain
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "401":
-          description: Unauthorized
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Retrieve the list of access controls for the logged user
-      tags:
-      - Access Control
   /admission:
     put:
       description: |-
@@ -735,4 +711,28 @@ paths:
       summary: Get the API of an Artisan Package
       tags:
       - Registry
+  /user:
+    get:
+      description: |-
+        Retrieve the logged user principal containing a list of access controls granted to the user
+        use it primarily to log in user interface services and retrieve a list of access controls to inform which
+        operations are available to the user via the user interface
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Retrieve the logged user principal
+      tags:
+      - Access Control
 swagger: "2.0"

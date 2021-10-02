@@ -560,18 +560,18 @@ func getPackagesApiHandler(w http.ResponseWriter, r *http.Request) {
 	server.Write(w, r, api)
 }
 
-// @Summary Retrieve the list of access controls for the logged user
-// @Description Retrieve the list of access controls for the logged user
+// @Summary Retrieve the logged user principal
+// @Description Retrieve the logged user principal containing a list of access controls granted to the user
 // @Description use it primarily to log in user interface services and retrieve a list of access controls to inform which
 // @Description operations are available to the user via the user interface
 // @Tags Access Control
-// @Router /acl [get]
+// @Router /user [get]
 // @Accepts json
 // @Produce plain
 // @Failure 401 {string} the request failed to authenticate the user
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
-func getACLHandler(w http.ResponseWriter, r *http.Request) {
+func getUserHandler(w http.ResponseWriter, r *http.Request) {
 	// if we got this far is because the user is authenticated
 	// then return the access controls for the user
 	user := server.GetUserPrincipal(r)
