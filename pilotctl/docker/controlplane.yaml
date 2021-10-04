@@ -11,10 +11,10 @@ version: '3'
 services:
 
   #############################################################################
-  # App services
+  # Onix application services
   #############################################################################
   ox-app:
-    image: quay.io/gatblau/onix-snapshot
+    image: "${CIT_OX_APP}"
     depends_on:
       - ox-db
       - ox-dbman
@@ -36,7 +36,7 @@ services:
       - "8080:8080"
 
   pilotctl-app:
-    image: quay.io/gatblau/pilotctl
+    image: ${CIT_PILOTCTL_APP}
     depends_on:
       - ox-db
       - ox-app
@@ -63,21 +63,8 @@ services:
       - ./keys:/keys
       - ./conf:/conf
 
-  evr-app:
-    image: quay.io/gatblau/pilotctl-evr-mongodb
-    depends_on:
-      - pilotctl
-      - evr-db
-    container_name: evr-app
-    restart: always
-    environment:
-      - OX_MONGO_EVR_CONN=mongodb://${PILOTCTL_EVR_MONGO_CONTAINER}:${PILOTCTL_EVR_MONGO_PORT}/${PILOTCTL_EVR_MONGO_OPTIONS}
-      - OX_HTTP_PORT=${PILOTCTL_EVR_PORT}
-    ports:
-      - "${PILOTCTL_EVR_PORT}:8885"
-
   artreg-app:
-    image: quay.io/gatblau/artisan-registry
+    image: ${CIT_ARTREG_APP}
     container_name: artreg-app
     restart: always
     environment:
@@ -90,7 +77,7 @@ services:
   # Temporary utility services
   #############################################################################
   ox-dbman:
-    image: quay.io/gatblau/dbman-snapshot
+    image: ${CIT_DBMAN}
     container_name: ox-dbman
     restart: always
     environment:
@@ -107,7 +94,7 @@ services:
       - "8085:8085"
 
   pilotctl-dbman:
-    image: quay.io/gatblau/dbman-snapshot
+    image: ${CIT_DBMAN}
     container_name: pilotctl-dbman
     restart: always
     environment:
@@ -126,27 +113,43 @@ services:
       - "8086:8085"
 
   #############################################################################
-  # Database services
+  # Database services (supports Onix and Pilot Control)
   #############################################################################
-  evr-db:
-    image: mongo
-    container_name: evr-db
-    restart: always
-    environment:
-      - MONGO_INITDB_DATABASE=syslog
-    ports:
-      - ${PILOTCTL_EVR_MONGO_PORT}:27017
-    volumes:
-      - evr-db:/data/db
-
   ox-db:
-    image: postgres:13
+    image: ${CIT_POSTGRES}
     container_name: ox-db
     restart: always
     environment:
       - POSTGRES_PASSWORD=${PG_ADMIN_PWD}
     volumes:
       - ox-db:/var/lib/postgresql/data
+
+  #############################################################################
+  # Event Receiver services
+  #############################################################################
+  evr-mongo-app:
+    image: ${CIT_EVRMONGO_APP}
+    depends_on:
+      - pilotctl-app
+      - evr-mongo-db
+    container_name: evr-mongo-app
+    restart: always
+    environment:
+      - OX_MONGO_EVR_CONN=mongodb://${PILOTCTL_EVR_MONGO_CONTAINER}:${PILOTCTL_EVR_MONGO_DBPORT}/${PILOTCTL_EVR_MONGO_OPTIONS}
+      - OX_HTTP_PORT=${PILOTCTL_EVR_PORT}
+    ports:
+      - "${PILOTCTL_EVR_PORT}:8885"
+
+  evr-mongo-db:
+    image: ${CIT_MONGO}
+    container_name: evr-mongo-db
+    restart: always
+    environment:
+      - MONGO_INITDB_DATABASE=syslog
+    ports:
+      - ${PILOTCTL_EVR_MONGO_DBPORT}:27017
+    volumes:
+      - evr-mongo-db:/data/db
 
 #############################################################################
 # Networking
@@ -159,5 +162,5 @@ networks:
 # Data volumes
 #############################################################################
 volumes:
-  evr-db:
+  evr-mongo-db:
   ox-db:
