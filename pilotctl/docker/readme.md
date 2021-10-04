@@ -11,21 +11,24 @@ This section contains scripts to start up all required PilotCtl services:
 
 ![setup](pilotctl_setup.png)
 
-### Start services
 
-In a host with Docker and Docker Compose installed:
+### Helper Scripts
 
-```bash
-$ sh up.sh
-```
+Helper scripts are available - please use these rather than direct Docker commands as they may do other things outside of Docker to help configure your stack:
 
-### Stopping services
+script | description
+--- | ---
+deploy.sh | deploys a completely new control plane from scratch
+stop.sh | stops the stack but keeps the containers and persistent data
+start.sh | re-starts an existing stack
+destroy.sh | destroys the stack completely, including any persistent data
 
-In a host with Docker and Docker Compose installed:
+### Notes:
+- Prior to starting the stack, it is expected that a Nexus server is available to the Docker network, and is configured with a "raw (hosted)" repository named "artisan". Credentials for this repo should be updated into the `.env` file
 
-```bash
-$ sh down.sh
-```
+- An attachable Docker network should already be available (this is done for you by the startup script if it doesn't exist).
+
+- By default, all databases are *not* exposed outside of the Docker network to your host. If you want to access them please see the optional `docker-compose-database.yaml` file
 
 ### Endpoints
 
@@ -39,5 +42,3 @@ $ sh down.sh
 ### Configuration Variables
 
 Are held in the file [here](.env)
-
-
