@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker-compose start
+docker-compose -f control-plane.yaml start

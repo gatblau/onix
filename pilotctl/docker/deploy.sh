@@ -10,7 +10,7 @@ if [[ $(docker network inspect ${DOCKER_NETWORK}) == "[]" ]]; then
   docker network create ${DOCKER_NETWORK}
 fi
 # start all services
-docker-compose up -d --remove-orphans
+docker-compose -f control-plane.yaml up -d
 
 # setup the onix database
 curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1
@@ -81,10 +81,12 @@ curl -X PUT "http://localhost:8080/link/AREA:NORTH|LOCATION:MANCHESTER_PICCADILL
 curl -X PUT "http://localhost:8080/link/AREA:NORTH|LOCATION:MANCHESTER_CHORLTON" -u "$ONIX_HTTP_ADMIN_USER:$ONIX_HTTP_ADMIN_PWD" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/north-manchester-chorlton.json" && printf "\n"
 
 # stop dbman instances
-docker-compose stop dbman_pilotctl
-docker-compose stop dbman_ox
+docker-compose -f control-plane.yaml stop pilotctl-dbman
+docker-compose -f control-plane.yaml stop ox-dbman
 
 # Completed
+echo ====================================================================================
 echo Deploy is completed - please use the following credentials to login to the Dashboard
+echo
 echo User=${PILOTCTL_ONIX_USER}
 echo Password=${PILOTCTL_ONIX_PWD}
