@@ -10,7 +10,7 @@ if [[ $(docker network inspect ${DOCKER_NETWORK}) == "[]" ]]; then
   docker network create ${DOCKER_NETWORK}
 fi
 # start all services
-docker-compose up -d --remove-orphans
+docker-compose -f onix.yaml up -d
 
 # setup the onix database
 curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1
@@ -18,6 +18,8 @@ curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy
 # setup the rem database
 curl -H "Content-Type: application/json" -X POST http://localhost:8086/db/create 2>&1
 curl -H "Content-Type: application/json" -X POST http://localhost:8086/db/deploy 2>&1
+
+sleep 5
 
 # update default's Onix Web API admin password"
 curl  --connect-timeout 5 \
@@ -39,7 +41,7 @@ curl  --connect-timeout 5 \
       -H "Authorization: Basic $(printf '%s:%s' $ONIX_HTTP_ADMIN_USER $ONIX_HTTP_ADMIN_PWD | base64)" \
       -H "Content-Type: application/json" \
       -X PUT http://localhost:8080/user/ONIX_PILOTCTL \
-      -d "{\"email\":\"${PILOTCTL_ONIX_USER}\", \"name\":\"pilotctl\", \"pwd\":\"${PILOTCTL_ONIX_PWD}\", \"service\":\"false\"}"
+      -d "{\"email\":\"${PILOTCTL_ONIX_EMAIL}\", \"name\":\"${PILOTCTL_ONIX_USER}\", \"pwd\":\"${PILOTCTL_ONIX_PWD}\", \"service\":\"false\", \"acl\":\"*:*:*\"}"
 
 # create required test items
 curl -X PUT "http://localhost:8080/item/ART_FX:LIST" -u "$ONIX_HTTP_ADMIN_USER:$ONIX_HTTP_ADMIN_PWD" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/fx.json" && printf "\n"
@@ -81,7 +83,12 @@ curl -X PUT "http://localhost:8080/link/AREA:NORTH|LOCATION:MANCHESTER_PICCADILL
 curl -X PUT "http://localhost:8080/link/AREA:NORTH|LOCATION:MANCHESTER_CHORLTON" -u "$ONIX_HTTP_ADMIN_USER:$ONIX_HTTP_ADMIN_PWD" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/north-manchester-chorlton.json" && printf "\n"
 
 # stop dbman instances
-docker-compose stop dbman_pilotctl
-docker-compose stop dbman_ox
+docker-compose -f onix.yaml stop pilotctl-dbman
+docker-compose -f onix.yaml stop ox-dbman
 
-echo Completed.
+# Completed
+echo ====================================================================================
+echo Deploy is completed - please use the following credentials to login to the Dashboard
+echo
+echo User=${PILOTCTL_ONIX_USER}
+echo Password=${PILOTCTL_ONIX_PWD}
