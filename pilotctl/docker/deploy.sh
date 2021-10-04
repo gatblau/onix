@@ -84,4 +84,7 @@ curl -X PUT "http://localhost:8080/link/AREA:NORTH|LOCATION:MANCHESTER_CHORLTON"
 docker-compose stop dbman_pilotctl
 docker-compose stop dbman_ox
 
-echo Completed.
+# Completed
+echo Deploy is completed - please use the following credentials to login to the Dashboard
+echo User=${PILOTCTL_ONIX_USER}
+echo Password=${PILOTCTL_ONIX_PWD}
