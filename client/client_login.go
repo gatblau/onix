@@ -111,11 +111,11 @@ func (controls Controls) RequestAllowed(realm string, r *http.Request) bool {
 	return false
 }
 
-func newControls(acl string) (*Controls, error) {
+func newControls(acl string) (Controls, error) {
 	var result Controls
 	// if acl is empty then return an empty list of controls
 	if len(strings.Trim(acl, " ")) == 0 {
-		return &Controls{}, nil
+		return Controls{}, nil
 	}
 	parts := strings.Split(acl, ",")
 	for _, part := range parts {
@@ -123,17 +123,17 @@ func newControls(acl string) (*Controls, error) {
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, *control)
+		result = append(result, control)
 	}
-	return &result, nil
+	return result, nil
 }
 
-func newControl(ac string) (*Control, error) {
+func newControl(ac string) (Control, error) {
 	parts := strings.Split(ac, ":")
 	if len(parts) != 3 {
-		return nil, fmt.Errorf("Invalid control format '%s', it should be realm:uri:method\n", ac)
+		return Control{}, fmt.Errorf("Invalid control format '%s', it should be realm:uri:method\n", ac)
 	}
-	return &Control{
+	return Control{
 		Realm:  parts[0],
 		URI:    parts[1],
 		Method: strings.Split(parts[2], "|"),
@@ -145,7 +145,7 @@ type UserPrincipal struct {
 	// the user Username used as a unique identifier (typically the user email address)
 	Username string `json:"username"`
 	// a list of rights or access controls granted to the user
-	Rights *Controls `json:"acl,omitempty"`
+	Rights Controls `json:"acl,omitempty"`
 	// the time the principal was Created
 	Created time.Time `json:"created"`
 }
