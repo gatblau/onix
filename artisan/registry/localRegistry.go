@@ -316,7 +316,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) {
 			tls = false
 			core.WarningLogger.Printf("artisan registry does not use TLS: the connection to the registry is not secure\n")
 		} else {
-			core.CheckErr(err, "art push '%s' cannot retrieve remote package information", name.String())
+			core.CheckErr(err2, "art push '%s' cannot retrieve remote package information", name.String())
 		}
 	}
 	// if the package exists in the remote registry
