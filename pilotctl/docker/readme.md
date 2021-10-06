@@ -28,7 +28,7 @@ destroy.sh | destroys the stack completely, including any persistent data
 
 - An attachable Docker network should already be available (this is done for you by the startup script if it doesn't exist).
 
-- By default, all databases are *not* exposed outside of the Docker network to your host. If you want to access them please see the optional `docker-compose-database.yaml` file
+- By default, persistent databases are *not* exposed outside of the Docker network to your host. It is recommended that if you want to access them please see the optional `database.yaml` file (which provides a web based solution within the Docker network instead).
 
 ### Endpoints
 

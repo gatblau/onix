@@ -3,14 +3,18 @@
 # Remote Host Service Setup
 # this script setup Remote Host service ready for Pilot to connect to
 #
+
 # source .env file vars
 set -o allexport; source .env; set +o allexport
+
 # Ensure attachable Docker network is already created
 if [[ $(docker network inspect ${DOCKER_NETWORK}) == "[]" ]]; then
+  echo Creating Docker network ${DOCKER_NETWORK} ...
   docker network create ${DOCKER_NETWORK}
 fi
+
 # start all services
-docker-compose -f onix.yaml up -d
+docker-compose up -d
 
 # setup the onix database
 curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1
@@ -19,6 +23,9 @@ curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy
 curl -H "Content-Type: application/json" -X POST http://localhost:8086/db/create 2>&1
 curl -H "Content-Type: application/json" -X POST http://localhost:8086/db/deploy 2>&1
 
+# NB. If you have issues with either Onix admin password not being updated or pilotctl user not being created,
+# try increasing timeout here to ensure that service has time to spin up correctly before applying data changes
+# (The time taken will depend on your host computing and I/O)
 sleep 5
 
 # update default's Onix Web API admin password"
@@ -83,12 +90,9 @@ curl -X PUT "http://localhost:8080/link/AREA:NORTH|LOCATION:MANCHESTER_PICCADILL
 curl -X PUT "http://localhost:8080/link/AREA:NORTH|LOCATION:MANCHESTER_CHORLTON" -u "$ONIX_HTTP_ADMIN_USER:$ONIX_HTTP_ADMIN_PWD" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/north-manchester-chorlton.json" && printf "\n"
 
 # stop dbman instances
-docker-compose -f onix.yaml stop pilotctl-dbman
-docker-compose -f onix.yaml stop ox-dbman
+docker-compose stop pilotctl-dbman
+docker-compose stop ox-dbman
 
 # Completed
 echo ====================================================================================
-echo Deploy is completed - please use the following credentials to login to the Dashboard
-echo
-echo User=${PILOTCTL_ONIX_USER}
-echo Password=${PILOTCTL_ONIX_PWD}
+echo Deploy is completed
