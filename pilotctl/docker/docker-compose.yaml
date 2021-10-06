@@ -72,6 +72,8 @@ services:
       - OXA_HTTP_PORT=${ART_REG_PORT}
       - OXA_HTTP_PWD=${ART_REG_PWD}
       - OXA_HTTP_BACKEND_DOMAIN=${ART_REG_BACKEND_URI}:${ART_REG_BACKEND_PORT}
+    ports:
+      - 8082:8082
 
   #############################################################################
   # Temporary utility services
@@ -90,7 +92,7 @@ services:
       - OX_DBM_HTTP_PASSWORD=${DBMAN_HTTP_PWD}
       - OX_DBM_HTTP_AUTHMODE=${DBMAN_AUTH_MODE}
       - OX_DBM_APPVERSION=${DBMAN_ONIX_VERSION}
-      - OX_DBM_REPO_URI=${DBMAN_ONIX_REPO_URI}      
+      - OX_DBM_REPO_URI=${DBMAN_ONIX_REPO_URI}${DBMAN_ONIX_COMMIT_HASH}
     ports:
       - "8085:8085"
 
@@ -109,7 +111,7 @@ services:
       - OX_DBM_HTTP_PASSWORD=${DBMAN_HTTP_PWD}
       - OX_DBM_HTTP_AUTHMODE=${DBMAN_AUTH_MODE}
       - OX_DBM_APPVERSION=${DBMAN_PILOTCTL_VERSION}
-      - OX_DBM_REPO_URI=${DBMAN_PILOTCTL_REPO_URI}
+      - OX_DBM_REPO_URI=${DBMAN_PILOTCTL_REPO_URI}${DBMAN_PILOTCTL_COMMIT_HASH}
     ports:
       - "8086:8085"
 
@@ -164,7 +166,9 @@ services:
     restart: always
     environment:
       - OX_MONGO_EVR_CONN=mongodb://${PILOTCTL_EVR_MONGO_CONTAINER}:${PILOTCTL_EVR_MONGO_DBPORT}/${PILOTCTL_EVR_MONGO_OPTIONS}
-      - OX_HTTP_PORT=8885
+      - OX_HTTP_PORT=${PILOTCTL_EVR_MONGO_PORT}
+      - OX_HTTP_UNAME=${PILOTCTL_EVR_MONGO_UNAME}
+      - OX_HTTP_PWD=${PILOTCTL_EVR_MONGO_PWD}
     ports:
       - "${PILOTCTL_EVR_MONGO_PORT}:8885"
 
