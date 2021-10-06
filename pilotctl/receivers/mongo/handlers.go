@@ -9,7 +9,7 @@ package main
 */
 import (
 	"encoding/json"
-	"github.com/gatblau/onix/client/server"
+	"github.com/gatblau/onix/oxlib/httpserver"
 	"github.com/gatblau/onix/pilotctl/receivers/mongo/core"
 	_ "github.com/gatblau/onix/pilotctl/receivers/mongo/docs"
 	"github.com/gatblau/onix/pilotctl/types"
@@ -110,7 +110,7 @@ func eventQueryHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	server.Write(w, r, events)
+	httpserver.Write(w, r, events)
 }
 
 func appendString(r *http.Request, filter map[string]interface{}, formKey, keyName string) map[string]interface{} {

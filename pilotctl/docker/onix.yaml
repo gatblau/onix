@@ -1,0 +1,168 @@
+#
+#    Onix Pilot Host Control Service
+#    Copyright (c) 2018-2021 by www.gatblau.org
+#    Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
+#    Contributors to this project, hereby assign copyright in this code to the project,
+#    to be licensed under the same terms as the rest of the code.
+#
+
+version: '3'
+
+services:
+
+  #############################################################################
+  # Onix application services
+  #############################################################################
+  ox-app:
+    image: "${CIT_OX_APP}"
+    depends_on:
+      - ox-db
+      - ox-dbman
+    container_name: ox-app
+    restart: always
+    environment:
+      - DB_HOST=ox-db
+      - DB_USER=${ONIX_DB_USER}
+      - DB_PWD=${ONIX_DB_PWD}
+      - DB_ADMIN_USER=${PG_ADMIN_USER}
+      - DB_ADMIN_PWD=${PG_ADMIN_PWD}
+      - WAPI_AUTH_MODE=${AUTH_MODE}
+      - WAPI_ADMIN_USER=${ONIX_HTTP_ADMIN_USER}
+      - WAPI_ADMIN_PWD=${ONIX_HTTP_ADMIN_PWD}
+      - WAPI_EVENTS_ENABLED=${BROKER_ENABLED}
+      - WAPI_EVENTS_SERVER_HOST=oxmsg
+      - WAPI_EVENTS_SERVER_PORT=${BROKER_PORT}
+    ports:
+      - "8080:8080"
+
+  pilotctl-app:
+    image: ${CIT_PILOTCTL_APP}
+    depends_on:
+      - ox-db
+      - ox-app
+      - pilotctl-dbman
+    container_name: pilotctl-app
+    restart: always
+    environment:
+      - OX_PILOTCTL_DB_HOST=ox-db
+      - OX_PILOTCTL_DB_USER=${PILOTCTL_DB_USER}
+      - OX_PILOTCTL_DB_PWD=${PILOTCTL_DB_PWD}
+      - OX_HTTP_UNAME=${PILOTCTL_HTTP_USER}
+      - OX_HTTP_PWD=${PILOTCTL_HTTP_PWD}
+      - OX_HTTP_PORT=${PILOTCTL_HTTP_PORT}
+      - OX_WAPI_URI=${WAPI_URI}
+      - OX_WAPI_USER=${ONIX_HTTP_ADMIN_USER}
+      - OX_WAPI_PWD=${ONIX_HTTP_ADMIN_PWD}
+      - OX_WAPI_INSECURE_SKIP_VERIFY=true
+      - OX_ART_REG_URI=${PILOTCTL_ART_REG_URI}
+      - OX_ART_REG_USER=${PILOTCTL_ART_REG_USER}
+      - OX_ART_REG_PWD=${PILOTCTL_ART_REG_PWD}
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./keys:/keys
+      - ./conf:/conf
+
+  artreg-app:
+    image: ${CIT_ARTREG_APP}
+    container_name: artreg-app
+    restart: always
+    environment:
+      - OXA_HTTP_UNAME=${ART_REG_USER}
+      - OXA_HTTP_PORT=${ART_REG_PORT}
+      - OXA_HTTP_PWD=${ART_REG_PWD}
+      - OXA_HTTP_BACKEND_DOMAIN=${ART_REG_BACKEND_URI}:${ART_REG_BACKEND_PORT}
+
+  #############################################################################
+  # Temporary utility services
+  #############################################################################
+  ox-dbman:
+    image: ${CIT_DBMAN}
+    container_name: ox-dbman
+    restart: always
+    environment:
+      - OX_DBM_DB_HOST=ox-db
+      - OX_DBM_DB_USERNAME=${ONIX_DB_USER}
+      - OX_DBM_DB_PASSWORD=${ONIX_DB_PWD}
+      - OX_DBM_DB_ADMINUSERNAME=${PG_ADMIN_USER}
+      - OX_DBM_DB_ADMINPASSWORD=${PG_ADMIN_PWD}
+      - OX_DBM_HTTP_USERNAME=${DBMAN_HTTP_USER}
+      - OX_DBM_HTTP_PASSWORD=${DBMAN_HTTP_PWD}
+      - OX_DBM_HTTP_AUTHMODE=${DBMAN_AUTH_MODE}
+      - OX_DBM_APPVERSION=${DBMAN_APP_VERSION}
+    ports:
+      - "8085:8085"
+
+  pilotctl-dbman:
+    image: ${CIT_DBMAN}
+    container_name: pilotctl-dbman
+    restart: always
+    environment:
+      - OX_DBM_DB_HOST=ox-db
+      - OX_DBM_DB_NAME=pilotctl
+      - OX_DBM_DB_USERNAME=${PILOTCTL_DB_USER}
+      - OX_DBM_DB_PASSWORD=${PILOTCTL_DB_PWD}
+      - OX_DBM_DB_ADMINUSERNAME=${PG_ADMIN_USER}
+      - OX_DBM_DB_ADMINPASSWORD=${PG_ADMIN_PWD}
+      - OX_DBM_HTTP_USERNAME=${DBMAN_HTTP_USER}
+      - OX_DBM_HTTP_PASSWORD=${DBMAN_HTTP_PWD}
+      - OX_DBM_HTTP_AUTHMODE=${DBMAN_AUTH_MODE}
+      - OX_DBM_APPVERSION=${DBMAN_APP_VERSION}
+      - OX_DBM_REPO_URI=${DBMAN_PILOTCTL_REPO_URI}
+    ports:
+      - "8086:8085"
+
+  #############################################################################
+  # Database services (supports Onix and Pilot Control)
+  #############################################################################
+  ox-db:
+    image: ${CIT_POSTGRES}
+    container_name: ox-db
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=${PG_ADMIN_PWD}
+    volumes:
+      - ox-db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  #############################################################################
+  # Event Receiver services
+  #############################################################################
+  evr-mongo-app:
+    image: ${CIT_EVRMONGO_APP}
+    depends_on:
+      - pilotctl-app
+      - evr-mongo-db
+    container_name: evr-mongo-app
+    restart: always
+    environment:
+      - OX_MONGO_EVR_CONN=mongodb://${PILOTCTL_EVR_MONGO_CONTAINER}:${PILOTCTL_EVR_MONGO_DBPORT}/${PILOTCTL_EVR_MONGO_OPTIONS}
+      - OX_HTTP_PORT=${PILOTCTL_EVR_PORT}
+    ports:
+      - "${PILOTCTL_EVR_PORT}:8885"
+
+  evr-mongo-db:
+    image: ${CIT_MONGO}
+    container_name: evr-mongo-db
+    restart: always
+    environment:
+      - MONGO_INITDB_DATABASE=syslog
+    ports:
+      - ${PILOTCTL_EVR_MONGO_DBPORT}:27017
+    volumes:
+      - evr-mongo-db:/data/db
+
+#############################################################################
+# Networking
+#############################################################################
+networks:
+  default:
+    name: ${DOCKER_NETWORK}
+
+#############################################################################
+# Data volumes
+#############################################################################
+volumes:
+  evr-mongo-db:
+  ox-db:
