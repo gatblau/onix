@@ -8,13 +8,13 @@ package main
   to be licensed under the same terms as the rest of the code.
 */
 import (
-	"github.com/gatblau/onix/client/server"
+	"github.com/gatblau/onix/oxlib/httpserver"
 	"github.com/gorilla/mux"
 )
 
 func main() {
 	// creates a generic http server
-	s := server.New("onix/pilotctl/receivers/mongo")
+	s := httpserver.New("onix/pilotctl/receivers/mongo")
 	s.Http = func(router *mux.Router) {
 		// enable encoded path  vars
 		router.UseEncodedPath()

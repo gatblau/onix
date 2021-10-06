@@ -15,8 +15,8 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
-	oxc "github.com/gatblau/onix/client"
-	"github.com/gatblau/onix/client/server"
+	"github.com/gatblau/onix/oxlib/httpserver"
+	"github.com/gatblau/onix/oxlib/oxc"
 	. "github.com/gatblau/onix/pilotctl/types"
 	"log"
 	"net/http"
@@ -274,7 +274,7 @@ func (r *API) AuthenticatePilot(token string) *oxc.UserPrincipal {
 // TODO: move to the server library, need to have instance of onox client configured in server library
 func (r *API) AuthenticateUser(request http.Request) *oxc.UserPrincipal {
 	// get the credentials from the request header
-	user, pwd := server.ParseBasicToken(request)
+	user, pwd := httpserver.ParseBasicToken(request)
 	// validate the credentials and retrieve user access controls
 	userPrincipal, err := r.ox.Login(&oxc.Login{
 		Username: user,

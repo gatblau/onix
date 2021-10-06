@@ -9,8 +9,8 @@ package main
 */
 import (
 	"fmt"
-	"github.com/gatblau/onix/client"
-	"github.com/gatblau/onix/client/server"
+	"github.com/gatblau/onix/oxlib/httpserver"
+	"github.com/gatblau/onix/oxlib/oxc"
 	"github.com/gatblau/onix/pilotctl/core"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -32,7 +32,7 @@ func init() {
 
 func main() {
 	// creates a generic http server
-	s := server.New("pilotctl")
+	s := httpserver.New("pilotctl")
 	// add handlers
 	s.Http = func(router *mux.Router) {
 		// enable encoded path  vars
@@ -65,7 +65,7 @@ func main() {
 		router.HandleFunc("/user", getUserHandler).Methods("GET")
 	}
 	// set up specific authentication for host pilot agents
-	s.Auth = map[string]func(http.Request) *client.UserPrincipal{
+	s.Auth = map[string]func(http.Request) *oxc.UserPrincipal{
 		"/register": pilotAuth,
 		"/ping":     pilotAuth,
 	}
@@ -75,12 +75,12 @@ func main() {
 
 // the overridden authentication mechanism used by the authentication middleware for specific routes
 // specified in server.Auth map
-var pilotAuth = func(r http.Request) *client.UserPrincipal {
+var pilotAuth = func(r http.Request) *oxc.UserPrincipal {
 	token := r.Header.Get("Authorization")
 	return api.AuthenticatePilot(token)
 }
 
 // the default authentication mechanism user by the authentication middleware
-var defaultAuth = func(r http.Request) *client.UserPrincipal {
+var defaultAuth = func(r http.Request) *oxc.UserPrincipal {
 	return api.AuthenticateUser(r)
 }
