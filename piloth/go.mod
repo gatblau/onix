@@ -4,7 +4,7 @@ go 1.16
 
 replace (
 	github.com/gatblau/onix/artisan => ../artisan
-	github.com/gatblau/onix/client => ../client
+	github.com/gatblau/onix/oxlib => ../oxlib
 	github.com/gatblau/onix/pilotctl => ../pilotctl
 )
 
