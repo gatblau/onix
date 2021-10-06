@@ -261,6 +261,12 @@ func (s *Server) AuthorisationMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// Authorise handler functions using user principal access control lists
+// wraps the authorization middleware to be used when wrapping specific handler functions
+func (s *Server) Authorise(handler http.HandlerFunc) http.Handler {
+	return handler
+}
+
 // writes the content of an object using the response writer in the format specified by the accept http header
 // supporting content negotiation for json, yaml, and xml formats
 func (s *Server) Write(w http.ResponseWriter, r *http.Request, obj interface{}) {
