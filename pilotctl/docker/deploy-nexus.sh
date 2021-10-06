@@ -11,9 +11,10 @@
 # along with any manual steps you need to perform in order to use it
 # as a backend for Artisan Repository
 
+. .env
+
 NEXUS_PORT=8081
 NEXUS_VOL=nexus_data
-DOCKER_NETWORK=pilotctl
 
 # Kill any old container and data
 docker rm -f nexus
