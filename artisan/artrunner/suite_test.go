@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/gatblau/onix/artisan/flow"
-	"github.com/gatblau/onix/artisan/server"
+	"github.com/gatblau/onix/oxlib/httpserver"
 	"github.com/gorilla/mux"
 	"testing"
 )
@@ -12,10 +12,10 @@ func Test(t *testing.T) {
 	z := f.Labels["aaa"]
 	print(z)
 	// creates a generic http server
-	s := server.New("onix/artisan-runner")
+	s := httpserver.New("onix/artisan-runner")
 	// add handlers
-	s.Serve(func(router *mux.Router) {
+	s.Http = func(router *mux.Router) {
 		router.HandleFunc("/flow", createFlowFromPayloadHandler).Methods("POST")
-		router.HandleFunc("/list", listHandler).Methods("GET")
-	})
+	}
+	s.Serve()
 }

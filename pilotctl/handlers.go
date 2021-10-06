@@ -20,7 +20,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gatblau/onix/client/server"
+	"github.com/gatblau/onix/oxlib/httpserver"
 	_ "github.com/gatblau/onix/pilotctl/docs"
 	. "github.com/gatblau/onix/pilotctl/types"
 	"github.com/gorilla/mux"
@@ -138,7 +138,7 @@ func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	server.Write(w, r, hosts)
+	httpserver.Write(w, r, hosts)
 }
 
 // registerHandler excluded from swagger as it is accessed by pilot with a special time-bound access token
@@ -225,7 +225,7 @@ func getCmdHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("can't query command with name '%s': %v\n", name, err), http.StatusInternalServerError)
 		return
 	}
-	server.Write(w, r, cmd)
+	httpserver.Write(w, r, cmd)
 }
 
 // @Summary Delete a Command definition
@@ -246,7 +246,7 @@ func deleteCmdHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("can't delete command with name '%s', check server logs for more details\n", name), http.StatusInternalServerError)
 		return
 	}
-	server.Write(w, r, resultingOperation)
+	httpserver.Write(w, r, resultingOperation)
 }
 
 // @Summary Get all Command definitions
@@ -264,7 +264,7 @@ func getAllCmdHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("can't query list of commands: %s\n", err), http.StatusInternalServerError)
 		return
 	}
-	server.Write(w, r, cmds)
+	httpserver.Write(w, r, cmds)
 }
 
 // @Summary Create a Job
@@ -342,7 +342,7 @@ func getJobsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	server.Write(w, r, jobs)
+	httpserver.Write(w, r, jobs)
 }
 
 // @Summary Get Job Batches
@@ -404,7 +404,7 @@ func getJobBatchHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	server.Write(w, r, batches)
+	httpserver.Write(w, r, batches)
 }
 
 // @Summary Get Areas in Organisation Group
@@ -424,7 +424,7 @@ func getAreasHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	server.Write(w, r, areas)
+	httpserver.Write(w, r, areas)
 }
 
 // @Summary Get Organisation Groups
@@ -441,7 +441,7 @@ func getOrgGroupsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	server.Write(w, r, areas)
+	httpserver.Write(w, r, areas)
 }
 
 // @Summary Get Organisations in Organisation Group
@@ -461,7 +461,7 @@ func getOrgHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	server.Write(w, r, areas)
+	httpserver.Write(w, r, areas)
 }
 
 // @Summary Get Locations in an Area
@@ -481,7 +481,7 @@ func getLocationsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	server.Write(w, r, areas)
+	httpserver.Write(w, r, areas)
 }
 
 // @Summary Admits a host into service
@@ -532,7 +532,7 @@ func getPackagesHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	server.Write(w, r, packages)
+	httpserver.Write(w, r, packages)
 }
 
 // @Summary Get the API of an Artisan Package
@@ -557,7 +557,7 @@ func getPackagesApiHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	server.Write(w, r, api)
+	httpserver.Write(w, r, api)
 }
 
 // @Summary Retrieve the logged user principal
@@ -574,8 +574,8 @@ func getPackagesApiHandler(w http.ResponseWriter, r *http.Request) {
 func getUserHandler(w http.ResponseWriter, r *http.Request) {
 	// if we got this far is because the user is authenticated
 	// then return the access controls for the user
-	user := server.GetUserPrincipal(r)
+	user := httpserver.GetUserPrincipal(r)
 	if user != nil {
-		server.Write(w, r, user)
+		httpserver.Write(w, r, user)
 	}
 }
