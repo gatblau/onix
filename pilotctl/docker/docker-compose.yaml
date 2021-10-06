@@ -16,12 +16,12 @@ services:
   ox-app:
     image: "${CIT_OX_APP}"
     depends_on:
-      - ox-db
+      - db
       - ox-dbman
     container_name: ox-app
     restart: always
     environment:
-      - DB_HOST=ox-db
+      - DB_HOST=db
       - DB_USER=${ONIX_DB_USER}
       - DB_PWD=${ONIX_DB_PWD}
       - DB_ADMIN_USER=${PG_ADMIN_USER}
@@ -38,19 +38,19 @@ services:
   pilotctl-app:
     image: ${CIT_PILOTCTL_APP}
     depends_on:
-      - ox-db
+      - db
       - ox-app
       - pilotctl-dbman
     container_name: pilotctl-app
     restart: always
     environment:
-      - OX_PILOTCTL_DB_HOST=ox-db
+      - OX_PILOTCTL_DB_HOST=db
       - OX_PILOTCTL_DB_USER=${PILOTCTL_DB_USER}
       - OX_PILOTCTL_DB_PWD=${PILOTCTL_DB_PWD}
       - OX_HTTP_UNAME=${PILOTCTL_HTTP_USER}
       - OX_HTTP_PWD=${PILOTCTL_HTTP_PWD}
       - OX_HTTP_PORT=${PILOTCTL_HTTP_PORT}
-      - OX_WAPI_URI=${WAPI_URI}
+      - OX_WAPI_URI=${WAPI_URL}:${WAPI_PORT}
       - OX_WAPI_USER=${ONIX_HTTP_ADMIN_USER}
       - OX_WAPI_PWD=${ONIX_HTTP_ADMIN_PWD}
       - OX_WAPI_INSECURE_SKIP_VERIFY=true
@@ -81,7 +81,7 @@ services:
     container_name: ox-dbman
     restart: always
     environment:
-      - OX_DBM_DB_HOST=ox-db
+      - OX_DBM_DB_HOST=db
       - OX_DBM_DB_USERNAME=${ONIX_DB_USER}
       - OX_DBM_DB_PASSWORD=${ONIX_DB_PWD}
       - OX_DBM_DB_ADMINUSERNAME=${PG_ADMIN_USER}
@@ -89,7 +89,8 @@ services:
       - OX_DBM_HTTP_USERNAME=${DBMAN_HTTP_USER}
       - OX_DBM_HTTP_PASSWORD=${DBMAN_HTTP_PWD}
       - OX_DBM_HTTP_AUTHMODE=${DBMAN_AUTH_MODE}
-      - OX_DBM_APPVERSION=${DBMAN_APP_VERSION}
+      - OX_DBM_APPVERSION=${DBMAN_ONIX_VERSION}
+      - OX_DBM_REPO_URI=${DBMAN_ONIX_REPO_URI}      
     ports:
       - "8085:8085"
 
@@ -98,7 +99,7 @@ services:
     container_name: pilotctl-dbman
     restart: always
     environment:
-      - OX_DBM_DB_HOST=ox-db
+      - OX_DBM_DB_HOST=db
       - OX_DBM_DB_NAME=pilotctl
       - OX_DBM_DB_USERNAME=${PILOTCTL_DB_USER}
       - OX_DBM_DB_PASSWORD=${PILOTCTL_DB_PWD}
@@ -107,24 +108,49 @@ services:
       - OX_DBM_HTTP_USERNAME=${DBMAN_HTTP_USER}
       - OX_DBM_HTTP_PASSWORD=${DBMAN_HTTP_PWD}
       - OX_DBM_HTTP_AUTHMODE=${DBMAN_AUTH_MODE}
-      - OX_DBM_APPVERSION=${DBMAN_APP_VERSION}
+      - OX_DBM_APPVERSION=${DBMAN_PILOTCTL_VERSION}
       - OX_DBM_REPO_URI=${DBMAN_PILOTCTL_REPO_URI}
     ports:
       - "8086:8085"
 
   #############################################################################
-  # Database services (supports Onix and Pilot Control)
+  # Database services
   #############################################################################
-  ox-db:
+  db: # (supports Onix and Pilot Control)
     image: ${CIT_POSTGRES}
-    container_name: ox-db
+    container_name: db
     restart: always
     environment:
       - POSTGRES_PASSWORD=${PG_ADMIN_PWD}
     volumes:
-      - ox-db:/var/lib/postgresql/data
+      - db:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+
+  #############################################################################
+  # Database GUIs
+  #############################################################################
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-gui
+    restart: always
+    ports:
+      - 8083:8081
+    environment:
+      #ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      #ME_CONFIG_MONGODB_ADMINPASSWORD: admin
+      ME_CONFIG_MONGODB_URL: mongodb://evr-mongo-db:${PILOTCTL_EVR_MONGO_DBPORT}/
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin-gui
+    restart: always
+    ports:
+      - 8084:8084
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.com
+      PGADMIN_DEFAULT_PASSWORD: QuB3vUL99gi8L8
+      PGADMIN_LISTEN_PORT: 8084
 
   #############################################################################
   # Event Receiver services
@@ -138,9 +164,9 @@ services:
     restart: always
     environment:
       - OX_MONGO_EVR_CONN=mongodb://${PILOTCTL_EVR_MONGO_CONTAINER}:${PILOTCTL_EVR_MONGO_DBPORT}/${PILOTCTL_EVR_MONGO_OPTIONS}
-      - OX_HTTP_PORT=${PILOTCTL_EVR_PORT}
+      - OX_HTTP_PORT=8885
     ports:
-      - "${PILOTCTL_EVR_PORT}:8885"
+      - "${PILOTCTL_EVR_MONGO_PORT}:8885"
 
   evr-mongo-db:
     image: ${CIT_MONGO}
@@ -153,6 +179,7 @@ services:
     volumes:
       - evr-mongo-db:/data/db
 
+
 #############################################################################
 # Networking
 #############################################################################
@@ -164,5 +191,5 @@ networks:
 # Data volumes
 #############################################################################
 volumes:
+  db:
   evr-mongo-db:
-  ox-db:

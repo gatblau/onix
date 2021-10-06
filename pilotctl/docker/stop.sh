@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker-compose -f onix.yaml stop
+docker-compose stop
