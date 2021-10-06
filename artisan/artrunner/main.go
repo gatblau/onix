@@ -8,13 +8,13 @@
 package main
 
 import (
-	"github.com/gatblau/onix/artisan/server"
+	"github.com/gatblau/onix/oxlib/httpserver"
 	"github.com/gorilla/mux"
 )
 
 func main() {
 	// creates a generic http server
-	s := server.New("onix/artisan-runner")
+	s := httpserver.New("art-runner")
 	// add handlers
 	s.Http = func(router *mux.Router) {
 		router.HandleFunc("/flow", createFlowFromPayloadHandler).Methods("POST")
