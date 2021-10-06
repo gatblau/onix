@@ -40,29 +40,28 @@ func main() {
 		// middleware
 		// router.Use(s.LoggingMiddleware)
 		router.Use(s.AuthenticationMiddleware)
-		router.Use(s.AuthorisationMiddleware)
 
-		// add http handlers
+		// pilot http handlers
 		router.HandleFunc("/ping", pingHandler).Methods("POST")
-		router.HandleFunc("/host", hostQueryHandler).Methods("GET")
 		router.HandleFunc("/register", registerHandler).Methods("POST")
-		router.HandleFunc("/cmd", updateCmdHandler).Methods("PUT")
-		router.HandleFunc("/cmd", getAllCmdHandler).Methods("GET")
-		router.HandleFunc("/cmd/{name}", getCmdHandler).Methods("GET")
-		router.HandleFunc("/cmd/{name}", deleteCmdHandler).Methods("DELETE")
-		router.HandleFunc("/org-group", getOrgGroupsHandler).Methods("GET")
-		router.HandleFunc("/org-group/{org-group}/area", getAreasHandler).Methods("GET")
-		router.HandleFunc("/org-group/{org-group}/org", getOrgHandler).Methods("GET")
-		router.HandleFunc("/area/{area}/location", getLocationsHandler).Methods("GET")
-		router.HandleFunc("/admission", setAdmissionHandler).Methods("PUT")
-		router.HandleFunc("/package", getPackagesHandler).Methods("GET")
-		router.HandleFunc("/package/{name}/api", getPackagesApiHandler).Methods("GET")
-		router.HandleFunc("/job", newJobHandler).Methods("POST")
-		router.HandleFunc("/job", getJobsHandler).Methods("GET")
-		router.HandleFunc("/job/batch", getJobBatchHandler).Methods("GET")
 
-		// router.Handle("/acl", s.AuthorisationMiddleware(http.HandlerFunc(getACLHandler))).Methods("GET")
-		router.HandleFunc("/user", getUserHandler).Methods("GET")
+		// apply authorisation to admin user http handlers
+		router.Handle("/host", s.Authorise(hostQueryHandler)).Methods("GET")
+		router.Handle("/cmd", s.Authorise(updateCmdHandler)).Methods("PUT")
+		router.Handle("/cmd", s.Authorise(getAllCmdHandler)).Methods("GET")
+		router.Handle("/cmd/{name}", s.Authorise(getCmdHandler)).Methods("GET")
+		router.Handle("/cmd/{name}", s.Authorise(deleteCmdHandler)).Methods("DELETE")
+		router.Handle("/org-group", s.Authorise(getOrgGroupsHandler)).Methods("GET")
+		router.Handle("/org-group/{org-group}/area", s.Authorise(getAreasHandler)).Methods("GET")
+		router.Handle("/org-group/{org-group}/org", s.Authorise(getOrgHandler)).Methods("GET")
+		router.Handle("/area/{area}/location", s.Authorise(getLocationsHandler)).Methods("GET")
+		router.Handle("/admission", s.Authorise(setAdmissionHandler)).Methods("PUT")
+		router.Handle("/package", s.Authorise(getPackagesHandler)).Methods("GET")
+		router.Handle("/package/{name}/api", s.Authorise(getPackagesApiHandler)).Methods("GET")
+		router.Handle("/job", s.Authorise(newJobHandler)).Methods("POST")
+		router.Handle("/job", s.Authorise(getJobsHandler)).Methods("GET")
+		router.Handle("/job/batch", s.Authorise(getJobBatchHandler)).Methods("GET")
+		router.Handle("/user", s.Authorise(getUserHandler)).Methods("GET")
 	}
 	// set up specific authentication for host pilot agents
 	s.Auth = map[string]func(http.Request) *oxc.UserPrincipal{
