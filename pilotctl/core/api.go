@@ -252,26 +252,29 @@ func (r *API) AuthenticatePilot(token string) *oxc.UserPrincipal {
 		break
 	}
 
-	if !admitted {
-		// log an authentication error
-		log.Printf("authentication failed for Host UUID='%s', host has not been admitted to service\n", hostUUId)
-	}
-
 	// captures token information for remote host
 	r.hostUUID = hostUUId
 	r.hostname = hostname
 	r.hostIP = hostIP
 
-	// returns authentication status
+	if !admitted {
+		// log an authentication error
+		log.Printf("authentication failed for Host UUID='%s', host has not been admitted to service\n", hostUUId)
+		// no user principal is returned as authentication failed
+		return nil
+	}
+
+	// otherwise, returns a principal to signify that authentication succeeded
 	return &oxc.UserPrincipal{
+		// use a dummy email with the pilot host uuid as username
 		Username: fmt.Sprintf("%s@pilot.com", hostUUId),
-		Rights:   nil,
-		Created:  time.Now(),
+		// no access rights are required for pilot
+		Rights:  oxc.Controls{},
+		Created: time.Now(),
 	}
 }
 
 // AuthenticateUser authenticate user requests
-// TODO: move to the server library, need to have instance of onox client configured in server library
 func (r *API) AuthenticateUser(request http.Request) *oxc.UserPrincipal {
 	// get the credentials from the request header
 	user, pwd := httpserver.ParseBasicToken(request)
