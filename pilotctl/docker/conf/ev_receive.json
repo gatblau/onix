@@ -1,9 +1,9 @@
 {
   "event_receivers": [
     {
-      "uri": "http://evr-mongo:8885/events",
+      "uri": "http://evr-mongo-app:8885/events",
       "user": "admin",
-      "pwd": "adm1n"
+      "pwd": "hrKXxojHE5rxjtH4"
     }
   ]
 }
