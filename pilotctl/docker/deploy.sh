@@ -7,6 +7,20 @@
 # source .env file vars
 set -o allexport; source .env; set +o allexport
 
+# create events receiver JSON for all events receivers
+[ ! -d "./conf" ] && mkdir conf
+cat >> ./conf/ev_receive.json <<EOF
+{
+  "event_receivers": [
+    {
+      "uri": "http://${PILOTCTL_EVR_MONGO_APPCONTAINER}:${PILOTCTL_EVR_MONGO_PORT}/events",
+      "user": "${PILOTCTL_EVR_MONGO_UNAME}",
+      "pwd": "${PILOTCTL_EVR_MONGO_PWD}"
+    }
+  ]
+}
+EOF
+
 # Ensure attachable Docker network is already created
 if [[ $(docker network inspect ${DOCKER_NETWORK}) == "[]" ]]; then
   echo Creating Docker network ${DOCKER_NETWORK} ...
