@@ -3,7 +3,7 @@
 . .env
 
 # Display summary for developer/tester
-echo "Developer/Tester info"
+echo "Technical Info"
 echo
 echo "Onix Swagger"
 echo "http://localhost:8080/swagger-ui.html"
@@ -23,4 +23,10 @@ echo ${ART_REG_USER}:${ART_REG_PWD}
 echo
 echo "Artisan backend (Nexus)"
 echo "http://localhost:${ART_REG_BACKEND_PORT}/"
-echo "(NB. Credentials specified outside of this stack)"
+echo
+echo "Current Container tags"
+echo CIT_OX_APP -------- $( echo ${CIT_OX_APP}  | awk -F":" '{print $2}' )
+echo CIT_PILOTCTL_APP -- $( echo ${CIT_PILOTCTL_APP}  | awk -F":" '{print $2}' )
+echo CIT_ARTREG_APP ---- $( echo ${CIT_ARTREG_APP}  | awk -F":" '{print $2}' )
+echo CIT_DBMAN --------- $( echo ${CIT_DBMAN}  | awk -F":" '{print $2}' )
+echo CIT_EVRMONGO_APP -- $( echo ${CIT_EVRMONGO_APP}  | awk -F":" '{print $2}' )
