@@ -16,6 +16,12 @@
 NEXUS_PORT=8081
 NEXUS_VOL=nexus_data
 
+# Ensure attachable Docker network is already created
+if [[ $(docker network inspect ${DOCKER_NETWORK}) == "[]" ]]; then
+  echo Creating Docker network ${DOCKER_NETWORK} ...
+  docker network create ${DOCKER_NETWORK}
+fi
+
 # Kill any old container and data
 docker rm -f nexus
 docker volume rm ${NEXUS_VOL}
