@@ -6,6 +6,10 @@
 #    to be licensed under the same terms as the rest of the code.
 #
 
+# Note: Some ports in this Compose are deliberately exposed to the host where they
+#       wouldn't normally be for a "production" system. This is so that developers
+#       or technically minded users can test or debug areas of the system.
+
 version: '3'
 
 services:
@@ -166,7 +170,8 @@ services:
 #############################################################################
 networks:
   default:
-    name: ${DOCKER_NETWORK}
+    external:
+      name: ${DOCKER_NETWORK}
 
 #############################################################################
 # Data volumes
