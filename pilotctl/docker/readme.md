@@ -2,14 +2,15 @@
 
 This section contains scripts to start up all required PilotCtl services:
 
-- PostgreSQL database server
+- PostgreSQL and Mongo database servers
 - Onix database
 - PilotCtl database
 - Onix Web API Service
 - PilotCtl HTTP Service
 - DbMan instances for database provisioning
+- Event receiver service(s)
 
-![setup](pilotctl_setup.png)
+![setup](info-services.drawio.svg)
 
 
 ### Helper Scripts
@@ -32,12 +33,37 @@ destroy.sh | destroys the stack completely, including any persistent data
 
 ### Endpoints
 
-| service | endpoint |
-|---|---|
-| onix database | postgresql://onix:PWD@localhost:5432/onix |
-| rem database | postgresql://rem:PWD@localhost:5432/rem |
-| onix WAPI | http://localhost:8080 |
-| rem WAPI | http://localhost:8088 |
+Up-to-date endpoints on what has been deployed (along with credentials from the .env file) can be displayed by using the helper script `techinfo.sh`. Running this will give output similar to:
+
+```
+Technical Info
+
+Onix Swagger
+http://localhost:8080/swagger-ui.html
+admin:ybGkxQ7GTVu3ek9eVQQM
+
+Pilotctl Swagger
+http://localhost:8888/api/index.html
+admin@pilotctl.com:zcsvk9YhbQmzkcGp
+
+Event Receiver (Mongo) Swagger
+http://localhost:8885/api/index.html
+admin:hrKXxojHE5rxjtH4
+
+Artisan Registry Swagger
+http://localhost:8082/api/index.html
+admin:BMgEXPNVQ8fjxn6r
+
+Artisan backend (Nexus)
+http://localhost:8081/
+
+Current Container tags
+CIT_OX_APP -------- v0.0.4-1af14bb-021021131813
+CIT_PILOTCTL_APP -- 0.0.4-061021135120757-114069b3db
+CIT_ARTREG_APP ---- 0.0.4-011021162133879-a3dedecb3f-RC1
+CIT_DBMAN --------- v0.0.4-d4fb6f7-031020001129
+CIT_EVRMONGO_APP -- 0.0.4-300921174051295-11aab8b6cc
+```
 
 ### Configuration Variables
 
