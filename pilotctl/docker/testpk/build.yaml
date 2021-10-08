@@ -50,4 +50,11 @@ functions:
     runtime: ubi-min
     run:
       - cat /tmp/info.txt
+
+  - name: raise-event
+    description: Raises a sample event
+    export: true
+    runtime: ubi-min
+    run:
+      - sh ./raise-event.sh
 ...
