@@ -30,17 +30,18 @@ fi
 # start all services
 docker-compose up -d
 
+# NB. If you have issues with either Onix admin password not being updated or pilotctl user not being created,
+# try increasing timeout here to ensure that service has time to spin up correctly before applying data changes
+# (The time taken will depend on your host computing and I/O)
+echo Waiting for cofiguration to apply ...
+sleep 10
+
 # setup the onix database
 curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1
 curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy 2>&1
 # setup the rem database
 curl -H "Content-Type: application/json" -X POST http://localhost:8086/db/create 2>&1
 curl -H "Content-Type: application/json" -X POST http://localhost:8086/db/deploy 2>&1
-
-# NB. If you have issues with either Onix admin password not being updated or pilotctl user not being created,
-# try increasing timeout here to ensure that service has time to spin up correctly before applying data changes
-# (The time taken will depend on your host computing and I/O)
-sleep 5
 
 # update default's Onix Web API admin password"
 curl  --connect-timeout 5 \
