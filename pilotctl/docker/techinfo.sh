@@ -17,12 +17,9 @@ echo "Event Receiver (Mongo) Swagger"
 echo "http://localhost:${PILOTCTL_EVR_MONGO_PORT}/api/index.html"
 echo ${PILOTCTL_EVR_MONGO_UNAME}:${PILOTCTL_EVR_MONGO_PWD}
 echo
-echo "Artisan Registry Swagger"
-echo "http://localhost:${ART_REG_PORT}/api/index.html"
-echo ${ART_REG_USER}:${ART_REG_PWD}
-echo
-echo "Artisan backend (Nexus)"
-echo "http://localhost:${ART_REG_BACKEND_PORT}/"
+echo "Remote Artisan Registry Links"
+echo "http://artreg.apsedge.io/api/index.html"
+echo "http://nexus.apsedge.io"
 echo
 echo "Current Container tags"
 echo CIT_OX_APP -------- $( echo ${CIT_OX_APP}  | awk -F":" '{print $2}' )

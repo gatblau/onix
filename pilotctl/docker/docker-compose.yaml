@@ -58,26 +58,26 @@ services:
       - OX_WAPI_USER=${ONIX_HTTP_ADMIN_USER}
       - OX_WAPI_PWD=${ONIX_HTTP_ADMIN_PWD}
       - OX_WAPI_INSECURE_SKIP_VERIFY=true
-      - OX_ART_REG_URI=${PILOTCTL_ART_REG_URI}
-      - OX_ART_REG_USER=${PILOTCTL_ART_REG_USER}
-      - OX_ART_REG_PWD=${PILOTCTL_ART_REG_PWD}
+      - OX_ART_REG_URI=${ART_REG_URI}
+      - OX_ART_REG_USER=${ART_REG_USER}
+      - OX_ART_REG_PWD=${ART_REG_PWD}
     ports:
       - "8888:8888"
     volumes:
       - ./keys:/keys
       - ./conf:/conf
 
-  artreg-app:
-    image: ${CIT_ARTREG_APP}
-    container_name: artreg-app
-    restart: always
-    environment:
-      - OXA_HTTP_UNAME=${ART_REG_USER}
-      - OXA_HTTP_PORT=${ART_REG_PORT}
-      - OXA_HTTP_PWD=${ART_REG_PWD}
-      - OXA_HTTP_BACKEND_DOMAIN=${ART_REG_BACKEND_URI}:${ART_REG_BACKEND_PORT}
-    ports:
-      - 8082:8082
+  # artreg-app:
+  #   image: ${CIT_ARTREG_APP}
+  #   container_name: artreg-app
+  #   restart: always
+  #   environment:
+  #     - OXA_HTTP_UNAME=${ART_REG_USER}
+  #     - OXA_HTTP_PORT=${ART_REG_PORT}
+  #     - OXA_HTTP_PWD=${ART_REG_PWD}
+  #     - OXA_HTTP_BACKEND_DOMAIN=${ART_REG_BACKEND_URI}:${ART_REG_BACKEND_PORT}
+  #   ports:
+  #     - 8082:8082
 
   #############################################################################
   # Temporary utility services
