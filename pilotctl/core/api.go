@@ -375,10 +375,11 @@ func (r *API) PutCommand(cmd *Cmd) error {
 		Type:        "ART_FX",
 		Meta:        meta,
 		Attribute: map[string]interface{}{
-			"PACKAGE":       cmd.Package,
-			"FX":            cmd.Function,
-			"USER":          cmd.User,
-			"PWD":           cmd.Pwd,
+			"PACKAGE": cmd.Package,
+			"FX":      cmd.Function,
+			// ensures credentials are for the registry tied to pilotctl
+			"USER":          r.conf.getArtRegUser(),
+			"PWD":           r.conf.getArtRegPwd(),
 			"VERBOSE":       cmd.Verbose,
 			"CONTAINERISED": cmd.Containerised,
 		},
