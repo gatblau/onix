@@ -9,7 +9,7 @@ set -o allexport; source .env; set +o allexport
 
 # create events receiver JSON for all events receivers
 [ ! -d "./conf" ] && mkdir conf
-cat >> ./conf/ev_receive.json <<EOF
+cat > ./conf/ev_receive.json <<EOF
 {
   "event_receivers": [
     {
@@ -30,6 +30,12 @@ fi
 # start all services
 docker-compose up -d
 
+# NB. If you have issues with either Onix admin password not being updated or pilotctl user not being created,
+# try increasing timeout here to ensure that service has time to spin up correctly before applying data changes
+# (The time taken will depend on your host computing and I/O)
+echo Waiting 5s for configuration 1 to apply ...
+sleep 5
+
 # setup the onix database
 curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/create 2>&1
 curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy 2>&1
@@ -37,10 +43,8 @@ curl -H "Content-Type: application/json" -X POST http://localhost:8085/db/deploy
 curl -H "Content-Type: application/json" -X POST http://localhost:8086/db/create 2>&1
 curl -H "Content-Type: application/json" -X POST http://localhost:8086/db/deploy 2>&1
 
-# NB. If you have issues with either Onix admin password not being updated or pilotctl user not being created,
-# try increasing timeout here to ensure that service has time to spin up correctly before applying data changes
-# (The time taken will depend on your host computing and I/O)
-sleep 5
+echo Waiting 20s for configuration 2 to apply ...
+sleep 20
 
 # update default's Onix Web API admin password"
 curl  --connect-timeout 5 \

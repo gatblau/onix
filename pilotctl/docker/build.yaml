@@ -1,0 +1,6 @@
+---
+profiles:
+  - name: testpk
+    target: testpk
+
+...
