@@ -1,1 +1,2 @@
-dashboard.yaml
+docker-compose.yaml
+.env
