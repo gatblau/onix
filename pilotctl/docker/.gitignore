@@ -1,3 +1,2 @@
-docker-compose.yaml
 .env
 conf/ev_receive.json
