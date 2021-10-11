@@ -4,7 +4,7 @@ go 1.16
 
 replace (
 	github.com/gatblau/onix/artisan => ../
-	github.com/gatblau/oxc => ../../../oxc
+	github.com/gatblau/onix/oxlib => ../../oxlib
 )
 
 require (
