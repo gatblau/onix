@@ -9,7 +9,7 @@ set -o allexport; source .env; set +o allexport
 
 # create events receiver JSON for all events receivers
 [ ! -d "./conf" ] && mkdir conf
-cat >> ./conf/ev_receive.json <<EOF
+cat > ./conf/ev_receive.json <<EOF
 {
   "event_receivers": [
     {
