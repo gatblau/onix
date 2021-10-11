@@ -1,9 +1,0 @@
-{
-  "event_receivers": [
-    {
-      "uri": "http://:/events",
-      "user": "",
-      "pwd": ""
-    }
-  ]
-}
