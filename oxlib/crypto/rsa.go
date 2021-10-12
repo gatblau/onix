@@ -16,8 +16,8 @@ import (
 	"encoding/base64"
 )
 
-// GenerateRSAKeys generate an RSA key pair and returns their base64 encoded string for PKCS #1, ASN.1 DER form
-func GenerateRSAKeys() (pk string, pub string, err error) {
+// GenerateRSAKeysPKCS1 generate an RSA key pair and returns their base64 encoded string for PKCS #1, ASN.1 DER form
+func GenerateRSAKeysPKCS1() (pk string, pub string, err error) {
 	key, err := rsa.GenerateMultiPrimeKey(rand.Reader, 2, 2048)
 	if err != nil {
 		return "", "", err
@@ -27,7 +27,7 @@ func GenerateRSAKeys() (pk string, pub string, err error) {
 	return
 }
 
-func Decrypt(cipherText string, privateKey string) (string, error) {
+func DecryptPKCS1(cipherText string, privateKey string) (string, error) {
 	pk, err := base64.StdEncoding.DecodeString(privateKey)
 	if err != nil {
 		return "", err
@@ -40,15 +40,14 @@ func Decrypt(cipherText string, privateKey string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	label := []byte("OAEP Encrypted")
-	plaintext, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privKey, ct, label)
+	plaintext, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privKey, ct, nil)
 	if err != nil {
 		return "", err
 	}
 	return string(plaintext[:]), nil
 }
 
-func Encrypt(plainText string, publicKey string) (string, error) {
+func EncryptPKCS1(plainText string, publicKey string) (string, error) {
 	pub, err := base64.StdEncoding.DecodeString(publicKey)
 	if err != nil {
 		return "", err
@@ -57,8 +56,7 @@ func Encrypt(plainText string, publicKey string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	label := []byte("OAEP Encrypted")
-	ciphertext, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, pubKey, []byte(plainText), label)
+	ciphertext, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, pubKey, []byte(plainText), nil)
 	if err != nil {
 		return "", err
 	}
