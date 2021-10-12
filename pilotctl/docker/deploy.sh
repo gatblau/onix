@@ -45,11 +45,11 @@ cat > .env <<EOF
 ################################################################################################
 
 # Artisan registry to use
-ART_REG_URI=localhost
+ART_REG_URI=http://artreg-app
 ART_REG_USER=admin
 ART_REG_PWD=$(RNDPASS)
 ART_REG_PORT=8082
-ART_REG_BACKEND_URI=localhost
+ART_REG_BACKEND_URI=http://nexus
 ART_REG_BACKEND_PORT=8081
 
 
@@ -168,6 +168,7 @@ docker run -d \
   -p ${ART_REG_BACKEND_PORT}:8081 \
   --name nexus \
   -v ${PWD##*/}_nexus:/nexus-data \
+  --network ${DOCKER_NETWORK} \
   sonatype/nexus3
 echo "Waiting for API interface to be available in Nexus container ..."
 sleep 15
@@ -194,7 +195,7 @@ CURL2xx -X POST \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
-  "name": "test1",
+  "name": "artisan",
   "online": true,
   "storage": {
     "blobStoreName": "default",
