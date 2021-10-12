@@ -63,6 +63,18 @@ services:
       - ./keys:/keys
       - ./conf:/conf
 
+  artreg-app:
+    image: ${CIT_ARTREG_APP}
+    container_name: artreg-app
+    restart: always
+    environment:
+      - OXA_HTTP_UNAME=${ART_REG_USER}
+      - OXA_HTTP_PORT=${ART_REG_PORT}
+      - OXA_HTTP_PWD=${ART_REG_PWD}
+      - OXA_HTTP_BACKEND_DOMAIN=${ART_REG_BACKEND_URI}:${ART_REG_BACKEND_PORT}
+    ports:
+      - 8082:8082
+
   #############################################################################
   # Temporary utility services
   #############################################################################
