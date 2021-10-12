@@ -57,4 +57,11 @@ functions:
     runtime: ubi-min
     run:
       - sh ./raise-event.sh
+
+  - name: restart-nginx
+    description: Restarts the local nginx service
+    export: true
+    runtime: ubi-min
+    run:
+      - sh ./restart-nginx.sh
 ...
