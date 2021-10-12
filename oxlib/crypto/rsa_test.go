@@ -10,21 +10,22 @@ package crypto
 
 import (
 	"fmt"
+	"os"
 	"testing"
 )
 
 // test encryption / decryption
-func TestCrypto(t *testing.T) {
-	pk, pub, err := GenerateRSAKeys()
+func TestEncryptDecrypt(t *testing.T) {
+	pk, pub, err := GenerateRSAKeysPKCS1()
 	if err != nil {
 		t.Error(err)
 	}
 	message := "Hello World!"
-	cipherText, err := Encrypt(message, pub)
+	cipherText, err := EncryptPKCS1(message, pub)
 	if err != nil {
 		t.Error(err)
 	}
-	plainText, err := Decrypt(cipherText, pk)
+	plainText, err := DecryptPKCS1(cipherText, pk)
 	if err != nil {
 		t.Error(err)
 	}
@@ -35,16 +36,29 @@ func TestCrypto(t *testing.T) {
 
 // prints 2 RSA key-pairs
 func TestPrintKeys(t *testing.T) {
-	pk, pub, err := GenerateRSAKeys()
+	pk, pub, err := GenerateRSAKeysPKCS1()
 	if err != nil {
 		t.Error(err)
 	}
 	fmt.Printf("PK-1 => '%s'\n", pk)
 	fmt.Printf("PUB-1 => '%s'\n\n", pub)
-	pk, pub, err = GenerateRSAKeys()
+	pk, pub, err = GenerateRSAKeysPKCS1()
 	if err != nil {
 		t.Error(err)
 	}
 	fmt.Printf("PK-2 => '%s'\n", pk)
 	fmt.Printf("PUB-2 => '%s'\n", pub)
+}
+
+func TestSaveKeys(t *testing.T) {
+	pk, pub, err := GenerateRSAKeysPKCS1()
+	if err != nil {
+		t.Error(err)
+	}
+	// user:   read/write
+	// group:  none
+	// others: none
+	var perm os.FileMode = 0600
+	os.WriteFile("id_rsa", []byte(pk), perm)
+	os.WriteFile("id_rsa.pub", []byte(pub), perm)
 }
