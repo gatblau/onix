@@ -13,6 +13,12 @@ RNDPASS () {
   tr -dc A-Za-z0-9 </dev/urandom | head -c 16
 }
 
+# Only run if no .env
+if test -f ".env"; then
+  echo "WARNING: .env file already exists - stopping init of variables!"
+  exit 1
+fi
+
 # create new .env
 echo Generating environment file
 
