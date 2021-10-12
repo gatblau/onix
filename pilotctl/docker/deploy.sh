@@ -45,7 +45,8 @@ cat > .env <<EOF
 ################################################################################################
 
 # Artisan registry to use
-ART_REG_URI=http://artreg-app
+#ART_REG_URI=http://artreg-app
+ART_REG_URI=http://demo.dcglab.co.uk
 ART_REG_USER=admin
 ART_REG_PWD=$(RNDPASS)
 ART_REG_PORT=8082
@@ -164,7 +165,6 @@ fi
 
 # create Nexus backend (for Artisan Registry)
 docker run -d \
-  --rm \
   -p ${ART_REG_BACKEND_PORT}:8081 \
   --name nexus \
   -v ${PWD##*/}_nexus:/nexus-data \
