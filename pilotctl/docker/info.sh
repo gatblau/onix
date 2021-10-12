@@ -21,6 +21,10 @@ echo "Remote Artisan Registry Links"
 echo "http://artreg.apsedge.io/api/index.html"
 echo "http://nexus.apsedge.io"
 echo
+echo "Local Artisan Registry Links"
+echo "http://${ART_REG_URI}:${ART_REG_PORT}"
+echo ${ART_REG_USER}:${ART_REG_PWD}
+echo
 echo "Current Container tags"
 echo CIT_OX_APP -------- $( echo ${CIT_OX_APP}  | awk -F":" '{print $2}' )
 echo CIT_PILOTCTL_APP -- $( echo ${CIT_PILOTCTL_APP}  | awk -F":" '{print $2}' )
