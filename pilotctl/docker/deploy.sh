@@ -9,13 +9,32 @@
 #
 
 # CURL options
-OPTIONS="--silent --show-error -f -L --max-redirs 3 --retry 10 --retry-connrefused --retry-delay 5 --max-time 120"
-#OPTIONS="-v --show-error -f -L --max-redirs 3 --retry 10 --retry-connrefused --retry-delay 5 --max-time 120"
+OPTIONS="-v --silent --show-error -f -L --max-redirs 3 --retry 10 --retry-connrefused --retry-delay 5 --max-time 120"
+CURL_MAXRETRY=10
+CURL_DELAY=5
+
 
 # functions
 RNDPASS () {
   tr -dc A-Za-z0-9 </dev/urandom | head -c 16
 }
+
+CURL2xx() {
+  CURL_CODE=0
+  CURL_RETRY=0
+  while [[ ("$CURL_CODE" < 200 || "$CURL_CODE" > 299) && "$CURL_RETRY" != "$CURL_MAXRETRY" ]]
+  do
+    #echo DBG curl -s -o /dev/nul -w %{http_code} "$@"
+    CURL_CODE=$(curl -s -o /dev/nul -w %{http_code} "$@")
+    if [[ ("$CURL_CODE" < 200 || "$CURL_CODE" > 299) && "$CURL_RETRY" != "$CURL_MAXRETRY" ]]
+    then
+      ((CURL_RETRY=CURL_RETRY+1))
+      echo "Got return code $CURL_CODE, pausing for retry $CURL_RETRY ..."
+      sleep $CURL_DELAY
+    fi
+  done
+}
+
 
 # create new .env
 echo Generating environment file
@@ -86,10 +105,10 @@ AUTH_MODE=basic # the authentication mode used by the Onix Web API (set to Basic
 # Pilotctl
 PILOTCTL_DB_USER=pilotctl
 PILOTCTL_DB_PWD=$(RNDPASS)
-PILOTCTL_HTTP_USER=pilotctl
-PILOTCTL_HTTP_PWD=$(RNDPASS)
 PILOTCTL_HTTP_PORT=8888
+
 # NB. Temporary creds until RBAC version has completed testing & released
+PILOTCTL_ONIX_URI=http://ox-app:8080
 PILOTCTL_ONIX_USER=admin@pilotctl.com # used for authentication - could be different than email if required
 PILOTCTL_ONIX_EMAIL=admin@pilotctl.com # used for password resets
 PILOTCTL_ONIX_PWD=P1l0tctl
@@ -159,15 +178,17 @@ do
   sleep 2
   CURRENTPASS=$(docker exec nexus cat /nexus-data/admin.password)
 done
+
 echo "Updating admin password ..."
-curl $OPTIONS -X PUT \
+CURL2xx -X PUT \
   -u admin:${CURRENTPASS} \
   http://localhost:${ART_REG_BACKEND_PORT}/service/rest/v1/security/users/admin/change-password \
   -H 'accept: application/json' \
   -H 'Content-Type: text/plain' \
-  -d '${ART_REG_PWD}'
+  -d "${ART_REG_PWD}"
+
 echo "Creating new Artisan repository ..."
-curl $OPTIONS -X POST \
+CURL2xx -X POST \
   -u admin:${ART_REG_PWD} \
   http://localhost:${ART_REG_BACKEND_PORT}/service/rest/v1/repositories/raw/hosted \
   -H 'accept: application/json' \
@@ -193,7 +214,7 @@ curl $OPTIONS -X POST \
   }
 }'
 echo "Disabling anonymous access ..."
-curl $OPTIONS -X PUT \
+CURL2xx -X PUT \
   -u admin:${ART_REG_PWD} \
   http://localhost:${ART_REG_BACKEND_PORT}/service/rest/v1/security/anonymous \
   -H 'accept: application/json' \
@@ -234,19 +255,28 @@ curl $OPTIONS \
   -H "Content-Type: application/json" \
   -X POST http://localhost:8086/db/deploy 2>&1
 
-# update default's Onix Web API admin password"
-curl $OPTIONS \
+
+echo "Updating Onix admin password from default ..."
+until contents=$(curl \
   -H "Authorization: Basic $(printf '%s:%s' admin 0n1x | base64)" \
   -H "Content-Type: application/json" \
   -X PUT ${WAPI_URL}:${WAPI_PORT}/user/${ONIX_HTTP_ADMIN_USER}/pwd \
   -d "{\"pwd\":\"${ONIX_HTTP_ADMIN_PWD}\"}"
+)
+do
+  sleep 3
+done
 
-# create pilotctl user
-curl $OPTIONS \
+echo "Creating special pilotctl user in Onix ..."
+until contents=$(curl \
   -H "Authorization: Basic $(printf '%s:%s' ${ONIX_HTTP_ADMIN_USER} ${ONIX_HTTP_ADMIN_PWD} | base64)" \
   -H "Content-Type: application/json" \
   -X PUT ${WAPI_URL}:${WAPI_PORT}/user/ONIX_PILOTCTL \
   -d "{\"email\":\"${PILOTCTL_ONIX_EMAIL}\", \"name\":\"${PILOTCTL_ONIX_USER}\", \"pwd\":\"${PILOTCTL_ONIX_PWD}\", \"service\":\"false\", \"acl\":\"*:*:*\"}"
+)
+do
+  sleep 3
+done
 
 # create required test items
 curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/item/ART_FX:LIST" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/fx.json" && printf "\n"
