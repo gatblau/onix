@@ -136,7 +136,7 @@ services:
       - PGADMIN_DEFAULT_PASSWORD=${PG_ADMIN_PWD}
       - PGADMIN_SERVER_JSON_FILE=/pgadmin4/onix/postgres_servers.json
     ports:
-      - "8083:5432"
+      - "8083:80"
     volumes:
       - ${PWD}/conf:/pgadmin4/onix
 
