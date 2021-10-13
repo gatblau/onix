@@ -200,7 +200,7 @@ CURL2xx -X POST \
   "storage": {
     "blobStoreName": "default",
     "strictContentTypeValidation": true,
-    "writePolicy": "allow_once"
+    "writePolicy": "allow"
   },
   "cleanup": {
     "policyNames": [
