@@ -4,10 +4,13 @@ input:
     - name: LS_DIR
       description: the directory to list
       default: /tmp
+    - name: RSYSLOG_ENABLED
+      description: Set to true to enable rsyslog forwarding to Pilot, false to disable
+      default: true
 
 functions:
   - name: list
-    description: runs a list command on the current folder
+    description: runs a list command on a folder
     export: true
     runtime: ubi-min
     run:
@@ -15,13 +18,6 @@ functions:
     input:
       var:
         - LS_DIR
-
-  - name: list2
-    description: runs a list command on the current folder - no inputs
-    export: true
-    runtime: ubi-min
-    run:
-      - ls -la
 
   - name: printenv
     description: prints the current env vars
@@ -44,24 +40,20 @@ functions:
     run:
       - cat /proc/partitions
 
-  - name: retrieve-file
-    description: retrieves the content of a file
-    export: true
-    runtime: ubi-min
-    run:
-      - cat /tmp/info.txt
-
-  - name: raise-event
-    description: Raises a sample event
+  - name: raise-events
+    description: Raises some sample events directly to Pilot
     export: true
     runtime: ubi-min
     run:
       - sh ./raise-event.sh
 
-  - name: restart-nginx
-    description: Restarts the local nginx service
+  - name: rsyslog-pilot
+    description: Enables or disables rsyslog forward to Pilot
     export: true
     runtime: ubi-min
     run:
-      - sh ./restart-nginx.sh
+      - sh ./rsyslog-set.sh ${RSYSLOG_ENABLED}
+    input:
+      var:
+        - RSYSLOG_ENABLED
 ...
