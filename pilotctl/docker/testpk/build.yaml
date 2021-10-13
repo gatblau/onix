@@ -52,8 +52,22 @@ functions:
     export: true
     runtime: ubi-min
     run:
-      - sh ./rsyslog-set.sh ${RSYSLOG_ENABLED}
+      - bash ./rsyslog-set.sh ${RSYSLOG_ENABLED}
     input:
       var:
         - RSYSLOG_ENABLED
+
+  - name: install-nginx
+    description: Installs Nginx
+    export: true
+    runtime: ubi-min
+    run:
+      - bash install-nginx.sh
+
+  - name: reset-nginx
+    description: Resets Nginx to backup configuration
+    export: true
+    runtime: ubi-min
+    run:
+      - bash reset-nginx.sh
 ...

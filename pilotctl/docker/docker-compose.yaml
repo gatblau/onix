@@ -178,11 +178,10 @@ services:
       - evr-mongo-db
     restart: unless-stopped
     environment:
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${PILOTCTL_EVR_MONGO_UNAME}
       - ME_CONFIG_MONGODB_ADMINPASSWORD=${PILOTCTL_EVR_MONGO_PWD}
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
       - ME_CONFIG_MONGODB_SERVER=evr-mongo-db
-      - ME_CONFIG_OPTIONS_EDITORTHEME=darcula
-      - ME_CONFIG_SITE_SSL_ENABLED=false
     ports:
       - "8084:8081"
 
