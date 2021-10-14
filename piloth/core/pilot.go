@@ -17,6 +17,8 @@ import (
 	"time"
 )
 
+var A *AK
+
 // Pilot host
 type Pilot struct {
 	cfg       *Config
@@ -33,6 +35,7 @@ type Pilot struct {
 }
 
 func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
+	Activate(hostInfo)
 	// read configuration
 	cfg := &Config{}
 	err := cfg.Load()
@@ -59,6 +62,46 @@ func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
 	}
 	// return a new pilot
 	return p, nil
+}
+
+func Activate(info *ctl.HostInfo) {
+	// first check for a valid activation key
+	if !AkExist() {
+		// if no activation key is present the exit
+		ErrorLogger.Printf("cannot launch pilot: missing activation key\n")
+		// TODO: initiate activation protocol
+		os.Exit(1)
+	}
+	// before doing anything, verify activation key
+	ak, err := LoadAK()
+	if err != nil {
+		// if it cannot load activation key exit
+		ErrorLogger.Printf("cannot launch pilot: cannot load activation key, %s\n", err)
+		os.Exit(1)
+	}
+	// set the activation
+	A = ak
+	// check expiration date
+	if A.Expiry.Before(time.Now()) {
+		// if activation expired the exit
+		ErrorLogger.Printf("cannot launch pilot: activation key expired\n")
+		os.Exit(1)
+	}
+	// check if the mac-adress is valid
+	validMac := false
+	for _, address := range info.MacAddress {
+		if address == A.MacAddress {
+			validMac = true
+			break
+		}
+	}
+	if !validMac {
+		// if activation expired the exit
+		ErrorLogger.Printf("cannot launch pilot: invalid mac address\n")
+		os.Exit(1)
+	}
+	// set host UUID
+	info.HostUUID = A.HostUUID
 }
 
 func (p *Pilot) Start() {

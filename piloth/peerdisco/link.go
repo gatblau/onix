@@ -9,13 +9,14 @@ package peerdisco
 */
 import (
 	"github.com/gatblau/onix/pilotctl/types"
+	"reflect"
 	"time"
 )
 
 type Links []Link
 
 func (l Links) Equals(links Links) bool {
-	panic("not implemented")
+	return reflect.DeepEqual(l, links)
 }
 
 // Link information about the discovered pilot peer

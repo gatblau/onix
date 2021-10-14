@@ -8,7 +8,6 @@ package core
   to be licensed under the same terms as the rest of the code.
 */
 import (
-	"container/list"
 	"context"
 	"fmt"
 	"github.com/gatblau/onix/artisan/build"
@@ -41,10 +40,6 @@ type Runnable func(data interface{}) (string, error)
 type Worker struct {
 	// what is the current status of the worker?
 	status workerStatus
-	// the list of jobs to be processed
-	jobs list.List
-	// the results of the last job processed
-	results list.List
 	// the context to manage the worker loop go routine
 	ctx context.Context
 	// the function to cancel the worker loop go routine
@@ -60,12 +55,10 @@ type Worker struct {
 func NewWorker(run Runnable) *Worker {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Worker{
-		status:  stopped,
-		jobs:    list.List{},
-		results: list.List{},
-		ctx:     ctx,
-		cancel:  cancel,
-		run:     run,
+		status: stopped,
+		ctx:    ctx,
+		cancel: cancel,
+		run:    run,
 	}
 }
 

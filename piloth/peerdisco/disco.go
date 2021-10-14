@@ -20,9 +20,10 @@ type Disco struct {
 	info      types.HostInfo
 }
 
-func NewDisco() *Disco {
+func NewDisco(info types.HostInfo) *Disco {
 	return &Disco{
 		scheduler: quartz.NewStdScheduler(),
+		info:      info,
 	}
 }
 
