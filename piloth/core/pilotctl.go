@@ -31,7 +31,7 @@ func NewPilotCtl(worker *Worker, hostInfo *ctl.HostInfo) (*PilotCtl, error) {
 		return nil, err
 	}
 	cfg := &ctlCore.ClientConf{
-		BaseURI:            conf.getPilotCtlURI(),
+		BaseURI:            A.CtlURI,
 		Username:           "_",
 		Password:           "_",
 		InsecureSkipVerify: true,

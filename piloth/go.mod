@@ -9,7 +9,9 @@ replace (
 )
 
 require (
+	github.com/ProtonMail/gopenpgp/v2 v2.2.4
 	github.com/gatblau/onix/artisan v0.0.0-00010101000000-000000000000
+	github.com/gatblau/onix/oxlib v0.0.0-00010101000000-000000000000
 	github.com/gatblau/onix/pilotctl v0.0.0-00010101000000-000000000000
 	github.com/joho/godotenv v1.3.0
 	github.com/reugn/go-quartz v0.3.6

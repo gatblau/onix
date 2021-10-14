@@ -10,7 +10,6 @@ package core
 import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os"
@@ -88,15 +87,7 @@ func (c *Config) GetBool(key ConfigKey) bool {
 func (c *Config) Load() error {
 	// set the file path to where pilot is running
 	// c.path = currentPath()
-	c.path = currentPath()
-
-	cFile := confFile()
-	if _, err := os.Stat(cFile); err == nil {
-		err := godotenv.Load(cFile)
-		if err != nil {
-			log.Fatal().Msg(err.Error())
-		}
-	}
+	c.path = CurrentPath()
 
 	// log level
 	c.LogLevel = c.Get(PilotLogLevel)
@@ -113,7 +104,7 @@ func (c *Config) Load() error {
 	return nil
 }
 
-func currentPath() string {
+func CurrentPath() string {
 	// check if the current path is overridden
 	path := os.Getenv("PILOT_CFG_PATH")
 	// if so
@@ -135,13 +126,13 @@ func currentPath() string {
 	return path
 }
 
-func confFile() string {
-	return fmt.Sprintf("%s/.pilot", currentPath())
+func ConfFile() string {
+	return fmt.Sprintf("%s/.pilot", CurrentPath())
 }
 
 // DataPath returns the path of the root local folder where files are cached
 func DataPath() string {
-	return filepath.Join(currentPath(), "data")
+	return filepath.Join(CurrentPath(), "data")
 }
 
 // SubmitPath returns the path of the local folder used to cache information to be submitted to pilotctl

@@ -30,12 +30,8 @@ func verify(obj interface{}, signature string) error {
 	if err != nil {
 		return fmt.Errorf("verify => cannot calculate checksum: %s\n", err)
 	}
-	// retrieve the verification key from the specified location
-	keyFile, err := verifyKeyFile()
-	if err != nil {
-		return fmt.Errorf("verify => cannot find host verification key: %s", err)
-	}
-	pgp, err := crypto.LoadPGP(keyFile, "")
+	// load verification key from activation key
+	pgp, err := crypto.LoadPGPBytes([]byte(A.VerifyKey))
 	if err != nil {
 		return fmt.Errorf("verify => cannot load host verification key: %s", err)
 	}
@@ -69,21 +65,6 @@ func checksum(obj interface{}) ([]byte, error) {
 	// obtain checksum
 	sum := hash.Sum(nil)
 	return sum, nil
-}
-
-func verifyKeyFile() (string, error) {
-	verifyKeyFilename := ".pilot_verify.pgp"
-	file := filepath.Join(executablePath(), verifyKeyFilename)
-	_, err := os.Stat(filepath.Join(executablePath(), verifyKeyFilename))
-	if err != nil {
-		file = filepath.Join(homePath(), verifyKeyFilename)
-		_, err = os.Stat(filepath.Join(homePath(), verifyKeyFilename))
-		if err != nil {
-			return "", fmt.Errorf("cannot find signing key")
-		}
-		return file, nil
-	}
-	return file, nil
 }
 
 func executablePath() string {

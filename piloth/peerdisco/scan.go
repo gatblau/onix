@@ -95,6 +95,10 @@ func linkInfo(info types.HostInfo) []byte {
 	return infoBytes
 }
 
-func readLinks() ([]Link, error) {
+func readLinks() (Links, error) {
+	panic("not implemented")
+}
+
+func writeLinks(links Links) error {
 	panic("not implemented")
 }
