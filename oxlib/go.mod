@@ -3,6 +3,7 @@ module github.com/gatblau/onix/oxlib
 go 1.16
 
 require (
+	github.com/ProtonMail/gopenpgp/v2 v2.2.4 // indirect
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.8.0
