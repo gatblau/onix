@@ -10,7 +10,7 @@
 
 # CURL options
 OPTIONS="-v --silent --show-error -f -L --max-redirs 3 --retry 10 --retry-connrefused --retry-delay 5 --max-time 120"
-CURL_MAXRETRY=10
+CURL_MAXRETRY=25
 CURL_DELAY=5
 
 
@@ -29,7 +29,7 @@ CURL2xx() {
     if [[ ("$CURL_CODE" < 200 || "$CURL_CODE" > 299) && "$CURL_RETRY" != "$CURL_MAXRETRY" ]]
     then
       ((CURL_RETRY=CURL_RETRY+1))
-      echo "Got return code $CURL_CODE, pausing for retry $CURL_RETRY ..."
+      echo "Got return code $CURL_CODE, pausing for $CURL_DELAY seconds (retry $CURL_RETRY of $CURL_MAXRETRY) ..."
       sleep $CURL_DELAY
     fi
   done
@@ -170,10 +170,10 @@ docker run -d \
   -v ${PWD##*/}_nexus:/nexus-data \
   --network ${DOCKER_NETWORK} \
   sonatype/nexus3
-echo "Waiting for API interface to be available in Nexus container ..."
-sleep 15
+echo "Waiting 20 seconds for Nexus container configure ..."
+sleep 20
 CURRENTPASS=
-echo "Checking for temporary password file ..."
+echo "Checking Nexus for temporary password file ..."
 while [ -z "$CURRENTPASS" ]
 do
   sleep 2
