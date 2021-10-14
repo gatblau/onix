@@ -6,10 +6,6 @@
 #    to be licensed under the same terms as the rest of the code.
 #
 
-# Note: Some ports in this Compose are deliberately exposed to the host where they
-#       wouldn't normally be for a "production" system. This is so that developers
-#       or technically minded users can test or debug areas of the system.
-
 version: '3'
 
 services:
@@ -51,14 +47,12 @@ services:
       - OX_PILOTCTL_DB_HOST=db
       - OX_PILOTCTL_DB_USER=${PILOTCTL_DB_USER}
       - OX_PILOTCTL_DB_PWD=${PILOTCTL_DB_PWD}
-      - OX_HTTP_UNAME=${PILOTCTL_HTTP_USER}
-      - OX_HTTP_PWD=${PILOTCTL_HTTP_PWD}
       - OX_HTTP_PORT=${PILOTCTL_HTTP_PORT}
-      - OX_WAPI_URI=${WAPI_URL}:${WAPI_PORT}
+      - OX_WAPI_URI=${PILOTCTL_ONIX_URI}
       - OX_WAPI_USER=${ONIX_HTTP_ADMIN_USER}
       - OX_WAPI_PWD=${ONIX_HTTP_ADMIN_PWD}
       - OX_WAPI_INSECURE_SKIP_VERIFY=true
-      - OX_ART_REG_URI=${ART_REG_URI}
+      - OX_ART_REG_URI=${ART_REG_URI}:${ART_REG_PORT}
       - OX_ART_REG_USER=${ART_REG_USER}
       - OX_ART_REG_PWD=${ART_REG_PWD}
     ports:
@@ -67,17 +61,17 @@ services:
       - ./keys:/keys
       - ./conf:/conf
 
-  # artreg-app:
-  #   image: ${CIT_ARTREG_APP}
-  #   container_name: artreg-app
-  #   restart: always
-  #   environment:
-  #     - OXA_HTTP_UNAME=${ART_REG_USER}
-  #     - OXA_HTTP_PORT=${ART_REG_PORT}
-  #     - OXA_HTTP_PWD=${ART_REG_PWD}
-  #     - OXA_HTTP_BACKEND_DOMAIN=${ART_REG_BACKEND_URI}:${ART_REG_BACKEND_PORT}
-  #   ports:
-  #     - 8082:8082
+  artreg-app:
+    image: ${CIT_ARTREG_APP}
+    container_name: artreg-app
+    restart: always
+    environment:
+      - OXA_HTTP_UNAME=${ART_REG_USER}
+      - OXA_HTTP_PORT=${ART_REG_PORT}
+      - OXA_HTTP_PWD=${ART_REG_PWD}
+      - OXA_HTTP_BACKEND_DOMAIN=${ART_REG_BACKEND_URI}:${ART_REG_BACKEND_PORT}
+    ports:
+      - 8082:8082
 
   #############################################################################
   # Temporary utility services
@@ -133,6 +127,19 @@ services:
     ports:
       - "5432:5432"
 
+  db-gui:
+    image: ${CIT_POSTGRESGUI}
+    container_name: db-gui
+    restart: unless-stopped
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@local.com
+      - PGADMIN_DEFAULT_PASSWORD=${PG_ADMIN_PWD}
+      - PGADMIN_SERVER_JSON_FILE=/pgadmin4/onix/postgres_servers.json
+    ports:
+      - "8083:80"
+    volumes:
+      - ${PWD}/conf:/pgadmin4/onix
+
   #############################################################################
   # Event Receiver services
   #############################################################################
@@ -164,14 +171,27 @@ services:
       - evr-mongo-db:/data/db
       - evr-mongo-dblogs:/var/log/mongodb
 
+  evr-mongo-dbgui:
+    image: ${CIT_MONGOGUI}
+    container_name: evr-mongo-dbgui
+    depends_on:
+      - evr-mongo-db
+    restart: unless-stopped
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${PILOTCTL_EVR_MONGO_UNAME}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${PILOTCTL_EVR_MONGO_PWD}
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      - ME_CONFIG_MONGODB_SERVER=evr-mongo-db
+    ports:
+      - "8084:8081"
+
 
 #############################################################################
 # Networking
 #############################################################################
 networks:
   default:
-    external:
-      name: ${DOCKER_NETWORK}
+    name: ${DOCKER_NETWORK}
 
 #############################################################################
 # Data volumes
