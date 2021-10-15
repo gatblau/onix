@@ -100,7 +100,11 @@ func Curl(uri string, method string, token string, validCodes []int, payload str
 	// retry if error or invalid response code
 	for err != nil || !validResponse(resp.StatusCode, validCodes) {
 		if err != nil {
-			ErrorLogger.Printf("unexpected error '%s', retrying attempt %d of %d in %d seconds, please wait...\n", err, attempts+1, maxAttempts, delaySecs)
+			if resp != nil {
+				ErrorLogger.Printf("unexpected error with response code '%s'; error was: '%s', retrying attempt %d of %d in %d seconds, please wait...\n", resp.StatusCode, err, attempts+1, maxAttempts, delaySecs)
+			} else {
+				ErrorLogger.Printf("unexpected error with no response; error was: '%s', retrying attempt %d of %d in %d seconds, please wait...\n", err, attempts+1, maxAttempts, delaySecs)
+			}
 		} else {
 			ErrorLogger.Printf("invalid response code %d, retrying attempt %d of %d in %d seconds, please wait...\n", resp.StatusCode, attempts+1, maxAttempts, delaySecs)
 		}
