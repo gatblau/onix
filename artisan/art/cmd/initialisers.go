@@ -27,6 +27,7 @@ func InitialiseRootCmd() *RootCmd {
 	exeCmd := NewExeCmd()
 	exeCCmd := NewExeCCmd()
 	waitCmd := NewWaitCmd()
+	curlCmd := NewCurlCmd()
 	langCmd := InitialiseLangCommand()
 	envCmd := InitialiseEnvCommand()
 	gitSyncCmd := NewGitSyncCmd()
@@ -48,6 +49,7 @@ func InitialiseRootCmd() *RootCmd {
 		exeCCmd.cmd,
 		tknCmd.cmd,
 		waitCmd.cmd,
+		curlCmd.cmd,
 		langCmd.cmd,
 		envCmd.cmd,
 		gitSyncCmd.cmd,
