@@ -8,13 +8,19 @@ package core
   to be licensed under the same terms as the rest of the code.
 */
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 )
 
-// Make a GET HTTP request to the specified URL
+// Get make a GET HTTP request to the specified URL
 func Get(url, user, pwd string) (*http.Response, error) {
 	// create request
 	req, err := http.NewRequest("GET", url, nil)
@@ -40,4 +46,71 @@ func Get(url, user, pwd string) (*http.Response, error) {
 
 func BasicToken(user string, pwd string) string {
 	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
+}
+
+func Curl(uri string, method string, token string, validCodes []int, payload string, file string, maxAttempts int, delaySecs time.Duration, timeout time.Duration) {
+	var (
+		bodyBytes []byte    = nil
+		body      io.Reader = nil
+		attempts            = 0
+	)
+	if len(payload) > 0 {
+		if len(file) > 0 {
+			RaiseErr("use either payload or file options, not both\n")
+		}
+		bodyBytes = []byte(payload)
+	} else {
+		if len(file) > 0 {
+			abs, err := filepath.Abs(file)
+			if err != nil {
+				RaiseErr("cannot obtain absolute path for file using %s: %s\n", file, err)
+			}
+			bodyBytes, err = os.ReadFile(abs)
+		}
+	}
+	if bodyBytes != nil {
+		body = bytes.NewReader(bodyBytes)
+	}
+	// create request
+	req, err := http.NewRequest(strings.ToUpper(method), uri, body)
+	if err != nil {
+		RaiseErr("cannot create http request object: %s\n", err)
+	}
+	// add authorization token to http request headers
+	if len(token) > 0 {
+		req.Header.Add("Authorization", token)
+	}
+	// create http client with timeout
+	client := &http.Client{
+		Timeout: timeout,
+	}
+	// issue http request
+	resp, err := client.Do(req)
+	// retry if error or invalid response code
+	for err != nil || !validResponse(resp.StatusCode, validCodes) {
+		if err != nil {
+			ErrorLogger.Printf("unexpected error, retrying attempt %d of %d in %d seconds, please wait...\n", attempts, maxAttempts, delaySecs)
+		} else {
+			ErrorLogger.Printf("invalid response code %d, retrying attempt %d of %d in %d seconds, please wait...\n", resp.StatusCode, attempts, maxAttempts, delaySecs)
+		}
+		// wait for next attempt
+		time.Sleep(delaySecs * time.Second)
+		// issue http request
+		resp, err = client.Do(req)
+		// increments the number of attempts
+		attempts++
+		// exits if max attempts reached
+		if attempts >= maxAttempts {
+			RaiseErr("%s request to '%s' failed after %d attempts\n", strings.ToUpper(method), uri, maxAttempts)
+		}
+	}
+}
+
+func validResponse(responseCode int, validCodes []int) bool {
+	for _, validCode := range validCodes {
+		if responseCode == validCode {
+			return true
+		}
+	}
+	return false
 }
