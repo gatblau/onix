@@ -48,7 +48,7 @@ func BasicToken(user string, pwd string) string {
 	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
 }
 
-func Curl(uri string, method string, token string, validCodes []int, payload string, file string, maxAttempts int, delaySecs time.Duration, timeout time.Duration) {
+func Curl(uri string, method string, token string, validCodes []int, payload string, file string, maxAttempts int, delaySecs int, timeoutSecs int, headers []string) {
 	var (
 		bodyBytes []byte    = nil
 		body      io.Reader = nil
@@ -80,21 +80,32 @@ func Curl(uri string, method string, token string, validCodes []int, payload str
 	if len(token) > 0 {
 		req.Header.Add("Authorization", token)
 	}
+	// add custom headers
+	if headers != nil {
+		for _, header := range headers {
+			parts := strings.Split(header, ":")
+			if len(parts) != 2 {
+				WarningLogger.Printf("wrong format of http header '%s'; format should be 'key:value', skipping it\n", header)
+				continue
+			}
+			req.Header.Add(parts[0], parts[1])
+		}
+	}
 	// create http client with timeout
 	client := &http.Client{
-		Timeout: timeout,
+		Timeout: time.Duration(int64(timeoutSecs)) * time.Second,
 	}
 	// issue http request
 	resp, err := client.Do(req)
 	// retry if error or invalid response code
 	for err != nil || !validResponse(resp.StatusCode, validCodes) {
 		if err != nil {
-			ErrorLogger.Printf("unexpected error, retrying attempt %d of %d in %d seconds, please wait...\n", attempts, maxAttempts, delaySecs)
+			ErrorLogger.Printf("unexpected error, retrying attempt %d of %d in %d seconds, please wait...\n", attempts+1, maxAttempts, delaySecs)
 		} else {
-			ErrorLogger.Printf("invalid response code %d, retrying attempt %d of %d in %d seconds, please wait...\n", resp.StatusCode, attempts, maxAttempts, delaySecs)
+			ErrorLogger.Printf("invalid response code %d, retrying attempt %d of %d in %d seconds, please wait...\n", resp.StatusCode, attempts+1, maxAttempts, delaySecs)
 		}
 		// wait for next attempt
-		time.Sleep(delaySecs * time.Second)
+		time.Sleep(time.Duration(int64(delaySecs)) * time.Second)
 		// issue http request
 		resp, err = client.Do(req)
 		// increments the number of attempts

@@ -11,7 +11,6 @@ package cmd
 import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/spf13/cobra"
-	"time"
 )
 
 // CurlCmd client url issues http requests within a retry framework
@@ -24,8 +23,9 @@ type CurlCmd struct {
 	file          string
 	validCodes    []int
 	addValidCodes []int
-	delaySecs     time.Duration
-	timeout       time.Duration
+	delaySecs     int
+	timeoutSecs   int
+	headers       []string
 }
 
 func NewCurlCmd() *CurlCmd {
@@ -40,12 +40,13 @@ func NewCurlCmd() *CurlCmd {
 	c.cmd.Flags().StringVarP(&c.creds, "creds", "u", "", "-u user:password")
 	c.cmd.Flags().IntVarP(&c.maxAttempts, "max-attempts", "a", 5, "number of attempts before it stops retrying")
 	c.cmd.Flags().IntSliceVarP(&c.validCodes, "valid-codes", "c", []int{200, 201, 202, 203, 204, 205, 206, 207, 208, 226}, "comma separated list of HTTP status codes considered valid (e.g. no retry will be triggered)")
-	c.cmd.Flags().IntSliceVarP(&c.validCodes, "add-valid-codes", "C", []int{}, "comma separated list of additional HTTP status codes considered valid (e.g. no retry will be triggered)")
+	c.cmd.Flags().IntSliceVarP(&c.addValidCodes, "add-valid-codes", "C", []int{}, "comma separated list of additional HTTP status codes considered valid (e.g. no retry will be triggered)")
 	c.cmd.Flags().StringVarP(&c.method, "method", "X", "GET", "the http method to use (i.e. POST, PUT, GET, DELETE)")
-	c.cmd.Flags().StringVarP(&c.payload, "payload", "P", "", "a string with the payload to be sent in the body of the http request")
+	c.cmd.Flags().StringVarP(&c.payload, "payload", "d", "", "a string with the payload to be sent in the body of the http request")
 	c.cmd.Flags().StringVarP(&c.file, "file", "f", "", "the location of a file which content is to be sent in the body of the http request")
-	c.cmd.Flags().DurationVarP(&c.delaySecs, "delay", "d", 15*time.Second, "the delay in seconds between each retry interval")
-	c.cmd.Flags().DurationVarP(&c.timeout, "timeout", "t", 30*time.Second, "the period after which the http request will timeout if not response is received from the server")
+	c.cmd.Flags().StringSliceVarP(&c.headers, "headers", "H", nil, "a comma separated list of http headers (format 'key1:value1','key2:value2,...,'keyN:valueN')")
+	c.cmd.Flags().IntVarP(&c.delaySecs, "delay", "r", 5, "the retry delay (in seconds)")
+	c.cmd.Flags().IntVarP(&c.timeoutSecs, "timeout", "t", 30, "the period (in seconds) after which the http request will timeout if not response is received from the server")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -57,6 +58,5 @@ func (c *CurlCmd) Run(cmd *cobra.Command, args []string) {
 		uname, pwd := core.UserPwd(c.creds)
 		token = core.BasicToken(uname, pwd)
 	}
-	// Curl(uri, method, token, validCodes, payload, file, maxAttempts, delaySecs)
-	core.Curl(uri, c.method, token, append(c.validCodes, c.addValidCodes...), c.payload, c.file, c.maxAttempts, c.delaySecs, c.timeout)
+	core.Curl(uri, c.method, token, append(c.validCodes, c.addValidCodes...), c.payload, c.file, c.maxAttempts, c.delaySecs, c.timeoutSecs, c.headers)
 }
