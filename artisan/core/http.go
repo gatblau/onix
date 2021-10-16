@@ -119,6 +119,15 @@ func Curl(uri string, method string, token string, validCodes []int, payload str
 			RaiseErr("%s request to '%s' failed after %d attempts\n", strings.ToUpper(method), uri, maxAttempts)
 		}
 	}
+	// if there is a response body prints it to stdout
+	if resp != nil && resp.Body != nil {
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			WarningLogger.Printf("cannot print response body: %s\n", err)
+		} else {
+			InfoLogger.Println(string(b[:]))
+		}
+	}
 }
 
 func validResponse(responseCode int, validCodes []int) bool {
