@@ -62,6 +62,8 @@ func main() {
 		router.Handle("/job", s.Authorise(getJobsHandler)).Methods("GET")
 		router.Handle("/job/batch", s.Authorise(getJobBatchHandler)).Methods("GET")
 		router.Handle("/user", s.Authorise(getUserHandler)).Methods("GET")
+
+		router.HandleFunc("/pub", getKeyHandler).Methods("GET")
 	}
 	// set up specific authentication for host pilot agents
 	s.Auth = map[string]func(http.Request) *oxc.UserPrincipal{

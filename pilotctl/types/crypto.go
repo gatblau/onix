@@ -25,12 +25,12 @@ func sign(obj interface{}) (string, error) {
 	// only sign if we have an object
 	if obj != nil {
 		// load the signing key
-		keyFile, err := signingKeyFile()
+		path, err := KeyFilePath("sign")
 		if err != nil {
 			return "", err
 		}
 		// retrieve the verification key from the specified location
-		pgp, err := crypto.LoadPGP(keyFile, "")
+		pgp, err := crypto.LoadPGP(path, "")
 		if err != nil {
 			return "", fmt.Errorf("sign => cannot load signing key: %s", err)
 		}
@@ -73,17 +73,21 @@ func checksum(obj interface{}) ([]byte, error) {
 	return sum, nil
 }
 
-func signingKeyFile() (string, error) {
-	path := filepath.Join(executablePath(), ".pilot_sign.pgp")
+// KeyFilePath return the path to the file where the relevant PGP key is
+// keyType is either verify (public) or sign (private) PGP key
+func KeyFilePath(keyType string) (string, error) {
+	name := fmt.Sprintf(".pilot_%s.pgp", keyType)
+	path := filepath.Join(executablePath(), name)
 	_, err := os.Stat(path)
 	if err != nil {
-		path = filepath.Join(homePath(), ".pilot_sign.pgp")
+		path = filepath.Join(homePath(), name)
 		_, err = os.Stat(path)
 		if err != nil {
-			path = "/keys/.pilot_sign.pgp"
+			// TODO: make path OS agnostic
+			path = fmt.Sprintf("/keys/%s", name)
 			_, err = os.Stat(path)
 			if err != nil {
-				return "", fmt.Errorf("cannot find signing key")
+				return "", fmt.Errorf("cannot find %s key\n", keyType)
 			}
 		}
 		return path, nil

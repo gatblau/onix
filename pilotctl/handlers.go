@@ -28,6 +28,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -578,4 +579,29 @@ func getUserHandler(w http.ResponseWriter, r *http.Request) {
 	if user != nil {
 		httpserver.Write(w, r, user)
 	}
+}
+
+// @Summary Retrieve the service public PGP key
+// @Description Retrieve the service public PGP key used to verify the authenticity of the service by pilot agents
+// @Tags PGP
+// @Router /pub [get]
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getKeyHandler(w http.ResponseWriter, r *http.Request) {
+	// load the verification key
+	path, err := KeyFilePath("verify")
+	if err != nil {
+		log.Printf("cannot find public PGP key: %s\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	key, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("cannot read public PGP key file: %s\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	httpserver.Write(w, r, string(key[:]))
 }
