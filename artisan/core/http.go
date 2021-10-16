@@ -69,7 +69,7 @@ func Curl(uri string, method string, token string, validCodes []int, payload str
 		}
 	}
 	if bodyBytes != nil {
-		body = bytes.NewReader(bodyBytes)
+		body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	}
 	// create request
 	req, err := http.NewRequest(strings.ToUpper(method), uri, body)
@@ -106,7 +106,9 @@ func Curl(uri string, method string, token string, validCodes []int, payload str
 				ErrorLogger.Printf("unexpected error with no response; error was: '%s', retrying attempt %d of %d in %d seconds, please wait...\n", err, attempts+1, maxAttempts, delaySecs)
 			}
 		} else {
-			ErrorLogger.Printf("invalid response code %d, retrying attempt %d of %d in %d seconds, please wait...\n", resp.StatusCode, attempts+1, maxAttempts, delaySecs)
+			// read http response body
+			respBody, _ := io.ReadAll(resp.Body)
+			ErrorLogger.Printf("invalid response code: '%d', body: '%s'; retrying attempt %d of %d in %d seconds, please wait...\n", resp.StatusCode, respBody, attempts+1, maxAttempts, delaySecs)
 		}
 		// wait for next attempt
 		time.Sleep(time.Duration(int64(delaySecs)) * time.Second)
