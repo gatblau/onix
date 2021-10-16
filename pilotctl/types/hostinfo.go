@@ -11,15 +11,12 @@ package types
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/shirou/gopsutil/cpu"
 	hostUtil "github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
-	"io/ioutil"
 	"math"
 	"net"
-	"os"
 	"strings"
 	"time"
 )
@@ -86,47 +83,8 @@ func NewHostInfo() (*HostInfo, error) {
 		CPUs:        cpus,
 		MacAddress:  macAddr,
 	}
-	// initialises host uuid
-	_, hostuuid, err := info.InitHostUUID()
-	if err != nil {
-		return nil, fmt.Errorf("cannot initialise host UUID: %s\n", err)
-	}
-	// set the uuid value
-	info.HostUUID = hostuuid
 	// return
 	return info, nil
-}
-
-// InitHostUUID check if there is a hostUUID file and if not generates one
-// loads the UUID value in host info
-// and works out a unique reference for the host that is not the machine id, as machine id is not unique
-// e.g. cloning a VM will have the same machine-id, hence using a combination of hostname and machine id for uniqueness
-// not using system UUID as it requires administrative privileges
-func (h *HostInfo) InitHostUUID() (created bool, hostUUID string, err error) {
-	// check if .hostUUID exists
-	_, err = os.Stat(".hostUUID")
-	// if not, creates one
-	if err != nil {
-		hostUUID = newUUID()
-		err = os.WriteFile(".hostUUID", []byte(hostUUID), os.ModePerm)
-		// if file could not be created
-		if err != nil {
-			// it should not continue
-			return false, "", fmt.Errorf("cannot create .hostUUID file: %s", err)
-		}
-		// UUID was created
-		created = true
-	} else {
-		// if the file exists
-		bytes, err := ioutil.ReadFile(".hostUUID")
-		if err != nil {
-			// it should not continue
-			return false, "", fmt.Errorf("cannot create .hostUUID file: %s", err)
-		}
-		hostUUID = fmt.Sprintf("%s", bytes[:])
-		created = false
-	}
-	return created, hostUUID, nil
 }
 
 func (h *HostInfo) String() string {

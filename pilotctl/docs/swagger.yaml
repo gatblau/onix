@@ -711,6 +711,24 @@ paths:
       summary: Get the API of an Artisan Package
       tags:
       - Registry
+  /pub:
+    get:
+      description: Retrieve the service public PGP key used to verify the authenticity
+        of the service by pilot agents
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Retrieve the service public PGP key
+      tags:
+      - PGP
   /user:
     get:
       description: |-

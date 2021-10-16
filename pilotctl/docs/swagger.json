@@ -734,6 +734,32 @@
                 }
             }
         },
+        "/pub": {
+            "get": {
+                "description": "Retrieve the service public PGP key used to verify the authenticity of the service by pilot agents",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "PGP"
+                ],
+                "summary": "Retrieve the service public PGP key",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/user": {
             "get": {
                 "description": "Retrieve the logged user principal containing a list of access controls granted to the user\nuse it primarily to log in user interface services and retrieve a list of access controls to inform which\noperations are available to the user via the user interface",
