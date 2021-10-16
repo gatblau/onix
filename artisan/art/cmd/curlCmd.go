@@ -26,6 +26,7 @@ type CurlCmd struct {
 	delaySecs     int
 	timeoutSecs   int
 	headers       []string
+	outFile       string
 }
 
 func NewCurlCmd() *CurlCmd {
@@ -42,6 +43,7 @@ func NewCurlCmd() *CurlCmd {
 	c.cmd.Flags().IntSliceVarP(&c.validCodes, "valid-codes", "c", []int{200, 201, 202, 203, 204, 205, 206, 207, 208, 226}, "comma separated list of HTTP status codes considered valid (e.g. no retry will be triggered)")
 	c.cmd.Flags().IntSliceVarP(&c.addValidCodes, "add-valid-codes", "C", []int{}, "comma separated list of additional HTTP status codes considered valid (e.g. no retry will be triggered)")
 	c.cmd.Flags().StringVarP(&c.method, "method", "X", "GET", "the http method to use (i.e. POST, PUT, GET, DELETE)")
+	c.cmd.Flags().StringVarP(&c.outFile, "out-file", "o", "", "the name of the file where the http response body should be saved; if not set, the response is not saved but printed to stdout")
 	c.cmd.Flags().StringVarP(&c.payload, "payload", "d", "", "a string with the payload to be sent in the body of the http request")
 	c.cmd.Flags().StringVarP(&c.file, "file", "f", "", "the location of a file which content is to be sent in the body of the http request")
 	c.cmd.Flags().StringSliceVarP(&c.headers, "headers", "H", nil, "a comma separated list of http headers (format 'key1:value1','key2:value2,...,'keyN:valueN')")
@@ -58,5 +60,5 @@ func (c *CurlCmd) Run(cmd *cobra.Command, args []string) {
 		uname, pwd := core.UserPwd(c.creds)
 		token = core.BasicToken(uname, pwd)
 	}
-	core.Curl(uri, c.method, token, append(c.validCodes, c.addValidCodes...), c.payload, c.file, c.maxAttempts, c.delaySecs, c.timeoutSecs, c.headers)
+	core.Curl(uri, c.method, token, append(c.validCodes, c.addValidCodes...), c.payload, c.file, c.maxAttempts, c.delaySecs, c.timeoutSecs, c.headers, c.outFile)
 }
