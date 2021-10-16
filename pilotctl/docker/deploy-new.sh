@@ -8,10 +8,10 @@
 #    to be licensed under the same terms as the rest of the code.
 #
 
-
 # functions
 RNDPASS () {
-  openssl rand -base64 16
+#  echo Adm1n1strat0R
+  LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16
 }
 
 # create new .env
@@ -41,7 +41,7 @@ CIT_MONGOGUI=docker.io/mongo-express:latest
 CIT_POSTGRES=docker.io/postgres:13
 CIT_POSTGRESGUI=docker.io/dpage/pgadmin4:latest
 CIT_OX_APP=quay.io/gatblau/onix-snapshot:v0.0.4-1af14bb-021021131813
-CIT_PILOTCTL_APP=quay.io/gatblau/pilotctl:0.0.4-081021093913126-9ea4c9e2bd
+CIT_PILOTCTL_APP=quay.io/gatblau/pilotctl:0.0.4-161021085624494-f2346825d0
 CIT_ARTREG_APP=quay.io/gatblau/artisan-registry:0.0.4-011021162133879-a3dedecb3f-RC1
 CIT_DBMAN=quay.io/gatblau/dbman-snapshot:v0.0.4-d4fb6f7-031020001129
 CIT_EVRMONGO_APP=quay.io/gatblau/pilotctl-evr-mongodb:0.0.4-300921174051295-11aab8b6cc
@@ -244,7 +244,7 @@ art curl -X POST \
   http://localhost:8086/db/deploy 2>&1
 
 echo "Waiting for Onix API..."
-art curl -X GET -a 25 /
+art curl -X GET -a 25 "${WAPI_URL}":"${WAPI_PORT}"
 
 echo "Updating Onix admin password from default ..."
 art curl -X PUT \
