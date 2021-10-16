@@ -48,7 +48,7 @@ func BasicToken(user string, pwd string) string {
 	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
 }
 
-func Curl(uri string, method string, token string, validCodes []int, payload string, file string, maxAttempts int, delaySecs int, timeoutSecs int, headers []string) {
+func Curl(uri string, method string, token string, validCodes []int, payload string, file string, maxAttempts int, delaySecs int, timeoutSecs int, headers []string, outputFile string) {
 	var (
 		bodyBytes []byte    = nil
 		body      io.Reader = nil
@@ -125,7 +125,20 @@ func Curl(uri string, method string, token string, validCodes []int, payload str
 		if err != nil {
 			WarningLogger.Printf("cannot print response body: %s\n", err)
 		} else {
-			InfoLogger.Println(string(b[:]))
+			if len(outputFile) > 0 {
+				// saves the response to a file
+				abs, err := filepath.Abs(outputFile)
+				if err != nil {
+					RaiseErr("cannot save response body to %s: %s\n", outputFile, err)
+				}
+				err = os.WriteFile(abs, b, 644)
+				if err != nil {
+					RaiseErr("cannot save response body to %s: %s\n", abs, err)
+				}
+			} else {
+				// prints the response to sdt out
+				fmt.Println(string(b[:]))
+			}
 		}
 	}
 }
