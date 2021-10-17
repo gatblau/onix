@@ -5,7 +5,7 @@ OPTIONS='%-40s | %-40s | %-40s \n'
 . .env
 
 # Display summary for developer/tester
-echo "Technical Info"
+echo "Credential Info"
 echo
 
 printf "$OPTIONS" "------------" "------------" "------------"
@@ -18,7 +18,7 @@ printf "$OPTIONS" "Local Artisan Swagger" "http://localhost:${ART_REG_PORT}/api/
 printf "$OPTIONS" "PilotCtl database (direct Postgres)" "http://localhost:5432" "${PG_ADMIN_USER}:${PG_ADMIN_PWD}"
 printf "$OPTIONS" "Pilotctl database (Web GUI)" "http://localhost:8083" "admin@local.com:${PG_ADMIN_PWD}"
 printf "$OPTIONS" "------------" "------------" "------------"
-printf "$OPTIONS" "Demo Artisan Registry" "http://artreg.apsedge.io/api/index.html" "Please contact for credentials"
+printf "$OPTIONS" "Demo Artisan Registry" "artisan.apsedge.io" "Please contact for credentials"
 printf "$OPTIONS" "------------" "------------" "------------"
 
 echo
