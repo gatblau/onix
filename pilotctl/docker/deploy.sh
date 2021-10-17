@@ -8,33 +8,20 @@
 #    to be licensed under the same terms as the rest of the code.
 #
 
-# CURL options
-OPTIONS="-v --silent --show-error -f -L --max-redirs 3 --retry 10 --retry-connrefused --retry-delay 5 --max-time 120"
-CURL_MAXRETRY=25
-CURL_DELAY=5
-
-
 # functions
+# NB. For dev purposes, you may wish to set a specific password for everything - if so,
+# just remark out the main line in the below function and replace with "echo mysinglepassword" etc.
 RNDPASS () {
-  tr -dc A-Za-z0-9 </dev/urandom | head -c 16
+#  echo Adm1n1strat0R
+  LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16
 }
-
-CURL2xx() {
-  CURL_CODE=0
-  CURL_RETRY=0
-  while [[ ("$CURL_CODE" < 200 || "$CURL_CODE" > 299) && "$CURL_RETRY" != "$CURL_MAXRETRY" ]]
-  do
-    #echo DBG curl -s -o /dev/nul -w %{http_code} "$@"
-    CURL_CODE=$(curl -s -o /dev/nul -w %{http_code} "$@")
-    if [[ ("$CURL_CODE" < 200 || "$CURL_CODE" > 299) && "$CURL_RETRY" != "$CURL_MAXRETRY" ]]
-    then
-      ((CURL_RETRY=CURL_RETRY+1))
-      echo "Got return code $CURL_CODE, pausing for $CURL_DELAY seconds (retry $CURL_RETRY of $CURL_MAXRETRY) ..."
-      sleep $CURL_DELAY
-    fi
-  done
+ADD_DATA () {
+  art curl -X PUT \
+    "${WAPI_URL}:${WAPI_PORT}$1" \
+    -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" \
+    -H "accept: application/json","Content-Type: application/json" \
+    -f "$2" && printf "\n"
 }
-
 
 # create new .env
 echo Generating environment file
@@ -45,8 +32,7 @@ cat > .env <<EOF
 ################################################################################################
 
 # Artisan registry to use
-#ART_REG_URI=http://artreg-app
-ART_REG_URI=http://demo.dcglab.co.uk
+ART_REG_URI=http://localhost:8082
 ART_REG_USER=admin
 ART_REG_PWD=$(RNDPASS)
 ART_REG_PORT=8082
@@ -55,6 +41,7 @@ ART_REG_BACKEND_PORT=8081
 
 
 # Docker network to use
+# NB. Make sure this doesn't clash with any other Docker networks for security reasons
 DOCKER_NETWORK=onix
 
 # Container image tags
@@ -63,7 +50,7 @@ CIT_MONGOGUI=docker.io/mongo-express:latest
 CIT_POSTGRES=docker.io/postgres:13
 CIT_POSTGRESGUI=docker.io/dpage/pgadmin4:latest
 CIT_OX_APP=quay.io/gatblau/onix-snapshot:v0.0.4-1af14bb-021021131813
-CIT_PILOTCTL_APP=quay.io/gatblau/pilotctl:0.0.4-081021093913126-9ea4c9e2bd
+CIT_PILOTCTL_APP=quay.io/gatblau/pilotctl:0.0.4-161021085624494-f2346825d0
 CIT_ARTREG_APP=quay.io/gatblau/artisan-registry:0.0.4-011021162133879-a3dedecb3f-RC1
 CIT_DBMAN=quay.io/gatblau/dbman-snapshot:v0.0.4-d4fb6f7-031020001129
 CIT_EVRMONGO_APP=quay.io/gatblau/pilotctl-evr-mongodb:0.0.4-300921174051295-11aab8b6cc
@@ -139,6 +126,9 @@ echo "Environment file (.env) has been created"
 # source the automatically created .env file
 set -o allexport; source .env; set +o allexport
 
+# Ensure conf directory exists
+[ ! -d "./conf" ] && mkdir conf
+
 # create JSON file for PGAdmin GUI
 cat > ./conf/postgres_servers.json <<EOF
 {
@@ -176,24 +166,29 @@ CURRENTPASS=
 echo "Checking Nexus for temporary password file ..."
 while [ -z "$CURRENTPASS" ]
 do
-  sleep 2
+  echo "Password file not found - attempting retry in 5 seconds"
+  sleep 5
   CURRENTPASS=$(docker exec nexus cat /nexus-data/admin.password)
 done
 
+echo Wait for Nexus API
+art curl -X GET \
+  -a 25 \
+  http://localhost:${ART_REG_BACKEND_PORT}/service/rest/v1/status \
+  -H 'accept: application/json'
+
 echo "Updating admin password ..."
-CURL2xx -X PUT \
+art curl -X PUT \
   -u admin:${CURRENTPASS} \
   http://localhost:${ART_REG_BACKEND_PORT}/service/rest/v1/security/users/admin/change-password \
-  -H 'accept: application/json' \
-  -H 'Content-Type: text/plain' \
+  -H 'accept: application/json','Content-Type: text/plain' \
   -d "${ART_REG_PWD}"
 
 echo "Creating new Artisan repository ..."
-CURL2xx -X POST \
+art curl -X POST \
   -u admin:${ART_REG_PWD} \
   http://localhost:${ART_REG_BACKEND_PORT}/service/rest/v1/repositories/raw/hosted \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
+  -H 'accept: application/json','Content-Type: application/json' \
   -d '{
   "name": "artisan",
   "online": true,
@@ -215,15 +210,13 @@ CURL2xx -X POST \
   }
 }'
 echo "Disabling anonymous access ..."
-CURL2xx -X PUT \
+art curl -X PUT \
   -u admin:${ART_REG_PWD} \
   http://localhost:${ART_REG_BACKEND_PORT}/service/rest/v1/security/anonymous \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
+  -H 'accept: application/json','Content-Type: application/json' \
   -d '{"enabled": false}'
 
 # create events receiver JSON for all events receivers
-[ ! -d "./conf" ] && mkdir conf
 cat > ./conf/ev_receive.json <<EOF
 {
   "event_receivers": [
@@ -241,82 +234,82 @@ docker-compose up -d
 
 # setup the onix database
 echo Creating Onix database via DBMan ...
-curl $OPTIONS \
+art curl -X POST \
+  -a 25 \
+  -C 401 \
   -H "Content-Type: application/json" \
-  -X POST http://localhost:8085/db/create 2>&1
-curl $OPTIONS \
+  http://localhost:8085/db/create 2>&1
+art curl -X POST \
+  -C 401 \
   -H "Content-Type: application/json" \
-  -X POST http://localhost:8085/db/deploy 2>&1
+  http://localhost:8085/db/deploy 2>&1
 
 echo Creating Pilotctl database via DBMan ...
-curl $OPTIONS \
+art curl -X POST \
+  -C 401 \
   -H "Content-Type: application/json" \
-  -X POST http://localhost:8086/db/create 2>&1
-curl $OPTIONS \
+  http://localhost:8086/db/create 2>&1
+art curl -X POST \
+  -C 401 \
   -H "Content-Type: application/json" \
-  -X POST http://localhost:8086/db/deploy 2>&1
+  http://localhost:8086/db/deploy 2>&1
 
+echo "Waiting for Onix API..."
+art curl -X GET -a 25 "${WAPI_URL}":"${WAPI_PORT}"
 
 echo "Updating Onix admin password from default ..."
-until contents=$(curl \
-  -H "Authorization: Basic $(printf '%s:%s' admin 0n1x | base64)" \
+art curl -X PUT \
+  -a 25 \
+  -u "admin:0n1x" \
   -H "Content-Type: application/json" \
-  -X PUT ${WAPI_URL}:${WAPI_PORT}/user/${ONIX_HTTP_ADMIN_USER}/pwd \
+  "${WAPI_URL}":"${WAPI_PORT}"/user/"${ONIX_HTTP_ADMIN_USER}"/pwd \
   -d "{\"pwd\":\"${ONIX_HTTP_ADMIN_PWD}\"}"
-)
-do
-  sleep 3
-done
 
 echo "Creating special pilotctl user in Onix ..."
-until contents=$(curl \
-  -H "Authorization: Basic $(printf '%s:%s' ${ONIX_HTTP_ADMIN_USER} ${ONIX_HTTP_ADMIN_PWD} | base64)" \
-  -H "Content-Type: application/json" \
-  -X PUT ${WAPI_URL}:${WAPI_PORT}/user/ONIX_PILOTCTL \
+art curl -X PUT \
+  -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" \
+  -H 'Content-Type: application/json' \
+  "${WAPI_URL}":"${WAPI_PORT}"/user/ONIX_PILOTCTL \
   -d "{\"email\":\"${PILOTCTL_ONIX_EMAIL}\", \"name\":\"${PILOTCTL_ONIX_USER}\", \"pwd\":\"${PILOTCTL_ONIX_PWD}\", \"service\":\"false\", \"acl\":\"*:*:*\"}"
-)
-do
-  sleep 3
-done
 
 # create required test items
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/item/ART_FX:LIST" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/fx.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/item/ORG_GRP:ACME" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/org-grp-acme.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/item/ORG:OPCO_A" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/org-opco-a.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/item/ORG:OPCO_B" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/org-opco-b.json" && printf "\n"
+ADD_DATA "/item/ART_FX:LIST" "items/fx.json"
+ADD_DATA "/item/ORG_GRP:ACME" "items/org-grp-acme.json"
+ADD_DATA "/item/ORG:OPCO_A" "items/org-opco-a.json"
+ADD_DATA "/item/ORG:OPCO_B" "items/org-opco-b.json"
 # areas
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/item/AREA:EAST" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/area-east.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/item/AREA:WEST" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/area-west.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/item/AREA:NORTH" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/area-north.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/item/AREA:SOUTH" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/area-south.json" && printf "\n"
+ADD_DATA "/item/AREA:EAST" "items/area-east.json"
+ADD_DATA "/item/AREA:WEST" "items/area-west.json"
+ADD_DATA "/item/AREA:NORTH" "items/area-north.json"
+ADD_DATA "/item/AREA:SOUTH" "items/area-south.json"
 # locations
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/item/LOCATION:LONDON_PADDINGTON" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/location-london-paddington.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/item/LOCATION:LONDON_EUSTON" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/location-london-euston.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/item/LOCATION:LONDON_BANK" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/location-london-bank.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/item/LOCATION:MANCHESTER_PICCADILLY" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/location-manchester-piccadilly.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/item/LOCATION:MANCHESTER_CHORLTON" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@items/location-manchester-chorlton.json" && printf "\n"
+ADD_DATA "/item/LOCATION:LONDON_PADDINGTON" "items/location-london-paddington.json"
+ADD_DATA "/item/LOCATION:LONDON_EUSTON" "items/location-london-euston.json"
+ADD_DATA "/item/LOCATION:LONDON_BANK" "items/location-london-bank.json"
+ADD_DATA "/item/LOCATION:MANCHESTER_PICCADILLY" "items/location-manchester-piccadilly.json"
+ADD_DATA "/item/LOCATION:MANCHESTER_CHORLTON" "items/location-manchester-chorlton.json"
 
 # create required test links
 # org group -> org
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/ORG_GRP:ACME|ORG:OPCO_A" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/acme-opco-a.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/ORG_GRP:ACME|ORG:OPCO_B" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/acme-opco-b.json" && printf "\n"
+ADD_DATA "/link/ORG_GRP:ACME|ORG:OPCO_A" "links/acme-opco-a.json"
+ADD_DATA "/link/ORG_GRP:ACME|ORG:OPCO_B" "links/acme-opco-b.json"
 # org group -> area
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/ORG_GRP:ACME|AREA:EAST" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/acme-east.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/ORG_GRP:ACME|AREA:WEST" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/acme-west.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/ORG_GRP:ACME|AREA:NORTH" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/acme-north.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/ORG_GRP:ACME|AREA:SOUTH" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/acme-south.json" && printf "\n"
+ADD_DATA "/link/ORG_GRP:ACME|AREA:EAST" "links/acme-east.json"
+ADD_DATA "/link/ORG_GRP:ACME|AREA:WEST" "links/acme-west.json"
+ADD_DATA "/link/ORG_GRP:ACME|AREA:NORTH" "links/acme-north.json"
+ADD_DATA "/link/ORG_GRP:ACME|AREA:SOUTH" "links/acme-south.json"
 # org -> location
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/ORG:OPCO_A|LOCATION:LONDON_PADDINGTON" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/opco-a-london-paddington.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/ORG:OPCO_A|LOCATION:LONDON_EUSTON" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/opco-a-london-paddington.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/ORG:OPCO_A|LOCATION:LONDON_BANK" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/opco-a-london-paddington.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/ORG:OPCO_A|LOCATION:MANCHESTER_PICCADILLY" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/opco-b-manchester-piccadilly.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/ORG:OPCO_A|LOCATION:MANCHESTER_CHORLTON" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/opco-b-manchester-chorlton.json" && printf "\n"
+ADD_DATA "/link/ORG:OPCO_A|LOCATION:LONDON_PADDINGTON" "links/opco-a-london-paddington.json"
+ADD_DATA "/link/ORG:OPCO_A|LOCATION:LONDON_EUSTON" "links/opco-a-london-paddington.json"
+ADD_DATA "/link/ORG:OPCO_A|LOCATION:LONDON_BANK" "links/opco-a-london-paddington.json"
+ADD_DATA "/link/ORG:OPCO_A|LOCATION:MANCHESTER_PICCADILLY" "links/opco-b-manchester-piccadilly.json"
+ADD_DATA "/link/ORG:OPCO_A|LOCATION:MANCHESTER_CHORLTON" "links/opco-b-manchester-chorlton.json"
 # area -> location
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/AREA:SOUTH|LOCATION:LONDON_PADDINGTON" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/south-london-paddington.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/AREA:SOUTH|LOCATION:LONDON_EUSTON" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/south-london-euston.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/AREA:SOUTH|LOCATION:LONDON_BANK" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/south-london-bank.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/AREA:NORTH|LOCATION:MANCHESTER_PICCADILLY" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/north-manchester-piccadilly.json" && printf "\n"
-curl $OPTIONS -X PUT "${WAPI_URL}:${WAPI_PORT}/link/AREA:NORTH|LOCATION:MANCHESTER_CHORLTON" -u "${ONIX_HTTP_ADMIN_USER}:${ONIX_HTTP_ADMIN_PWD}" -H  "accept: application/json" -H  "Content-Type: application/json" -d "@links/north-manchester-chorlton.json" && printf "\n"
+ADD_DATA "/link/AREA:SOUTH|LOCATION:LONDON_PADDINGTON" "links/south-london-paddington.json"
+ADD_DATA "/link/AREA:SOUTH|LOCATION:LONDON_EUSTON" "links/south-london-euston.json"
+ADD_DATA "/link/AREA:SOUTH|LOCATION:LONDON_BANK" "links/south-london-bank.json"
+ADD_DATA "/link/AREA:NORTH|LOCATION:MANCHESTER_PICCADILLY" "links/north-manchester-piccadilly.json"
+ADD_DATA "/link/AREA:NORTH|LOCATION:MANCHESTER_CHORLTON" "links/north-manchester-chorlton.json"
 
 # stop dbman instances
 docker-compose stop pilotctl-dbman
