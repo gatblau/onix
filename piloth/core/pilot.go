@@ -13,6 +13,7 @@ import (
 	"log/syslog"
 	"math"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -116,14 +117,18 @@ func (p *Pilot) Start() {
 +---------------------------------------------------------+`)
 	InfoLogger.Printf("launching pilot version %s\n", Version)
 	InfoLogger.Printf("using Host UUID = '%s'\n", p.info.HostUUID)
-	// creates a new SysLog collector
-	collector, err := NewCollector("0.0.0.0", p.cfg.getSyslogPort())
-	if err != nil {
-		ErrorLogger.Printf("cannot create pilot syslog collector: %s\n", err)
-		os.Exit(1)
-	}
 	// starts the collector service
-	collector.Start()
+	if collectorEnabled() {
+		// creates a new SysLog collector
+		collector, err := NewCollector("0.0.0.0", p.cfg.getSyslogPort())
+		if err != nil {
+			ErrorLogger.Printf("cannot create pilot syslog collector: %s\n", err)
+			os.Exit(1)
+		}
+		collector.Start()
+	} else {
+		InfoLogger.Printf("syslog collector has been disabled\n")
+	}
 	// check artisan cli is installed
 	if !commandExists("art") {
 		ErrorLogger.Printf("cannot find artisan CLI, ensure it is installed before running pilot\n")
@@ -236,4 +241,22 @@ func (p *Pilot) debug(msg string, a ...interface{}) {
 	if len(os.Getenv("PILOT_DEBUG")) > 0 {
 		DebugLogger.Printf(msg, a...)
 	}
+}
+
+// collectorEnabled determine if the log collector should be enabled
+// uses PILOT_LOG_COLLECTION, if its value is not set then the collector is enabled by default
+// to disable the collector set PILOT_LOG_COLLECTION=false (possible values "0", "f", "F", "false", "FALSE", "False")
+func collectorEnabled() (enabled bool) {
+	var err error
+	collection := os.Getenv("PILOT_LOG_COLLECTION")
+	if len(collection) > 0 {
+		enabled, err = strconv.ParseBool(collection)
+		if err != nil {
+			WarningLogger.Printf("invalid format for PILOT_LOG_COLLECTION variable: %s\n; log collection is enabled by default", err)
+			enabled = true
+		}
+	} else {
+		enabled = true
+	}
+	return enabled
 }
