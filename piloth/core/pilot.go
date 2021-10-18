@@ -43,12 +43,8 @@ func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
 	if err != nil {
 		return nil, err
 	}
-	logsWriter, err := syslog.New(syslog.LOG_ALERT, "onix-pilot")
-	if err != nil {
-		return nil, err
-	}
 	// create a new job worker
-	worker := NewCmdRequestWorker(logsWriter)
+	worker := NewCmdRequestWorker()
 	// start the worker
 	worker.Start()
 	r, err := NewPilotCtl(worker, hostInfo)
