@@ -63,7 +63,7 @@ func NewWorker(run Runnable) *Worker {
 }
 
 // NewCmdRequestWorker create a new worker to process pilotctl command requests
-func NewCmdRequestWorker(logger *syslog.Writer) *Worker {
+func NewCmdRequestWorker() *Worker {
 	return NewWorker(run)
 }
 
