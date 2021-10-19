@@ -13,8 +13,6 @@ import (
 	"log"
 	"os/exec"
 	"os/user"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -43,25 +41,6 @@ func newToken(hostUUID, hostIP, hostName string) string {
 	return reverse(
 		base64.StdEncoding.EncodeToString(
 			[]byte(fmt.Sprintf("%s|%s|%s|%d", hostUUID, hostIP, hostName, time.Now().Unix()))))
-}
-
-func readToken(token string) (string, bool, error) {
-	// read token by:
-	// 1. reverse string
-	// 2. base 64 decode
-	// 3. break down into parts
-	value, err := base64.StdEncoding.DecodeString(reverse(token))
-	if err != nil {
-		return "", false, err
-	}
-	str := string(value)
-	parts := strings.Split(str, "|")
-	tokenTime, err := strconv.ParseInt(parts[1], 10, 64)
-	if err != nil {
-		return "", false, err
-	}
-	timeOk := (time.Now().Unix() - tokenTime) < (5 * 60)
-	return parts[0], timeOk, nil
 }
 
 func commandExists(cmd string) bool {

@@ -1,5 +1,3 @@
-package core
-
 /*
   Onix Config Manager - Pilot
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -7,6 +5,9 @@ package core
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package core
+
 import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
@@ -32,35 +33,28 @@ func (k ConfigKey) String() string {
 	switch k {
 	case PilotLogLevel:
 		return "PILOT_LOG_LEVEL"
-	case PilotCtlUri:
-		return "PILOTCTL_URI"
-	case PilotArtRegUser:
-		return "PILOT_ART_REG_USER"
-	case PilotArtRegPwd:
-		return "PILOT_ART_REG_PWD"
 	case PilotSyslogPort:
 		return "PILOT_SYSLOG_PORT"
+	case PilotActivationURI:
+		return "PILOT_ACTIVATION_URI"
 	}
 	return ""
 }
 
 const (
 	PilotLogLevel ConfigKey = iota
-	PilotCtlUri
-	PilotArtRegUser
-	PilotArtRegPwd
 	PilotSyslogPort
+	PilotActivationURI
 )
 
-func (c *Config) getPilotCtlURI() string {
-	uri := c.Get(PilotCtlUri)
+func (c *Config) getActivationURI() string {
+	uri := c.Get(PilotActivationURI)
 	if len(uri) == 0 {
-		ErrorLogger.Printf("PILOTCTL_URI not defined\n")
+		ErrorLogger.Printf("cannot launch pilot: missing %s\n", PilotActivationURI.String())
 		os.Exit(1)
 	}
-	uri = strings.ToLower(uri)
 	if !strings.HasPrefix(uri, "http") {
-		ErrorLogger.Printf("PILOTCTL_URI does not define a protocol (preferably use https:// - http links are not secure)\n")
+		ErrorLogger.Printf("activation URI %s=%s is missing protocol scheme\n", PilotActivationURI.String(), uri)
 		os.Exit(1)
 	}
 	return uri
@@ -126,7 +120,7 @@ func CurrentPath() string {
 	return path
 }
 
-func ConfFile() string {
+func AkFile() string {
 	return fmt.Sprintf("%s/.pilot", CurrentPath())
 }
 

@@ -8,10 +8,15 @@ package core
   to be licensed under the same terms as the rest of the code.
 */
 import (
+	"bytes"
+	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	ctl "github.com/gatblau/onix/pilotctl/types"
-	"log/syslog"
+	"io"
+	"io/ioutil"
 	"math"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -25,7 +30,6 @@ type Pilot struct {
 	cfg       *Config
 	info      *ctl.HostInfo
 	ctl       *PilotCtl
-	logs      *syslog.Writer
 	worker    *Worker
 	connected bool
 	// A duration string is a possibly signed sequence of
@@ -36,7 +40,7 @@ type Pilot struct {
 }
 
 func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
-	Activate(hostInfo)
+	activate(hostInfo)
 	// read configuration
 	cfg := &Config{}
 	err := cfg.Load()
@@ -59,46 +63,6 @@ func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
 	}
 	// return a new pilot
 	return p, nil
-}
-
-func Activate(info *ctl.HostInfo) {
-	// first check for a valid activation key
-	if !AkExist() {
-		// if no activation key is present the exit
-		ErrorLogger.Printf("cannot launch pilot: missing activation key\n")
-		// TODO: initiate activation protocol
-		os.Exit(1)
-	}
-	// before doing anything, verify activation key
-	ak, err := LoadAK()
-	if err != nil {
-		// if it cannot load activation key exit
-		ErrorLogger.Printf("cannot launch pilot: cannot load activation key, %s\n", err)
-		os.Exit(1)
-	}
-	// set the activation
-	A = ak
-	// check expiration date
-	if A.Expiry.Before(time.Now()) {
-		// if activation expired the exit
-		ErrorLogger.Printf("cannot launch pilot: activation key expired\n")
-		os.Exit(1)
-	}
-	// check if the mac-adress is valid
-	validMac := false
-	for _, address := range info.MacAddress {
-		if address == A.MacAddress {
-			validMac = true
-			break
-		}
-	}
-	if !validMac {
-		// if activation expired the exit
-		ErrorLogger.Printf("cannot launch pilot: invalid mac address\n")
-		os.Exit(1)
-	}
-	// set host UUID
-	info.HostUUID = A.HostUUID
 }
 
 func (p *Pilot) Start() {
@@ -255,4 +219,94 @@ func collectorEnabled() (enabled bool) {
 		enabled = true
 	}
 	return enabled
+}
+
+func activate(info *ctl.HostInfo) {
+	// first check for a valid activation key
+	if !AkExist() {
+		InfoLogger.Printf("cannot find activation key, initiating activation protocol\n")
+		// fetch remote key
+		if fetched, err := fetchToken(info); !fetched {
+			ErrorLogger.Printf("cannot retrieve activation key: %s\n", err)
+			os.Exit(1)
+		}
+	}
+	// before doing anything, verify activation key
+	ak, err := LoadAK()
+	if err != nil {
+		// if it cannot load activation key exit
+		ErrorLogger.Printf("cannot launch pilot: cannot load activation key, %s\n", err)
+		os.Exit(1)
+	}
+	// set the activation
+	A = ak
+	// check expiration date
+	if A.Expiry.Before(time.Now()) {
+		// if activation expired the exit
+		ErrorLogger.Printf("cannot launch pilot: activation key expired\n")
+		os.Exit(1)
+	}
+	// check if the mac-adress is valid
+	validMac := false
+	for _, address := range info.MacAddress {
+		if address == A.MacAddress {
+			validMac = true
+			break
+		}
+	}
+	if !validMac {
+		// if activation expired the exit
+		ErrorLogger.Printf("cannot launch pilot: invalid mac address\n")
+		os.Exit(1)
+	}
+	// set host UUID
+	info.HostUUID = A.HostUUID
+}
+
+func fetchToken(info *ctl.HostInfo) (bool, error) {
+	akreq, err := NewAKRequest(
+		AKRequestEnvelope{
+			MacAddress: info.MacAddress[0],
+			IpAddress:  info.HostIP,
+			Hostname:   info.HostName,
+			Time:       time.Now(),
+		})
+	if err != nil {
+		return false, fmt.Errorf("cannot sign activation request: %s\n", err)
+	}
+	body, err := json.Marshal(akreq)
+	if err != nil {
+		return false, fmt.Errorf("cannot marshal activation request: %s\n", err)
+	}
+	cf := new(Config)
+	c := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				// TODO: set to false if in production!!!
+				InsecureSkipVerify: true,
+			},
+		},
+		Timeout: time.Second * 60,
+	}
+	req, err := http.NewRequest("POST", cf.getActivationURI(), io.NopCloser(bytes.NewBuffer(body)))
+	if err != nil {
+		return false, fmt.Errorf("cannot create activation request: %s\n", err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := c.Do(req)
+	if err != nil {
+		return false, fmt.Errorf("cannot send http request: %s\n", err)
+	}
+	if resp.StatusCode != http.StatusCreated {
+		return false, fmt.Errorf("activation http request failed with code %d: %s\n", resp.StatusCode, resp.Status)
+	}
+	ak, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return false, fmt.Errorf("cannot read activation key from http response: %s\n", err)
+	}
+	err = os.WriteFile(AkFile(), ak, 0600)
+	if err != nil {
+		return false, fmt.Errorf("cannot write activation file: %s\n", err)
+	}
+	return true, nil
 }

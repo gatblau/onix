@@ -15,6 +15,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	c "github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/ProtonMail/gopenpgp/v2/helper"
 	"os"
 	"time"
@@ -29,12 +30,12 @@ type AK struct {
 }
 
 func AkExist() bool {
-	_, err := os.Stat(ConfFile())
+	_, err := os.Stat(AkFile())
 	return err == nil
 }
 
 func LoadAK() (*AK, error) {
-	akBytes, err := os.ReadFile(ConfFile())
+	akBytes, err := os.ReadFile(AkFile())
 	if err != nil {
 		return nil, fmt.Errorf("cannot read activation key file: %s\n", err)
 	}
@@ -68,4 +69,40 @@ func decrypt(key string, ct string, iv string) string {
 	}
 	s := string(plaintext[:])
 	return s
+}
+
+type AKRequest struct {
+	Data      AKRequestEnvelope `json:"data"`
+	Signature string            `json:"signature"`
+}
+
+type AKRequestEnvelope struct {
+	MacAddress string    `json:"mac_address"`
+	IpAddress  string    `json:"ip_address"`
+	Hostname   string    `json:"hostname"`
+	Time       time.Time `json:"time"`
+}
+
+func NewAKRequest(data AKRequestEnvelope) (*AKRequest, error) {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("cannot serialise request envelope: %s\n", err)
+	}
+	pk, err := c.NewKeyFromArmored(decrypt(k, a, i))
+	if err != nil {
+		return nil, fmt.Errorf("cannot load signing key: %s\n", err)
+	}
+	kr, err := c.NewKeyRing(pk)
+	sig, err := kr.SignDetached(c.NewPlainMessageFromString(string(dataBytes[:])))
+	if err != nil {
+		return nil, fmt.Errorf("cannot sign request envelope: %s\n", err)
+	}
+	s, err := sig.GetArmored()
+	if err != nil {
+		return nil, fmt.Errorf("cannot retrieve request envelope armored signature: %s\n", err)
+	}
+	return &AKRequest{
+		Data:      data,
+		Signature: s,
+	}, nil
 }
