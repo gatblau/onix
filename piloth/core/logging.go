@@ -26,9 +26,4 @@ func init() {
 	WarningLogger = log.New(os.Stdout, "PILOT WARNING: ", log.Ldate|log.Ltime|log.Lmsgprefix|log.LUTC|log.Lmicroseconds)
 	ErrorLogger = log.New(os.Stderr, "PILOT ERROR: ", log.Ldate|log.Ltime|log.Lmsgprefix|log.LUTC|log.Lmicroseconds)
 	DebugLogger = log.New(os.Stdout, "PILOT DEBUG: ", log.Ldate|log.Ltime|log.Lmsgprefix|log.LUTC|log.Lmicroseconds)
-	w, err := syslog.New(syslog.LOG_ERR, "pilot")
-	if err != nil {
-		ErrorLogger.Printf("cannot create syslog writer: %s\n", err)
-	}
-	SyslogWriter = w
 }
