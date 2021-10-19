@@ -299,7 +299,7 @@ func (b *Builder) setUniqueIdName(repo *git.Repository) {
 	}
 	// get the current time
 	t := time.Now()
-	timeStamp := fmt.Sprintf("%02d%02d%02s%02d%02d%02d%s", t.Day(), t.Month(), strconv.Itoa(t.Year())[2:], t.Hour(), t.Minute(), t.Second(), strconv.Itoa(t.Nanosecond())[:3])
+	timeStamp := fmt.Sprintf("%04s%02d%02d%02d%02d%02d%s", strconv.Itoa(t.Year()), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), strconv.Itoa(t.Nanosecond())[:3])
 	b.uniqueIdName = fmt.Sprintf("%s%s", timeStamp, hash)
 }
 
