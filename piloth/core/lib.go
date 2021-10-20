@@ -11,8 +11,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"math"
+	"os"
 	"os/exec"
 	"os/user"
+	"strconv"
 	"time"
 )
 
@@ -46,4 +49,48 @@ func newToken(hostUUID, hostIP, hostName string) string {
 func commandExists(cmd string) bool {
 	_, err := exec.LookPath(cmd)
 	return err == nil
+}
+
+// nextInterval calculates the next retry interval using exponential backoff strategy
+// exponential backoff interval for registration retries
+// waitInterval = base * multiplier ^ n
+//   - base is the initial interval, ie, wait for the first retry
+//   - n is the number of failures that have occurred
+//   - multiplier is an arbitrary multiplier that can be replaced with any suitable value
+func nextInterval(failureCount float64) time.Duration {
+	// multiplier 2.0 yields 15s, 60s, 135s, 240s, 375s, 540s, etc
+	interval := 15 * math.Pow(2.0, failureCount)
+	// puts a maximum limit of 1 hour
+	if interval > 3600 {
+		interval = 3600
+	}
+	duration, err := time.ParseDuration(fmt.Sprintf("%fs", interval))
+	if err != nil {
+		ErrorLogger.Printf(err.Error())
+	}
+	return duration
+}
+
+// collectorEnabled determine if the log collector should be enabled
+// uses PILOT_LOG_COLLECTION, if its value is not set then the collector is enabled by default
+// to disable the collector set PILOT_LOG_COLLECTION=false (possible values "0", "f", "F", "false", "FALSE", "False")
+func collectorEnabled() (enabled bool) {
+	var err error
+	collection := os.Getenv("PILOT_LOG_COLLECTION")
+	if len(collection) > 0 {
+		enabled, err = strconv.ParseBool(collection)
+		if err != nil {
+			WarningLogger.Printf("invalid format for PILOT_LOG_COLLECTION variable: %s\n; log collection is enabled by default", err)
+			enabled = true
+		}
+	} else {
+		enabled = true
+	}
+	return enabled
+}
+
+func (p *Pilot) debug(msg string, a ...interface{}) {
+	if len(os.Getenv("PILOT_DEBUG")) > 0 {
+		DebugLogger.Printf(msg, a...)
+	}
 }

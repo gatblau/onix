@@ -8,17 +8,9 @@ package core
   to be licensed under the same terms as the rest of the code.
 */
 import (
-	"bytes"
-	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	ctl "github.com/gatblau/onix/pilotctl/types"
-	"io"
-	"io/ioutil"
-	"math"
-	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -27,15 +19,11 @@ var A *AK
 
 // Pilot host
 type Pilot struct {
-	cfg       *Config
-	info      *ctl.HostInfo
-	ctl       *PilotCtl
-	worker    *Worker
-	connected bool
-	// A duration string is a possibly signed sequence of
-	// decimal numbers, each with optional fraction and a unit suffix,
-	// such as "300ms", "-1.5h" or "2h45m".
-	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	cfg          *Config
+	info         *ctl.HostInfo
+	ctl          *PilotCtl
+	worker       *Worker
+	connected    bool
 	pingInterval time.Duration
 }
 
@@ -124,7 +112,7 @@ func (p *Pilot) register() {
 			break
 		}
 		// calculates next retry interval
-		interval := p.nextInterval(failures)
+		interval := nextInterval(failures)
 
 		// set the ping interval
 		// the registration call failed, need to retry
@@ -136,26 +124,6 @@ func (p *Pilot) register() {
 		// increment count
 		failures = failures + 1
 	}
-}
-
-// nextInterval calculates the next retry interval using exponential backoff strategy
-// exponential backoff interval for registration retries
-// waitInterval = base * multiplier ^ n
-//   - base is the initial interval, ie, wait for the first retry
-//   - n is the number of failures that have occurred
-//   - multiplier is an arbitrary multiplier that can be replaced with any suitable value
-func (p *Pilot) nextInterval(failureCount float64) time.Duration {
-	// multiplier 2.0 yields 15s, 60s, 135s, 240s, 375s, 540s, etc
-	interval := 15 * math.Pow(2.0, failureCount)
-	// puts a maximum limit of 1 hour
-	if interval > 3600 {
-		interval = 3600
-	}
-	duration, err := time.ParseDuration(fmt.Sprintf("%fs", interval))
-	if err != nil {
-		ErrorLogger.Printf(err.Error())
-	}
-	return duration
 }
 
 func (p *Pilot) ping() {
@@ -195,118 +163,4 @@ func (p *Pilot) ping() {
 		// waits for the requested interval
 		time.Sleep(p.pingInterval)
 	}
-}
-
-func (p *Pilot) debug(msg string, a ...interface{}) {
-	if len(os.Getenv("PILOT_DEBUG")) > 0 {
-		DebugLogger.Printf(msg, a...)
-	}
-}
-
-// collectorEnabled determine if the log collector should be enabled
-// uses PILOT_LOG_COLLECTION, if its value is not set then the collector is enabled by default
-// to disable the collector set PILOT_LOG_COLLECTION=false (possible values "0", "f", "F", "false", "FALSE", "False")
-func collectorEnabled() (enabled bool) {
-	var err error
-	collection := os.Getenv("PILOT_LOG_COLLECTION")
-	if len(collection) > 0 {
-		enabled, err = strconv.ParseBool(collection)
-		if err != nil {
-			WarningLogger.Printf("invalid format for PILOT_LOG_COLLECTION variable: %s\n; log collection is enabled by default", err)
-			enabled = true
-		}
-	} else {
-		enabled = true
-	}
-	return enabled
-}
-
-func activate(info *ctl.HostInfo) {
-	// first check for a valid activation key
-	if !AkExist() {
-		InfoLogger.Printf("cannot find activation key, initiating activation protocol\n")
-		// fetch remote key
-		if fetched, err := fetchToken(info); !fetched {
-			ErrorLogger.Printf("cannot retrieve activation key: %s\n", err)
-			os.Exit(1)
-		}
-	}
-	// before doing anything, verify activation key
-	ak, err := LoadAK()
-	if err != nil {
-		// if it cannot load activation key exit
-		ErrorLogger.Printf("cannot launch pilot: cannot load activation key, %s\n", err)
-		os.Exit(1)
-	}
-	// set the activation
-	A = ak
-	// check expiration date
-	if A.Expiry.Before(time.Now()) {
-		// if activation expired the exit
-		ErrorLogger.Printf("cannot launch pilot: activation key expired\n")
-		os.Exit(1)
-	}
-	// check if the mac-adress is valid
-	validMac := false
-	for _, address := range info.MacAddress {
-		if address == A.MacAddress {
-			validMac = true
-			break
-		}
-	}
-	if !validMac {
-		// if activation expired the exit
-		ErrorLogger.Printf("cannot launch pilot: invalid mac address\n")
-		os.Exit(1)
-	}
-	// set host UUID
-	info.HostUUID = A.HostUUID
-}
-
-func fetchToken(info *ctl.HostInfo) (bool, error) {
-	akreq, err := NewAKRequest(
-		AKRequestEnvelope{
-			MacAddress: info.MacAddress[0],
-			IpAddress:  info.HostIP,
-			Hostname:   info.HostName,
-			Time:       time.Now(),
-		})
-	if err != nil {
-		return false, fmt.Errorf("cannot sign activation request: %s\n", err)
-	}
-	body, err := json.Marshal(akreq)
-	if err != nil {
-		return false, fmt.Errorf("cannot marshal activation request: %s\n", err)
-	}
-	cf := new(Config)
-	c := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				// TODO: set to false if in production!!!
-				InsecureSkipVerify: true,
-			},
-		},
-		Timeout: time.Second * 60,
-	}
-	req, err := http.NewRequest("POST", cf.getActivationURI(), io.NopCloser(bytes.NewBuffer(body)))
-	if err != nil {
-		return false, fmt.Errorf("cannot create activation request: %s\n", err)
-	}
-	req.Header.Add("Content-Type", "application/json")
-	resp, err := c.Do(req)
-	if err != nil {
-		return false, fmt.Errorf("cannot send http request: %s\n", err)
-	}
-	if resp.StatusCode != http.StatusCreated {
-		return false, fmt.Errorf("activation http request failed with code %d: %s\n", resp.StatusCode, resp.Status)
-	}
-	ak, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return false, fmt.Errorf("cannot read activation key from http response: %s\n", err)
-	}
-	err = os.WriteFile(AkFile(), ak, 0600)
-	if err != nil {
-		return false, fmt.Errorf("cannot write activation file: %s\n", err)
-	}
-	return true, nil
 }
