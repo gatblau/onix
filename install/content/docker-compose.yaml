@@ -58,7 +58,7 @@ services:
     ports:
       - "8888:8888"
     volumes:
-      - ${HOME}/.config/onix/keys:/keys
+      - ${HOME}/.config/onix/conf/keys:/keys
       - ${HOME}/.config/onix:/conf
 
   artreg-app:

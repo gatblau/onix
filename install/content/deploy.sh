@@ -49,8 +49,9 @@ echo "Checking config directory"
 # Create PGP keys
 echo "Creating new PGP keys"
 art pgp gen
-mv id_rsa_key.pgp ./conf/keys/.pilot_sign.pgp
-mv id_rsa_pub.pgp ./conf/keys/.pilot_verify.pgp
+mv ./id_rsa_key.pgp ./conf/keys/.pilot_sign.pgp
+mv ./id_rsa_pub.pgp ./conf/keys/.pilot_verify.pgp
+chmod 600 ./conf/keys/*
 
 # create new .env
 echo "Generating environment file (.env)"
@@ -92,7 +93,8 @@ PG_ADMIN_USER=postgres
 PG_ADMIN_PWD=$(RNDPASS)
 
 # DBMan - (@ localhost:8085/api/)
-# CredentialsDBMAN_HTTP_USER=admin
+# Credentials
+DBMAN_HTTP_USER=admin
 DBMAN_HTTP_PWD=$(RNDPASS)
 # the authentication mode used by dbman (e.g. none or basic)
 DBMAN_AUTH_MODE=basic

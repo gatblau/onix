@@ -27,7 +27,5 @@ docker volume rm \
   nexus
 
 echo "===================================================="
-echo "Destroying local flat files ..."
-rm -f .env || true
-rm -f ./conf/postgres_servers.json || true
-rm -f ./conf/ev_receive.json || true
+echo "Destroying local Onix configuration ..."
+rm ${HOME}/.config/onix -rf
