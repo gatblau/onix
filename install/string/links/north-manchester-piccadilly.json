@@ -1,6 +1,0 @@
-{
-  "description": "links Location London Bank with area South",
-  "type": "U_RELATIONSHIP",
-  "startItemKey": "AREA:NORTH",
-  "endItemKey": "LOCATION:MANCHESTER_PICCADILLY"
-}

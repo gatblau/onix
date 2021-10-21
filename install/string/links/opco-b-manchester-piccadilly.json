@@ -1,6 +1,0 @@
-{
-  "description": "links OpCo B with Location Manchester Piccadilly",
-  "type": "U_RELATIONSHIP",
-  "startItemKey": "ORG:OPCO_B",
-  "endItemKey": "LOCATION:MANCHESTER_PICCADILLY"
-}

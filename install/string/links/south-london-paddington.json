@@ -1,6 +1,0 @@
-{
-  "description": "links Location London Paddington with area South",
-  "type": "U_RELATIONSHIP",
-  "startItemKey": "AREA:SOUTH",
-  "endItemKey": "LOCATION:LONDON_PADDINGTON"
-}
