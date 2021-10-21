@@ -9,6 +9,8 @@ package cmd
 */
 
 import (
+	"fmt"
+
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/git"
 	"github.com/spf13/cobra"
@@ -20,10 +22,13 @@ type GitSyncCmd struct {
 	repoPath          string
 	repoURI           string
 	token             string
-	recursive         *bool
+	recursive         bool
 	path4Files2BeSync string
 	yamlFilePrefix    string
 	strictSync        bool
+	tempPath          string
+	preserveFiles     bool
+	branch            string
 }
 
 // NewGitSyncCmd create a new GitSyncCmd.
@@ -47,8 +52,11 @@ func NewGitSyncCmd() *GitSyncCmd {
 	c.cmd.Flags().StringVarP(&c.token, "token", "t", "", "the token to authenticate with the git repository")
 	c.cmd.Flags().StringVarP(&c.yamlFilePrefix, "yaml-file-prefix", "x", "", "The prefix to be added to yaml file name after merge")
 	c.cmd.Flags().BoolVarP(&c.strictSync, "strict", "s", false, "whether strict synchronisation to be followed, by delete existing repo path and create new folder with same name")
-	//c.recursive = c.cmd.Flags().BoolP("recursive", "r", false, "whether to perform recursive sync. true or false (currently not implemented) ")
-	// this is causing problem, the recursive value is coming as args in Run function.
+	c.cmd.Flags().BoolVarP(&c.recursive, "recursive", "r", false, "whether to perform recursive sync, true or false, default is false ")
+	c.cmd.Flags().StringVarP(&c.tempPath, "temp-path", "m", "", "the temp path where art sync will clone the repo")
+	c.cmd.Flags().BoolVarP(&c.preserveFiles, "preserve-files", "f", true, "whether the files in temp folder to be preserved or to be deleted, default is true ")
+	c.cmd.Flags().StringVarP(&c.branch, "branch", "b", "", "the branch which art sync will clone and push the change, default is origin/main")
+
 	return c
 }
 
@@ -63,7 +71,10 @@ func (g *GitSyncCmd) Run(cmd *cobra.Command, args []string) {
 	default:
 		core.RaiseErr("too many arguments")
 	}
-	sm, err := git.NewSyncManagerFromUri(g.repoURI, g.token, g.yamlFilePrefix, g.path4Files2BeSync, g.repoPath, g.strictSync)
+
+	fmt.Println(" flag to preserve files ", g.preserveFiles)
+	sm, err := git.NewSyncManagerFromUri(g.repoURI, g.token, g.yamlFilePrefix, g.path4Files2BeSync,
+		g.repoPath, g.strictSync, g.recursive, g.tempPath, g.preserveFiles, g.branch)
 	core.CheckErr(err, "Failed to initialise SyncManagerFromUri ")
 	err = sm.MergeAndSync()
 	core.CheckErr(err, "Failed to perform sync operation")
