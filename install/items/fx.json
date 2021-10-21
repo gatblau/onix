@@ -1,0 +1,14 @@
+{
+  "name": "ART_FX:LIST",
+  "description": "executes a list of the current directory",
+  "type": "ART_FX",
+  "attribute": {
+    "PACKAGE" : "list",
+    "FX" : "list"
+  },
+  "meta" : {
+    "input": {
+    }
+  },
+  "status": 1
+}
