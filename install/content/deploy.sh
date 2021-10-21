@@ -51,7 +51,6 @@ echo "Creating new PGP keys"
 art pgp gen
 mv ./id_rsa_key.pgp ./conf/keys/.pilot_sign.pgp
 mv ./id_rsa_pub.pgp ./conf/keys/.pilot_verify.pgp
-chmod 600 ./conf/keys/*
 
 # create new .env
 echo "Generating environment file (.env)"
