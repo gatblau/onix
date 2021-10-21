@@ -1,5 +1,5 @@
 ---
-profile:
+profiles:
   - name: default
-  - target: content
+    target: content
 ...

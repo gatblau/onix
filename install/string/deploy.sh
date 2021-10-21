@@ -92,7 +92,8 @@ PG_ADMIN_USER=postgres
 PG_ADMIN_PWD=$(RNDPASS)
 
 # DBMan - (@ localhost:8085/api/)
-# CredentialsDBMAN_HTTP_USER=admin
+# Credentials
+DBMAN_HTTP_USER=admin
 DBMAN_HTTP_PWD=$(RNDPASS)
 # the authentication mode used by dbman (e.g. none or basic)
 DBMAN_AUTH_MODE=basic
@@ -350,4 +351,4 @@ docker-compose stop pilotctl-dbman
 docker-compose stop ox-dbman
 
 # Display help
-echo "The deployment is now complete."
+echo "The deployment is now complete. Please run the info.sh helper (E.G. sh ./info.sh) script to show the credentials that have been generated for your local instances."

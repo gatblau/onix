@@ -42,16 +42,17 @@ As the various functions of the Artisan package need persistent data, the config
 Because of this, the default way that Artisan works needs to be over-ridden - please use the examples below as a starting point for deploying out Onix (the environment variables `REG`, `REG_USER` and `REG_PASS` are presumed to be set correctly for your registry.)
 
 ### Build example
-An example of how to build your package (*nb. make sure you are in the `install` directory not the `content` directory*)
-`art build -t $REG/onix`
+An example of how to build and push your package (*nb. make sure you are in the `install` directory not the `content` directory*)
+`art build -t $REG/mygroup/deploy-onix`
+`art push $REG/mygroup/deploy-onix -u $REG_USER:$REG_PASS`
 
 ### Install example
-Pull the latest version of your package
-`art pull $REG/onix -u $REG_USER:$REG_PASS`
+Pull the latest version of your package (*optional*)
+`art pull $REG/mygroup/deploy-onix -u $REG_USER:$REG_PASS`
 
 Execute the deployment function of your package
-`art exe --path string --preserve-files $REG/onix deploy`
+`art exe --path string --preserve-files $REG/mygroup/deploy-onix deploy`
 
 View the endpoint and credential information created for you:
-`art exe --path string --preserve-files $REG/onix info`
+`art exe --path string --preserve-files $REG/mygroup/deploy-onix info`
 ```

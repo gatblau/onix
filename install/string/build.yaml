@@ -1,0 +1,45 @@
+---
+labels:
+  author: genn@southwinds.io
+  application: Onix Containerised Local Deployment
+  description: A local containerised deployment for testing, developing, learning purposes
+
+runtime: ubi-min
+
+functions:
+  - name: env
+    description: Display local environment details
+    export: true
+    run:
+      - printenv
+      
+  - name: deploy
+    description: Deploy out a brand new set of containers
+    export: true
+    run:
+      - bash ./deploy.sh
+
+  - name: destroy
+    description: Destroy all containers and persistent data
+    export: true
+    run:
+      - bash ./destroy.sh
+
+  - name: stop
+    description: Stop all containers but keep data
+    export: true
+    run:
+      - bash ./stop.sh
+
+  - name: start
+    description: Start all containers using existing data
+    export: true
+    run:
+      - bash ./start.sh
+
+  - name: info
+    description: Display technical info and credentials for applications
+    export: true
+    run:
+      - bash ./info.sh
+...
