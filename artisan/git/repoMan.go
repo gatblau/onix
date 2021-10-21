@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
@@ -24,6 +25,7 @@ type RepoManager struct {
 	workingDir string
 	repoPath   string
 	strictSync bool
+	branch     string
 }
 
 // NewRepoManager will initialise RepoManager.
@@ -31,9 +33,9 @@ type RepoManager struct {
 // token token required to clone the repository
 // workingDir directory where repo will be cloned
 // It will return initialised RepoManager or any  error occurred
-func NewRepoManager(repoURI, token, workingDir, repoPath string, strictSync bool) *RepoManager {
+func NewRepoManager(repoURI, token, workingDir, repoPath string, strictSync bool, branch string) *RepoManager {
 	return &RepoManager{
-		repoURI: repoURI, token: token, workingDir: workingDir, repoPath: repoPath, strictSync: strictSync,
+		repoURI: repoURI, token: token, workingDir: workingDir, repoPath: repoPath, strictSync: strictSync, branch: branch,
 	}
 }
 
@@ -43,12 +45,20 @@ func (g *RepoManager) Clone() error {
 	if len(g.repoURI) == 0 {
 		return fmt.Errorf("git repo URI is missing in RepoManager ")
 	}
-
-	// clone the remote repository
-	opts := &git.CloneOptions{
-		URL:      g.repoURI,
-		Progress: os.Stdout,
+	var opts *git.CloneOptions
+	if len(g.branch) > 0 {
+		opts = &git.CloneOptions{
+			URL:           g.repoURI,
+			Progress:      os.Stdout,
+			ReferenceName: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", g.branch)),
+		}
+	} else {
+		opts = &git.CloneOptions{
+			URL:      g.repoURI,
+			Progress: os.Stdout,
+		}
 	}
+
 	// if authentication token has been provided
 	if len(g.token) > 0 {
 		// The intended use of a GitHub personal access token is in replace of your password
@@ -60,12 +70,16 @@ func (g *RepoManager) Clone() error {
 		}
 	}
 	grepo, err := git.PlainClone(g.workingDir, false, opts)
+	if err != nil {
+		return err
+	}
 	g.repo = grepo
 
 	wrkTree, err := g.repo.Worktree()
 	if err != nil {
 		return err
 	}
+
 	if g.strictSync {
 		wrkTree.Remove(g.repoPath)
 	}
@@ -96,6 +110,7 @@ func (g *RepoManager) Commit() error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(" commit performed  .... ")
 	return err
 }
 
@@ -111,5 +126,6 @@ func (g *RepoManager) Push() error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(" push performed  .... ")
 	return err
 }
