@@ -350,4 +350,4 @@ docker-compose stop pilotctl-dbman
 docker-compose stop ox-dbman
 
 # Display help
-echo "The deployment is now complete."
+echo "The Onix deployment is now complete."
