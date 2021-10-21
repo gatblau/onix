@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -93,4 +94,16 @@ func (p *Pilot) debug(msg string, a ...interface{}) {
 	if len(os.Getenv("PILOT_DEBUG")) > 0 {
 		DebugLogger.Printf(msg, a...)
 	}
+}
+
+func Abs(path string) string {
+	if !filepath.IsAbs(path) {
+		p, err := filepath.Abs(path)
+		if err != nil {
+			fmt.Printf("cannot work out absolute path for %s: %s\n", path, err)
+			os.Exit(1)
+		}
+		path = p
+	}
+	return path
 }

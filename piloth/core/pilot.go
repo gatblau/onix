@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var A *AK
+var A *AKInfo
 
 // Pilot host
 type Pilot struct {
@@ -138,8 +138,9 @@ func (p *Pilot) ping() {
 				InfoLogger.Printf("ping loop operational\n")
 			}
 			p.connected = true
-			// verify the host identity and response integrity using Pretty Good Privacy (PGP
-			err = verify(resp.Envelope, resp.Signature)
+			// verify the host identity and response integrity using Pretty Good Privacy (PGP)
+			// TODO: use verify() instead
+			err = verify2(resp.Envelope, resp.Signature)
 			// if the verification fails, it is likely spoofing of pilotctl has happened
 			if err != nil {
 				WarningLogger.Printf("invalid host signature, cannot trust the pilot control service => %s\n", err)

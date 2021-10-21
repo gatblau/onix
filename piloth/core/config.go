@@ -37,6 +37,8 @@ func (k ConfigKey) String() string {
 		return "PILOT_SYSLOG_PORT"
 	case PilotActivationURI:
 		return "PILOT_ACTIVATION_URI"
+	case PilotUserKey:
+		return "PILOT_USER_KEY"
 	}
 	return ""
 }
@@ -45,6 +47,7 @@ const (
 	PilotLogLevel ConfigKey = iota
 	PilotSyslogPort
 	PilotActivationURI
+	PilotUserKey
 )
 
 func (c *Config) getActivationURI() string {
@@ -122,6 +125,10 @@ func CurrentPath() string {
 
 func AkFile() string {
 	return fmt.Sprintf("%s/.pilot", CurrentPath())
+}
+
+func TkFile() string {
+	return fmt.Sprintf("%s/.tenant", CurrentPath())
 }
 
 // DataPath returns the path of the root local folder where files are cached
