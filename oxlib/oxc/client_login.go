@@ -148,4 +148,6 @@ type UserPrincipal struct {
 	Rights Controls `json:"acl,omitempty"`
 	// the time the principal was Created
 	Created time.Time `json:"created"`
+	// any context associated to the principal
+	Context interface{}
 }
