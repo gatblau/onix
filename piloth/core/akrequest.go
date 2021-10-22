@@ -20,6 +20,7 @@ import (
 )
 
 type AKRequestToken struct {
+	info       tenantKeyInfo
 	Tenant     string    `json:"tenant"`
 	MacAddress string    `json:"mac_address"`
 	IpAddress  string    `json:"ip_address"`
@@ -29,6 +30,7 @@ type AKRequestToken struct {
 
 func NewAKRequestToken(tenantInfo tenantKeyInfo, hostInfo *ctl.HostInfo) AKRequestToken {
 	return AKRequestToken{
+		info:       tenantInfo,
 		Tenant:     tenantInfo.Tenant,
 		MacAddress: hostInfo.MacAddress[0],
 		IpAddress:  hostInfo.HostIP,
@@ -43,7 +45,7 @@ func (t AKRequestToken) String() string {
 		ErrorLogger.Printf("cannot create activation key request bearer token: %s\n", err)
 		os.Exit(1)
 	}
-	return fmt.Sprintf("Bearer %s %s", t.Tenant, encrypt(skb(), string(b[:]), ivb()))
+	return fmt.Sprintf("Bearer %s %s", t.Tenant, encrypt(t.info.SK, string(b[:]), t.info.IV))
 }
 
 func activate(info *ctl.HostInfo) {
