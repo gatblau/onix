@@ -89,6 +89,7 @@ func activate(info *ctl.HostInfo) {
 				break
 			}
 		}
+		InfoLogger.Printf("activation key deployed, pilot is ready to launch\n")
 	}
 	// before doing anything, verify activation key
 	ak, err := loadAKey(AkFile())
