@@ -12,8 +12,10 @@
 RNDPASSEXTRA () {
 #  echo Adm1n1strat0R
   A=LC_ALL=C tr -dc 'A-Za-z' < /dev/urandom | head -c 8
-  N=LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 6
-  S=LC_ALL=C tr -dc '!@#$^\&' < /dev/urandom | head -c 2
+  N=LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 7
+  # Simplified special characters for ease of end user
+  #S=LC_ALL=C tr -dc '!@#$^\&' < /dev/urandom | head -c 1
+  S="!"
   $A$S$N
 }
 
