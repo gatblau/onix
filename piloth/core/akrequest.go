@@ -10,6 +10,7 @@ package core
 
 import (
 	"crypto/tls"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	ctl "github.com/gatblau/onix/pilotctl/types"
@@ -45,7 +46,7 @@ func (t AKRequestToken) String() string {
 		ErrorLogger.Printf("cannot create activation key request bearer token: %s\n", err)
 		os.Exit(1)
 	}
-	return fmt.Sprintf("Bearer %s %s", t.Tenant, encrypt(t.info.SK, string(b[:]), t.info.IV))
+	return fmt.Sprintf("Bearer %s %s", t.Tenant, encrypt(t.info.SK, hex.EncodeToString(b), t.info.IV))
 }
 
 func activate(info *ctl.HostInfo) {
