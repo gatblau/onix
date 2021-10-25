@@ -20,19 +20,19 @@ import (
 	"time"
 )
 
-type AKRequestToken struct {
-	info       tenantKeyInfo
-	Tenant     string    `json:"tenant"`
+type AKToken struct {
+	info       clientKeyInfo
+	Username   string    `json:"username"`
 	MacAddress string    `json:"mac_address"`
 	IpAddress  string    `json:"ip_address"`
 	Hostname   string    `json:"hostname"`
 	Time       time.Time `json:"time"`
 }
 
-func NewAKRequestToken(tenantInfo tenantKeyInfo, hostInfo *ctl.HostInfo) AKRequestToken {
-	return AKRequestToken{
-		info:       tenantInfo,
-		Tenant:     tenantInfo.Tenant,
+func NewAKToken(clientInfo clientKeyInfo, hostInfo *ctl.HostInfo) AKToken {
+	return AKToken{
+		info:       clientInfo,
+		Username:   clientInfo.Username,
 		MacAddress: hostInfo.MacAddress[0],
 		IpAddress:  hostInfo.HostIP,
 		Hostname:   hostInfo.HostName,
@@ -40,13 +40,13 @@ func NewAKRequestToken(tenantInfo tenantKeyInfo, hostInfo *ctl.HostInfo) AKReque
 	}
 }
 
-func (t AKRequestToken) String() string {
+func (t AKToken) String() string {
 	b, err := json.Marshal(t)
 	if err != nil {
 		ErrorLogger.Printf("cannot create activation key request bearer token: %s\n", err)
 		os.Exit(1)
 	}
-	return fmt.Sprintf("Bearer %s %s", t.Tenant, encrypt(t.info.SK, hex.EncodeToString(b), t.info.IV))
+	return fmt.Sprintf("Bearer %s %s", t.Username, encrypt(t.info.SK, hex.EncodeToString(b), t.info.IV))
 }
 
 func activate(info *ctl.HostInfo) {
@@ -64,13 +64,13 @@ func activate(info *ctl.HostInfo) {
 		}
 		// otherwise, it can start the activation process
 		InfoLogger.Printf("cannot find activation key, initiating activation protocol\n")
-		tk, err := loadTenantKey(TkFile())
+		tk, err := loadClientKey(CkFile())
 		if err != nil {
 			// cannot continue
 			ErrorLogger.Printf("cannot launch pilot, cannot load tenant key: %s\n", err)
 			os.Exit(1)
 		}
-		tenant, err := readTenantKey(*tk)
+		tenant, err := readClientKey(*tk)
 		// fetch remote key
 		fetched, err := requestAKey(*tenant, info)
 		// if failed retry
@@ -129,8 +129,8 @@ func activate(info *ctl.HostInfo) {
 	info.HostUUID = A.HostUUID
 }
 
-func requestAKey(tenantKey tenantKeyInfo, info *ctl.HostInfo) (bool, error) {
-	bearerToken := NewAKRequestToken(tenantKey, info)
+func requestAKey(clientKey clientKeyInfo, info *ctl.HostInfo) (bool, error) {
+	bearerToken := NewAKToken(clientKey, info)
 	c := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -140,7 +140,7 @@ func requestAKey(tenantKey tenantKeyInfo, info *ctl.HostInfo) (bool, error) {
 		},
 		Timeout: time.Second * 60,
 	}
-	req, err := http.NewRequest("POST", tenantKey.URI, nil)
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/activation-key", clientKey.URI), nil)
 	if err != nil {
 		return false, fmt.Errorf("cannot create activation request: %s\n", err)
 	}

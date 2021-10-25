@@ -40,7 +40,7 @@ func AkExist() bool {
 }
 
 func TkExist() bool {
-	_, err := os.Stat(TkFile())
+	_, err := os.Stat(CkFile())
 	return err == nil
 }
 

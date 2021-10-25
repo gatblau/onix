@@ -127,8 +127,8 @@ func AkFile() string {
 	return fmt.Sprintf("%s/.pilot", CurrentPath())
 }
 
-func TkFile() string {
-	return fmt.Sprintf("%s/.tenant", CurrentPath())
+func CkFile() string {
+	return fmt.Sprintf("%s/.client", CurrentPath())
 }
 
 // DataPath returns the path of the root local folder where files are cached
