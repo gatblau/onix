@@ -208,6 +208,30 @@ func (r *API) SetAdmission(admission Admission) error {
 		admission.Label)
 }
 
+func (r *API) SetRegistration(registration Registration) error {
+	if len(registration.MacAddress) == 0 {
+		return fmt.Errorf("MAC-ADDRESS is missing")
+	}
+	return r.db.RunCommand("select pilotctl_set_registration($1, $2, $3, $4, $5, $6)",
+		registration.MacAddress,
+		registration.OrgGroup,
+		registration.Org,
+		registration.Area,
+		registration.Location,
+		registration.Label)
+}
+
+// AdmitRegistered admits a host that has been registered with a mac-address after confirmation of activation
+func (r *API) AdmitRegistered(macAddress, hostUUID string) error {
+	if len(macAddress) == 0 {
+		return fmt.Errorf("mac-address is missing\n")
+	}
+	if len(hostUUID) == 0 {
+		return fmt.Errorf("host UUID is missing\n")
+	}
+	return r.db.RunCommand("select pilotctl_admit_registered($1, $2)", macAddress, hostUUID)
+}
+
 // AuthenticatePilot authenticates pilot requests
 func (r *API) AuthenticatePilot(token string) *oxc.UserPrincipal {
 	if len(token) == 0 {
@@ -717,6 +741,20 @@ func (r *API) Login(username string) ([]oxc.AccessControl, error) {
 		}
 	}
 	return result, nil
+}
+
+func (r *API) AuthenticateActivationSvc(request http.Request) *oxc.UserPrincipal {
+	cf := &Conf{}
+	user, pwd := httpserver.ParseBasicToken(request)
+	if user == cf.getActivationUser() && pwd == cf.getActivationPwd() {
+		return &oxc.UserPrincipal{
+			Username: user,
+			Rights:   nil,
+			Created:  time.Now(),
+			Context:  nil,
+		}
+	}
+	return nil
 }
 
 func reverse(str string) (result string) {

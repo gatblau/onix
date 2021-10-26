@@ -777,6 +777,46 @@ var doc = `{
                 }
             }
         },
+        "/registration": {
+            "post": {
+                "description": "requests the activation service to reserve an activation for a host of the specified mac-address",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Activation"
+                ],
+                "summary": "Registers a Host so that it can be activated",
+                "parameters": [
+                    {
+                        "description": "the required registration information",
+                        "name": "command",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/types.Registration"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/user": {
             "get": {
                 "description": "Retrieve the logged user principal containing a list of access controls granted to the user\nuse it primarily to log in user interface services and retrieve a list of access controls to inform which\noperations are available to the user via the user interface",
@@ -1122,6 +1162,32 @@ var doc = `{
                 },
                 "notes": {
                     "description": "any relevant notes for the batch (not mandatory)",
+                    "type": "string"
+                }
+            }
+        },
+        "types.Registration": {
+            "type": "object",
+            "properties": {
+                "area": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "location": {
+                    "type": "string"
+                },
+                "mac_address": {
+                    "type": "string"
+                },
+                "org": {
+                    "type": "string"
+                },
+                "org_group": {
                     "type": "string"
                 }
             }

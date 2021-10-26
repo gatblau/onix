@@ -18,6 +18,7 @@ package main
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/oxlib/httpserver"
@@ -603,5 +604,64 @@ func getKeyHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	httpserver.Write(w, r, string(key[:]))
+	w.Write([]byte(hex.EncodeToString(key)))
+}
+
+// @Summary Registers a Host so that it can be activated
+// @Description requests the activation service to reserve an activation for a host of the specified mac-address
+// @Tags Activation
+// @Router /registration [post]
+// @Param command body []types.Registration true "the required registration information"
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 201 {string} OK
+func registrationHandler(w http.ResponseWriter, r *http.Request) {
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var registrations []Registration
+	err = json.Unmarshal(bytes, &registrations)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	for _, registration := range registrations {
+		err = api.SetRegistration(registration)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
+// activationHandler notifies PilotCtl of a Host Activation
+// used by the activation service to notify pilot control that a host has been issued with an activation key
+// not in swagger as it authenticates with activation service credentials
+func activationHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	macAddr := vars["macAddress"]
+	ma, err := url.PathUnescape(macAddr)
+	if err != nil {
+		log.Printf("failed to unescape mac-address '%s': %s\n", macAddr, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	uuid := vars["uuid"]
+	id, err := url.PathUnescape(uuid)
+	if err != nil {
+		log.Printf("failed to unescape host UUID '%s': %s\n", uuid, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	err = api.AdmitRegistered(ma, id)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

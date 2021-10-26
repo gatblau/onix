@@ -217,6 +217,23 @@ definitions:
         description: any relevant notes for the batch (not mandatory)
         type: string
     type: object
+  types.Registration:
+    properties:
+      area:
+        type: string
+      label:
+        items:
+          type: string
+        type: array
+      location:
+        type: string
+      mac_address:
+        type: string
+      org:
+        type: string
+      org_group:
+        type: string
+    type: object
 info:
   contact:
     email: onix@gatblau.org
@@ -729,6 +746,33 @@ paths:
       summary: Retrieve the service public PGP key
       tags:
       - PGP
+  /registration:
+    post:
+      description: requests the activation service to reserve an activation for a
+        host of the specified mac-address
+      parameters:
+      - description: the required registration information
+        in: body
+        name: command
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/types.Registration'
+          type: array
+      produces:
+      - text/plain
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Registers a Host so that it can be activated
+      tags:
+      - Activation
   /user:
     get:
       description: |-

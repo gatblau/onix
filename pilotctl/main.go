@@ -64,11 +64,15 @@ func main() {
 		router.Handle("/user", s.Authorise(getUserHandler)).Methods("GET")
 
 		router.HandleFunc("/pub", getKeyHandler).Methods("GET")
+
+		router.HandleFunc("/activation/{macAddress}/{uuid}", activationHandler).Methods("POST")
+		router.HandleFunc("/registration", registrationHandler).Methods("POST")
 	}
 	// set up specific authentication for host pilot agents
 	s.Auth = map[string]func(http.Request) *oxc.UserPrincipal{
-		"/register": pilotAuth,
-		"/ping":     pilotAuth,
+		"/register":         pilotAuth,
+		"/ping":             pilotAuth,
+		"/activation/.*/.*": activationSvc,
 	}
 	s.DefaultAuth = defaultAuth
 	s.Serve()
@@ -84,4 +88,9 @@ var pilotAuth = func(r http.Request) *oxc.UserPrincipal {
 // the default authentication mechanism user by the authentication middleware
 var defaultAuth = func(r http.Request) *oxc.UserPrincipal {
 	return api.AuthenticateUser(r)
+}
+
+// authenticates requests from the activation service
+var activationSvc = func(r http.Request) *oxc.UserPrincipal {
+	return api.AuthenticateActivationSvc(r)
 }

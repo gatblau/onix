@@ -30,6 +30,8 @@ const (
 	ConfArtRegURI                ConfKey = "OX_ART_REG_URI"
 	ConfArtRegUser               ConfKey = "OX_ART_REG_USER"
 	ConfArtRegPwd                ConfKey = "OX_ART_REG_PWD"
+	ConfActUser                  ConfKey = "OX_PILOTCTL_ACTIVATION_USER"
+	ConfActPwd                   ConfKey = "OX_PILOTCTL_ACTIVATION_PWD"
 )
 
 type Conf struct {
@@ -69,6 +71,14 @@ func (c *Conf) getDbUser() string {
 
 func (c *Conf) getDbPwd() string {
 	return c.getValue(ConfDbPwd)
+}
+
+func (c *Conf) getActivationUser() string {
+	return c.getValue(ConfActUser)
+}
+
+func (c *Conf) getActivationPwd() string {
+	return c.getValue(ConfActPwd)
 }
 
 // PingIntervalSecs the pilot ping interval

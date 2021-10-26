@@ -17,3 +17,12 @@ type Admission struct {
 	Location string   `json:"location"`
 	Label    []string `json:"label"`
 }
+
+type Registration struct {
+	MacAddress string   `json:"mac_address"`
+	OrgGroup   string   `json:"org_group"`
+	Org        string   `json:"org"`
+	Area       string   `json:"area"`
+	Location   string   `json:"location"`
+	Label      []string `json:"label"`
+}
