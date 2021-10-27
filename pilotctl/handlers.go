@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/oxlib/httpserver"
+	"github.com/gatblau/onix/pilotctl/core"
 	_ "github.com/gatblau/onix/pilotctl/docs"
 	. "github.com/gatblau/onix/pilotctl/types"
 	"github.com/gorilla/mux"
@@ -630,7 +631,16 @@ func registrationHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	c := core.NewConf()
 	for _, registration := range registrations {
+		// call activation service and reserve the mac-address for this tenant
+		_, err = core.HttpRequest(&http.Client{Timeout: 60 * time.Second}, fmt.Sprintf("%s/provision/%s/%s", c.GetActivationURI(), c.GetTenant(), registration.MacAddress), "POST", c.GetActivationUser(), c.GetActivationPwd(), 201)
+		if err != nil {
+			log.Printf("cannot provision mac-address %s with activation service: %s\n", registration.MacAddress, err)
+			http.Error(w, fmt.Sprintf("cannot provision mac-address %s with activation service, check the server logs for more information\n", registration.MacAddress), http.StatusInternalServerError)
+			return
+		}
+		// as the provisioning of the mac-address has been successful records the host in pilot-ctl db
 		err = api.SetRegistration(registration)
 		if err != nil {
 			log.Println(err)

@@ -11,33 +11,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/gatblau/onix/artisan/data"
+	"io/ioutil"
+	"net/http"
 )
-
-// func hashCode(s string) int {
-// 	h := fnv.New32a()
-// 	_, _ = h.Write([]byte(s))
-// 	return int(h.Sum32())
-// }
-//
-// func toCSV(v pgtype.TextArray) string {
-// 	str := bytes.Buffer{}
-// 	for i, s := range v.Elements {
-// 		str.WriteString(s.String)
-// 		if i < len(v.Elements)-1 {
-// 			str.WriteString(",")
-// 		}
-// 	}
-// 	return str.String()
-// }
-//
-// // toTime converts microseconds into HH:mm:SS.ms
-// func toTime(microseconds int64) string {
-// 	milliseconds := (microseconds / 1000) % 1000
-// 	seconds := (((microseconds / 1000) - milliseconds) / 1000) % 60
-// 	minutes := (((((microseconds / 1000) - milliseconds) / 1000) - seconds) / 60) % 60
-// 	hours := ((((((microseconds / 1000) - milliseconds) / 1000) - seconds) / 60) - minutes) / 60
-// 	return fmt.Sprintf("%02v:%02v:%02v.%03v", hours, minutes, seconds, milliseconds)
-// }
 
 func basicAuthToken(user, pwd string) string {
 	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
@@ -113,4 +89,28 @@ func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
 		}
 	}
 	return input, nil
+}
+
+func HttpRequest(client *http.Client, uri, method, user, pwd string, resultCode int) ([]byte, error) {
+	req, err := http.NewRequest(method, uri, nil)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create http request to backend: %s\n", err)
+	}
+	req.Header.Add("Authorization", basicToken(user, pwd))
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("http request to backend failed: %s\n", err)
+	}
+	if resp.StatusCode != resultCode {
+		return nil, fmt.Errorf("http request to backend failed: %s\n", resp.Status)
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read backend service response: %s\n", err)
+	}
+	return respBody, nil
+}
+
+func basicToken(user string, pwd string) string {
+	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
 }

@@ -746,7 +746,7 @@ func (r *API) Login(username string) ([]oxc.AccessControl, error) {
 func (r *API) AuthenticateActivationSvc(request http.Request) *oxc.UserPrincipal {
 	cf := &Conf{}
 	user, pwd := httpserver.ParseBasicToken(request)
-	if user == cf.getActivationUser() && pwd == cf.getActivationPwd() {
+	if user == cf.GetActivationUser() && pwd == cf.GetActivationPwd() {
 		return &oxc.UserPrincipal{
 			Username: user,
 			Rights:   nil,

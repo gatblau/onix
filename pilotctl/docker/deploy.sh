@@ -12,8 +12,8 @@
 # NB. For dev purposes, you may wish to set a specific password for everything - if so,
 # just remark out the main line in the below function and replace with "echo mysinglepassword" etc.
 RNDPASS () {
-#  echo Adm1n1strat0R
-  LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16
+  echo Adm1n1strat0R
+#  LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16
 }
 ADD_DATA () {
   art curl -X PUT \
@@ -74,7 +74,7 @@ DBMAN_AUTH_MODE=basic
 # https://github.com/gatblau/ox-db/blob/master/plan.json
 DBMAN_ONIX_VERSION=0.0.4
 DBMAN_PILOTCTL_VERSION=0.0.4
-DBMAN_PILOTCTL_COMMIT_HASH=master # master is the latest version, enter hash if different is required
+DBMAN_PILOTCTL_COMMIT_HASH=48980250ff7caaf570c078f8ac272b41e981c0bc # master is the latest version, enter hash if different is required
 DBMAN_PILOTCTL_REPO_URI=https://raw.githubusercontent.com/gatblau/pilotctl-db/
 DBMAN_ONIX_COMMIT_HASH=master # master is the latest version, enter hash if different is required
 DBMAN_ONIX_REPO_URI=https://raw.githubusercontent.com/gatblau/ox-db/

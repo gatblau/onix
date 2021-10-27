@@ -30,8 +30,10 @@ const (
 	ConfArtRegURI                ConfKey = "OX_ART_REG_URI"
 	ConfArtRegUser               ConfKey = "OX_ART_REG_USER"
 	ConfArtRegPwd                ConfKey = "OX_ART_REG_PWD"
+	ConfActURI                   ConfKey = "OX_PILOTCTL_ACTIVATION_URI"
 	ConfActUser                  ConfKey = "OX_PILOTCTL_ACTIVATION_USER"
 	ConfActPwd                   ConfKey = "OX_PILOTCTL_ACTIVATION_PWD"
+	ConfTenant                   ConfKey = "OX_PILOTCTL_TENANT"
 )
 
 type Conf struct {
@@ -73,11 +75,19 @@ func (c *Conf) getDbPwd() string {
 	return c.getValue(ConfDbPwd)
 }
 
-func (c *Conf) getActivationUser() string {
+func (c *Conf) GetTenant() string {
+	return c.getValue(ConfTenant)
+}
+
+func (c *Conf) GetActivationURI() string {
+	return c.getValue(ConfActURI)
+}
+
+func (c *Conf) GetActivationUser() string {
 	return c.getValue(ConfActUser)
 }
 
-func (c *Conf) getActivationPwd() string {
+func (c *Conf) GetActivationPwd() string {
 	return c.getValue(ConfActPwd)
 }
 
