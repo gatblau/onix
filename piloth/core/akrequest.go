@@ -21,7 +21,7 @@ import (
 )
 
 type AKToken struct {
-	info       clientKeyInfo
+	info       userKeyInfo
 	Username   string    `json:"username"`
 	MacAddress string    `json:"mac_address"`
 	IpAddress  string    `json:"ip_address"`
@@ -29,7 +29,7 @@ type AKToken struct {
 	Time       time.Time `json:"time"`
 }
 
-func NewAKToken(clientInfo clientKeyInfo, hostInfo *ctl.HostInfo) AKToken {
+func NewAKToken(clientInfo userKeyInfo, hostInfo *ctl.HostInfo) AKToken {
 	return AKToken{
 		info:       clientInfo,
 		Username:   clientInfo.Username,
@@ -64,13 +64,13 @@ func activate(info *ctl.HostInfo) {
 		}
 		// otherwise, it can start the activation process
 		InfoLogger.Printf("cannot find activation key, initiating activation protocol\n")
-		tk, err := loadClientKey(CkFile())
+		tk, err := loadUserKey(CkFile())
 		if err != nil {
 			// cannot continue
 			ErrorLogger.Printf("cannot launch pilot, cannot load tenant key: %s\n", err)
 			os.Exit(1)
 		}
-		tenant, err := readClientKey(*tk)
+		tenant, err := readUserKey(*tk)
 		// fetch remote key
 		fetched, err := requestAKey(*tenant, info)
 		// if failed retry
@@ -129,7 +129,7 @@ func activate(info *ctl.HostInfo) {
 	info.HostUUID = A.HostUUID
 }
 
-func requestAKey(clientKey clientKeyInfo, info *ctl.HostInfo) (bool, error) {
+func requestAKey(clientKey userKeyInfo, info *ctl.HostInfo) (bool, error) {
 	bearerToken := NewAKToken(clientKey, info)
 	c := &http.Client{
 		Transport: &http.Transport{
