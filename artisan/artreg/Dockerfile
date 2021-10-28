@@ -18,16 +18,16 @@ ENV GID=100000000
 RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y && \
     microdnf install shadow-utils.x86_64 && \
     groupadd -g $GID -o $UNAME && \
-    # user home under /home/artisan
-    useradd -u $UID -g $GID $UNAME && \
+    # -M create the user with no /home
+    useradd -M -u $UID -g $GID $UNAME && \
     rm -rf /var/cache/yum && \
     microdnf clean all && \
     # pessimistic locking for metadata changes within a virtual repository
-    mkdir -p /home/artisan/locks && chown $UNAME /home/artisan/locks && chmod ug+wr /home/artisan/locks && \
+    mkdir -p /.artisan/locks && chown $UNAME /.artisan/locks && chmod ug+wr /.artisan/locks && \
     # temprorary file operations folder
-    mkdir -p /home/artisan/tmp && chown $UNAME /home/artisan/tmp && chmod ug+wr /home/artisan/tmp && \
+    mkdir -p /.artisan/tmp && chown $UNAME /.artisan/tmp && chmod ug+wr /.artisan/tmp && \
     # web hooks configuration
-    mkdir -p /home/artisan/hooks && chown $UNAME /home/artisan/hooks && chmod ug+wr /home/artisan/hooks
+    mkdir -p /.artisan/hooks && chown $UNAME /.artisan/hooks && chmod ug+wr /.artisan/hooks
 
 WORKDIR /app
 

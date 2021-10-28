@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	os "os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
@@ -102,7 +103,8 @@ func (l *lock) ensurePath() {
 	if err != nil {
 		if os.IsNotExist(err) {
 			err = os.MkdirAll(l.path(), os.ModePerm)
-			core.CheckErr(err, "cannot create locks path")
+			u, _ := user.Current()
+			core.CheckErr(err, fmt.Sprintf("cannot create locks path, user '%s', uid '%s', home '%s' - '%s'", u.Username, u.Uid, u.HomeDir, core.HomeDir()))
 		}
 	}
 }

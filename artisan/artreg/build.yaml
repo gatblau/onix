@@ -10,7 +10,6 @@ env:
   GOARCH: amd64
   REPO_NAME: quay.io/gatblau
   APP_VERSION: 0.0.4
-  LIFECYCLE_STAGE: alpha
   ART_REGISTRY: artisan-registry
 
 profiles:
