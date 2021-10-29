@@ -46,6 +46,9 @@ func handleCommands(i *ctl.HostInfo) bool {
 		} else if os.Args[1] == "uuid" {
 			// prints the host UUID
 			fmt.Printf("%s\n", i.HostUUID)
+		} else if os.Args[1] == "mac-addr" {
+			// prints the host UUID
+			fmt.Printf("%s\n", i.MacAddress[0])
 		} else if os.Args[1] == "version" {
 			// prints the program version
 			fmt.Printf("%s\n", core.Version)
