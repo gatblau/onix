@@ -67,10 +67,14 @@ func activate(info *ctl.HostInfo) {
 		tk, err := loadUserKey(CkFile())
 		if err != nil {
 			// cannot continue
-			ErrorLogger.Printf("cannot launch pilot, cannot load tenant key: %s\n", err)
+			ErrorLogger.Printf("cannot launch pilot, cannot load user key: %s\n", err)
 			os.Exit(1)
 		}
 		tenant, err := readUserKey(*tk)
+		if err != nil {
+			ErrorLogger.Printf("cannot launch pilot, cannot load user key: %s\n", err)
+			os.Exit(1)
+		}
 		// fetch remote key
 		fetched, err := requestAKey(*tenant, info)
 		// if failed retry
