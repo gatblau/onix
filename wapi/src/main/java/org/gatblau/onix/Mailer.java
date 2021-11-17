@@ -26,7 +26,9 @@ import org.springframework.stereotype.Service;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -70,10 +72,17 @@ public class Mailer {
             msg.setFrom(new InternetAddress(cfg.getSmtpFromUser(), cfg.getSmtpFromUser()));
             msg.setReplyTo(InternetAddress.parse(cfg.getSmtpFromUser(), false));
             msg.setSubject(subject, UTF8);
-            msg.setText(body, UTF8);
+            Multipart multipart = new MimeMultipart("alternative");
+            MimeBodyPart htmlPart = new MimeBodyPart();
+            htmlPart.setContent(body, "text/html; charset=utf-8");
+            multipart.addBodyPart(htmlPart);
+            msg.setContent(multipart);
             msg.setSentDate(new Date());
             msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail, false));
-            Transport.send(msg);
+            Transport transport = session.getTransport("smtps");
+            transport.connect(cfg.getSmtpHost(), cfg.getSmtpPort(), cfg.getSmtpFromUser(), cfg.getSmtpFromPwd());
+            transport.sendMessage(msg, msg.getAllRecipients());
+            transport.close();
             log.atDebug().log(String.format("email sent successfully to %s, subject: %s", toEmail, subject));
         } catch (Exception e) {
             log.atError().log(String.format("failed to send email to '%s' with subject '%s': %s", toEmail, subject, e.getMessage()));

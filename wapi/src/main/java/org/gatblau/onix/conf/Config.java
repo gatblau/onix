@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
 
+import static org.gatblau.onix.conf.Config.AuthMode.*;
+
 /*
   Abstracts Spring configuration
  */
@@ -127,6 +129,9 @@ public class Config implements Serializable {
 
     @Value("${wapi.smtp.from.user}")
     private String smtpFromUser;
+
+    @Value("${wapi.smtp.from.pwd}")
+    private String smtpFromPwd;
 
     @Value("${wapi.smtp.pwd.reset.uri}")
     private String smtpPwdResetURI;
@@ -253,12 +258,12 @@ public class Config implements Serializable {
     public AuthMode getAuthMode() {
         switch (authMode.toLowerCase()) {
             case "none":
-                return AuthMode.None;
+                return None;
             case "oidc":
-                return AuthMode.OIDC;
+                return OIDC;
             case "basic":
             default:
-                return AuthMode.Basic;
+                return Basic;
         }
     }
 
@@ -285,6 +290,8 @@ public class Config implements Serializable {
     public String getSmtpFromUser() {
         return smtpFromUser;
     }
+
+    public String getSmtpFromPwd() { return smtpFromPwd; }
 
     public String getSmtpPwdResetURI() {
         return smtpPwdResetURI;
