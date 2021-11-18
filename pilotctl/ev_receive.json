@@ -1,6 +1,7 @@
 {
   "event_receivers": [
     {
+      "name": "mongo",
       "uri": "http://localhost:8885/events",
       "user": "admin",
       "pwd": "adm1n"

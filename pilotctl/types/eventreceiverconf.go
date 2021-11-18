@@ -14,7 +14,8 @@ import (
 )
 
 type EventReceiver struct {
-	URI string `json:"uri"`
+	Name string `json:"name,omitempty"`
+	URI  string `json:"uri"`
 	// optional credentials if authentication is required
 	User string `json:"user,omitempty"`
 	Pwd  string `json:"pwd,omitempty"`
