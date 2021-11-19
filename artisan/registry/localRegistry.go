@@ -162,10 +162,9 @@ func (r *LocalRegistry) Tag(sourceName *core.PackageName, targetName *core.Packa
 	}
 	if targetName.IsInTheSameRepositoryAs(sourceName) {
 		if !sourcePackage.HasTag(targetName.Tag) {
-			sourcePackage.Tags = append(sourcePackage.Tags, targetName.Tag)
 			// if the source package has the target name tag
 			targetPackage := r.FindPackage(targetName)
-			if targetPackage.HasTag(targetName.Tag) {
+			if targetPackage != nil && targetPackage.HasTag(targetName.Tag) {
 				// remove the tag
 				targetPackage.Tags = removeItem(targetPackage.Tags, targetName.Tag)
 				// if no tags are left, add a default tag equal to the package file reference
@@ -173,6 +172,7 @@ func (r *LocalRegistry) Tag(sourceName *core.PackageName, targetName *core.Packa
 					targetPackage.Tags = append(targetPackage.Tags, targetPackage.FileRef)
 				}
 			}
+			sourcePackage.Tags = append(sourcePackage.Tags, targetName.Tag)
 			r.save()
 			return
 		} else {
