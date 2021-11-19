@@ -47,5 +47,5 @@ func (c *PullCmd) Run(cmd *cobra.Command, args []string) {
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	// attempt pull from remote registry
-	local.Pull(packageName, c.credentials)
+	local.Pull(packageName, credsFromEnv(ArtisanRegistryUser, ArtisanRegistryPwd, c.credentials))
 }

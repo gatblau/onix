@@ -17,6 +17,11 @@ import (
 	"runtime"
 )
 
+const (
+	ArtisanRegistryUser = "ART_REG_USER"
+	ArtisanRegistryPwd  = "ART_REG_PWD"
+)
+
 func init() {
 	// ensure the registry folder structure is in place
 	ensureRegistryDir()
@@ -64,4 +69,22 @@ func ensureRegistryDir() {
 
 func versionLabel() string {
 	return fmt.Sprintf("onix-artisan-%s", core.Version)
+}
+
+// credsFromEnv if passed in credentials is empty, then returns credentials in format username:password
+// from environment variables, or empty if no environment is set up
+func credsFromEnv(userKey, pwdKey, credentials string) (creds string) {
+	creds = credentials
+	// if the specified credentials are not set
+	if len(creds) == 0 {
+		// try and get them from the environment
+		user := os.Getenv(userKey)
+		pwd := os.Getenv(pwdKey)
+		// if successful
+		if len(user) > 0 && len(pwd) > 0 {
+			// construct a new credentials string
+			creds = fmt.Sprintf("%s:%s", user, pwd)
+		}
+	}
+	return
 }
