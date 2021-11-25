@@ -198,7 +198,7 @@ func (r *Api) GetPackageInfo(group, name, id, user, pwd string, https bool) (*Pa
 		return nil, err
 	}
 	if !core.IsJSON(string(b)) {
-		return nil, fmt.Errorf("invalid package name: %s/%s/%s", r.domain, group, name)
+		return nil, fmt.Errorf("the registry returned an invalid payload, as follows: \n%s\n", string(b[:]))
 	}
 	pack := new(Package)
 	err = json.Unmarshal(b, pack)
