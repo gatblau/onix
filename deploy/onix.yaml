@@ -1,10 +1,25 @@
 ---
 - name: pg-db
-  uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/pg-db.yaml
-- name: pilotctl-app
-  uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/pilotctl-app.yaml
+  uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/db.yaml
+  image: docker.io/postgres:13
+
+- name: evr-mongo-db
+  uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/evr-mongo-db.yaml
+  image: docker.io/mongo:5
+
+- name: evr-mongo-app
+  uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/evr-mongo-app.yaml
+  image: quay.io/gatblau/pilotctl-evr-mongodb:0.0.4-300921174051295-11aab8b6cc
+
 - name: artisan-registry
-  uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/artisan-registry.yaml
+  uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/artreg-app.yaml
+  image: quay.io/gatblau/artisan-registry:0.0.4-011021162133879-a3dedecb3f-RC1
+
 - name: ox-app
   uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/ox-app.yaml
+  image: quay.io/gatblau/onix-snapshot:v0.0.4-1af14bb-021021131813
+
+- name: pilotctl-app
+  uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/pilotctl-app.yaml
+  image: quay.io/gatblau/pilotctl:0.0.4-161021085624494-f2346825d0
 ...
