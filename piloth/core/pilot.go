@@ -65,6 +65,8 @@ func (p *Pilot) Start() {
 +---------------------------------------------------------+`)
 	InfoLogger.Printf("launching pilot version %s\n", Version)
 	InfoLogger.Printf("using Host UUID = '%s'\n", p.info.HostUUID)
+	// create local cache folder in pilot's current location
+	CheckPaths()
 	// starts the collector service
 	if collectorEnabled() {
 		// creates a new SysLog collector
