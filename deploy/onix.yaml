@@ -1,0 +1,10 @@
+---
+- name: pg-db
+  uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/pg-db.yaml
+- name: pilotctl-app
+  uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/pilotctl-app.yaml
+- name: artisan-registry
+  uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/artisan-registry.yaml
+- name: ox-app
+  uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/ox-app.yaml
+...

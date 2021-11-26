@@ -1,0 +1,19 @@
+---
+name: evr-mongo-db
+description: mongo database used by Pilot Control Mongo event receiver
+port: "27017"
+var:
+  - name: MONGO_INITDB_ROOT_USERNAME
+    description: the name of the root user
+  - name: MONGO_INITDB_ROOT_PASSWORD
+    description: the password of the root user
+    secret: true
+    value: "<<auto-generate>>"
+volume:
+  - name: evr-mongo-db
+    description: the volume where mongo records are stored
+    path: /data/db
+  - name: evr-mongo-dblogs
+    description: the volume where mongo log information is stored
+    path: /var/log/mongodb
+...

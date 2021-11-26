@@ -1,0 +1,18 @@
+---
+name: evr-mongo-app
+description: pilot control event receiver using mongo db as its backend
+port: "8885"
+var:
+  - name: OX_MONGO_EVR_CONN
+    description: the connection information to the mongodb database
+  - name: OX_HTTP_PORT
+    description: the HTTP port on which the event receiver service listens
+    value: "8885"
+  - name: OX_HTTP_UNAME
+    description: the user to authenticate with the event receiver HTTP service
+    secret: true
+  - name: OX_HTTP_PWD
+    description: the password to authenticate with the event receiver HTTP service
+    secret: true
+    value: "<<auto-generate>>"
+...
