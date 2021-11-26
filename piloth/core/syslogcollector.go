@@ -21,8 +21,6 @@ type SyslogCollector struct {
 
 // NewCollector creates an instance of a syslog collection service
 func NewCollector(bindIP, port string) (*SyslogCollector, error) {
-	// create local cache folder in pilot's current location
-	CheckPaths()
 	channel := make(syslog.LogPartsChannel)
 	sysServ := syslog.NewServer()
 	sysServ.SetHandler(syslog.NewChannelHandler(channel))
