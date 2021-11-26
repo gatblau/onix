@@ -9,6 +9,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal
 
 LABEL author="gatblau"
 LABEL maintainer="onix@gatblau.org"
+LABEL artisan.svc.manifest="/app/svc.yaml"
 
 ARG UNAME=pilotctl
 
@@ -26,7 +27,7 @@ USER $UNAME
 
 WORKDIR /app
 
-COPY ./bin/pilotctl ./
+COPY ./bin/pilotctl ./svc.yaml ./
 
 # mount for PGP signing key
 VOLUME /keys
