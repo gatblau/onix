@@ -56,21 +56,21 @@ func activate(info *ctl.HostInfo) {
 	)
 	// first check for a valid activation key
 	if !AkExist() {
-		// if no tenant key exist
-		if !TkExist() {
+		// if no user key exists
+		if !UserKeyExist() {
 			// cannot continue
 			ErrorLogger.Printf("cannot launch pilot, missing activation key\n")
 			os.Exit(1)
 		}
 		// otherwise, it can start the activation process
 		InfoLogger.Printf("cannot find activation key, initiating activation protocol\n")
-		tk, err := loadUserKey(CkFile())
+		uKey, err := loadUserKey(UserKeyFile())
 		if err != nil {
 			// cannot continue
 			ErrorLogger.Printf("cannot launch pilot, cannot load user key: %s\n", err)
 			os.Exit(1)
 		}
-		tenant, err := readUserKey(*tk)
+		tenant, err := readUserKey(*uKey)
 		if err != nil {
 			ErrorLogger.Printf("cannot launch pilot, cannot load user key: %s\n", err)
 			os.Exit(1)

@@ -39,8 +39,8 @@ func AkExist() bool {
 	return err == nil
 }
 
-func TkExist() bool {
-	_, err := os.Stat(CkFile())
+func UserKeyExist() bool {
+	_, err := os.Stat(UserKeyFile())
 	return err == nil
 }
 
