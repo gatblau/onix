@@ -3,6 +3,7 @@
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
 //   to be licensed under the same terms as the rest of the code.
+
 package core
 
 import (
@@ -10,19 +11,19 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/gatblau/onix/dbman/plugin"
-	"github.com/gatblau/oxc"
+	"github.com/gatblau/onix/oxlib/oxc"
 	"io/ioutil"
 	"net/http"
 	"strings"
 )
 
-// the source of database scripts
+// ScriptManager the source of database scripts
 type ScriptManager struct {
 	client *oxc.Client
 	cfg    *Config
 }
 
-// factory function
+// NewScriptManager factory function
 func NewScriptManager(cfg *Config, client *oxc.Client) (*ScriptManager, error) {
 	// creates a new struct
 	source := new(ScriptManager)

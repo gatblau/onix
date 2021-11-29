@@ -3,12 +3,13 @@
 //   Licensed under the
 //   Contributors to this project, hereby assign copyright in this code to the project,
 //   to be licensed under the same terms as the rest of the code.
+
 package plugin
 
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/gatblau/oxc"
+	"github.com/gatblau/onix/oxlib/oxc"
 	"gopkg.in/yaml.v3"
 	"net/http"
 	"strings"

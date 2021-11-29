@@ -2,36 +2,33 @@ module github.com/gatblau/onix/dbman
 
 go 1.16
 
+replace github.com/gatblau/onix/oxlib => ../oxlib
+
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/gatblau/oxc v0.0.0-20201002225610-c6a7c98363fa
+	github.com/gatblau/onix/oxlib v0.0.0-00010101000000-000000000000
+	github.com/gatblau/oxc v0.0.0-20210810120109-3c7f200d87d2
 	github.com/ghodss/yaml v1.0.0
-	github.com/google/go-cmp v0.5.0 // indirect
-	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
-	github.com/gorilla/mux v1.7.4
-	github.com/hashicorp/go-hclog v0.0.0-20181001195459-61d530d6c27f
-	github.com/hashicorp/go-plugin v1.3.0
-	github.com/jackc/pgconn v1.6.1
-	github.com/jackc/pgtype v1.4.0
-	github.com/jackc/pgx/v4 v4.7.1
+	github.com/gorilla/mux v1.8.0
+	github.com/hashicorp/go-hclog v1.0.0
+	github.com/hashicorp/go-plugin v1.4.3
+	github.com/jackc/pgconn v1.10.1
+	github.com/jackc/pgtype v1.9.1
+	github.com/jackc/pgx/v4 v4.14.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pelletier/go-toml v1.8.0 // indirect
-	github.com/prometheus/client_golang v1.7.0
+	github.com/prometheus/client_golang v1.11.0
 	github.com/rs/zerolog v1.19.0 // indirect
-	github.com/smartystreets/assertions v1.1.1 // indirect
 	github.com/spf13/afero v1.3.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.7.0
-	github.com/swaggo/http-swagger v0.0.0-20200308142732-58ac5e232fba
-	github.com/swaggo/swag v1.6.7
-	golang.org/x/sys v0.0.0-20200620081246-981b61492c35 // indirect
-	golang.org/x/tools v0.0.0-20200717024301-6ddee64345a6 // indirect
-	google.golang.org/protobuf v1.24.0 // indirect
-	gopkg.in/ini.v1 v1.57.0 // indirect
-	gopkg.in/yaml.v2 v2.3.0
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
+	github.com/spf13/viper v1.4.0
+	github.com/swaggo/http-swagger v1.1.2
+	github.com/swaggo/swag v1.7.6
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
+	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
