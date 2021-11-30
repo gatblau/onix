@@ -18,11 +18,11 @@ var:
     value: "Basic"
   - name: WAPI_ADMIN_USER
     description: the username to authenticate with the web api as admin
-    value: "{{fx=>name:99}}"
+    value: "{{fx=name:99}}"
   - name: WAPI_ADMIN_PWD
     description: the password to authenticate with the web api as admin
     secret: true
-    value: "{{fx=>pwd:16,false}}"
+    value: "{{fx=pwd:16,false}}"
   - name: WAPI_EVENTS_ENABLED
     description: whether sending of mqtt messages is enabled for changes to configuration data
     value: "false"
