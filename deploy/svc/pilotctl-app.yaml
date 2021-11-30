@@ -1,47 +1,44 @@
 ---
-# pilot control service manifest
 name: pilotctl-app
 description: control pilot instances managing remote devices
 port: "8888"
-readyuri: /ready
-# application variables
 var:
   - name: OX_PILOTCTL_DB_HOST
     description: the name of the database service host used by pilot control to store management data
-    value: "{{bind=>db:name}}"
+    value: "{{bind=db:name}}"
   - name: OX_PILOTCTL_DB_USER
     description: the username to authenticate with the database service
-    value: "{{fx=>name:99}}"
+    value: "{{bind=db:var::99}}"
   - name: OX_PILOTCTL_DB_PWD
     description: the password to authenticate with the database service
     secret: true
-    value: "{{fx=>pwd:16,false}}"
+    value: "{{fx=pwd:16,false}}"
   - name: OX_HTTP_PORT
     description: the port the http
     value: "8888"
   - name: OX_WAPI_URI
     description: the URI of the Onix Web API service used by pilot control to store configuration data
-    value: "{{bind=>ox-app:uri}}"
+    value: "{{bind=ox-app:uri}}"
   - name: OX_WAPI_USER
     description: the username to authenticate with the Onix Web API service
-    value: "{{fx=>name:99}}"
+    value: "{{fx=name:99}}"
   - name: OX_WAPI_PWD
     description: the password to authenticate with the Onix Web API service
     secret: true
-    value: "{{fx=>pwd:16,false}}"
+    value: "{{fx=pwd:16,false}}"
   - name: OX_WAPI_INSECURE_SKIP_VERIFY
     description: skips verification of TLS certificate for the Onix Web API service
     default: "false"
   - name: OX_ART_REG_URI
     description: the URI of the Artisan registry service used by pilot control to look up automation packages
-    value: "{{bind=>artreg-app:uri}}"
+    value: "{{bind=artreg-app:uri}}"
   - name: OX_ART_REG_USER
     description: the username to authenticate with the Artisan Registry service
-    value: "{{bind=>artreg-app:var:OXA_HTTP_UNAME}}"
+    value: "{{bind=artreg-app:var:OXA_HTTP_UNAME}}"
   - name: OX_ART_REG_PWD
     description: the password to authenticate with the Artisan Registry service
     secret: true
-    value: "{{bind=>artreg-app:var:OXA_HTTP_PWD}}"
+    value: "{{bind=artreg-app:var:OXA_HTTP_PWD}}"
 file:
   - value: /keys/.pilot_verify.pgp
     description: the public pgp key used by pilot to verify connections to pilot control

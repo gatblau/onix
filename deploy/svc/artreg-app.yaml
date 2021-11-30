@@ -5,11 +5,11 @@ port: "8082"
 var:
   - name: OXA_HTTP_UNAME
     description: the username to authenticate with the registry HTTP API service
-    value: "{{fx=>name:99}}"
+    value: "{{fx=name:99}}"
   - name: OXA_HTTP_PWD
     description: the password to authenticate the registry HTTP API service
     secret: true
-    value: "{{fx=>pwd:16,false}}"
+    value: "{{fx=pwd:16,false}}"
   - name: OXA_HTTP_PORT
     description: the port on which the registry HTTP API service listens
     value: "8082"

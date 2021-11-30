@@ -5,16 +5,16 @@ port: "8885"
 var:
   - name: OX_MONGO_EVR_CONN
     description: the connection information to the mongodb database
-    value: "mongodb://{{bind=>evr-mongo-db:var:MONGO_INITDB_ROOT_USERNAME}}:{{bind=>evr-mongo-db:var:MONGO_INITDB_ROOT_PASSWORD}}@{{bind=>evr-mongo-db:uri}}:{{bind=>evr-mongo-db:port}}//syslog?authSource=admin&keepAlive=true&poolSize=30&autoReconnect=true&socketTimeoutMS=360000&connectTimeoutMS=360000"
+    value: "mongodb://{{bind=evr-mongo-db:var:MONGO_INITDB_ROOT_USERNAME}}:{{bind=evr-mongo-db:var:MONGO_INITDB_ROOT_PASSWORD}}@{{bind=evr-mongo-db:uri}}:{{bind=evr-mongo-db:port}}//syslog?authSource=admin&keepAlive=true&poolSize=30&autoReconnect=true&socketTimeoutMS=360000&connectTimeoutMS=360000"
     secret: true
   - name: OX_HTTP_PORT
     description: the HTTP port on which the event receiver service listens
     value: "8885"
   - name: OX_HTTP_UNAME
     description: the user to authenticate with the event receiver HTTP service
-    value: "{{fx=>name:99}}"
+    value: "{{fx=name:99}}"
   - name: OX_HTTP_PWD
     description: the password to authenticate with the event receiver HTTP service
     secret: true
-    value: "{{fx=>pwd:16,false}}"
+    value: "{{fx=pwd:16,false}}"
 ...
