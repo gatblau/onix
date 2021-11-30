@@ -58,7 +58,8 @@ func NewAppMan(uri string) (*AppManifest, error) {
 func (m *AppManifest) Explode() (*AppManifest, error) {
 	var err error
 	// create a copy of the passed in light manifest to become the exploded version
-	appMan := m.deepCopy()
+	appMan := new(AppManifest)
+	_ = m.deepCopy(appMan)
 	// validate the app manifest
 	if err = m.validate(); err != nil {
 		return nil, err
@@ -81,12 +82,12 @@ func (m *AppManifest) Explode() (*AppManifest, error) {
 		appMan.Services[i].Info = svcMan
 		appMan.Services[i].Name = svcMan.Name
 	}
-	return &appMan, nil
+	return appMan, nil
 }
 
 func (m *AppManifest) Wire() (*AppManifest, error) {
 	appMan := new(AppManifest)
-	DeepCopy(m, appMan)
+	_ = m.deepCopy(appMan)
 	for six, service := range m.Services {
 		for vix, v := range service.Info.Var {
 			// if the variable is a function expression
@@ -127,21 +128,9 @@ func (m *AppManifest) validate() error {
 	return nil
 }
 
-func (m *AppManifest) deepCopy() AppManifest {
-	result := AppManifest{
-		Name:        m.Name,
-		Description: m.Description,
-		Version:     m.Version,
-	}
-	for _, svc := range m.Services {
-		result.Services = append(result.Services, svc)
-	}
-	return result
-}
-
-func DeepCopy(src, dst interface{}) error {
+func (m *AppManifest) deepCopy(dst interface{}) error {
 	var buffer bytes.Buffer
-	if err := gob.NewEncoder(&buffer).Encode(src); err != nil {
+	if err := gob.NewEncoder(&buffer).Encode(m); err != nil {
 		return err
 	}
 	return gob.NewDecoder(&buffer).Decode(dst)
