@@ -5,7 +5,7 @@ port: "8086"
 var:
   - name: OX_DBM_DB_HOST
     description: the database host to which dbman should connect
-    value: "{{bind=db:name}}"
+    value: "{{bind=db}}"
   - name: OX_DBM_DB_USERNAME
     description: the database user name
     value: "onix"

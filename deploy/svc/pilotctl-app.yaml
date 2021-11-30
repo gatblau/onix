@@ -5,7 +5,7 @@ port: "8888"
 var:
   - name: OX_PILOTCTL_DB_HOST
     description: the name of the database service host used by pilot control to store management data
-    value: "{{bind=db:name}}"
+    value: "{{bind=db}}"
   - name: OX_PILOTCTL_DB_USER
     description: the username to authenticate with the database service
     value: "{{bind=db:var::99}}"
@@ -18,7 +18,7 @@ var:
     value: "8888"
   - name: OX_WAPI_URI
     description: the URI of the Onix Web API service used by pilot control to store configuration data
-    value: "{{bind=ox-app:uri}}"
+    value: "{{bind=ox-app}}"
   - name: OX_WAPI_USER
     description: the username to authenticate with the Onix Web API service
     value: "{{fx=name:99}}"
@@ -31,7 +31,7 @@ var:
     default: "false"
   - name: OX_ART_REG_URI
     description: the URI of the Artisan registry service used by pilot control to look up automation packages
-    value: "{{bind=artreg-app:uri}}"
+    value: "{{bind=artreg-app}}"
   - name: OX_ART_REG_USER
     description: the username to authenticate with the Artisan Registry service
     value: "{{bind=artreg-app:var:OXA_HTTP_UNAME}}"
