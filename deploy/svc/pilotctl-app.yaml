@@ -8,11 +8,11 @@ var:
     value: "{{bind=db}}"
   - name: OX_PILOTCTL_DB_USER
     description: the username to authenticate with the database service
-    value: "{{bind=pilotctl-app-dbman:var:OX_DBM_DB_USERNAME}}"
+    value: "{{fx=name:99}}"
   - name: OX_PILOTCTL_DB_PWD
     description: the password to authenticate with the database service
     secret: true
-    value: "{{bind=pilotctl-app-dbman:var:OX_DBM_DB_PASSWORD}}"
+    value: "{{fx=pwd:16,false}}"
   - name: OX_HTTP_PORT
     description: the port the http
     value: "8888"

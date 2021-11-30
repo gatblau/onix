@@ -8,10 +8,10 @@ var:
     value: "{{bind=db}}"
   - name: OX_DBM_DB_USERNAME
     description: the database user name
-    value: "onix"
+    value: "{{bind=pilotctl-app:var:OX_PILOTCTL_DB_USER}}"
   - name: OX_DBM_DB_PASSWORD
     description: the database user password
-    value: "{{fx=pwd:16,false}}"
+    value: "{{bind=pilotctl-app:var:OX_PILOTCTL_DB_PWD}}"
     secret: true
   - name: OX_DBM_DB_ADMINUSERNAME
     description: the database server administrator user name
