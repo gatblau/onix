@@ -29,7 +29,7 @@ services:
 
   - description: Onix Web API
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/ox-app.yaml
-    shema_uri: https://raw.githubusercontent.com/gatblau/ox-db/e94e263989f959a4cfbd06c2af0232fdab94b709
+    schema_uri: https://raw.githubusercontent.com/gatblau/ox-db/e94e263989f959a4cfbd06c2af0232fdab94b709
     image: quay.io/gatblau/onix-snapshot:v0.0.4-1af14bb-021021131813
 
   - description: Pilot Control
