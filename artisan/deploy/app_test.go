@@ -22,5 +22,9 @@ func TestAppManifest_Explode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot explode app manifest: %s\n", err)
 	}
-	fmt.Println(len(*em))
+	wm, err := em.Wire()
+	if err != nil {
+		t.Fatalf("cannot wire app manifest: %s\n", err)
+	}
+	fmt.Println(len(wm.Services))
 }

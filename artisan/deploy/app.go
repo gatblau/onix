@@ -9,17 +9,30 @@
 package deploy
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 // AppManifest the application manifest that is made up of one or more service manifests
-type AppManifest []SvcRef
+type AppManifest struct {
+	Name        string   `yaml:"name"`
+	Description string   `yaml:"description,omitempty"`
+	Version     string   `yaml:"version"`
+	Services    []SvcRef `yaml:"services"`
+}
 
 type SvcRef struct {
 	// the name of the service
-	Name string `yaml:"name"`
+	Name string `yaml:"name,omitempty"`
+	// the service description
+	Description string `yaml:"description"`
 	// the uri of the service manifest
 	URI string `yaml:"uri,omitempty"`
+	// the uri of the database schema definition (if any)
+	SchemaURI string `yaml:"schema_uri,omitempty"`
 	// the URI of the service image containing the service manifest
 	Image string `yaml:"image,omitempty"`
 	// whether this service should not be publicly exposed, by default is false
@@ -27,7 +40,7 @@ type SvcRef struct {
 	// the service port, if not specified, the application port (in the service manifest) is used
 	Port string `yaml:"port,omitempty"`
 	// the service manifest loaded from remote image
-	Service *SvcManifest `yaml:"service,omitempty"`
+	Info *SvcManifest `yaml:"service,omitempty"`
 }
 
 // NewAppMan creates a new application manifest from an URI (supported schemes are http(s):// and file://
@@ -52,7 +65,7 @@ func (m *AppManifest) Explode() (*AppManifest, error) {
 	}
 	// loop through
 	var svcMan *SvcManifest
-	for i, svc := range *m {
+	for i, svc := range m.Services {
 		// image only
 		if len(svc.Image) > 0 && len(svc.URI) == 0 {
 			svcMan, err = loadSvcManFromImage(svc)
@@ -65,17 +78,41 @@ func (m *AppManifest) Explode() (*AppManifest, error) {
 				return nil, fmt.Errorf("cannot load service manifest for '%s': %s\n", svc.Image, err)
 			}
 		}
-		appMan[i].Service = svcMan
+		appMan.Services[i].Info = svcMan
+		appMan.Services[i].Name = svcMan.Name
 	}
 	return &appMan, nil
 }
 
-func (m *AppManifest) validate() error {
-	for _, svc := range *m {
-		// check that the manifest has named services
-		if len(svc.Name) == 0 {
-			return fmt.Errorf("service manifest name is required for image %s\n", svc.Image)
+func (m *AppManifest) Wire() (*AppManifest, error) {
+	appMan := new(AppManifest)
+	DeepCopy(m, appMan)
+	for six, service := range m.Services {
+		for vix, v := range service.Info.Var {
+			// if the variable is a function expression
+			if strings.HasPrefix(strings.Replace(v.Value, " ", "", -1), "{{fx=") {
+				content := v.Value[len("{{fx=") : len(v.Value)-2]
+				parts := strings.Split(content, ":")
+				switch strings.ToLower(parts[0]) {
+				case "pwd":
+					subParts := strings.Split(parts[1], ",")
+					length, _ := strconv.Atoi(subParts[0])
+					symbols, _ := strconv.ParseBool(subParts[1])
+					appMan.Services[six].Info.Var[vix].Value = RandomPwd(length, symbols)
+				case "name":
+					number, _ := strconv.Atoi(parts[1])
+					appMan.Services[six].Info.Var[vix].Value = RandomName(number)
+				default:
+
+				}
+			}
 		}
+	}
+	return appMan, nil
+}
+
+func (m *AppManifest) validate() error {
+	for _, svc := range m.Services {
 		// case of manifest embedded in docker image then no URI is needed (image only)
 		// case of manifest in git repo (uri + image required)
 		// so cases to avoid is uri only
@@ -91,9 +128,21 @@ func (m *AppManifest) validate() error {
 }
 
 func (m *AppManifest) deepCopy() AppManifest {
-	result := AppManifest{}
-	for _, svc := range *m {
-		result = append(result, svc)
+	result := AppManifest{
+		Name:        m.Name,
+		Description: m.Description,
+		Version:     m.Version,
+	}
+	for _, svc := range m.Services {
+		result.Services = append(result.Services, svc)
 	}
 	return result
+}
+
+func DeepCopy(src, dst interface{}) error {
+	var buffer bytes.Buffer
+	if err := gob.NewEncoder(&buffer).Encode(src); err != nil {
+		return err
+	}
+	return gob.NewDecoder(&buffer).Decode(dst)
 }
