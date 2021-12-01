@@ -21,11 +21,11 @@ var:
     value: "{{bind=ox-app}}"
   - name: OX_WAPI_USER
     description: the username to authenticate with the Onix Web API service
-    value: "{{fx=name:99}}"
+    value: "{{bind=ox-app:var:WAPI_ADMIN_USER}}"
   - name: OX_WAPI_PWD
     description: the password to authenticate with the Onix Web API service
     secret: true
-    value: "{{fx=pwd:16,false}}"
+    value: "{{bind=ox-app:var:WAPI_ADMIN_PWD}}"
   - name: OX_WAPI_INSECURE_SKIP_VERIFY
     description: skips verification of TLS certificate for the Onix Web API service
     default: "false"
