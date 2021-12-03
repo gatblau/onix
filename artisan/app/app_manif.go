@@ -161,7 +161,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 						if !found {
 							return nil, fmt.Errorf("invalid service name '%s' => %s='%s' in service '%s'\n", svcName, v.Name, v.Value, service.Name)
 						}
-						appMan.Services[six].Info.Var[vix].Value = svcName
+						appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, svcName, 1)
 						appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, svcName)
 						ix := getServiceIx(*appMan, svcName)
 						appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name)
@@ -172,6 +172,15 @@ func (m *Manifest) wire() (*Manifest, error) {
 								appMan.Services[six].Info.Var[vix].Value = uri
 							} else {
 								return nil, fmt.Errorf("variable %s='%s' in service '%s' request schema_ui from service '%s' but is missing\n", v.Name, v.Value, service.Name, parts[0])
+							}
+						case "port":
+							if port := m.getSvcPort(parts[0]); len(port) > 0 {
+								appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, port, 1)
+								appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, port)
+								ix := getServiceIx(*appMan, parts[0])
+								appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name)
+							} else {
+								return nil, fmt.Errorf("port not defined in service '%s', invoked from variable %s => '%s' in service %s\n", parts[0], v.Name, binding, service.Name)
 							}
 						default:
 							return nil, fmt.Errorf("invalid binding %s='%s' in service '%s'\n", v.Name, binding, service.Name)
@@ -271,6 +280,15 @@ func (m *Manifest) deepCopy(dst interface{}) error {
 		return err
 	}
 	return gob.NewDecoder(&buffer).Decode(dst)
+}
+
+func (m *Manifest) getSvcPort(svcName string) string {
+	for _, service := range m.Services {
+		if service.Name == svcName && len(service.Info.Port) > 0 {
+			return service.Info.Port
+		}
+	}
+	return ""
 }
 
 func bindings(value string) []string {
