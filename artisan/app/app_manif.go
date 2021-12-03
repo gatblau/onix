@@ -115,13 +115,16 @@ func (m *Manifest) wire() (*Manifest, error) {
 				content := v.Value[len("{{fx=") : len(v.Value)-2]
 				parts := strings.Split(content, ":")
 				// qualifies the name of the variable with the service name
-				vName := fmt.Sprintf("${%s_%s}", strings.ToUpper(strings.Replace(service.Name, "-", "_", -1)), v.Name)
+				// variable name without ${...} wrapper
+				vName := fmt.Sprintf("%s_%s", strings.ToUpper(strings.Replace(service.Name, "-", "_", -1)), v.Name)
+				// variable name wrapped with ${...}
+				vNameWrapped := fmt.Sprintf("${%s}", vName)
 				switch strings.ToLower(parts[0]) {
 				case "pwd":
 					subParts := strings.Split(parts[1], ",")
 					length, _ := strconv.Atoi(subParts[0])
 					symbols, _ := strconv.ParseBool(subParts[1])
-					appMan.Services[six].Info.Var[vix].Value = vName
+					appMan.Services[six].Info.Var[vix].Value = vNameWrapped
 					appMan.Var.Items = append(appMan.Var.Items, AppVar{
 						Name:        vName,
 						Description: v.Description,
@@ -131,7 +134,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 					})
 				case "name":
 					number, _ := strconv.Atoi(parts[1])
-					appMan.Services[six].Info.Var[vix].Value = vName
+					appMan.Services[six].Info.Var[vix].Value = vNameWrapped
 					appMan.Var.Items = append(appMan.Var.Items, AppVar{
 						Name:        vName,
 						Description: v.Description,

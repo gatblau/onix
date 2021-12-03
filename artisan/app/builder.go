@@ -30,6 +30,7 @@ type DeploymentRsxType int
 const (
 	ComposeProject DeploymentRsxType = iota
 	K8SResource
+	EnvironmentFile
 )
 
 type DeploymentRsx struct {
