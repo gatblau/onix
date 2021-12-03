@@ -9,7 +9,7 @@
     implementation can be found here https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go
 */
 
-package deploy
+package app
 
 import (
 	"fmt"

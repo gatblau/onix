@@ -6,18 +6,20 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package deploy
+package app
 
 import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
 
-// AppManifest the application manifest that is made up of one or more service manifests
-type AppManifest struct {
+// Manifest the application manifest that is made up of one or more service manifests
+type Manifest struct {
 	Name        string   `yaml:"name"`
 	Description string   `yaml:"description,omitempty"`
 	Version     string   `yaml:"version"`
@@ -44,24 +46,37 @@ type SvcRef struct {
 	Info *SvcManifest `yaml:"service,omitempty"`
 	// the other services it depends on
 	DependsOn []string `yaml:"depends_on,omitempty"`
+	// the other services using it
+	UsedBy []string `yaml:"used_by_count,omitempty"`
 }
 
 // NewAppMan creates a new application manifest from an URI (supported schemes are http(s):// and file://
-func NewAppMan(uri string) (*AppManifest, error) {
+func NewAppMan(uri string) (man *Manifest, err error) {
 	if ok, path := isFile(uri); ok {
-		return loadFromFile(path)
+		man, err = loadFromFile(path)
+	} else if isURL(uri) {
+		man, err = loadFromURL(uri)
 	}
-	if isURL(uri) {
-		return loadFromURL(uri)
+	if err != nil {
+		return
 	}
-	return nil, fmt.Errorf("invalid URI value '%s': should start with either file://, http:// or https://\n", uri)
+	if man == nil {
+		return nil, fmt.Errorf("invalid URI value '%s': should start with either file://, http:// or https://\n", uri)
+	}
+	if man, err = man.explode(); err != nil {
+		return
+	}
+	if man, err = man.wire(); err != nil {
+		return
+	}
+	return
 }
 
-// Explode augments an app manifest that has remote references to service manifests
-func (m *AppManifest) Explode() (*AppManifest, error) {
+// explode adds service manifest information to the application manifest by querying remote sources
+func (m *Manifest) explode() (*Manifest, error) {
 	var err error
 	// create a copy of the passed in light manifest to become the exploded version
-	appMan := new(AppManifest)
+	appMan := new(Manifest)
 	_ = m.deepCopy(appMan)
 	// validate the app manifest
 	if err = m.validate(); err != nil {
@@ -88,9 +103,11 @@ func (m *AppManifest) Explode() (*AppManifest, error) {
 	return appMan, nil
 }
 
-func (m *AppManifest) Wire() (*AppManifest, error) {
-	appMan := new(AppManifest)
+// wire evaluates all expressions in the service manifest (i.e. functions and bindings) and work out service dependencies
+func (m *Manifest) wire() (*Manifest, error) {
+	appMan := new(Manifest)
 	_ = m.deepCopy(appMan)
+	// do the wiring
 	for six, service := range m.Services {
 		for vix, v := range service.Info.Var {
 			// if the variable is a function expression
@@ -125,50 +142,61 @@ func (m *AppManifest) Wire() (*AppManifest, error) {
 				default:
 					return nil, fmt.Errorf("invalid function %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
 				}
-			} else // if the variable is a binding
-			if strings.HasPrefix(strings.Replace(v.Value, " ", "", -1), "{{bind=") {
-				content := v.Value[len("{{bind=") : len(v.Value)-2]
-				parts := strings.Split(content, ":")
-				switch len(parts) {
-				case 1:
-					svcName := parts[0]
-					// check the name exists
-					found := false
-					for _, s := range m.Services {
-						if s.Name == svcName {
-							found = true
-							break
+			} else { // if the variable is a binding
+				b := bindings(v.Value)
+				for _, binding := range b {
+					content := binding[len("{{bind=") : len(binding)-2]
+					parts := strings.Split(content, ":")
+					switch len(parts) {
+					case 1:
+						svcName := parts[0]
+						// check the name exists
+						found := false
+						for _, s := range m.Services {
+							if s.Name == svcName {
+								found = true
+								break
+							}
 						}
-					}
-					if !found {
-						return nil, fmt.Errorf("invalid service name '%s' => %s='%s' in service '%s'\n", svcName, v.Name, v.Value, service.Name)
-					}
-					appMan.Services[six].Info.Var[vix].Value = svcName
-				case 2:
-					switch parts[1] {
-					case "schema_uri":
-						if uri := m.getSchemaURI(parts[0]); len(uri) > 0 {
-							appMan.Services[six].Info.Var[vix].Value = uri
-						} else {
-							return nil, fmt.Errorf("variable %s='%s' in service '%s' request schema_ui from service '%s' but is missing\n", v.Name, v.Value, service.Name, parts[0])
+						if !found {
+							return nil, fmt.Errorf("invalid service name '%s' => %s='%s' in service '%s'\n", svcName, v.Name, v.Value, service.Name)
 						}
-					}
-				default:
-					return nil, fmt.Errorf("invalid binding %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
-				case 3:
-					switch parts[1] {
-					case "var":
-						if m.varExists(parts[2]) {
-							appMan.Services[six].Info.Var[vix].Value = strings.ToUpper(fmt.Sprintf("${%s_%s}", parts[0], parts[2]))
-							appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, parts[0])
-						} else {
-							return nil, fmt.Errorf("cannot find variable %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
+						appMan.Services[six].Info.Var[vix].Value = svcName
+						appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, svcName)
+						ix := getServiceIx(*appMan, svcName)
+						appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name)
+					case 2:
+						switch parts[1] {
+						case "schema_uri":
+							if uri := m.getSchemaURI(parts[0]); len(uri) > 0 {
+								appMan.Services[six].Info.Var[vix].Value = uri
+							} else {
+								return nil, fmt.Errorf("variable %s='%s' in service '%s' request schema_ui from service '%s' but is missing\n", v.Name, v.Value, service.Name, parts[0])
+							}
+						}
+					default:
+						return nil, fmt.Errorf("invalid binding %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
+					case 3:
+						switch parts[1] {
+						case "var":
+							if m.varExists(parts[2]) {
+								appMan.Services[six].Info.Var[vix].Value = strings.ToUpper(fmt.Sprintf("${%s_%s}", parts[0], parts[2]))
+								appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, parts[0])
+								ix := getServiceIx(*appMan, parts[0])
+								appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name)
+							} else {
+								return nil, fmt.Errorf("cannot find variable %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
+							}
 						}
 					}
 				}
 			}
 		}
 	}
+	// sort the services by dependencies (most widely used first)
+	sort.Slice(m.Services, func(i, j int) bool {
+		return len(m.Services[i].UsedBy) > len(m.Services[j].UsedBy)
+	})
 	return appMan, nil
 }
 
@@ -188,7 +216,7 @@ func addDependency(dependsOn []string, svc string) []string {
 	return result
 }
 
-func (m *AppManifest) getSchemaURI(svc string) string {
+func (m *Manifest) getSchemaURI(svc string) string {
 	for _, service := range m.Services {
 		if service.Name == svc && len(service.SchemaURI) > 0 {
 			return service.SchemaURI
@@ -197,7 +225,16 @@ func (m *AppManifest) getSchemaURI(svc string) string {
 	return ""
 }
 
-func (m *AppManifest) varExists(varName string) bool {
+func getServiceIx(m Manifest, svcName string) int {
+	for ix, service := range m.Services {
+		if service.Name == svcName {
+			return ix
+		}
+	}
+	return -1
+}
+
+func (m *Manifest) varExists(varName string) bool {
 	for _, service := range m.Services {
 		for _, v := range service.Info.Var {
 			if v.Name == varName {
@@ -208,7 +245,7 @@ func (m *AppManifest) varExists(varName string) bool {
 	return false
 }
 
-func (m *AppManifest) validate() error {
+func (m *Manifest) validate() error {
 	for _, svc := range m.Services {
 		// case of manifest embedded in docker image then no URI is needed (image only)
 		// case of manifest in git repo (uri + image required)
@@ -224,10 +261,15 @@ func (m *AppManifest) validate() error {
 	return nil
 }
 
-func (m *AppManifest) deepCopy(dst interface{}) error {
+func (m *Manifest) deepCopy(dst interface{}) error {
 	var buffer bytes.Buffer
 	if err := gob.NewEncoder(&buffer).Encode(m); err != nil {
 		return err
 	}
 	return gob.NewDecoder(&buffer).Decode(dst)
+}
+
+func bindings(value string) []string {
+	r, _ := regexp.Compile("{{bind=(?P<NAME>[^}]+)}}")
+	return r.FindAllString(value, -1)
 }

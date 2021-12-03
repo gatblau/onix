@@ -6,14 +6,17 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package deploy
+package app
 
-import (
-	"fmt"
-	"testing"
-)
+type KubeBuilder struct {
+	Manifest Manifest
+}
 
-func TestNewPwd(t *testing.T) {
-	fmt.Println(RandomPwd(55, false))
-	fmt.Println(RandomPwd(36, true))
+// newKubeBuilder called internally by NewBuilder()
+func newKubeBuilder(appMan Manifest) Builder {
+	return &KubeBuilder{Manifest: appMan}
+}
+
+func (b *KubeBuilder) Build() ([]DeploymentRsx, error) {
+	return nil, nil
 }

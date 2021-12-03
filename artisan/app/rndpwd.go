@@ -6,7 +6,7 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package deploy
+package app
 
 import (
 	"math/rand"

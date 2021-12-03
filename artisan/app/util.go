@@ -6,7 +6,7 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package deploy
+package app
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-func loadFromFile(path string) (*AppManifest, error) {
+func loadFromFile(path string) (*Manifest, error) {
 	if len(path) == 0 {
 		path = "."
 	}
@@ -36,7 +36,7 @@ func loadFromFile(path string) (*AppManifest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot read app manifest: %s\n", err)
 	}
-	appMan := new(AppManifest)
+	appMan := new(Manifest)
 	err = yaml.Unmarshal(file, appMan)
 	if err != nil {
 		return nil, fmt.Errorf("cannot unmarshal app manifest: %s\n", err)
@@ -44,12 +44,12 @@ func loadFromFile(path string) (*AppManifest, error) {
 	return appMan, nil
 }
 
-func loadFromURL(url string) (*AppManifest, error) {
+func loadFromURL(url string) (*Manifest, error) {
 	content, err := fetchFile(url)
 	if err != nil {
 		return nil, err
 	}
-	m := new(AppManifest)
+	m := new(Manifest)
 	err = yaml.Unmarshal(content, m)
 	if err != nil {
 		return nil, fmt.Errorf("cannot unmarshal remotely fetched app manifest yaml file: %s\n", err)
