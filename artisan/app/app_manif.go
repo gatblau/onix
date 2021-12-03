@@ -173,21 +173,25 @@ func (m *Manifest) wire() (*Manifest, error) {
 							} else {
 								return nil, fmt.Errorf("variable %s='%s' in service '%s' request schema_ui from service '%s' but is missing\n", v.Name, v.Value, service.Name, parts[0])
 							}
+						default:
+							return nil, fmt.Errorf("invalid binding %s='%s' in service '%s'\n", v.Name, binding, service.Name)
 						}
-					default:
-						return nil, fmt.Errorf("invalid binding %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
 					case 3:
 						switch parts[1] {
 						case "var":
 							if m.varExists(parts[2]) {
-								appMan.Services[six].Info.Var[vix].Value = strings.ToUpper(fmt.Sprintf("${%s_%s}", parts[0], parts[2]))
+								appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, strings.ToUpper(fmt.Sprintf("${%s_%s}", parts[0], parts[2])), 1)
 								appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, parts[0])
 								ix := getServiceIx(*appMan, parts[0])
 								appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name)
 							} else {
 								return nil, fmt.Errorf("cannot find variable %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
 							}
+						default:
+							return nil, fmt.Errorf("invalid binding %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
 						}
+					default:
+						return nil, fmt.Errorf("invalid binding %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
 					}
 				}
 			}
