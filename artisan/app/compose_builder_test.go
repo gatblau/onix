@@ -26,5 +26,5 @@ func TestComposeBuilder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot build docker compose resources: %s\n", err)
 	}
-	fmt.Println(resx[0])
+	fmt.Println(string(resx[0].Content[:]))
 }
