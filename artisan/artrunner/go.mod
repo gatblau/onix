@@ -1,6 +1,6 @@
 module github.com/gatblau/onix/artisan/artrunner
 
-go 1.15
+go 1.16
 
 replace (
 	github.com/gatblau/onix/artisan => ../
