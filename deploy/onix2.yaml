@@ -2,6 +2,24 @@
 name: Pilot Control Plane
 description: Onix services to enable Pilot Control
 version: 1.0
+profiles:
+  - name: full
+    services:
+      - db
+      - ox-app-dbman
+      - pilotctl-app-dbman
+      - evr-mongo-db
+      - evr-mongo-app
+      - artreg-app
+      - ox-app
+      - pilotctl-app
+
+  - name: micro
+    services:
+      - db
+      - ox-app-dbman
+      - ox-app
+
 services:
   - name: db
     description: PostgreSQL Database service
