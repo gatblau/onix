@@ -115,8 +115,12 @@ func loadSvcManFromImage(svcRef SvcRef) (*SvcManifest, error) {
 }
 
 // loadSvcManFromURI extracts the service manifest from a remote URI
-func loadSvcManFromURI(svc SvcRef) (*SvcManifest, error) {
-	content, err := fetchFile(svc.URI)
+func loadSvcManFromURI(svc SvcRef, credentials string) (*SvcManifest, error) {
+	uri, err := addCredentialsToURI(svc.URI, credentials)
+	if err != nil {
+		return nil, err
+	}
+	content, err := fetchFile(uri)
 	if err != nil {
 		return nil, err
 	}

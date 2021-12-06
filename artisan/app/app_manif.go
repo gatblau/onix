@@ -26,6 +26,9 @@ type Manifest struct {
 	Profiles    Profiles `yaml:"profiles"`
 	Services    Services `yaml:"services"`
 	Var         Vars     `yaml:"var,omitempty"`
+
+	// internal use for git credentials if required
+	credentials string
 }
 
 type Profile struct {
@@ -88,18 +91,34 @@ type SvcRef struct {
 }
 
 // NewAppMan creates a new application manifest from an URI (supported schemes are http(s):// and file://
-func NewAppMan(uri, profile string) (man *Manifest, err error) {
+func NewAppMan(uri, profile, credentials string) (man *Manifest, err error) {
+	// validate credentials
+	if len(credentials) > 0 {
+		if len(strings.Split(credentials, ":")) != 2 {
+			err = fmt.Errorf("invalid crdentials format: requires 'user:password'\n")
+		}
+	}
 	if ok, path := isFile(uri); ok {
 		man, err = loadFromFile(path)
+		if err != nil {
+			return
+		}
 	} else if isURL(uri) {
+		// if credentials have been provided, add them to the URI
+		uri, err = addCredentialsToURI(uri, credentials)
+		if err != nil {
+			return
+		}
 		man, err = loadFromURL(uri)
-	}
-	if err != nil {
-		return
+		if err != nil {
+			return
+		}
 	}
 	if man == nil {
 		return nil, fmt.Errorf("invalid URI value '%s': should start with either file://, http:// or https://\n", uri)
 	}
+	// set any credentials if provided
+	man.credentials = credentials
 	// first trim the services in the manifest to only the one defined in the requested profile
 	if man, err = man.trim(profile); err != nil {
 		return
@@ -179,13 +198,20 @@ func (m *Manifest) explode() (*Manifest, error) {
 				return nil, fmt.Errorf("cannot load service manifest for '%s': %s\n", svc.Image, err)
 			}
 		} else if len(svc.Image) > 0 && len(svc.URI) > 0 {
-			svcMan, err = loadSvcManFromURI(svc)
+			svcMan, err = loadSvcManFromURI(svc, m.credentials)
 			if err != nil {
 				return nil, fmt.Errorf("cannot load service manifest for '%s': %s\n", svc.Image, err)
 			}
 		}
 		appMan.Services[i].Info = svcMan
-		appMan.Services[i].Name = svcMan.Name
+		// if profiles are defined then service name sin app manifest should match the ones in the service manifests
+		if appMan.Profiles != nil && appMan.Services[i].Name != svcMan.Name {
+			return nil, fmt.Errorf("service name mismatch: app manifest => %s; svc manifest => %s\n", appMan.Services[i].Name, svcMan.Name)
+		}
+		// if no profiles set, and service name in app manifest not set, then set it with the value in the service manifest
+		if appMan.Profiles == nil && len(appMan.Services[i].Name) == 0 {
+			appMan.Services[i].Name = svcMan.Name
+		}
 	}
 	return appMan, nil
 }
@@ -384,4 +410,17 @@ func (m *Manifest) getSvcPort(svcName string) string {
 func bindings(value string) []string {
 	r, _ := regexp.Compile("{{bind=(?P<NAME>[^}]+)}}")
 	return r.FindAllString(value, -1)
+}
+
+// add credentials to http(s) URI
+func addCredentialsToURI(uri string, creds string) (string, error) {
+	if len(creds) == 0 {
+		return uri, nil
+	}
+	parts := strings.Split(uri, "/")
+	if !strings.HasPrefix(parts[0], "http") {
+		return uri, fmt.Errorf("invalid URI scheme, http(s) expected when specifying credentials\n")
+	}
+	parts[2] = fmt.Sprintf("%s@%s", creds, parts[2])
+	return strings.Join(parts, "/"), nil
 }
