@@ -8,6 +8,8 @@
 
 package app
 
+import "fmt"
+
 type KubeBuilder struct {
 	Manifest Manifest
 }
@@ -18,5 +20,5 @@ func newKubeBuilder(appMan Manifest) Builder {
 }
 
 func (b *KubeBuilder) Build() ([]DeploymentRsx, error) {
-	return nil, nil
+	return nil, fmt.Errorf("kubernetes builder in not yet implemented\n")
 }

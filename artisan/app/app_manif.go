@@ -23,8 +23,45 @@ type Manifest struct {
 	Name        string   `yaml:"name"`
 	Description string   `yaml:"description,omitempty"`
 	Version     string   `yaml:"version"`
-	Services    []SvcRef `yaml:"services"`
+	Profiles    Profiles `yaml:"profiles"`
+	Services    Services `yaml:"services"`
 	Var         Vars     `yaml:"var,omitempty"`
+}
+
+type Profile struct {
+	Name     string   `yaml:"name"`
+	Services []string `yaml:"services"`
+}
+
+type Profiles []Profile
+
+func (p *Profiles) Get(name string) *Profile {
+	for _, profile := range *p {
+		if profile.Name == name {
+			return &profile
+		}
+	}
+	return nil
+}
+
+// servicesSlice returns a string slice with service names in the profile
+func (p *Profile) servicesSlice() []string {
+	result := make([]string, 0)
+	for _, svc := range p.Services {
+		result = append(result, svc)
+	}
+	return result
+}
+
+type Services []SvcRef
+
+func (s *SvcRef) InProfile(profile []string) bool {
+	for _, p := range profile {
+		if s.Name == p {
+			return true
+		}
+	}
+	return false
 }
 
 type SvcRef struct {
@@ -51,7 +88,7 @@ type SvcRef struct {
 }
 
 // NewAppMan creates a new application manifest from an URI (supported schemes are http(s):// and file://
-func NewAppMan(uri string) (man *Manifest, err error) {
+func NewAppMan(uri, profile string) (man *Manifest, err error) {
 	if ok, path := isFile(uri); ok {
 		man, err = loadFromFile(path)
 	} else if isURL(uri) {
@@ -63,13 +100,63 @@ func NewAppMan(uri string) (man *Manifest, err error) {
 	if man == nil {
 		return nil, fmt.Errorf("invalid URI value '%s': should start with either file://, http:// or https://\n", uri)
 	}
+	// first trim the services in the manifest to only the one defined in the requested profile
+	if man, err = man.trim(profile); err != nil {
+		return
+	}
+	//  then fetches remote service manifests
 	if man, err = man.explode(); err != nil {
 		return
 	}
+	// finally, evaluates functions and bindings (wire all service dependencies by evaluating dependent variables)
 	if man, err = man.wire(); err != nil {
 		return
 	}
 	return
+}
+
+// trim the services to a specific profile
+// if no profile is specified and profiles exist then use the first profile in the manifest
+// if no profile is specified and profiles do not exist return an error
+// if no profile is specified and no profiles exist in the manifest then does not trim (all services in the manifest are included)
+func (m *Manifest) trim(profile string) (*Manifest, error) {
+	var prof *Profile
+	// if no profiles have been defined then perform no trimming
+	if m.Profiles == nil || len(m.Profiles) == 0 {
+		// if a specific profile was requested
+		if len(profile) > 0 {
+			return nil, fmt.Errorf("no profiles have been defined in application manifest\n")
+		}
+		// else return untrimmed
+		return m, nil
+	}
+	// if no specific profile was requested, and profiles are defined, use the first one in the list
+	if len(profile) == 0 {
+		prof = &m.Profiles[0]
+	} else {
+		// try and get the requested profile
+		prof = m.Profiles.Get(profile)
+		// if the profile was not found
+		if prof == nil {
+			return nil, fmt.Errorf("profile '%s' was not found in the application manifest '%s'\n", profile, m.Name)
+		}
+	}
+	// get a list of service names in the profile
+	profServices := prof.servicesSlice()
+	// deep clone the manifest
+	appMan := new(Manifest)
+	_ = m.deepCopy(appMan)
+	// reset the services list
+	appMan.Services = make(Services, 0)
+	// a re-populate with the items in the requested profile
+	for _, svc := range m.Services {
+		for _, profSvc := range profServices {
+			if profSvc == svc.Name {
+				appMan.Services = append(appMan.Services, svc)
+			}
+		}
+	}
+	return appMan, nil
 }
 
 // explode adds service manifest information to the application manifest by querying remote sources

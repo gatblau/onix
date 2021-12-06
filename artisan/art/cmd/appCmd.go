@@ -19,10 +19,11 @@ import (
 
 // AppCmd creates deployment config files for a target platform
 type AppCmd struct {
-	cmd    *cobra.Command
-	creds  string
-	path   string
-	format string
+	cmd     *cobra.Command
+	creds   string
+	path    string
+	format  string
+	profile string
 }
 
 func NewAppCmd() *AppCmd {
@@ -38,13 +39,16 @@ the URI can be either http(s):// or file://`,
 	c.cmd.Flags().StringVarP(&c.creds, "creds", "u", "", "-u user:password; the credentials for git authentication")
 	c.cmd.Flags().StringVarP(&c.format, "format", "f", "compose", "the target format for the configuration files (i.e. compose or k8s)")
 	c.cmd.Flags().StringVarP(&c.path, "path", "p", ".", "the output path where the configuration files will be written")
+	c.cmd.Flags().StringVarP(&c.profile, "profile", "r", "", "the application profile to use, "+
+		"if not specified, and profiles have been defined in the application manifest, the first profile is used\n"+
+		"if not specified, and profiles have not been defined in the application manifest, all services in the manifest are included ")
 	c.cmd.Run = c.Run
 	return c
 }
 
 func (c *AppCmd) Run(cmd *cobra.Command, args []string) {
 	uri := args[0]
-	manifest, err := app.NewAppMan(uri)
+	manifest, err := app.NewAppMan(uri, c.profile)
 	if err != nil {
 		core.ErrorLogger.Fatalf(err.Error())
 	}
