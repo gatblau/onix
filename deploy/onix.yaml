@@ -2,37 +2,63 @@
 name: Pilot Control Plane
 description: Onix services to enable Pilot Control
 version: 1.0
+profiles:
+  - name: full
+    services:
+      - db
+      - ox-app-dbman
+      - pilotctl-app-dbman
+      - evr-mongo-db
+      - evr-mongo-app
+      - artreg-app
+      - ox-app
+      - pilotctl-app
+
+  - name: micro
+    services:
+      - db
+      - ox-app-dbman
+      - ox-app
+
 services:
-  - description: PostgreSQL Database service
+  - name: db
+    description: PostgreSQL Database service
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/db.yaml
     image: docker.io/postgres:13
 
-  - description: Database Manager for ox-app
+  - name: ox-app-dbman
+    description: Database Manager for ox-app
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/ox-app-dbman.yaml
     image: quay.io/gatblau/dbman-snapshot:v0.0.4-d4fb6f7-031020001129
 
-  - description: Database Manager for pilotctl-app
+  - name: pilotctl-app-dbman
+    description: Database Manager for pilotctl-app
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/pilotctl-app-dbman.yaml
     image: quay.io/gatblau/dbman-snapshot:v0.0.4-d4fb6f7-031020001129
 
-  - description: Mongo Database for Event Receiver
+  - name: evr-mongo-db
+    description: Mongo Database for Event Receiver
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/evr-mongo-db.yaml
     image: docker.io/mongo:5
 
-  - description: Pilot Control Event Receiver for Mongo
+  - name: evr-mongo-app
+    description: Pilot Control Event Receiver for Mongo
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/evr-mongo-app.yaml
     image: quay.io/gatblau/pilotctl-evr-mongodb:0.0.4-300921174051295-11aab8b6cc
 
-  - description: Artisan Registry
+  - name: artreg-app
+    description: Artisan Registry
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/artreg-app.yaml
     image: quay.io/gatblau/artisan-registry:0.0.4-011021162133879-a3dedecb3f-RC1
 
-  - description: Onix Web API
+  - name: ox-app
+    description: Onix Web API
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/ox-app.yaml
     schema_uri: https://raw.githubusercontent.com/gatblau/ox-db/e94e263989f959a4cfbd06c2af0232fdab94b709
     image: quay.io/gatblau/onix-snapshot:v0.0.4-1af14bb-021021131813
 
-  - description: Pilot Control
+  - name: pilotctl-app
+    description: Pilot Control
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/pilotctl-app.yaml
     schema_uri: https://raw.githubusercontent.com/gatblau/pilotctl-db/da13b0b770d5898327e95e0545266a229f0c837c
     image: quay.io/gatblau/pilotctl:0.0.4-161021085624494-f2346825d0
