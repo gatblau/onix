@@ -98,18 +98,18 @@ func NewAppMan(uri, profile, credentials string) (man *Manifest, err error) {
 			err = fmt.Errorf("invalid crdentials format: requires 'user:password'\n")
 		}
 	}
-	if ok, path := isFile(uri); ok {
-		man, err = loadFromFile(path)
-		if err != nil {
-			return
-		}
-	} else if isURL(uri) {
+	if isURL(uri) {
 		// if credentials have been provided, add them to the URI
 		uri, err = addCredentialsToURI(uri, credentials)
 		if err != nil {
 			return
 		}
 		man, err = loadFromURL(uri)
+		if err != nil {
+			return
+		}
+	} else {
+		man, err = loadFromFile(uri)
 		if err != nil {
 			return
 		}
@@ -414,7 +414,9 @@ func bindings(value string) []string {
 
 // add credentials to http(s) URI
 func addCredentialsToURI(uri string, creds string) (string, error) {
-	if len(creds) == 0 {
+	// if there are no credentials or the uri is a file path
+	if len(creds) == 0 || strings.HasPrefix(uri, "http") {
+		// skip and return as is
 		return uri, nil
 	}
 	parts := strings.Split(uri, "/")

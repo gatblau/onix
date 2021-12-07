@@ -7,11 +7,11 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20210707164159-52430bf6b52c // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/cheggaaa/pb/v3 v3.0.8
+	github.com/compose-spec/compose-go v1.0.8
 	github.com/eclipse/paho.mqtt.golang v1.3.5 // indirect
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/gatblau/oxc v0.0.0-20210810120109-3c7f200d87d2
 	github.com/go-git/go-git/v5 v5.4.2
-	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-uuid v1.0.2
 	github.com/kevinburke/ssh_config v1.1.0 // indirect

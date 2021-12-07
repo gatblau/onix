@@ -31,8 +31,7 @@ func loadFromFile(path string) (*Manifest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot convert app manifest to absolute path: %s\n", err)
 	}
-	filename := filepath.Join(path, "app.yaml")
-	file, err := os.ReadFile(filename)
+	file, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read app manifest: %s\n", err)
 	}
@@ -116,13 +115,32 @@ func loadSvcManFromImage(svcRef SvcRef) (*SvcManifest, error) {
 
 // loadSvcManFromURI extracts the service manifest from a remote URI
 func loadSvcManFromURI(svc SvcRef, credentials string) (*SvcManifest, error) {
-	uri, err := addCredentialsToURI(svc.URI, credentials)
-	if err != nil {
-		return nil, err
-	}
-	content, err := fetchFile(uri)
-	if err != nil {
-		return nil, err
+	var (
+		content []byte
+		uri     string
+		err     error
+	)
+	if isURL(svc.URI) {
+		// checks if credentials exists and adds them to the URI scheme
+		uri, err = addCredentialsToURI(svc.URI, credentials)
+		if err != nil {
+			return nil, fmt.Errorf("cannot add credentials to URI '%s': %s\n", uri, err)
+		}
+		// get the service manifest files over http
+		content, err = fetchFile(uri)
+		if err != nil {
+			return nil, fmt.Errorf("cannot retrieve service manifest from URI '%s': %s\n", uri, err)
+		}
+	} else {
+		// load the service manifest files from the file system
+		uri, err = filepath.Abs(svc.URI)
+		if err != nil {
+			return nil, fmt.Errorf("cannot obtain absolute representation of path '%s': %s\n", uri, err)
+		}
+		content, err = os.ReadFile(uri)
+		if err != nil {
+			return nil, fmt.Errorf("cannot load service manifest from path '%s': %s\n", uri, err)
+		}
 	}
 	m := new(SvcManifest)
 	err = yaml.Unmarshal(content, m)
@@ -130,12 +148,6 @@ func loadSvcManFromURI(svc SvcRef, credentials string) (*SvcManifest, error) {
 		return nil, fmt.Errorf("cannot unmarshal remotely fetched service manifest yaml file: %s\n", err)
 	}
 	return m, nil
-}
-
-func isFile(uri string) (isFile bool, path string) {
-	isFile = strings.HasPrefix(uri, "file://")
-	path = uri[len("file://"):]
-	return
 }
 
 func isURL(uri string) bool {
@@ -158,12 +170,12 @@ func tmpPath() (string, error) {
 }
 
 // fetchFile fetches a file content from an url
-// TODO: implement authentication
-func fetchFile(url string) ([]byte, error) {
+// authentication is done via uri scheme (i.e. https://username:password@domain/.../...)
+func fetchFile(uri string) ([]byte, error) {
 	client := http.Client{
 		Timeout: 60 * time.Second,
 	}
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +185,7 @@ func fetchFile(url string) ([]byte, error) {
 		return nil, err
 	}
 	if resp.StatusCode > 299 {
-		return nil, fmt.Errorf("cannot fetch '%s': %s\n", url, resp.Status)
+		return nil, fmt.Errorf("cannot fetch '%s': %s\n", uri, resp.Status)
 	}
 	return ioutil.ReadAll(resp.Body)
 }

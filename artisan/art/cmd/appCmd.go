@@ -9,7 +9,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/gatblau/onix/artisan/app"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/spf13/cobra"
@@ -53,13 +52,8 @@ func (c *AppCmd) Run(cmd *cobra.Command, args []string) {
 	if len(uri) == 0 {
 		core.ErrorLogger.Fatalf("missing application manifest URI\n")
 	}
-	// add credentials to URI if provided
-	uri, err := addCreds(uri, c.creds)
-	if err != nil {
-		core.ErrorLogger.Fatalf(err.Error())
-	}
 	// create an application manifest
-	manifest, err := app.NewAppMan(uri, c.profile)
+	manifest, err := app.NewAppMan(uri, c.profile, c.creds)
 	if err != nil {
 		core.ErrorLogger.Fatalf(err.Error())
 	}
@@ -102,17 +96,4 @@ func (c *AppCmd) Run(cmd *cobra.Command, args []string) {
 			core.ErrorLogger.Fatalf("cannot write file %s: %s\n", fpath, err)
 		}
 	}
-}
-
-// add credentials to http(s) URI
-func addCreds(uri string, creds string) (string, error) {
-	if len(creds) == 0 {
-		return uri, nil
-	}
-	parts := strings.Split(uri, "/")
-	if !strings.HasPrefix(parts[0], "http") {
-		return uri, fmt.Errorf("invalid URI scheme, http(s) expected when specifying credentials\n")
-	}
-	parts[2] = fmt.Sprintf("%s@%s", creds, parts[2])
-	return strings.Join(parts, "/"), nil
 }

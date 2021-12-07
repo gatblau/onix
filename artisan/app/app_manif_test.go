@@ -14,7 +14,7 @@ import (
 )
 
 func TestAppManifest_Explode(t *testing.T) {
-	m, err := NewAppMan("https://raw.githubusercontent.com/gatblau/onix/dev/deploy/onix.yaml", "")
+	m, err := NewAppMan("./test/onix.yaml", "", "")
 	if err != nil {
 		t.Fatalf("cannot create app manifest: %s\n", err)
 	}
