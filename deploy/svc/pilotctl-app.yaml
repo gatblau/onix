@@ -40,10 +40,22 @@ var:
     secret: true
     value: "{{bind=artreg-app:var:OXA_HTTP_PWD}}"
 file:
-  - value: /keys/.pilot_verify.pgp
+  - path: /keys/.pilot_verify.pgp
     description: the public pgp key used by pilot to verify connections to pilot control
     secret: true
-  - value: /keys/.pilot_sign.pgp
+  - path: /keys/.pilot_sign.pgp
     description: the private pgp key used by pilot to sign commands issued to pilot instances
     secret: true
+  - path: /conf/ev_receive.json
+    description: the configuration of event receivers used by pilotctl to send events
+    template: |
+      {
+        "event_receivers": [
+          {
+            "uri": "{{bind=evr-mongo-app}}:{{bind=evr-mongo-db:port}}/events",
+            "user": "{{bind=evr-mongo-db:var:OX_HTTP_UNAME}}",
+            "pwd": "{{bind=evr-mongo-db:var:OX_HTTP_PWD}}"
+          }
+        ]
+      }
 ...

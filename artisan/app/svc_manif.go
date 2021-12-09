@@ -43,11 +43,13 @@ type Var struct {
 // File describes a file used by a service
 type File struct {
 	// the file path
-	Path string `yaml:"value"`
+	Path string `yaml:"path"`
 	// a human-readable description for the file
 	Description string `yaml:"description,omitempty"`
 	// whether the file should be treated as a secret
 	Secret bool `yaml:"secret,omitempty"`
+	// the template to use to create the file
+	Template string `yaml:"template,omitempty"`
 }
 
 type Volume struct {
