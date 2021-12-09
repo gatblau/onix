@@ -50,6 +50,8 @@ type File struct {
 	Secret bool `yaml:"secret,omitempty"`
 	// the template to use to create the file
 	Template string `yaml:"template,omitempty"`
+	// the content of the file (can be the result of evaluating a template)
+	Content string `yaml:"content,omitempty"`
 }
 
 type Volume struct {

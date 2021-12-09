@@ -5,11 +5,11 @@ port: "27017"
 var:
   - name: MONGO_INITDB_ROOT_USERNAME
     description: the name of the root user
-    value: "{{fx=name:99}}"
+    value: "<<fx=name:99>>"
   - name: MONGO_INITDB_ROOT_PASSWORD
     description: the password of the root user
     secret: true
-    value: "{{fx=pwd:16,false}}"
+    value: "<<fx=pwd:16,false>>"
 volume:
   - name: evr-mongo-db
     description: the volume where mongo records are stored
