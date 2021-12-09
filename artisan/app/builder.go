@@ -8,7 +8,12 @@
 
 package app
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
 
 // Builder the contract for application deployment configuration builders
 type Builder interface {
@@ -31,6 +36,7 @@ const (
 	ComposeProject DeploymentRsxType = iota
 	K8SResource
 	EnvironmentFile
+	ConfigurationFile
 )
 
 type DeploymentRsx struct {
@@ -45,3 +51,86 @@ const (
 	DockerCompose BuilderType = iota
 	Kubernetes
 )
+
+// GenerateResources generates application deployment resources for a particular platform specified by the format parameter
+// uri: the uri of the application manifest to use to generate resources
+// format: the resources platform format (e.g. compose, k8s)
+// profile: the application profile name, that describes the services to generate from the application manifest
+// creds: credentials to get the app manifest from git service in the format uname:pwd - if not required pass empty string
+// path: the file path where the resources should be saved
+func GenerateResources(uri, format, profile, creds, path string) error {
+	// create an application manifest
+	manifest, err := NewAppMan(uri, profile, creds)
+	if err != nil {
+		return err
+	}
+	// create a builder
+	var builderType BuilderType
+	switch strings.ToLower(format) {
+	case "compose":
+		builderType = DockerCompose
+	case "k8s":
+		builderType = Kubernetes
+	default:
+		return fmt.Errorf("invalid format, valid formats are compose or k8s")
+	}
+	builder, err := NewBuilder(builderType, *manifest)
+	if err != nil {
+		return err
+	}
+	// build the app deployment resources
+	files, err := builder.Build()
+	if err != nil {
+		return err
+	}
+	// work out a target path
+	path, err = filepath.Abs(path)
+	if err != nil {
+		return err
+	}
+	// ensure path exists
+	if _, err = os.Stat(path); os.IsNotExist(err) {
+		err = os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("cannot create folder '%s': %s\n", path, err)
+		}
+	}
+	// write files to disk
+	for _, file := range files {
+		// if the path contains a directory
+		if !isFilename(file.Name) {
+			// if it is absolute
+			if isAbs(file.Name) {
+				// makes the directory relative (removes leading slash)
+				file.Name = file.Name[1:]
+			}
+			// creates the relative directory
+			dir, err2 := filepath.Abs(filepath.Join(path, filepath.Dir(file.Name)))
+			if err2 != nil {
+				return err
+			}
+			err = os.MkdirAll(dir, os.ModePerm)
+			if err != nil {
+				return err
+			}
+		}
+		fpath := filepath.Join(path, file.Name)
+		err = os.WriteFile(fpath, file.Content, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("cannot write file %s: %s\n", fpath, err)
+		}
+	}
+	return nil
+}
+
+func isAbs(path string) bool {
+	// the path is considered absolute if:
+	// a. starts with a forward slash
+	// b. contains at least two forward slashes
+	return len(strings.Split(path, "/")) > 1 && path[0] == '/'
+}
+
+func isFilename(path string) bool {
+	// the path is considered a filename only if it does not contain any forward slashes
+	return strings.Index(path, "/") == -1
+}

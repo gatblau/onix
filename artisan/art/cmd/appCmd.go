@@ -12,9 +12,6 @@ import (
 	"github.com/gatblau/onix/artisan/app"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/spf13/cobra"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 // AppCmd creates deployment config files for a target platform
@@ -52,48 +49,7 @@ func (c *AppCmd) Run(cmd *cobra.Command, args []string) {
 	if len(uri) == 0 {
 		core.ErrorLogger.Fatalf("missing application manifest URI\n")
 	}
-	// create an application manifest
-	manifest, err := app.NewAppMan(uri, c.profile, c.creds)
-	if err != nil {
+	if err := app.GenerateResources(uri, c.format, c.profile, c.creds, c.path); err != nil {
 		core.ErrorLogger.Fatalf(err.Error())
-	}
-	// create a builder
-	var builderType app.BuilderType
-	switch strings.ToLower(c.format) {
-	case "compose":
-		builderType = app.DockerCompose
-	case "k8s":
-		builderType = app.Kubernetes
-	default:
-		core.ErrorLogger.Fatalf("invalid format, valid formats are compose or k8s")
-	}
-	builder, err := app.NewBuilder(builderType, *manifest)
-	if err != nil {
-		core.ErrorLogger.Fatalf(err.Error())
-	}
-	// build the app deployment resources
-	files, err := builder.Build()
-	if err != nil {
-		core.ErrorLogger.Fatalf(err.Error())
-	}
-	// work out a target path
-	path, err := filepath.Abs(c.path)
-	if err != nil {
-		core.ErrorLogger.Fatalf(err.Error())
-	}
-	// ensure path exists
-	if _, err = os.Stat(path); os.IsNotExist(err) {
-		err = os.MkdirAll(path, os.ModePerm)
-		if err != nil {
-			core.ErrorLogger.Fatalf("cannot create folder '%s': %s\n", path, err)
-		}
-	}
-	// write files to disk
-	for _, file := range files {
-		fpath := filepath.Join(path, file.Name)
-		err = os.WriteFile(fpath, file.Content, os.ModePerm)
-		if err != nil {
-			core.ErrorLogger.Fatalf("cannot write file %s: %s\n", fpath, err)
-		}
 	}
 }
