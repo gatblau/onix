@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/compose-spec/compose-go/types"
 	"gopkg.in/yaml.v2"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -48,7 +49,7 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 			Image:         svc.Image,
 			Ports:         nil,
 			Restart:       "always",
-			Volumes:       getSvcVols(svc.Info.Volume),
+			Volumes:       append(getSvcVols(svc.Info.Volume), getFileVols(svc.Info.File)...),
 		})
 	}
 	p.Volumes = getVols(b.manifest.Services)
@@ -106,6 +107,7 @@ func (b ComposeBuilder) buildFiles() []DeploymentRsx {
 
 func getSvcVols(volume []Volume) []types.ServiceVolumeConfig {
 	vo := make([]types.ServiceVolumeConfig, 0)
+	// does any explicit volumes
 	for _, v := range volume {
 		vo = append(vo, types.ServiceVolumeConfig{
 			Extensions: map[string]interface{}{
@@ -114,6 +116,50 @@ func getSvcVols(volume []Volume) []types.ServiceVolumeConfig {
 		})
 	}
 	return vo
+}
+
+// gets a list of volumes required by the specified files
+func getFileVols(files []File) []types.ServiceVolumeConfig {
+	vo := make([]types.ServiceVolumeConfig, 0)
+	// does any explicit volumes
+	for _, f := range files {
+		relD := relDir(f.Path)
+		found := false
+		for _, x := range vo {
+			if x.Extensions[relD] != nil {
+				found = true
+			}
+		}
+		if !found {
+			vo = append(vo, types.ServiceVolumeConfig{
+				Extensions: map[string]interface{}{
+					relD: absDir(f.Path),
+				},
+			})
+		}
+	}
+	return vo
+}
+
+func relDir(path string) string {
+	// if the path is absolute
+	if path[0] == '/' {
+		// returns a relative form
+		return fmt.Sprintf("./%s", filepath.Dir(path[1:]))
+	}
+	// if the path is not absolute but does not start with ./ add it
+	if path[0:1] != "./" {
+		return fmt.Sprintf("./%s", filepath.Dir(path[1:]))
+	}
+	// otherwise, return as is
+	return filepath.Dir(path)
+}
+
+func absDir(path string) string {
+	if path[0] == '/' {
+		return filepath.Dir(path)
+	}
+	return filepath.Dir(fmt.Sprintf("/%s", filepath.Dir(path)))
 }
 
 func getDeps(dependencies []string) types.DependsOnConfig {
