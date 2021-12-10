@@ -34,7 +34,11 @@ func (b *ComposeBuilder) Build() ([]DeploymentRsx, error) {
 		return nil, err
 	}
 	rsx = append(rsx, *composeProject, b.buildEnv())
-	return append(rsx, b.buildFiles()...), nil
+	files, err := b.buildFiles()
+	if err != nil {
+		return nil, err
+	}
+	return append(rsx, files...), nil
 }
 
 func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
@@ -94,7 +98,7 @@ func (b *ComposeBuilder) buildEnv() DeploymentRsx {
 	}
 }
 
-func (b ComposeBuilder) buildFiles() []DeploymentRsx {
+func (b ComposeBuilder) buildFiles() ([]DeploymentRsx, error) {
 	rsx := make([]DeploymentRsx, 0)
 	for _, svc := range b.manifest.Services {
 		for _, f := range svc.Info.File {
@@ -104,10 +108,12 @@ func (b ComposeBuilder) buildFiles() []DeploymentRsx {
 					Content: []byte(f.Content),
 					Type:    ConfigurationFile,
 				})
+			} else {
+				return nil, fmt.Errorf("definition of file '%s' in '%s' service manifest has no content\n", f.Path, svc.Name)
 			}
 		}
 	}
-	return rsx
+	return rsx, nil
 }
 
 func getSvcVols(volume []Volume) []types.ServiceVolumeConfig {
