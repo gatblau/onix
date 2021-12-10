@@ -484,7 +484,7 @@ public class Lib implements InitializingBean {
     }
     
     public String checkPwd(String password) {
-        if (password == null || password.length() == 0) return null;
+        if (password == null || password.length() == 0) return "password is required";
         
         int lowerCount = 0;
         int upperCount = 0;
