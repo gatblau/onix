@@ -53,6 +53,11 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 		})
 	}
 	p.Volumes = getVols(b.manifest.Services)
+	p.Networks = types.Networks{
+		"default": types.NetworkConfig{
+			Name: fmt.Sprintf("%s_network", strings.Replace(strings.ToLower(b.manifest.Name), " ", "_", -1)),
+		},
+	}
 	composeProject, err := yaml.Marshal(p)
 	if err != nil {
 		return nil, err
