@@ -222,7 +222,7 @@ func (m *Manifest) explode() (*Manifest, error) {
 func (m *Manifest) wire() (*Manifest, error) {
 	appMan := new(Manifest)
 	_ = m.deepCopy(appMan)
-	// do the wiring
+	// do the wiring of expressions in the service manifests
 	for six, service := range m.Services {
 		// wire expressions in variables
 		for vix, v := range service.Info.Var {
@@ -324,12 +324,17 @@ func (m *Manifest) wire() (*Manifest, error) {
 				}
 			}
 		}
+	}
+	// do the wiring of expressions in the configuration files
+	// note: this is done outside the previous wiring as a first pass is required to collect
+	// variable data that can be used to do merging of configuration file templates
+	for six, service := range m.Services {
 		// wire bind expressions in file templates
 		for fix, f := range service.Info.File {
 			// if the file has a template
 			if len(f.Template) > 0 {
 				// merges the file template
-				merged, err := m.eval(appMan.Services[six].Info.File[fix].Template)
+				merged, err := appMan.eval(appMan.Services[six].Info.File[fix].Template)
 				if err != nil {
 					return nil, err
 				}
@@ -381,8 +386,20 @@ func (m *Manifest) wire() (*Manifest, error) {
 					case 3:
 						switch parts[1] {
 						case "var":
-							if m.varExists(parts[2]) {
-								appMan.Services[six].Info.File[fix].Content = strings.Replace(appMan.Services[six].Info.File[fix].Content, binding, strings.ToUpper(fmt.Sprintf("${%s_%s}", parts[0], parts[2])), 1)
+							if appMan.varExists(parts[2]) {
+								// get the variable value
+								varKey := strings.ToUpper(fmt.Sprintf("%s_%s", strings.Replace(parts[0], "-", "_", -1), parts[2]))
+								found := false
+								for _, v := range appMan.Var.Items {
+									if v.Name == varKey {
+										appMan.Services[six].Info.File[fix].Content = strings.Replace(appMan.Services[six].Info.File[fix].Content, binding, v.Value, 1)
+										found = true
+										break
+									}
+								}
+								if !found {
+									return nil, fmt.Errorf("binding in service '%s' points to variable '%s' in service '%s', but it is not defined;\npossible causes:\n - the binding points to the incorrect service;\n - the variable name has been mispelled;\n - the variable needs adding to the service manifest;\n", service.Name, parts[2], parts[0])
+								}
 								appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, parts[0])
 								ix := getServiceIx(*appMan, parts[0])
 								appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name)
