@@ -148,7 +148,7 @@ file:
       {
         "event_receivers": [
           {{ if service "evr-mongo-app" }}{
-            "uri": "<<bind=evr-mongo-app>>:<<bind=evr-mongo-db:port>>/events",
+            "uri": "<<bind=evr-mongo-app>>:<<bind=evr-mongo-app:port>>/events",
             "user": "<<bind=evr-mongo-app:var:OX_HTTP_UNAME>>",
             "pwd": "<<bind=evr-mongo-app:var:OX_HTTP_PWD>>"
           }{{ end }}
