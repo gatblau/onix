@@ -24,6 +24,8 @@ type SvcManifest struct {
 	File []File `yaml:"file,omitempty"`
 	// one or more persistent volumes
 	Volume []Volume `yaml:"volume,omitempty"`
+	// init script that will be run to configure the service
+	Init string `yaml:"init,omitempty"`
 }
 
 // Var describes a variable used by a service
