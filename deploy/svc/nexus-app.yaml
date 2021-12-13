@@ -32,7 +32,7 @@ init: |
   echo "updating admin password from current temporary one"
   art curl -X PUT \
     -u admin:${CURRENTPASS} \
-    http://localhost:${bind=nexus-app:port}"/service/rest/v1/security/users/admin/change-password \
+    http://localhost:${bind=nexus-app:port}/service/rest/v1/security/users/admin/change-password \
     -H 'accept: application/json','Content-Type: text/plain' \
     -d ${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD}"
 
