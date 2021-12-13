@@ -1,24 +1,25 @@
 ---
 name: artreg-app
 description: artisan registry
-port: "8082"
+port: "8080"
 var:
   - name: OXA_HTTP_UNAME
     description: the username to authenticate with the registry HTTP API service
-    value: "<<fx=name:99>>"
+    value: "admin"
   - name: OXA_HTTP_PWD
     description: the password to authenticate the registry HTTP API service
     secret: true
-    value: "<<fx=pwd:16,false>>"
+    value: ${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD}
   - name: OXA_HTTP_PORT
     description: the port on which the registry HTTP API service listens
-    value: "8082"
+    value: "8080"
   - name: OXA_HTTP_BACKEND_DOMAIN
     description: the URI of the HTTP backend service to use
+    value: "http://${bind=nexus-app}"
   - name: OXA_HTTP_BACKEND
     description: the type of backend service used by the registry to store packages
     value: "Nexus3"
   - name: OXA_HTTP_UPLOAD_LIMIT
     description: the maximum size of artisan packages (in MB) allowed to be pushed to the registry
-    default: "30"
+    value: "30"
 ...

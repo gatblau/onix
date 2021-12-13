@@ -1,5 +1,5 @@
 ---
-name: Pilot Control Plane
+name: Onix Config Manager
 description: Onix services to enable Pilot Control
 version: 1.0
 profiles:
@@ -10,6 +10,7 @@ profiles:
       - pilotctl-app-dbman
       - evr-mongo-db
       - evr-mongo-app
+      - nexus-app
       - artreg-app
       - ox-app
       - pilotctl-app
@@ -45,6 +46,11 @@ services:
     description: Pilot Control Event Receiver for Mongo
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/evr-mongo-app.yaml
     image: quay.io/gatblau/pilotctl-evr-mongodb:0.0.4-300921174051295-11aab8b6cc
+
+  - name: nexus-app
+    description: Nexus Repository Manager for Artisan Registry
+    uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/nexus-app.yaml
+    image: sonatype/nexus3
 
   - name: artreg-app
     description: Artisan Registry

@@ -227,8 +227,8 @@ func (m *Manifest) wire() (*Manifest, error) {
 		// wire expressions in variables
 		for vix, v := range service.Info.Var {
 			// if the variable is a function expression
-			if strings.HasPrefix(strings.Replace(v.Value, " ", "", -1), "<<fx=") {
-				content := v.Value[len("<<fx=") : len(v.Value)-2]
+			if strings.HasPrefix(strings.Replace(v.Value, " ", "", -1), "${fx=") {
+				content := v.Value[len("${fx=") : len(v.Value)-2]
 				parts := strings.Split(content, ":")
 				// qualifies the name of the variable with the service name
 				// variable name without ${...} wrapper
@@ -264,7 +264,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 			} else { // if the variable is a binding
 				b := bindings(v.Value)
 				for _, binding := range b {
-					content := binding[len("<<bind=") : len(binding)-2]
+					content := binding[len("${bind=") : len(binding)-1]
 					parts := strings.Split(content, ":")
 					switch len(parts) {
 					case 1:
@@ -295,9 +295,6 @@ func (m *Manifest) wire() (*Manifest, error) {
 						case "port":
 							if port := m.getSvcPort(parts[0]); len(port) > 0 {
 								appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, port, 1)
-								appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, port)
-								ix := getServiceIx(*appMan, parts[0])
-								appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name)
 							} else {
 								return nil, fmt.Errorf("port not defined in service '%s', invoked from variable %s => '%s' in service %s\n", parts[0], v.Name, binding, service.Name)
 							}
@@ -308,7 +305,8 @@ func (m *Manifest) wire() (*Manifest, error) {
 						switch parts[1] {
 						case "var":
 							if m.varExists(parts[2]) {
-								appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, strings.ToUpper(fmt.Sprintf("${%s_%s}", parts[0], parts[2])), 1)
+								varKey := strings.ToUpper(fmt.Sprintf("${%s_%s}", strings.Replace(parts[0], "-", "_", -1), parts[2]))
+								appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, varKey, 1)
 								appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, parts[0])
 								ix := getServiceIx(*appMan, parts[0])
 								appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name)
@@ -343,7 +341,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 				// extract any bindings
 				b := bindings(merged)
 				for _, binding := range b {
-					content := binding[len("<<bind=") : len(binding)-2]
+					content := binding[len("${bind=") : len(binding)-1]
 					parts := strings.Split(content, ":")
 					switch len(parts) {
 					case 1:
@@ -374,11 +372,8 @@ func (m *Manifest) wire() (*Manifest, error) {
 						case "port":
 							if port := m.getSvcPort(parts[0]); len(port) > 0 {
 								appMan.Services[six].Info.File[fix].Content = strings.Replace(appMan.Services[six].Info.File[fix].Content, binding, port, 1)
-								appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, port)
-								ix := getServiceIx(*appMan, parts[0])
-								appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name)
 							} else {
-								return nil, fmt.Errorf("port not defined in service '%s', invoked from binding '%s' in service %s\n", parts[0], binding, service.Name)
+								return nil, fmt.Errorf("port not defined for service '%s' in application manifest, invoked from binding '%s' in service %s\n", parts[0], binding, service.Name)
 							}
 						default:
 							return nil, fmt.Errorf("invalid binding '%s' in service '%s'\n", binding, service.Name)
@@ -494,15 +489,15 @@ func (m *Manifest) deepCopy(dst interface{}) error {
 
 func (m *Manifest) getSvcPort(svcName string) string {
 	for _, service := range m.Services {
-		if service.Name == svcName && len(service.Info.Port) > 0 {
-			return service.Info.Port
+		if service.Name == svcName && len(service.Port) > 0 {
+			return service.Port
 		}
 	}
 	return ""
 }
 
 func bindings(value string) []string {
-	r, _ := regexp.Compile("<<bind=(?P<NAME>[^>]+)>>")
+	r, _ := regexp.Compile("\\${bind=(?P<NAME>[^}]+)}")
 	return r.FindAllString(value, -1)
 }
 
@@ -523,7 +518,10 @@ func addCredentialsToURI(uri string, creds string) (string, error) {
 
 func (m *Manifest) eval(t string) (string, error) {
 	ctx := fileTempCtx{m: *m}
-	tt, err := template.New("svc_file").Funcs(template.FuncMap{"service": ctx.serviceExists}).Parse(t)
+	tt, err := template.New("svc_file").Funcs(template.FuncMap{
+		"service": ctx.serviceExists,
+		"plus":    ctx.plus,
+	}).Parse(t)
 	if err != nil {
 		return "", err
 	}
@@ -547,4 +545,9 @@ func (c *fileTempCtx) serviceExists(svcName reflect.Value) bool {
 		}
 	}
 	return false
+}
+
+// plus adds two numbers
+func (c *fileTempCtx) plus(number1, number2 reflect.Value) int64 {
+	return number1.Int() + number2.Int()
 }

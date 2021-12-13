@@ -1,31 +1,31 @@
 ---
 name: pilotctl-app-dbman
 description: database manager process for piloctl-app
-port: "8086"
+port: "8085"
 var:
   - name: OX_DBM_DB_HOST
     description: the database host to which dbman should connect
-    value: "<<bind=db>>"
+    value: ${bind=db}
   - name: OX_DBM_DB_USERNAME
     description: the database user name
-    value: "<<bind=pilotctl-app:var:OX_PILOTCTL_DB_USER>>"
+    value: ${bind=pilotctl-app:var:OX_PILOTCTL_DB_USER}
   - name: OX_DBM_DB_PASSWORD
     description: the database user password
-    value: "<<bind=pilotctl-app:var:OX_PILOTCTL_DB_PWD>>"
+    value: ${bind=pilotctl-app:var:OX_PILOTCTL_DB_PWD}
     secret: true
   - name: OX_DBM_DB_ADMINUSERNAME
     description: the database server administrator user name
     value: "postgres"
   - name: OX_DBM_DB_ADMINPASSWORD
     description: the database server administrator password
-    value: "<<bind=db:var:POSTGRES_PASSWORD>>"
+    value: ${bind=db:var:POSTGRES_PASSWORD}
     secret: true
   - name: OX_DBM_HTTP_USERNAME
     description: the user name for the http api
-    value: "<<fx=name:99>>"
+    value: ${fx=name:99}
   - name: OX_DBM_HTTP_PASSWORD
     description: the password for the http api
-    value: "<<fx=pwd:16,false>>"
+    value: ${fx=pwd:16,false}
     secret: true
   - name: OX_DBM_HTTP_AUTHMODE
     description: the http api authentication mode
@@ -35,5 +35,5 @@ var:
     value: "0.0.4"
   - name: OX_DBM_REPO_URI
     description: the location of the database schemas
-    value: "<<bind=pilotctl-app:schema_uri>>"
+    value: ${bind=pilotctl-app:schema_uri}
 ...
