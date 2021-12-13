@@ -410,6 +410,79 @@ func (m *Manifest) wire() (*Manifest, error) {
 				}
 			}
 		}
+		// wire bind expressions in init file
+		if len(service.Info.Init) > 0 {
+			// extract any bindings
+			b := bindings(service.Info.Init)
+			for _, binding := range b {
+				content := binding[len("${bind=") : len(binding)-1]
+				parts := strings.Split(content, ":")
+				switch len(parts) {
+				case 1:
+					svcName := parts[0]
+					// check the name exists
+					found := false
+					for _, s := range m.Services {
+						if s.Name == svcName {
+							found = true
+							break
+						}
+					}
+					if !found {
+						return nil, fmt.Errorf("invalid service name '%s' => binding '%s' in service '%s'\n", svcName, binding, service.Name)
+					}
+					appMan.Services[six].Info.Init = strings.Replace(appMan.Services[six].Info.Init, binding, svcName, 1)
+					appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, svcName)
+					ix := getServiceIx(*appMan, svcName)
+					appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name)
+				case 2:
+					switch parts[1] {
+					case "schema_uri":
+						if uri := m.getSchemaURI(parts[0]); len(uri) > 0 {
+							appMan.Services[six].Info.Init = uri
+						} else {
+							return nil, fmt.Errorf("binding '%s' in init script for service '%s' request schema_ui from service '%s' but is missing\n", binding, service.Name, parts[0])
+						}
+					case "port":
+						if port := m.getSvcPort(parts[0]); len(port) > 0 {
+							appMan.Services[six].Info.Init = strings.Replace(appMan.Services[six].Info.Init, binding, port, 1)
+						} else {
+							return nil, fmt.Errorf("port not defined for service '%s' in application manifest, invoked from binding '%s' in service %s\n", parts[0], binding, service.Name)
+						}
+					default:
+						return nil, fmt.Errorf("invalid binding '%s' in init script for service '%s'\n", binding, service.Name)
+					}
+				case 3:
+					switch parts[1] {
+					case "var":
+						if appMan.varExists(parts[2]) {
+							// get the variable value
+							varKey := strings.ToUpper(fmt.Sprintf("%s_%s", strings.Replace(parts[0], "-", "_", -1), parts[2]))
+							found := false
+							for _, v := range appMan.Var.Items {
+								if v.Name == varKey {
+									appMan.Services[six].Info.Init = strings.Replace(appMan.Services[six].Info.Init, binding, fmt.Sprintf("${%s}", varKey), 1)
+									found = true
+									break
+								}
+							}
+							if !found {
+								return nil, fmt.Errorf("binding in init script for service '%s' points to variable '%s' in service '%s', but it is not defined;\npossible causes:\n - the binding points to the incorrect service;\n - the variable name has been mispelled;\n - the variable needs adding to the service manifest;\n", service.Name, parts[2], parts[0])
+							}
+							appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, parts[0])
+							ix := getServiceIx(*appMan, parts[0])
+							appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name)
+						} else {
+							return nil, fmt.Errorf("cannot find variable '%s' in init script for service '%s'\n", parts[2], service.Name)
+						}
+					default:
+						return nil, fmt.Errorf("invalid binding '%s' in init script for service '%s'\n", binding, service.Name)
+					}
+				default:
+					return nil, fmt.Errorf("invalid binding '%s' in init script for service '%s'\n", binding, service.Name)
+				}
+			}
+		}
 	}
 	// sort the services by dependencies (most widely used first)
 	sort.Slice(m.Services, func(i, j int) bool {

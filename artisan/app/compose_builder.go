@@ -39,7 +39,12 @@ func (b *ComposeBuilder) Build() ([]DeploymentRsx, error) {
 	if err != nil {
 		return nil, err
 	}
-	return append(rsx, files...), nil
+	scripts, err := b.buildInit()
+	if err != nil {
+		return nil, err
+	}
+	rsx = append(rsx, files...)
+	return append(rsx, scripts...), nil
 }
 
 func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
@@ -120,6 +125,20 @@ func (b ComposeBuilder) buildFiles() ([]DeploymentRsx, error) {
 			} else {
 				return nil, fmt.Errorf("definition of file '%s' in '%s' service manifest has no content\n", f.Path, svc.Name)
 			}
+		}
+	}
+	return rsx, nil
+}
+
+func (b ComposeBuilder) buildInit() ([]DeploymentRsx, error) {
+	rsx := make([]DeploymentRsx, 0)
+	for _, svc := range b.manifest.Services {
+		if len(svc.Info.Init) > 0 {
+			rsx = append(rsx, DeploymentRsx{
+				Name:    fmt.Sprintf("%s-init", svc.Name),
+				Content: []byte(svc.Info.Init),
+				Type:    InitScript,
+			})
 		}
 	}
 	return rsx, nil
