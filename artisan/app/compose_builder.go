@@ -14,6 +14,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -45,13 +46,21 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 	p := new(types.Project)
 	p.Name = fmt.Sprintf("Docker Compose Project for %s", strings.ToUpper(b.manifest.Name))
 	for _, svc := range b.manifest.Services {
+		publishedPort, err := strconv.Atoi(svc.Port)
+		if err != nil {
+			return nil, fmt.Errorf("invalid published port '%s'\n", svc.Port)
+		}
+		targetPort, err := strconv.Atoi(svc.Info.Port)
+		if err != nil {
+			return nil, fmt.Errorf("invalid target port '%s'\n", svc.Port)
+		}
 		p.Services = append(p.Services, types.ServiceConfig{
 			Name:          svc.Name,
 			ContainerName: svc.Name,
 			DependsOn:     getDeps(svc.DependsOn),
 			Environment:   getEnv(svc.Info.Var),
 			Image:         svc.Image,
-			Ports:         nil,
+			Ports:         []types.ServicePortConfig{{Target: uint32(targetPort), Published: uint32(publishedPort)}},
 			Restart:       "always",
 			Volumes:       append(getSvcVols(svc.Info.Volume), getFileVols(svc.Info.File)...),
 		})
