@@ -1,0 +1,14 @@
+---
+name: nexus-app
+description: Nexus 3 repository manager
+port: "8081"
+var:
+  - name: NEXUS_ADMIN_PASSWORD
+    description: the nexus admin password
+    secret: true
+    value: ${fx=pwd:16,false}
+volume:
+  - name: nexus-data
+    path: /nexus-data
+init: init/nexus-app.sh
+...
