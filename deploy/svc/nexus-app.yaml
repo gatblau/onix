@@ -29,14 +29,14 @@ init: |
     http://localhost:${bind=nexus-app:port}/service/rest/v1/status \
     -H 'accept: application/json'
 
-  echo "updating admin password from current temporary one"
+  echo updating admin password from current temporary one
   art curl -X PUT \
     -u admin:${CURRENTPASS} \
     http://localhost:${bind=nexus-app:port}/service/rest/v1/security/users/admin/change-password \
     -H 'accept: application/json','Content-Type: text/plain' \
     -d ${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD}"
 
-  echo "creating new Artisan repository"
+  echo creating new Artisan repository
   art curl -X POST \
     -u admin:${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD} \
     http://localhost:${bind=nexus-app:port}/service/rest/v1/repositories/raw/hosted \
@@ -62,7 +62,7 @@ init: |
     }
   }'
 
-  echo "disabling anonymous access"
+  echo disabling anonymous access
   art curl -X PUT \
     -u admin:${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD} \
     http://localhost:${bind=nexus-app:port}/service/rest/v1/security/anonymous \
