@@ -32,7 +32,7 @@ func NewRootCmd() *RootCmd {
 |                  Manage Database Schemas              |
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 dbman is a CLI tool to manage database schema versions and upgrades.
-dbman is part of (and used by) Onix Configuration DatabaseProvider (see https://onix.gatblau.org) to manage its configuration database.
+dbman is part of (and used by) Onix Configuration Manager (see https://onix.gatblau.org) to manage its configuration database.
 dbman can also be run from a container (when in http mode) to manage the data / schema life cycle of databases from a container platform.`,
 		},
 	}
