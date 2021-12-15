@@ -485,6 +485,23 @@ func (m *Manifest) wire() (*Manifest, error) {
 		}
 		// evaluate expressions in db section, if one has been defined
 		if service.Info.Db != nil {
+			if strings.HasPrefix(strings.Replace(service.Info.Db.Host, " ", "", -1), "${bind=") {
+				content := service.Info.Db.Host[len("${bind=") : len(service.Info.Db.Host)-1]
+				parts := strings.Split(content, ":")
+				svcName := parts[0]
+				// check the name exists
+				found := false
+				for _, s := range m.Services {
+					if s.Name == svcName {
+						found = true
+						break
+					}
+				}
+				if !found {
+					return nil, fmt.Errorf("invalid service name '%s' => '%s' in service '%s'\n", svcName, content, service.Name)
+				}
+				appMan.Services[six].Info.Db.Host = svcName
+			}
 			// schema uri binding
 			if strings.HasPrefix(strings.Replace(service.Info.Db.SchemaURI, " ", "", -1), "${bind=") {
 				content := service.Info.Db.SchemaURI[len("${bind=") : len(service.Info.Db.SchemaURI)-1]

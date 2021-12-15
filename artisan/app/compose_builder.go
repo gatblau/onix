@@ -39,12 +39,12 @@ func (b *ComposeBuilder) Build() ([]DeploymentRsx, error) {
 	if err != nil {
 		return nil, err
 	}
-	scripts, err := b.buildInit()
+	svcScripts, err := b.buildInit()
 	if err != nil {
 		return nil, err
 	}
 	rsx = append(rsx, files...)
-	return append(rsx, scripts...), nil
+	return append(rsx, svcScripts...), nil
 }
 
 func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
@@ -133,15 +133,44 @@ func (b ComposeBuilder) buildFiles() ([]DeploymentRsx, error) {
 func (b ComposeBuilder) buildInit() ([]DeploymentRsx, error) {
 	rsx := make([]DeploymentRsx, 0)
 	for _, svc := range b.manifest.Services {
+		var content []byte
+		// if there is database schema configuration for the service
+		if svc.Info.Db != nil {
+			content = append(content, getDbScript(*svc.Info.Db)...)
+		}
+		// if there is specific initialisation logic for the service
 		if len(svc.Info.Init) > 0 {
+			content = append(content, []byte(svc.Info.Init)...)
+		}
+		if len(content) > 0 {
 			rsx = append(rsx, DeploymentRsx{
-				Name:    fmt.Sprintf("%s-init", svc.Name),
-				Content: []byte(svc.Info.Init),
-				Type:    InitScript,
+				Name:    fmt.Sprintf("'%s' service initialisation", svc.Name),
+				Content: content,
+				Type:    SvcInitScript,
 			})
 		}
 	}
 	return rsx, nil
+}
+
+func getDbScript(db Db) []byte {
+	s := new(strings.Builder)
+	s.WriteString(fmt.Sprintf("# configure '%s' database release information\n", db.Name))
+	s.WriteString(fmt.Sprintf("dbman config use %s-config\n", db.Name))
+	s.WriteString(fmt.Sprintf("dbman config set SchemaURI %s\n", db.SchemaURI))
+	s.WriteString(fmt.Sprintf("dbman config set db.provider %s\n", db.Provider))
+	s.WriteString(fmt.Sprintf("dbman config set db.host %s\n", db.Host))
+	s.WriteString(fmt.Sprintf("dbman config set db.port %d\n", db.Port))
+	s.WriteString(fmt.Sprintf("dbman config set db.username %s\n", db.User))
+	s.WriteString(fmt.Sprintf("dbman config set db.password %s\n", db.Pwd))
+	s.WriteString(fmt.Sprintf("dbman config set db.adminusername %s\n", db.AdminUser))
+	s.WriteString(fmt.Sprintf("dbman config set db.adminpassword %s\n", db.AdminPwd))
+	s.WriteString(fmt.Sprintf("dbman config set db.appversion %s\n\n", db.AppVersion))
+	s.WriteString(fmt.Sprintf("# create '%s' database\n", db.Name))
+	s.WriteString(fmt.Sprintf("dbman db create\n\n"))
+	s.WriteString(fmt.Sprintf("# deploy '%s' database schema\n", db.Name))
+	s.WriteString(fmt.Sprintf("dbman db deploy\n\n"))
+	return []byte(s.String())
 }
 
 func getSvcVols(volume []Volume) []types.ServiceVolumeConfig {
