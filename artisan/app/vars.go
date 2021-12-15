@@ -34,3 +34,12 @@ func (a *Vars) SortByService() {
 		return a.Items[i].Service < a.Items[j].Service
 	})
 }
+
+func (a *Vars) Get(key string) *string {
+	for _, item := range a.Items {
+		if item.Name == key {
+			return &(item.Value)
+		}
+	}
+	return nil
+}

@@ -154,4 +154,15 @@ file:
           }{{ end }}{{ if gt $count 1 }},{{ end }}
         ]
       }
+db:
+  name: pilotctl
+  app_version: 0.0.4
+  host: ${bind=db}
+  port: 5432
+  provider: _pgsql
+  user: pilotctl
+  pwd: ${fx=pwd:16,false}
+  admin_user: postgres
+  admin_pwd: ${bind=db:var:POSTGRES_PASSWORD}
+  schema_uri: ${bind=pilotctl-app:schema_uri}
 ...

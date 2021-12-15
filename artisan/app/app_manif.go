@@ -483,6 +483,67 @@ func (m *Manifest) wire() (*Manifest, error) {
 				}
 			}
 		}
+		// evaluate expressions in db section, if one has been defined
+		if service.Info.Db != nil {
+			// schema uri binding
+			if strings.HasPrefix(strings.Replace(service.Info.Db.SchemaURI, " ", "", -1), "${bind=") {
+				content := service.Info.Db.SchemaURI[len("${bind=") : len(service.Info.Db.SchemaURI)-1]
+				parts := strings.Split(content, ":")
+				if uri := m.getSchemaURI(parts[0]); len(uri) > 0 {
+					appMan.Services[six].Info.Db.SchemaURI = uri
+				} else {
+					return nil, fmt.Errorf("schema_uri not defined in app '%s' manifest\n", parts[0])
+				}
+			}
+			// db user pwd
+			if strings.HasPrefix(strings.Replace(service.Info.Db.Pwd, " ", "", -1), "${bind=") {
+				content := service.Info.Db.Pwd[len("${bind=") : len(service.Info.Db.Pwd)-1]
+				parts := strings.Split(content, ":")
+				varKey := strings.ToUpper(fmt.Sprintf("${%s_%s}", strings.Replace(parts[0], "-", "_", -1), parts[2]))
+				appMan.Services[six].Info.Db.Pwd = varKey
+			} else if strings.HasPrefix(strings.Replace(service.Info.Db.Pwd, " ", "", -1), "${fx=") {
+				content := service.Info.Db.Pwd[len("${fx=") : len(service.Info.Db.Pwd)-1]
+				parts := strings.Split(content, ":")
+				if strings.ToLower(parts[0]) == "pwd" {
+					subParts := strings.Split(parts[1], ",")
+					length, _ := strconv.Atoi(subParts[0])
+					symbols, _ := strconv.ParseBool(subParts[1])
+					varKey := strings.ToUpper(fmt.Sprintf("${%s_%s}", strings.Replace(appMan.Services[six].Name, "-", "_", -1), "DB_ADMIN_PWD"))
+					appMan.Var.Items = append(appMan.Var.Items, AppVar{
+						Name:        varKey,
+						Description: fmt.Sprintf("The administrator password to connect to database host '%s'\n", appMan.Services[six].Info.Db.Host),
+						Value:       RandomPwd(length, symbols),
+						Secret:      true,
+						Service:     appMan.Services[six].Name,
+					})
+					appMan.Services[six].Info.Db.Pwd = varKey
+				}
+			}
+			// db admin pwd
+			if strings.HasPrefix(strings.Replace(service.Info.Db.AdminPwd, " ", "", -1), "${bind=") {
+				content := service.Info.Db.AdminPwd[len("${bind=") : len(service.Info.Db.AdminPwd)-1]
+				parts := strings.Split(content, ":")
+				varKey := strings.ToUpper(fmt.Sprintf("${%s_%s}", strings.Replace(parts[0], "-", "_", -1), parts[2]))
+				appMan.Services[six].Info.Db.AdminPwd = varKey
+			} else if strings.HasPrefix(strings.Replace(service.Info.Db.AdminPwd, " ", "", -1), "${fx=") {
+				content := service.Info.Db.AdminPwd[len("${fx=") : len(service.Info.Db.AdminPwd)-1]
+				parts := strings.Split(content, ":")
+				if strings.ToLower(parts[0]) == "pwd" {
+					subParts := strings.Split(parts[1], ",")
+					length, _ := strconv.Atoi(subParts[0])
+					symbols, _ := strconv.ParseBool(subParts[1])
+					varKey := strings.ToUpper(fmt.Sprintf("${%s_%s}", strings.Replace(appMan.Services[six].Name, "-", "_", -1), "DB_ADMIN_PWD"))
+					appMan.Var.Items = append(appMan.Var.Items, AppVar{
+						Name:        varKey,
+						Description: fmt.Sprintf("The administrator password to connect to database host '%s'\n", appMan.Services[six].Info.Db.Host),
+						Value:       RandomPwd(length, symbols),
+						Secret:      true,
+						Service:     appMan.Services[six].Name,
+					})
+					appMan.Services[six].Info.Db.Pwd = varKey
+				}
+			}
+		}
 	}
 	// sort the services by dependencies (most widely used first)
 	sort.Slice(m.Services, func(i, j int) bool {

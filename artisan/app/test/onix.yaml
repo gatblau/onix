@@ -6,8 +6,6 @@ profiles:
   - name: full
     services:
       - db
-      - ox-app-dbman
-      - pilotctl-app-dbman
       - evr-mongo-db
       - evr-mongo-app
       - nexus-app
@@ -18,7 +16,6 @@ profiles:
   - name: micro
     services:
       - db
-      - ox-app-dbman
       - ox-app
 
 services:
@@ -27,18 +24,6 @@ services:
     uri: ../../deploy/svc/db.yaml
     image: docker.io/postgres:13
     port: "5432"
-
-  - name: ox-app-dbman
-    description: Database Manager for ox-app
-    uri: ../../deploy/svc/ox-app-dbman.yaml
-    image: quay.io/gatblau/dbman-snapshot:v0.0.4-d4fb6f7-031020001129
-    port: "8085"
-
-  - name: pilotctl-app-dbman
-    description: Database Manager for pilotctl-app
-    uri: ../../deploy/svc/pilotctl-app-dbman.yaml
-    image: quay.io/gatblau/dbman-snapshot:v0.0.4-d4fb6f7-031020001129
-    port: "8086"
 
   - name: evr-mongo-db
     description: Mongo Database for Event Receiver

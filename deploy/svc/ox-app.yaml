@@ -26,4 +26,15 @@ var:
   - name: WAPI_EVENTS_ENABLED
     description: whether sending of mqtt messages is enabled for changes to configuration data
     value: "false"
+db:
+  name: onix
+  app_version: 0.0.4
+  host: ${bind=db}
+  provider: _pgsql
+  port: 5432
+  user: onix
+  pwd: ${fx=pwd:16,false}
+  admin_user: postgres
+  admin_pwd: ${bind=db:var:POSTGRES_PASSWORD}
+  schema_uri: ${bind=ox-app:schema_uri}
 ...

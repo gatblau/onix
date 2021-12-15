@@ -26,6 +26,8 @@ type SvcManifest struct {
 	Volume []Volume `yaml:"volume,omitempty"`
 	// init script that will be run to configure the service
 	Init string `yaml:"init,omitempty"`
+	// the database configuration
+	Db *Db `yaml:"db,omitempty"`
 }
 
 // Var describes a variable used by a service
@@ -63,4 +65,17 @@ type Volume struct {
 	Description string `yaml:"description,omitempty"`
 	// the volume source path
 	Path string `yaml:"path"`
+}
+
+type Db struct {
+	Name       string `yaml:"name"`
+	AppVersion string `yaml:"app_version"`
+	Host       string `yaml:"host"`
+	Provider   string `yaml:"provider"`
+	Port       int    `yaml:"port"`
+	User       string `yaml:"user"`
+	Pwd        string `yaml:"pwd"`
+	AdminUser  string `yaml:"admin_user"`
+	AdminPwd   string `yaml:"admin_pwd"`
+	SchemaURI  string `yaml:"schema_uri"`
 }

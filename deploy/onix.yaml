@@ -6,8 +6,6 @@ profiles:
   - name: full
     services:
       - db
-      - ox-app-dbman
-      - pilotctl-app-dbman
       - evr-mongo-db
       - evr-mongo-app
       - nexus-app
@@ -26,16 +24,6 @@ services:
     description: PostgreSQL Database service
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/db.yaml
     image: docker.io/postgres:13
-
-  - name: ox-app-dbman
-    description: Database Manager for ox-app
-    uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/ox-app-dbman.yaml
-    image: quay.io/gatblau/dbman-snapshot:v0.0.4-d4fb6f7-031020001129
-
-  - name: pilotctl-app-dbman
-    description: Database Manager for pilotctl-app
-    uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/pilotctl-app-dbman.yaml
-    image: quay.io/gatblau/dbman-snapshot:v0.0.4-d4fb6f7-031020001129
 
   - name: evr-mongo-db
     description: Mongo Database for Event Receiver
