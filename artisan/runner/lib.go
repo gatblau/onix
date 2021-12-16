@@ -173,15 +173,20 @@ func toContainerArgs(imageName, dir, containerName string, env *merge.Envar) []s
 		result = append(result, "-e")
 		result = append(result, v)
 	}
+	// create bind mounts
+	// note: in order to allow for art runc command to access host mounted files in linux with selinux enabled, a :Z label
+	// is added to the volume see https://docs.docker.com/storage/bind-mounts/#configure-the-selinux-label
+	// Z modify the selinux label of the host file or directory being mounted into the container indicating that the
+	// bind mount content is private and unshared.
 	if len(dir) > 0 {
 		// add a bind mount for the current folder to the /workspace/source in the runtime
 		result = append(result, "-v")
-		result = append(result, fmt.Sprintf("%s:%s", dir, "/workspace/source"))
+		result = append(result, fmt.Sprintf("%s:%s", dir, "/workspace/source:Z"))
 	}
 	// add a bind mount for the artisan registry folder
 	result = append(result, "-v")
 	// note: mind the location of the mount in the runtime must align with its user home!
-	result = append(result, fmt.Sprintf("%s:%s", core.RegistryPath(), "/home/runtime/.artisan"))
+	result = append(result, fmt.Sprintf("%s:%s", core.RegistryPath(), "/home/runtime/.artisan:Z"))
 	result = append(result, imageName)
 	return result
 }
