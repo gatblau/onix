@@ -21,6 +21,7 @@ type ExeCCmd struct {
 	credentials string
 	path        string
 	envFilename string
+	network     string
 }
 
 func NewExeCCmd() *ExeCCmd {
@@ -43,8 +44,9 @@ NOTE: exec always pulls the package from its registry as it is done within the r
 		},
 	}
 	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
-	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD artisan registry user and password")
-	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env")
+	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "the artisan registry user and password; e.g. -u USER:PASSWORD or -u USER")
+	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "the environment file to load; e.g. --env=.env or -e=.env")
+	c.cmd.Flags().StringVarP(&c.network, "network", "n", "", "attaches the container to the specified docker network; by default it is not specified so the container is not attached to any docker network; usage: --network my-net")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -70,6 +72,6 @@ func (c *ExeCCmd) Run(cmd *cobra.Command, args []string) {
 		core.InfoLogger.Printf("no credentials have been provided, if you are connecting to a authenticated registry, you need to pass the -u flag\n")
 	}
 	// launch a runtime to execute the function
-	err = run.ExeC(packageName, fxName, c.credentials, *c.interactive, env)
+	err = run.ExeC(packageName, fxName, c.credentials, c.network, *c.interactive, env)
 	i18n.Err(err, i18n.ERR_CANT_EXEC_FUNC_IN_PACKAGE, fxName, packageName)
 }

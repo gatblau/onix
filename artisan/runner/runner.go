@@ -14,7 +14,6 @@ import (
 	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/registry"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -43,7 +42,7 @@ func New() (*Runner, error) {
 	return new(Runner), nil
 }
 
-func (r *Runner) RunC(fxName string, interactive bool, env *merge.Envar) error {
+func (r *Runner) RunC(fxName string, interactive bool, env *merge.Envar, network string) error {
 	var runtime string
 	fx := r.buildFile.Fx(fxName)
 	// if the runtime is defined at the function level
@@ -66,7 +65,7 @@ func (r *Runner) RunC(fxName string, interactive bool, env *merge.Envar) error {
 	env.Merge(i.Env(false))
 	core.Debug(fmt.Sprintf("env vars passed to container:\n%s\n", env.String()))
 	// launch a container with a bind mount to the path where the build.yaml is located
-	err := runBuildFileFx(runtime, fxName, r.path, containerName, env)
+	err := runBuildFileFx(runtime, fxName, r.path, containerName, network, env)
 	if err != nil {
 		removeContainer(containerName)
 		return err
@@ -79,7 +78,7 @@ func (r *Runner) RunC(fxName string, interactive bool, env *merge.Envar) error {
 	return nil
 }
 
-func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool, env *merge.Envar) error {
+func (r *Runner) ExeC(packageName, fxName, credentials, network string, interactive bool, env *merge.Envar) error {
 	var runtime string
 	name, _ := core.ParseName(packageName)
 	// get a local registry handle
@@ -112,7 +111,7 @@ func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool,
 		// create a random container name
 		containerName := fmt.Sprintf("art-exec-%s", core.RandomString(8))
 		// launch a container with a bind mount to the artisan registry only
-		err := runPackageFx(runtime, packageName, fxName, containerName, uname, pwd, env)
+		err := runPackageFx(runtime, packageName, fxName, containerName, uname, pwd, network, env)
 		if err != nil {
 			removeContainer(containerName)
 			return err
@@ -127,18 +126,4 @@ func (r *Runner) ExeC(packageName, fxName, credentials string, interactive bool,
 		core.RaiseErr("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile", fxName)
 	}
 	return nil
-}
-
-// return an env slice with no user home info
-func filterUserHome(env []string) []string {
-	result := []string{}
-	for _, e := range env {
-		// ensure local user and home are not added
-		if strings.Contains(e, "USER") || strings.Contains(e, "HOME") || // linux, osx
-			strings.Contains(e, "HOMEDRIVE") || strings.Contains(e, "HOMEPATH") { // windows
-			continue
-		}
-		result = append(result, e)
-	}
-	return result
 }

@@ -19,6 +19,7 @@ type RunCCmd struct {
 	cmd         *cobra.Command
 	interactive *bool
 	envFilename string
+	network     string
 }
 
 func NewRunCCmd() *RunCCmd {
@@ -30,7 +31,8 @@ func NewRunCCmd() *RunCCmd {
 		},
 	}
 	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
-	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env")
+	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "the environment file to load; e.g. --env=.env or -e=.env")
+	c.cmd.Flags().StringVarP(&c.network, "network", "n", "", "attaches the container to the specified docker network; by default it is not specified so the container is not attached to any docker network; usage: --network my-net")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -53,6 +55,6 @@ func (c *RunCCmd) Run(cmd *cobra.Command, args []string) {
 	env, err := merge.NewEnVarFromFile(c.envFilename)
 	core.CheckErr(err, "failed to load environment file '%s'", c.envFilename)
 	// launch a runtime to execute the function
-	err = run.RunC(function, *c.interactive, env)
+	err = run.RunC(function, *c.interactive, env, c.network)
 	core.CheckErr(err, "cannot execute function '%s'", function)
 }

@@ -23,7 +23,7 @@ import (
 
 // launch a container and mount the current directory on the host machine into the container
 // the current directory must contain a build.yaml file where fxName is defined
-func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *merge.Envar) error {
+func runBuildFileFx(runtimeName, fxName, dir, containerName, network string, env *merge.Envar) error {
 	// NOTE: below restriction no longer necessary as volume is now mounted with :Z option
 	// if the OS is linux and the user id is not 100,000,000, it cannot continue
 	// if isWrong, msg := core.WrongUserId(); isWrong {
@@ -36,10 +36,14 @@ func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *merge.E
 		// in linux if the user is not root but the local registry folder is owned by the root user, then
 		// the registry path in a runtime will start with two consecutive forward slashes
 		core.RaiseErr("cannot continue, the local registry folder is owned by root\n" +
-			"ensure it is owned by UID=100000000 for the runtime to work")
+			"ensure it is owned by the non root user for the runtime to work")
 	}
 	if env == nil {
 		env = merge.NewEnVarFromSlice([]string{})
+	}
+	// adds debug mode
+	if len(os.Getenv("ARTISAN_DEBUG")) > 0 {
+		env.Add("ARTISAN_DEBUG", "true")
 	}
 	// determine which container tool is available in the host
 	tool, err := containerCmd()
@@ -49,7 +53,7 @@ func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *merge.E
 	// add runtime vars
 	env.Add("OXART_FX_NAME", fxName)
 	// get the docker run arguments
-	args := toContainerArgs(runtimeName, dir, containerName, env)
+	args := toContainerArgs(runtimeName, dir, containerName, network, env)
 	// launch the container with an art exec command
 	cmd := exec.Command(tool, args...)
 	core.Debug("! launching runtime: %s %s\n", tool, strings.Join(args, " "))
@@ -91,7 +95,7 @@ func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *merge.E
 }
 
 // launch a container and execute a package function
-func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUser, artRegistryPwd string, env *merge.Envar) error {
+func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUser, artRegistryPwd, network string, env *merge.Envar) error {
 	// if the OS is linux and the user id is not 100,000,000, it cannot continue
 	if isWrong, msg := core.WrongUserId(); isWrong {
 		// print warning
@@ -108,8 +112,12 @@ func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUs
 	env.Add("OXART_FX_NAME", fxName)
 	env.Add("OXART_REG_USER", artRegistryUser)
 	env.Add("OXART_REG_PWD", artRegistryPwd)
+	// adds debug mode
+	if len(os.Getenv("ARTISAN_DEBUG")) > 0 {
+		env.Add("ARTISAN_DEBUG", "true")
+	}
 	// create a slice with docker run args
-	args := toContainerArgs(runtimeName, "", containerName, env)
+	args := toContainerArgs(runtimeName, "", containerName, network, env)
 	// launch the container with an art exec command
 	cmd := exec.Command(tool, args...)
 	core.Debug("! launching runtime: %s %s\n", tool, strings.Join(args, " "))
@@ -167,13 +175,18 @@ func isCmdAvailable(name string) bool {
 }
 
 // return an array of environment variable arguments to pass to docker
-func toContainerArgs(imageName, dir, containerName string, env *merge.Envar) []string {
+func toContainerArgs(imageName, dir, containerName, network string, env *merge.Envar) []string {
 	var result = []string{"run", "--name", containerName}
 	vars := env.Slice()
 	for _, v := range vars {
 		result = append(result, "-e")
 		result = append(result, v)
 	}
+	// attach to network if defined
+	if len(network) > 0 {
+		result = append(result, "--network", network)
+	}
+
 	// create bind mounts
 	// note: in order to allow for art runc command to access host mounted files in linux with selinux enabled, a :Z label
 	// is added to the volume see https://docs.docker.com/storage/bind-mounts/#configure-the-selinux-label
