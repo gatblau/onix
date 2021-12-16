@@ -24,11 +24,12 @@ import (
 // launch a container and mount the current directory on the host machine into the container
 // the current directory must contain a build.yaml file where fxName is defined
 func runBuildFileFx(runtimeName, fxName, dir, containerName string, env *merge.Envar) error {
+	// NOTE: below restriction no longer necessary as volume is now mounted with :Z option
 	// if the OS is linux and the user id is not 100,000,000, it cannot continue
-	if isWrong, msg := core.WrongUserId(); isWrong {
-		// print error
-		core.RaiseErr("%s\n", msg)
-	}
+	// if isWrong, msg := core.WrongUserId(); isWrong {
+	// 	// print error
+	// 	core.RaiseErr("%s\n", msg)
+	// }
 	// check the local registry path has not been created by the root user othewise the runtime will error
 	registryPath := core.RegistryPath()
 	if runtime.GOOS == "linux" && strings.HasPrefix(registryPath, "//") {
