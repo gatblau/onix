@@ -40,7 +40,7 @@ scripts:
     content: |
       DEFAULT_PWD=$(cat temppwd)
 
-      echo wait for Nexus API
+      echo waiting for Nexus API to come online, ignore errors, please wait...
       art curl -X GET \
         -a 25 \
         http://${bind=nexus-app}:${bind=nexus-app:port}/service/rest/v1/status \
