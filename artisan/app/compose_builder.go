@@ -50,11 +50,15 @@ func (b *ComposeBuilder) Build() ([]DeploymentRsx, error) {
 	if err != nil {
 		return nil, err
 	}
+	disposeScript, err := b.buildDispose()
+	if err != nil {
+		return nil, err
+	}
 	buildFile, err := b.buildFile()
 	if err != nil {
 		return nil, err
 	}
-	rsx = append(rsx, deployScript, buildFile)
+	rsx = append(rsx, deployScript, disposeScript, buildFile)
 	return rsx, nil
 }
 
@@ -178,9 +182,10 @@ func (b ComposeBuilder) buildInit() ([]DeploymentRsx, error) {
 }
 
 func (b ComposeBuilder) buildDeploy() (DeploymentRsx, error) {
+	header := newHeaderBuilder("application '%s' deploy script using docker-compose", b.manifest.Name)
 	s := new(strings.Builder)
-	s.WriteString(fmt.Sprintf(`
-if ! command -v docker &> /dev/null; then
+	s.WriteString(header.String())
+	s.WriteString(fmt.Sprintf(`if ! command -v docker &> /dev/null; then
 	echo "docker is required but not installed"
 	exit
 fi
@@ -213,6 +218,27 @@ docker-compose up -d
 	}, nil
 }
 
+func (b ComposeBuilder) buildDispose() (DeploymentRsx, error) {
+	header := newHeaderBuilder("application '%s' dispose script using docker-compose", b.manifest.Name)
+	s := new(strings.Builder)
+	s.WriteString(header.String())
+	s.WriteString(fmt.Sprintf(`
+# bring down services
+docker-compose down
+`))
+	s.WriteString("\n# remove docker volumes\n")
+	for _, service := range b.manifest.Services {
+		for _, volume := range service.Info.Volume {
+			s.WriteString(fmt.Sprintf("docker volume rm %s\n", volume.Name))
+		}
+	}
+	return DeploymentRsx{
+		Name:    "dispose.sh",
+		Content: []byte(s.String()),
+		Type:    DeployScript,
+	}, nil
+}
+
 func (b ComposeBuilder) buildFile() (DeploymentRsx, error) {
 	buildFile := new(data.BuildFile)
 	deploy := []string{"sh deploy.sh"}
@@ -239,6 +265,12 @@ func (b ComposeBuilder) buildFile() (DeploymentRsx, error) {
 		Name:        "deploy",
 		Description: fmt.Sprintf("deploys the %s application using docker-compose", b.manifest.Name),
 		Run:         deploy,
+		Export:      &export,
+	})
+	buildFile.Functions = append(buildFile.Functions, &data.Function{
+		Name:        "dispose",
+		Description: fmt.Sprintf("disposes of all resources for the %s application", b.manifest.Name),
+		Run:         []string{"sh dispose.sh"},
 		Export:      &export,
 	})
 	content, err := yaml.Marshal(buildFile)
