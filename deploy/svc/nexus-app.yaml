@@ -26,7 +26,7 @@ scripts:
       echo "checking Nexus for temporary password file ..."
       while [ -z "$DEFAULT_PWD" ]
       do
-        echo "waiting for nexus to create default admin password, please wait"
+        echo "waiting for nexus to create default admin password, ignore errors, please wait..."
         sleep 5
         DEFAULT_PWD=$(docker exec ${bind-nexus-app} cat /nexus-data/admin.password)
       done
