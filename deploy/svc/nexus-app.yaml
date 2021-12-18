@@ -22,12 +22,12 @@ scripts:
       using docker exec command and writes the content to a temporary file
       note: this process should run outside of a container, as it needs to call the docker exec command
     content: |
+      echo "waiting for nexus process to create default admin password, please wait..."
       DEFAULT_PWD=
       while [ -z "$DEFAULT_PWD" ]
       do
-        echo "waiting for nexus process to create default admin password, ignore any errors, please wait..."
-        sleep 5
-        DEFAULT_PWD=$(docker exec ${bind-nexus-app} cat /nexus-data/admin.password)
+        sleep 1
+        DEFAULT_PWD=$(docker exec ${bind-nexus-app} cat /nexus-data/admin.password 2>/dev/null)
       done
       echo $DEFAULT_PWD > temppwd
   - name: setup_nexus
