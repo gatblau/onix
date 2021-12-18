@@ -1,0 +1,27 @@
+---
+name: Artisan Registry
+description: Onix Artisan Registry
+version: 1.0
+profiles:
+  - name: full
+    services:
+      - nexus-app
+      - artreg-app
+
+  - name: nexus
+    services:
+      - nexus-app
+
+services:
+  - name: nexus-app
+    description: Nexus 3 repository manager service
+    uri: ../../deploy/svc/nexus-app.yaml
+    image: sonatype/nexus3
+    port: "8081"
+
+  - name: artreg-app
+    description: Artisan Registry
+    uri: ../../deploy/svc/artreg-app.yaml
+    image: quay.io/gatblau/artisan-registry:0.0.4-011021162133879-a3dedecb3f-RC1
+    port: "8082"
+...
