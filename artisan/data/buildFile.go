@@ -29,14 +29,14 @@ type BuildFile struct {
 	// the environment variables that apply to the build
 	// any variables defined at this level will be available to all build profiles
 	// in addition, the defined variables are added on top of the existing environment
-	Env map[string]string `yaml:"env"`
+	Env map[string]string `yaml:"env,omitempty"`
 	// a list of labels to be added to the package seal
 	// they should be used to document key aspects of the package in a generic way
-	Labels map[string]string `yaml:"labels"`
+	Labels map[string]string `yaml:"labels,omitempty"`
 	// any input required by functions
 	Input *Input `yaml:"input,omitempty"`
 	// a list of build configurations in the form of labels, commands to run and environment variables
-	Profiles []*Profile `yaml:"profiles"`
+	Profiles []*Profile `yaml:"profiles,omitempty"`
 	// a list of functions containing a list of commands to execute
 	Functions []*Function `yaml:"functions"`
 }
