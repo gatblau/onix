@@ -13,7 +13,10 @@ import (
 )
 
 func TestGenerateResources(t *testing.T) {
-	if err := GenerateResources("./test/onix.yaml", "compose", "full", "", "onix"); err != nil {
+	// if err := GenerateResources("./test/onix.yaml", "compose", "micro", "", "onix"); err != nil {
+	// 	t.Fatalf(err.Error())
+	// }
+	if err := GenerateResources("./test/artisan_registry.yaml", "compose", "nexus", "", "nexus"); err != nil {
 		t.Fatalf(err.Error())
 	}
 }

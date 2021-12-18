@@ -24,10 +24,35 @@ type SvcManifest struct {
 	File []File `yaml:"file,omitempty"`
 	// one or more persistent volumes
 	Volume []Volume `yaml:"volume,omitempty"`
-	// init script that will be run to configure the service
-	Init string `yaml:"init,omitempty"`
+	// a list of initialisation blocks for different builders
+	Init []Init `yaml:"init"`
+	// a list of command definitions that can be used in any of the initialisation blocks
+	Script []Script `yaml:"scripts"`
 	// the database configuration
 	Db *Db `yaml:"db,omitempty"`
+}
+
+func (m SvcManifest) ScriptIx(scriptName string) int {
+	for i, s := range m.Script {
+		if s.Name == scriptName {
+			return i
+		}
+	}
+	return -1
+}
+
+// Init initialisation block containing commands to be run for a specific builder
+type Init struct {
+	Builder string   `yaml:"builder"`
+	Scripts []string `yaml:"scripts"`
+}
+
+// Script defines a script that can be run in a host or a runtime
+type Script struct {
+	Name        string `yaml:"name"`
+	Description string `yaml:"description,omitempty"`
+	Content     string `yaml:"content"`
+	Runtime     string `yaml:"runtime,omitempty"`
 }
 
 // Var describes a variable used by a service
