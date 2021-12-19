@@ -4,6 +4,7 @@ description: Onix services to enable Pilot Control
 version: 1.0
 profiles:
   - name: full
+    description: deploys all services
     services:
       - db
       - evr-mongo-db
@@ -13,11 +14,22 @@ profiles:
       - ox-app
       - pilotctl-app
 
-  - name: micro
+  - name: config-db
+    description: deploys the configuration database only
     services:
       - db
-      - ox-app-dbman
       - ox-app
+
+  - name: art-reg
+    description: deploys the artisan package registry only
+    services:
+      - nexus-app
+      - artreg-app
+
+  - name: nexus
+    description: deploys nexus repository manager only
+    services:
+      - nexus-app
 
 services:
   - name: db
