@@ -322,7 +322,7 @@ func getFileVols(files []File) []types.ServiceVolumeConfig {
 		relD := relDir(f.Path)
 		found := false
 		for _, x := range vo {
-			if x.Extensions[relD] != nil {
+			if x.Source == relD {
 				found = true
 			}
 		}
