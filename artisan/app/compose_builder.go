@@ -157,7 +157,7 @@ func (b ComposeBuilder) buildInit() ([]DeploymentRsx, error) {
 		if svc.Info.Db != nil {
 			dbHeader := newHeaderBuilder("initialise database for %s service", svc.Name).String()
 			rsx = append(rsx, DeploymentRsx{
-				Name:    fmt.Sprintf("setup_db_%s.sh", svc.Info.Db.Name),
+				Name:    fmt.Sprintf("%s.sh", dbInitScriptName(svc)),
 				Content: append([]byte(dbHeader), getDbScript(*svc.Info.Db)...),
 				Type:    DbInitScript,
 			})
@@ -179,6 +179,10 @@ func (b ComposeBuilder) buildInit() ([]DeploymentRsx, error) {
 		}
 	}
 	return rsx, nil
+}
+
+func dbInitScriptName(svc SvcRef) string {
+	return fmt.Sprintf("setup_db_%s", svc.Info.Db.Name)
 }
 
 func (b ComposeBuilder) buildDeploy() (DeploymentRsx, error) {
@@ -243,6 +247,14 @@ func (b ComposeBuilder) buildFile() (DeploymentRsx, error) {
 	buildFile := new(data.BuildFile)
 	deploy := []string{"sh deploy.sh"}
 	for svcix, service := range b.manifest.Services {
+		if service.Info.Db != nil {
+			buildFile.Functions = append(buildFile.Functions, &data.Function{
+				Name:    dbInitScriptName(service),
+				Run:     []string{fmt.Sprintf("sh %s.sh", dbInitScriptName(service))},
+				Runtime: "dbman",
+			})
+			deploy = append(deploy, fmt.Sprintf("art runc -n %s %s", b.network(), dbInitScriptName(service)))
+		}
 		for _, init := range service.Info.Init {
 			for _, script := range init.Scripts {
 				i := service.Info.ScriptIx(script)
@@ -284,8 +296,8 @@ func (b ComposeBuilder) buildFile() (DeploymentRsx, error) {
 func getDbScript(db Db) []byte {
 	s := new(strings.Builder)
 	s.WriteString(fmt.Sprintf("# configure '%s' database release information\n", db.Name))
-	s.WriteString(fmt.Sprintf("dbman config use %s-config\n", db.Name))
-	s.WriteString(fmt.Sprintf("dbman config set SchemaURI %s\n", db.SchemaURI))
+	s.WriteString(fmt.Sprintf("dbman config use -n %s-config\n", db.Name))
+	s.WriteString(fmt.Sprintf("dbman config set repo.uri %s\n", db.SchemaURI))
 	s.WriteString(fmt.Sprintf("dbman config set db.provider %s\n", db.Provider))
 	s.WriteString(fmt.Sprintf("dbman config set db.host %s\n", db.Host))
 	s.WriteString(fmt.Sprintf("dbman config set db.port %d\n", db.Port))
