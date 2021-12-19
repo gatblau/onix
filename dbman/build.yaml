@@ -1,0 +1,48 @@
+---
+labels:
+  author: onix@gatblau.org
+  application: Onix DbMan Command Line Interface
+  description: The Onix Database Manager command line interface
+  architecture: AMD64
+
+env:
+  CGO_ENABLED: 0
+  GOARCH: amd64
+
+
+profiles:
+  - name: linux
+    default: true
+    application: dbman
+    type: content/binary
+    license: Apache Version 2
+    labels:
+      platform: linux
+    env:
+      GOOS: linux
+    run:
+      - $(build-linux)
+    target: bin/linux/dbman
+
+functions:
+  - name: build-mac
+    description: builds the DbMan CLI for MacOS
+    env:
+      GOOS: darwin
+    run:
+      - go build -o bin/darwin/dbman -v
+
+  - name: build-linux
+    description: builds the DbMan CLI for the linux platform
+    env:
+      GOOS: linux
+    run:
+      - go build -o bin/linux/dbman -v
+
+  - name: build-win
+    description: builds the DbMan CLI for the linux platform
+    env:
+      GOOS: windows
+    run:
+      - go build -o bin/windows/dbman.exe -v
+...
