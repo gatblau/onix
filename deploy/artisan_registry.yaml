@@ -10,10 +10,10 @@ profiles:
 
   - name: nexus
     services:
-      - nexus
+      - nexus-app
 
 services:
-  - name: nexus
+  - name: nexus-app
     description: Nexus 3 repository manager service
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/nexus-app.yaml
     image: sonatype/nexus3
