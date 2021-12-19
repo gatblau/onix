@@ -297,7 +297,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 							if port := m.getSvcPort(parts[0]); len(port) > 0 {
 								appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, port, 1)
 							} else {
-								return nil, fmt.Errorf("port not defined in service '%s', invoked from variable %s => '%s' in service %s\n", parts[0], v.Name, binding, service.Name)
+								return nil, fmt.Errorf("missing port in application manifest: service '%s', binding %s\n", service.Name, binding)
 							}
 						default:
 							return nil, fmt.Errorf("invalid binding %s='%s' in service '%s'\n", v.Name, binding, service.Name)
