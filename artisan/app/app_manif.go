@@ -34,8 +34,9 @@ type Manifest struct {
 }
 
 type Profile struct {
-	Name     string   `yaml:"name"`
-	Services []string `yaml:"services"`
+	Name        string   `yaml:"name"`
+	Description string   `yaml:"description"`
+	Services    []string `yaml:"services"`
 }
 
 type Profiles []Profile
