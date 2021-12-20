@@ -48,6 +48,7 @@ public class Lib implements InitializingBean {
     private final DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss Z");
     private final JSONParser jsonParser = new JSONParser();
     private final Config cfg;
+    private static final String USER_NAME_REGEX = "^[A-Za-z]\\w{1,198}[a-zA-Z0-9]$";
 
     @Autowired
     private Crypto crypto;
@@ -185,6 +186,7 @@ public class Lib implements InitializingBean {
         if (set != null) {
             Date updated = set.getDate("updated");
             Date expires = set.getDate("expires");
+            Date created = set.getDate("created");
             user = new UserData();
             user.setKey(set.getString("key"));
             user.setName(set.getString("name"));
@@ -197,6 +199,7 @@ public class Lib implements InitializingBean {
             user.setAcl(set.getString("acl"));
             user.setVersion(set.getInt("version"));
             user.setChangedBy(set.getString("changed_by"));
+            user.setCreated((created != null) ? dateFormat.format(created) : null);
         }
         return user;
     }
@@ -524,6 +527,20 @@ public class Lib implements InitializingBean {
         } else {
             return String.format("Password must have at least %s characters", cfg.getPwdLen());
         }
+        return null;
+    }
+
+    public String checkUserName(String name) {
+        if (name == null || name.length() == 0) 
+            return String.format("Name must have at least 3 characters");
+        if (!String.valueOf(name).matches(USER_NAME_REGEX)){
+            return String.format("Name must follow below policies \n "+
+            " 1) start with alphabet \n "+
+            " 2) ends with alpha numeric \n "+
+            " 3) can containe underscore _ \n "+
+            " 4) must be of minimum 3 character and maximum of 200 character");
+        }
+        
         return null;
     }
 }
