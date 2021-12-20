@@ -301,6 +301,7 @@ func getDbScript(db Db) []byte {
 	s.WriteString(fmt.Sprintf("dbman config set db.provider %s\n", db.Provider))
 	s.WriteString(fmt.Sprintf("dbman config set db.host %s\n", db.Host))
 	s.WriteString(fmt.Sprintf("dbman config set db.port %d\n", db.Port))
+	s.WriteString(fmt.Sprintf("dbman config set db.name %s\n", db.Name))
 	s.WriteString(fmt.Sprintf("dbman config set db.username %s\n", db.User))
 	s.WriteString(fmt.Sprintf("dbman config set db.password %s\n", db.Pwd))
 	s.WriteString(fmt.Sprintf("dbman config set db.adminusername %s\n", db.AdminUser))
