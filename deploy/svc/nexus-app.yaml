@@ -27,7 +27,7 @@ scripts:
       while [ -z "$DEFAULT_PWD" ]
       do
         sleep 1
-        DEFAULT_PWD=$(docker exec ${bind-nexus-app} cat /nexus-data/admin.password 2>/dev/null)
+        DEFAULT_PWD=$(docker exec ${bind=nexus-app} cat /nexus-data/admin.password 2>/dev/null)
       done
       echo $DEFAULT_PWD > temppwd
   - name: setup_nexus
