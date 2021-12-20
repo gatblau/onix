@@ -305,7 +305,7 @@ func getDbScript(db Db) []byte {
 	s.WriteString(fmt.Sprintf("dbman config set db.password %s\n", db.Pwd))
 	s.WriteString(fmt.Sprintf("dbman config set db.adminusername %s\n", db.AdminUser))
 	s.WriteString(fmt.Sprintf("dbman config set db.adminpassword %s\n", db.AdminPwd))
-	s.WriteString(fmt.Sprintf("dbman config set db.appversion %s\n\n", db.AppVersion))
+	s.WriteString(fmt.Sprintf("dbman config set appversion %s\n\n", db.AppVersion))
 	s.WriteString(fmt.Sprintf("# create '%s' database\n", db.Name))
 	s.WriteString(fmt.Sprintf("dbman db create\n\n"))
 	s.WriteString(fmt.Sprintf("# deploy '%s' database schema\n", db.Name))

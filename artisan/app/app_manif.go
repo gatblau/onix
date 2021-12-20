@@ -522,13 +522,13 @@ func (m *Manifest) wire() (*Manifest, error) {
 					subParts := strings.Split(parts[1], ",")
 					length, _ := strconv.Atoi(subParts[0])
 					symbols, _ := strconv.ParseBool(subParts[1])
-					varKey := strings.ToUpper(fmt.Sprintf("${%s_%s}", strings.Replace(appMan.Services[six].Name, "-", "_", -1), "DB_ADMIN_PWD"))
+					varKey := strings.ToUpper(fmt.Sprintf("%s_%s", strings.Replace(appMan.Services[six].Name, "-", "_", -1), "DB_ADMIN_PWD"))
 					appMan.Var.Items = append(appMan.Var.Items, AppVar{
 						Name:        varKey,
-						Description: fmt.Sprintf("The administrator password to connect to database host '%s'\n", appMan.Services[six].Info.Db.Host),
+						Description: fmt.Sprintf("The administrator password to connect to database host '%s'", appMan.Services[six].Info.Db.Host),
 						Value:       RandomPwd(length, symbols),
 						Secret:      true,
-						Service:     appMan.Services[six].Name,
+						Service:     strings.ToUpper(appMan.Services[six].Name),
 					})
 					appMan.Services[six].Info.Db.Pwd = varKey
 				}
@@ -546,13 +546,13 @@ func (m *Manifest) wire() (*Manifest, error) {
 					subParts := strings.Split(parts[1], ",")
 					length, _ := strconv.Atoi(subParts[0])
 					symbols, _ := strconv.ParseBool(subParts[1])
-					varKey := strings.ToUpper(fmt.Sprintf("${%s_%s}", strings.Replace(appMan.Services[six].Name, "-", "_", -1), "DB_ADMIN_PWD"))
+					varKey := strings.ToUpper(fmt.Sprintf("%s_%s", strings.Replace(appMan.Services[six].Name, "-", "_", -1), "DB_ADMIN_PWD"))
 					appMan.Var.Items = append(appMan.Var.Items, AppVar{
 						Name:        varKey,
 						Description: fmt.Sprintf("The administrator password to connect to database host '%s'\n", appMan.Services[six].Info.Db.Host),
 						Value:       RandomPwd(length, symbols),
 						Secret:      true,
-						Service:     appMan.Services[six].Name,
+						Service:     strings.ToUpper(appMan.Services[six].Name),
 					})
 					appMan.Services[six].Info.Db.Pwd = varKey
 				}
