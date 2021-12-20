@@ -123,13 +123,20 @@ func (b *ComposeBuilder) buildEnv() DeploymentRsx {
 			currentSvc = v.Service
 		}
 		builder.WriteString(fmt.Sprintf("# %s \n", v.Description))
-		builder.WriteString(fmt.Sprintf("%s=%s\n\n", v.Name, v.Value))
+		builder.WriteString(fmt.Sprintf("%s=%s\n\n", unwrap(v.Name), v.Value))
 	}
 	return DeploymentRsx{
 		Name:    ".env",
 		Content: []byte(builder.String()),
 		Type:    EnvironmentFile,
 	}
+}
+
+func unwrap(variable string) string {
+	if strings.HasPrefix(variable, "${") && strings.HasSuffix(variable, "}") {
+		return variable[2 : len(variable)-1]
+	}
+	return variable
 }
 
 func (b ComposeBuilder) buildFiles() ([]DeploymentRsx, error) {
