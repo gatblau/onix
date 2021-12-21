@@ -1,5 +1,3 @@
-package cmd
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,22 +5,19 @@ package cmd
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-import (
-	"github.com/spf13/cobra"
-)
 
-// PGPCmd provides PGP management functions
-type PGPCmd struct {
-	cmd *cobra.Command
+package app
+
+type K8SBuilder struct {
+	manifest Manifest
 }
 
-func NewPGPCmd() *PGPCmd {
-	c := &PGPCmd{
-		cmd: &cobra.Command{
-			Use:   "pgp",
-			Short: "provides PGP management functions",
-			Long:  ``,
-		},
-	}
-	return c
+// newComposeBuilder called internally by NewBuilder()
+func newK8SBuilder(appMan Manifest) Builder {
+	return &K8SBuilder{manifest: appMan}
+}
+
+func (b *K8SBuilder) Build() ([]DeploymentRsx, error) {
+	rsx := make([]DeploymentRsx, 0)
+	return rsx, nil
 }

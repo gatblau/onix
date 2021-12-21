@@ -24,7 +24,7 @@ func TestExeC(t *testing.T) {
 		t.FailNow()
 	}
 	// launch a runtime to execute the function
-	err = run.ExeC(packageName, fxName, "admin:sss", false, env)
+	err = run.ExeC(packageName, fxName, "admin:sss", "", false, env)
 	i18n.Err(err, i18n.ERR_CANT_EXEC_FUNC_IN_PACKAGE, fxName, packageName)
 }
 
@@ -51,7 +51,7 @@ func TestBuild(t *testing.T) {
 func TestRunC(t *testing.T) {
 	run, err := runner.NewFromPath(".")
 	core.CheckErr(err, "cannot initialise runner")
-	err = run.RunC("deploy", false, merge.NewEnVarFromSlice([]string{}))
+	err = run.RunC("deploy", false, merge.NewEnVarFromSlice([]string{}), "")
 }
 
 func TestPush(t *testing.T) {
