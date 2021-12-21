@@ -8,6 +8,8 @@
 
 package k8s
 
+const AppsVersion = "apps/v1"
+
 type Labels struct {
 	App string `yaml:"app"`
 }

@@ -21,5 +21,6 @@ type Annotations struct {
 }
 
 type Selector struct {
-	App string `yaml:"app"`
+	App         string      `yaml:"app,omitempty"`
+	MatchLabels MatchLabels `yaml:"matchLabels,omitempty"`
 }

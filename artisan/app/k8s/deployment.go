@@ -36,23 +36,23 @@ type Env struct {
 }
 
 type Exec struct {
-	Command []string `yaml:"command"`
+	Command []string `yaml:"command,omitempty"`
 }
 
 type ReadinessProbe struct {
-	Exec                Exec `yaml:"exec"`
-	InitialDelaySeconds int  `yaml:"initialDelaySeconds"`
-	PeriodSeconds       int  `yaml:"periodSeconds"`
-	TimeoutSeconds      int  `yaml:"timeoutSeconds"`
-	FailureThreshold    int  `yaml:"failureThreshold"`
+	Exec                Exec `yaml:"exec,omitempty"`
+	InitialDelaySeconds int  `yaml:"initialDelaySeconds,omitempty"`
+	PeriodSeconds       int  `yaml:"periodSeconds,omitempty"`
+	TimeoutSeconds      int  `yaml:"timeoutSeconds,omitempty"`
+	FailureThreshold    int  `yaml:"failureThreshold,omitempty"`
 }
 
 type Ports struct {
 	ContainerPort int    `yaml:"containerPort"`
-	Name          string `yaml:"name"`
-	Protocol      string `yaml:"protocol"`
-	Port          int    `yaml:"port"`
-	TargetPort    int    `yaml:"targetPort"`
+	Name          string `yaml:"name,omitempty"`
+	Protocol      string `yaml:"protocol,omitempty"`
+	Port          int    `yaml:"port,omitempty"`
+	TargetPort    int    `yaml:"targetPort,omitempty"`
 }
 
 type Requests struct {
@@ -73,11 +73,11 @@ type Resources struct {
 type Containers struct {
 	Env             []Env          `yaml:"env"`
 	Image           string         `yaml:"image"`
-	ReadinessProbe  ReadinessProbe `yaml:"readinessProbe"`
+	ReadinessProbe  ReadinessProbe `yaml:"readinessProbe,omitempty"`
 	ImagePullPolicy string         `yaml:"imagePullPolicy"`
 	Name            string         `yaml:"name"`
 	Ports           []Ports        `yaml:"ports"`
-	Resources       Resources      `yaml:"resources"`
+	Resources       Resources      `yaml:"resources,omitempty"`
 }
 
 type TemplateSpec struct {
@@ -91,11 +91,11 @@ type Template struct {
 }
 
 type Spec struct {
-	Replicas int      `yaml:"replicas"`
-	Selector Selector `yaml:"selector"`
-	Template Template `yaml:"template"`
-	Ports    []Ports  `yaml:"ports"`
-	Type     string   `yaml:"type"`
-	TLS      []TLS    `yaml:"tls"`
-	Rules    []Rules  `yaml:"rules"`
+	Replicas int      `yaml:"replicas,omitempty"`
+	Selector Selector `yaml:"selector,omitempty"`
+	Template Template `yaml:"template,omitempty"`
+	Ports    []Ports  `yaml:"ports,omitempty"`
+	Type     string   `yaml:"type,omitempty"`
+	TLS      []TLS    `yaml:"tls,omitempty"`
+	Rules    []Rules  `yaml:"rules,omitempty"`
 }
