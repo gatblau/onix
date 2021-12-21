@@ -9,6 +9,7 @@
 package app
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/gatblau/onix/artisan/app/k8s"
 	"gopkg.in/yaml.v2"
@@ -34,8 +35,69 @@ func (b *KubeBuilder) Build() ([]DeploymentRsx, error) {
 			return nil, err
 		}
 		rsx = append(rsx, *deployment)
+		secrets, err := b.buildSecrets(s)
+		if err != nil {
+			return nil, err
+		}
+		rsx = append(rsx, secrets...)
 	}
 	return rsx, nil
+}
+
+func (b *KubeBuilder) buildSecrets(svc SvcRef) ([]DeploymentRsx, error) {
+	rsx := make([]DeploymentRsx, 0)
+	for _, v := range svc.Info.Var {
+		if v.Secret {
+			value, err := b.getVarValue(v.Value)
+			if err != nil {
+				return rsx, err
+			}
+			secret := k8s.Secret{
+				APIVersion: k8s.SecretsVersion,
+				Kind:       "Secret",
+				Metadata: &k8s.Metadata{
+					Name:        secretName(v),
+					Annotations: k8s.Annotations{Description: v.Description},
+				},
+				Type: "Opaque",
+				Data: &map[string]string{
+					v.Name: base64.StdEncoding.EncodeToString([]byte(value)),
+				},
+			}
+			content, err := yaml.Marshal(secret)
+			if err != nil {
+				return rsx, nil
+			}
+			rsx = append(rsx, DeploymentRsx{
+				Name:    fmt.Sprintf("%s-%s-secret.yaml", svc.Name, strings.Replace(strings.ToLower(v.Name), "_", "-", -1)),
+				Content: content,
+				Type:    K8SResource,
+			})
+		}
+	}
+	return rsx, nil
+}
+
+func (b *KubeBuilder) getVarValue(name string) (string, error) {
+	// check if the name contains other variables
+	vs := nestedVars(name)
+	var vName string
+	var merged bool
+	for _, vv := range vs {
+		if strings.HasPrefix(vv, "${") && strings.HasSuffix(vv, "}") {
+			vName = vv[2 : len(vv)-1]
+		}
+		for _, v := range b.Manifest.Var.Items {
+			if v.Name == vName {
+				name = strings.Replace(name, vv, v.Value, -1)
+				merged = true
+			}
+		}
+	}
+	if merged {
+		return name, nil
+	}
+	return "", fmt.Errorf("variable %s not found", name)
 }
 
 func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
@@ -148,4 +210,9 @@ func getK8SEnv(svc SvcRef) []k8s.Env {
 
 func secretName(v Var) string {
 	return fmt.Sprintf("%s-secret", strings.ToLower(strings.Replace(v.Name, "_", "-", -1)))
+}
+
+func nestedVars(value string) []string {
+	r, _ := regexp.Compile("\\${(?P<NAME>[^}]+)}")
+	return r.FindAllString(value, -1)
 }
