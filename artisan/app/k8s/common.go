@@ -8,7 +8,10 @@
 
 package k8s
 
-const AppsVersion = "apps/v1"
+const (
+	AppsVersion    = "apps/v1"
+	SecretsVersion = "v1"
+)
 
 type Labels struct {
 	App string `yaml:"app"`
@@ -16,6 +19,6 @@ type Labels struct {
 
 type Metadata struct {
 	Annotations Annotations `yaml:"annotations"`
-	Labels      Labels      `yaml:"labels"`
+	Labels      Labels      `yaml:"labels,omitempty"`
 	Name        string      `yaml:"name"`
 }

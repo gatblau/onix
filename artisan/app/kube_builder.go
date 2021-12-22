@@ -127,6 +127,10 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 					Labels: k8s.Labels{
 						App: svc.Name,
 					},
+					Annotations: k8s.Annotations{
+						Description: svc.Description,
+					},
+					Name: fmt.Sprintf("%s-deployment", strings.ToLower(svc.Name)),
 				},
 				Spec: k8s.TemplateSpec{
 					Containers:                    containers,
