@@ -40,6 +40,11 @@ func (b *KubeBuilder) Build() ([]DeploymentRsx, error) {
 			return nil, err
 		}
 		rsx = append(rsx, secrets...)
+		service, err := b.buildService(s)
+		if err != nil {
+			return nil, err
+		}
+		rsx = append(rsx, *service)
 	}
 	return rsx, nil
 }
@@ -53,7 +58,7 @@ func (b *KubeBuilder) buildSecrets(svc SvcRef) ([]DeploymentRsx, error) {
 				return rsx, err
 			}
 			secret := k8s.Secret{
-				APIVersion: k8s.SecretsVersion,
+				APIVersion: k8s.CoreVersion,
 				Kind:       "Secret",
 				Metadata: &k8s.Metadata{
 					Name:        secretName(v),
@@ -150,8 +155,39 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 	}, nil
 }
 
+func (b *KubeBuilder) buildService(svc SvcRef) (*DeploymentRsx, error) {
+	ports, err := getServicePorts(svc)
+	if err != nil {
+		return nil, err
+	}
+	s := k8s.Service{
+		APIVersion: k8s.CoreVersion,
+		Kind:       "Service",
+		Metadata: k8s.Metadata{
+			Annotations: k8s.Annotations{Description: svc.Description},
+			Labels: k8s.Labels{
+				App: svc.Name,
+			},
+			Name: fmt.Sprintf("%s-service", svc.Name),
+		},
+		Spec: k8s.Spec{
+			Selector: k8s.Selector{App: svc.Name},
+			Ports:    ports,
+		},
+	}
+	content, err := yaml.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+	return &DeploymentRsx{
+		Name:    fmt.Sprintf("%s-service.yaml", svc.Name),
+		Content: content,
+		Type:    K8SResource,
+	}, nil
+}
+
 func getContainers(svc SvcRef) ([]k8s.Containers, error) {
-	ports, err := getPorts(svc)
+	ports, err := getDeploymentPorts(svc)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +202,7 @@ func getContainers(svc SvcRef) ([]k8s.Containers, error) {
 	}, nil
 }
 
-func getPorts(svc SvcRef) ([]k8s.Ports, error) {
+func getDeploymentPorts(svc SvcRef) ([]k8s.Ports, error) {
 	p, err := strconv.Atoi(svc.Info.Port)
 	if err != nil {
 		return nil, err
@@ -174,6 +210,23 @@ func getPorts(svc SvcRef) ([]k8s.Ports, error) {
 	return []k8s.Ports{
 		{
 			ContainerPort: p,
+		},
+	}, nil
+}
+
+func getServicePorts(svc SvcRef) ([]k8s.Ports, error) {
+	target, err := strconv.Atoi(svc.Info.Port)
+	if err != nil {
+		return nil, err
+	}
+	published, err := strconv.Atoi(svc.Port)
+	if err != nil {
+		return nil, err
+	}
+	return []k8s.Ports{
+		{
+			Port:       published,
+			TargetPort: target,
 		},
 	}, nil
 }

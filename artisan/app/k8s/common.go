@@ -9,8 +9,8 @@
 package k8s
 
 const (
-	AppsVersion    = "apps/v1"
-	SecretsVersion = "v1"
+	AppsVersion = "apps/v1"
+	CoreVersion = "v1"
 )
 
 type Labels struct {

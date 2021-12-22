@@ -48,7 +48,7 @@ type ReadinessProbe struct {
 }
 
 type Ports struct {
-	ContainerPort int    `yaml:"containerPort"`
+	ContainerPort int    `yaml:"containerPort,omitempty"`
 	Name          string `yaml:"name,omitempty"`
 	Protocol      string `yaml:"protocol,omitempty"`
 	Port          int    `yaml:"port,omitempty"`
