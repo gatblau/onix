@@ -216,6 +216,12 @@ func (m *Manifest) explode() (*Manifest, error) {
 			appMan.Services[i].Name = svcMan.Name
 		}
 	}
+	for _, service := range appMan.Services {
+		// binding in a service cannot point to another binding but a value or a function expression
+		if err = validateBindings(*appMan, service); err != nil {
+			return nil, err
+		}
+	}
 	return appMan, nil
 }
 
@@ -564,6 +570,39 @@ func (m *Manifest) wire() (*Manifest, error) {
 		return len(m.Services[i].UsedBy) > len(m.Services[j].UsedBy)
 	})
 	return appMan, nil
+}
+
+// ensure one binding does not point to another so that the process of wiring variables is easier
+func validateBindings(m Manifest, svc SvcRef) error {
+	for _, v := range svc.Info.Var {
+		// if the variable contains a binding expression
+		if strings.Contains(v.Value, "${bind=") {
+			// checks the target is not another binding
+			parts := parseBinding(v.Value)
+			if len(parts) == 3 && strings.ToLower(parts[1]) == "var" {
+				svcName := parts[0]
+				varName := parts[2]
+				// find the target
+				for _, service := range m.Services {
+					if service.Name == svcName {
+						for _, target := range service.Info.Var {
+							if target.Name == varName && strings.Contains(target.Value, "${bind=") {
+								return fmt.Errorf("a variable binding cannot point to another binding: in service %[1]s, "+
+									"variable %[2]s=%[3]s points to service %s, variable %[4]s=%[5]s, which is a binding expression; "+
+									"ensure the variable in service %[1]s points to a value, empty variable or a function expression", svc.Name, v.Name, v.Value, svcName, target.Name, target.Value)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func parseBinding(binding string) []string {
+	value := binding[len("${bind=") : len(binding)-1]
+	return strings.Split(value, ":")
 }
 
 func addDependency(dependsOn []string, svc string, s SvcRef) []string {

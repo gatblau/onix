@@ -38,7 +38,7 @@ var:
   - name: OX_ART_REG_PWD
     description: the password to authenticate with the Artisan Registry service
     secret: true
-    value: ${bind=artreg-app:var:OXA_HTTP_PWD}
+    value: ${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD}
 file:
   - path: /keys/.pilot_verify.pgp
     description: the public pgp key used by pilot to verify connections to pilot control

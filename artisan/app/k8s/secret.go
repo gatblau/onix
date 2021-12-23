@@ -9,13 +9,11 @@
 package k8s
 
 type Secret struct {
-	APIVersion string     `yaml:"apiVersion"`
-	Kind       string     `yaml:"kind"`
-	Metadata   Metadata   `yaml:"metadata"`
-	Type       string     `yaml:"type"`
-	StringData StringData `yaml:"stringData"`
-}
-
-type StringData struct {
-	Pwd string `yaml:"pwd"`
+	APIVersion string             `yaml:"apiVersion,omitempty"`
+	Kind       string             `yaml:"kind,omitempty"`
+	Metadata   *Metadata          `yaml:"metadata,omitempty"`
+	Type       string             `yaml:"type,omitempty"`
+	StringData *map[string]string `yaml:"stringData,omitempty"`
+	Data       *map[string]string `yaml:"data,omitempty"`
+	SecretName string             `yaml:"secretName,omitempty"`
 }
