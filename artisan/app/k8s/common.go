@@ -11,10 +11,12 @@ package k8s
 const (
 	AppsVersion = "apps/v1"
 	CoreVersion = "v1"
+	NetVersion  = "networking.k8s.io/v1beta1"
 )
 
 type Labels struct {
-	App string `yaml:"app"`
+	App     string `yaml:"app,omitempty"`
+	Version string `yaml:"version,omitempty"`
 }
 
 type Metadata struct {

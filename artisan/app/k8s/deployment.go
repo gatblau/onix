@@ -17,7 +17,8 @@ type Deployment struct {
 }
 
 type MatchLabels struct {
-	App string `yaml:"app"`
+	App     string `yaml:"app,omitempty"`
+	Version string `yaml:"version,omitempty"`
 }
 
 type SecretKeyRef struct {

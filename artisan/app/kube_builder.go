@@ -45,6 +45,11 @@ func (b *KubeBuilder) Build() ([]DeploymentRsx, error) {
 			return nil, err
 		}
 		rsx = append(rsx, *service)
+		ingress, err := b.buildIngress(s)
+		if err != nil {
+			return nil, err
+		}
+		rsx = append(rsx, *ingress)
 	}
 	return rsx, nil
 }
@@ -114,8 +119,11 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 		APIVersion: k8s.AppsVersion,
 		Kind:       "Deployment",
 		Metadata: k8s.Metadata{
-			Labels: k8s.Labels{App: svc.Name},
-			Name:   svc.Name,
+			Labels: k8s.Labels{
+				App:     svc.Name,
+				Version: b.Manifest.Version,
+			},
+			Name: svc.Name,
 			Annotations: k8s.Annotations{
 				Description: fmt.Sprintf("Deployment configuration for %s", svc.Description),
 			},
@@ -124,13 +132,15 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 			Replicas: 1,
 			Selector: k8s.Selector{
 				MatchLabels: k8s.MatchLabels{
-					App: svc.Name,
+					App:     svc.Name,
+					Version: b.Manifest.Version,
 				},
 			},
 			Template: k8s.Template{
 				Metadata: k8s.Metadata{
 					Labels: k8s.Labels{
-						App: svc.Name,
+						App:     svc.Name,
+						Version: b.Manifest.Version,
 					},
 					Annotations: k8s.Annotations{
 						Description: svc.Description,
@@ -166,13 +176,17 @@ func (b *KubeBuilder) buildService(svc SvcRef) (*DeploymentRsx, error) {
 		Metadata: k8s.Metadata{
 			Annotations: k8s.Annotations{Description: svc.Description},
 			Labels: k8s.Labels{
-				App: svc.Name,
+				App:     svc.Name,
+				Version: b.Manifest.Version,
 			},
-			Name: fmt.Sprintf("%s-service", svc.Name),
+			Name: svcName(svc),
 		},
 		Spec: k8s.Spec{
-			Selector: k8s.Selector{App: svc.Name},
-			Ports:    ports,
+			Selector: k8s.Selector{
+				App:     svc.Name,
+				Version: b.Manifest.Version,
+			},
+			Ports: ports,
 		},
 	}
 	content, err := yaml.Marshal(s)
@@ -184,6 +198,67 @@ func (b *KubeBuilder) buildService(svc SvcRef) (*DeploymentRsx, error) {
 		Content: content,
 		Type:    K8SResource,
 	}, nil
+}
+
+func svcName(svc SvcRef) string {
+	return fmt.Sprintf("%s-service", normalisedName(svc.Name))
+}
+
+func (b *KubeBuilder) buildIngress(svc SvcRef) (*DeploymentRsx, error) {
+	port, err := strconv.Atoi(svc.Port)
+	if err != nil {
+		return nil, err
+	}
+	i := &k8s.Ingress{
+		APIVersion: k8s.NetVersion,
+		Kind:       "Ingress",
+		Metadata: k8s.Metadata{
+			Annotations: k8s.Annotations{Description: fmt.Sprintf("publishes the %s service", svc.Name)},
+			Labels: k8s.Labels{
+				App:     svc.Name,
+				Version: b.Manifest.Version,
+			},
+			Name: fmt.Sprintf("%s-ingress", strings.Replace(strings.ToLower(svc.Name), "_", "-", -1)),
+		},
+		Spec: k8s.Spec{
+			TLS: []k8s.TLS{
+				{
+					Hosts:      []string{ingressURL(svc)},
+					SecretName: ingressTlsSecretName(svc),
+				},
+			},
+			Rules: []k8s.Rules{
+				{
+					Host: ingressURL(svc),
+					HTTP: k8s.HTTP{Paths: []k8s.Paths{
+						{Path: "/",
+							Backend: k8s.Backend{
+								ServiceName: svcName(svc),
+								ServicePort: port,
+							},
+						},
+					}},
+				},
+			},
+		},
+	}
+	content, err := yaml.Marshal(i)
+	if err != nil {
+		return nil, err
+	}
+	return &DeploymentRsx{
+		Name:    fmt.Sprintf("%s-ingress.yaml", svcName(svc)),
+		Content: content,
+		Type:    K8SResource,
+	}, nil
+}
+
+func ingressURL(svc SvcRef) string {
+	return "???"
+}
+
+func ingressTlsSecretName(svc SvcRef) string {
+	return fmt.Sprintf("%s-ingress-tls-secret", normalisedName(svc.Name))
 }
 
 func getContainers(svc SvcRef) ([]k8s.Containers, error) {
@@ -266,10 +341,14 @@ func getK8SEnv(svc SvcRef) []k8s.Env {
 }
 
 func secretName(v Var) string {
-	return fmt.Sprintf("%s-secret", strings.ToLower(strings.Replace(v.Name, "_", "-", -1)))
+	return fmt.Sprintf("%s-secret", normalisedName(v.Name))
 }
 
 func nestedVars(value string) []string {
 	r, _ := regexp.Compile("\\${(?P<NAME>[^}]+)}")
 	return r.FindAllString(value, -1)
+}
+
+func normalisedName(name string) string {
+	return strings.Replace(strings.Replace(strings.ToLower(name), "_", "-", -1), " ", "-", -1)
 }
