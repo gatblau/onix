@@ -21,6 +21,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
+	"net"
 	"os"
 	"time"
 )
@@ -37,7 +38,7 @@ const (
 
 // TLSCertificate generates a self-signed TLS x509 certificate and a private key using Elliptic Curve Digital
 // Signature Algorithm (ECDSA)
-func TLSCertificate(algor TlsSignatureAlgorithm, organisation string) (cert []byte, key []byte, err error) {
+func TLSCertificate(algor TlsSignatureAlgorithm, organisation string, hosts []string, isCA bool) (cert []byte, key []byte, err error) {
 	var priv interface{}
 	switch algor {
 	case RSA:
@@ -63,22 +64,21 @@ func TLSCertificate(algor TlsSignatureAlgorithm, organisation string) (cert []by
 		},
 		BasicConstraintsValid: true,
 	}
-
-	/*
-	   hosts := strings.Split(*host, ",")
-	   for _, h := range hosts {
-	   	if ip := net.ParseIP(h); ip != nil {
-	   		template.IPAddresses = append(template.IPAddresses, ip)
-	   	} else {
-	   		template.DNSNames = append(template.DNSNames, h)
-	   	}
-	   }
-	   if *isCA {
-	   	template.IsCA = true
-	   	template.KeyUsage |= x509.KeyUsageCertSign
-	   }
-	*/
-
+	// add IP addresses and or DNS names to the certificate
+	for _, h := range hosts {
+		if ip := net.ParseIP(h); ip != nil {
+			template.IPAddresses = append(template.IPAddresses, ip)
+		} else {
+			template.DNSNames = append(template.DNSNames, h)
+		}
+	}
+	// if the certificates are for a certificate authority
+	if isCA {
+		// set it as CA cert
+		template.IsCA = true
+		// add use for signing certs
+		template.KeyUsage |= x509.KeyUsageCertSign
+	}
 	certBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, pubKey(priv), priv)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create certificate: %s", err)
