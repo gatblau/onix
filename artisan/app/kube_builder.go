@@ -129,7 +129,7 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 			},
 		},
 		Spec: k8s.Spec{
-			Replicas: 1,
+			Replicas: getReplicas(svc),
 			Selector: k8s.Selector{
 				MatchLabels: k8s.MatchLabels{
 					App:     svc.Name,
@@ -163,6 +163,17 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 		Content: content,
 		Type:    K8SResource,
 	}, nil
+}
+
+func getReplicas(svc SvcRef) int {
+	if value, exists := svc.Directives["highly_available"]; exists {
+		replicas, err := strconv.Atoi(value)
+		if err != nil {
+			return 1
+		}
+		return replicas
+	}
+	return 1
 }
 
 func (b *KubeBuilder) buildService(svc SvcRef) (*DeploymentRsx, error) {
