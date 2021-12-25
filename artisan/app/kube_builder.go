@@ -166,7 +166,7 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 }
 
 func getReplicas(svc SvcRef) int {
-	if value, exists := svc.Directives["highly_available"]; exists {
+	if value, exists := svc.Attributes["highly_available"]; exists {
 		replicas, err := strconv.Atoi(value)
 		if err != nil {
 			return 1

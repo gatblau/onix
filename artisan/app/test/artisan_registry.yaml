@@ -18,10 +18,15 @@ services:
     uri: ../../deploy/svc/nexus-app.yaml
     image: sonatype/nexus3
     port: "8081"
+    attributes:
+      tls: auto
 
   - name: artreg-app
     description: Artisan Registry
     uri: ../../deploy/svc/artreg-app.yaml
     image: quay.io/gatblau/artisan-registry:0.0.4-011021162133879-a3dedecb3f-RC1
     port: "8082"
+    attributes:
+      tls: auto
+      highly_available: 3
 ...
