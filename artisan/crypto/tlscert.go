@@ -18,6 +18,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"math/big"
@@ -77,14 +78,15 @@ func SelfSignedCertificate(algor TlsSignatureAlgorithm, organisation string, hos
 		BasicConstraintsValid: true,
 	}
 	// add IP addresses and or DNS names to the certificate
-	for _, h := range hosts {
-		if ip := net.ParseIP(h); ip != nil {
-			template.IPAddresses = append(template.IPAddresses, ip)
-		} else {
-			template.DNSNames = append(template.DNSNames, h)
+	if hosts != nil {
+		for _, h := range hosts {
+			if ip := net.ParseIP(h); ip != nil {
+				template.IPAddresses = append(template.IPAddresses, ip)
+			} else {
+				template.DNSNames = append(template.DNSNames, h)
+			}
 		}
 	}
-
 	// creates a DER (Distinguished Encoding Rules) encoded certificate
 	// DER is a purely binary encoding for X.509 certificates and private keys
 	// NOTE: as it is self-signed, the public key of the signee and the private key of the signer are of the same key-pair
@@ -99,6 +101,16 @@ func SelfSignedCertificate(algor TlsSignatureAlgorithm, organisation string, hos
 	pem.Encode(out, pemBlock(priv))
 	key = out.Bytes()
 	return
+}
+
+// SelfSignedBase64 returns a base64 encoded self-signed TLS certificate and key using
+// ECDSA NIST P-256 (FIPS 186-3, section D.2.3)
+func SelfSignedBase64() (cert, key string, err error) {
+	certBytes, keyBytes, e := SelfSignedCertificate(ECDSA, "self-signed", nil)
+	if e != nil {
+		return "", "", e
+	}
+	return base64.StdEncoding.EncodeToString(certBytes), base64.StdEncoding.EncodeToString(keyBytes), nil
 }
 
 // pubKey returns the public key for the specified private key
