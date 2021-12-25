@@ -36,9 +36,20 @@ const (
 	ECDSA
 )
 
-// TLSCertificate generates a self-signed TLS x509 certificate and a private key using Elliptic Curve Digital
-// Signature Algorithm (ECDSA)
-func TLSCertificate(algor TlsSignatureAlgorithm, organisation string, hosts []string, isCA bool) (cert []byte, key []byte, err error) {
+// SelfSignedCertificate generates a self-signed TLS x509 certificate and a private key using Elliptic Curve Digital Signature Algorithm (ECDSA)
+// the process is as follows:
+// 1. create server private key
+// 2. create certificate signing request (CSR) using server private key
+// 3. create server cert using CA cert, CA private key & Server CRS
+//
+// NOTE: the process to create a TLS cert with a CA is below.
+// 1. CA private key
+// 2. CA root certificate
+// 3. Server private key
+// 4. CSR using server private key
+// 5. Server cert using CA cert, CA private key & Server CRS
+func SelfSignedCertificate(algor TlsSignatureAlgorithm, organisation string, hosts []string) (cert []byte, key []byte, err error) {
+	// first generates a key pair using either RSA or ECDSA algorithms
 	var priv interface{}
 	switch algor {
 	case RSA:
@@ -49,6 +60,7 @@ func TLSCertificate(algor TlsSignatureAlgorithm, organisation string, hosts []st
 	if err != nil {
 		return
 	}
+	// then creates a certificate signing request (template)
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
@@ -72,19 +84,16 @@ func TLSCertificate(algor TlsSignatureAlgorithm, organisation string, hosts []st
 			template.DNSNames = append(template.DNSNames, h)
 		}
 	}
-	// if the certificates are for a certificate authority
-	if isCA {
-		// set it as CA cert
-		template.IsCA = true
-		// add use for signing certs
-		template.KeyUsage |= x509.KeyUsageCertSign
-	}
-	certBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, pubKey(priv), priv)
+
+	// creates a DER (Distinguished Encoding Rules) encoded certificate
+	// DER is a purely binary encoding for X.509 certificates and private keys
+	// NOTE: as it is self-signed, the public key of the signee and the private key of the signer are of the same key-pair
+	certDERBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, pubKey(priv), priv)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create certificate: %s", err)
 	}
 	out := &bytes.Buffer{}
-	pem.Encode(out, &pem.Block{Type: "CERTIFICATE", Bytes: certBytes})
+	pem.Encode(out, &pem.Block{Type: "CERTIFICATE", Bytes: certDERBytes})
 	cert = out.Bytes()
 	out.Reset()
 	pem.Encode(out, pemBlock(priv))
