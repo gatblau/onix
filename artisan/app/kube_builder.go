@@ -12,6 +12,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/gatblau/onix/artisan/app/k8s"
+	"github.com/gatblau/onix/artisan/crypto"
 	"gopkg.in/yaml.v2"
 	"regexp"
 	"strconv"
@@ -49,7 +50,9 @@ func (b *KubeBuilder) Build() ([]DeploymentRsx, error) {
 		if err != nil {
 			return nil, err
 		}
-		rsx = append(rsx, *ingress)
+		if ingress != nil {
+			rsx = append(rsx, *ingress)
+		}
 	}
 	return rsx, nil
 }
@@ -80,6 +83,40 @@ func (b *KubeBuilder) buildSecrets(svc SvcRef) ([]DeploymentRsx, error) {
 			}
 			rsx = append(rsx, DeploymentRsx{
 				Name:    fmt.Sprintf("%s-%s-secret.yaml", svc.Name, strings.Replace(strings.ToLower(v.Name), "_", "-", -1)),
+				Content: content,
+				Type:    K8SResource,
+			})
+		}
+	}
+	if value, exists := svc.Attributes["tls"]; exists {
+		switch strings.ToLower(value) {
+		// auto generate tls certificate secret
+		case "auto":
+			cert, key, err := crypto.SelfSignedBase64()
+			if err != nil {
+				return nil, err
+			}
+			secret := k8s.Secret{
+				APIVersion: k8s.CoreVersion,
+				Kind:       "Secret",
+				Metadata: &k8s.Metadata{
+					Name: tlsSecretName(svc),
+					Annotations: k8s.Annotations{
+						Description: fmt.Sprintf("certificate for TLS encryption of ingress endpoint"),
+					},
+				},
+				Type: "kubernetes.io/tls",
+				Data: &map[string]string{
+					"tls.crt": cert,
+					"tls.key": key,
+				},
+			}
+			content, err := yaml.Marshal(secret)
+			if err != nil {
+				return rsx, nil
+			}
+			rsx = append(rsx, DeploymentRsx{
+				Name:    fmt.Sprintf("%s.yaml", tlsSecretName(svc)),
 				Content: content,
 				Type:    K8SResource,
 			})
@@ -165,6 +202,7 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 	}, nil
 }
 
+// getReplicas get the number of pod replicas based on the highly_available attribute
 func getReplicas(svc SvcRef) int {
 	if value, exists := svc.Attributes["highly_available"]; exists {
 		replicas, err := strconv.Atoi(value)
@@ -216,56 +254,68 @@ func svcName(svc SvcRef) string {
 }
 
 func (b *KubeBuilder) buildIngress(svc SvcRef) (*DeploymentRsx, error) {
-	port, err := strconv.Atoi(svc.Port)
-	if err != nil {
-		return nil, err
-	}
-	i := &k8s.Ingress{
-		APIVersion: k8s.NetVersion,
-		Kind:       "Ingress",
-		Metadata: k8s.Metadata{
-			Annotations: k8s.Annotations{Description: fmt.Sprintf("publishes the %s service", svc.Name)},
-			Labels: k8s.Labels{
-				App:     svc.Name,
-				Version: b.Manifest.Version,
-			},
-			Name: fmt.Sprintf("%s-ingress", strings.Replace(strings.ToLower(svc.Name), "_", "-", -1)),
-		},
-		Spec: k8s.Spec{
-			TLS: []k8s.TLS{
-				{
-					Hosts:      []string{ingressURL(svc)},
-					SecretName: ingressTlsSecretName(svc),
+	if host, exists := svc.Attributes["publish"]; exists {
+		port, err := strconv.Atoi(svc.Port)
+		if err != nil {
+			return nil, err
+		}
+		tls, err := getTLS(svc, host)
+		i := &k8s.Ingress{
+			APIVersion: k8s.NetVersion,
+			Kind:       "Ingress",
+			Metadata: k8s.Metadata{
+				Annotations: k8s.Annotations{Description: fmt.Sprintf("publishes the %s service", svc.Name)},
+				Labels: k8s.Labels{
+					App:     svc.Name,
+					Version: b.Manifest.Version,
 				},
+				Name: fmt.Sprintf("%s-ingress", strings.Replace(strings.ToLower(svc.Name), "_", "-", -1)),
 			},
-			Rules: []k8s.Rules{
-				{
-					Host: ingressURL(svc),
-					HTTP: k8s.HTTP{Paths: []k8s.Paths{
-						{Path: "/",
-							Backend: k8s.Backend{
-								ServiceName: svcName(svc),
-								ServicePort: port,
+			Spec: k8s.Spec{
+				TLS: tls,
+				Rules: []k8s.Rules{
+					{
+						Host: host,
+						HTTP: k8s.HTTP{Paths: []k8s.Paths{
+							{Path: "/",
+								Backend: k8s.Backend{
+									ServiceName: svcName(svc),
+									ServicePort: port,
+								},
 							},
-						},
-					}},
+						}},
+					},
 				},
 			},
-		},
+		}
+		content, err := yaml.Marshal(i)
+		if err != nil {
+			return nil, err
+		}
+		return &DeploymentRsx{
+			Name:    fmt.Sprintf("%s-ingress.yaml", svcName(svc)),
+			Content: content,
+			Type:    K8SResource,
+		}, nil
 	}
-	content, err := yaml.Marshal(i)
-	if err != nil {
-		return nil, err
-	}
-	return &DeploymentRsx{
-		Name:    fmt.Sprintf("%s-ingress.yaml", svcName(svc)),
-		Content: content,
-		Type:    K8SResource,
-	}, nil
+	return nil, nil
 }
 
-func ingressURL(svc SvcRef) string {
-	return "???"
+func getTLS(svc SvcRef, host string) ([]k8s.TLS, error) {
+	if value, exists := svc.Attributes["tls"]; exists {
+		switch strings.ToLower(value) {
+		case "auto":
+			return []k8s.TLS{
+				{
+					Hosts:      []string{host},
+					SecretName: ingressTlsSecretName(svc),
+				},
+			}, nil
+		default:
+			return nil, nil
+		}
+	}
+	return nil, nil
 }
 
 func ingressTlsSecretName(svc SvcRef) string {
@@ -362,4 +412,8 @@ func nestedVars(value string) []string {
 
 func normalisedName(name string) string {
 	return strings.Replace(strings.Replace(strings.ToLower(name), "_", "-", -1), " ", "-", -1)
+}
+
+func tlsSecretName(svc SvcRef) string {
+	return fmt.Sprintf("%s-ingress-tls-cert-secret", normalisedName(svc.Name))
 }

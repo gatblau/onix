@@ -92,7 +92,7 @@ type SvcRef struct {
 	// the other services using it
 	UsedBy []string `yaml:"used_by_count,omitempty"`
 	// instructions to customise deployment
-	Directives map[string]string `yaml:"directives,omitempty"`
+	Attributes map[string]string `yaml:"attributes,omitempty"`
 }
 
 // NewAppMan creates a new application manifest from an URI (supported schemes are http(s):// and file://
