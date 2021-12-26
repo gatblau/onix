@@ -88,7 +88,7 @@ func (b *KubeBuilder) buildSecrets(svc SvcRef) ([]DeploymentRsx, error) {
 			})
 		}
 	}
-	if value, exists := svc.Attributes["tls"]; exists {
+	if value, exists := svc.Behave["tls"]; exists {
 		switch strings.ToLower(value) {
 		// auto generate tls certificate secret
 		case "auto":
@@ -126,7 +126,7 @@ func (b *KubeBuilder) buildSecrets(svc SvcRef) ([]DeploymentRsx, error) {
 }
 
 func getHosts(svc SvcRef) []string {
-	if host, exists := svc.Attributes["public"]; exists {
+	if host, exists := svc.Behave["public"]; exists {
 		return strings.Split(host, ",")
 	}
 	return []string{}
@@ -211,7 +211,7 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 
 // getReplicas get the number of pod replicas based on the highly_available attribute
 func getReplicas(svc SvcRef) int {
-	if value, exists := svc.Attributes["load-balanced"]; exists {
+	if value, exists := svc.Behave["load-balanced"]; exists {
 		replicas, err := strconv.Atoi(value)
 		if err != nil {
 			return 1
@@ -261,7 +261,7 @@ func svcName(svc SvcRef) string {
 }
 
 func (b *KubeBuilder) buildIngress(svc SvcRef) (*DeploymentRsx, error) {
-	if host, exists := svc.Attributes["public"]; exists {
+	if host, exists := svc.Behave["public"]; exists {
 		port, err := strconv.Atoi(svc.Port)
 		if err != nil {
 			return nil, err
@@ -309,7 +309,7 @@ func (b *KubeBuilder) buildIngress(svc SvcRef) (*DeploymentRsx, error) {
 }
 
 func getTLS(svc SvcRef, hosts []string) ([]k8s.TLS, error) {
-	if value, exists := svc.Attributes["tls"]; exists {
+	if value, exists := svc.Behave["tls"]; exists {
 		switch strings.ToLower(value) {
 		case "auto":
 			return []k8s.TLS{
