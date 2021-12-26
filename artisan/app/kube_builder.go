@@ -92,7 +92,7 @@ func (b *KubeBuilder) buildSecrets(svc SvcRef) ([]DeploymentRsx, error) {
 		switch strings.ToLower(value) {
 		// auto generate tls certificate secret
 		case "auto":
-			cert, key, err := crypto.SelfSignedBase64()
+			cert, key, err := crypto.SelfSignedBase64(getHosts(svc))
 			if err != nil {
 				return nil, err
 			}
@@ -123,6 +123,13 @@ func (b *KubeBuilder) buildSecrets(svc SvcRef) ([]DeploymentRsx, error) {
 		}
 	}
 	return rsx, nil
+}
+
+func getHosts(svc SvcRef) []string {
+	if host, exists := svc.Attributes["public"]; exists {
+		return strings.Split(host, ",")
+	}
+	return []string{}
 }
 
 func (b *KubeBuilder) getVarValue(name string) (string, error) {
@@ -204,7 +211,7 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 
 // getReplicas get the number of pod replicas based on the highly_available attribute
 func getReplicas(svc SvcRef) int {
-	if value, exists := svc.Attributes["highly_available"]; exists {
+	if value, exists := svc.Attributes["load-balanced"]; exists {
 		replicas, err := strconv.Atoi(value)
 		if err != nil {
 			return 1
@@ -254,12 +261,12 @@ func svcName(svc SvcRef) string {
 }
 
 func (b *KubeBuilder) buildIngress(svc SvcRef) (*DeploymentRsx, error) {
-	if host, exists := svc.Attributes["publish"]; exists {
+	if host, exists := svc.Attributes["public"]; exists {
 		port, err := strconv.Atoi(svc.Port)
 		if err != nil {
 			return nil, err
 		}
-		tls, err := getTLS(svc, host)
+		tls, err := getTLS(svc, strings.Split(strings.Replace(host, " ", "", -1), ","))
 		i := &k8s.Ingress{
 			APIVersion: k8s.NetVersion,
 			Kind:       "Ingress",
@@ -301,13 +308,13 @@ func (b *KubeBuilder) buildIngress(svc SvcRef) (*DeploymentRsx, error) {
 	return nil, nil
 }
 
-func getTLS(svc SvcRef, host string) ([]k8s.TLS, error) {
+func getTLS(svc SvcRef, hosts []string) ([]k8s.TLS, error) {
 	if value, exists := svc.Attributes["tls"]; exists {
 		switch strings.ToLower(value) {
 		case "auto":
 			return []k8s.TLS{
 				{
-					Hosts:      []string{host},
+					Hosts:      hosts,
 					SecretName: ingressTlsSecretName(svc),
 				},
 			}, nil

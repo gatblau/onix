@@ -105,8 +105,8 @@ func SelfSignedCertificate(algor TlsSignatureAlgorithm, organisation string, hos
 
 // SelfSignedBase64 returns a base64 encoded self-signed TLS certificate and key using
 // ECDSA NIST P-256 (FIPS 186-3, section D.2.3)
-func SelfSignedBase64() (cert, key string, err error) {
-	certBytes, keyBytes, e := SelfSignedCertificate(ECDSA, "self-signed", nil)
+func SelfSignedBase64(hosts []string) (cert, key string, err error) {
+	certBytes, keyBytes, e := SelfSignedCertificate(ECDSA, "self-signed", hosts)
 	if e != nil {
 		return "", "", e
 	}

@@ -25,7 +25,7 @@ services:
     image: quay.io/gatblau/artisan-registry:0.0.4-011021162133879-a3dedecb3f-RC1
     port: "8082"
     attributes:
-      publish: artreg.mydomain.com
+      public: artreg.mydomain.com
       tls: auto
-      highly_available: 3
+      load-balanced: 3
 ...
