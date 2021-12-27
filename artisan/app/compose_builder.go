@@ -80,6 +80,9 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 		if _, exists := svc.Is["public"]; exists {
 			ports = []types.ServicePortConfig{{Target: uint32(targetPort), Published: uint32(publishedPort)}}
 		}
+		if _, exists := svc.Is["encypted-in-transit"]; exists {
+			core.WarningLogger.Printf("encryption of data in transit is not currently supported by the compose builder\n")
+		}
 		s := types.ServiceConfig{
 			Name:          svc.Name,
 			ContainerName: svc.Name,
@@ -91,7 +94,7 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 			Volumes:       append(getSvcVols(svc.Info.Volume), getFileVols(svc.Info.File)...),
 		}
 		// if the load_balanced behaviour is defined then add replicated deployment mode to the service
-		if replicas, exists := svc.Is["load_balanced"]; exists {
+		if replicas, exists := svc.Is["load-balanced"]; exists {
 			rep, err2 := strconv.ParseUint(replicas, 10, 64)
 			if err2 != nil {
 				core.WarningLogger.Printf("failed to read load_balanced behaviour value '%s': %s\n", replicas, err2)
