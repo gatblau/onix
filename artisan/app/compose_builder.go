@@ -11,6 +11,7 @@ package app
 import (
 	"fmt"
 	"github.com/compose-spec/compose-go/types"
+	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"gopkg.in/yaml.v2"
 	"path/filepath"
@@ -74,7 +75,7 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid target port '%s'\n", svc.Port)
 		}
-		p.Services = append(p.Services, types.ServiceConfig{
+		s := types.ServiceConfig{
 			Name:          svc.Name,
 			ContainerName: svc.Name,
 			DependsOn:     getDeps(svc.DependsOn),
@@ -83,7 +84,20 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 			Ports:         []types.ServicePortConfig{{Target: uint32(targetPort), Published: uint32(publishedPort)}},
 			Restart:       "always",
 			Volumes:       append(getSvcVols(svc.Info.Volume), getFileVols(svc.Info.File)...),
-		})
+		}
+		// if the load_balanced behaviour is defined then add replicated deployment mode to the service
+		if replicas, exists := svc.Is["load_balanced"]; exists {
+			rep, err2 := strconv.ParseUint(replicas, 10, 64)
+			if err2 != nil {
+				core.WarningLogger.Printf("failed to read load_balanced behaviour value '%s': %s\n", replicas, err2)
+			} else {
+				s.Deploy = &types.DeployConfig{
+					Mode:     "replicated",
+					Replicas: &rep,
+				}
+			}
+		}
+		p.Services = append(p.Services, s)
 	}
 	p.Volumes = getVols(b.manifest.Services)
 	p.Networks = types.Networks{
