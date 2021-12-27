@@ -49,6 +49,9 @@ services:
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/evr-mongo-app.yaml
     image: quay.io/gatblau/pilotctl-evr-mongodb:0.0.4-300921174051295-11aab8b6cc
     port: "8885"
+    is:
+      public: evr-mongo.onix.com
+      encrypted-in-transit:
 
   - name: nexus-app
     description: Nexus Repository Manager for Artisan Registry
