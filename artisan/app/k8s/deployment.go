@@ -92,11 +92,13 @@ type Template struct {
 }
 
 type Spec struct {
-	Replicas int      `yaml:"replicas,omitempty"`
-	Selector Selector `yaml:"selector,omitempty"`
-	Template Template `yaml:"template,omitempty"`
-	Ports    []Ports  `yaml:"ports,omitempty"`
-	Type     string   `yaml:"type,omitempty"`
-	TLS      []TLS    `yaml:"tls,omitempty"`
-	Rules    []Rules  `yaml:"rules,omitempty"`
+	Replicas    int      `yaml:"replicas,omitempty"`
+	Selector    Selector `yaml:"selector,omitempty"`
+	Template    Template `yaml:"template,omitempty"`
+	Ports       []Ports  `yaml:"ports,omitempty"`
+	Type        string   `yaml:"type,omitempty"`
+	TLS         []TLS    `yaml:"tls,omitempty"`
+	Rules       []Rules  `yaml:"rules,omitempty"`
+	Parallelism int      `yaml:"parallelism,omitempty"`
+	Completions int      `yaml:"completions,omitempty"`
 }
