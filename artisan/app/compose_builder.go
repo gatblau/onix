@@ -11,6 +11,7 @@ package app
 import (
 	"fmt"
 	"github.com/compose-spec/compose-go/types"
+	"github.com/gatblau/onix/artisan/app/behaviour"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"gopkg.in/yaml.v2"
@@ -77,10 +78,10 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 		}
 		var ports []types.ServicePortConfig
 		// if the public behaviour is defined then add a port mapping to the service
-		if _, exists := svc.Is["public"]; exists {
+		if _, exists := svc.Is[behaviour.Public]; exists {
 			ports = []types.ServicePortConfig{{Target: uint32(targetPort), Published: uint32(publishedPort)}}
 		}
-		if _, exists := svc.Is["encrypted-in-transit"]; exists {
+		if _, exists := svc.Is[behaviour.EncryptedInTransit]; exists {
 			core.WarningLogger.Printf("encryption of data in transit is not currently supported by the compose builder\n")
 		}
 		s := types.ServiceConfig{
@@ -94,7 +95,7 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 			Volumes:       append(getSvcVols(svc.Info.Volume), getFileVols(svc.Info.File)...),
 		}
 		// if the load_balanced behaviour is defined then add replicated deployment mode to the service
-		if replicas, exists := svc.Is["load-balanced"]; exists {
+		if replicas, exists := svc.Is[behaviour.LoadBalanced]; exists {
 			rep, err2 := strconv.ParseUint(replicas, 10, 64)
 			if err2 != nil {
 				core.WarningLogger.Printf("failed to read load_balanced behaviour value '%s': %s\n", replicas, err2)

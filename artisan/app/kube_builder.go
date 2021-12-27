@@ -11,6 +11,7 @@ package app
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/gatblau/onix/artisan/app/behaviour"
 	"github.com/gatblau/onix/artisan/app/k8s"
 	"github.com/gatblau/onix/artisan/crypto"
 	"gopkg.in/yaml.v2"
@@ -88,7 +89,7 @@ func (b *KubeBuilder) buildSecrets(svc SvcRef) ([]DeploymentRsx, error) {
 			})
 		}
 	}
-	if value, exists := svc.Is["encrypted-in-transit"]; exists {
+	if value, exists := svc.Is[behaviour.EncryptedInTransit]; exists {
 		switch strings.ToLower(value) {
 		// auto generate tls certificate secret
 		case "":
@@ -126,7 +127,7 @@ func (b *KubeBuilder) buildSecrets(svc SvcRef) ([]DeploymentRsx, error) {
 }
 
 func getHosts(svc SvcRef) []string {
-	if host, exists := svc.Is["public"]; exists {
+	if host, exists := svc.Is[behaviour.Public]; exists {
 		return strings.Split(host, ",")
 	}
 	return []string{}
@@ -211,7 +212,7 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 
 // getReplicas get the number of pod replicas based on the highly_available attribute
 func getReplicas(svc SvcRef) int {
-	if value, exists := svc.Is["load-balanced"]; exists {
+	if value, exists := svc.Is[behaviour.LoadBalanced]; exists {
 		replicas, err := strconv.Atoi(value)
 		if err != nil {
 			return 1
@@ -261,7 +262,7 @@ func svcName(svc SvcRef) string {
 }
 
 func (b *KubeBuilder) buildIngress(svc SvcRef) (*DeploymentRsx, error) {
-	if host, exists := svc.Is["public"]; exists {
+	if host, exists := svc.Is[behaviour.Public]; exists {
 		port, err := strconv.Atoi(svc.Port)
 		if err != nil {
 			return nil, err
@@ -309,7 +310,7 @@ func (b *KubeBuilder) buildIngress(svc SvcRef) (*DeploymentRsx, error) {
 }
 
 func getTLS(svc SvcRef, hosts []string) ([]k8s.TLS, error) {
-	if value, exists := svc.Is["tls"]; exists {
+	if value, exists := svc.Is[behaviour.EncryptedInTransit]; exists {
 		switch strings.ToLower(value) {
 		case "auto":
 			return []k8s.TLS{

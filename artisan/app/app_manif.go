@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"github.com/gatblau/onix/artisan/app/behaviour"
 	"reflect"
 	"regexp"
 	"sort"
@@ -92,7 +93,7 @@ type SvcRef struct {
 	// the other services using it
 	UsedBy []string `yaml:"used_by_count,omitempty"`
 	// instructions to customise deployment
-	Is map[string]string `yaml:"is,omitempty"`
+	Is map[behaviour.ServiceBehaviour]string `yaml:"is,omitempty"`
 }
 
 // NewAppMan creates a new application manifest from an URI (supported schemes are http(s):// and file://
