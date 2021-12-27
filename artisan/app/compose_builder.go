@@ -75,13 +75,18 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid target port '%s'\n", svc.Port)
 		}
+		var ports []types.ServicePortConfig
+		// if the public behaviour is defined then add a port mapping to the service
+		if _, exists := svc.Is["public"]; exists {
+			ports = []types.ServicePortConfig{{Target: uint32(targetPort), Published: uint32(publishedPort)}}
+		}
 		s := types.ServiceConfig{
 			Name:          svc.Name,
 			ContainerName: svc.Name,
 			DependsOn:     getDeps(svc.DependsOn),
 			Environment:   getEnv(svc.Info.Var),
 			Image:         svc.Image,
-			Ports:         []types.ServicePortConfig{{Target: uint32(targetPort), Published: uint32(publishedPort)}},
+			Ports:         ports,
 			Restart:       "always",
 			Volumes:       append(getSvcVols(svc.Info.Volume), getFileVols(svc.Info.File)...),
 		}
