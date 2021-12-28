@@ -6,7 +6,7 @@ profiles:
   - name: full
     description: deploys all services
     services:
-      - db
+      - name: db
       - name: evr-mongo-db
       - name: evr-mongo-app
       - name: nexus-app
