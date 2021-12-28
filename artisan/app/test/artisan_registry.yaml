@@ -5,12 +5,14 @@ version: 1.0
 profiles:
   - name: full
     services:
-      - nexus-app
-      - artreg-app
+      - name: nexus-app
+      - name: artreg-app
+        is:
+          public: artreg.overriden.com
 
   - name: nexus
     services:
-      - nexus-app
+      - name: nexus-app
 
 services:
   - name: nexus-app

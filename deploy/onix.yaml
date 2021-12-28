@@ -6,30 +6,32 @@ profiles:
   - name: full
     description: deploys all services
     services:
-      - db
-      - evr-mongo-db
-      - evr-mongo-app
-      - nexus-app
-      - artreg-app
-      - ox-app
-      - pilotctl-app
+      - db:
+      - evr-mongo-db:
+      - evr-mongo-app:
+      - nexus-app:
+      - artreg-app:
+      - ox-app:
+      - pilotctl-app:
 
   - name: config-db
     description: deploys the configuration database only
     services:
-      - db
-      - ox-app
+      - db:
+      - ox-app:
+          load-balanced: 2
 
   - name: art-reg
     description: deploys the artisan package registry only
     services:
-      - nexus-app
-      - artreg-app
+      - nexus-app:
+      - artreg-app:
+          load-balanced: 2
 
   - name: nexus
     description: deploys nexus repository manager only
     services:
-      - nexus-app
+      - nexus-app:
 
 services:
   - name: db
@@ -80,7 +82,6 @@ services:
     is:
       public: wapi.onix.com
       encrypted-in-transit:
-      load-balanced: 2
 
   - name: pilotctl-app
     description: Pilot Control
@@ -91,5 +92,4 @@ services:
     is:
       public: pilotctl.onix.com
       encrypted-in-transit:
-      load-balanced: 2
 ...

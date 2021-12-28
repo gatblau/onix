@@ -35,12 +35,17 @@ type Manifest struct {
 }
 
 type Profile struct {
-	Name        string   `yaml:"name"`
-	Description string   `yaml:"description"`
-	Services    []string `yaml:"services"`
+	Name        string           `yaml:"name"`
+	Description string           `yaml:"description"`
+	Services    []ProfileService `yaml:"services"`
 }
 
 type Profiles []Profile
+
+type ProfileService struct {
+	Name string                                `yaml:"name"`
+	Is   map[behaviour.ServiceBehaviour]string `yaml:"is"`
+}
 
 func (p *Profiles) Get(name string) *Profile {
 	for _, profile := range *p {
@@ -55,7 +60,8 @@ func (p *Profiles) Get(name string) *Profile {
 func (p *Profile) servicesSlice() []string {
 	result := make([]string, 0)
 	for _, svc := range p.Services {
-		result = append(result, svc)
+
+		result = append(result, svc.Name)
 	}
 	return result
 }
@@ -166,8 +172,6 @@ func (m *Manifest) trim(profile string) (*Manifest, error) {
 			return nil, fmt.Errorf("profile '%s' was not found in the application manifest '%s'\n", profile, m.Name)
 		}
 	}
-	// get a list of service names in the profile
-	profServices := prof.servicesSlice()
 	// deep clone the manifest
 	appMan := new(Manifest)
 	_ = m.deepCopy(appMan)
@@ -175,9 +179,22 @@ func (m *Manifest) trim(profile string) (*Manifest, error) {
 	appMan.Services = make(Services, 0)
 	// a re-populate with the items in the requested profile
 	for _, svc := range m.Services {
-		for _, profSvc := range profServices {
-			if profSvc == svc.Name {
+		for _, profSvc := range prof.Services {
+			if profSvc.Name == svc.Name {
 				appMan.Services = append(appMan.Services, svc)
+				// if the profile service has behaviours then override the ones defined in the service
+				if profSvc.Is != nil {
+					// if the service does not define behaviours
+					if svc.Is == nil {
+						// use the ones in the profile
+						svc.Is = profSvc.Is
+					} else {
+						// override only the behaviours defined in the profile
+						for behaviour, value := range profSvc.Is {
+							svc.Is[behaviour] = value
+						}
+					}
+				}
 			}
 		}
 	}
