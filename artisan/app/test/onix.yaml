@@ -5,18 +5,18 @@ version: 1.0
 profiles:
   - name: full
     services:
-      - db
-      - evr-mongo-db
-      - evr-mongo-app
-      - nexus-app
-      - artreg-app
-      - ox-app
-      - pilotctl-app
+      - db:
+      - evr-mongo-db:
+      - evr-mongo-app:
+      - nexus-app:
+      - artreg-app:
+      - ox-app:
+      - pilotctl-app:
 
   - name: micro
     services:
-      - db
-      - ox-app
+      - db:
+      - ox-app:
 
 services:
   - name: db
