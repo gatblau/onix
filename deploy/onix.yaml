@@ -6,7 +6,7 @@ profiles:
   - name: full
     description: deploys all services
     services:
-      - name: db
+      - db
       - name: evr-mongo-db
       - name: evr-mongo-app
       - name: nexus-app
@@ -19,6 +19,8 @@ profiles:
     services:
       - name: db
       - name: ox-app
+        is:
+          # overrides load-balanced behaviour in service
           load-balanced: 2
 
   - name: art-reg
@@ -26,6 +28,8 @@ profiles:
     services:
       - name: nexus-app
       - name: artreg-app
+        is:
+          # overrides load-balanced behaviour in service
           load-balanced: 2
 
   - name: nexus
