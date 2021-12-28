@@ -6,32 +6,32 @@ profiles:
   - name: full
     description: deploys all services
     services:
-      - db:
-      - evr-mongo-db:
-      - evr-mongo-app:
-      - nexus-app:
-      - artreg-app:
-      - ox-app:
-      - pilotctl-app:
+      - name: db
+      - name: evr-mongo-db
+      - name: evr-mongo-app
+      - name: nexus-app
+      - name: artreg-app
+      - name: ox-app
+      - name: pilotctl-app
 
   - name: config-db
     description: deploys the configuration database only
     services:
-      - db:
-      - ox-app:
+      - name: db
+      - name: ox-app
           load-balanced: 2
 
   - name: art-reg
     description: deploys the artisan package registry only
     services:
-      - nexus-app:
-      - artreg-app:
+      - name: nexus-app
+      - name: artreg-app
           load-balanced: 2
 
   - name: nexus
     description: deploys nexus repository manager only
     services:
-      - nexus-app:
+      - name: nexus-app
 
 services:
   - name: db
