@@ -82,7 +82,7 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 			ports = []types.ServicePortConfig{{Target: uint32(targetPort), Published: uint32(publishedPort)}}
 		}
 		if _, exists := svc.Is[behaviour.EncryptedInTransit]; exists {
-			core.WarningLogger.Printf("encryption of data in transit is not currently supported by the compose builder\n")
+			core.WarningLogger.Printf("service '%s' requested encryption of data in transit; it is currently not supported by the compose builder; skipping behaviour\n", svc.Name)
 		}
 		s := types.ServiceConfig{
 			Name:          svc.Name,
