@@ -212,8 +212,8 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 	}, nil
 }
 
+// getK8SVolumes generates one volume per different file path
 func getK8SVolumes(svc SvcRef) ([]k8s.Volumes, error) {
-	// loop through the files used by the service and creates a different volume per root in the file system
 	var paths []string
 	vo := make([]k8s.Volumes, 0)
 	for _, f := range svc.Info.File {
@@ -227,9 +227,9 @@ func getK8SVolumes(svc SvcRef) ([]k8s.Volumes, error) {
 		if !found {
 			paths = append(paths, relD)
 			vo = append(vo, k8s.Volumes{
-				Name: filesVolumeName(svc),
+				Name: filesVolumeName(svc, relD),
 				Secret: k8s.Secret{
-					SecretName: filesSecretName(svc),
+					SecretName: filesSecretName(svc, relD),
 				},
 			})
 		}
@@ -237,12 +237,12 @@ func getK8SVolumes(svc SvcRef) ([]k8s.Volumes, error) {
 	return vo, nil
 }
 
-func filesSecretName(svc SvcRef) string {
-	return fmt.Sprintf("%s-files-secret", normalisedName(svc.Name))
+func filesSecretName(svc SvcRef, path string) string {
+	return fmt.Sprintf("%s-%s-secret", normalisedName(svc.Name), normalisedName(path))
 }
 
-func filesVolumeName(svc SvcRef) string {
-	return fmt.Sprintf("%s-files-volume", normalisedName(svc.Name))
+func filesVolumeName(svc SvcRef, path string) string {
+	return fmt.Sprintf("%s-%s-volume", normalisedName(svc.Name), normalisedName(path))
 }
 
 // getReplicas get the number of pod replicas based on the highly_available attribute
@@ -454,7 +454,8 @@ func nestedVars(value string) []string {
 }
 
 func normalisedName(name string) string {
-	return strings.Replace(strings.Replace(strings.ToLower(name), "_", "-", -1), " ", "-", -1)
+	value := strings.Replace(strings.Replace(strings.ToLower(name), "_", "-", -1), " ", "-", -1)
+	return strings.Replace(strings.Replace(value, "/", "", -1), ".", "", -1)
 }
 
 func tlsSecretName(svc SvcRef) string {
