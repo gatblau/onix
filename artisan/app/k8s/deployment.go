@@ -82,6 +82,7 @@ type Containers struct {
 }
 
 type TemplateSpec struct {
+	Volumes                       []Volumes    `yaml:"volumes,omitempty"`
 	Containers                    []Containers `yaml:"containers"`
 	TerminationGracePeriodSeconds int          `yaml:"terminationGracePeriodSeconds"`
 }

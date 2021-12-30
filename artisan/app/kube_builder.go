@@ -160,6 +160,7 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 	if err != nil {
 		return nil, err
 	}
+	volumes, err := getK8SVolumes(svc)
 	d := &k8s.Deployment{
 		APIVersion: k8s.AppsVersion,
 		Kind:       "Deployment",
@@ -195,6 +196,7 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 				Spec: k8s.TemplateSpec{
 					Containers:                    containers,
 					TerminationGracePeriodSeconds: 30,
+					Volumes:                       volumes,
 				},
 			},
 		},
@@ -208,6 +210,39 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 		Content: content,
 		Type:    K8SResource,
 	}, nil
+}
+
+func getK8SVolumes(svc SvcRef) ([]k8s.Volumes, error) {
+	// loop through the files used by the service and creates a different volume per root in the file system
+	var paths []string
+	vo := make([]k8s.Volumes, 0)
+	for _, f := range svc.Info.File {
+		relD := relDir(f.Path)
+		found := false
+		for _, path := range paths {
+			if path == relD {
+				found = true
+			}
+		}
+		if !found {
+			paths = append(paths, relD)
+			vo = append(vo, k8s.Volumes{
+				Name: filesVolumeName(svc),
+				Secret: k8s.Secret{
+					SecretName: filesSecretName(svc),
+				},
+			})
+		}
+	}
+	return vo, nil
+}
+
+func filesSecretName(svc SvcRef) string {
+	return fmt.Sprintf("%s-files-secret", normalisedName(svc.Name))
+}
+
+func filesVolumeName(svc SvcRef) string {
+	return fmt.Sprintf("%s-files-volume", normalisedName(svc.Name))
 }
 
 // getReplicas get the number of pod replicas based on the highly_available attribute
