@@ -88,7 +88,7 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 			Name:          svc.Name,
 			ContainerName: svc.Name,
 			DependsOn:     getDeps(svc.DependsOn),
-			Environment:   getEnv(svc.Info.Var),
+			Environment:   getEnv(svc),
 			Image:         svc.Image,
 			Ports:         ports,
 			Restart:       "always",
@@ -426,10 +426,18 @@ func newHeaderBuilder(label string, a ...interface{}) *strings.Builder {
 	return script
 }
 
-func getEnv(vars []Var) types.MappingWithEquals {
+func getEnv(svc SvcRef) types.MappingWithEquals {
 	var values []string
-	for _, v := range vars {
-		values = append(values, fmt.Sprintf("%s=%s", v.Name, v.Value))
+	for _, v := range svc.Info.Var {
+		// if the value is or contains environment variables
+		if strings.Contains(v.Value, "${") {
+			// add it as is to the compose file env section so that it can read from .env
+			values = append(values, fmt.Sprintf("%s=%s", v.Name, v.Value))
+		} else {
+			// if there is no env variable then use the variable from the global list in the manifest
+			vName := fmt.Sprintf("${%s_%s}", strings.ToUpper(strings.Replace(svc.Name, "-", "_", -1)), v.Name)
+			values = append(values, fmt.Sprintf("%s=%s", v.Name, vName))
+		}
 	}
 	return types.NewMappingWithEquals(values)
 }
