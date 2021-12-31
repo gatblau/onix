@@ -325,6 +325,15 @@ func (m *Manifest) wire() (*Manifest, error) {
 							appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, svcName, appMan.Services[six])
 							ix := getServiceIx(*appMan, svcName)
 							appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name, appMan.Services[six])
+							// add variable to manifest list
+							vName := fmt.Sprintf("%s_%s", strings.ToUpper(strings.Replace(service.Name, "-", "_", -1)), v.Name)
+							appMan.Var.Items = append(appMan.Var.Items, AppVar{
+								Name:        vName,
+								Description: v.Description,
+								Value:       svcName,
+								Secret:      v.Secret,
+								Service:     strings.ToUpper(service.Name),
+							})
 						case 2:
 							switch parts[1] {
 							case "schema_uri":
