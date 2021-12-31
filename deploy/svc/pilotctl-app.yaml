@@ -28,7 +28,7 @@ var:
     value: ${bind=ox-app:var:WAPI_ADMIN_PWD}
   - name: OX_WAPI_INSECURE_SKIP_VERIFY
     description: skips verification of TLS certificate for the Onix Web API service
-    default: "false"
+    value: "false"
   - name: OX_ART_REG_URI
     description: the URI of the Artisan registry service used by pilot control to look up automation packages
     value: ${bind=artreg-app}
