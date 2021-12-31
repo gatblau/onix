@@ -535,6 +535,13 @@ func (m *Manifest) wire() (*Manifest, error) {
 					return nil, fmt.Errorf("schema_uri not defined in app '%s' manifest\n", parts[0])
 				}
 			}
+			// db user name
+			if strings.HasPrefix(strings.Replace(service.Info.Db.User, " ", "", -1), "${bind=") {
+				content := service.Info.Db.User[len("${bind=") : len(service.Info.Db.User)-1]
+				parts := strings.Split(content, ":")
+				varKey := strings.ToUpper(fmt.Sprintf("${%s_%s}", strings.Replace(parts[0], "-", "_", -1), parts[2]))
+				appMan.Services[six].Info.Db.User = varKey
+			}
 			// db user pwd
 			if strings.HasPrefix(strings.Replace(service.Info.Db.Pwd, " ", "", -1), "${bind=") {
 				content := service.Info.Db.Pwd[len("${bind=") : len(service.Info.Db.Pwd)-1]
