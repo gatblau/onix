@@ -8,7 +8,7 @@ var:
     value: ${bind=db}
   - name: OX_PILOTCTL_DB_USER
     description: the username to authenticate with the database service
-    value: ${fx=name:99}
+    value: pilotctl
   - name: OX_PILOTCTL_DB_PWD
     description: the password to authenticate with the database service
     secret: true
@@ -161,7 +161,7 @@ db:
   port: 5432
   provider: _pgsql
   user: pilotctl
-  pwd: ${fx=pwd:16,false}
+  pwd: ${bind=pilotctl-app:var:OX_PILOTCTL_DB_PWD}
   admin_user: postgres
   admin_pwd: ${bind=db:var:POSTGRES_PASSWORD}
   schema_uri: ${bind=pilotctl-app:schema_uri}
