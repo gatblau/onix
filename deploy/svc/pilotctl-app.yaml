@@ -160,7 +160,7 @@ db:
   host: ${bind=db}
   port: 5432
   provider: _pgsql
-  user: pilotctl
+  user: ${bind=pilotctl-app:var:OX_PILOTCTL_DB_USER}
   pwd: ${bind=pilotctl-app:var:OX_PILOTCTL_DB_PWD}
   admin_user: postgres
   admin_pwd: ${bind=db:var:POSTGRES_PASSWORD}
