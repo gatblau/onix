@@ -8,8 +8,15 @@ var:
     value: ${bind=db}
   - name: DB_USER
     description: the username to authenticate with the database services
-    value: "postgres"
+    value: "onix"
   - name: DB_PWD
+    description: the password to authenticate with the database service
+    secret: true
+    value: ${fx=pwd:16,false}
+  - name: DB_ADMIN_USER
+    description: the username to authenticate with the database services
+    value: "postgres"
+  - name: DB_ADMIN_PWD
     description: the password to authenticate with the database service
     secret: true
     value: ${bind=db:var:POSTGRES_PASSWORD}
@@ -32,8 +39,8 @@ db:
   host: ${bind=db}
   provider: _pgsql
   port: 5432
-  user: onix
-  pwd: ${fx=pwd:16,false}
+  user: ${bind=ox-app:var:DB_USER}
+  pwd: ${bind=ox-app:var:DB_PWD}
   admin_user: postgres
   admin_pwd: ${bind=db:var:POSTGRES_PASSWORD}
   schema_uri: ${bind=ox-app:schema_uri}

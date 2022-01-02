@@ -11,6 +11,7 @@ package app
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/gatblau/onix/artisan/app/behaviour"
 	"github.com/gatblau/onix/artisan/app/k8s"
 	"github.com/gatblau/onix/artisan/crypto"
 	"gopkg.in/yaml.v2"
@@ -88,11 +89,11 @@ func (b *KubeBuilder) buildSecrets(svc SvcRef) ([]DeploymentRsx, error) {
 			})
 		}
 	}
-	if value, exists := svc.Attributes["tls"]; exists {
+	if value, exists := svc.Is[behaviour.EncryptedInTransit]; exists {
 		switch strings.ToLower(value) {
 		// auto generate tls certificate secret
-		case "auto":
-			cert, key, err := crypto.SelfSignedBase64()
+		case "":
+			cert, key, err := crypto.SelfSignedBase64(getHosts(svc))
 			if err != nil {
 				return nil, err
 			}
@@ -125,6 +126,13 @@ func (b *KubeBuilder) buildSecrets(svc SvcRef) ([]DeploymentRsx, error) {
 	return rsx, nil
 }
 
+func getHosts(svc SvcRef) []string {
+	if host, exists := svc.Is[behaviour.Public]; exists {
+		return strings.Split(host, ",")
+	}
+	return []string{}
+}
+
 func (b *KubeBuilder) getVarValue(name string) (string, error) {
 	// check if the name contains other variables
 	vs := nestedVars(name)
@@ -152,6 +160,7 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 	if err != nil {
 		return nil, err
 	}
+	volumes, err := getK8SVolumes(svc)
 	d := &k8s.Deployment{
 		APIVersion: k8s.AppsVersion,
 		Kind:       "Deployment",
@@ -187,6 +196,7 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 				Spec: k8s.TemplateSpec{
 					Containers:                    containers,
 					TerminationGracePeriodSeconds: 30,
+					Volumes:                       volumes,
 				},
 			},
 		},
@@ -202,9 +212,42 @@ func (b *KubeBuilder) buildDeployment(svc SvcRef) (*DeploymentRsx, error) {
 	}, nil
 }
 
+// getK8SVolumes generates one volume per different file path
+func getK8SVolumes(svc SvcRef) ([]k8s.Volumes, error) {
+	var paths []string
+	vo := make([]k8s.Volumes, 0)
+	for _, f := range svc.Info.File {
+		relD := relDir(f.Path)
+		found := false
+		for _, path := range paths {
+			if path == relD {
+				found = true
+			}
+		}
+		if !found {
+			paths = append(paths, relD)
+			vo = append(vo, k8s.Volumes{
+				Name: filesVolumeName(svc, relD),
+				Secret: k8s.Secret{
+					SecretName: filesSecretName(svc, relD),
+				},
+			})
+		}
+	}
+	return vo, nil
+}
+
+func filesSecretName(svc SvcRef, path string) string {
+	return fmt.Sprintf("%s-%s-secret", normalisedName(svc.Name), normalisedName(path))
+}
+
+func filesVolumeName(svc SvcRef, path string) string {
+	return fmt.Sprintf("%s-%s-volume", normalisedName(svc.Name), normalisedName(path))
+}
+
 // getReplicas get the number of pod replicas based on the highly_available attribute
 func getReplicas(svc SvcRef) int {
-	if value, exists := svc.Attributes["highly_available"]; exists {
+	if value, exists := svc.Is[behaviour.LoadBalanced]; exists {
 		replicas, err := strconv.Atoi(value)
 		if err != nil {
 			return 1
@@ -254,12 +297,12 @@ func svcName(svc SvcRef) string {
 }
 
 func (b *KubeBuilder) buildIngress(svc SvcRef) (*DeploymentRsx, error) {
-	if host, exists := svc.Attributes["publish"]; exists {
+	if host, exists := svc.Is[behaviour.Public]; exists {
 		port, err := strconv.Atoi(svc.Port)
 		if err != nil {
 			return nil, err
 		}
-		tls, err := getTLS(svc, host)
+		tls, err := getTLS(svc, strings.Split(strings.Replace(host, " ", "", -1), ","))
 		i := &k8s.Ingress{
 			APIVersion: k8s.NetVersion,
 			Kind:       "Ingress",
@@ -301,13 +344,13 @@ func (b *KubeBuilder) buildIngress(svc SvcRef) (*DeploymentRsx, error) {
 	return nil, nil
 }
 
-func getTLS(svc SvcRef, host string) ([]k8s.TLS, error) {
-	if value, exists := svc.Attributes["tls"]; exists {
+func getTLS(svc SvcRef, hosts []string) ([]k8s.TLS, error) {
+	if value, exists := svc.Is[behaviour.EncryptedInTransit]; exists {
 		switch strings.ToLower(value) {
 		case "auto":
 			return []k8s.TLS{
 				{
-					Hosts:      []string{host},
+					Hosts:      hosts,
 					SecretName: ingressTlsSecretName(svc),
 				},
 			}, nil
@@ -411,7 +454,8 @@ func nestedVars(value string) []string {
 }
 
 func normalisedName(name string) string {
-	return strings.Replace(strings.Replace(strings.ToLower(name), "_", "-", -1), " ", "-", -1)
+	value := strings.Replace(strings.Replace(strings.ToLower(name), "_", "-", -1), " ", "-", -1)
+	return strings.Replace(strings.Replace(value, "/", "", -1), ".", "", -1)
 }
 
 func tlsSecretName(svc SvcRef) string {

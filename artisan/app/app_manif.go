@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"github.com/gatblau/onix/artisan/app/behaviour"
 	"reflect"
 	"regexp"
 	"sort"
@@ -34,12 +35,17 @@ type Manifest struct {
 }
 
 type Profile struct {
-	Name        string   `yaml:"name"`
-	Description string   `yaml:"description"`
-	Services    []string `yaml:"services"`
+	Name        string           `yaml:"name"`
+	Description string           `yaml:"description"`
+	Services    []ProfileService `yaml:"services"`
 }
 
 type Profiles []Profile
+
+type ProfileService struct {
+	Name string                                `yaml:"name"`
+	Is   map[behaviour.ServiceBehaviour]string `yaml:"is"`
+}
 
 func (p *Profiles) Get(name string) *Profile {
 	for _, profile := range *p {
@@ -54,7 +60,8 @@ func (p *Profiles) Get(name string) *Profile {
 func (p *Profile) servicesSlice() []string {
 	result := make([]string, 0)
 	for _, svc := range p.Services {
-		result = append(result, svc)
+
+		result = append(result, svc.Name)
 	}
 	return result
 }
@@ -92,7 +99,7 @@ type SvcRef struct {
 	// the other services using it
 	UsedBy []string `yaml:"used_by_count,omitempty"`
 	// instructions to customise deployment
-	Attributes map[string]string `yaml:"attributes,omitempty"`
+	Is map[behaviour.ServiceBehaviour]string `yaml:"is,omitempty"`
 }
 
 // NewAppMan creates a new application manifest from an URI (supported schemes are http(s):// and file://
@@ -165,8 +172,6 @@ func (m *Manifest) trim(profile string) (*Manifest, error) {
 			return nil, fmt.Errorf("profile '%s' was not found in the application manifest '%s'\n", profile, m.Name)
 		}
 	}
-	// get a list of service names in the profile
-	profServices := prof.servicesSlice()
 	// deep clone the manifest
 	appMan := new(Manifest)
 	_ = m.deepCopy(appMan)
@@ -174,9 +179,22 @@ func (m *Manifest) trim(profile string) (*Manifest, error) {
 	appMan.Services = make(Services, 0)
 	// a re-populate with the items in the requested profile
 	for _, svc := range m.Services {
-		for _, profSvc := range profServices {
-			if profSvc == svc.Name {
+		for _, profSvc := range prof.Services {
+			if profSvc.Name == svc.Name {
 				appMan.Services = append(appMan.Services, svc)
+				// if the profile service has behaviours then override the ones defined in the service
+				if profSvc.Is != nil {
+					// if the service does not define behaviours
+					if svc.Is == nil {
+						// use the ones in the profile
+						svc.Is = profSvc.Is
+					} else {
+						// override only the behaviours defined in the profile
+						for behaviour, value := range profSvc.Is {
+							svc.Is[behaviour] = value
+						}
+					}
+				}
 			}
 		}
 	}
@@ -250,6 +268,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 					length, _ := strconv.Atoi(subParts[0])
 					symbols, _ := strconv.ParseBool(subParts[1])
 					appMan.Services[six].Info.Var[vix].Value = vNameWrapped
+					// add a manifest variable
 					appMan.Var.Items = append(appMan.Var.Items, AppVar{
 						Name:        vName,
 						Description: v.Description,
@@ -260,6 +279,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 				case "name":
 					number, _ := strconv.Atoi(parts[1])
 					appMan.Services[six].Info.Var[vix].Value = vNameWrapped
+					// add a manifest variable
 					appMan.Var.Items = append(appMan.Var.Items, AppVar{
 						Name:        vName,
 						Description: v.Description,
@@ -272,61 +292,83 @@ func (m *Manifest) wire() (*Manifest, error) {
 				}
 			} else { // if the variable is a binding
 				b := bindings(v.Value)
-				for _, binding := range b {
-					content := binding[len("${bind=") : len(binding)-1]
-					parts := strings.Split(content, ":")
-					switch len(parts) {
-					case 1:
-						svcName := parts[0]
-						// check the name exists
-						found := false
-						for _, s := range m.Services {
-							if s.Name == svcName {
-								found = true
-								break
+				// if variable is a value add it to the list of manifest variables so that it can be loaded using the .env file
+				if len(b) == 0 {
+					// add a manifest variable
+					vName := fmt.Sprintf("%s_%s", strings.ToUpper(strings.Replace(service.Name, "-", "_", -1)), v.Name)
+					appMan.Var.Items = append(appMan.Var.Items, AppVar{
+						Name:        vName,
+						Description: v.Description,
+						Value:       v.Value,
+						Secret:      v.Secret,
+						Service:     strings.ToUpper(service.Name),
+					})
+				} else {
+					for _, binding := range b {
+						content := binding[len("${bind=") : len(binding)-1]
+						parts := strings.Split(content, ":")
+						switch len(parts) {
+						case 1:
+							svcName := parts[0]
+							// check the name exists
+							found := false
+							for _, s := range m.Services {
+								if s.Name == svcName {
+									found = true
+									break
+								}
 							}
-						}
-						if !found {
-							return nil, fmt.Errorf("invalid service name '%s' => %s='%s' in service '%s'\n", svcName, v.Name, v.Value, service.Name)
-						}
-						appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, svcName, 1)
-						appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, svcName, appMan.Services[six])
-						ix := getServiceIx(*appMan, svcName)
-						appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name, appMan.Services[six])
-					case 2:
-						switch parts[1] {
-						case "schema_uri":
-							if uri := m.getSchemaURI(parts[0]); len(uri) > 0 {
-								appMan.Services[six].Info.Var[vix].Value = uri
-							} else {
-								return nil, fmt.Errorf("variable %s='%s' in service '%s' request schema_ui from service '%s' but is missing\n", v.Name, v.Value, service.Name, parts[0])
+							if !found {
+								return nil, fmt.Errorf("invalid service name '%s' => %s='%s' in service '%s'\n", svcName, v.Name, v.Value, service.Name)
 							}
-						case "port":
-							if port := m.getSvcPort(parts[0]); len(port) > 0 {
-								appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, port, 1)
-							} else {
-								return nil, fmt.Errorf("missing port in application manifest: service '%s', binding %s\n", service.Name, binding)
+							appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, svcName, 1)
+							appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, svcName, appMan.Services[six])
+							ix := getServiceIx(*appMan, svcName)
+							appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name, appMan.Services[six])
+							// add variable to manifest list
+							vName := fmt.Sprintf("%s_%s", strings.ToUpper(strings.Replace(service.Name, "-", "_", -1)), v.Name)
+							appMan.Var.Items = append(appMan.Var.Items, AppVar{
+								Name:        vName,
+								Description: v.Description,
+								Value:       svcName,
+								Secret:      v.Secret,
+								Service:     strings.ToUpper(service.Name),
+							})
+						case 2:
+							switch parts[1] {
+							case "schema_uri":
+								if uri := m.getSchemaURI(parts[0]); len(uri) > 0 {
+									appMan.Services[six].Info.Var[vix].Value = uri
+								} else {
+									return nil, fmt.Errorf("variable %s='%s' in service '%s' request schema_ui from service '%s' but is missing\n", v.Name, v.Value, service.Name, parts[0])
+								}
+							case "port":
+								if port := m.getSvcPort(parts[0]); len(port) > 0 {
+									appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, port, 1)
+								} else {
+									return nil, fmt.Errorf("missing port in application manifest: service '%s', binding %s\n", service.Name, binding)
+								}
+							default:
+								return nil, fmt.Errorf("invalid binding %s='%s' in service '%s'\n", v.Name, binding, service.Name)
 							}
-						default:
-							return nil, fmt.Errorf("invalid binding %s='%s' in service '%s'\n", v.Name, binding, service.Name)
-						}
-					case 3:
-						switch parts[1] {
-						case "var":
-							if m.varExists(parts[2]) {
-								varKey := strings.ToUpper(fmt.Sprintf("${%s_%s}", strings.Replace(parts[0], "-", "_", -1), parts[2]))
-								appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, varKey, 1)
-								appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, parts[0], appMan.Services[six])
-								ix := getServiceIx(*appMan, parts[0])
-								appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name, appMan.Services[six])
-							} else {
-								return nil, fmt.Errorf("cannot find variable %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
+						case 3:
+							switch parts[1] {
+							case "var":
+								if m.varExists(parts[2]) {
+									varKey := strings.ToUpper(fmt.Sprintf("${%s_%s}", strings.Replace(parts[0], "-", "_", -1), parts[2]))
+									appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, varKey, 1)
+									appMan.Services[six].DependsOn = addDependency(appMan.Services[six].DependsOn, parts[0], appMan.Services[six])
+									ix := getServiceIx(*appMan, parts[0])
+									appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name, appMan.Services[six])
+								} else {
+									return nil, fmt.Errorf("cannot find variable %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
+								}
+							default:
+								return nil, fmt.Errorf("invalid binding %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
 							}
 						default:
 							return nil, fmt.Errorf("invalid binding %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
 						}
-					default:
-						return nil, fmt.Errorf("invalid binding %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
 					}
 				}
 			}
@@ -516,6 +558,13 @@ func (m *Manifest) wire() (*Manifest, error) {
 				} else {
 					return nil, fmt.Errorf("schema_uri not defined in app '%s' manifest\n", parts[0])
 				}
+			}
+			// db user name
+			if strings.HasPrefix(strings.Replace(service.Info.Db.User, " ", "", -1), "${bind=") {
+				content := service.Info.Db.User[len("${bind=") : len(service.Info.Db.User)-1]
+				parts := strings.Split(content, ":")
+				varKey := strings.ToUpper(fmt.Sprintf("${%s_%s}", strings.Replace(parts[0], "-", "_", -1), parts[2]))
+				appMan.Services[six].Info.Db.User = varKey
 			}
 			// db user pwd
 			if strings.HasPrefix(strings.Replace(service.Info.Db.Pwd, " ", "", -1), "${bind=") {

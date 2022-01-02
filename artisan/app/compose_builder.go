@@ -11,6 +11,8 @@ package app
 import (
 	"fmt"
 	"github.com/compose-spec/compose-go/types"
+	"github.com/gatblau/onix/artisan/app/behaviour"
+	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"gopkg.in/yaml.v2"
 	"path/filepath"
@@ -74,16 +76,37 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid target port '%s'\n", svc.Port)
 		}
-		p.Services = append(p.Services, types.ServiceConfig{
+		var ports []types.ServicePortConfig
+		// if the public behaviour is defined then add a port mapping to the service
+		if _, exists := svc.Is[behaviour.Public]; exists {
+			ports = []types.ServicePortConfig{{Target: uint32(targetPort), Published: uint32(publishedPort)}}
+		}
+		if _, exists := svc.Is[behaviour.EncryptedInTransit]; exists {
+			core.WarningLogger.Printf("service '%s' requested encryption of data in transit; it is currently not supported by the compose builder; skipping behaviour\n", svc.Name)
+		}
+		s := types.ServiceConfig{
 			Name:          svc.Name,
 			ContainerName: svc.Name,
 			DependsOn:     getDeps(svc.DependsOn),
-			Environment:   getEnv(svc.Info.Var),
+			Environment:   getEnv(svc),
 			Image:         svc.Image,
-			Ports:         []types.ServicePortConfig{{Target: uint32(targetPort), Published: uint32(publishedPort)}},
+			Ports:         ports,
 			Restart:       "always",
 			Volumes:       append(getSvcVols(svc.Info.Volume), getFileVols(svc.Info.File)...),
-		})
+		}
+		// if the load_balanced behaviour is defined then add replicated deployment mode to the service
+		if replicas, exists := svc.Is[behaviour.LoadBalanced]; exists {
+			rep, err2 := strconv.ParseUint(replicas, 10, 64)
+			if err2 != nil {
+				core.WarningLogger.Printf("failed to read load_balanced behaviour value '%s': %s\n", replicas, err2)
+			} else {
+				s.Deploy = &types.DeployConfig{
+					Mode:     "replicated",
+					Replicas: &rep,
+				}
+			}
+		}
+		p.Services = append(p.Services, s)
 	}
 	p.Volumes = getVols(b.manifest.Services)
 	p.Networks = types.Networks{
@@ -403,10 +426,18 @@ func newHeaderBuilder(label string, a ...interface{}) *strings.Builder {
 	return script
 }
 
-func getEnv(vars []Var) types.MappingWithEquals {
+func getEnv(svc SvcRef) types.MappingWithEquals {
 	var values []string
-	for _, v := range vars {
-		values = append(values, fmt.Sprintf("%s=%s", v.Name, v.Value))
+	for _, v := range svc.Info.Var {
+		// if the value is or contains environment variables
+		if strings.Contains(v.Value, "${") {
+			// add it as is to the compose file env section so that it can read from .env
+			values = append(values, fmt.Sprintf("%s=%s", v.Name, v.Value))
+		} else {
+			// if there is no env variable then use the variable from the global list in the manifest
+			vName := fmt.Sprintf("${%s_%s}", strings.ToUpper(strings.Replace(svc.Name, "-", "_", -1)), v.Name)
+			values = append(values, fmt.Sprintf("%s=%s", v.Name, vName))
+		}
 	}
 	return types.NewMappingWithEquals(values)
 }

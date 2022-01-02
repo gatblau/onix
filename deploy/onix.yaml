@@ -6,30 +6,36 @@ profiles:
   - name: full
     description: deploys all services
     services:
-      - db
-      - evr-mongo-db
-      - evr-mongo-app
-      - nexus-app
-      - artreg-app
-      - ox-app
-      - pilotctl-app
+      - name: db
+      - name: evr-mongo-db
+      - name: evr-mongo-app
+      - name: nexus-app
+      - name: artreg-app
+      - name: ox-app
+      - name: pilotctl-app
 
   - name: config-db
     description: deploys the configuration database only
     services:
-      - db
-      - ox-app
+      - name: db
+      - name: ox-app
+        is:
+          # overrides load-balanced behaviour in service
+          load-balanced: 2
 
   - name: art-reg
     description: deploys the artisan package registry only
     services:
-      - nexus-app
-      - artreg-app
+      - name: nexus-app
+      - name: artreg-app
+        is:
+          # overrides load-balanced behaviour in service
+          load-balanced: 2
 
   - name: nexus
     description: deploys nexus repository manager only
     services:
-      - nexus-app
+      - name: nexus-app
 
 services:
   - name: db
@@ -49,18 +55,27 @@ services:
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/evr-mongo-app.yaml
     image: quay.io/gatblau/pilotctl-evr-mongodb:0.0.4-300921174051295-11aab8b6cc
     port: "8885"
+    is:
+      public: evr-mongo.onix.com
+      encrypted-in-transit:
 
   - name: nexus-app
     description: Nexus Repository Manager for Artisan Registry
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/nexus-app.yaml
     image: sonatype/nexus3
     port: "8081"
+    is:
+      public: nexus.onix.com
+      encrypted-in-transit:
 
   - name: artreg-app
     description: Artisan Registry
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/artreg-app.yaml
     image: quay.io/gatblau/artisan-registry:0.0.4-011021162133879-a3dedecb3f-RC1
     port: "8082"
+    is:
+      public: artreg.onix.com
+      encrypted-in-transit:
 
   - name: ox-app
     description: Onix Web API
@@ -68,6 +83,9 @@ services:
     schema_uri: https://raw.githubusercontent.com/gatblau/ox-db/e94e263989f959a4cfbd06c2af0232fdab94b709
     image: quay.io/gatblau/onix-snapshot:v0.0.4-1af14bb-021021131813
     port: "8080"
+    is:
+      public: wapi.onix.com
+      encrypted-in-transit:
 
   - name: pilotctl-app
     description: Pilot Control
@@ -75,4 +93,7 @@ services:
     schema_uri: https://raw.githubusercontent.com/gatblau/pilotctl-db/da13b0b770d5898327e95e0545266a229f0c837c
     image: quay.io/gatblau/pilotctl:0.0.4-161021085624494-f2346825d0
     port: "8888"
+    is:
+      public: pilotctl.onix.com
+      encrypted-in-transit:
 ...
