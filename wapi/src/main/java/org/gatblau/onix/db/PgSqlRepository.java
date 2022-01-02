@@ -2337,10 +2337,17 @@ public class PgSqlRepository implements DbRepository {
         String newSalt = null;
         // check the provided password is within policy
         String pwdResult = util.checkPwd(user.getPwd());
+        String usrNameResult = util.checkUserName(user.getName());
         // if not
         if (pwdResult != null) {
             // return a message 
             result.setMessage(String.format("password policy failed for '%s', %s", user.getEmail(), pwdResult));
+            result.setError(true);
+            return result;
+        }
+        if (usrNameResult != null) {
+            // return a message 
+            result.setMessage(String.format("name policy failed for '%s', %s", user.getEmail(), usrNameResult));
             result.setError(true);
             return result;
         }
