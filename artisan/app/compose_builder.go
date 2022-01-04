@@ -219,21 +219,20 @@ func (b ComposeBuilder) buildDeploy() (DeploymentRsx, error) {
 	header := newHeaderBuilder("application '%s' deploy script using docker-compose", b.manifest.Name)
 	s := new(strings.Builder)
 	s.WriteString(header.String())
-	s.WriteString(fmt.Sprintf(`if ! command -v docker &> /dev/null; then
-	echo "docker is required but not installed"
-	exit
+	s.WriteString(fmt.Sprintf(`if ! command -v docker
+then
+  echo "docker is required but not installed"
+  exit
 fi
-if ! command -v docker-compose &> /dev/null; then
-	echo "docker-compose is required but not installed"
-	exit
+if ! command -v docker-compose 
+then
+  echo "docker-compose is required but not installed"
+  exit
 fi
 `))
 	s.WriteString(fmt.Sprintf(`
 # ensure attachable docker network is already created
-if [[ $(docker network inspect %[1]s) == "[]" ]]; then
-	echo Creating Docker network %[1]s ...
-	docker network create %[1]s
-fi
+docker network create %[1]s
 `, b.network()))
 	s.WriteString("\n# create docker volumes\n")
 	for _, service := range b.manifest.Services {

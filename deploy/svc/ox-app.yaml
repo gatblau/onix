@@ -25,7 +25,7 @@ var:
     value: "Basic"
   - name: WAPI_ADMIN_USER
     description: the username to authenticate with the web api as admin
-    value: ${fx=name:99}
+    value: admin
   - name: WAPI_ADMIN_PWD
     description: the password to authenticate with the web api as admin
     secret: true
@@ -33,6 +33,10 @@ var:
   - name: WAPI_EVENTS_ENABLED
     description: whether sending of mqtt messages is enabled for changes to configuration data
     value: "false"
+init:
+  - builder: compose
+    scripts:
+      - reset_admin_pwd
 db:
   name: onix
   app_version: 0.0.4
@@ -44,4 +48,17 @@ db:
   admin_user: postgres
   admin_pwd: ${bind=db:var:POSTGRES_PASSWORD}
   schema_uri: ${bind=ox-app:schema_uri}
+scripts:
+  - name: reset_admin_pwd
+    description: |
+      updates the default admin password with the auto generated password provided by this manifest
+    runtime: ubi-min
+    content: |
+      echo "updating Onix admin password from default ..."
+      art curl -X PUT \
+        -a 25 \
+        -u "admin:0n1x" \
+        -H "Content-Type: application/json" \
+        "http://${bind=ox-app}":"${bind=ox-app:port}"/user/"${OX_APP_WAPI_ADMIN_USER}"/pwd \
+        -d "{\"pwd\":\"${OX_APP_WAPI_ADMIN_PWD}\"}"
 ...
