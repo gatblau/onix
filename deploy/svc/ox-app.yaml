@@ -59,6 +59,6 @@ scripts:
         -a 25 \
         -u "admin:0n1x" \
         -H "Content-Type: application/json" \
-        "http://${bind=ox-app}":"${bind=ox-app:port}"/user/"${OX_APP_WAPI_ADMIN_PWD}"/pwd \
+        "http://${bind=ox-app}":"${bind=ox-app:port}"/user/"${OX_APP_WAPI_ADMIN_USER}"/pwd \
         -d "{\"pwd\":\"${OX_APP_WAPI_ADMIN_PWD}\"}"
 ...
