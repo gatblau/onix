@@ -346,7 +346,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 									return nil, fmt.Errorf("variable %s='%s' in service '%s' request schema_ui from service '%s' but is missing\n", v.Name, v.Value, service.Name, parts[0])
 								}
 							case "port":
-								if port := m.getSvcPort(parts[0]); len(port) > 0 {
+								if port := m.getSvcTargetPort(parts[0]); len(port) > 0 {
 									appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, port, 1)
 									vName := fmt.Sprintf("%s_%s", strings.ToUpper(strings.Replace(service.Name, "-", "_", -1)), v.Name)
 									found := false
@@ -441,7 +441,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 								return nil, fmt.Errorf("binding '%s' in service '%s' request schema_ui from service '%s' but is missing\n", binding, service.Name, parts[0])
 							}
 						case "port":
-							if port := m.getSvcPort(parts[0]); len(port) > 0 {
+							if port := m.getSvcTargetPort(parts[0]); len(port) > 0 {
 								appMan.Services[six].Info.File[fix].Content = strings.Replace(appMan.Services[six].Info.File[fix].Content, binding, port, 1)
 							} else {
 								return nil, fmt.Errorf("port not defined for service '%s' in application manifest, invoked from binding '%s' in service %s\n", parts[0], binding, service.Name)
@@ -510,7 +510,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 					case 2:
 						switch parts[1] {
 						case "port":
-							if port := m.getSvcPort(parts[0]); len(port) > 0 {
+							if port := m.getSvcTargetPort(parts[0]); len(port) > 0 {
 								appMan.Services[six].Info.Script[i].Content = strings.Replace(appMan.Services[six].Info.Script[i].Content, binding, port, 1)
 							} else {
 								return nil, fmt.Errorf("port not defined for service '%s' in application manifest, invoked from binding '%s' in service %s\n", parts[0], binding, service.Name)
@@ -745,10 +745,10 @@ func (m *Manifest) deepCopy(dst interface{}) error {
 	return gob.NewDecoder(&buffer).Decode(dst)
 }
 
-func (m *Manifest) getSvcPort(svcName string) string {
+func (m *Manifest) getSvcTargetPort(svcName string) string {
 	for _, service := range m.Services {
-		if service.Name == svcName && len(service.Port) > 0 {
-			return service.Port
+		if service.Name == svcName && len(service.Info.Port) > 0 {
+			return service.Info.Port
 		}
 	}
 	return ""
@@ -756,11 +756,6 @@ func (m *Manifest) getSvcPort(svcName string) string {
 
 func bindings(value string) []string {
 	r, _ := regexp.Compile("\\${bind=(?P<NAME>[^}]+)}")
-	return r.FindAllString(value, -1)
-}
-
-func functions(value string) []string {
-	r, _ := regexp.Compile("\\${fx=(?P<NAME>[^}]+)}")
 	return r.FindAllString(value, -1)
 }
 
