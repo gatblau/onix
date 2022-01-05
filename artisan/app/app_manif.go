@@ -254,8 +254,10 @@ func (m *Manifest) wire() (*Manifest, error) {
 		// wire expressions in variables
 		for vix, v := range service.Info.Var {
 			// if the variable is a function expression
-			if strings.HasPrefix(strings.Replace(v.Value, " ", "", -1), "${fx=") {
-				content := v.Value[len("${fx=") : len(v.Value)-2]
+			if strings.Contains(strings.Replace(v.Value, " ", "", -1), "${fx=") {
+				startAt := strings.Index(v.Value, "${fx=") + len("${fx=")
+				endsAt := strings.Index(v.Value, "}")
+				content := v.Value[startAt:endsAt]
 				parts := strings.Split(content, ":")
 				// qualifies the name of the variable with the service name
 				// variable name without ${...} wrapper
@@ -272,9 +274,10 @@ func (m *Manifest) wire() (*Manifest, error) {
 					appMan.Var.Items = append(appMan.Var.Items, AppVar{
 						Name:        vName,
 						Description: v.Description,
-						Value:       RandomPwd(length, symbols),
-						Secret:      true,
-						Service:     strings.ToUpper(service.Name),
+						// preserves prefix and suffix for a fx to generate password
+						Value:   v.Value[0:startAt-len("${fx=")] + RandomPwd(length, symbols) + v.Value[endsAt+1:],
+						Secret:  true,
+						Service: strings.ToUpper(service.Name),
 					})
 				case "name":
 					number, _ := strconv.Atoi(parts[1])
@@ -736,6 +739,11 @@ func (m *Manifest) getSvcPort(svcName string) string {
 
 func bindings(value string) []string {
 	r, _ := regexp.Compile("\\${bind=(?P<NAME>[^}]+)}")
+	return r.FindAllString(value, -1)
+}
+
+func functions(value string) []string {
+	r, _ := regexp.Compile("\\${fx=(?P<NAME>[^}]+)}")
 	return r.FindAllString(value, -1)
 }
 
