@@ -333,7 +333,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 							appMan.Var.Items = append(appMan.Var.Items, AppVar{
 								Name:        vName,
 								Description: v.Description,
-								Value:       svcName,
+								Value:       appMan.Services[six].Info.Var[vix].Value,
 								Secret:      v.Secret,
 								Service:     strings.ToUpper(service.Name),
 							})
@@ -348,6 +348,23 @@ func (m *Manifest) wire() (*Manifest, error) {
 							case "port":
 								if port := m.getSvcPort(parts[0]); len(port) > 0 {
 									appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, port, 1)
+									vName := fmt.Sprintf("%s_%s", strings.ToUpper(strings.Replace(service.Name, "-", "_", -1)), v.Name)
+									found := false
+									for ix, item := range appMan.Var.Items {
+										if item.Name == vName {
+											appMan.Var.Items[ix].Value = appMan.Services[six].Info.Var[vix].Value
+											found = true
+										}
+									}
+									if !found {
+										appMan.Var.Items = append(appMan.Var.Items, AppVar{
+											Name:        vName,
+											Description: v.Description,
+											Value:       appMan.Services[six].Info.Var[vix].Value,
+											Secret:      v.Secret,
+											Service:     strings.ToUpper(service.Name),
+										})
+									}
 								} else {
 									return nil, fmt.Errorf("missing port in application manifest: service '%s', binding %s\n", service.Name, binding)
 								}
