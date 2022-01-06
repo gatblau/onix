@@ -20,6 +20,7 @@ import (
 	. "github.com/gatblau/onix/pilotctl/types"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -335,7 +336,14 @@ func (r *API) GetPackages() ([]PackageInfo, error) {
 		regDomain = regDomain[0 : len(regDomain)-1]
 	}
 	result := make([]PackageInfo, 0)
+	// gets the package filter is defined
+	filter := os.Getenv("OX_ART_REG_PACKAGE_FILTER")
 	for _, repo := range repos {
+		// if a filter has been defined and the repository name does not start with the filter
+		if len(filter) > 0 && !strings.HasPrefix(repo.Repository, filter) {
+			// filter out from the result
+			continue
+		}
 		pack := PackageInfo{
 			Name: fmt.Sprintf("%s/%s", regDomain, repo.Repository),
 			Tags: []TagInfo{},
