@@ -1,0 +1,67 @@
+---
+name: ox-app-test-data
+description: test data for Onix database
+init:
+  - builder: compose
+    scripts:
+      - add_test_data
+scripts:
+  - name: add_test_data
+    description: add test data in the onix database
+    runtime: ubi-min
+    content: |
+      PUT () {
+        art curl -X PUT \
+          "http://${bind=ox-app}:${bind=ox-app:port}$1" \
+          -u "${bind=ox-app:var:WAPI_ADMIN_USER}:${bind=ox-app:var:WAPI_ADMIN_PWD}" \
+          -H "accept: application/json","Content-Type: application/json" \
+          -d "$2" && printf "\n"
+      }
+
+      # artisan functions
+      PUT '/item/ART_FX:LIST' '{"name":"ART_FX:LIST","description":"executes a list of the current directory","type":"ART_FX","attribute":{"PACKAGE":"list","FX":"list"},"meta":{"input":{}},"status":1}'
+
+      # organisation groups
+      PUT '/item/ORG_GRP:ACME' '{"name":"ACME GROUP","description":"A sample organisation group for testing purposes.","type":"U_ORG_GROUP"}'
+
+      # organisations
+      PUT '/item/ORG:OPCO_A' '{"name":"OPERATING COMPANY A","description":"A sample operating company for testing purposes.","type":"U_ORG"}'
+      PUT '/item/ORG:OPCO_B' '{"name":"OPERATING COMPANY B","description":"A sample operating company for testing purposes.","type":"U_ORG"}'
+
+      # areas
+      PUT '/item/AREA:EAST' '{"name":"EAST","description":"Represents the East region.","type":"U_AREA"}'
+      PUT '/item/AREA:WEST' '{"name":"WEST","description":"Represents the West region.","type":"U_AREA"}'
+      PUT '/item/AREA:NORTH' '{"name":"NORTH","description":"Represents the North region.","type":"U_AREA"}'
+      PUT '/item/AREA:SOUTH' '{"name":"SOUTH","description":"Represents the South region.","type":"U_AREA"}'
+
+      # locations
+      PUT '/item/LOCATION:LONDON_PADDINGTON' '{"name":"London Paddington","description":"Represents a physical location.","type":"U_LOCATION"}'
+      PUT '/item/LOCATION:LONDON_EUSTON' '{"name":"London Euston","description":"Represents a physical location.","type":"U_LOCATION"}'
+      PUT '/item/LOCATION:LONDON_BANK' '{"name":"London Bank","description":"Represents a physical location.","type":"U_LOCATION"}'
+      PUT '/item/LOCATION:MANCHESTER_PICCADILLY' '{"name":"Manchester Piccadilly","description":"Represents a physical location.","type":"U_LOCATION"}'
+      PUT '/item/LOCATION:MANCHESTER_CHORLTON' '{"name":"Manchester Chorlton","description":"Represents a physical location.","type":"U_LOCATION"}'
+
+      # link org group -> org
+      PUT '/link/ORG_GRP:ACME|ORG:OPCO_A' '{"description":"links ACME with OpCo-A","type":"U_RELATIONSHIP","startItemKey":"ORG_GRP:ACME","endItemKey":"ORG:OPCO_A"}'
+      PUT '/link/ORG_GRP:ACME|ORG:OPCO_B' '{"description":"links ACME with OpCo-B","type":"U_RELATIONSHIP","startItemKey":"ORG_GRP:ACME","endItemKey":"ORG:OPCO_B"}'
+
+      # link org group -> area
+      PUT '/link/ORG_GRP:ACME|AREA:EAST' '{"description":"links Acme group with area EAST","type":"U_RELATIONSHIP","startItemKey":"ORG_GRP:ACME","endItemKey":"AREA:EAST"}'
+      PUT '/link/ORG_GRP:ACME|AREA:WEST' '{"description":"links Acme group with area WEST","type":"U_RELATIONSHIP","startItemKey":"ORG_GRP:ACME","endItemKey":"AREA:WEST"}'
+      PUT '/link/ORG_GRP:ACME|AREA:NORTH' '{"description":"links Acme group with area NORTH","type":"U_RELATIONSHIP","startItemKey":"ORG_GRP:ACME","endItemKey":"AREA:NORTH"}'
+      PUT '/link/ORG_GRP:ACME|AREA:SOUTH' '{"description":"links Acme group with area SOUTH","type":"U_RELATIONSHIP","startItemKey":"ORG_GRP:ACME","endItemKey":"AREA:SOUTH"}'
+
+      # link org -> location
+      PUT '/link/ORG:OPCO_A|LOCATION:LONDON_PADDINGTON' '{"description":"links OpCo A with Location London Paddington","type":"U_RELATIONSHIP","startItemKey":"ORG:OPCO_A","endItemKey":"LOCATION:LONDON_PADDINGTON"}'
+      PUT '/link/ORG:OPCO_A|LOCATION:LONDON_EUSTON' '{"description":"links OpCo A with Location London Euston","type":"U_RELATIONSHIP","startItemKey":"ORG:OPCO_A","endItemKey":"LOCATION:LONDON_EUSTON"}'
+      PUT '/link/ORG:OPCO_A|LOCATION:LONDON_BANK' '{"description":"links OpCo A with Location London Bank","type":"U_RELATIONSHIP","startItemKey":"ORG:OPCO_A","endItemKey":"LOCATION:LONDON_BANK"}'
+      PUT '/link/ORG:OPCO_B|LOCATION:MANCHESTER_PICCADILLY' '{"description":"links OpCo B with Location Manchester Piccadilly","type":"U_RELATIONSHIP","startItemKey":"ORG:OPCO_B","endItemKey":"LOCATION:MANCHESTER_PICCADILLY"}'
+      PUT '/link/ORG:OPCO_B|LOCATION:MANCHESTER_CHORLTON' '{"description":"links OpCo B with Location Manchester Chorlton","type":"U_RELATIONSHIP","startItemKey":"ORG:OPCO_B","endItemKey":"LOCATION:MANCHESTER_CHORLTON"}'
+
+      # link area -> location
+      PUT '/link/AREA:SOUTH|LOCATION:LONDON_PADDINGTON' '{"description":"links Location London Paddington with area South","type":"U_RELATIONSHIP","startItemKey":"AREA:SOUTH","endItemKey":"LOCATION:LONDON_PADDINGTON"}'
+      PUT '/link/AREA:SOUTH|LOCATION:LONDON_EUSTON' '{"description":"links Location London Euston with area South","type":"U_RELATIONSHIP","startItemKey":"AREA:SOUTH","endItemKey":"LOCATION:LONDON_EUSTON"}'
+      PUT '/link/AREA:SOUTH|LOCATION:LONDON_BANK' '{"description":"links Location London Bank with area South","type":"U_RELATIONSHIP","startItemKey":"AREA:SOUTH","endItemKey":"LOCATION:LONDON_BANK"}'
+      PUT '/link/AREA:NORTH|LOCATION:MANCHESTER_PICCADILLY' '{"description":"links Location Manchester Piccadilly with area North","type":"U_RELATIONSHIP","startItemKey":"AREA:NORTH","endItemKey":"LOCATION:MANCHESTER_PICCADILLY"}'
+      PUT '/link/AREA:NORTH|LOCATION:MANCHESTER_CHORLTON' '{"description":"links Location Manchester Chorlton with area North","type":"U_RELATIONSHIP","startItemKey":"AREA:NORTH","endItemKey":"LOCATION:MANCHESTER_CHORLTON"}'
+...
