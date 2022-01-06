@@ -195,6 +195,7 @@ func (m *Manifest) trim(profile string) (*Manifest, error) {
 						}
 					}
 				}
+				continue
 			}
 		}
 	}
@@ -220,7 +221,7 @@ func (m *Manifest) explode() (*Manifest, error) {
 			if err != nil {
 				return nil, fmt.Errorf("cannot load service manifest for '%s': %s\n", svc.Image, err)
 			}
-		} else if len(svc.Image) > 0 && len(svc.URI) > 0 {
+		} else if len(svc.URI) > 0 {
 			svcMan, err = loadSvcManFromURI(svc, m.credentials)
 			if err != nil {
 				return nil, fmt.Errorf("cannot load service manifest for '%s': %s\n", svc.Image, err)
@@ -725,11 +726,8 @@ func (m *Manifest) validate() error {
 	for _, svc := range m.Services {
 		// case of manifest embedded in docker image then no URI is needed (image only)
 		// case of manifest in git repo (uri + image required)
-		// so cases to avoid is uri only
-		if len(svc.Image) == 0 && len(svc.URI) > 0 {
-			return fmt.Errorf("invalid entry for service '%s' manifest in application manifest: only one of Image or URI attributes must be specified\n", svc.Name)
-		}
-		// or uri & image not provided
+		// case of manifest in git repo defining scripts to run with artisan runtimes (hence no image)
+		// so case to avoid is uri & image not provided
 		if len(svc.Image) == 0 && len(svc.URI) == 0 {
 			return fmt.Errorf("invalid entry for service '%s' manifest in application manifest: either one of Image or URI attributes must be specified\n", svc.Name)
 		}

@@ -68,6 +68,11 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 	p := new(types.Project)
 	p.Name = fmt.Sprintf("Docker Compose Project for %s", strings.ToUpper(b.manifest.Name))
 	for _, svc := range b.manifest.Services {
+		// if no image is defined then assume it is a job and omits the service in the compose project
+		// as it will be run as an attached container using art runc
+		if len(svc.Image) == 0 {
+			continue
+		}
 		publishedPort, err := strconv.Atoi(svc.Port)
 		if err != nil {
 			return nil, fmt.Errorf("invalid published port '%s'\n", svc.Port)
