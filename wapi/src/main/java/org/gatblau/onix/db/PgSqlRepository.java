@@ -2335,15 +2335,6 @@ public class PgSqlRepository implements DbRepository {
         String newPwd = user.getPwd();
         String encPwd = null;
         String newSalt = null;
-        // check the provided password is within policy
-        String pwdResult = util.checkPwd(user.getPwd());
-        // if not
-        if (pwdResult != null) {
-            // return a message 
-            result.setMessage(String.format("password policy failed for '%s', %s", user.getEmail(), pwdResult));
-            result.setError(true);
-            return result;
-        }
         try {
             /*
              *  prevents a change in the user record if the pwd specified already exists in the database
@@ -2352,6 +2343,7 @@ public class PgSqlRepository implements DbRepository {
             UserData u = getUser(key, role);
             // if the user already exists
             if (u != null && newPwd != null && newPwd.length() > 0) {
+                if (invalidPwd(user, result, newPwd)) return result;
                 // checks the provided password is not the same as the one in the database
                 // this cannot be done at database level as the database only sees different salted strings
                 encPwd = pbe.getEncryptedPwd(newPwd, u.getSalt()); // uses the salt in the database
@@ -2364,6 +2356,7 @@ public class PgSqlRepository implements DbRepository {
             } else {
                 // otherwise, if there was a pwd specified
                 if (newPwd != null && newPwd.length() > 0) {
+                    if (invalidPwd(user, result, newPwd)) return result;
                     // an encrypted password and salt are calculated
                     newSalt = pbe.generateSalt();
                     encPwd = pbe.getEncryptedPwd(newPwd, newSalt);
@@ -2398,6 +2391,19 @@ public class PgSqlRepository implements DbRepository {
             }
         }
         return result;
+    }
+
+    private boolean invalidPwd(org.gatblau.onix.data.UserData user, org.gatblau.onix.data.Result result, String newPwd) {
+        // check the provided password is within policy
+        String pwdResult = util.checkPwd(newPwd);
+        // if not
+        if (pwdResult != null) {
+            // return a message
+            result.setMessage(String.format("password policy failed for '%s', %s", user.getEmail(), pwdResult));
+            result.setError(true);
+            return true;
+        }
+        return false;
     }
 
     @Override
