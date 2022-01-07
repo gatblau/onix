@@ -166,7 +166,7 @@ file:
             "pwd": "${bind=evr-mongo-app:var:OX_HTTP_PWD}"{{ $count := plus $count 1 }}
           }{{ end }}{{ if gt $count 1 }},{{ end }}
         ]
-      }
+      }      
 db:
   name: pilotctl
   app_version: 0.0.4
@@ -178,6 +178,10 @@ db:
   admin_user: postgres
   admin_pwd: ${bind=db:var:POSTGRES_PASSWORD}
   schema_uri: ${bind=pilotctl-app:schema_uri}
+init:	
+  - builder: compose	
+    scripts:	
+      - create_pilotctl_user  
 scripts:
   - name: create_pilotctl_user
     description: |
