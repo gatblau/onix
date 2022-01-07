@@ -183,8 +183,10 @@ public class Lib implements InitializingBean {
     public UserData toUserData(ResultSet set) throws SQLException {
         UserData user = null;
         if (set != null) {
-            Date updated = set.getDate("updated");
-            Date expires = set.getDate("expires");
+            Date updated = set.getTimestamp("updated");
+            Date expires = set.getTimestamp("expires");
+            Date created = set.getTimestamp("created");
+
             user = new UserData();
             user.setKey(set.getString("key"));
             user.setName(set.getString("name"));
@@ -197,6 +199,7 @@ public class Lib implements InitializingBean {
             user.setAcl(set.getString("acl"));
             user.setVersion(set.getInt("version"));
             user.setChangedBy(set.getString("changed_by"));
+            user.setCreated((created != null) ? dateFormat.format(created) : null);
         }
         return user;
     }
