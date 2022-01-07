@@ -1,0 +1,19 @@
+---
+name: mongodb-gui-app
+description: db web client for mongo database
+port: "8081"
+var:
+  - name: ME_CONFIG_MONGODB_ADMINUSERNAME
+    description: the username to authenticate with the mongo database 
+    value: ${bind=evr-mongo-db:var:MONGO_INITDB_ROOT_USERNAME}
+  - name: ME_CONFIG_MONGODB_ADMINPASSWORD
+    description: the password to authenticate with the mongo database
+    secret: true
+    value: ${bind=evr-mongo-db:var:MONGO_INITDB_ROOT_PASSWORD}
+  - name: ME_CONFIG_MONGODB_ENABLE_ADMIN
+    description: whether to enable admin
+    value: "true"
+  - name: ME_CONFIG_MONGODB_SERVER
+    description: the name of the mongo service which this gui app has to connect
+    value: ${bind=evr-mongo-db}
+...

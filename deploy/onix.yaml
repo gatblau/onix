@@ -13,24 +13,15 @@ profiles:
       - name: artreg-app
       - name: ox-app
       - name: pilotctl-app
-
-  - name: full-test-data
-    description: deploys all services
-    services:
-      - name: db
-      - name: evr-mongo-db
-      - name: evr-mongo-app
-      - name: nexus-app
-      - name: artreg-app
-      - name: ox-app
-      - name: ox-app-test-data
-      - name: pilotctl-app
+      - name: pgadmin-app
+      - name: mongodb-gui-app      
 
   - name: config-db
     description: deploys the configuration database only
     services:
       - name: db
       - name: ox-app
+      - name: pgadmin-app      
         is:
           # overrides load-balanced behaviour in service
           load-balanced: 2
@@ -48,7 +39,7 @@ profiles:
     description: deploys nexus repository manager only
     services:
       - name: nexus-app
-
+      
 services:
   - name: db
     description: PostgreSQL Database service
@@ -99,20 +90,29 @@ services:
       public: wapi.onix.com
       encrypted-in-transit:
 
-  # image-less services run as a job, in this case to populate Onix database with test data
-  # note the definition does not define an image and the uri points to a service manifest which declares the
-  # scripts to run in one or more runtimes
-  - name: ox-app-test-data
-    description: add test data into the Onix database
-    uri: ../../deploy/svc/ox-app-test-data.yaml
-
   - name: pilotctl-app
     description: Pilot Control
-    uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/pilotctl-app.yaml
+    uri: ./svc/pilotctl-app.yaml
     schema_uri: https://raw.githubusercontent.com/gatblau/pilotctl-db/da13b0b770d5898327e95e0545266a229f0c837c
     image: quay.io/gatblau/pilotctl:0.0.4-161021085624494-f2346825d0
     port: "8888"
     is:
       public: pilotctl.onix.com
       encrypted-in-transit:
+
+  - name: pgadmin-app
+    description: web gui client for postgresql database
+    uri: ./svc/pgadmin-app.yaml
+    image: docker.io/dpage/pgadmin4:latest
+    port: "8083"
+    is:
+      public: pgadmin.onix.com
+
+  - name: mongodb-gui-app
+    description: web gui client for mongo database
+    uri: ./svc/mongodb-gui-app.yaml
+    image: docker.io/mongo-express:latest
+    port: "8084"
+    is:
+      public: mongodbgui.onix.com
 ...
