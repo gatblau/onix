@@ -92,7 +92,7 @@ services:
 
   - name: pilotctl-app
     description: Pilot Control
-    uri: ./svc/pilotctl-app.yaml
+    uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/pilotctl-app.yaml
     schema_uri: https://raw.githubusercontent.com/gatblau/pilotctl-db/da13b0b770d5898327e95e0545266a229f0c837c
     image: quay.io/gatblau/pilotctl:0.0.4-161021085624494-f2346825d0
     port: "8888"
@@ -102,7 +102,7 @@ services:
 
   - name: pgadmin-app
     description: web gui client for postgresql database
-    uri: ./svc/pgadmin-app.yaml
+    uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/pgadmin-app.yaml
     image: docker.io/dpage/pgadmin4:latest
     port: "8083"
     is:
@@ -110,7 +110,7 @@ services:
 
   - name: mongodb-gui-app
     description: web gui client for mongo database
-    uri: ./svc/mongodb-gui-app.yaml
+    uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/mongodb-gui-app.yaml
     image: docker.io/mongo-express:latest
     port: "8084"
     is:
