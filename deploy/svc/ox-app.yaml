@@ -12,7 +12,7 @@ var:
   - name: DB_PWD
     description: the password to authenticate with the database service
     secret: true
-    value: ${fx=pwd:16,false}
+    value: ${fx=pwd:16,false}123
   - name: DB_ADMIN_USER
     description: the username to authenticate with the database services
     value: "postgres"
