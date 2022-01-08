@@ -79,7 +79,9 @@ services:
     description: Nexus Repository Manager for Artisan Registry
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/nexus-app.yaml
     image: sonatype/nexus3
-    port: "8081"
+    port:
+      http: "8081"
+      docker: "5000"
     is:
       public: nexus.onix.com
       encrypted-in-transit:
