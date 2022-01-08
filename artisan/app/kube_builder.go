@@ -298,10 +298,12 @@ func svcName(svc SvcRef) string {
 
 func (b *KubeBuilder) buildIngress(svc SvcRef) (*DeploymentRsx, error) {
 	if host, exists := svc.Is[behaviour.Public]; exists {
-		port, err := strconv.Atoi(svc.Port)
-		if err != nil {
-			return nil, err
-		}
+		// port, err := strconv.Atoi(svc.Port)
+		// if err != nil {
+		// 	return nil, err
+		// }
+		// todo read proper port
+		port := 0
 		tls, err := getTLS(svc, strings.Split(strings.Replace(host, " ", "", -1), ","))
 		i := &k8s.Ingress{
 			APIVersion: k8s.NetVersion,
@@ -382,32 +384,36 @@ func getContainers(svc SvcRef) ([]k8s.Containers, error) {
 }
 
 func getDeploymentPorts(svc SvcRef) ([]k8s.Ports, error) {
-	p, err := strconv.Atoi(svc.Info.Port)
+	p, err := svc.Info.PortMap()
 	if err != nil {
 		return nil, err
 	}
-	return []k8s.Ports{
-		{
-			ContainerPort: p,
-		},
-	}, nil
+	var ports []k8s.Ports
+	for _, value := range p {
+		ports = append(ports, k8s.Ports{
+			ContainerPort: value,
+		})
+	}
+	return ports, nil
 }
 
 func getServicePorts(svc SvcRef) ([]k8s.Ports, error) {
-	target, err := strconv.Atoi(svc.Info.Port)
+	target, err := svc.Info.PortMap()
 	if err != nil {
 		return nil, err
 	}
-	published, err := strconv.Atoi(svc.Port)
+	published, err := svc.PortMap()
 	if err != nil {
 		return nil, err
 	}
-	return []k8s.Ports{
-		{
-			Port:       published,
-			TargetPort: target,
-		},
-	}, nil
+	var ports []k8s.Ports
+	for tKey, tValue := range target {
+		ports = append(ports, k8s.Ports{
+			Port:       published[tKey],
+			TargetPort: tValue,
+		})
+	}
+	return ports, nil
 }
 
 // getImagePullPolicy work out what pull policy to use based on the  image tag

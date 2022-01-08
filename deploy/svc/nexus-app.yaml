@@ -1,7 +1,9 @@
 ---
 name: nexus-app
 description: Nexus 3 repository manager
-port: "8081"
+port:
+  http: "8081"
+  docker: "5000"
 var:
   - name: NEXUS_ADMIN_PASSWORD
     description: the nexus admin password
@@ -41,13 +43,13 @@ scripts:
       echo "waiting for nexus to come online, ignore errors, please wait..."
       art curl -X GET \
         -a 25 \
-        http://${bind=nexus-app}:${bind=nexus-app:port}/service/rest/v1/status \
+        http://${bind=nexus-app}:${bind=nexus-app:port[http]}/service/rest/v1/status \
         -H 'accept: application/json'
 
       echo "updating admin password"
       art curl -X PUT \
         -u admin:${DEFAULT_PWD} \
-        http://${bind=nexus-app}:${bind=nexus-app:port}/service/rest/v1/security/users/admin/change-password \
+        http://${bind=nexus-app}:${bind=nexus-app:port[http]}/service/rest/v1/security/users/admin/change-password \
         -H 'accept: application/json','Content-Type: text/plain' \
         -d "${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD}"
 
@@ -56,7 +58,7 @@ scripts:
       echo "creating new artisan hosted repository in nexus"
       art curl -X POST \
         -u admin:${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD} \
-        http://${bind=nexus-app}:${bind=nexus-app:port}/service/rest/v1/repositories/raw/hosted \
+        http://${bind=nexus-app}:${bind=nexus-app:port[http]}/service/rest/v1/repositories/raw/hosted \
         -H 'accept: application/json','Content-Type: application/json' \
         -d '{
         "name": "artisan",
@@ -82,7 +84,7 @@ scripts:
       echo "disabling nexus anonymous access"
       art curl -X PUT \
         -u admin:${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD} \
-        http://${bind=nexus-app}:${bind=nexus-app:port}/service/rest/v1/security/anonymous \
+        http://${bind=nexus-app}:${bind=nexus-app:port[http]}/service/rest/v1/security/anonymous \
         -H 'accept: application/json','Content-Type: application/json' \
         -d '{"enabled": false}'
 ...

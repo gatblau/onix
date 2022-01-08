@@ -73,18 +73,26 @@ func (b *ComposeBuilder) buildProject() (*DeploymentRsx, error) {
 		if len(svc.Image) == 0 {
 			continue
 		}
-		publishedPort, err := strconv.Atoi(svc.Port)
+		publishedPort, err := svc.PortMap()
 		if err != nil {
 			return nil, fmt.Errorf("invalid published port '%s'\n", svc.Port)
 		}
-		targetPort, err := strconv.Atoi(svc.Info.Port)
+		targetPort, err := svc.Info.PortMap()
 		if err != nil {
 			return nil, fmt.Errorf("invalid target port '%s'\n", svc.Port)
 		}
 		var ports []types.ServicePortConfig
 		// if the public behaviour is defined then add a port mapping to the service
 		if _, exists := svc.Is[behaviour.Public]; exists {
-			ports = []types.ServicePortConfig{{Target: uint32(targetPort), Published: uint32(publishedPort)}}
+			ports = []types.ServicePortConfig{}
+			for tpKey, tpValue := range targetPort {
+				if ppValue, contains := publishedPort[tpKey]; contains {
+					ports = append(ports, types.ServicePortConfig{
+						Target:    uint32(tpValue),
+						Published: uint32(ppValue),
+					})
+				}
+			}
 		}
 		if _, exists := svc.Is[behaviour.EncryptedInTransit]; exists {
 			core.WarningLogger.Printf("service '%s' requested encryption of data in transit; it is currently not supported by the compose builder; skipping behaviour\n", svc.Name)

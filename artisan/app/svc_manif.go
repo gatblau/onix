@@ -8,6 +8,11 @@
 
 package app
 
+import (
+	"fmt"
+	"strconv"
+)
+
 // SvcManifest the manifest that describes how a software service should be configured
 type SvcManifest struct {
 	// Name the name of the service
@@ -15,7 +20,7 @@ type SvcManifest struct {
 	// Description describes what the service is all about
 	Description string `yaml:"description"`
 	// the port used by the http service
-	Port string `yaml:"port"`
+	Port interface{} `yaml:"port"`
 	// the URI to determine if the service is ready to use
 	ReadyURI string `yaml:"ready_uri,omitempty"`
 	// the variables passed to the service (either ordinary or secret)
@@ -30,6 +35,31 @@ type SvcManifest struct {
 	Script []Script `yaml:"scripts"`
 	// the database configuration
 	Db *Db `yaml:"db,omitempty"`
+}
+
+// PortMap return a parsed map of ports for the port attribute
+func (m *SvcManifest) PortMap() (map[string]int, error) {
+	ports := map[string]int{}
+	if p, isString := m.Port.(string); isString {
+		value, err := strconv.Atoi(p)
+		if err != nil {
+			return nil, err
+		}
+		ports = map[string]int{
+			"default": value,
+		}
+	} else if p, isMap := m.Port.(map[interface{}]interface{}); isMap {
+		for key, value := range p {
+			iv, err := strconv.Atoi(value.(string))
+			if err != nil {
+				return nil, err
+			}
+			ports[key.(string)] = iv
+		}
+	} else {
+		return nil, fmt.Errorf("invalid port value: %s", m.Port)
+	}
+	return ports, nil
 }
 
 func (m SvcManifest) ScriptIx(scriptName string) int {

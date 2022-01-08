@@ -90,8 +90,9 @@ type SvcRef struct {
 	Image string `yaml:"image,omitempty"`
 	// whether this service should not be publicly exposed, by default is false
 	Private bool `yaml:"private,omitempty"`
-	// the service port, if not specified, the application port (in the service manifest) is used
-	Port string `yaml:"port,omitempty"`
+	// the service port(s), if not specified, the application port (in the service manifest) is used
+	// it can be a string value for a single port or a map for multiple ports
+	Port interface{} `yaml:"port"`
 	// the service manifest loaded from remote image
 	Info *SvcManifest `yaml:"service,omitempty"`
 	// the other services it depends on
@@ -100,6 +101,31 @@ type SvcRef struct {
 	UsedBy []string `yaml:"used_by_count,omitempty"`
 	// instructions to customise deployment
 	Is map[behaviour.ServiceBehaviour]string `yaml:"is,omitempty"`
+}
+
+// PortMap return a parsed map of ports for the port attribute
+func (s *SvcRef) PortMap() (map[string]int, error) {
+	ports := map[string]int{}
+	if p, isString := s.Port.(string); isString {
+		value, err := strconv.Atoi(p)
+		if err != nil {
+			return nil, err
+		}
+		ports = map[string]int{
+			"default": value,
+		}
+	} else if p, isMap := s.Port.(map[interface{}]interface{}); isMap {
+		for key, value := range p {
+			iv, err := strconv.Atoi(value.(string))
+			if err != nil {
+				return nil, err
+			}
+			ports[key.(string)] = iv
+		}
+	} else {
+		return nil, fmt.Errorf("invalid port value: %s", s.Port)
+	}
+	return ports, nil
 }
 
 // NewAppMan creates a new application manifest from an URI (supported schemes are http(s):// and file://
@@ -242,6 +268,25 @@ func (m *Manifest) explode() (*Manifest, error) {
 		if err = validateBindings(*appMan, service); err != nil {
 			return nil, err
 		}
+		// check port is defined in service manifest and the service declaration in the app manifest is not a job (image-less service)
+		if service.Info.Port == nil && len(service.Image) > 0 {
+			return nil, fmt.Errorf("port not defined in service '%s' manifest\n", service.Info.Name)
+		}
+		// in the case the port in the app manifest not defined
+		if service.Port == nil {
+			// set it to the port in the svc manifest (through mapping)
+			service.Port = service.Info.Port
+		} else {
+			// check that the port attributes in both the application manifest service declaration and in the service
+			// manifests are either a single port string value or a multi-port map value
+			_, publishedIsString := service.Port.(string)
+			_, publishedIsMap := service.Port.(map[interface{}]interface{})
+			_, targetIsString := service.Info.Port.(string)
+			_, targetIsMap := service.Info.Port.(map[interface{}]interface{})
+			if !(publishedIsString && targetIsString || publishedIsMap && targetIsMap) {
+				return nil, fmt.Errorf("port type mistatch between application and service manifests in '%s': check that the port attributes in both manifests are set to either string or map", service.Name)
+			}
+		}
 	}
 	return appMan, nil
 }
@@ -249,7 +294,10 @@ func (m *Manifest) explode() (*Manifest, error) {
 // wire evaluates all expressions in the service manifest (i.e. functions and bindings) and work out service dependencies
 func (m *Manifest) wire() (*Manifest, error) {
 	appMan := new(Manifest)
-	_ = m.deepCopy(appMan)
+	err := m.deepCopy(appMan)
+	if err != nil {
+		return nil, err
+	}
 	// do the wiring of expressions in the service manifests
 	for six, service := range m.Services {
 		// wire expressions in variables
@@ -339,15 +387,18 @@ func (m *Manifest) wire() (*Manifest, error) {
 								Service:     strings.ToUpper(service.Name),
 							})
 						case 2:
-							switch parts[1] {
-							case "schema_uri":
+							if strings.HasPrefix(parts[1], "schema_uri") {
 								if uri := m.getSchemaURI(parts[0]); len(uri) > 0 {
 									appMan.Services[six].Info.Var[vix].Value = uri
 								} else {
 									return nil, fmt.Errorf("variable %s='%s' in service '%s' request schema_ui from service '%s' but is missing\n", v.Name, v.Value, service.Name, parts[0])
 								}
-							case "port":
-								if port := m.getSvcTargetPort(parts[0]); len(port) > 0 {
+							} else if strings.HasPrefix(parts[1], "port") {
+								port, err := m.getSvcTargetPort(parts[0], portKey(parts[1]), binding)
+								if err != nil {
+									return nil, err
+								}
+								if len(port) > 0 {
 									appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, port, 1)
 									vName := fmt.Sprintf("%s_%s", strings.ToUpper(strings.Replace(service.Name, "-", "_", -1)), v.Name)
 									found := false
@@ -369,7 +420,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 								} else {
 									return nil, fmt.Errorf("missing port in application manifest: service '%s', binding %s\n", service.Name, binding)
 								}
-							default:
+							} else {
 								return nil, fmt.Errorf("invalid binding %s='%s' in service '%s'\n", v.Name, binding, service.Name)
 							}
 						case 3:
@@ -434,20 +485,23 @@ func (m *Manifest) wire() (*Manifest, error) {
 						ix := getServiceIx(*appMan, svcName)
 						appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name, appMan.Services[six])
 					case 2:
-						switch parts[1] {
-						case "schema_uri":
+						if strings.HasPrefix(parts[1], "schema_uri") {
 							if uri := m.getSchemaURI(parts[0]); len(uri) > 0 {
 								appMan.Services[six].Info.File[fix].Content = uri
 							} else {
 								return nil, fmt.Errorf("binding '%s' in service '%s' request schema_ui from service '%s' but is missing\n", binding, service.Name, parts[0])
 							}
-						case "port":
-							if port := m.getSvcTargetPort(parts[0]); len(port) > 0 {
+						} else if strings.HasPrefix(parts[1], "port") {
+							port, err := m.getSvcTargetPort(parts[0], portKey(parts[1]), binding)
+							if err != nil {
+								return nil, err
+							}
+							if len(port) > 0 {
 								appMan.Services[six].Info.File[fix].Content = strings.Replace(appMan.Services[six].Info.File[fix].Content, binding, port, 1)
 							} else {
 								return nil, fmt.Errorf("port not defined for service '%s' in application manifest, invoked from binding '%s' in service %s\n", parts[0], binding, service.Name)
 							}
-						default:
+						} else {
 							return nil, fmt.Errorf("invalid binding '%s' in service '%s'\n", binding, service.Name)
 						}
 					case 3:
@@ -509,14 +563,17 @@ func (m *Manifest) wire() (*Manifest, error) {
 						ix := getServiceIx(*appMan, svcName)
 						appMan.Services[ix].UsedBy = addDependency(appMan.Services[ix].UsedBy, service.Name, appMan.Services[six])
 					case 2:
-						switch parts[1] {
-						case "port":
-							if port := m.getSvcTargetPort(parts[0]); len(port) > 0 {
+						if strings.HasPrefix(parts[1], "port") {
+							port, err := m.getSvcTargetPort(parts[0], portKey(parts[1]), binding)
+							if err != nil {
+								return nil, err
+							}
+							if len(port) > 0 {
 								appMan.Services[six].Info.Script[i].Content = strings.Replace(appMan.Services[six].Info.Script[i].Content, binding, port, 1)
 							} else {
 								return nil, fmt.Errorf("port not defined for service '%s' in application manifest, invoked from binding '%s' in service %s\n", parts[0], binding, service.Name)
 							}
-						default:
+						} else {
 							return nil, fmt.Errorf("invalid binding '%s' in init script for service '%s'\n", binding, service.Name)
 						}
 					case 3:
@@ -644,6 +701,16 @@ func (m *Manifest) wire() (*Manifest, error) {
 	return appMan, nil
 }
 
+// portKey extracts the port key from an expression like "port[http]"
+// if the expression does not contain a map key then it returns the "default" key
+func portKey(expression string) string {
+	portKey := "default"
+	if strings.HasPrefix(expression, "port[") {
+		portKey = expression[len("port[") : len(expression)-1]
+	}
+	return portKey
+}
+
 // ensure one binding does not point to another so that the process of wiring variables is easier
 func validateBindings(m Manifest, svc SvcRef) error {
 	for _, v := range svc.Info.Var {
@@ -737,19 +804,32 @@ func (m *Manifest) validate() error {
 
 func (m *Manifest) deepCopy(dst interface{}) error {
 	var buffer bytes.Buffer
+	gob.Register(map[interface{}]interface{}{})
 	if err := gob.NewEncoder(&buffer).Encode(m); err != nil {
 		return err
 	}
 	return gob.NewDecoder(&buffer).Decode(dst)
 }
 
-func (m *Manifest) getSvcTargetPort(svcName string) string {
+func (m *Manifest) getSvcTargetPort(svcName, portKey, binding string) (string, error) {
 	for _, service := range m.Services {
-		if service.Name == svcName && len(service.Info.Port) > 0 {
-			return service.Info.Port
+		if service.Name == svcName {
+			p, err := service.Info.PortMap()
+			if err != nil {
+				return "", err
+			}
+			targetPort, exists := p[portKey]
+			if !exists {
+				if portKey == "default" {
+					return "", fmt.Errorf("port binding key not defined in service '%s': '%s'", svcName, binding)
+				} else {
+					return "", fmt.Errorf("port key '%s' not found in service '%s'", portKey, svcName)
+				}
+			}
+			return fmt.Sprintf("%d", targetPort), nil
 		}
 	}
-	return ""
+	return "", nil
 }
 
 func bindings(value string) []string {

@@ -15,7 +15,7 @@ var:
     value: "8080"
   - name: OXA_HTTP_BACKEND_DOMAIN
     description: the URI of the HTTP backend service to use
-    value: "http://${bind=nexus-app}:${bind=nexus-app:port}"
+    value: "http://${bind=nexus-app}:${bind=nexus-app:port[http]}"
   - name: OXA_HTTP_BACKEND
     description: the type of backend service used by the registry to store packages
     value: "Nexus3"
