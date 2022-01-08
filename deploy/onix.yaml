@@ -13,6 +13,8 @@ profiles:
       - name: artreg-app
       - name: ox-app
       - name: pilotctl-app
+      - name: pgadmin-app
+      - name: mongodb-gui-app      
 
   - name: full-test-data
     description: deploys all services
@@ -25,7 +27,9 @@ profiles:
       - name: ox-app
       - name: ox-app-test-data
       - name: pilotctl-app
-
+      - name: pgadmin-app
+      - name: mongodb-gui-app
+      
   - name: config-db
     description: deploys the configuration database only
     services:
@@ -115,4 +119,20 @@ services:
     is:
       public: pilotctl.onix.com
       encrypted-in-transit:
+
+  - name: pgadmin-app
+    description: web gui client for postgresql database
+    uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/pgadmin-app.yaml
+    image: docker.io/dpage/pgadmin4:latest
+    port: "8083"
+    is:
+      public: pgadmin.onix.com
+
+  - name: mongodb-gui-app
+    description: web gui client for mongo database
+    uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/mongodb-gui-app.yaml
+    image: docker.io/mongo-express:latest
+    port: "8084"
+    is:
+      public: mongodbgui.onix.com
 ...

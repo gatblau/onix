@@ -39,6 +39,19 @@ var:
     description: the password to authenticate with the Artisan Registry service
     secret: true
     value: ${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD}
+  - name: PILOTCTL_ONIX_EMAIL
+    description: Demo email for dashboard logon
+    value: "demouser@onix.com"
+  - name: PILOTCTL_ONIX_USER
+    description: Demo user for dashboard logon
+    value: "demouser"
+  - name: PILOTCTL_ONIX_PWD
+    description: Password for demouser dashboard logon
+    secret: true
+    value: ${fx=pwd:13,true}123
+  - name: OX_ART_REG_PACKAGE_FILTER
+    description: Filter for retrieving Artisan registry packages through pilotctl
+    value: "aps/"    
 file:
   - path: /keys/.pilot_verify.pgp
     description: the public pgp key used by pilot to verify connections to pilot control
@@ -153,7 +166,7 @@ file:
             "pwd": "${bind=evr-mongo-app:var:OX_HTTP_PWD}"{{ $count := plus $count 1 }}
           }{{ end }}{{ if gt $count 1 }},{{ end }}
         ]
-      }
+      }      
 db:
   name: pilotctl
   app_version: 0.0.4
@@ -165,4 +178,20 @@ db:
   admin_user: postgres
   admin_pwd: ${bind=db:var:POSTGRES_PASSWORD}
   schema_uri: ${bind=pilotctl-app:schema_uri}
+init:	
+  - builder: compose	
+    scripts:	
+      - create_pilotctl_user  
+scripts:
+  - name: create_pilotctl_user
+    description: |
+      creates the main pilotctl user in Onix
+    runtime: ubi-min
+    content: |
+      echo "updating Onix admin password from default ..."
+      art curl -X PUT \
+        -u "${bind=ox-app:var:WAPI_ADMIN_USER}:${bind=ox-app:var:WAPI_ADMIN_PWD}" \
+        -H 'Content-Type: application/json' \
+        "http://${bind=ox-app}":"${bind=ox-app:port}"/user/ONIX_PILOTCTL \
+        -d "{\"email\":\"${bind=pilotctl-app:var:PILOTCTL_ONIX_EMAIL}\", \"name\":\"${bind=pilotctl-app:var:PILOTCTL_ONIX_USER}\", \"pwd\":\"${bind=pilotctl-app:var:PILOTCTL_ONIX_PWD}\", \"service\":\"false\", \"acl\":\"*:*:*\"}"
 ...

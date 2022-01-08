@@ -1,0 +1,33 @@
+---
+name: pgadmin-app
+description: db web client for postgresql
+port: "80"
+var:
+  - name: PGADMIN_DEFAULT_EMAIL
+    description: the default user id which will be used to login to pgadmin web console
+    value: "admin@local.com"
+  - name: PGADMIN_DEFAULT_PASSWORD
+    description: the password to authenticate user to pgadmin web console
+    secret: true
+    value: ${fx=pwd:16,false}
+  - name: PGADMIN_SERVER_JSON_FILE
+    description: the port the http
+    value: "/pgadmin4/onix/postgres_servers.json"
+file:
+  - path: /pgadmin4/onix/postgres_servers.json
+    description: the configuration of event receivers used by pilotctl to send events
+    template: |
+      {
+        "Servers": {
+          "1": {
+            "Name": "Main Onix database",
+            "Group": "Onix",
+            "Port": 5432,
+            "Host": "${bind=db}",
+            "Username": "${bind=ox-app:var:DB_ADMIN_USER}",            
+            "MaintenanceDB": "postgres",
+            "SSLMode": "disable"
+          }
+        }
+      }
+...
