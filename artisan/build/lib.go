@@ -162,42 +162,6 @@ func waitForTargetToBeCreated(path string) {
 	}
 }
 
-// copy a single file
-func copyFile(src, dst string) error {
-	var err error
-	var srcFd *os.File
-	var dstFd *os.File
-	var srcInfo os.FileInfo
-
-	if srcFd, err = os.Open(src); err != nil {
-		return err
-	}
-	defer func() {
-		err := srcFd.Close()
-		if err != nil {
-			log.Print(err)
-			runtime.Goexit()
-		}
-	}()
-	if dstFd, err = os.Create(dst); err != nil {
-		return err
-	}
-	defer func() {
-		err := dstFd.Close()
-		if err != nil {
-			log.Print(err)
-			runtime.Goexit()
-		}
-	}()
-	if _, err = io.Copy(dstFd, srcFd); err != nil {
-		return err
-	}
-	if srcInfo, err = os.Stat(src); err != nil {
-		return err
-	}
-	return os.Chmod(dst, srcInfo.Mode())
-}
-
 // copy the files in a folder recursively
 func copyFolder(src string, dst string) error {
 	var err error
@@ -220,7 +184,7 @@ func copyFolder(src string, dst string) error {
 				core.ErrorLogger.Printf(err.Error())
 			}
 		} else {
-			if err = copyFile(srcFp, dstFp); err != nil {
+			if err = core.CopyFile(srcFp, dstFp); err != nil {
 				core.ErrorLogger.Printf(err.Error())
 			}
 		}
@@ -229,7 +193,7 @@ func copyFolder(src string, dst string) error {
 }
 
 func renameFile(src string, dst string) (err error) {
-	err = copyFile(src, dst)
+	err = core.CopyFile(src, dst)
 	if err != nil {
 		return fmt.Errorf("failed to copy source file %s to %s: %s", src, dst, err)
 	}

@@ -1,3 +1,5 @@
+package registry
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -5,7 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package registry
 
 import (
 	"encoding/base64"
@@ -19,6 +20,10 @@ type Repository struct {
 	Repository string `json:"repository"`
 	// the reference name of the package corresponding to different builds
 	Packages []*Package `json:"artefacts"`
+}
+
+func (r *Repository) ToJsonBytes() ([]byte, error) {
+	return json.Marshal(r)
 }
 
 func (r *Repository) FindPackage(id string) *Package {

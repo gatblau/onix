@@ -8,6 +8,7 @@ package registry
   to be licensed under the same terms as the rest of the code.
 */
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -154,7 +155,7 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 	r.save()
 }
 
-// remove a given tag from an package
+// Tag remove a given tag from an package
 func (r *LocalRegistry) Tag(sourceName *core.PackageName, targetName *core.PackageName) {
 	sourcePackage := r.FindPackage(sourceName)
 	if sourcePackage == nil {
@@ -278,7 +279,7 @@ func (r *LocalRegistry) List() {
 	core.CheckErr(err, "failed to flush output")
 }
 
-// list (quiet) package IDs only
+// ListQ list (quiet) package IDs only
 func (r *LocalRegistry) ListQ() {
 	// get a table writer for the stdout
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 10, ' ', 0)
@@ -640,6 +641,40 @@ func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
 	seal, err := r.GetSeal(a)
 	core.CheckErr(err, "cannot get package seal")
 	return seal.Manifest
+}
+
+func (r *LocalRegistry) Export(name *core.PackageName, creds string) ([]byte, error) {
+	var pack *Package
+	repo := r.findRepository(name)
+	if repo == nil {
+		pack = r.Pull(name, creds)
+	} else {
+		pack = r.FindPackage(name)
+	}
+	repoBytes, _ := repo.ToJsonBytes()
+	// creates a bytes buffer
+	buf := &bytes.Buffer{}
+	// tar the package files without preserving directory structure
+	err := core.Tar([]core.TarFile{
+		{
+			Name:  "repository.json",
+			Bytes: repoBytes,
+		},
+		{
+			Path: filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", pack.FileRef)),
+		},
+		{
+			Path: filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", pack.FileRef)),
+		},
+	}, buf, false)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func (r *LocalRegistry) Import() {
+
 }
 
 // -----------------

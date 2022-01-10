@@ -30,6 +30,10 @@ func (a *PackageName) String() string {
 	return fmt.Sprintf("%s/%s/%s:%s", a.Domain, a.Group, a.Name, a.Tag)
 }
 
+func (a *PackageName) NormalString() string {
+	return strings.ReplaceAll(fmt.Sprintf("%s_%s_%s_%s", a.Domain, a.Group, a.Name, a.Tag), ".", "_")
+}
+
 func (a *PackageName) FullyQualifiedGroup() string {
 	return fmt.Sprintf("%s/%s", a.Domain, a.Group)
 }
