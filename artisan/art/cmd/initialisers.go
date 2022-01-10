@@ -11,6 +11,7 @@ package cmd
 func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
 	appCmd := NewAppCmd()
+	exportCmd := NewExportCmd()
 	buildCmd := NewBuildCmd()
 	lsCmd := NewListCmd()
 	pushCmd := NewPushCmd()
@@ -34,6 +35,7 @@ func InitialiseRootCmd() *RootCmd {
 	gitSyncCmd := NewGitSyncCmd()
 	rootCmd.Cmd.AddCommand(
 		appCmd.cmd,
+		exportCmd.cmd,
 		buildCmd.cmd,
 		lsCmd.cmd,
 		pushCmd.cmd,
