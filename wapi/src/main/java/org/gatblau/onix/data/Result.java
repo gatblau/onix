@@ -140,4 +140,21 @@ public class Result implements Serializable {
         }
         throw new RuntimeException("Return Status not identified.");
     }
+
+    public void setMessage(Exception e) {
+        if(e != null){
+            if(e.getMessage() != null && e.getMessage().contains("valid_user")){
+                String msg = String.format("Name must follow below policies \n "+
+                " 1) start with alphabet \n "+
+                " 2) ends with alpha numeric \n "+
+                " 3) can contain underscore _ \n "+
+                " 4) must be of minimum 3 character and maximum of 200 character");
+                this.message = msg;
+            }else{
+                this.message = e.getMessage();
+            }
+            e.printStackTrace();
+            this.setError(true);
+        }
+    }
 }
