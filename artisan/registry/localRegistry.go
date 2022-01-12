@@ -643,34 +643,45 @@ func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
 	return seal.Manifest
 }
 
-func (r *LocalRegistry) Export(name *core.PackageName, creds string) ([]byte, error) {
-	var pack *Package
-	repo := r.findRepository(name)
-	if repo == nil {
-		pack = r.Pull(name, creds)
-	} else {
-		pack = r.FindPackage(name)
+func (r *LocalRegistry) Save(names []core.PackageName, creds string) ([]byte, error) {
+	var (
+		pack  *Package
+		repo  *Repository
+		files []core.TarFile
+		reg   = LocalRegistry{}
+	)
+	for _, name := range names {
+		// find the package metadata
+		repo = r.findRepository(&name)
+		// if not found locally, pull the package from remote (needs credentials)
+		if repo == nil {
+			pack = r.Pull(&name, creds)
+		} else {
+			pack = r.FindPackage(&name)
+		}
+		// append the package index data
+		reg.Repositories = append(reg.Repositories, repo)
+		// add the package files to the archive list
+		files = append(files, []core.TarFile{
+			// add package seal
+			{Path: filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", pack.FileRef))},
+			// add package content
+			{Path: filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", pack.FileRef))},
+		}...)
 	}
-	repoBytes, _ := repo.ToJsonBytes()
-	// creates a bytes buffer
-	buf := &bytes.Buffer{}
+	// add repository metadata to the archive list
+	files = append(files, core.TarFile{
+		Bytes: core.ToJsonBytes(reg),
+		Name:  "repository.json",
+	})
+	// creates a bytes buffer to record content of tar
+	tar := &bytes.Buffer{}
 	// tar the package files without preserving directory structure
-	err := core.Tar([]core.TarFile{
-		{
-			Name:  "repository.json",
-			Bytes: repoBytes,
-		},
-		{
-			Path: filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", pack.FileRef)),
-		},
-		{
-			Path: filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", pack.FileRef)),
-		},
-	}, buf, false)
+	err := core.Tar(files, tar, false)
 	if err != nil {
 		return nil, err
 	}
-	return buf.Bytes(), nil
+	return tar.Bytes(), nil
 }
 
 func (r *LocalRegistry) Import() {

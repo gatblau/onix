@@ -19,49 +19,61 @@ import (
 	"path/filepath"
 )
 
-// ExportCmd exports a package from the local registry to allow copying without using registries
-type ExportCmd struct {
+// SaveCmd save one or more packages from the local registry to a tar archive to allow copying without using registries
+type SaveCmd struct {
 	cmd         *cobra.Command
 	credentials string
 	output      string
 }
 
-func NewExportCmd() *ExportCmd {
-	c := &ExportCmd{
+func NewSaveCmd() *SaveCmd {
+	c := &SaveCmd{
 		cmd: &cobra.Command{
-			Use:   "export PACKAGE_NAME[:TAG] [flags]",
-			Short: "exports a package",
-			Long:  `exports a package`,
+			Use:   "save [OPTIONS] PACKAGE [flags]",
+			Short: "Save one or more packages to a tar archive",
+			Long: `Usage:  art save [OPTIONS] PACKAGE [PACKAGE...]
+
+Save one or more packages to a tar archive (streamed to STDOUT by default)
+
+Options:
+  -o, --output string   Write to a file, instead of STDOUT 
+  -u, --creds  string   The credentials to pull packages from a registry, if the packages are not in the local registry
+
+Examples:
+   art save package1 package2 > archive.tar 
+   art save package1 package2 -o archive.tar 
+`,
 		},
 	}
 	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.output, "output", "o", ".", "-o ./exported; the output where the package will be exported")
-	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
+	c.cmd.Flags().StringVarP(&c.output, "output", "o", "", "-o exported/archive.tar; the output where the archive will be written including filename")
+	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "-u USER:PASSWORD; artisan registry username and password")
 	return c
 }
 
-func (c *ExportCmd) Run(cmd *cobra.Command, args []string) {
+func (c *SaveCmd) Run(cmd *cobra.Command, args []string) {
 	// check a package name has been provided
 	if len(args) < 1 {
-		log.Fatal("name of the package to export is required")
+		log.Fatal("at least the name of one package to save is required")
 	}
-	// get the name of the package to push
-	nameTag := args[0]
-	// validate the name
-	name, err := core.ParseName(nameTag)
+	// validate the package names
+	names, err := core.ValidateNames(args)
 	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	// export packages into tar bytes
-	content, err := local.Export(name, c.credentials)
-	core.CheckErr(err, "failed to export package")
+	content, err := local.Save(names, c.credentials)
+	core.CheckErr(err, "cannot export package(s)")
 	if len(c.output) == 0 {
-		fmt.Print(content)
+		fmt.Print(string(content[:]))
 	} else {
-		absPath, err := filepath.Abs(c.output)
-		core.CheckErr(err, "cannot obtain absolute output")
-		core.CheckErr(os.MkdirAll(absPath, 0755), "cannot create target output")
-		targetPath := filepath.Join(absPath, fmt.Sprintf("%s.tar", name.NormalString()))
-		core.CheckErr(os.WriteFile(targetPath, content, 0755), "cannot write exported package file")
+		targetPath, err := filepath.Abs(c.output)
+		core.CheckErr(err, "cannot obtain the absolute output path")
+		ext := filepath.Ext(targetPath)
+		if len(ext) == 0 || ext != ".tar" {
+			core.RaiseErr("output path must contain a filename with .tar extension")
+		}
+		core.CheckErr(os.MkdirAll(filepath.Dir(targetPath), 0755), "cannot create target output folder")
+		core.CheckErr(os.WriteFile(targetPath, content, 0755), "cannot save exported package file")
 	}
 }

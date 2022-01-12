@@ -136,3 +136,18 @@ func TestCurl(t *testing.T) {
 		[]string{"Content-Type: application/json"},
 		"")
 }
+
+func TestSave(t *testing.T) {
+	names, err := core.ValidateNames([]string{"test", "artisan"})
+	if err != nil {
+		t.Error(err)
+	}
+	r := registry.NewLocalRegistry()
+	b, err := r.Save(names, "")
+	if err != nil {
+		t.Error(err)
+	}
+	if len(b) == 0 {
+		t.FailNow()
+	}
+}

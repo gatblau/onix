@@ -11,7 +11,7 @@ package cmd
 func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
 	appCmd := NewAppCmd()
-	exportCmd := NewExportCmd()
+	exportCmd := NewSaveCmd()
 	buildCmd := NewBuildCmd()
 	lsCmd := NewListCmd()
 	pushCmd := NewPushCmd()
