@@ -60,6 +60,19 @@ func ParseName(packageName string) (*PackageName, error) {
 	return n, nil
 }
 
+// ValidateNames get a list of qualified package names from their string representation
+func ValidateNames(packages []string) ([]PackageName, error) {
+	var names []PackageName
+	for _, p := range packages {
+		name, err := ParseName(p)
+		if err != nil {
+			return nil, err
+		}
+		names = append(names, *name)
+	}
+	return names, nil
+}
+
 func splitName(packageName string) (domain, group, name, tag string, err error) {
 	parts := strings.Split(packageName, "/")
 	switch len(parts) {
