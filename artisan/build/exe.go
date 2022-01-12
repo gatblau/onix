@@ -171,19 +171,22 @@ func Exe(cmd string, dir string, env *merge.Envar, interactive bool) (string, er
 func printInfo(reader *bufio.Reader, out *strings.Builder) {
 	for {
 		str, err := reader.ReadString('\n')
-		if err != nil {
-			break
-		}
 		// if we are in nested execution scenarios there might be already log headers
 		if strings.Contains(str, "ART INFO") || strings.Contains(str, "ART ERROR") || strings.Contains(str, "ART WARNING") {
 			// then prints directly to stdout to avoid repeating log headers
 			fmt.Print(str)
-		} else {
+		} else if len(str) > 0 {
 			// write to stdout adding log headers
 			core.InfoLogger.Print(str)
 		}
-		// and collect the output for further use
-		out.WriteString(str)
+		// and collect the output for further use if there is one
+		if len(str) > 0 {
+			out.WriteString(str)
+		}
+		// exits after collecting output and printing to stdout to avoid swallowing the last line in case there is err == EOF
+		if err != nil {
+			break
+		}
 	}
 }
 
