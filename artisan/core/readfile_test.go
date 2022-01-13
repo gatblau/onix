@@ -13,13 +13,13 @@ import (
 	"testing"
 )
 
-// TestGetFileS3 test the retrieval of a file from an S£ bucket
+// TestReadFileS3 test the retrieval of a file from an S£ bucket
 // launch minio service: docker run -p 9000:9000 -p 9001:9001 quay.io/minio/minio server /data --console-address ":9001"
 // create user called "abcdefgh" with password "12345678"
 // create a bucket called "test"
 // upload file.txt to the bucket
-func TestGetFileS3(t *testing.T) {
-	content, err := GetFile("s3://127.0.0.1:9000/test/file.txt", "abcdefgh:12345678")
+func TestReadFileS3(t *testing.T) {
+	content, err := ReadFile("s3://127.0.0.1:9000/test/file.txt", "abcdefgh:12345678")
 	if err != nil {
 		t.Fatal(err)
 	}
