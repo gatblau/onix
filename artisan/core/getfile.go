@@ -22,7 +22,13 @@ import (
 	"time"
 )
 
-// GetFile fetch a file from a URI
+// GetFile use this function to generically fetch a file from a URI regardless of the type of location the file is in
+// supported URI schemes are:
+// - if prefix http:// or https:// then fetches from http endpoint
+// - if prefix is none then reads from file system
+// - if prefix is s3:// or s3s:// then fetches from s3 bucket endpoint
+// - if prefix is ftp then returns a not supported error
+// credentials are valid for http and s3 URIs and follow the syntax "user:pwd"
 func GetFile(uri, creds string) ([]byte, error) {
 	if strings.HasPrefix(uri, "http") {
 		return getHttpFile(uri, creds)
