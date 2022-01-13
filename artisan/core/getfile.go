@@ -14,52 +14,13 @@ import (
 	"fmt"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 )
-
-// CopyFile copy a single file
-func CopyFile(src, dst string) error {
-	var err error
-	var srcFd *os.File
-	var dstFd *os.File
-	var srcInfo os.FileInfo
-
-	if srcFd, err = os.Open(src); err != nil {
-		return err
-	}
-	defer func() {
-		err := srcFd.Close()
-		if err != nil {
-			log.Print(err)
-			runtime.Goexit()
-		}
-	}()
-	if dstFd, err = os.Create(dst); err != nil {
-		return err
-	}
-	defer func() {
-		err := dstFd.Close()
-		if err != nil {
-			log.Print(err)
-			runtime.Goexit()
-		}
-	}()
-	if _, err = io.Copy(dstFd, srcFd); err != nil {
-		return err
-	}
-	if srcInfo, err = os.Stat(src); err != nil {
-		return err
-	}
-	return os.Chmod(dst, srcInfo.Mode())
-}
 
 // GetFile fetch a file from a URI
 func GetFile(uri, creds string) ([]byte, error) {
