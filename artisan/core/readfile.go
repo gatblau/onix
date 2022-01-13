@@ -35,15 +35,20 @@ func ReadFile(uri, creds string) ([]byte, error) {
 	} else if strings.HasPrefix(uri, "s3") {
 		return getS3File(uri, creds)
 	} else if strings.HasPrefix(uri, "ftp") {
-		return nil, fmt.Errorf("ftp scheme is not currently supported")
+		return getFtpFile(uri, creds)
 	} else {
-		return getFsFile(uri, creds)
+		return getFsFile(uri)
 	}
 	return nil, nil
 }
 
+// getFtpFile reads a file from an ftp endpoint
+func getFtpFile(uri string, creds string) ([]byte, error) {
+	return nil, fmt.Errorf("ftp scheme is not currently supported")
+}
+
 // getFsFile reads a file from the file system
-func getFsFile(uri, creds string) ([]byte, error) {
+func getFsFile(uri string) ([]byte, error) {
 	path, err := filepath.Abs(uri)
 	if err != nil {
 		return nil, err
@@ -101,42 +106,7 @@ func addCredsToHttpURI(uri string, creds string) (string, error) {
 
 // getS3File reads a file from an S3 bucket
 func getS3File(uri, creds string) ([]byte, error) {
-	var (
-		endpoint, bucketName, objectName string
-		useSSL                           bool
-	)
-	// if scheme is s3s use SSL
-	if strings.HasPrefix(uri, "s3s://") {
-		useSSL = true
-		endpoint = uri[len("s3s://"):]
-	} else if strings.HasPrefix(uri, "s3://") {
-		useSSL = false
-		endpoint = uri[len("s3://"):]
-	} else {
-		return nil, fmt.Errorf("invalid URI scheme: it should be s3:// or s3s://, uri was '%s'", uri)
-	}
-	p := strings.Split(endpoint, "/")
-	if len(p) < 3 {
-		return nil, fmt.Errorf("invalid URI, format should be [s3|s3s]://endpoint/bucket-name/object-name; it was: '%s'", uri)
-	}
-	endpoint = p[0]
-	bucketName = p[1]
-	objectName = p[2]
-	// store minio credentials
-	var c *credentials.Credentials
-	// if credentials provided
-	if len(creds) > 0 {
-		parts := strings.Split(creds, ":")
-		if len(parts) != 2 {
-			return nil, fmt.Errorf("invalid credentials, format should be ID:SECRET, provided '%s'", creds)
-		}
-		c = credentials.NewStaticV4(parts[0], parts[1], "")
-	}
-	// Initialize minio client object.
-	s3Client, err := minio.New(endpoint, &minio.Options{
-		Creds:  c,
-		Secure: useSSL,
-	})
+	s3Client, bucketName, objectName, err := newS3Client(uri, creds)
 	if err != nil {
 		return nil, err
 	}
@@ -151,4 +121,44 @@ func getS3File(uri, creds string) ([]byte, error) {
 	_, err = buf.ReadFrom(reader)
 	// return the byte slice
 	return buf.Bytes(), err
+}
+
+func newS3Client(uri, creds string) (client *minio.Client, bucketName, objectName string, err error) {
+	var (
+		endpoint string
+		useSSL   bool
+	)
+	// if scheme is s3s use SSL
+	if strings.HasPrefix(uri, "s3s://") {
+		useSSL = true
+		endpoint = uri[len("s3s://"):]
+	} else if strings.HasPrefix(uri, "s3://") {
+		useSSL = false
+		endpoint = uri[len("s3://"):]
+	} else {
+		return nil, "", "", fmt.Errorf("invalid URI scheme: it should be s3:// or s3s://, uri was '%s'", uri)
+	}
+	p := strings.Split(endpoint, "/")
+	if len(p) < 3 {
+		return nil, "", "", fmt.Errorf("invalid URI, format should be [s3|s3s]://endpoint/bucket-name/object-name; it was: '%s'", uri)
+	}
+	endpoint = p[0]
+	bucketName = p[1]
+	objectName = p[2]
+	// store minio credentials
+	var c *credentials.Credentials
+	// if credentials provided
+	if len(creds) > 0 {
+		parts := strings.Split(creds, ":")
+		if len(parts) != 2 {
+			return nil, "", "", fmt.Errorf("invalid credentials, format should be ID:SECRET, provided '%s'", creds)
+		}
+		c = credentials.NewStaticV4(parts[0], parts[1], "")
+	}
+	// Initialize minio client object.
+	client, err = minio.New(endpoint, &minio.Options{
+		Creds:  c,
+		Secure: useSSL,
+	})
+	return
 }
