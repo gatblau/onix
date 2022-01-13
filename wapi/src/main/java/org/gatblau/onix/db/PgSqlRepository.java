@@ -348,9 +348,7 @@ public class PgSqlRepository implements DbRepository {
             db.execute();
             result.setOperation("D");
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setMessage(ex.getMessage());
-            result.setError(true);
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -484,8 +482,7 @@ public class PgSqlRepository implements DbRepository {
         } catch (Exception ex) {
             ex.printStackTrace();
             Result result = new Result("CLEAR_ALL");
-            result.setError(true);
-            result.setMessage(ex.getMessage());
+            result.setMessage(ex);
             return result;
         }
     }
@@ -516,9 +513,7 @@ public class PgSqlRepository implements DbRepository {
             }
             result.setOperation(db.executeQueryAndRetrieveStatus(resultColName));
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setError(true);
-            result.setMessage(ex.getMessage());
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -603,9 +598,7 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(14, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_item_type"));
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setMessage(ex.getMessage());
-            result.setError(true);
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -678,9 +671,7 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(12, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_type_attribute"));
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setMessage(ex.getMessage());
-            result.setError(true);
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -816,9 +807,7 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(12, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_type_attribute"));
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setMessage(ex.getMessage());
-            result.setError(true);
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -880,9 +869,7 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(12, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_link_type"));
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setMessage(ex.getMessage());
-            result.setError(true);
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -933,9 +920,7 @@ public class PgSqlRepository implements DbRepository {
             linkRule = util.toLinkRuleData(set);
             db.close();
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setError(true);
-            result.setMessage(ex.getMessage());
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -992,9 +977,7 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(9, role); // roel_key_param
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_link_rule"));
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setError(true);
-            result.setMessage(ex.getMessage());
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -1359,9 +1342,7 @@ public class PgSqlRepository implements DbRepository {
                 result.setMessage(String.format("Tag data for label '%s' already exists and cannot be overridden.", label));
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setError(true);
-            result.setMessage(ex.getMessage());
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -1386,9 +1367,7 @@ public class PgSqlRepository implements DbRepository {
             db.setObject(7, version); // version_param
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_update_tag"));
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setError(true);
-            result.setMessage(ex.getMessage());
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -1405,9 +1384,7 @@ public class PgSqlRepository implements DbRepository {
             result.setError(!db.execute());
             result.setOperation("D");
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setError(true);
-            result.setMessage(ex.getMessage());
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -1579,9 +1556,7 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(8, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_model"));
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setError(true);
-            result.setMessage(ex.getMessage());
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -1763,9 +1738,7 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(5, role); // role_key_param
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_add_membership"));
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setError(true);
-            result.setMessage(ex.getMessage());
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -2162,9 +2135,7 @@ public class PgSqlRepository implements DbRepository {
                 result.setChanged(true);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setError(true);
-            result.setMessage(ex.getMessage());
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -2183,9 +2154,7 @@ public class PgSqlRepository implements DbRepository {
             privilege = util.toPrivilegeData(set);
             db.close();
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setError(true);
-            result.setMessage(ex.getMessage());
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -2376,9 +2345,7 @@ public class PgSqlRepository implements DbRepository {
             db.setArray(11, role);
             result.setOperation(db.executeQueryAndRetrieveStatus("ox_set_user"));
         } catch (Exception ex) {
-            ex.printStackTrace();
-            result.setError(true);
-            result.setMessage(ex.getMessage());
+            result.setMessage(ex);
         } finally {
             db.close();
         }
@@ -2515,7 +2482,7 @@ public class PgSqlRepository implements DbRepository {
             result.setMessage(String.format("email sent to %s", email));
         } catch (Exception ex) {
             result.setOperation("N"); // no email was sent
-            result.setMessage(ex.getMessage()); // why was it not sent?
+            result.setMessage(ex); // why was it not sent?
         }
         return result;
     }
