@@ -33,15 +33,9 @@ func NewSaveCmd() *SaveCmd {
 		cmd: &cobra.Command{
 			Use:   "save [OPTIONS] PACKAGE [flags]",
 			Short: "Save one or more packages to a tar archive",
-			Long: `Usage:  art save [OPTIONS] PACKAGE [PACKAGE...]
+			Long: `Usage:  art save [FLAGS] PACKAGE [PACKAGE...]
 
 Save one or more packages to a tar archive, streamed to STDOUT by default or saved to a URI (file system or S3)
-
-Options:
-  -o, --output        string   Write to a URI, instead of STDOUT 
-                               URI can be file system (absolute or relative path) or s3 bucket (s3:// or s3s:// using TLS)
-  -u, --source-creds  string   The credentials used to pull packages from an authenticated artisan registry, if the packages are not already in the local registry
-  -v  --target-creds  string   The credentials to write packages to a destination, if such destination implements authentication (e.g. s3)
 
 Examples:
    # save package1 and package2 to a tar archive by redirecting STDOUT to file (using >)
@@ -56,9 +50,9 @@ Examples:
 		},
 	}
 	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.output, "output", "o", "", "-o exported/archive.tar; the output where the archive will be written including filename")
-	c.cmd.Flags().StringVarP(&c.srcCreds, "user", "u", "", "-u USER:PASSWORD; artisan registry username and password")
-	c.cmd.Flags().StringVarP(&c.targetCreds, "creds", "c", "", "-c USER:PASSWORD; destination URI username and password")
+	c.cmd.Flags().StringVarP(&c.output, "output", "o", "", "the URI where the tar archive will be saved, instead of STDOUT; URI can be file system (absolute or relative path) or s3 bucket (s3:// or s3s:// using TLS)")
+	c.cmd.Flags().StringVarP(&c.srcCreds, "user", "u", "", "the credentials used to pull packages from an authenticated artisan registry, if the packages are not already in the local registry")
+	c.cmd.Flags().StringVarP(&c.targetCreds, "creds", "c", "", "the credentials to write packages to a destination, if such destination implements authentication (e.g. s3)")
 	return c
 }
 
