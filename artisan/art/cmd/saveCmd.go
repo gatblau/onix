@@ -40,14 +40,17 @@ Save one or more packages to a tar archive, streamed to STDOUT by default or sav
 Options:
   -o, --output        string   Write to a URI, instead of STDOUT 
                                URI can be file system (absolute or relative path) or s3 bucket (s3:// or s3s:// using TLS)
-  -u, --source-creds  string   The srcCreds to pull packages from a registry, if the packages are not in the local registry
-  -v  --target-creds  string   The srcCreds to write packages to a destination, if such destination implements authentication (e.g. s3, http)
+  -u, --source-creds  string   The credentials used to pull packages from an authenticated artisan registry, if the packages are not already in the local registry
+  -v  --target-creds  string   The credentials to write packages to a destination, if such destination implements authentication (e.g. s3)
 
 Examples:
+   # save package1 and package2 to a tar archive by redirecting STDOUT to file (using >)
    art save package1 package2 > archive.tar 
-   art save package1 package2 -o archive.tar 
+   
+   # save package1 and package2 to a tar archive by specifying relative file path via URI (using -o)
+   art save package1 package2 -o ./test/archive.tar 
 
-   # pull package1 and package2 from artisan registry, extract their content to a tar archive and uploads it to an s3 bucket using SSL (s3s://) 
+   # save package1 and package2 from remote artisan registry to an authenticated and TLS enabled s3 bucket
    art save package1 package2 -u reg-USER:reg-PWD -o s3s://endpoint/bucket/archive.tar -c s3-ID:s3-SECRET
 `,
 		},
