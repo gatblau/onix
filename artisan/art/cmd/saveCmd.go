@@ -35,10 +35,11 @@ func NewSaveCmd() *SaveCmd {
 			Short: "Save one or more packages to a tar archive",
 			Long: `Usage:  art save [OPTIONS] PACKAGE [PACKAGE...]
 
-Save one or more packages to a tar archive (streamed to STDOUT by default)
+Save one or more packages to a tar archive, streamed to STDOUT by default or saved to a URI (file system or S3)
 
 Options:
-  -o, --output        string   Write to a file, instead of STDOUT 
+  -o, --output        string   Write to a URI, instead of STDOUT 
+                               URI can be file system (absolute or relative path) or s3 bucket (s3:// or s3s:// using TLS)
   -u, --source-creds  string   The srcCreds to pull packages from a registry, if the packages are not in the local registry
   -v  --target-creds  string   The srcCreds to write packages to a destination, if such destination implements authentication (e.g. s3, http)
 
@@ -46,10 +47,8 @@ Examples:
    art save package1 package2 > archive.tar 
    art save package1 package2 -o archive.tar 
 
-   # pull package1 and package2 from artisan registry (note all packages must be in the same registry)
-   # extract their content to a tar archive
-   # uploads the tar archive to an s3 bucket using SSL (s3s://)
-   art save package1 package2 -u reg-USER:reg-PWD -o s3s://endpoint/bucket/archive.tar -v s3-ID:s3-SECRET
+   # pull package1 and package2 from artisan registry, extract their content to a tar archive and uploads it to an s3 bucket using SSL (s3s://) 
+   art save package1 package2 -u reg-USER:reg-PWD -o s3s://endpoint/bucket/archive.tar -c s3-ID:s3-SECRET
 `,
 		},
 	}
