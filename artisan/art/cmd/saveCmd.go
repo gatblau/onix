@@ -17,12 +17,14 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // SaveCmd save one or more packages from the local registry to a tar archive to allow copying without using registries
 type SaveCmd struct {
 	cmd         *cobra.Command
-	credentials string
+	srcCreds    string
+	targetCreds string
 	output      string
 }
 
@@ -36,18 +38,25 @@ func NewSaveCmd() *SaveCmd {
 Save one or more packages to a tar archive (streamed to STDOUT by default)
 
 Options:
-  -o, --output string   Write to a file, instead of STDOUT 
-  -u, --creds  string   The credentials to pull packages from a registry, if the packages are not in the local registry
+  -o, --output        string   Write to a file, instead of STDOUT 
+  -u, --source-creds  string   The srcCreds to pull packages from a registry, if the packages are not in the local registry
+  -v  --target-creds  string   The srcCreds to write packages to a destination, if such destination implements authentication (e.g. s3, http)
 
 Examples:
    art save package1 package2 > archive.tar 
    art save package1 package2 -o archive.tar 
+
+   # pull package1 and package2 from artisan registry (note all packages must be in the same registry)
+   # extract their content to a tar archive
+   # uploads the tar archive to an s3 bucket using SSL (s3s://)
+   art save package1 package2 -u reg-USER:reg-PWD -o s3s://endpoint/bucket/archive.tar -v s3-ID:s3-SECRET
 `,
 		},
 	}
 	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.output, "output", "o", "", "-o exported/archive.tar; the output where the archive will be written including filename")
-	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "-u USER:PASSWORD; artisan registry username and password")
+	c.cmd.Flags().StringVarP(&c.srcCreds, "user", "u", "", "-u USER:PASSWORD; artisan registry username and password")
+	c.cmd.Flags().StringVarP(&c.targetCreds, "creds", "c", "", "-c USER:PASSWORD; destination URI username and password")
 	return c
 }
 
@@ -62,18 +71,23 @@ func (c *SaveCmd) Run(cmd *cobra.Command, args []string) {
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	// export packages into tar bytes
-	content, err := local.Save(names, c.credentials)
+	content, err := local.Save(names, c.srcCreds)
 	core.CheckErr(err, "cannot export package(s)")
 	if len(c.output) == 0 {
 		fmt.Print(string(content[:]))
 	} else {
-		targetPath, err := filepath.Abs(c.output)
-		core.CheckErr(err, "cannot obtain the absolute output path")
-		ext := filepath.Ext(targetPath)
-		if len(ext) == 0 || ext != ".tar" {
-			core.RaiseErr("output path must contain a filename with .tar extension")
+		targetPath := c.output
+		// if the path does not implement an URI scheme (i.e. is a file path)
+		if !strings.Contains(c.output, "://") {
+			targetPath, err = filepath.Abs(targetPath)
+			core.CheckErr(err, "cannot obtain the absolute output path")
+			ext := filepath.Ext(targetPath)
+			if len(ext) == 0 || ext != ".tar" {
+				core.RaiseErr("output path must contain a filename with .tar extension")
+			}
+			// creates target directory
+			core.CheckErr(os.MkdirAll(filepath.Dir(targetPath), 0755), "cannot create target output folder")
 		}
-		core.CheckErr(os.MkdirAll(filepath.Dir(targetPath), 0755), "cannot create target output folder")
-		core.CheckErr(os.WriteFile(targetPath, content, 0755), "cannot save exported package file")
+		core.CheckErr(core.WriteFile(content, targetPath, c.targetCreds), "cannot save exported package file")
 	}
 }
