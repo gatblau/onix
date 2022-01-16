@@ -106,6 +106,10 @@ type SvcRef struct {
 // PortMap return a parsed map of ports for the port attribute
 func (s *SvcRef) PortMap() (map[string]int, error) {
 	ports := map[string]int{}
+	// if no port is specified at the service level in the app manifest then use the one in the service manifest
+	if s.Port == nil {
+		s.Port = s.Info.Port
+	}
 	if p, isString := s.Port.(string); isString {
 		value, err := strconv.Atoi(p)
 		if err != nil {
