@@ -765,6 +765,9 @@ func (r *LocalRegistry) importTar(uri, creds string) error {
 			}
 			// add the package to the local registry
 			if err2 := r.Add(filepath.Join(tmp, fmt.Sprintf("%s.zip", seal.Manifest.Ref)), packageName, seal); err2 != nil {
+				// cleanup tmp folder
+				os.RemoveAll(tmp)
+				// return error
 				return err2
 			}
 		}
