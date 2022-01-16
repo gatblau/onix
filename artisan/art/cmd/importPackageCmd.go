@@ -54,5 +54,5 @@ func (c *ImportPackageCmd) Run(cmd *cobra.Command, args []string) {
 	r := registry.NewLocalRegistry()
 	// import the tar archive(s)
 	err := r.Import(args, c.creds)
-	core.CheckErr(err, err.Error())
+	core.CheckErr(err, "cannot import archive(s)")
 }
