@@ -18,6 +18,7 @@ require (
 	github.com/kr/pty v1.1.5 // indirect
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
+	github.com/minio/minio-go/v7 v7.0.21
 	github.com/ohler55/ojg v1.12.5
 	github.com/pelletier/go-toml v1.9.4
 	github.com/rs/zerolog v1.24.0 // indirect

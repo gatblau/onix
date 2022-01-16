@@ -110,7 +110,7 @@ func (r *LocalRegistry) FindPackagesById(id string) []*core.PackageName {
 }
 
 // Add the package and seal to the LocalRegistry
-func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Seal) {
+func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Seal) error {
 	// gets the full base name (with extension)
 	basename := filepath.Base(filename)
 	// gets the basename directory only
@@ -121,12 +121,24 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 	basenameNoExt := strings.TrimSuffix(basename, path.Ext(basename))
 	// if the file to add is not a zip file
 	if basenameExt != ".zip" {
-		log.Fatal(errors.New(fmt.Sprintf("the localRepo can only accept zip files, the extension provided was %s", basenameExt)))
+		return errors.New(fmt.Sprintf("the localRepo can only accept zip files, the extension provided was %s", basenameExt))
+	}
+	// the fully qualified name of the zip package file in the local registry
+	registryZipFilename := filepath.Join(core.RegistryPath(), basename)
+	// the fully qualified name of the json seal file in the local registry
+	registryJsonFilename := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", basenameNoExt))
+	// if the zip or json files already exist in the local registry
+	if fileExists(registryZipFilename) || fileExists(registryJsonFilename) {
+		return fmt.Errorf("cannot add package '%s' to registry as it already exists", name.Repository())
 	}
 	// move the zip file to the localRepo folder
-	core.CheckErr(MoveFile(filename, filepath.Join(core.RegistryPath(), basename)), "failed to move package zip file to the local registry")
+	if err := MoveFile(filename, filepath.Join(core.RegistryPath(), basename)); err != nil {
+		return fmt.Errorf("failed to move package zip file to the local registry: %s", err)
+	}
 	// now move the seal file to the localRepo folder
-	core.CheckErr(MoveFile(filepath.Join(basenameDir, fmt.Sprintf("%s.json", basenameNoExt)), filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", basenameNoExt))), "failed to move package seal file to the local registry")
+	if err := MoveFile(filepath.Join(basenameDir, fmt.Sprintf("%s.json", basenameNoExt)), filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", basenameNoExt))); err != nil {
+		return fmt.Errorf("failed to move package seal file to the local registry: %s", err)
+	}
 	// untag package package (if any)
 	r.unTag(name, name.Tag)
 	// remove any dangling packages
@@ -153,6 +165,7 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 	repo.Packages = packages
 	// persist the changes
 	r.save()
+	return nil
 }
 
 // Tag remove a given tag from an package
@@ -402,20 +415,12 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 		packageFilename, err := api.Download(name.Group, name.Name, fmt.Sprintf("%s.zip", remoteArt.FileRef), uname, pwd, tls)
 		core.CheckErr(err, "failed to download package file")
 
-		// unmarshal the seal
-		sealFile, err := os.Open(sealFilename)
-		core.CheckErr(err, "cannot read package seal file")
-		seal := new(data.Seal)
-		sealBytes, err := ioutil.ReadAll(sealFile)
-		// exit if it failed to read the seal
-		core.CheckErr(err, "cannot read package seal file")
-		// release the handle on the seal
-		core.CheckErr(sealFile.Close(), "failed to close seal file stream")
-		// unmarshal the seal
-		err = json.Unmarshal(sealBytes, seal)
-		core.CheckErr(err, "cannot unmarshal package seal file")
+		seal, err := r.loadSeal(sealFilename)
+		core.CheckErr(err, "cannot load package seal")
+
 		// add the package to the local registry
-		r.Add(packageFilename, name, seal)
+		err2 := r.Add(packageFilename, name, seal)
+		core.CheckErr(err, err2.Error())
 	} else {
 		// the local registry has the package
 		// if the local package does not have the tag
@@ -433,6 +438,31 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 		}
 	}
 	return r.FindPackage(name)
+}
+
+func (r *LocalRegistry) loadSeal(sealFilename string) (*data.Seal, error) {
+	// unmarshal the seal
+	sealFile, err := os.Open(sealFilename)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read package seal file: %s", err)
+	}
+	seal := new(data.Seal)
+	sealBytes, err := ioutil.ReadAll(sealFile)
+	// exit if it failed to read the seal
+	if err != nil {
+		return nil, fmt.Errorf("cannot read package seal file: %s", err)
+	}
+	// release the handle on the seal
+	err = sealFile.Close()
+	if err != nil {
+		return nil, fmt.Errorf("failed to close seal file stream: %s", err)
+	}
+	// unmarshal the seal
+	err = json.Unmarshal(sealBytes, seal)
+	if err != nil {
+		return nil, fmt.Errorf("cannot unmarshal package seal file: %s", err)
+	}
+	return seal, nil
 }
 
 func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS bool, targetPath string, certPath string, ignoreSignature bool) {
@@ -684,13 +714,93 @@ func (r *LocalRegistry) Save(names []core.PackageName, creds string) ([]byte, er
 	return tar.Bytes(), nil
 }
 
-func (r *LocalRegistry) Import() {
+func (r *LocalRegistry) Import(uri []string, creds string) error {
+	for _, path := range uri {
+		if err := r.importTar(path, creds); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
+func (r *LocalRegistry) importTar(uri, creds string) error {
+	// read tar archive
+	tarBytes, err := core.ReadFile(uri, creds)
+	if err != nil {
+		return err
+	}
+	// create a tmp folder to extract the content of the tar archive
+	tmp, err := core.NewTempDir()
+	if err != nil {
+		return err
+	}
+	// extract the archive to the tmp folder
+	err = core.Untar(bytes.NewReader(tarBytes), tmp)
+	if err != nil {
+		return err
+	}
+	// loop through extracted packages
+	entries, err := os.ReadDir(tmp)
+	if err != nil {
+		return err
+	}
+	// load the repository index
+	repoIndex, err := loadIndexFromPath(tmp)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		// if the entry is a package seal
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".json") && !strings.Contains(entry.Name(), "repository.json") {
+			// Name() returns filename without path
+			sealFilename := entry.Name()
+			// load the package seal
+			seal, err := r.loadSeal(filepath.Join(tmp, sealFilename))
+			if err != nil {
+				return fmt.Errorf("cannot load package seal: %s", err)
+			}
+			packageName, err := getPackageName(*repoIndex, seal.PackageId())
+			if err != nil {
+				return fmt.Errorf("cannot parse package name: %s", err)
+			}
+			// add the package to the local registry
+			if err2 := r.Add(filepath.Join(tmp, fmt.Sprintf("%s.zip", seal.Manifest.Ref)), packageName, seal); err2 != nil {
+				return err2
+			}
+		}
+	}
+	return nil
 }
 
 // -----------------
 // utility functions
 // -----------------
+
+// load the repository.json index file from a path
+func loadIndexFromPath(path string) (*LocalRegistry, error) {
+	repos := new(LocalRegistry)
+	repoBytes, err := ioutil.ReadFile(filepath.Join(path, "repository.json"))
+	if err != nil {
+		return nil, fmt.Errorf("cannot read repository index in tar archive: %s", err)
+	}
+	err = json.Unmarshal(repoBytes, repos)
+	if err != nil {
+		return nil, fmt.Errorf("cannot unmarshal repository index in tar archive: %s", err)
+	}
+	return repos, nil
+}
+
+// given the ID of a package, returns the repository it is in (package name)
+func getPackageName(repoIx LocalRegistry, packageId string) (*core.PackageName, error) {
+	for _, repo := range repoIx.Repositories {
+		for _, pack := range repo.Packages {
+			if pack.Id == packageId {
+				return core.ParseName(repo.Repository)
+			}
+		}
+	}
+	return nil, nil
+}
 
 // works out the destination folder and prefix for the key
 func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string) (destPath string, prefix string) {
@@ -931,4 +1041,10 @@ func (r *LocalRegistry) findRepository(name *core.PackageName) *Repository {
 		}
 	}
 	return nil
+}
+
+// checks if a file exists
+func fileExists(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil
 }

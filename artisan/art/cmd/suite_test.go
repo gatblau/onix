@@ -151,3 +151,13 @@ func TestSave(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestImport(t *testing.T) {
+	// create a local registry
+	r := registry.NewLocalRegistry()
+	// import the tar archive(s)
+	err := r.Import([]string{"../archive.tar"}, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
