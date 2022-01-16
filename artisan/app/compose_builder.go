@@ -320,12 +320,14 @@ func (b ComposeBuilder) buildFile() (DeploymentRsx, error) {
 		Description: fmt.Sprintf("deploys the %s application using docker-compose", b.manifest.Name),
 		Run:         deploy,
 		Export:      &export,
+		Runtime:     "ubi-min",
 	})
 	buildFile.Functions = append(buildFile.Functions, &data.Function{
 		Name:        "dispose",
 		Description: fmt.Sprintf("disposes of all resources for the %s application", b.manifest.Name),
 		Run:         []string{"sh dispose.sh"},
 		Export:      &export,
+		Runtime:     "ubi-min",
 	})
 	content, err := yaml.Marshal(buildFile)
 	return DeploymentRsx{
