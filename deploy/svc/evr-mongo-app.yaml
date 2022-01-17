@@ -9,7 +9,7 @@ var:
     secret: true
   - name: OX_HTTP_PORT
     description: the HTTP port on which the event receiver service listens
-    value: "8080"
+    value: ${bind=evr-mongo-app:port}
   - name: OX_HTTP_UNAME
     description: the user to authenticate with the event receiver HTTP service
     value: ${fx=name:99}

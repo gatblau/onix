@@ -3,12 +3,16 @@ name: nexus-app
 description: Nexus 3 repository manager
 port:
   http: "8081"
-  docker: "5000"
+  docker-http: "5000"
+  docker-https: "5001"
 var:
   - name: NEXUS_ADMIN_PASSWORD
     description: the nexus admin password
     secret: true
     value: ${fx=pwd:16,false}
+  - name: SETUP_DOCKER_REGISTRY
+    description: Whether to setup docker registry with in Nexus.
+    value: true    
 volume:
   - name: nexus-data
     path: /nexus-data
@@ -55,36 +59,41 @@ scripts:
 
       rm temppwd
 
-      echo "creating new artisan hosted repository in nexus"
-      art curl -X POST \
-        -u admin:${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD} \
-        http://${bind=nexus-app}:${bind=nexus-app:port[http]}/service/rest/v1/repositories/raw/hosted \
-        -H 'accept: application/json','Content-Type: application/json' \
-        -d '{
-        "name": "artisan",
-        "online": true,
-        "storage": {
-          "blobStoreName": "default",
-          "strictContentTypeValidation": true,
-          "writePolicy": "allow"
-        },
-        "cleanup": {
-          "policyNames": [
-            "string"
-          ]
-        },
-        "component": {
-          "proprietaryComponents": true
-        },
-        "raw": {
-          "contentDisposition": "ATTACHMENT"
-        }
-      }'
-
       echo "disabling nexus anonymous access"
       art curl -X PUT \
         -u admin:${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD} \
         http://${bind=nexus-app}:${bind=nexus-app:port[http]}/service/rest/v1/security/anonymous \
         -H 'accept: application/json','Content-Type: application/json' \
         -d '{"enabled": false}'
+      
+      if ${bind=nexus-app:var:SETUP_DOCKER_REGISTRY} ; then
+        echo "creating new artisan docker registry in nexus"
+        art curl -X POST \
+          -u admin:${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD} \
+          http://${bind=nexus-app}:${bind=nexus-app:port[http]}/service/rest/v1/repositories/docker/hosted \
+          -H 'accept: application/json','Content-Type: application/json' \
+          -d '{
+          "name": "aps-docker-registry",
+          "online": true,
+          "storage": {
+            "blobStoreName": "default",
+            "strictContentTypeValidation": true,
+            "writePolicy": "allow"
+          },
+          "cleanup": {
+            "policyNames": [
+              "string"
+            ]
+          },
+          "component": {
+            "proprietaryComponents": true
+          },
+          "docker": {
+            "v1Enabled": false,
+            "forceBasicAuth": true,
+            "httpPort": ${bind=nexus-app:port[docker-http]},
+            "httpsPort": ${bind=nexus-app:port[docker-https]}
+          }
+        }'
+      fi
 ...

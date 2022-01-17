@@ -15,10 +15,10 @@ var:
     value: ${fx=pwd:16,false}
   - name: OX_HTTP_PORT
     description: the port the http
-    value: "8888"
+    value: ${bind=pilotctl-app:port}
   - name: OX_WAPI_URI
-    description: the URI of the Onix Web API service used by pilot control to store configuration data
-    value: ${bind=ox-app}
+    description: the URI of the Onix Web API service used by pilot control to store configuration data (must include port)
+    value: http://${bind=ox-app}:${bind=ox-app:port}
   - name: OX_WAPI_USER
     description: the username to authenticate with the Onix Web API service
     value: ${bind=ox-app:var:WAPI_ADMIN_USER}
@@ -31,7 +31,7 @@ var:
     value: "false"
   - name: OX_ART_REG_URI
     description: the URI of the Artisan registry service used by pilot control to look up automation packages
-    value: ${bind=artreg-app}
+    value: http://${bind=artreg-app}:${bind=artreg-app:port}
   - name: OX_ART_REG_USER
     description: the username to authenticate with the Artisan Registry service
     value: ${bind=artreg-app:var:OXA_HTTP_UNAME}
@@ -188,10 +188,10 @@ scripts:
       creates the main pilotctl user in Onix
     runtime: ubi-min
     content: |
-      echo "updating Onix admin password from default ..."
+      echo "creating pilotctl user ..."
       art curl -X PUT \
         -u "${bind=ox-app:var:WAPI_ADMIN_USER}:${bind=ox-app:var:WAPI_ADMIN_PWD}" \
         -H 'Content-Type: application/json' \
-        "http://${bind=ox-app}":"${bind=ox-app:port}"/user/ONIX_PILOTCTL \
+        "http://${bind=ox-app}":"${bind=ox-app:port}"/user/ONIX_PILOTCTL?notify=false \
         -d "{\"email\":\"${bind=pilotctl-app:var:PILOTCTL_ONIX_EMAIL}\", \"name\":\"${bind=pilotctl-app:var:PILOTCTL_ONIX_USER}\", \"pwd\":\"${bind=pilotctl-app:var:PILOTCTL_ONIX_PWD}\", \"service\":\"false\", \"acl\":\"*:*:*\"}"
 ...

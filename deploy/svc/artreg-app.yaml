@@ -12,7 +12,7 @@ var:
     value: ${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD}
   - name: OXA_HTTP_PORT
     description: the port on which the registry HTTP API service listens
-    value: "8080"
+    value: ${bind=artreg-app:port}
   - name: OXA_HTTP_BACKEND_DOMAIN
     description: the URI of the HTTP backend service to use
     value: "http://${bind=nexus-app}:${bind=nexus-app:port[http]}"
@@ -22,4 +22,39 @@ var:
   - name: OXA_HTTP_UPLOAD_LIMIT
     description: the maximum size of artisan packages (in MB) allowed to be pushed to the registry
     value: "30"
+init:
+  - builder: compose
+    scripts:
+      - create_artisan_repo
+scripts:
+  - name: create_artisan_repo
+    description: |
+      create new artisan hosted repository in nexus
+    runtime: ubi-min
+    content: |
+      echo "creating new artisan hosted repository in nexus"
+      art curl -X POST \
+        -u admin:${bind=nexus-app:var:NEXUS_ADMIN_PASSWORD} \
+        http://${bind=nexus-app}:${bind=nexus-app:port[http]}/service/rest/v1/repositories/raw/hosted \
+        -H 'accept: application/json','Content-Type: application/json' \
+        -d '{
+        "name": "artisan",
+        "online": true,
+        "storage": {
+          "blobStoreName": "default",
+          "strictContentTypeValidation": true,
+          "writePolicy": "allow"
+        },
+        "cleanup": {
+          "policyNames": [
+            "string"
+          ]
+        },
+        "component": {
+          "proprietaryComponents": true
+        },
+        "raw": {
+          "contentDisposition": "ATTACHMENT"
+        }
+      }'
 ...

@@ -81,7 +81,8 @@ services:
     image: sonatype/nexus3
     port:
       http: "8081"
-      docker: "5000"
+      docker-http: "5000"
+      docker-https: "5001"
     is:
       public: nexus.onix.com
       encrypted-in-transit:
