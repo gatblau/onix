@@ -79,7 +79,7 @@ public class Mailer {
             msg.setContent(multipart);
             msg.setSentDate(new Date());
             msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail, false));
-            Transport transport = session.getTransport("smtps");
+            Transport transport = session.getTransport(cfg.isSmtpSMTPS()?"smtps":"smtp");
             transport.connect(cfg.getSmtpHost(), cfg.getSmtpPort(), cfg.getSmtpFromUser(), cfg.getSmtpFromPwd());
             transport.sendMessage(msg, msg.getAllRecipients());
             transport.close();

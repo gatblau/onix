@@ -43,6 +43,10 @@ public class Config implements Serializable {
         return csrfEnabled;
     }
 
+    public boolean isSmtpSMTPS() {
+        return smtpSMTPS;
+    }
+
     public enum AuthMode {
         Basic,
         OIDC,
@@ -120,6 +124,9 @@ public class Config implements Serializable {
     
     @Value("${wapi.smtp.starttls.enable}")
     private boolean smtpStartTLS;
+
+    @Value("${wapi.smtp.smtps.enabled}")
+    private boolean smtpSMTPS;
 
     @Value("${wapi.smtp.host}")
     private String smtpHost;
