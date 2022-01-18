@@ -44,9 +44,6 @@ profiles:
     services:
       - name: nexus-app
       - name: artreg-app
-        is:
-          # overrides load-balanced behaviour in service
-          load-balanced: 2
 
   - name: nexus
     description: deploys nexus repository manager only
