@@ -17,8 +17,12 @@ import (
 
 const AppName = "artisan"
 
-// gets the user home directory
+// HomeDir gets the user home directory
 func HomeDir() string {
+	// if ARTISAN_HOME is defined use it
+	if artHome := os.Getenv("ARTISAN_HOME"); len(artHome) > 0 {
+		return artHome
+	}
 	usr, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
