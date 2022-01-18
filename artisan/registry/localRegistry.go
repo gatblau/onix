@@ -420,7 +420,7 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 
 		// add the package to the local registry
 		err2 := r.Add(packageFilename, name, seal)
-		core.CheckErr(err, err2.Error())
+		core.CheckErr(err2, "cannot add package to local registry")
 	} else {
 		// the local registry has the package
 		// if the local package does not have the tag
