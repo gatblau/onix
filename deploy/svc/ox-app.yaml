@@ -29,7 +29,7 @@ var:
   - name: WAPI_ADMIN_PWD
     description: the password to authenticate with the web api as admin
     secret: true
-    value: ${fx=pwd:16,false}
+    value: ${fx=pwd:16,false}123
   - name: WAPI_EVENTS_ENABLED
     description: whether sending of mqtt messages is enabled for changes to configuration data
     value: "false"
@@ -59,6 +59,6 @@ scripts:
         -a 25 \
         -u "admin:0n1x" \
         -H "Content-Type: application/json" \
-        "http://${bind=ox-app}":"${bind=ox-app:port}"/user/"${OX_APP_WAPI_ADMIN_USER}"/pwd \
-        -d "{\"pwd\":\"${OX_APP_WAPI_ADMIN_PWD}\"}"
+        "http://${bind=ox-app}":"${bind=ox-app:port}"/user/"${bind=ox-app:var:WAPI_ADMIN_USER}"/pwd \
+        -d "{\"pwd\":\"${bind=ox-app:var:WAPI_ADMIN_PWD}\"}"
 ...
