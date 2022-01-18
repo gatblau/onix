@@ -12,8 +12,12 @@ LABEL maintainer="onix@gatblau.org"
 
 ARG UNAME=artisan
 
-ENV UID=100000000
-ENV GID=100000000
+ENV UID=1000
+ENV GID=1000
+
+# the location of the artisan registry files in the image
+# NB if changed, ensure there is a trailing slash at the end of the path
+ENV ARTISAN_HOME=/opt/
 
 RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y && \
     microdnf install shadow-utils.x86_64 && \
@@ -22,12 +26,13 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
     useradd -M -u $UID -g $GID $UNAME && \
     rm -rf /var/cache/yum && \
     microdnf clean all && \
-    # pessimistic locking for metadata changes within a virtual repository
-    mkdir -p /.artisan/locks && chown $UNAME /.artisan/locks && chmod ug+wr /.artisan/locks && \
-    # temprorary file operations folder
-    mkdir -p /.artisan/tmp && chown $UNAME /.artisan/tmp && chmod ug+wr /.artisan/tmp && \
-    # web hooks configuration
-    mkdir -p /.artisan/hooks && chown $UNAME /.artisan/hooks && chmod ug+wr /.artisan/hooks
+    # create new Artisan specific directory and sub folders to support pessimistic locking for metadata changes within a
+    # virtual repository
+    mkdir -p \
+        ${ARTISAN_HOME}.artisan/locks \
+        ${ARTISAN_HOME}.artisan/tmp \
+        ${ARTISAN_HOME}.artisan/hooks && \
+    chown -R ${UNAME} ${ARTISAN_HOME}.artisan
 
 WORKDIR /app
 
