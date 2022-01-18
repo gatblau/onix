@@ -104,7 +104,7 @@ func (l *lock) ensurePath() {
 		if os.IsNotExist(err) {
 			err = os.MkdirAll(l.path(), os.ModePerm)
 			u, _ := user.Current()
-			core.CheckErr(err, fmt.Sprintf("cannot create locks path, user '%s', uid '%s', home '%s' - '%s'", u.Username, u.Uid, u.HomeDir, core.HomeDir()))
+			core.CheckErr(err, fmt.Sprintf("cannot create locks path, user='%s', uid='%s', path='%s'", u.Username, u.Uid, l.path()))
 		}
 	}
 }
