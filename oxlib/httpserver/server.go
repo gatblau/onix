@@ -200,6 +200,7 @@ func (s *Server) AuthenticationMiddleware(next http.Handler) http.Handler {
 				// Write an error and stop the handler chain
 				log.Printf("authentication function error: %s\n", err)
 				http.Error(w, "Authentication Error", http.StatusInternalServerError)
+				return
 			}
 			// if the regex matched the URL path
 			if matched {
@@ -228,6 +229,7 @@ func (s *Server) AuthenticationMiddleware(next http.Handler) http.Handler {
 					w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, s.realm))
 					w.WriteHeader(http.StatusUnauthorized)
 					fmt.Printf("! unauthorised http request from: '%v'\n", r.RemoteAddr)
+					return
 				} else {
 					// authenticate the request using the default handler
 					user = s.DefaultAuth(*r)
