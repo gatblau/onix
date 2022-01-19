@@ -87,7 +87,7 @@ services:
   - name: artreg-app
     description: Artisan Registry
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/artreg-app.yaml
-    image: quay.io/gatblau/artisan-registry:0.0.4-011021162133879-a3dedecb3f-RC1
+    image: quay.io/gatblau/artisan-registry:0.0.4-20220119125807167-be45caa1e9-RC1
     port: "8082"
     is:
       public: artreg.onix.com
