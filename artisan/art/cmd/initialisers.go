@@ -11,6 +11,7 @@ package cmd
 func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
 	appCmd := NewAppCmd()
+	serveCmd := NewServeCmd()
 	saveCmd := InitialiseSaveCommand()
 	importCmd := InitialiseImportCommand()
 	buildCmd := NewBuildCmd()
@@ -38,6 +39,7 @@ func InitialiseRootCmd() *RootCmd {
 		appCmd.cmd,
 		saveCmd.cmd,
 		importCmd.cmd,
+		serveCmd.cmd,
 		buildCmd.cmd,
 		lsCmd.cmd,
 		pushCmd.cmd,
