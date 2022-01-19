@@ -17,14 +17,15 @@ import (
 )
 
 const (
-	VarMetricsEnabled  = "OXA_METRICS_ENABLED"
-	VarSwaggerEnabled  = "OXA_SWAGGER_ENABLED"
-	VarHTTPPort        = "OXA_HTTP_PORT"
-	VarHTTPUname       = "OXA_HTTP_UNAME"
-	VarHTTPPwd         = "OXA_HTTP_PWD"
-	VarBackendType     = "OXA_HTTP_BACKEND"
-	VarBackendDomain   = "OXA_HTTP_BACKEND_DOMAIN"
-	VarHTTPUploadLimit = "OXA_HTTP_UPLOAD_LIMIT"
+	VarMetricsEnabled         = "OXA_METRICS_ENABLED"
+	VarSwaggerEnabled         = "OXA_SWAGGER_ENABLED"
+	VarHTTPPort               = "OXA_HTTP_PORT"
+	VarHTTPUname              = "OXA_HTTP_UNAME"
+	VarHTTPPwd                = "OXA_HTTP_PWD"
+	VarBackendType            = "OXA_HTTP_BACKEND"
+	VarBackendDomain          = "OXA_HTTP_BACKEND_DOMAIN"
+	VarHTTPUploadPayloadLimit = "OXA_HTTP_UPLOAD_LIMIT"
+	VarHTTPUploadInMemSize    = "OXA_HTTP_UPLOAD_IN_MEM_SIZE"
 )
 
 type ServerConfig struct {
@@ -60,7 +61,13 @@ func (c *ServerConfig) HttpUser() string {
 }
 
 func (c *ServerConfig) HttpUploadLimit() int64 {
-	limit, err := strconv.ParseInt(c.getString(VarHTTPUploadLimit, "30"), 0, 0)
+	limit, err := strconv.ParseInt(c.getString(VarHTTPUploadPayloadLimit, "250"), 0, 0)
+	core.CheckErr(err, "invalid upload limit specified")
+	return limit
+}
+
+func (c *ServerConfig) HttpUploadInMemorySize() int64 {
+	limit, err := strconv.ParseInt(c.getString(VarHTTPUploadInMemSize, "150"), 0, 0)
 	core.CheckErr(err, "invalid upload limit specified")
 	return limit
 }

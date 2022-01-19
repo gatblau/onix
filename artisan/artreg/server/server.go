@@ -200,8 +200,13 @@ func (s *Server) packageUploadHandler(w http.ResponseWriter, r *http.Request) {
 		Name:  repoName,
 		Tag:   packageTag,
 	}
-	// file upload limit in MB
-	err := r.ParseMultipartForm(s.conf.HttpUploadLimit() << 20)
+	// limits the size of incoming request bodies (in MB) to prevent clients from accidentally or maliciously
+	// sending a large request and wasting server resources
+	r.Body = http.MaxBytesReader(w, r.Body, s.conf.HttpUploadLimit()<<20)
+
+	// parses the whole request body and up to a total of HttpUploadInMemoryLimit MB are stored in memory,
+	// with the remainder stored on disk in temporary files
+	err := r.ParseMultipartForm(s.conf.HttpUploadInMemorySize() << 20)
 	if err != nil {
 		s.writeError(w, fmt.Errorf("error parsing multipart form: %s", err), http.StatusBadRequest)
 		return
