@@ -81,7 +81,14 @@ func (w *Worker) Start() {
 				// if it can't peek the next job, it must consider it as a failure as, if not, pilot could
 				// continue to repeat the failure forever
 				if err != nil {
-					errorMsg := fmt.Sprintf("pilot could not read the next job to process from the local queue, possibly due to the file '%s' being corrupted: %s\n", job.file.Name(), err)
+					var errorMsg string
+					// if it cannot read jobs
+					if job == nil {
+						errorMsg = fmt.Sprintf("cannot list jobs: %s", err)
+					} else {
+						// otherwise
+						errorMsg = fmt.Sprintf("pilot could not read the next job to process from the local queue, possibly due to the file '%s' being corrupted: %s\n", job.file.Name(), err)
+					}
 					// logs the error
 					ErrorLogger.Printf(errorMsg)
 					// if a Job Id is known
