@@ -20,3 +20,8 @@ func TestPackName(t *testing.T) {
 	n, _ := ParseName("localhost%:9009/hh/ff/gg/hh/hh/jj/kk'|&*/testpk:v1")
 	fmt.Println(n)
 }
+
+func TestUserPwd(t *testing.T) {
+	u, p := UserPwd("ab.er:46567785")
+	fmt.Println(u, p)
+}

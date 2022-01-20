@@ -5,14 +5,16 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package cmd
 
 import (
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/oxlib/httpserver"
 	"github.com/spf13/cobra"
 )
 
-// list local packages
+// WaitCmd wait until the response payload contains a specific value
 type WaitCmd struct {
 	cmd      *cobra.Command
 	attempts int
@@ -40,7 +42,7 @@ func (c *WaitCmd) Run(cmd *cobra.Command, args []string) {
 	token := ""
 	if len(c.creds) > 0 {
 		uname, pwd := core.UserPwd(c.creds)
-		token = core.BasicToken(uname, pwd)
+		token = httpserver.BasicToken(uname, pwd)
 	}
 	core.Wait(args[0], c.filter, token, c.attempts)
 }

@@ -10,6 +10,7 @@ package cmd
 
 import (
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/oxlib/httpserver"
 	"github.com/spf13/cobra"
 )
 
@@ -58,7 +59,7 @@ func (c *CurlCmd) Run(cmd *cobra.Command, args []string) {
 	token := ""
 	if len(c.creds) > 0 {
 		uname, pwd := core.UserPwd(c.creds)
-		token = core.BasicToken(uname, pwd)
+		token = httpserver.BasicToken(uname, pwd)
 	}
 	core.Curl(uri, c.method, token, append(c.validCodes, c.addValidCodes...), c.payload, c.file, c.maxAttempts, c.delaySecs, c.timeoutSecs, c.headers, c.outFile)
 }

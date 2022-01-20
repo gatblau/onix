@@ -15,6 +15,7 @@ import (
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/registry"
+	"github.com/gatblau/onix/oxlib/httpserver"
 	"github.com/gatblau/oxc"
 	"gopkg.in/yaml.v2"
 	"io"
@@ -222,7 +223,7 @@ func (m *Manager) Run(runnerName, creds string, interactive bool) error {
 	if err != nil {
 		return err
 	}
-	token := core.BasicToken(core.UserPwd(creds))
+	token := httpserver.BasicToken(core.UserPwd(creds))
 	// assume tls enabled
 	response, err := m.postFlow(runnerName, err, true, body, token)
 	if err != nil {

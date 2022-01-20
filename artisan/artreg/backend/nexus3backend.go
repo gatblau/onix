@@ -1,3 +1,5 @@
+package backend
+
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -5,7 +7,6 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-package backend
 
 import (
 	"bufio"
@@ -16,6 +17,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
+	"github.com/gatblau/onix/oxlib/httpserver"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -26,7 +28,7 @@ import (
 	"time"
 )
 
-// a Nexus3 implementation of a remote registry
+// Nexus3Backend a Nexus3 implementation of a remote registry
 type Nexus3Backend struct {
 	domain string
 	client *http.Client
@@ -61,7 +63,7 @@ func (r *Nexus3Backend) Download(repoGroup, repoName, fileName, user, pwd string
 		return nil, err
 	}
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", core.BasicToken(user, pwd))
+		req.Header.Add("authorization", httpserver.BasicToken(user, pwd))
 	}
 	// Submit the request
 	res, err := r.client.Do(req)
@@ -189,7 +191,7 @@ func (r *Nexus3Backend) postMultipart(b bytes.Buffer, writer *multipart.Writer, 
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", core.BasicToken(user, pwd))
+		req.Header.Add("authorization", httpserver.BasicToken(user, pwd))
 	}
 	// Submit the request
 	res, err := r.client.Do(req)
@@ -369,7 +371,7 @@ func (r *Nexus3Backend) getFile(repoGroup, repoName, filename, user, pwd string)
 	}
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", core.BasicToken(user, pwd))
+		req.Header.Add("authorization", httpserver.BasicToken(user, pwd))
 	}
 	// Submit the request
 	resp, err := r.client.Do(req)
@@ -438,7 +440,7 @@ func (r *Nexus3Backend) getMeta(user, pwd, uri string, result interface{}) (inte
 	}
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", core.BasicToken(user, pwd))
+		req.Header.Add("authorization", httpserver.BasicToken(user, pwd))
 	}
 	// Submit the request
 	resp, err := r.client.Do(req)

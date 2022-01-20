@@ -9,9 +9,9 @@ package core
 */
 import (
 	"bytes"
-	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/gatblau/onix/oxlib/httpserver"
 	"io"
 	"net/http"
 	"os"
@@ -29,7 +29,7 @@ func Get(url, user, pwd string) (*http.Response, error) {
 	}
 	// add http request headers
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("Authorization", BasicToken(user, pwd))
+		req.Header.Add("Authorization", httpserver.BasicToken(user, pwd))
 	}
 	// issue http request
 	resp, err := http.DefaultClient.Do(req)
@@ -42,10 +42,6 @@ func Get(url, user, pwd string) (*http.Response, error) {
 		err = errors.New(fmt.Sprintf("error: response returned status: %s. resource: %s", resp.Status, url))
 	}
 	return resp, err
-}
-
-func BasicToken(user string, pwd string) string {
-	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
 }
 
 func Curl(uri string, method string, token string, validCodes []int, payload string, file string, maxAttempts int, delaySecs int, timeoutSecs int, headers []string, outputFile string) {

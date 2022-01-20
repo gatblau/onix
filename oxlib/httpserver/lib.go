@@ -58,10 +58,15 @@ func WriteError(w http.ResponseWriter, err error, errorCode int) {
 	w.WriteHeader(errorCode)
 }
 
-// ParseBasicToken getUser retrieve the username from the basic authentication token in the http request
+// ParseBasicToken retrieve the username and password from the basic authentication token in the http request
 func ParseBasicToken(r http.Request) (user, pwd string) {
 	// get the token from the authorization header
 	token := r.Header.Get("Authorization")
+	return ReadBasicToken(token)
+}
+
+// ReadBasicToken retrieve the username and password from the passed-in basic authentication token
+func ReadBasicToken(token string) (user, pwd string) {
 	if len(token) == 0 {
 		return "", ""
 	}
@@ -77,6 +82,11 @@ func ParseBasicToken(r http.Request) (user, pwd string) {
 	}
 	// retrieve the username part (i.e. #0: username:password => 0:1)
 	return parts[0], parts[1]
+}
+
+// BasicToken creates a basic authentication token
+func BasicToken(user string, pwd string) string {
+	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
 }
 
 // GetUserPrincipal get the user principal in the http request

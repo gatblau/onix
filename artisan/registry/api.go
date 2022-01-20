@@ -16,6 +16,7 @@ import (
 	"github.com/cheggaaa/pb/v3"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/i18n"
+	"github.com/gatblau/onix/oxlib/httpserver"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -83,7 +84,7 @@ func (r *Api) UploadPackage(name *core.PackageName, packageRef string, zipfile m
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", core.BasicToken(user, pwd))
+		req.Header.Add("authorization", httpserver.BasicToken(user, pwd))
 	}
 	// Submit the request
 	res, err := r.client.Do(req)
@@ -113,7 +114,7 @@ func (r *Api) UpdatePackageInfo(name *core.PackageName, pack *Package, user stri
 	}
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", core.BasicToken(user, pwd))
+		req.Header.Add("authorization", httpserver.BasicToken(user, pwd))
 	}
 	// Submit the request
 	res, err := r.client.Do(req)
@@ -133,7 +134,7 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string, https bool) (*Rep
 	}
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", core.BasicToken(user, pwd))
+		req.Header.Add("authorization", httpserver.BasicToken(user, pwd))
 	}
 	// Submit the request
 	resp, err := r.client.Do(req)
@@ -177,7 +178,7 @@ func (r *Api) GetPackageInfo(group, name, id, user, pwd string, https bool) (*Pa
 	}
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", core.BasicToken(user, pwd))
+		req.Header.Add("authorization", httpserver.BasicToken(user, pwd))
 	}
 	// Submit the request
 	resp, err := r.client.Do(req)
@@ -212,7 +213,7 @@ func (r *Api) Download(group, name, filename, user, pwd string, https bool) (str
 	}
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
-		req.Header.Add("authorization", core.BasicToken(user, pwd))
+		req.Header.Add("authorization", httpserver.BasicToken(user, pwd))
 	}
 	// Submit the request
 	res, err := r.client.Do(req)
