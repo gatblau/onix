@@ -63,7 +63,7 @@ func SaveImage(imgName, packName, targetUri, creds string) error {
 				Export:      &export,
 				Runtime:     "ubi-min",
 				Run: []string{
-					fmt.Sprintf("%s import %s.tar", containerCli, imgFilename(imgName)),
+					fmt.Sprintf("%s import %s.tar %s", containerCli, imgFilename(imgName), imgName),
 				},
 			},
 		},
