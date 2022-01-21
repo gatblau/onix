@@ -1,5 +1,5 @@
 //   Onix Config DatabaseProvider - Dbman
-//   Copyright (c) 2018-2020 by www.gatblau.org
+//   Copyright (c) 2018-Present by www.gatblau.org
 //   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
 //   Contributors to this project, hereby assign copyright in this code to the project,
 //   to be licensed under the same terms as the rest of the code.
@@ -7,39 +7,30 @@
 package core
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	. "github.com/gatblau/onix/dbman/plugin"
-	"github.com/gatblau/onix/oxlib/oxc"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 )
 
 // ScriptManager the source of database scripts
 type ScriptManager struct {
-	client *oxc.Client
-	cfg    *Config
+	cfg *Config
 }
 
 // NewScriptManager factory function
-func NewScriptManager(cfg *Config, client *oxc.Client) (*ScriptManager, error) {
+func NewScriptManager(cfg *Config) (*ScriptManager, error) {
 	// creates a new struct
 	source := new(ScriptManager)
 	// setup attributes
 	source.cfg = cfg
-	source.client = client
+	// source.client = client
 	return source, nil
-}
-
-// new oxc configuration
-func NewOxClientConf(cfg *Config) *oxc.ClientConf {
-	return &oxc.ClientConf{
-		BaseURI:            cfg.GetString(RepoURI),
-		InsecureSkipVerify: false,
-		AuthMode:           oxc.None,
-	}
 }
 
 // fetchPlan fetches the getReleaseInfo plan
@@ -50,18 +41,12 @@ func (s *ScriptManager) fetchPlan() (*Plan, error) {
 		return nil, err
 	}
 	// note: passing http headers results in 503 on gitlab.com when using credentials on URI
-	// response, err := s.client.Get(fmt.Sprintf("%s/plan.json", baseUri), s.addHttpHeaders)
-	response, err := s.client.Get(fmt.Sprintf("%s/plan.json", baseUri), nil)
+	content, err := s.readFile(fmt.Sprintf("%s/plan.json", baseUri))
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("! cannot retrieve release plan: %v", err))
 	}
 	p := &Plan{}
-	p, err = p.decode(response)
-	defer func() {
-		if ferr := response.Body.Close(); ferr != nil {
-			err = ferr
-		}
-	}()
+	p, err = p.decode(content)
 	return p, err
 }
 
@@ -77,30 +62,19 @@ func (s *ScriptManager) FetchFile(path string) (*string, error) {
 	uri := fmt.Sprintf("%s%s", baseUri, path)
 	// fetch the file
 	// note: passing http headers results in 503 on gitlab.com when using credentials on URI
-	// response, err := s.client.Get(uri, s.addHttpHeaders)
-	response, err := s.client.Get(uri, nil)
+	content, err := s.readFile(uri)
 	// if the request was unsuccessful then return the error
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
-
-	if response.StatusCode == http.StatusOK {
-		bodyBytes, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			return nil, err
-		}
-		result := string(bodyBytes)
-		// if the result is not an empty string
-		if len(strings.Trim(result, " ")) > 0 {
-			// return the result
-			return &result, nil
-		} else {
-			// otherwise return nil
-			return nil, nil
-		}
+	result := string(content)
+	// if the result is not an empty string
+	if len(strings.Trim(result, " ")) > 0 {
+		// return the result
+		return &result, nil
 	} else {
-		return nil, fmt.Errorf("!!! I cannot read file '%s': %s", path, err)
+		// otherwise, return nil
+		return nil, nil
 	}
 }
 
@@ -123,15 +97,14 @@ func (s *ScriptManager) fetchManifest(appVersion string) (*Info, *Manifest, erro
 	uri := fmt.Sprintf("%s/%s/manifest.json", baseUri, release.Path)
 	// fetchManifest the manifest
 	// note: passing http headers results in 503 on gitlab.com when using credentials on URI
-	// response, err := s.client.Get(uri, s.addHttpHeaders)
-	response, err := s.client.Get(uri, nil)
+	content, err := s.readFile(uri)
 	// if the request was unsuccessful then return the error
 	if err != nil {
 		return nil, nil, err
 	}
 	// request was good so construct a release manifest reference
 	man := &Manifest{}
-	man, err = man.Decode(response)
+	man, err = man.Decode(content)
 	return release, man, nil
 }
 
@@ -187,20 +160,6 @@ func (s *ScriptManager) getReleaseInfo(appVersion string) (*Info, error) {
 	return nil, errors.New(fmt.Sprintf("!!! information for application version '%s' does not exist in the release plan", appVersion))
 }
 
-// add http headers to the request object
-func (s *ScriptManager) addHttpHeaders(req *http.Request, payload oxc.Serializable) error {
-	// add headers to disable caching
-	req.Header.Add("Cache-Control", `no-cache"`)
-	req.Header.Add("Pragma", "no-cache")
-	// if there is an access token defined
-	if len(s.get(RepoUsername)) > 0 && len(s.get(RepoPassword)) > 0 {
-		credentials := base64.StdEncoding.EncodeToString([]byte(
-			fmt.Sprintf("%s:%s", s.get(RepoUsername), s.get(RepoPassword))))
-		req.Header.Add("Authorization", credentials)
-	}
-	return nil
-}
-
 func (s *ScriptManager) get(key string) string {
 	return s.cfg.GetString(key)
 }
@@ -248,34 +207,11 @@ func (s *ScriptManager) getContent(baseUri string, path string, file string) (st
 	uri := fmt.Sprintf("%v/%v/%v", baseUri, path, file)
 	// issue an http request for the content
 	// note: passing http headers results in 503 on gitlab.com when using credentials on URI
-	// response, err := s.client.Get(uri, s.addHttpHeaders)
-	response, err := s.client.Get(uri, nil)
-	switch response.StatusCode {
-	case 401:
-		fallthrough
-	case 403:
-		return "", errors.New(fmt.Sprintf("!!! I do not have permission to get the content of the file %s at URI %s\n", file, uri))
-	case 404:
-		return "", errors.New(fmt.Sprintf("!!! I cannot find file %s at URI %s\n", file, uri))
-	case 408:
-		return "", errors.New(fmt.Sprintf("!!! I cannot retrieve content of file %s at URI %s as the server is not responding\n", file, uri))
-	case 500:
-		return "", errors.New(fmt.Sprintf("!!! I cannot retrieve content of file %s at URI %s as the server responded with an internal error\n", file, uri))
-	}
+	content, err := s.readFile(uri)
 	if err != nil {
 		return "", err
 	}
-	// decode response into a string
-	if response.StatusCode == http.StatusOK {
-		bodyBytes, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			response.Body.Close()
-			return "", err
-		}
-		return string(bodyBytes), err
-
-	}
-	return "", err
+	return string(content[:]), err
 }
 
 // merges the passed-in script with the values in of the script vars
@@ -319,13 +255,91 @@ func (s ScriptManager) getRepoUri() (string, error) {
 	if len(uri) == 0 {
 		return "", errors.New(fmt.Sprintf("!!! The Repo.URI is not defined"))
 	}
-	if !strings.HasPrefix(strings.ToLower(uri), "http") {
-		return "", errors.New(fmt.Sprintf("!!! The Repo.URI must be an http(s) address"))
-	}
 	// if the username and password have been set
 	if len(s.get(RepoUsername)) > 0 && len(s.get(RepoPassword)) > 0 {
 		uriParts := strings.Split(uri, "//")
 		return fmt.Sprintf("%s//%s:%s@%s", uriParts[0], s.get(RepoUsername), s.get(RepoPassword), uriParts[1]), nil
 	}
 	return uri, nil
+}
+
+func (s *ScriptManager) readFile(uri string) ([]byte, error) {
+	if strings.HasPrefix(uri, "http") {
+		return getHttpFile(uri, fmt.Sprintf("%s:%s", s.get(RepoUsername), s.get(RepoPassword)))
+	} else {
+		return getFsFile(uri)
+	}
+	return nil, nil
+}
+
+// getFsFile reads a file from the file system
+func getFsFile(uri string) ([]byte, error) {
+	path, err := filepath.Abs(uri)
+	if err != nil {
+		return nil, err
+	}
+	return os.ReadFile(path)
+}
+
+// getHttpFile reads a file from a http endpoint
+func getHttpFile(uri, creds string) ([]byte, error) {
+	// if credentials are provided
+	if len(creds) > 0 {
+		// add them to the uri scheme
+		u, err := addCredsToHttpURI(uri, creds)
+		if err != nil {
+			return nil, err
+		}
+		uri = u
+	}
+	// create an http client with defined timeout
+	client := http.Client{
+		Timeout: 60 * time.Second,
+	}
+	// create a new http request
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return nil, err
+	}
+	// add headers to disable caching
+	req.Header.Add("Cache-Control", `no-cache"`)
+	req.Header.Add("Pragma", "no-cache")
+	// execute the request
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+	if resp != nil {
+		switch resp.StatusCode {
+		case 401:
+			fallthrough
+		case 403:
+			return nil, errors.New(fmt.Sprintf("!!! I do not have permission to get the content of %s\n", uri))
+		case 404:
+			return nil, errors.New(fmt.Sprintf("!!! I cannot find %s\n", uri))
+		case 408:
+			return nil, errors.New(fmt.Sprintf("!!! I cannot retrieve content of %s as the server is not responding\n", uri))
+		case 500:
+			return nil, errors.New(fmt.Sprintf("!!! I cannot retrieve content of %s as the server responded with an internal error\n", uri))
+		}
+		// return the byte content in the response body
+		return ioutil.ReadAll(resp.Body)
+	}
+	return nil, fmt.Errorf("server sent no response: %s", err)
+}
+
+// addCredsToHttpURI add credentials to http(s) URI
+func addCredsToHttpURI(uri string, creds string) (string, error) {
+	// if there are no credentials or the uri is a file path
+	if len(creds) == 0 || strings.HasPrefix(uri, "http") {
+		// skip and return as is
+		return uri, nil
+	}
+	parts := strings.Split(uri, "/")
+	if !strings.HasPrefix(parts[0], "http") {
+		return uri, fmt.Errorf("invalid URI scheme, http(s) expected when specifying credentials\n")
+	}
+	parts[2] = fmt.Sprintf("%s@%s", creds, parts[2])
+	return strings.Join(parts, "/"), nil
 }

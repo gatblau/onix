@@ -1,5 +1,5 @@
 //   Onix Config Manager - Dbman
-//   Copyright (c) 2018-2020 by www.gatblau.org
+//   Copyright (c) 2018-Present by www.gatblau.org
 //   Licensed under the
 //   Contributors to this project, hereby assign copyright in this code to the project,
 //   to be licensed under the same terms as the rest of the code.
@@ -11,12 +11,11 @@ import (
 	"encoding/json"
 	"github.com/gatblau/onix/oxlib/oxc"
 	"gopkg.in/yaml.v3"
-	"net/http"
 	"strings"
 	"time"
 )
 
-// a database manifest containing the meta data required by DbMan
+// Manifest a database manifest containing the meta data required by DbMan
 // to execute commands and queries
 type Manifest struct {
 	// the database release version
@@ -41,7 +40,7 @@ type Manifest struct {
 	Queries []Query `json:"queries"`
 }
 
-// a database action containing either other sub-actions or commands
+// Action a database action containing either other sub-actions or commands
 type Action struct {
 	// the description for the command
 	Description string `json:"description"`
@@ -51,7 +50,7 @@ type Action struct {
 	Commands []string `json:"commands,omitempty"`
 }
 
-// a set of scripts that must be executed within the same database connection
+// Command a set of scripts that must be executed within the same database connection
 type Command struct {
 	// the command identifiable name
 	Name string `json:"name"`
@@ -67,7 +66,7 @@ type Command struct {
 	Scripts []Script `json:"scripts"`
 }
 
-// creates a new command from a serialised json string
+// NewCommand creates a new command from a serialised json string
 func NewCommand(jsonString string) (*Command, error) {
 	c := &Command{}
 	err := json.Unmarshal([]byte(jsonString), c)
@@ -152,7 +151,7 @@ func (v *Version) ToString() string {
 	return string(bytes)
 }
 
-// a database query
+// Query a database query
 type Query struct {
 	// the identifiable name for the query
 	Name string `json:"name"`
@@ -167,7 +166,7 @@ type Query struct {
 	Content string `json:"content,omitempty" yaml:"content,omitempty"`
 }
 
-// creates a new query from a serialised json string
+// NewQuery creates a new query from a serialised json string
 func NewQuery(jsonString string) (*Query, error) {
 	q := &Query{}
 	err := json.Unmarshal([]byte(jsonString), q)
@@ -205,10 +204,10 @@ func (m *Manifest) bytes() (*[]byte, error) {
 	return &b, err
 }
 
-// get the Plan in the http Response
-func (m *Manifest) Decode(response *http.Response) (*Manifest, error) {
+// Decode get the Plan in the http Response
+func (m *Manifest) Decode(content []byte) (*Manifest, error) {
 	result := new(Manifest)
-	err := json.NewDecoder(response.Body).Decode(result)
+	err := json.NewDecoder(bytes.NewReader(content)).Decode(result)
 	return result, err
 }
 
@@ -233,7 +232,7 @@ func (m *Manifest) findCommands(action *Action) ([]Command, error) {
 	return commands, nil
 }
 
-// find the query by name
+// GetQuery find the query by name
 func (m *Manifest) GetQuery(queryName string) *Query {
 	for _, query := range m.Queries {
 		if query.Name == queryName {
@@ -243,7 +242,7 @@ func (m *Manifest) GetQuery(queryName string) *Query {
 	return nil
 }
 
-// get a string containing query information in the manifest
+// GetQueriesInfo get a string containing query information in the manifest
 func (m *Manifest) GetQueriesInfo(format string, verbose bool) string {
 	// make a copy
 	queries := make([]Query, len(m.Queries))

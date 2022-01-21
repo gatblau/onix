@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/gatblau/onix/dbman/plugin"
-	"github.com/gatblau/onix/oxlib/oxc"
 	"strings"
 	"time"
 )
@@ -32,13 +31,8 @@ type DbMan struct {
 func NewDbMan() (*DbMan, error) {
 	// create an instance of the current configuration set
 	cfg := NewConfig("", "")
-	// create an instance of the script http client
-	scriptClient, err := oxc.NewClient(NewOxClientConf(cfg))
-	if err != nil {
-		return nil, err
-	}
 	// create an instance of the script manager
-	scriptManager, err := NewScriptManager(cfg, scriptClient)
+	scriptManager, err := NewScriptManager(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +55,7 @@ func NewDbMan() (*DbMan, error) {
 	}
 	// output the setup log
 	result.PrintLog()
-	// otherwise returns a DbMan instance
+	// otherwise, returns a DbMan instance
 	return &DbMan{
 		Cfg:    cfg,
 		script: scriptManager,
@@ -90,24 +84,24 @@ func (dm *DbMan) ConfigSetAsString() string {
 	return dm.Cfg.ToString()
 }
 
-// use the configuration set specified by name
+// UseConfigSet use the configuration set specified by name
 // name: the name of the configuration set to use
 // filepath: the path to the configuration set
 func (dm *DbMan) UseConfigSet(filepath string, name string) {
 	dm.Cfg.Load(filepath, name)
 }
 
-// get the content of the current configuration set
+// GetConfigSet get the content of the current configuration set
 func (dm *DbMan) GetConfigSet() string {
 	return dm.Cfg.ConfigFileUsed()
 }
 
-// get the current configuration directory
+// GetConfigSetDir get the current configuration directory
 func (dm *DbMan) GetConfigSetDir() string {
 	return dm.Cfg.Cache.Path()
 }
 
-// performs various connectivity checks using the information in the current configuration set
+// CheckConfigSet performs various connectivity checks using the information in the current configuration set
 // returns a map containing entries with the type of check and the result
 func (dm *DbMan) CheckConfigSet() map[string]string {
 	results := make(map[string]string)

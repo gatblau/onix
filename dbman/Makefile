@@ -1,5 +1,5 @@
 #
-#    Onix DbMan - Copyright (c) 2018-2020 by www.gatblau.org
+#    Onix DbMan - Copyright (c) 2018-Present by www.gatblau.org
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
