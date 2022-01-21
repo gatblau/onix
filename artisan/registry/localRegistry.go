@@ -673,7 +673,7 @@ func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
 	return seal.Manifest
 }
 
-func (r *LocalRegistry) Save(names []core.PackageName, creds string) ([]byte, error) {
+func (r *LocalRegistry) Save(names []core.PackageName, sourceCreds, targetUri, targetCreds string) error {
 	var (
 		pack  *Package
 		repo  *Repository
@@ -685,7 +685,7 @@ func (r *LocalRegistry) Save(names []core.PackageName, creds string) ([]byte, er
 		repo = r.findRepository(&name)
 		// if not found locally, pull the package from remote (needs credentials)
 		if repo == nil {
-			pack = r.Pull(&name, creds)
+			pack = r.Pull(&name, sourceCreds)
 		} else {
 			pack = r.FindPackage(&name)
 		}
@@ -709,9 +709,37 @@ func (r *LocalRegistry) Save(names []core.PackageName, creds string) ([]byte, er
 	// tar the package files without preserving directory structure
 	err := core.Tar(files, tar, false)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return tar.Bytes(), nil
+
+	content := tar.Bytes()
+
+	// if no output has been specified
+	if len(targetUri) == 0 {
+		// prints to the stdout
+		fmt.Print(string(content[:]))
+	} else {
+		// otherwise, if the path does not implement an URI scheme (i.e. is a file path)
+		if !strings.Contains(targetUri, "://") {
+			targetUri, err = filepath.Abs(targetUri)
+			core.CheckErr(err, "cannot obtain the absolute output path")
+			ext := filepath.Ext(targetUri)
+			if len(ext) == 0 || ext != ".tar" {
+				core.RaiseErr("output path must contain a filename with .tar extension")
+			}
+			// creates target directory
+			err = os.MkdirAll(filepath.Dir(targetUri), 0755)
+			if err != nil {
+				return err
+			}
+		}
+		err = core.WriteFile(content, targetUri, targetCreds)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *LocalRegistry) Import(uri []string, creds string) error {

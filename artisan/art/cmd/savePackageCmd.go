@@ -9,15 +9,11 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/spf13/cobra"
 	"log"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 // SavePackageCmd save one or more packages from the local registry to a tar archive to allow copying without using registries
@@ -39,13 +35,13 @@ Save one or more packages to a tar archive, streamed to STDOUT by default or to 
 
 Examples:
    # save my-package-1 and my-package-2 to a tar archive by redirecting STDOUT to file (using the redirection operator '>')
-   art save package my-package-1 my-package-1 > archive.tar 
+   art save package my-package-1 my-package-2 > archive.tar 
    
-   # save my-package-1 and my-package-1 to a tar archive by specifying relative file path via URI (using the -o flag)
-   art save package my-package-1 my-package-1 -o ./test/archive.tar 
+   # save my-package-1 and my-package-2 to a tar archive by specifying relative file path via URI (using the -o flag)
+   art save package my-package-1 my-package-2 -o ./test/archive.tar 
 
-   # save my-package-1 and my-package-1 from remote artisan registry to an authenticated and TLS enabled s3 bucket
-   art save package my-package-1 my-package-1 -u REG_USER:REG_PWD -o s3s://endpoint/bucket/archive.tar -c S3_ID:S3_SECRET
+   # save my-package-1 and my-package-2 from remote artisan registry to an authenticated and TLS enabled s3 bucket
+   art save package my-package-1 my-package-2 -u REG_USER:REG_PWD -o s3s://endpoint/bucket/archive.tar -c S3_ID:S3_SECRET
 `,
 		},
 	}
@@ -67,23 +63,6 @@ func (c *SavePackageCmd) Run(cmd *cobra.Command, args []string) {
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	// export packages into tar bytes
-	content, err := local.Save(names, c.srcCreds)
+	err = local.Save(names, c.srcCreds, c.output, c.targetCreds)
 	core.CheckErr(err, "cannot export package(s)")
-	if len(c.output) == 0 {
-		fmt.Print(string(content[:]))
-	} else {
-		targetPath := c.output
-		// if the path does not implement an URI scheme (i.e. is a file path)
-		if !strings.Contains(c.output, "://") {
-			targetPath, err = filepath.Abs(targetPath)
-			core.CheckErr(err, "cannot obtain the absolute output path")
-			ext := filepath.Ext(targetPath)
-			if len(ext) == 0 || ext != ".tar" {
-				core.RaiseErr("output path must contain a filename with .tar extension")
-			}
-			// creates target directory
-			core.CheckErr(os.MkdirAll(filepath.Dir(targetPath), 0755), "cannot create target output folder")
-		}
-		core.CheckErr(core.WriteFile(content, targetPath, c.targetCreds), "cannot save exported package file")
-	}
 }

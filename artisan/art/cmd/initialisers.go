@@ -68,7 +68,9 @@ func InitialiseRootCmd() *RootCmd {
 func InitialiseSaveCommand() *SaveCmd {
 	saveCmd := NewSaveCmd()
 	savePackageCmd := NewSavePackageCmd()
+	saveImageCmd := NewSaveImageCmd()
 	saveCmd.cmd.AddCommand(savePackageCmd.cmd)
+	saveCmd.cmd.AddCommand(saveImageCmd.cmd)
 	return saveCmd
 }
 
