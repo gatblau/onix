@@ -130,7 +130,7 @@ func openFile(path string) *os.File {
 	return r
 }
 
-// remove an element in a slice
+// RemoveElement remove an element in a slice
 func RemoveElement(a []string, value string) []string {
 	i := -1
 	// find the value to remove

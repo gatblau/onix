@@ -139,10 +139,13 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 	if err := MoveFile(filepath.Join(basenameDir, fmt.Sprintf("%s.json", basenameNoExt)), filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", basenameNoExt))); err != nil {
 		return fmt.Errorf("failed to move package seal file to the local registry: %s", err)
 	}
-	// untag package package (if any)
-	r.unTag(name, name.Tag)
-	// remove any dangling packages
-	r.removeDangling(name)
+	// check if a package with the same name:tag exists
+	old := r.FindPackage(name)
+	// if a package was found
+	if old != nil {
+		// moves it to the dangling artefacts repository
+		r.moveToDangling(name)
+	}
 	// find the repository
 	repo := r.findRepository(name)
 	// if the repo does not exist the creates it
@@ -166,6 +169,43 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 	// persist the changes
 	r.save()
 	return nil
+}
+
+// moveToDangling move the specified package to the dangling artefacts repository
+// and remove any existing tags
+func (r *LocalRegistry) moveToDangling(name *core.PackageName) {
+	// get the package repository
+	repo := r.findRepository(name)
+	// get the package in the repository
+	p := r.FindPackage(name)
+	// get the dangling artefact repository
+	dangRepo := r.findDanglingRepo()
+	// remove the package from the original repository
+	repo.Packages = rmPackage(repo.Packages, p)
+	// change the package tag to none
+	p.Tags = []string{"<none>"}
+	// add the package to the dangling repo
+	dangRepo.Packages = append(dangRepo.Packages, p)
+}
+
+// findDanglingRepo find the dangling artefacts repository
+// if the repository does not exist, it creates one and adds it to the collection of
+// repositories of the registry
+func (r *LocalRegistry) findDanglingRepo() *Repository {
+	for _, r := range r.Repositories {
+		if strings.Contains(r.Repository, "none") {
+			return r
+		}
+	}
+	// if the dangling repo does not exist, it creates one
+	danglingRepo := &Repository{
+		Repository: "<none>",
+		Packages:   []*Package{},
+	}
+	// adds it to the collection of repos of the registry
+	r.Repositories = append(r.Repositories, danglingRepo)
+	// return the repo
+	return danglingRepo
 }
 
 // Tag remove a given tag from an package
@@ -1091,4 +1131,24 @@ func (r *LocalRegistry) findRepository(name *core.PackageName) *Repository {
 func fileExists(filename string) bool {
 	_, err := os.Stat(filename)
 	return err == nil
+}
+
+// rmPackage removes a package from a slice
+func rmPackage(a []*Package, value *Package) []*Package {
+	i := -1
+	// find the value to remove
+	for ix := 0; ix < len(a); ix++ {
+		if a[ix] == value {
+			i = ix
+			break
+		}
+	}
+	if i == -1 {
+		return a
+	}
+	// Remove the element at index i from a.
+	a[i] = a[len(a)-1] // Copy last element to index i.
+	a[len(a)-1] = nil  // Erase last element (write zero value).
+	a = a[:len(a)-1]   // Truncate slice.
+	return a
 }
