@@ -821,12 +821,17 @@ func loadIndexFromPath(path string) (*LocalRegistry, error) {
 	return repos, nil
 }
 
-// given the ID of a package, returns the repository it is in (package name)
+// given the ID of a package, returns the package name with the last available tag (avoid latest)
 func getPackageName(repoIx LocalRegistry, packageId string) (*core.PackageName, error) {
 	for _, repo := range repoIx.Repositories {
 		for _, pack := range repo.Packages {
 			if pack.Id == packageId {
-				return core.ParseName(repo.Repository)
+				tag := ""
+				if len(pack.Tags) > 0 {
+					// pick the last tag
+					tag = pack.Tags[len(pack.Tags)-1]
+				}
+				return core.ParseName(fmt.Sprintf("%s:%s", repo.Repository, tag))
 			}
 		}
 	}
