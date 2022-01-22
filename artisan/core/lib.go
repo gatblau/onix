@@ -187,20 +187,12 @@ func StringCheckSum(value string) string {
 	return base64.StdEncoding.EncodeToString(hash.Sum(nil))
 }
 
+// UserPwd returns username and password from a username:password formatted string
+// if the passed-in creds string is empty then it returns empty values
+// note: if the credentials are for an artisan registry then the function RegUserPwd should be used instead
 func UserPwd(creds string) (user, pwd string) {
-	// if the specified credentials are not set
 	if len(creds) == 0 {
-		// try and get them from the environment
-		user = os.Getenv(ArtisanRegistryUser)
-		pwd = os.Getenv(ArtisanRegistryPwd)
-		// if successful
-		if len(user) > 0 && len(pwd) > 0 {
-			// construct a new credentials string
-			creds = fmt.Sprintf("%s:%s", user, pwd)
-		} else {
-			// returns no credentials
-			return "", ""
-		}
+		return "", ""
 	}
 	parts := strings.Split(creds, ":")
 	if len(parts) == 1 {
@@ -216,6 +208,28 @@ func UserPwd(creds string) (user, pwd string) {
 		RaiseErr("incorrect credentials format, it should be username[:password]")
 	}
 	return parts[0], parts[1]
+}
+
+// RegUserPwd returns username and password from a username:password formatted string
+// if the passed-in creds string is empty then it checks if the artisan registry env variables have been set and if so,
+// use their values as creds
+// note: this function should be used any time remote artisan registry operations are required
+func RegUserPwd(creds string) (user, pwd string) {
+	// if the specified credentials are not set
+	if len(creds) == 0 {
+		// try and get them from the environment
+		user = os.Getenv(ArtisanRegistryUser)
+		pwd = os.Getenv(ArtisanRegistryPwd)
+		// if successful
+		if len(user) > 0 && len(pwd) > 0 {
+			// return user and pwd
+			return user, pwd
+		} else {
+			// returns no credentials
+			return "", ""
+		}
+	}
+	return UserPwd(creds)
 }
 
 func FilenameWithoutExtension(fn string) string {

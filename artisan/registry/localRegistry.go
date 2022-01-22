@@ -311,7 +311,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) {
 	// get a reference to the remote registry
 	api := r.api(name.Domain)
 	// get registry credentials
-	uname, pwd := core.UserPwd(credentials)
+	uname, pwd := core.RegUserPwd(credentials)
 	// fetch the package info from the local registry
 	localPackage := r.FindPackage(name)
 	if localPackage == nil {
@@ -378,7 +378,7 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 	// get a reference to the remote registry
 	api := r.api(name.Domain)
 	// get registry credentials
-	uname, pwd := core.UserPwd(credentials)
+	uname, pwd := core.RegUserPwd(credentials)
 	// assume tls enabled
 	tls := true
 	// get remote repository information

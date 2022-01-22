@@ -107,7 +107,7 @@ func (r *Runner) ExeC(packageName, fxName, credentials, network string, interact
 		// merge the collected input with the current environment without adding the PGP keys (they must be present locally)
 		env.Merge(input.Env(false))
 		// get registry credentials
-		uname, pwd := core.UserPwd(credentials)
+		uname, pwd := core.RegUserPwd(credentials)
 		// create a random container name
 		containerName := fmt.Sprintf("art-exec-%s", core.RandomString(8))
 		// launch a container with a bind mount to the artisan registry only
