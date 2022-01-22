@@ -1,5 +1,3 @@
-package cmd
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package cmd
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package cmd
+
 import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/i18n"
@@ -15,6 +16,7 @@ import (
 	"log"
 )
 
+// PullCmd pull a package from a remote registry
 type PullCmd struct {
 	cmd         *cobra.Command
 	credentials string
@@ -24,7 +26,7 @@ type PullCmd struct {
 func NewPullCmd() *PullCmd {
 	c := &PullCmd{
 		cmd: &cobra.Command{
-			Use:   "pull [OPTIONS] NAME[:TAG]",
+			Use:   "pull [FLAGS] NAME[:TAG]",
 			Short: "downloads an package from the package registry",
 			Long:  ``,
 		},
@@ -47,5 +49,5 @@ func (c *PullCmd) Run(cmd *cobra.Command, args []string) {
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	// attempt pull from remote registry
-	local.Pull(packageName, credsFromEnv(ArtisanRegistryUser, ArtisanRegistryPwd, c.credentials))
+	local.Pull(packageName, c.credentials)
 }

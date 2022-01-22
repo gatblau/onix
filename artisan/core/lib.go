@@ -1,5 +1,3 @@
-package core
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package core
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package core
+
 import (
 	"bytes"
 	"crypto/sha256"
@@ -35,6 +36,15 @@ import (
 	t "github.com/google/uuid"
 	"github.com/hashicorp/go-uuid"
 	"github.com/ohler55/ojg/jp"
+)
+
+const (
+	// ArtisanRegistryUser the name of the env variable that holds the artisan registry user to authenticate with a remote registry
+	// when registry related commands are executed and no specific credentials are provided via command flag
+	ArtisanRegistryUser = "ART_REG_USER"
+	// ArtisanRegistryPwd the name of the env variable that holds the artisan registry password to authenticate with a remote registry
+	// when registry related commands are executed and no specific credentials are provided via command flag
+	ArtisanRegistryPwd = "ART_REG_PWD"
 )
 
 var (
@@ -208,9 +218,19 @@ func StringCheckSum(value string) string {
 }
 
 func UserPwd(creds string) (user, pwd string) {
-	// if credentials not provided then no user / pwd
+	// if the specified credentials are not set
 	if len(creds) == 0 {
-		return "", ""
+		// try and get them from the environment
+		user = os.Getenv(ArtisanRegistryUser)
+		pwd = os.Getenv(ArtisanRegistryPwd)
+		// if successful
+		if len(user) > 0 && len(pwd) > 0 {
+			// construct a new credentials string
+			creds = fmt.Sprintf("%s:%s", user, pwd)
+		} else {
+			// returns no credentials
+			return "", ""
+		}
 	}
 	parts := strings.Split(creds, ":")
 	if len(parts) == 1 {

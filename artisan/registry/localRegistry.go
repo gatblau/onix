@@ -673,6 +673,11 @@ func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
 	return seal.Manifest
 }
 
+// Save one or more packages as a tar archive to the target URI
+// names: the slice of packages to save
+// sourceCreds: the artisan registry credentials to pull the packages to save (in the format user:password)
+// targetUri: the URI where the tar archive should be saved (could be S3 or file system)
+// targetCreds: the credentials to connect to the targetUri (if it is authenticated S3 in the format user:password)
 func (r *LocalRegistry) Save(names []core.PackageName, sourceCreds, targetUri, targetCreds string) error {
 	var (
 		pack  *Package
@@ -742,6 +747,9 @@ func (r *LocalRegistry) Save(names []core.PackageName, sourceCreds, targetUri, t
 	return nil
 }
 
+// Import a package tar archive into the local registry
+// uri: the uri of the package to import (can be file path or S3 bucket uri)
+// creds: the credentials to connect to the endpoint if it is authenticated S3 in the format user:password
 func (r *LocalRegistry) Import(uri []string, creds string) error {
 	for _, path := range uri {
 		if err := r.importTar(path, creds); err != nil {

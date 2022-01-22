@@ -1,5 +1,3 @@
-package cmd
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package cmd
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package cmd
+
 import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/i18n"
@@ -15,7 +16,7 @@ import (
 	"log"
 )
 
-// list local packages
+// PushCmd push a package to a remote registry
 type PushCmd struct {
 	cmd         *cobra.Command
 	credentials string
@@ -24,7 +25,7 @@ type PushCmd struct {
 func NewPushCmd() *PushCmd {
 	c := &PushCmd{
 		cmd: &cobra.Command{
-			Use:   "push [OPTIONS] NAME[:TAG]",
+			Use:   "push [FLAGS] NAME[:TAG]",
 			Short: "uploads an package to a remote package store",
 			Long:  ``,
 		},
@@ -47,5 +48,5 @@ func (c *PushCmd) Run(cmd *cobra.Command, args []string) {
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	// attempt upload to remote repository
-	local.Push(packageName, credsFromEnv(ArtisanRegistryUser, ArtisanRegistryPwd, c.credentials))
+	local.Push(packageName, c.credentials)
 }
