@@ -96,12 +96,6 @@ func runBuildFileFx(runtimeName, fxName, dir, containerName, network string, env
 
 // launch a container and execute a package function
 func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUser, artRegistryPwd, network string, env *merge.Envar) error {
-	// if the OS is linux and the user id is not 100,000,000, it cannot continue
-	if isWrong, msg := core.WrongUserId(); isWrong {
-		// print warning
-		fmt.Println(msg)
-		os.Exit(1)
-	}
 	// determine which container tool is available in the host
 	tool, err := containerCmd()
 	if err != nil {
