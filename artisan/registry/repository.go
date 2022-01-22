@@ -1,5 +1,3 @@
-package registry
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,8 @@ package registry
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package registry
 
 import (
 	"encoding/base64"
@@ -16,7 +16,7 @@ import (
 )
 
 type Repository struct {
-	// the package repository (name without without tag)
+	// the package repository (name without tag)
 	Repository string `json:"repository"`
 	// the reference name of the package corresponding to different builds
 	Packages []*Package `json:"artefacts"`
@@ -26,6 +26,7 @@ func (r *Repository) ToJsonBytes() ([]byte, error) {
 	return json.Marshal(r)
 }
 
+// FindPackage find a package using its unique id
 func (r *Repository) FindPackage(id string) *Package {
 	for _, pack := range r.Packages {
 		if pack.Id == id {
@@ -35,7 +36,7 @@ func (r *Repository) FindPackage(id string) *Package {
 	return nil
 }
 
-// updates the specified package
+// UpdatePackage updates the specified package
 func (r *Repository) UpdatePackage(a *Package) bool {
 	position := -1
 	for ix, pack := range r.Packages {
@@ -51,7 +52,7 @@ func (r *Repository) UpdatePackage(a *Package) bool {
 	return false
 }
 
-// determines if the repository contains an package with the specified tag
+// GetTag determines if the repository contains an package with the specified tag
 func (r *Repository) GetTag(tag string) (*Package, bool) {
 	for _, pack := range r.Packages {
 		if pack.HasTag(tag) {
@@ -61,7 +62,7 @@ func (r *Repository) GetTag(tag string) (*Package, bool) {
 	return nil, false
 }
 
-// metadata for an Artisan package
+// Package metadata for an Artisan package
 type Package struct {
 	// a unique identifier for the package calculated as the checksum of the complete seal
 	Id string `json:"id"`
@@ -81,7 +82,7 @@ func (a *Package) String() string {
 	return fmt.Sprintf("%s-%s", a.Id[0:12], a.FileRef)
 }
 
-// determines if the package has the specified tag
+// HasTag determines if the package has the specified tag
 func (a *Package) HasTag(tag string) bool {
 	for _, t := range a.Tags {
 		if t == tag {
@@ -91,7 +92,7 @@ func (a *Package) HasTag(tag string) bool {
 	return false
 }
 
-// removes a specified tag
+// RemoveTag removes a specified tag
 // returns true if the tag was found and removed, otherwise false
 func (a *Package) RemoveTag(tag string) bool {
 	before := len(a.Tags)
