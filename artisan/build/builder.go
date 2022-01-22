@@ -77,14 +77,14 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 	if len(buildProfile.Target) == 0 {
 		core.RaiseErr("profile '%s' target not specified, cannot continue", buildProfile.Name)
 	}
+	// if the build target is a file or subdirectory in current folder
+	if buildProfile.Target == "." || strings.HasPrefix(buildProfile.MergedTarget, "..") || strings.HasPrefix(buildProfile.MergedTarget, "/") {
+		core.RaiseErr("invalid build target, target must be a file or folder under the build file\n")
+	}
 	// merge env with target
 	mergedTarget, _ := core.MergeEnvironmentVars([]string{buildProfile.Target}, b.env.Vars, interactive)
 	// set the merged target for later use
 	buildProfile.MergedTarget = mergedTarget[0]
-	// if target is a file or subdirectory in current folder
-	if buildProfile.MergedTarget == "." || strings.HasPrefix(buildProfile.MergedTarget, "..") || strings.HasPrefix(buildProfile.MergedTarget, "/") {
-		core.RaiseErr("invalid build target, target is a file or subdirectory in current folder\n")
-	}
 	// wait for the target to be created in the file system
 	targetPath := filepath.Join(b.loadFrom, mergedTarget[0])
 	waitForTargetToBeCreated(targetPath)
