@@ -9,22 +9,49 @@
 package cmd
 
 import (
+	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/registry"
 	"github.com/spf13/cobra"
 )
 
 // ImportCmd Import the contents from a tarball to create an artisan package in the local registry
 type ImportCmd struct {
-	cmd *cobra.Command
+	cmd   *cobra.Command
+	creds string
 }
 
 func NewImportCmd() *ImportCmd {
 	c := &ImportCmd{
 		cmd: &cobra.Command{
-			Use:   "import",
-			Short: "imports the content from one or more tarball files to create one or more packages in the local registry",
-			Long: `Imports the content from one or more tarball files to create one or more packages in the local registry.
+			Use:   "import [FLAGS] TARBALL [TARBALL...]",
+			Short: "import packages from one or more tarball files into the local registry",
+			Long: `Usage: art import [FLAGS] TARBALL [TARBALL...]
+
+Import packages from one or more tarball files into the local registry.
+The tarball file(s) can be located either in the filesystem or an S3 endpoint.
+
+Examples:
+   # import one or more packages in the tarball file from the filesystem
+   art import ./test/archive.tar 
+   
+   # import one or more packages in the tarball file from an S3 endpoint
+   art import s3s://endpoint/bucket/archive.tar -u S3_ID:S3_SECRET
 `,
 		},
 	}
+	c.cmd.Run = c.Run
+	c.cmd.Flags().StringVarP(&c.creds, "user", "u", "", "the credentials used to retrieve the tarball from an endpoint")
 	return c
+}
+
+func (c *ImportCmd) Run(cmd *cobra.Command, args []string) {
+	// check a package name has been provided
+	if len(args) < 1 {
+		core.RaiseErr("at least the name of one tarball file to import is required")
+	}
+	// create a local registry
+	r := registry.NewLocalRegistry()
+	// import the tar archive(s)
+	err := r.Import(args, c.creds)
+	core.CheckErr(err, "cannot import archive(s)")
 }

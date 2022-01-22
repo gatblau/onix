@@ -13,7 +13,7 @@ func InitialiseRootCmd() *RootCmd {
 	appCmd := NewAppCmd()
 	serveCmd := NewServeCmd()
 	saveCmd := InitialiseSaveCommand()
-	importCmd := InitialiseImportCommand()
+	importCmd := NewImportCmd()
 	buildCmd := NewBuildCmd()
 	lsCmd := NewListCmd()
 	pushCmd := NewPushCmd()
@@ -72,13 +72,6 @@ func InitialiseSaveCommand() *SaveCmd {
 	saveCmd.cmd.AddCommand(savePackageCmd.cmd)
 	saveCmd.cmd.AddCommand(saveImageCmd.cmd)
 	return saveCmd
-}
-
-func InitialiseImportCommand() *ImportCmd {
-	importCmd := NewImportCmd()
-	importPackageCmd := NewImportPackageCmd()
-	importCmd.cmd.AddCommand(importPackageCmd.cmd)
-	return importCmd
 }
 
 func InitialiseEnvCommand() *EnvCmd {
