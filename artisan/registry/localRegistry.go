@@ -64,6 +64,21 @@ func (r *LocalRegistry) GetPackagesByName(name *core.PackageName) ([]*Package, b
 	return nil, false
 }
 
+func (r *LocalRegistry) Prune() error {
+	danglingRepo := r.findDanglingRepo()
+	if len(danglingRepo.Packages) > 0 {
+		for _, p := range danglingRepo.Packages {
+			err := r.removeFiles(p)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	danglingRepo.Packages = nil
+	r.save()
+	return nil
+}
+
 // FindPackage return the package that matches the specified:
 // - domain/group/name:tag
 // nil if not found in the LocalRegistry
@@ -644,7 +659,7 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 	}
 }
 
-func (r *LocalRegistry) Remove(names []*core.PackageName) {
+func (r *LocalRegistry) Remove(names []*core.PackageName) error {
 	for _, name := range names {
 		// try and get the package by complete URI or id ref
 		localPackage := r.FindPackage(name)
@@ -657,7 +672,10 @@ func (r *LocalRegistry) Remove(names []*core.PackageName) {
 				continue
 			} else {
 				// call the remove with the new names
-				r.Remove(list)
+				err := r.Remove(list)
+				if err != nil {
+					return err
+				}
 			}
 		} else {
 			// try to remove it using full name
@@ -682,7 +700,10 @@ func (r *LocalRegistry) Remove(names []*core.PackageName) {
 					}
 					// no other repo contains the package so safe to remove the files
 					if !found {
-						r.removeFiles(localPackage)
+						err := r.removeFiles(localPackage)
+						if err != nil {
+							return err
+						}
 					}
 				}
 				// persist changes
@@ -691,13 +712,17 @@ func (r *LocalRegistry) Remove(names []*core.PackageName) {
 			} else {
 				// attempt to remove by Id (stored in the Name)
 				repo := r.findRepository(name)
+				err := r.removeFiles(localPackage)
+				if err != nil {
+					return err
+				}
 				repo.Packages = r.removePackageById(repo.Packages, name.Name)
-				r.removeFiles(localPackage)
 				r.save()
 				log.Print(localPackage.Id)
 			}
 		}
 	}
+	return nil
 }
 
 func (r *LocalRegistry) GetSeal(name *Package) (*data.Seal, error) {
@@ -957,17 +982,14 @@ func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string) 
 }
 
 // remove the files associated with an Package
-func (r *LocalRegistry) removeFiles(artie *Package) {
+func (r *LocalRegistry) removeFiles(pack *Package) error {
 	// remove the zip file
-	err := os.Remove(fmt.Sprintf("%s/%s.zip", core.RegistryPath(), artie.FileRef))
+	err := os.Remove(fmt.Sprintf("%s/%s.zip", core.RegistryPath(), pack.FileRef))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	// remove the json file
-	err = os.Remove(fmt.Sprintf("%s/%s.json", core.RegistryPath(), artie.FileRef))
-	if err != nil {
-		log.Fatal(err)
-	}
+	return os.Remove(fmt.Sprintf("%s/%s.json", core.RegistryPath(), pack.FileRef))
 }
 
 // returns the elapsed time until now in human friendly format

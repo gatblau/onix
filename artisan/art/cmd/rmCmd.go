@@ -40,7 +40,8 @@ func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 	//  create a local registry
 	local := registry.NewLocalRegistry()
 	// get the name(s) of the package(s) to remove
-	local.Remove(c.toArtURIs(args))
+	err := local.Remove(c.toArtURIs(args))
+	core.CheckErr(err, "cannot remove package")
 }
 
 func (c *RmCmd) toArtURIs(args []string) []*core.PackageName {

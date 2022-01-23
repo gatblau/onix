@@ -35,6 +35,7 @@ func InitialiseRootCmd() *RootCmd {
 	langCmd := InitialiseLangCommand()
 	envCmd := InitialiseEnvCommand()
 	gitSyncCmd := NewGitSyncCmd()
+	pruneCmd := NewPruneCmd()
 	rootCmd.Cmd.AddCommand(
 		appCmd.cmd,
 		saveCmd.cmd,
@@ -61,6 +62,7 @@ func InitialiseRootCmd() *RootCmd {
 		langCmd.cmd,
 		envCmd.cmd,
 		gitSyncCmd.cmd,
+		pruneCmd.cmd,
 	)
 	return rootCmd
 }
