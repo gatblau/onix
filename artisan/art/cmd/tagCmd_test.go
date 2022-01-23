@@ -36,11 +36,11 @@ func TestTagV1ToLatestExist(t *testing.T) {
 	testV1PId := reg.FindPackage(testV1).Id
 	testLatestPId := reg.FindPackage(testLatest).Id
 	// execute action tag
-	reg.Tag(testV1, testLatest)
+	reg.Tag("test:V1", "test:latest")
 	// reload the registry
 	reg.Load()
 	// check post-conditions
-	testLatestP := reg.FindPackagesById(testLatestPId)
+	testLatestP := reg.FindPackageNamesById(testLatestPId)
 	if testLatestP == nil {
 		t.Fatalf("test:latest package not found")
 	}
@@ -48,7 +48,7 @@ func TestTagV1ToLatestExist(t *testing.T) {
 	if len(testLatestP) != 1 {
 		t.Fatalf("old test:latest package should have only one renamed tag")
 	}
-	testV1P := reg.FindPackagesById(testV1PId)
+	testV1P := reg.FindPackageNamesById(testV1PId)
 	// the new latest tag added on top of existing package with V1 tag
 	if len(testV1P) != 2 {
 		t.Fatalf("")
@@ -69,7 +69,7 @@ func TestTagV1ToLatest(t *testing.T) {
 	// reload the registry
 	reg.Load()
 	// tag
-	reg.Tag(testV1, testLatest)
+	reg.Tag("test:V1", "test:latest")
 	// check post-conditions
 	if reg.FindPackage(testLatest) == nil {
 		t.Fatalf("test:latest package not found")

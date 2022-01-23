@@ -34,9 +34,5 @@ func (c *TagCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("source and target package tags are required")
 	}
 	l := registry.NewLocalRegistry()
-	srcName, err := core.ParseName(args[0])
-	core.CheckErr(err, "invalid source package name")
-	destName, err := core.ParseName(args[1])
-	core.CheckErr(err, "invalid destination package name")
-	l.Tag(srcName, destName)
+	core.CheckErr(l.Tag(args[0], args[1]), "cannot tag package")
 }

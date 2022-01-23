@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
+	"strings"
 )
 
 type Repository struct {
@@ -24,6 +25,10 @@ type Repository struct {
 
 func (r *Repository) ToJsonBytes() ([]byte, error) {
 	return json.Marshal(r)
+}
+
+func (r *Repository) IsDangling() bool {
+	return strings.Contains(r.Repository, "<none>")
 }
 
 // FindPackage find a package using its unique id
@@ -76,6 +81,10 @@ type Package struct {
 	Size string `json:"size"`
 	// the creation time
 	Created string `json:"created"`
+}
+
+func (a *Package) IsDangling() bool {
+	return len(a.Tags) == 1 && strings.Contains(a.Tags[0], "<none>")
 }
 
 func (a *Package) String() string {

@@ -86,9 +86,9 @@ func (r *LocalRegistry) FindPackage(name *core.PackageName) *Package {
 	return nil
 }
 
-// FindPackagesById return the packages that matches the specified:
+// FindPackageNamesById return the packages that matches the specified:
 // - package id substring
-func (r *LocalRegistry) FindPackagesById(id string) []*core.PackageName {
+func (r *LocalRegistry) FindPackageNamesById(id string) []*core.PackageName {
 	// go through the packages in the repository and check for Id matches
 	names := make([]*core.PackageName, 0)
 	// first gets the repository the package is in
@@ -97,6 +97,10 @@ func (r *LocalRegistry) FindPackagesById(id string) []*core.PackageName {
 			// try and match against the package ID substring
 			if strings.HasPrefix(packag.Id, id) {
 				for _, tag := range packag.Tags {
+					// if the package is in the repository for dangling artefacts cannot get a name so returns nil
+					if strings.Contains(repository.Repository, "<none>") {
+						return nil
+					}
 					name, err := core.ParseName(fmt.Sprintf("%s:%s", repository.Repository, tag))
 					if err != nil {
 						log.Fatalf(err.Error())
@@ -107,6 +111,19 @@ func (r *LocalRegistry) FindPackagesById(id string) []*core.PackageName {
 		}
 	}
 	return names
+}
+
+func (r *LocalRegistry) FindPackageById(id string) *Package {
+	// first gets the repository the package is in
+	for _, repository := range r.Repositories {
+		for _, packag := range repository.Packages {
+			// try and match against the package ID substring
+			if strings.HasPrefix(packag.Id, id) {
+				return packag
+			}
+		}
+	}
+	return nil
 }
 
 // Add the package and seal to the LocalRegistry
@@ -209,10 +226,39 @@ func (r *LocalRegistry) findDanglingRepo() *Repository {
 }
 
 // Tag remove a given tag from an package
-func (r *LocalRegistry) Tag(sourceName *core.PackageName, targetName *core.PackageName) {
-	sourcePackage := r.FindPackage(sourceName)
-	if sourcePackage == nil {
-		core.RaiseErr("source package %s does not exit", sourceName)
+func (r *LocalRegistry) Tag(srcName, tgtName string) error {
+	// try the package Id
+	var (
+		sourceName *core.PackageName
+		err        error
+	)
+	// try to find the source package by its id
+	sourcePackage := r.FindPackageById(srcName)
+	// if the package was found and is dangling
+	if sourcePackage != nil && sourcePackage.IsDangling() {
+		// move the package to the target repository
+		if err = r.moveDanglingToRepo(sourcePackage, tgtName); err != nil {
+			return fmt.Errorf("cannot tag dangling package: %s", err)
+		}
+		// persist changes
+		r.save()
+		// return
+		return nil
+	} else {
+		// the package could not be found by Id so try by name
+		sourceName, err = core.ParseName(srcName)
+		if err != nil {
+			return fmt.Errorf("invalid source package name %s; or it does not exist", srcName)
+		}
+		sourcePackage = r.FindPackage(sourceName)
+		// if the package is not found by name the exit with error
+		if sourcePackage == nil {
+			return fmt.Errorf("source package %s does not exist", sourceName)
+		}
+	}
+	targetName, err := core.ParseName(tgtName)
+	if err != nil {
+		return fmt.Errorf("invalid target package name %s; or it does not exist", tgtName)
 	}
 	if targetName.IsInTheSameRepositoryAs(sourceName) {
 		if !sourcePackage.HasTag(targetName.Tag) {
@@ -228,9 +274,9 @@ func (r *LocalRegistry) Tag(sourceName *core.PackageName, targetName *core.Packa
 			}
 			sourcePackage.Tags = append(sourcePackage.Tags, targetName.Tag)
 			r.save()
-			return
+			return nil
 		} else {
-			return
+			return nil
 		}
 	} else {
 		targetRepository := r.findRepository(targetName)
@@ -252,7 +298,7 @@ func (r *LocalRegistry) Tag(sourceName *core.PackageName, targetName *core.Packa
 				},
 			})
 			r.save()
-			return
+			return nil
 		} else {
 			targetPackage := r.FindPackage(targetName)
 			// if the package exists in the repository
@@ -273,7 +319,7 @@ func (r *LocalRegistry) Tag(sourceName *core.PackageName, targetName *core.Packa
 						// add a tag
 						a.Tags = append(a.Tags, targetName.Tag)
 						r.save()
-						return
+						return nil
 					}
 				}
 				// add a new package metadata in the existing repository
@@ -287,10 +333,11 @@ func (r *LocalRegistry) Tag(sourceName *core.PackageName, targetName *core.Packa
 						Created: sourcePackage.Created,
 					})
 				r.save()
-				return
+				return nil
 			}
 		}
 	}
+	return nil
 }
 
 // List packages to stdout
@@ -604,7 +651,7 @@ func (r *LocalRegistry) Remove(names []*core.PackageName) {
 		// if the package is not found by name:tag
 		if localPackage == nil {
 			// try finding it by Id (passed in the name part of the package name)
-			list := r.FindPackagesById(name.Name)
+			list := r.FindPackageNamesById(name.Name)
 			if len(list) == 0 {
 				fmt.Printf("name %s not found\n", name.Name)
 				continue
@@ -909,22 +956,6 @@ func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string) 
 	return destPath, prefix
 }
 
-// removes any packages with no tags
-func (r *LocalRegistry) removeDangling(name *core.PackageName) {
-	repo := r.findRepository(name)
-	if repo != nil {
-		for _, pack := range repo.Packages {
-			// if the package has no tags then remove it
-			if len(pack.Tags) == 0 {
-				// remove the package metadata using its Id
-				repo.Packages = r.removePackageById(repo.Packages, pack.Id)
-				// remove the package files
-				r.removeFiles(pack)
-			}
-		}
-	}
-}
-
 // remove the files associated with an Package
 func (r *LocalRegistry) removeFiles(artie *Package) {
 	// remove the zip file
@@ -1120,6 +1151,66 @@ func (r *LocalRegistry) findRepository(name *core.PackageName) *Repository {
 	for _, repository := range r.Repositories {
 		for _, artie := range repository.Packages {
 			if strings.Contains(artie.Id, name.Name) {
+				return repository
+			}
+		}
+	}
+	return nil
+}
+
+// moveDanglingToRepo move the passed in dangling package to the repo specified by the target name
+func (r *LocalRegistry) moveDanglingToRepo(srcPackage *Package, targetName string) error {
+	// check the package is dangling
+	srcRepo := r.findRepositoryByPackageId(srcPackage.Id)
+	if srcRepo == nil {
+		return fmt.Errorf("cannot find repository for package Id %6s", srcPackage.Id)
+	}
+	if srcRepo != nil && !srcRepo.IsDangling() {
+		return fmt.Errorf("the package with Id %6s is not in the dangling repository", srcPackage.Id)
+	}
+	// parse the target name
+	tgtName, err := core.ParseName(targetName)
+	if err != nil {
+		return fmt.Errorf("invalid target package name %s", targetName)
+	}
+	// check if the target name already exists in the target repo
+	tgtPackage := r.FindPackage(tgtName)
+	if tgtPackage != nil {
+		// cannot override this package with dangling
+		return fmt.Errorf("package name %s already exists, use a name that is not in use or re-tag or delete the existing package", targetName)
+	}
+	// check if the target repo exists
+	tgtRepo := r.findRepository(tgtName)
+	// if it does not
+	if tgtRepo == nil {
+		// creates a new repo
+		tgtRepo = &Repository{
+			Repository: tgtName.FullyQualifiedName(),
+			Packages:   []*Package{},
+		}
+		// add the repo to the local registry
+		r.Repositories = append(r.Repositories, tgtRepo)
+	}
+	// remove the package from the dangling repo
+	srcRepo.Packages = r.removePackageById(srcRepo.Packages, srcPackage.Id)
+	// update the src package tag
+	srcPackage.Tags = []string{tgtName.Tag}
+	// add the package  to the target repo
+	tgtRepo.Packages = append(tgtRepo.Packages, srcPackage)
+	return nil
+}
+
+// moveToRepo move the passed in package to the repo specified by the target name
+func (r *LocalRegistry) moveToRepo(sourcePackage *Package, name string) error {
+
+	return nil
+}
+
+// findRepositoryByPackageId find the repository a package with a specific Id is in
+func (r *LocalRegistry) findRepositoryByPackageId(id string) *Repository {
+	for _, repository := range r.Repositories {
+		for _, p := range repository.Packages {
+			if p.Id == id {
 				return repository
 			}
 		}
