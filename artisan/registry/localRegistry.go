@@ -806,14 +806,21 @@ func (r *LocalRegistry) Save(names []core.PackageName, sourceCreds, targetUri, t
 		} else {
 			pack = r.FindPackage(&name)
 		}
+		// check if the package exists
+		if pack == nil {
+			return fmt.Errorf("package does not exist")
+		}
+		// works out the path to the package files in the local registry
+		zipFile := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", pack.FileRef))
+		jsonFile := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", pack.FileRef))
 		// append the package index data
 		reg.Repositories = append(reg.Repositories, repo)
 		// add the package files to the archive list
 		files = append(files, []core.TarFile{
 			// add package seal
-			{Path: filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", pack.FileRef))},
+			{Path: jsonFile},
 			// add package content
-			{Path: filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", pack.FileRef))},
+			{Path: zipFile},
 		}...)
 	}
 	// add repository metadata to the archive list
