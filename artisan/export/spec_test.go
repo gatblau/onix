@@ -8,7 +8,12 @@
 
 package export
 
-import "testing"
+import (
+	"fmt"
+	"github.com/gatblau/onix/artisan/core"
+	"gopkg.in/yaml.v2"
+	"testing"
+)
 
 func TestSpec_SaveSpec(t *testing.T) {
 	s, err := NewSpec(".")
@@ -18,5 +23,24 @@ func TestSpec_SaveSpec(t *testing.T) {
 	err = s.Save("s3://localhost:9000/app1/v1", "", "minioadmin:minioadmin")
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestSpec_ImportSpec(t *testing.T) {
+	err := ImportSpec("s3://localhost:9000/app1/v1", "minioadmin:minioadmin")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSpec_Unmarshal(t *testing.T) {
+	specBytes, err := core.ReadFile("spec.yaml", "")
+	if err != nil {
+		t.Fatal(fmt.Errorf("cannot read spec.yaml: %s", err))
+	}
+	spec := new(Spec)
+	err = yaml.Unmarshal(specBytes, spec)
+	if err != nil {
+		t.Fatal(fmt.Errorf("cannot unmarshal spec.yaml: %s", err))
 	}
 }

@@ -161,7 +161,8 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 	registryJsonFilename := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", basenameNoExt))
 	// if the zip or json files already exist in the local registry
 	if fileExists(registryZipFilename) || fileExists(registryJsonFilename) {
-		return fmt.Errorf("cannot add package '%s' to registry as it already exists", name.Repository())
+		core.InfoLogger.Printf("package '%s:%s' already exists, skipping import", name.FullyQualifiedName(), name.Tag)
+		return nil
 	}
 	// move the zip file to the localRepo folder
 	if err := MoveFile(filename, filepath.Join(core.RegistryPath(), basename)); err != nil {

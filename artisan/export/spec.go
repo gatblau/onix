@@ -10,7 +10,9 @@ package export
 
 import (
 	"fmt"
+	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/registry"
 	"gopkg.in/yaml.v2"
 	"os"
@@ -84,6 +86,47 @@ func (s *Spec) Save(targetUri, sourceCreds, targetCreds string) error {
 			return fmt.Errorf("cannot save image %s: %s", value, err)
 		}
 		core.InfoLogger.Println(value)
+	}
+	return nil
+}
+
+func ImportSpec(targetUri, targetCreds string) error {
+	r := registry.NewLocalRegistry()
+	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
+	specBytes, err := core.ReadFile(uri, targetCreds)
+	if err != nil {
+		return fmt.Errorf("cannot read spec.yaml: %s", err)
+	}
+	spec := new(Spec)
+	err = yaml.Unmarshal(specBytes, spec)
+	if err != nil {
+		return fmt.Errorf("cannot unmarshal spec.yaml: %s", err)
+	}
+	// import packages
+	for k, _ := range spec.Packages {
+		name := fmt.Sprintf("%s/%s.tar", targetUri, k)
+		err2 := r.Import([]string{name}, targetCreds)
+		if err2 != nil {
+			return fmt.Errorf("cannot read %s.tar: %s", k, err2)
+		}
+		core.InfoLogger.Println(name)
+	}
+	// import images
+	for k, _ := range spec.Images {
+		name := fmt.Sprintf("%s/%s.tar", targetUri, k)
+		err2 := r.Import([]string{name}, targetCreds)
+		if err2 != nil {
+			return fmt.Errorf("cannot read %s.tar: %s", k, err)
+		}
+		core.InfoLogger.Println(name)
+	}
+	// import images
+	for _, name := range spec.Images {
+		_, err2 := build.Exe(fmt.Sprintf("art exe %s import", name), ".", merge.NewEnVarFromSlice([]string{}), false)
+		if err2 != nil {
+			return fmt.Errorf("cannot import image %s: %s", name, err)
+		}
+		core.InfoLogger.Printf("image %s", name)
 	}
 	return nil
 }
