@@ -22,6 +22,8 @@ type Spec struct {
 	Version  string            `yaml:"version"`
 	Images   map[string]string `yaml:"images"`
 	Packages map[string]string `yaml:"packages"`
+
+	content []byte
 }
 
 func NewSpec(path string) (*Spec, error) {
@@ -43,10 +45,19 @@ func NewSpec(path string) (*Spec, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot unmarshal spec file: %s", err)
 	}
+	// set the content of the spec file for later use
+	spec.content = content
 	return spec, nil
 }
 
 func (s *Spec) Save(targetUri, sourceCreds, targetCreds string) error {
+	// first, save the spec to the target location
+	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
+	err := core.WriteFile(s.content, uri, targetCreds)
+	if err != nil {
+		return fmt.Errorf("cannot save spec file: %s", err)
+	}
+	core.InfoLogger.Println("spec.yaml")
 	// target uri should not have a file extension
 	if len(filepath.Ext(targetUri)) > 0 {
 		return fmt.Errorf("target URI must to have a file extension")
