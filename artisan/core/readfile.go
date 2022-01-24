@@ -145,6 +145,9 @@ func newS3Client(uri, creds string) (client *minio.Client, bucketName, objectNam
 	endpoint = p[0]
 	bucketName = p[1]
 	objectName = p[2]
+	for i := 3; i < len(p); i++ {
+		objectName += "/" + p[i]
+	}
 	// store minio credentials
 	var c *credentials.Credentials
 	// if credentials provided
