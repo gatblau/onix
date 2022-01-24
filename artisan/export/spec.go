@@ -65,11 +65,11 @@ func (s *Spec) Save(targetUri, sourceCreds, targetCreds string) error {
 	// save packages first
 	l := registry.NewLocalRegistry()
 	for key, value := range s.Packages {
-		name, err := core.ParseName(value)
-		if err != nil {
+		name, err2 := core.ParseName(value)
+		if err2 != nil {
 			return fmt.Errorf("invalid package name: %s", err)
 		}
-		uri := fmt.Sprintf("%s/%s.tar", targetUri, key)
+		uri = fmt.Sprintf("%s/%s.tar", targetUri, key)
 		err = l.Save([]core.PackageName{*name}, sourceCreds, uri, targetCreds)
 		if err != nil {
 			return fmt.Errorf("cannot save package %s: %s", value, err)
@@ -78,8 +78,8 @@ func (s *Spec) Save(targetUri, sourceCreds, targetCreds string) error {
 	}
 	// save images
 	for key, value := range s.Images {
-		uri := fmt.Sprintf("%s/%s.tar", targetUri, key)
-		err := SaveImage(value, value, uri, targetCreds)
+		uri = fmt.Sprintf("%s/%s.tar", targetUri, key)
+		err = SaveImage(value, value, uri, targetCreds)
 		if err != nil {
 			return fmt.Errorf("cannot save image %s: %s", value, err)
 		}
