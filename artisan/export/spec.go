@@ -72,7 +72,7 @@ func (s *Spec) Save(targetUri, sourceCreds, targetCreds string) error {
 		uri := fmt.Sprintf("%s/%s.tar", targetUri, key)
 		err = l.Save([]core.PackageName{*name}, sourceCreds, uri, targetCreds)
 		if err != nil {
-			fmt.Errorf("cannot save package %s: %s", value, err)
+			return fmt.Errorf("cannot save package %s: %s", value, err)
 		}
 		core.InfoLogger.Println(value)
 	}
