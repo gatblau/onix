@@ -9,8 +9,8 @@
 package cmd
 
 import (
-	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/export"
 	"github.com/spf13/cobra"
 	"log"
 )
@@ -60,5 +60,5 @@ func (c *SaveImageCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
 		log.Fatal("at least the name of one images to save is required")
 	}
-	core.CheckErr(build.SaveImage(args[0], c.packageName, c.output, c.targetCreds), "cannot save image")
+	core.CheckErr(export.SaveImage(args[0], c.packageName, c.output, c.targetCreds), "cannot save image")
 }

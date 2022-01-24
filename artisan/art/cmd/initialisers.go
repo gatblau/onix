@@ -71,8 +71,10 @@ func InitialiseSaveCommand() *SaveCmd {
 	saveCmd := NewSaveCmd()
 	savePackageCmd := NewSavePackageCmd()
 	saveImageCmd := NewSaveImageCmd()
+	saveSpecCmd := NewSaveSpecCmd()
 	saveCmd.cmd.AddCommand(savePackageCmd.cmd)
 	saveCmd.cmd.AddCommand(saveImageCmd.cmd)
+	saveCmd.cmd.AddCommand(saveSpecCmd.cmd)
 	return saveCmd
 }
 

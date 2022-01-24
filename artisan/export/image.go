@@ -6,10 +6,11 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package build
+package export
 
 import (
 	"fmt"
+	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/merge"
@@ -83,7 +84,7 @@ func SaveImage(imgName, packName, targetUri, creds string) error {
 	// workout the docker save command
 	cmd := fmt.Sprintf("%s save %s -o %s/%s.tar", containerCli, imgName, targetFolder, imgFilename(imgName))
 	// execute the command synchronously
-	_, err = Exe(cmd, tmp, merge.NewEnVarFromSlice([]string{}), false)
+	_, err = build.Exe(cmd, tmp, merge.NewEnVarFromSlice([]string{}), false)
 	if err != nil {
 		os.RemoveAll(tmp)
 		return fmt.Errorf("cannot execute archive command: %s", err)
@@ -98,7 +99,7 @@ func SaveImage(imgName, packName, targetUri, creds string) error {
 		os.RemoveAll(tmp)
 		return fmt.Errorf("cannot save package build file: %s", err)
 	}
-	b := NewBuilder()
+	b := build.NewBuilder()
 	b.Build(tmp, "", "", pName, "", false, false, "")
 	// if a target has been specified
 	if len(targetUri) > 0 {

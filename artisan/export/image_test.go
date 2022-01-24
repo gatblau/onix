@@ -6,7 +6,7 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package build
+package export
 
 import "testing"
 
