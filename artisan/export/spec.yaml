@@ -2,7 +2,7 @@
 # this is an example of a spec.yaml file used by the art save spec command to export artefacts
 version: 1.0
 packages:
-  TEST_TESTPK: localhost:8082/test/testpk:v1
+  TEST_TESTPK: localhost:8082/test/testpk:v3
 
 images:
   QUAY_MINIO_LATEST: quay.io/minio/minio:latest
