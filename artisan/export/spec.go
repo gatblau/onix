@@ -109,7 +109,7 @@ func ImportSpec(targetUri, targetCreds string) error {
 		if err2 != nil {
 			return fmt.Errorf("cannot read %s.tar: %s", k, err2)
 		}
-		core.InfoLogger.Println(name)
+		core.InfoLogger.Printf("completed package %s\n", name)
 	}
 	// import images
 	for k, _ := range spec.Images {
@@ -118,7 +118,7 @@ func ImportSpec(targetUri, targetCreds string) error {
 		if err2 != nil {
 			return fmt.Errorf("cannot read %s.tar: %s", k, err)
 		}
-		core.InfoLogger.Println(name)
+		core.InfoLogger.Printf("completed package %s\n", name)
 	}
 	// import images
 	for _, name := range spec.Images {
@@ -126,7 +126,7 @@ func ImportSpec(targetUri, targetCreds string) error {
 		if err2 != nil {
 			return fmt.Errorf("cannot import image %s: %s", name, err)
 		}
-		core.InfoLogger.Printf("image %s", name)
+		core.InfoLogger.Printf("completed image %s", name)
 	}
 	return nil
 }
