@@ -870,25 +870,47 @@ func (r *LocalRegistry) Save(names []core.PackageName, sourceCreds, targetUri, t
 // Import a package tar archive into the local registry
 // uri: the uri of the package to import (can be file path or S3 bucket uri)
 // creds: the credentials to connect to the endpoint if it is authenticated S3 in the format user:password
-func (r *LocalRegistry) Import(uri []string, creds string) error {
+// localPath: if specified, it downloads the remote files to a target folder
+func (r *LocalRegistry) Import(uri []string, creds, localPath string) error {
 	for _, path := range uri {
-		if err := r.importTar(path, creds); err != nil {
+		if err := r.importTar(path, creds, localPath); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *LocalRegistry) importTar(uri, creds string) error {
+func (r *LocalRegistry) importTar(uri, creds, localPath string) error {
 	// read tar archive
 	tarBytes, err := core.ReadFile(uri, creds)
 	if err != nil {
 		return err
 	}
-	// create a tmp folder to extract the content of the tar archive
 	tmp, err := core.NewTempDir()
 	if err != nil {
 		return err
+	}
+	// if the uri is s3 allows using localPath
+	if strings.HasPrefix(uri, "s3") && len(localPath) > 0 {
+		localPath, err = filepath.Abs(localPath)
+		if err != nil {
+			return err
+		}
+		// if the path does not exist
+		if _, err = os.Stat(localPath); os.IsNotExist(err) {
+			// creates it
+			err = os.MkdirAll(localPath, 0755)
+			if err != nil {
+				return err
+			}
+		}
+		err = os.WriteFile(filepath.Join(localPath, filepath.Base(uri)), tarBytes, 0755)
+		if err != nil {
+			return err
+		}
+	} else {
+		// otherwise, return error
+		return fmt.Errorf("local path cannot be specified if URI is not s3")
 	}
 	// extract the archive to the tmp folder
 	err = core.Untar(bytes.NewReader(tarBytes), tmp)
@@ -921,12 +943,19 @@ func (r *LocalRegistry) importTar(uri, creds string) error {
 			}
 			// add the package to the local registry
 			if err2 := r.Add(filepath.Join(tmp, fmt.Sprintf("%s.zip", seal.Manifest.Ref)), packageName, seal); err2 != nil {
-				// cleanup tmp folder
-				os.RemoveAll(tmp)
+				if len(localPath) > 0 {
+					// cleanup tmp folder
+					os.RemoveAll(tmp)
+				}
 				// return error
 				return err2
 			}
 		}
+	}
+	// only removes tmp if it is not a local folder
+	if len(localPath) > 0 {
+		// cleanup tmp folder
+		os.RemoveAll(tmp)
 	}
 	return nil
 }

@@ -17,6 +17,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Spec the specification for artisan artefacts to be exported
@@ -90,7 +91,7 @@ func (s *Spec) Save(targetUri, sourceCreds, targetCreds string) error {
 	return nil
 }
 
-func ImportSpec(targetUri, targetCreds string) error {
+func ImportSpec(targetUri, targetCreds, localPath string) error {
 	r := registry.NewLocalRegistry()
 	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
 	specBytes, err := core.ReadFile(uri, targetCreds)
@@ -102,23 +103,46 @@ func ImportSpec(targetUri, targetCreds string) error {
 	if err != nil {
 		return fmt.Errorf("cannot unmarshal spec.yaml: %s", err)
 	}
+	// if the uri is s3 allows using localPath
+	if strings.HasPrefix(targetUri, "s3") && len(localPath) > 0 {
+		path, err2 := filepath.Abs(localPath)
+		if err2 != nil {
+			return err2
+		}
+		// if the path does not exist
+		if _, err = os.Stat(path); os.IsNotExist(err) {
+			// creates it
+			err = os.MkdirAll(path, 0755)
+			if err != nil {
+				return err
+			}
+		}
+		localPath = path
+		err = os.WriteFile(filepath.Join(localPath, "spec.yaml"), specBytes, 0755)
+		if err != nil {
+			return err
+		}
+	} else {
+		// otherwise, return error
+		return fmt.Errorf("local path cannot be specified if URI is not s3")
+	}
 	// import packages
 	for k, _ := range spec.Packages {
 		name := fmt.Sprintf("%s/%s.tar", targetUri, k)
-		err2 := r.Import([]string{name}, targetCreds)
+		err2 := r.Import([]string{name}, targetCreds, localPath)
 		if err2 != nil {
 			return fmt.Errorf("cannot read %s.tar: %s", k, err2)
 		}
-		core.InfoLogger.Printf("completed package %s\n", name)
+		core.InfoLogger.Println(name)
 	}
 	// import images
 	for k, _ := range spec.Images {
 		name := fmt.Sprintf("%s/%s.tar", targetUri, k)
-		err2 := r.Import([]string{name}, targetCreds)
+		err2 := r.Import([]string{name}, targetCreds, localPath)
 		if err2 != nil {
 			return fmt.Errorf("cannot read %s.tar: %s", k, err)
 		}
-		core.InfoLogger.Printf("completed package %s\n", name)
+		core.InfoLogger.Println(name)
 	}
 	// import images
 	for _, name := range spec.Images {
@@ -126,7 +150,7 @@ func ImportSpec(targetUri, targetCreds string) error {
 		if err2 != nil {
 			return fmt.Errorf("cannot import image %s: %s", name, err)
 		}
-		core.InfoLogger.Printf("completed image %s", name)
+		core.InfoLogger.Println(name)
 	}
 	return nil
 }

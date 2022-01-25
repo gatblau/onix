@@ -8,6 +8,7 @@ import (
 	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/gatblau/onix/artisan/runner"
+	"github.com/gatblau/onix/oxlib/httpserver"
 	"os"
 	"testing"
 )
@@ -126,7 +127,7 @@ func TestRun(t *testing.T) {
 func TestCurl(t *testing.T) {
 	core.Curl("http://localhost:8080/user/ONIX_PILOTCTL",
 		"PUT",
-		core.BasicToken("admin", "0n1x"),
+		httpserver.BasicToken("admin", "0n1x"),
 		[]int{200, 201},
 		"{\n  \"email\":\"a@a.com\", \"name\":\"aa\", \"pwd\":\"aaAA88!=12222\", \"service\":\"false\", \"acl\":\"*:*:*\"\n}",
 		"",
@@ -143,12 +144,9 @@ func TestSave(t *testing.T) {
 		t.Error(err)
 	}
 	r := registry.NewLocalRegistry()
-	b, err := r.Save(names, "")
+	err = r.Save(names, "", "./export", "")
 	if err != nil {
 		t.Error(err)
-	}
-	if len(b) == 0 {
-		t.FailNow()
 	}
 }
 
@@ -156,7 +154,7 @@ func TestImport(t *testing.T) {
 	// create a local registry
 	r := registry.NewLocalRegistry()
 	// import the tar archive(s)
-	err := r.Import([]string{"../archive.tar"}, "")
+	err := r.Import([]string{"../archive.tar"}, "", "./app1")
 	if err != nil {
 		t.Fatal(err)
 	}
