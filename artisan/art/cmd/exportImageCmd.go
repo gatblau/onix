@@ -15,36 +15,36 @@ import (
 	"log"
 )
 
-// SaveImageCmd save one or more container images to a tar archive
-type SaveImageCmd struct {
+// ExportImageCmd save one or more container images to a tar archive
+type ExportImageCmd struct {
 	cmd         *cobra.Command
 	targetCreds string
 	output      string
 	packageName string
 }
 
-func NewSaveImageCmd() *SaveImageCmd {
-	c := &SaveImageCmd{
+func NewSaveImageCmd() *ExportImageCmd {
+	c := &ExportImageCmd{
 		cmd: &cobra.Command{
 			Use:   "image [FLAGS] IMAGE",
-			Short: "save a container image as an artisan package",
-			Long: `Usage: art save image [FLAGS] IMAGE 
+			Short: "exports a container image as an artisan package",
+			Long: `Usage: art export image [FLAGS] IMAGE 
 
-Save a container image as an artisan package
+Exports a container image as an artisan package
 If a target URI is specified, the package is save to the target, otherwise it remains in the local artisan registry
 Note the container images must be in the local container registry (already pulled)
 
 Examples:
    # create a tar archive of my-contaner-image and put it in an artisan package
-   art save image my-contaner-image -t my-package-name
+   art export image my-contaner-image -t my-package-name
    
    # create a tar archive of my-contaner-image and put it in an artisan package 
    # then exports the package as a tar archive to the specified path
-   art save image my-contaner-image -t my-package-name -o ./test/archive.tar 
+   art export image my-contaner-image -t my-package-name -o ./test/archive.tar 
 
    # create a tar archive of my-contaner-image and put it in an artisan package 
    # then exports the package as a tar archive to the specified s3 location 
-   art save image my-contaner-image -t my-package-name -o s3s://endpoint/bucket/archive.tar -c S3_ID:S3_SECRET
+   art export image my-contaner-image -t my-package-name -o s3s://endpoint/bucket/archive.tar -c S3_ID:S3_SECRET
 `,
 		},
 	}
@@ -55,10 +55,10 @@ Examples:
 	return c
 }
 
-func (c *SaveImageCmd) Run(cmd *cobra.Command, args []string) {
+func (c *ExportImageCmd) Run(cmd *cobra.Command, args []string) {
 	// check an image name has been provided
 	if len(args) < 1 {
-		log.Fatal("at least the name of one images to save is required")
+		log.Fatal("at least the name of one image to export is required")
 	}
-	core.CheckErr(export.SaveImage(args[0], c.packageName, c.output, c.targetCreds), "cannot save image")
+	core.CheckErr(export.SaveImage(args[0], c.packageName, c.output, c.targetCreds), "cannot export image")
 }

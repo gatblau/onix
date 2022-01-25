@@ -14,22 +14,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// SaveSpecCmd save one or more packages or images tar archives using a specification of artefacts to export in a yaml file
-type SaveSpecCmd struct {
+// ExportSpecCmd save one or more packages or images tar archives using a specification of artefacts to export in a yaml file
+type ExportSpecCmd struct {
 	cmd         *cobra.Command
 	srcCreds    string
 	targetCreds string
 	output      string
 }
 
-func NewSaveSpecCmd() *SaveSpecCmd {
-	c := &SaveSpecCmd{
+func NewSaveSpecCmd() *ExportSpecCmd {
+	c := &ExportSpecCmd{
 		cmd: &cobra.Command{
 			Use:   "spec [FLAGS] SPEC-FILE",
-			Short: "save one or more packages and / or container images to tar archives defined in a spec.yaml file",
-			Long: `Usage: art save spec [FLAGS] SPEC-FILE
+			Short: "export one or more packages and / or container images to tar archives defined in a spec.yaml file",
+			Long: `Usage: art export spec [FLAGS] SPEC-FILE
 
-Save one or more packages and / or container images tar archives using a specification of the artefacts to export in a yaml file.
+Exports one or more packages and / or container images tar archives using a specification of the artefacts to export in a yaml file.
 The yaml specification file is as follows:
 
 spec.yaml
@@ -48,11 +48,11 @@ Note: artefacts require a key-value pair to define them.
 The key is used to derived the name of the tar archive produced.
 
 Examples:
-   # save the artefacts defined in the spec.yaml file in the current folder to tar archives in the target folder 
-   art save spec -o ./test . 
+   # exports the artefacts defined in the spec.yaml file in the current folder to tar archives in the target folder 
+   art export spec -o ./test . 
 
-   # save defined in the spec.yaml file in the ./v1 folder to tar archives in an authenticated and TLS enabled s3 bucket
-   art save spec -u REG_USER:REG_PWD -o s3s://endpoint/bucket -c S3_ID:S3_SECRET ./v1
+   # exports defined in the spec.yaml file in the ./v1 folder to tar archives in an authenticated and TLS enabled s3 bucket
+   art export spec -u REG_USER:REG_PWD -o s3s://endpoint/bucket -c S3_ID:S3_SECRET ./v1
 `,
 		},
 	}
@@ -63,7 +63,7 @@ Examples:
 	return c
 }
 
-func (c *SaveSpecCmd) Run(cmd *cobra.Command, args []string) {
+func (c *ExportSpecCmd) Run(cmd *cobra.Command, args []string) {
 	var path string
 	// if no spec path is provided assume current folder
 	if len(args) == 0 || len(args) > 1 {
@@ -71,5 +71,5 @@ func (c *SaveSpecCmd) Run(cmd *cobra.Command, args []string) {
 	}
 	spec, err := export.NewSpec(path)
 	core.CheckErr(err, "cannot load spec.yaml")
-	core.CheckErr(spec.Save(c.output, c.srcCreds, c.targetCreds), "cannot save spec")
+	core.CheckErr(spec.Save(c.output, c.srcCreds, c.targetCreds), "cannot export spec")
 }

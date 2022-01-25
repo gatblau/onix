@@ -67,8 +67,8 @@ func InitialiseRootCmd() *RootCmd {
 	return rootCmd
 }
 
-func InitialiseSaveCommand() *SaveCmd {
-	saveCmd := NewSaveCmd()
+func InitialiseSaveCommand() *ExportCmd {
+	saveCmd := NewExportCmd()
 	savePackageCmd := NewSavePackageCmd()
 	saveImageCmd := NewSaveImageCmd()
 	saveSpecCmd := NewSaveSpecCmd()

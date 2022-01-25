@@ -16,32 +16,32 @@ import (
 	"log"
 )
 
-// SavePackageCmd save one or more packages from the local registry to a tar archive to allow copying without using registries
-type SavePackageCmd struct {
+// ExportPackageCmd save one or more packages from the local registry to a tar archive to allow copying without using registries
+type ExportPackageCmd struct {
 	cmd         *cobra.Command
 	srcCreds    string
 	targetCreds string
 	output      string
 }
 
-func NewSavePackageCmd() *SavePackageCmd {
-	c := &SavePackageCmd{
+func NewSavePackageCmd() *ExportPackageCmd {
+	c := &ExportPackageCmd{
 		cmd: &cobra.Command{
 			Use:   "package [FLAGS] PACKAGE [PACKAGE...]",
-			Short: "save one or more packages to a tar archive",
-			Long: `Usage: art save package [FLAGS] PACKAGE [PACKAGE...]
+			Short: "export one or more packages to a tar archive",
+			Long: `Usage: art export package [FLAGS] PACKAGE [PACKAGE...]
 
-Save one or more packages to a tar archive, streamed to STDOUT by default or to a URI that can be for the file system or an S3 endpoint
+Exports one or more packages to a tar archive, streamed to STDOUT by default or to a URI that can be for the file system or an S3 endpoint
 
 Examples:
-   # save my-package-1 and my-package-2 to a tar archive by redirecting STDOUT to file (using the redirection operator '>')
-   art save package my-package-1 my-package-2 > archive.tar 
+   # exports my-package-1 and my-package-2 to a tar archive by redirecting STDOUT to file (using the redirection operator '>')
+   art export package my-package-1 my-package-2 > archive.tar 
    
-   # save my-package-1 and my-package-2 to a tar archive by specifying relative file path via URI (using the -o flag)
-   art save package my-package-1 my-package-2 -o ./test/archive.tar 
+   # exports my-package-1 and my-package-2 to a tar archive by specifying relative file path via URI (using the -o flag)
+   art export package my-package-1 my-package-2 -o ./test/archive.tar 
 
-   # save my-package-1 and my-package-2 from remote artisan registry to an authenticated and TLS enabled s3 bucket
-   art save package my-package-1 my-package-2 -u REG_USER:REG_PWD -o s3s://endpoint/bucket/archive.tar -c S3_ID:S3_SECRET
+   # exports my-package-1 and my-package-2 from remote artisan registry to an authenticated and TLS enabled s3 bucket
+   art export package my-package-1 my-package-2 -u REG_USER:REG_PWD -o s3s://endpoint/bucket/archive.tar -c S3_ID:S3_SECRET
 `,
 		},
 	}
@@ -52,7 +52,7 @@ Examples:
 	return c
 }
 
-func (c *SavePackageCmd) Run(cmd *cobra.Command, args []string) {
+func (c *ExportPackageCmd) Run(cmd *cobra.Command, args []string) {
 	// check a package name has been provided
 	if len(args) < 1 {
 		log.Fatal("at least the name of one package to save is required")
