@@ -20,3 +20,11 @@ func TestAppManifest_Explode(t *testing.T) {
 	}
 	fmt.Println(len(m.Services))
 }
+
+func TestAppManifest_ExplodeHTTP(t *testing.T) {
+	m, err := NewAppMan("https://raw.githubusercontent.com/gatblau/onix/dev/deploy/onix.yaml", "full", "")
+	if err != nil {
+		t.Fatalf("cannot create app manifest: %s\n", err)
+	}
+	fmt.Println(len(m.Services))
+}

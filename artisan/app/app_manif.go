@@ -13,6 +13,9 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/gatblau/onix/artisan/app/behaviour"
+	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/export"
+	"gopkg.in/yaml.v2"
 	"reflect"
 	"regexp"
 	"sort"
@@ -32,6 +35,8 @@ type Manifest struct {
 
 	// internal use for git credentials if required
 	credentials string
+	// specification for images and packages
+	spec *export.Spec
 }
 
 type Profile struct {
@@ -140,21 +145,15 @@ func NewAppMan(uri, profile, credentials string) (man *Manifest, err error) {
 			err = fmt.Errorf("invalid crdentials format: requires 'user:password'\n")
 		}
 	}
-	if isURL(uri) {
-		// if credentials have been provided, add them to the URI
-		uri, err = addCredentialsToURI(uri, credentials)
-		if err != nil {
-			return
-		}
-		man, err = loadFromURL(uri)
-		if err != nil {
-			return
-		}
-	} else {
-		man, err = loadFromFile(uri)
-		if err != nil {
-			return
-		}
+	// generically load the manifest
+	manBytes, err := core.ReadFile(uri, credentials)
+	if err != nil {
+		return
+	}
+	man = new(Manifest)
+	err = yaml.Unmarshal(manBytes, man)
+	if err != nil {
+		return nil, fmt.Errorf("cannot unmarshal app manifest: %s\n", err)
 	}
 	if man == nil {
 		return nil, fmt.Errorf("invalid URI value '%s': should start with either file://, http:// or https://\n", uri)
@@ -708,11 +707,11 @@ func (m *Manifest) wire() (*Manifest, error) {
 // portKey extracts the port key from an expression like "port[http]"
 // if the expression does not contain a map key then it returns the "default" key
 func portKey(expression string) string {
-	portKey := "default"
+	portkey := "default"
 	if strings.HasPrefix(expression, "port[") {
-		portKey = expression[len("port[") : len(expression)-1]
+		portkey = expression[len("port[") : len(expression)-1]
 	}
-	return portKey
+	return portkey
 }
 
 // ensure one binding does not point to another so that the process of wiring variables is easier

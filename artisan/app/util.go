@@ -23,39 +23,6 @@ import (
 	"time"
 )
 
-func loadFromFile(path string) (*Manifest, error) {
-	if len(path) == 0 {
-		path = "."
-	}
-	path, err := filepath.Abs(path)
-	if err != nil {
-		return nil, fmt.Errorf("cannot convert app manifest to absolute path: %s\n", err)
-	}
-	file, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read app manifest: %s\n", err)
-	}
-	appMan := new(Manifest)
-	err = yaml.Unmarshal(file, appMan)
-	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal app manifest: %s\n", err)
-	}
-	return appMan, nil
-}
-
-func loadFromURL(url string) (*Manifest, error) {
-	content, err := fetchFile(url)
-	if err != nil {
-		return nil, err
-	}
-	m := new(Manifest)
-	err = yaml.Unmarshal(content, m)
-	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal remotely fetched app manifest yaml file: %s\n", err)
-	}
-	return m, nil
-}
-
 // loadSvcManFromImage extracts the service manifest from a docker image
 func loadSvcManFromImage(svcRef SvcRef) (*SvcManifest, error) {
 	var cmd string
@@ -117,30 +84,11 @@ func loadSvcManFromImage(svcRef SvcRef) (*SvcManifest, error) {
 func loadSvcManFromURI(svc SvcRef, credentials string) (*SvcManifest, error) {
 	var (
 		content []byte
-		uri     string
 		err     error
 	)
-	if isURL(svc.URI) {
-		// checks if credentials exists and adds them to the URI scheme
-		uri, err = addCredentialsToURI(svc.URI, credentials)
-		if err != nil {
-			return nil, fmt.Errorf("cannot add credentials to URI '%s': %s\n", uri, err)
-		}
-		// get the service manifest files over http
-		content, err = fetchFile(uri)
-		if err != nil {
-			return nil, fmt.Errorf("cannot retrieve service manifest from URI '%s': %s\n", uri, err)
-		}
-	} else {
-		// load the service manifest files from the file system
-		uri, err = filepath.Abs(svc.URI)
-		if err != nil {
-			return nil, fmt.Errorf("cannot obtain absolute representation of path '%s': %s\n", uri, err)
-		}
-		content, err = os.ReadFile(uri)
-		if err != nil {
-			return nil, fmt.Errorf("cannot load service manifest from path '%s': %s\n", uri, err)
-		}
+	content, err = core.ReadFile(svc.URI, credentials)
+	if err != nil {
+		return nil, err
 	}
 	m := new(SvcManifest)
 	err = yaml.Unmarshal(content, m)
