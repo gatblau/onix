@@ -705,21 +705,24 @@ func (m *Manifest) wire() (*Manifest, error) {
 	}
 	// merges the spec variables
 	for six, service := range m.Services {
-		// if the service image does not the spec and is not an image-less service
-		if len(service.Image) > 0 && !m.Spec.ContainsImage(service.Image) {
-			// returns an error
-			return nil, fmt.Errorf("service %s should specify an image defined in the spec.yaml; the value found was %s", service.Name, service.Image)
+		// if the service image has been defined (not image-less service)
+		if len(service.Image) > 0 {
+			// if the value of Image in the service is not included in the spec
+			if !m.Spec.ContainsImage(service.Image) {
+				// returns an error
+				return nil, fmt.Errorf("service %s should specify an image defined in the spec.yaml; the value found was %s", service.Name, service.Image)
+			}
+			// wraps it as an env variable
+			appMan.Services[six].Image = fmt.Sprintf("${%s}", service.Image)
+			// adds it to the manifest variable list
+			appMan.Var.Items = append(appMan.Var.Items, AppVar{
+				Name:        service.Image,
+				Description: fmt.Sprintf("the container image name required by service %s", appMan.Services[six].Name),
+				Value:       m.Spec.Images[service.Image],
+				Secret:      false,
+				Service:     strings.ToUpper(appMan.Services[six].Name),
+			})
 		}
-		// wraps it as an env variable
-		appMan.Services[six].Image = fmt.Sprintf("${%s}", service.Image)
-		// adds it to the manifest variable list
-		appMan.Var.Items = append(appMan.Var.Items, AppVar{
-			Name:        service.Image,
-			Description: fmt.Sprintf("the container image name required by service %s", appMan.Services[six].Name),
-			Value:       m.Spec.Images[service.Image],
-			Secret:      false,
-			Service:     strings.ToUpper(appMan.Services[six].Name),
-		})
 	}
 	// sort the services by dependencies (most widely used first)
 	sort.Slice(m.Services, func(i, j int) bool {
