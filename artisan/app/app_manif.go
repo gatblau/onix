@@ -705,8 +705,8 @@ func (m *Manifest) wire() (*Manifest, error) {
 	}
 	// merges the spec variables
 	for six, service := range m.Services {
-		// if the service image does not the spec
-		if !m.Spec.ContainsImage(service.Image) {
+		// if the service image does not the spec and is not an image-less service
+		if len(service.Image) > 0 && !m.Spec.ContainsImage(service.Image) {
 			// returns an error
 			return nil, fmt.Errorf("service %s should specify an image defined in the spec.yaml; the value found was %s", service.Name, service.Image)
 		}
