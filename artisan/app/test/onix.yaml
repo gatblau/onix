@@ -37,19 +37,19 @@ services:
   - name: db
     description: PostgreSQL Database service
     uri: ../../deploy/svc/db.yaml
-    image: docker.io/postgres:13
+    image: IMAGE_POSTGRES
     port: "5432"
 
   - name: evr-mongo-db
     description: Mongo Database for Event Receiver
     uri: ../../deploy/svc/evr-mongo-db.yaml
-    image: docker.io/mongo:5
+    image: IMAGE_MONGO_DB
     port: "27017"
 
   - name: evr-mongo-app
     description: Pilot Control Event Receiver for Mongo
     uri: ../../deploy/svc/evr-mongo-app.yaml
-    image: quay.io/gatblau/pilotctl-evr-mongodb:0.0.4-300921174051295-11aab8b6cc
+    image: IMAGE_PILOTCTL_EVR_MONGODB
     port: "8885"
     is:
       public: evr-mongo.mydomain.com
@@ -58,7 +58,7 @@ services:
   - name: nexus-app
     description: Nexus Repository Manager for Artisan Registry
     uri: ../../deploy/svc/nexus-app.yaml
-    image: sonatype/nexus3
+    image: IMAGE_NEXUS3
     port:
       http: "8081"
       docker: "5000"
@@ -69,7 +69,7 @@ services:
   - name: artreg-app
     description: Artisan Registry
     uri: ../../deploy/svc/artreg-app.yaml
-    image: quay.io/gatblau/artisan-registry:0.0.4-011021162133879-a3dedecb3f-RC1
+    image: IMAGE_ARTISAN_REGISTRY
     port: "8082"
     is:
       public: artreg.mydomain.com
@@ -79,7 +79,7 @@ services:
     description: Onix Web API
     uri: ../../deploy/svc/ox-app.yaml
     schema_uri: https://raw.githubusercontent.com/gatblau/ox-db/e94e263989f959a4cfbd06c2af0232fdab94b709
-    image: quay.io/gatblau/onix-snapshot:v0.0.4-1af14bb-021021131813
+    image: IMAGE_ONIX_WAPI
     port: "8080"
     is:
       public: wapi.mydomain.com
@@ -89,7 +89,7 @@ services:
     description: Pilot Control
     uri: ../../deploy/svc/pilotctl-app.yaml
     schema_uri: https://raw.githubusercontent.com/gatblau/pilotctl-db/da13b0b770d5898327e95e0545266a229f0c837c
-    image: quay.io/gatblau/pilotctl:0.0.4-161021085624494-f2346825d0
+    image: IMAGE_PILOTCTL
     port: "8888"
     is:
       public: pilotctl.mydomain.com

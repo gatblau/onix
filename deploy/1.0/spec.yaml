@@ -1,0 +1,13 @@
+---
+version: 1.0
+images:
+  IMAGE_POSTGRES: docker.io/postgres:13
+  IMAGE_MONGO_DB: docker.io/mongo:5
+  IMAGE_PILOTCTL_EVR_MONGODB: quay.io/gatblau/pilotctl-evr-mongodb:0.0.4-300921174051295-11aab8b6cc
+  IMAGE_NEXUS3: sonatype/nexus3:latest
+  IMAGE_ARTISAN_REGISTRY: quay.io/gatblau/artisan-registry:0.0.4-011021162133879-a3dedecb3f-RC1
+  IMAGE_ONIX_WAPI: quay.io/gatblau/onix-snapshot:v0.0.4-1af14bb-021021131813
+  IMAGE_PILOTCTL: quay.io/gatblau/pilotctl:0.0.4-161021085624494-f2346825d0
+  IMAGE_PGADMIN: docker.io/dpage/pgadmin4:latest
+  IMAGE_MONGO_EXPRESS: docker.io/mongo-express:latest
+...
