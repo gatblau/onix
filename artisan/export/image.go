@@ -27,6 +27,20 @@ func SaveImage(imgName, packName, targetUri, creds string) error {
 	if err != nil {
 		return fmt.Errorf("invalid package name: %s", err)
 	}
+	// if a target has been specified
+	if len(targetUri) > 0 {
+		if len(filepath.Ext(targetUri)) > 0 {
+			return fmt.Errorf("the destination URI %s must not contain a filename", targetUri)
+		}
+		// if a final slash exist in the URI removes it
+		if targetUri[len(targetUri)-1] == '/' {
+			targetUri = targetUri[:len(targetUri)-1]
+		}
+		// automatically adds a tar filename to the URI based on the package name:tag
+		targetUri = fmt.Sprintf("%s/%s", targetUri, pkgFilename(*pName))
+	} else {
+		return fmt.Errorf("a destination URI must be specified to export the image")
+	}
 	// should we use docker or podman?
 	containerCli, err := containerCmd()
 	if err != nil {
@@ -101,14 +115,12 @@ func SaveImage(imgName, packName, targetUri, creds string) error {
 	}
 	b := build.NewBuilder()
 	b.Build(tmp, "", "", pName, "", false, false, "")
-	// if a target has been specified
-	if len(targetUri) > 0 {
-		r := registry.NewLocalRegistry()
-		err = r.Save([]core.PackageName{*pName}, "", targetUri, creds)
-		if err != nil {
-			os.RemoveAll(tmp)
-			return fmt.Errorf("cannot save package to destination: %s", err)
-		}
+	r := registry.NewLocalRegistry()
+	// export package
+	err = r.Save([]core.PackageName{*pName}, "", targetUri, creds)
+	if err != nil {
+		os.RemoveAll(tmp)
+		return fmt.Errorf("cannot save package to destination: %s", err)
 	}
 	return nil
 }
@@ -134,4 +146,8 @@ func imgFilename(name string) string {
 	n = strings.Replace(n, "/", "_", -1)
 	n = strings.Replace(n, "-", "_", -1)
 	return n
+}
+
+func pkgFilename(name core.PackageName) string {
+	return strings.Replace(fmt.Sprintf("%s:%s.tar", name.Name, name.Tag), "/", "_", -1)
 }

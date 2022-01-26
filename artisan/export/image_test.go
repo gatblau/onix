@@ -11,7 +11,7 @@ package export
 import "testing"
 
 func TestSaveImage(t *testing.T) {
-	if err := SaveImage("quay.io/gatblau/dbman-snapshot", "dbman", "", ""); err != nil {
+	if err := SaveImage("postgres:13", "postgres:13", "s3://localhost:9000/app1/v1", "user:pwd"); err != nil {
 		t.Fatal(err)
 	}
 }
