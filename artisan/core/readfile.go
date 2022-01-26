@@ -78,7 +78,9 @@ func getHttpFile(uri, creds string) ([]byte, error) {
 	}
 	// execute the request
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return nil, err
 	}

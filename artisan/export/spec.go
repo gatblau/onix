@@ -23,8 +23,8 @@ import (
 // Spec the specification for artisan artefacts to be exported
 type Spec struct {
 	Version  string            `yaml:"version"`
-	Images   map[string]string `yaml:"images"`
-	Packages map[string]string `yaml:"packages"`
+	Images   map[string]string `yaml:"images,omitempty"`
+	Packages map[string]string `yaml:"packages,omitempty"`
 
 	content []byte
 }
@@ -153,4 +153,13 @@ func ImportSpec(targetUri, targetCreds, localPath string) error {
 		core.InfoLogger.Println(name)
 	}
 	return nil
+}
+
+func (s *Spec) ContainsImage(name string) bool {
+	for key, _ := range s.Images {
+		if name == key {
+			return true
+		}
+	}
+	return false
 }

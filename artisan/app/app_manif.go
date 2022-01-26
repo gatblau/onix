@@ -32,11 +32,11 @@ type Manifest struct {
 	Profiles    Profiles `yaml:"profiles"`
 	Services    Services `yaml:"services"`
 	Var         Vars     `yaml:"var,omitempty"`
+	// specification for images and packages
+	Spec *export.Spec `yaml:"spec,omitempty"`
 
 	// internal use for git credentials if required
 	credentials string
-	// specification for images and packages
-	spec *export.Spec
 }
 
 type Profile struct {
@@ -137,7 +137,7 @@ func (s *SvcRef) PortMap() (map[string]int, error) {
 	return ports, nil
 }
 
-// NewAppMan creates a new application manifest from an URI (supported schemes are http(s):// and file://
+// NewAppMan creates a new application manifest from a URI (supported schemes are http(s)://, s3(s):// and file
 func NewAppMan(uri, profile, credentials string) (man *Manifest, err error) {
 	// validate credentials
 	if len(credentials) > 0 {
@@ -160,6 +160,12 @@ func NewAppMan(uri, profile, credentials string) (man *Manifest, err error) {
 	}
 	// set any credentials if provided
 	man.credentials = credentials
+	// set spec
+	spec, err := man.loadSpec(uri)
+	if err != nil {
+		return
+	}
+	man.Spec = spec
 	// first trim the services in the manifest to only the one defined in the requested profile
 	if man, err = man.trim(profile); err != nil {
 		return
@@ -697,6 +703,24 @@ func (m *Manifest) wire() (*Manifest, error) {
 			}
 		}
 	}
+	// merges the spec variables
+	for six, service := range m.Services {
+		// if the service image does not the spec
+		if !m.Spec.ContainsImage(service.Image) {
+			// returns an error
+			return nil, fmt.Errorf("service %s should specify an image defined in the spec.yaml; the value found was %s", service.Name, service.Image)
+		}
+		// wraps it as an env variable
+		appMan.Services[six].Image = fmt.Sprintf("${%s}", service.Image)
+		// adds it to the manifest variable list
+		appMan.Var.Items = append(appMan.Var.Items, AppVar{
+			Name:        service.Image,
+			Description: fmt.Sprintf("the container image name required by service %s", appMan.Services[six].Name),
+			Value:       m.Spec.Images[service.Image],
+			Secret:      false,
+			Service:     strings.ToUpper(appMan.Services[six].Name),
+		})
+	}
 	// sort the services by dependencies (most widely used first)
 	sort.Slice(m.Services, func(i, j int) bool {
 		return len(m.Services[i].UsedBy) > len(m.Services[j].UsedBy)
@@ -870,6 +894,24 @@ func (m *Manifest) eval(t string) (string, error) {
 		return "", err
 	}
 	return tpl.String(), nil
+}
+
+func (m *Manifest) loadSpec(uri string) (*export.Spec, error) {
+	root := uri[:strings.LastIndex(uri, "/")]
+	specBytes, err := core.ReadFile(fmt.Sprintf("%s/%s/%s", root, m.Version, "spec.yaml"), m.credentials)
+	if err != nil {
+		return nil, err
+	}
+	spec := new(export.Spec)
+	err = yaml.Unmarshal(specBytes, spec)
+	if err != nil {
+		return nil, err
+	}
+	// check the spec version matches the version in the app manifest
+	if spec.Version != m.Version {
+		return nil, fmt.Errorf("version mismatch between app manifest and spec files: %s vs %s", m.Version, spec.Version)
+	}
+	return spec, nil
 }
 
 type fileTempCtx struct {
