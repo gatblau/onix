@@ -61,10 +61,6 @@ func (s *Spec) Save(targetUri, sourceCreds, targetCreds string) error {
 		return fmt.Errorf("cannot save spec file: %s", err)
 	}
 	core.InfoLogger.Println("spec.yaml")
-	// target uri should not have a file extension
-	if len(filepath.Ext(targetUri)) > 0 {
-		return fmt.Errorf("target URI must to have a file extension")
-	}
 	// save packages first
 	l := registry.NewLocalRegistry()
 	for key, value := range s.Packages {
@@ -80,9 +76,8 @@ func (s *Spec) Save(targetUri, sourceCreds, targetCreds string) error {
 		core.InfoLogger.Println(value)
 	}
 	// save images
-	for key, value := range s.Images {
-		uri = fmt.Sprintf("%s/%s.tar", targetUri, key)
-		err = SaveImage(value, value, uri, targetCreds)
+	for _, value := range s.Images {
+		err = SaveImage(value, pkgName(value), targetUri, targetCreds)
 		if err != nil {
 			return fmt.Errorf("cannot save image %s: %s", value, err)
 		}
@@ -127,28 +122,28 @@ func ImportSpec(targetUri, targetCreds, localPath string) error {
 		return fmt.Errorf("local path cannot be specified if URI is not s3")
 	}
 	// import packages
-	for k, _ := range spec.Packages {
-		name := fmt.Sprintf("%s/%s.tar", targetUri, k)
+	for _, pkName := range spec.Packages {
+		name := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(pkName))
 		err2 := r.Import([]string{name}, targetCreds, localPath)
 		if err2 != nil {
-			return fmt.Errorf("cannot read %s.tar: %s", k, err2)
+			return fmt.Errorf("cannot read %s.tar: %s", pkgName(pkName), err2)
 		}
 		core.InfoLogger.Println(name)
 	}
 	// import images
-	for k, _ := range spec.Images {
-		name := fmt.Sprintf("%s/%s.tar", targetUri, k)
+	for _, image := range spec.Images {
+		name := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(image))
 		err2 := r.Import([]string{name}, targetCreds, localPath)
 		if err2 != nil {
-			return fmt.Errorf("cannot read %s.tar: %s", k, err)
+			return fmt.Errorf("cannot read %s.tar: %s", pkgName(image), err)
 		}
 		core.InfoLogger.Println(name)
 	}
 	// import images
 	for _, name := range spec.Images {
-		_, err2 := build.Exe(fmt.Sprintf("art exe %s import", name), ".", merge.NewEnVarFromSlice([]string{}), false)
+		_, err2 := build.Exe(fmt.Sprintf("art exe %s import", pkgName(name)), ".", merge.NewEnVarFromSlice([]string{}), false)
 		if err2 != nil {
-			return fmt.Errorf("cannot import image %s: %s", name, err)
+			return fmt.Errorf("cannot import image %s: %s", name, err2)
 		}
 		core.InfoLogger.Println(name)
 	}
@@ -162,4 +157,8 @@ func (s *Spec) ContainsImage(name string) bool {
 		}
 	}
 	return false
+}
+
+func pkgName(name string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(name, "/", "_"), ".", "_"), "-", "_")
 }

@@ -29,15 +29,12 @@ func SaveImage(imgName, packName, targetUri, creds string) error {
 	}
 	// if a target has been specified
 	if len(targetUri) > 0 {
-		if len(filepath.Ext(targetUri)) > 0 {
-			return fmt.Errorf("the destination URI %s must not contain a filename", targetUri)
-		}
-		// if a final slash exist in the URI removes it
-		if targetUri[len(targetUri)-1] == '/' {
-			targetUri = targetUri[:len(targetUri)-1]
+		// if a final slash does not exist add it
+		if targetUri[len(targetUri)-1] != '/' {
+			targetUri = fmt.Sprintf("%s/", targetUri)
 		}
 		// automatically adds a tar filename to the URI based on the package name:tag
-		targetUri = fmt.Sprintf("%s/%s", targetUri, pkgFilename(*pName))
+		targetUri = fmt.Sprintf("%s%s", targetUri, pkgFilename(*pName))
 	} else {
 		return fmt.Errorf("a destination URI must be specified to export the image")
 	}
@@ -78,7 +75,7 @@ func SaveImage(imgName, packName, targetUri, creds string) error {
 				Export:      &export,
 				Runtime:     "ubi-min",
 				Run: []string{
-					fmt.Sprintf("%s import %s.tar %s", containerCli, imgFilename(imgName), imgName),
+					fmt.Sprintf("%s import %s.tar %s", containerCli, pkgName(imgName), imgName),
 				},
 			},
 		},
@@ -149,5 +146,5 @@ func imgFilename(name string) string {
 }
 
 func pkgFilename(name core.PackageName) string {
-	return strings.Replace(fmt.Sprintf("%s:%s.tar", name.Name, name.Tag), "/", "_", -1)
+	return strings.ReplaceAll(strings.Replace(fmt.Sprintf("%s:%s.tar", name.Name, name.Tag), "/", "_", -1), "-", "_")
 }
