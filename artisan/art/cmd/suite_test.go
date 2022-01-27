@@ -144,7 +144,7 @@ func TestSave(t *testing.T) {
 		t.Error(err)
 	}
 	r := registry.NewLocalRegistry()
-	err = r.Save(names, "", "./export", "")
+	err = r.ExportPackage(names, "", "./export", "")
 	if err != nil {
 		t.Error(err)
 	}

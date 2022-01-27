@@ -60,5 +60,5 @@ func (c *ExportImageCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
 		log.Fatal("at least the name of one image to export is required")
 	}
-	core.CheckErr(export.SaveImage(args[0], c.packageName, c.output, c.targetCreds), "cannot export image")
+	core.CheckErr(export.ExportImage(args[0], c.packageName, c.output, c.targetCreds), "cannot export image")
 }

@@ -22,10 +22,10 @@ import (
 	"strings"
 )
 
-func SaveImage(imgName, packName, targetUri, creds string) error {
+func ExportImage(imgName, packName, targetUri, creds string) error {
 	pName, err := core.ParseName(packName)
 	if err != nil {
-		return fmt.Errorf("invalid package name: %s", err)
+		return fmt.Errorf("invalid package name: %s, ensure the container image name fully specify host and user/group if from docker.io", err)
 	}
 	// if a target has been specified
 	if len(targetUri) > 0 {
@@ -95,11 +95,13 @@ func SaveImage(imgName, packName, targetUri, creds string) error {
 	// workout the docker save command
 	cmd := fmt.Sprintf("%s save %s -o %s/%s.tar", containerCli, imgName, targetFolder, imgFilename(imgName))
 	// execute the command synchronously
+	core.InfoLogger.Printf("exporting image %s to tarball file", imgName)
 	_, err = build.Exe(cmd, tmp, merge.NewEnVarFromSlice([]string{}), false)
 	if err != nil {
 		os.RemoveAll(tmp)
 		return fmt.Errorf("cannot execute archive command: %s", err)
 	}
+	core.InfoLogger.Println("packaging image tarball file")
 	err = os.WriteFile(filepath.Join(tmp, "build.yaml"), pbfBytes, 0755)
 	if err != nil {
 		os.RemoveAll(tmp)
@@ -114,7 +116,8 @@ func SaveImage(imgName, packName, targetUri, creds string) error {
 	b.Build(tmp, "", "", pName, "", false, false, "")
 	r := registry.NewLocalRegistry()
 	// export package
-	err = r.Save([]core.PackageName{*pName}, "", targetUri, creds)
+	core.InfoLogger.Printf("exporting image package to tarball file")
+	err = r.ExportPackage([]core.PackageName{*pName}, "", targetUri, creds)
 	if err != nil {
 		os.RemoveAll(tmp)
 		return fmt.Errorf("cannot save package to destination: %s", err)
@@ -146,5 +149,6 @@ func imgFilename(name string) string {
 }
 
 func pkgFilename(name core.PackageName) string {
-	return strings.ReplaceAll(strings.Replace(fmt.Sprintf("%s:%s.tar", name.Name, name.Tag), "/", "_", -1), "-", "_")
+	filename := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(fmt.Sprintf("%s:%s", name.FullyQualifiedName(), name.Tag), "/", "_"), ".", "_"), "-", "_")
+	return fmt.Sprintf("%s.tar", filename)
 }

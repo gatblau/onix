@@ -786,12 +786,12 @@ func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
 	return seal.Manifest
 }
 
-// Save one or more packages as a tar archive to the target URI
+// ExportPackage exports one or more packages as a tar archive to the target URI
 // names: the slice of packages to save
 // sourceCreds: the artisan registry credentials to pull the packages to save (in the format user:password)
 // targetUri: the URI where the tar archive should be saved (could be S3 or file system)
 // targetCreds: the credentials to connect to the targetUri (if it is authenticated S3 in the format user:password)
-func (r *LocalRegistry) Save(names []core.PackageName, sourceCreds, targetUri, targetCreds string) error {
+func (r *LocalRegistry) ExportPackage(names []core.PackageName, sourceCreds, targetUri, targetCreds string) error {
 	var (
 		pack  *Package
 		repo  *Repository
@@ -809,7 +809,7 @@ func (r *LocalRegistry) Save(names []core.PackageName, sourceCreds, targetUri, t
 		}
 		// check if the package exists
 		if pack == nil {
-			return fmt.Errorf("package does not exist")
+			return fmt.Errorf("package %s does not exist", name)
 		}
 		// works out the path to the package files in the local registry
 		zipFile := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", pack.FileRef))
@@ -858,6 +858,7 @@ func (r *LocalRegistry) Save(names []core.PackageName, sourceCreds, targetUri, t
 				return err
 			}
 		}
+		core.InfoLogger.Printf("writing package tarball to %s", targetUri)
 		err = core.WriteFile(content, targetUri, targetCreds)
 		if err != nil {
 			return err

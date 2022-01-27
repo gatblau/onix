@@ -63,6 +63,6 @@ func (c *ExportPackageCmd) Run(cmd *cobra.Command, args []string) {
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	// export packages into tar bytes
-	err = local.Save(names, c.srcCreds, c.output, c.targetCreds)
+	err = local.ExportPackage(names, c.srcCreds, c.output, c.targetCreds)
 	core.CheckErr(err, "cannot export package(s)")
 }

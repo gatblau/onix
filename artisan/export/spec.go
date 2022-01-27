@@ -53,14 +53,14 @@ func NewSpec(path string) (*Spec, error) {
 	return spec, nil
 }
 
-func (s *Spec) Save(targetUri, sourceCreds, targetCreds string) error {
+func (s *Spec) Export(targetUri, sourceCreds, targetCreds string) error {
 	// first, save the spec to the target location
 	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
 	err := core.WriteFile(s.content, uri, targetCreds)
 	if err != nil {
 		return fmt.Errorf("cannot save spec file: %s", err)
 	}
-	core.InfoLogger.Println("spec.yaml")
+	core.InfoLogger.Printf("writing spec.yaml to %s", targetUri)
 	// save packages first
 	l := registry.NewLocalRegistry()
 	for _, value := range s.Packages {
@@ -69,19 +69,20 @@ func (s *Spec) Save(targetUri, sourceCreds, targetCreds string) error {
 			return fmt.Errorf("invalid package name: %s", err)
 		}
 		uri = fmt.Sprintf("%s/%s.tar", targetUri, pkgName(value))
-		err = l.Save([]core.PackageName{*name}, sourceCreds, uri, targetCreds)
+		err = l.ExportPackage([]core.PackageName{*name}, sourceCreds, uri, targetCreds)
 		if err != nil {
 			return fmt.Errorf("cannot save package %s: %s", value, err)
 		}
-		core.InfoLogger.Println(value)
 	}
 	// save images
 	for _, value := range s.Images {
-		err = SaveImage(value, pkgName(value), targetUri, targetCreds)
+		// note: the package is saved with a name exactly the same as the container image
+		// to avoid the art package name parsing from failing, any images with no host or user/group in the name should be avoided
+		// e.g. docker.io/mongo-express:latest will fail so use docker.io/library/mongo-express:latest instead
+		err = ExportImage(value, value, targetUri, targetCreds)
 		if err != nil {
 			return fmt.Errorf("cannot save image %s: %s", value, err)
 		}
-		core.InfoLogger.Println(value)
 	}
 	return nil
 }
@@ -138,7 +139,7 @@ func ImportSpec(targetUri, targetCreds, localPath string) error {
 	}
 	// import images
 	for _, name := range spec.Images {
-		_, err2 := build.Exe(fmt.Sprintf("art exe %s import", pkgName(name)), ".", merge.NewEnVarFromSlice([]string{}), false)
+		_, err2 := build.Exe(fmt.Sprintf("art exe %s import", name), ".", merge.NewEnVarFromSlice([]string{}), false)
 		if err2 != nil {
 			return fmt.Errorf("cannot import image %s: %s", name, err2)
 		}

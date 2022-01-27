@@ -132,7 +132,8 @@ func parseNameTag(nameTag string) (name, tag string, err error) {
 // A tag name must be valid ASCII and may contain lowercase and uppercase letters, digits, underscores, periods and dashes.
 // A tag name may not start with a period or a dash and may contain a maximum of 128 characters.
 func validTag(tag string) (valid bool) {
-	return validName(tag)
+	valid, _ = regexp.MatchString(`^([a-zA-Z0-9\._-]{0,62})*$`, tag)
+	return
 }
 
 func validDomain(domain string) bool {

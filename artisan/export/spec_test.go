@@ -20,7 +20,7 @@ func TestSpec_SaveSpec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.Save("s3://localhost:9000/app1/v1", "", "minioadmin:minioadmin")
+	err = s.Export("s3://localhost:9000/app1/v1", "", "minioadmin:minioadmin")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,6 +28,17 @@ func TestSpec_SaveSpec(t *testing.T) {
 
 func TestSpec_ImportSpec(t *testing.T) {
 	err := ImportSpec("s3://localhost:9000/app1/v1", "minioadmin:minioadmin", "./app1")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSpec_ExportSpec(t *testing.T) {
+	s, err := NewSpec("../../deploy/1.0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = s.Export("s3://localhost:9000/app1/v1", "", "minioadmin:minioadmin")
 	if err != nil {
 		t.Fatal(err)
 	}

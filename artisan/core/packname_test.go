@@ -48,3 +48,7 @@ func TestParseName(t *testing.T) {
 		}
 	}
 }
+
+func TestParseName2(t *testing.T) {
+	_, _ = ParseName("quay.io/gatblau/pilotctl-evr-mongodb:0.0.4-300921174051295-11aab8b6cc")
+}
