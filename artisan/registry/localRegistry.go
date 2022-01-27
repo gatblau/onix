@@ -908,9 +908,6 @@ func (r *LocalRegistry) importTar(uri, creds, localPath string) error {
 		if err != nil {
 			return err
 		}
-	} else {
-		// otherwise, return error
-		return fmt.Errorf("local path cannot be specified if URI is not s3")
 	}
 	// extract the archive to the tmp folder
 	err = core.Untar(bytes.NewReader(tarBytes), tmp)
@@ -933,16 +930,16 @@ func (r *LocalRegistry) importTar(uri, creds, localPath string) error {
 			// Name() returns filename without path
 			sealFilename := entry.Name()
 			// load the package seal
-			seal, err := r.loadSeal(filepath.Join(tmp, sealFilename))
-			if err != nil {
-				return fmt.Errorf("cannot load package seal: %s", err)
+			seal, err2 := r.loadSeal(filepath.Join(tmp, sealFilename))
+			if err2 != nil {
+				return fmt.Errorf("cannot load package seal: %s", err2)
 			}
-			packageName, err := getPackageName(*repoIndex, seal.PackageId())
-			if err != nil {
-				return fmt.Errorf("cannot parse package name: %s", err)
+			packageName, err2 := getPackageName(*repoIndex, seal.PackageId())
+			if err2 != nil {
+				return fmt.Errorf("cannot parse package name: %s", err2)
 			}
 			// add the package to the local registry
-			if err2 := r.Add(filepath.Join(tmp, fmt.Sprintf("%s.zip", seal.Manifest.Ref)), packageName, seal); err2 != nil {
+			if err2 = r.Add(filepath.Join(tmp, fmt.Sprintf("%s.zip", seal.Manifest.Ref)), packageName, seal); err2 != nil {
 				if len(localPath) > 0 {
 					// cleanup tmp folder
 					os.RemoveAll(tmp)
