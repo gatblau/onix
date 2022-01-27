@@ -98,7 +98,7 @@ func ImportSpec(targetUri, targetCreds, localPath string) error {
 	if err != nil {
 		return fmt.Errorf("cannot unmarshal spec.yaml: %s", err)
 	}
-	// if the uri is s3 allows using localPath
+	// if the uri is s3 allows using localPath only if local path provided
 	if strings.HasPrefix(targetUri, "s3") && len(localPath) > 0 {
 		path, err2 := filepath.Abs(localPath)
 		if err2 != nil {
@@ -119,7 +119,7 @@ func ImportSpec(targetUri, targetCreds, localPath string) error {
 		}
 	} else {
 		// otherwise, return error
-		return fmt.Errorf("local path cannot be specified if URI is not s3")
+
 	}
 	// import packages
 	for _, pkName := range spec.Packages {
