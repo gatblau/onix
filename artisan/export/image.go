@@ -75,7 +75,7 @@ func ExportImage(imgName, packName, targetUri, creds string) error {
 				Export:      &export,
 				Runtime:     "ubi-min",
 				Run: []string{
-					fmt.Sprintf("%s import %s.tar %s", containerCli, pkgName(imgName), imgName),
+					fmt.Sprintf("%s load -i %s.tar", containerCli, pkgName(imgName)),
 				},
 			},
 		},
