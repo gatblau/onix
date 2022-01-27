@@ -63,12 +63,12 @@ func (s *Spec) Save(targetUri, sourceCreds, targetCreds string) error {
 	core.InfoLogger.Println("spec.yaml")
 	// save packages first
 	l := registry.NewLocalRegistry()
-	for key, value := range s.Packages {
+	for _, value := range s.Packages {
 		name, err2 := core.ParseName(value)
 		if err2 != nil {
 			return fmt.Errorf("invalid package name: %s", err)
 		}
-		uri = fmt.Sprintf("%s/%s.tar", targetUri, key)
+		uri = fmt.Sprintf("%s/%s.tar", targetUri, pkgName(value))
 		err = l.Save([]core.PackageName{*name}, sourceCreds, uri, targetCreds)
 		if err != nil {
 			return fmt.Errorf("cannot save package %s: %s", value, err)
