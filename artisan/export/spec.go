@@ -117,9 +117,6 @@ func ImportSpec(targetUri, targetCreds, localPath string) error {
 		if err != nil {
 			return err
 		}
-	} else {
-		// otherwise, return error
-
 	}
 	// import packages
 	for _, pkName := range spec.Packages {
