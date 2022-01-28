@@ -300,7 +300,7 @@ func (m *Manifest) explode() (*Manifest, error) {
 	return appMan, nil
 }
 
-// wire evaluates all expressions in the service manifest (i.e. functions and bindings) and work out service dependencies
+// wire evaluates all expressions in the service manifest (i.e. functions and serviceBindings) and work out service dependencies
 func (m *Manifest) wire() (*Manifest, error) {
 	appMan := new(Manifest)
 	err := m.deepCopy(appMan)
@@ -352,7 +352,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 					return nil, fmt.Errorf("invalid function %s='%s' in service '%s'\n", v.Name, v.Value, service.Name)
 				}
 			} else { // if the variable is a binding
-				b := bindings(v.Value)
+				b := serviceBindings(v.Value)
 				// if variable is a value add it to the list of manifest variables so that it can be loaded using the .env file
 				if len(b) == 0 {
 					// add a manifest variable
@@ -471,7 +471,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 				// set the content to the merged result
 				appMan.Services[six].Info.File[fix].Content = merged
 				// extract any bindings
-				b := bindings(merged)
+				b := serviceBindings(merged)
 				for _, binding := range b {
 					content := binding[len("${bind=") : len(binding)-1]
 					parts := strings.Split(content, ":")
@@ -549,7 +549,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 			for _, script := range init.Scripts {
 				i := service.Info.ScriptIx(script)
 				// extract any bindings
-				b := bindings(appMan.Services[six].Info.Script[i].Content)
+				b := serviceBindings(appMan.Services[six].Info.Script[i].Content)
 				for _, binding := range b {
 					content := binding[len("${bind=") : len(binding)-1]
 					parts := strings.Split(content, ":")
@@ -723,6 +723,38 @@ func (m *Manifest) wire() (*Manifest, error) {
 				Service:     strings.ToUpper(appMan.Services[six].Name),
 			})
 		}
+		// spec bindings in scripts
+		for _, init := range service.Info.Init {
+			for _, script := range init.Scripts {
+				i := service.Info.ScriptIx(script)
+				// extract any bindings
+				b := specBindings(appMan.Services[six].Info.Script[i].Content)
+				for _, binding := range b {
+					content := binding[len("${spec=") : len(binding)-1]
+					parts := strings.Split(content, ":")
+					switch len(parts) {
+					case 2:
+						if strings.HasPrefix(parts[0], "pkg") {
+							pkg, exists := m.Spec.Packages[parts[1]]
+							if !exists {
+								return nil, fmt.Errorf("package key %s not found in spec version %s", parts[1], m.Spec.Version)
+							}
+							appMan.Services[six].Info.Script[i].Content = strings.Replace(appMan.Services[six].Info.Script[i].Content, binding, pkg, 1)
+						} else if strings.HasPrefix(parts[0], "img") {
+							img, exists := m.Spec.Images[parts[1]]
+							if !exists {
+								return nil, fmt.Errorf("image key %s not found in spec version %s", parts[1], m.Spec.Version)
+							}
+							appMan.Services[six].Info.Script[i].Content = strings.Replace(appMan.Services[six].Info.Script[i].Content, binding, img, 1)
+						} else {
+							return nil, fmt.Errorf("invalid spec spec binding '%s' in init script for service '%s'\n", binding, service.Name)
+						}
+					default:
+						return nil, fmt.Errorf("invalid binding '%s' in init script for service '%s'\n", binding, service.Name)
+					}
+				}
+			}
+		}
 	}
 	// sort the services by dependencies (most widely used first)
 	sort.Slice(m.Services, func(i, j int) bool {
@@ -862,8 +894,13 @@ func (m *Manifest) getSvcTargetPort(svcName, portKey, binding string) (string, e
 	return "", nil
 }
 
-func bindings(value string) []string {
+func serviceBindings(value string) []string {
 	r, _ := regexp.Compile("\\${bind=(?P<NAME>[^}]+)}")
+	return r.FindAllString(value, -1)
+}
+
+func specBindings(value string) []string {
+	r, _ := regexp.Compile("\\${spec=(?P<NAME>[^}]+)}")
 	return r.FindAllString(value, -1)
 }
 
