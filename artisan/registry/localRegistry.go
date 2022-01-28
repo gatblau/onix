@@ -864,7 +864,6 @@ func (r *LocalRegistry) ExportPackage(names []core.PackageName, sourceCreds, tar
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -872,17 +871,17 @@ func (r *LocalRegistry) ExportPackage(names []core.PackageName, sourceCreds, tar
 // uri: the uri of the package to import (can be file path or S3 bucket uri)
 // creds: the credentials to connect to the endpoint if it is authenticated S3 in the format user:password
 // localPath: if specified, it downloads the remote files to a target folder
-func (r *LocalRegistry) Import(uri []string, creds, localPath string) error {
+func (r *LocalRegistry) Import(uri []string, creds string) error {
 	for _, path := range uri {
-		if err := r.importTar(path, creds, localPath); err != nil {
+		if err := r.importTar(path, creds); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *LocalRegistry) importTar(uri, creds, localPath string) error {
-	// read tar archive
+func (r *LocalRegistry) importTar(uri, creds string) error {
+	core.InfoLogger.Printf("reading => %s\n", uri)
 	tarBytes, err := core.ReadFile(uri, creds)
 	if err != nil {
 		return err
@@ -891,26 +890,7 @@ func (r *LocalRegistry) importTar(uri, creds, localPath string) error {
 	if err != nil {
 		return err
 	}
-	// if the uri is s3 allows using localPath
-	if strings.HasPrefix(uri, "s3") && len(localPath) > 0 {
-		localPath, err = filepath.Abs(localPath)
-		if err != nil {
-			return err
-		}
-		// if the path does not exist
-		if _, err = os.Stat(localPath); os.IsNotExist(err) {
-			// creates it
-			err = os.MkdirAll(localPath, 0755)
-			if err != nil {
-				return err
-			}
-		}
-		err = os.WriteFile(filepath.Join(localPath, filepath.Base(uri)), tarBytes, 0755)
-		if err != nil {
-			return err
-		}
-	}
-	// extract the archive to the tmp folder
+	core.InfoLogger.Printf("untarring => %s\n", uri)
 	err = core.Untar(bytes.NewReader(tarBytes), tmp)
 	if err != nil {
 		return err
@@ -939,22 +919,17 @@ func (r *LocalRegistry) importTar(uri, creds, localPath string) error {
 			if err2 != nil {
 				return fmt.Errorf("cannot parse package name: %s", err2)
 			}
-			// add the package to the local registry
+			core.InfoLogger.Printf("importing => %s:%s\n", packageName.FullyQualifiedName(), packageName.Tag)
 			if err2 = r.Add(filepath.Join(tmp, fmt.Sprintf("%s.zip", seal.Manifest.Ref)), packageName, seal); err2 != nil {
-				if len(localPath) > 0 {
-					// cleanup tmp folder
-					os.RemoveAll(tmp)
-				}
+				// cleanup tmp folder
+				os.RemoveAll(tmp)
 				// return error
 				return err2
 			}
 		}
 	}
-	// only removes tmp if it is not a local folder
-	if len(localPath) > 0 {
-		// cleanup tmp folder
-		os.RemoveAll(tmp)
-	}
+	// cleanup tmp folder
+	os.RemoveAll(tmp)
 	return nil
 }
 

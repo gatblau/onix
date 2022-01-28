@@ -29,26 +29,21 @@ type Spec struct {
 	content []byte
 }
 
-func NewSpec(path string) (*Spec, error) {
-	// finds the absolute path
-	specFile, err := filepath.Abs(path)
+func NewSpec(path, creds string) (*Spec, error) {
+	path, err := filepath.Abs(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get absolute path: %s", err)
 	}
-	// appends spec filename
-	specFile = filepath.Join(specFile, "spec.yaml")
-	// reads spec.yaml
-	content, err := os.ReadFile(specFile)
+	specFile := filepath.Join(path, "spec.yaml")
+	content, err := core.ReadFile(specFile, creds)
 	if err != nil {
-		return nil, fmt.Errorf("cannot read spec file: %s", err)
+		return nil, fmt.Errorf("cannot read spec file %s: %s", specFile, err)
 	}
 	spec := new(Spec)
-	// unmarshal yaml
 	err = yaml.Unmarshal(content, spec)
 	if err != nil {
 		return nil, fmt.Errorf("cannot unmarshal spec file: %s", err)
 	}
-	// set the content of the spec file for later use
 	spec.content = content
 	return spec, nil
 }
@@ -87,9 +82,10 @@ func (s *Spec) Export(targetUri, sourceCreds, targetCreds string) error {
 	return nil
 }
 
-func ImportSpec(targetUri, targetCreds, localPath string) error {
+func ImportSpec(targetUri, targetCreds string) error {
 	r := registry.NewLocalRegistry()
 	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
+	core.InfoLogger.Printf("retrieving %s\n", uri)
 	specBytes, err := core.ReadFile(uri, targetCreds)
 	if err != nil {
 		return fmt.Errorf("cannot read spec.yaml: %s", err)
@@ -99,51 +95,72 @@ func ImportSpec(targetUri, targetCreds, localPath string) error {
 	if err != nil {
 		return fmt.Errorf("cannot unmarshal spec.yaml: %s", err)
 	}
-	// if the uri is s3 allows using localPath only if local path provided
-	if strings.HasPrefix(targetUri, "s3") && len(localPath) > 0 {
-		path, err2 := filepath.Abs(localPath)
-		if err2 != nil {
-			return err2
-		}
-		// if the path does not exist
-		if _, err = os.Stat(path); os.IsNotExist(err) {
-			// creates it
-			err = os.MkdirAll(path, 0755)
-			if err != nil {
-				return err
-			}
-		}
-		localPath = path
-		err = os.WriteFile(filepath.Join(localPath, "spec.yaml"), specBytes, 0755)
-		if err != nil {
-			return err
-		}
-	}
 	// import packages
 	for _, pkName := range spec.Packages {
 		name := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(pkName))
-		err2 := r.Import([]string{name}, targetCreds, localPath)
+		err2 := r.Import([]string{name}, targetCreds)
 		if err2 != nil {
 			return fmt.Errorf("cannot read %s.tar: %s", pkgName(pkName), err2)
 		}
-		core.InfoLogger.Println(name)
 	}
 	// import images
 	for _, image := range spec.Images {
 		name := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(image))
-		err2 := r.Import([]string{name}, targetCreds, localPath)
+		err2 := r.Import([]string{name}, targetCreds)
 		if err2 != nil {
 			return fmt.Errorf("cannot read %s.tar: %s", pkgName(image), err)
 		}
-		core.InfoLogger.Println(name)
-	}
-	// import images
-	for _, name := range spec.Images {
-		_, err2 := build.Exe(fmt.Sprintf("art exe %s import", name), ".", merge.NewEnVarFromSlice([]string{}), false)
+		core.InfoLogger.Printf("loading => %s\n", image)
+		_, err2 = build.Exe(fmt.Sprintf("art exe %s import", image), ".", merge.NewEnVarFromSlice([]string{}), false)
 		if err2 != nil {
-			return fmt.Errorf("cannot import image %s: %s", name, err2)
+			return fmt.Errorf("cannot import image %s: %s", image, err2)
 		}
-		core.InfoLogger.Println(name)
+	}
+	return nil
+}
+
+func DownloadSpec(targetUri, targetCreds, localPath string) error {
+	if !strings.Contains(targetUri, "://") {
+		return fmt.Errorf("invalid URI, it must have an scheme (e.g. scheme://)")
+	}
+	spec, err := NewSpec(targetUri, targetCreds)
+	if err != nil {
+		return fmt.Errorf("cannot load specification: %s", err)
+	}
+	if err = checkPath(localPath); err != nil {
+		return fmt.Errorf("cannot create local path: %s", err)
+	}
+	err = os.WriteFile(filepath.Join(localPath, "spec.yaml"), spec.content, 0755)
+	if err != nil {
+		return err
+	}
+	for _, pkg := range spec.Packages {
+		pkgUri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(pkg))
+		core.InfoLogger.Printf("downloading => %s\n", pkgUri)
+		tarBytes, err2 := core.ReadFile(pkgUri, targetCreds)
+		if err2 != nil {
+			return err2
+		}
+		pkgPath := filepath.Join(localPath, filepath.Base(targetUri))
+		core.InfoLogger.Printf("writing => %s\n", pkgPath)
+		err = os.WriteFile(pkgPath, tarBytes, 0755)
+		if err != nil {
+			return err
+		}
+	}
+	for _, image := range spec.Images {
+		imageUri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(image))
+		core.InfoLogger.Printf("downloading => %s\n", imageUri)
+		tarBytes, err2 := core.ReadFile(imageUri, targetCreds)
+		if err2 != nil {
+			return err2
+		}
+		targetFile := filepath.Join(localPath, fmt.Sprintf("%s.tar", pkgName(image)))
+		core.InfoLogger.Printf("writing => %s\n", targetFile)
+		err = os.WriteFile(targetFile, tarBytes, 0755)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -159,4 +176,20 @@ func (s *Spec) ContainsImage(name string) bool {
 
 func pkgName(name string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(name, "/", "_"), ".", "_"), "-", "_")
+}
+
+func checkPath(path string) error {
+	p, err := filepath.Abs(path)
+	if err != nil {
+		return err
+	}
+	// if the path does not exist
+	if _, err = os.Stat(p); os.IsNotExist(err) {
+		// creates it
+		err = os.MkdirAll(p, 0755)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

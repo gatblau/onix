@@ -12,17 +12,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ExportCmd save artisan packages for transfer between registries in disconnected scenarios
-type ExportCmd struct {
+// SpecCmd provide commands to manage application release specifications
+type SpecCmd struct {
 	cmd *cobra.Command
 }
 
-func NewExportCmd() *ExportCmd {
-	c := &ExportCmd{
+func NewSpecCmd() *SpecCmd {
+	c := &SpecCmd{
 		cmd: &cobra.Command{
-			Use:   "export",
-			Short: "export artisan packages ready for transfer between registries in disconnected scenarios",
-			Long:  ``,
+			Use:   "spec",
+			Short: "provide commands to manage application release specifications",
+			Long:  `provide commands to manage application release specifications`,
 		},
 	}
 	return c

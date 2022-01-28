@@ -14,45 +14,49 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ExportSpecCmd save one or more packages or images tar archives using a specification of artefacts to export in a yaml file
-type ExportSpecCmd struct {
+// SpecExportCmd save one or more packages or images tar archives using a specification of artefacts to export in a yaml file
+type SpecExportCmd struct {
 	cmd         *cobra.Command
 	srcCreds    string
 	targetCreds string
 	output      string
 }
 
-func NewSaveSpecCmd() *ExportSpecCmd {
-	c := &ExportSpecCmd{
+func NewSpecExportCmd() *SpecExportCmd {
+	c := &SpecExportCmd{
 		cmd: &cobra.Command{
-			Use:   "spec [FLAGS] SPEC-FILE",
-			Short: "export one or more packages and / or container images to tar archives defined in a spec.yaml file",
-			Long: `Usage: art export spec [FLAGS] SPEC-FILE
+			Use:   "export [FLAGS] SPEC-FILE-PATH",
+			Short: "export an application release specification",
+			Long: `Usage: art spec export [FLAGS] SPEC-FILE-PATH
 
-Exports one or more packages and / or container images tar archives using a specification of the artefacts to export in a yaml file.
-The yaml specification file is as follows:
+Exports an application release specification using the information in a spec.yaml file.
+
+The specification YAML file should look like the one in the sample below:
 
 spec.yaml
 ---
+# the application release version to which this specification applies
+version: "1.0"
+
+# a list of packages to export
 packages:
-	- package-key-1: my-package-1:tag1
-	- package-key-2: my-package-2:tag2
-	- package-key-3: my-package-3:tag3
+	- package-key-1: "my-package-1:tag1"
+	- package-key-2: "my-package-2:tag2"
+	- package-key-3: "my-package-3:tag3"
+
+# a list of container images to export
 images:
-	- image-key-1: my-image-1:tag1
-	- image-key-1: my-image-2:tag2
-	- image-key-1: my-image-2:tag2
+	- image-key-1: "my-image-1:tag1"
+	- image-key-1: "my-image-2:tag2"
+	- image-key-1: "my-image-2:tag2"
 ...
 
-Note: artefacts require a key-value pair to define them.
-The key is used to derived the name of the tar archive produced.
-
 Examples:
-   # exports the artefacts defined in the spec.yaml file in the current folder to tar archives in the target folder 
-   art export spec -o ./test . 
+   # exports the artefacts defined in the spec.yaml file in the current folder to tar archives in the test folder 
+   art spec export spec -o ./test
 
    # exports defined in the spec.yaml file in the ./v1 folder to tar archives in an authenticated and TLS enabled s3 bucket
-   art export spec -u REG_USER:REG_PWD -o s3s://endpoint/bucket -c S3_ID:S3_SECRET ./v1
+   art spec export -u REG_USER:REG_PWD -o s3s://endpoint/bucket -c S3_ID:S3_SECRET ./v1
 `,
 		},
 	}
@@ -63,13 +67,15 @@ Examples:
 	return c
 }
 
-func (c *ExportSpecCmd) Run(cmd *cobra.Command, args []string) {
+func (c *SpecExportCmd) Run(cmd *cobra.Command, args []string) {
 	var path string
 	// if no spec path is provided assume current folder
 	if len(args) == 0 || len(args) > 1 {
 		path = "."
+	} else {
+		path = args[0]
 	}
-	spec, err := export.NewSpec(path)
+	spec, err := export.NewSpec(path, "")
 	core.CheckErr(err, "cannot load spec.yaml")
 	core.CheckErr(spec.Export(c.output, c.srcCreds, c.targetCreds), "cannot export spec")
 }

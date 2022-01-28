@@ -12,8 +12,7 @@ func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
 	appCmd := NewAppCmd()
 	serveCmd := NewServeCmd()
-	saveCmd := InitialiseSaveCommand()
-	importCmd := InitialiseImportCmd()
+	specCmd := InitialiseSpecCommand()
 	buildCmd := NewBuildCmd()
 	lsCmd := NewListCmd()
 	pushCmd := NewPushCmd()
@@ -38,8 +37,7 @@ func InitialiseRootCmd() *RootCmd {
 	pruneCmd := NewPruneCmd()
 	rootCmd.Cmd.AddCommand(
 		appCmd.cmd,
-		saveCmd.cmd,
-		importCmd.cmd,
+		specCmd.cmd,
 		serveCmd.cmd,
 		buildCmd.cmd,
 		lsCmd.cmd,
@@ -67,24 +65,15 @@ func InitialiseRootCmd() *RootCmd {
 	return rootCmd
 }
 
-func InitialiseSaveCommand() *ExportCmd {
-	saveCmd := NewExportCmd()
-	savePackageCmd := NewSavePackageCmd()
-	saveImageCmd := NewSaveImageCmd()
-	saveSpecCmd := NewSaveSpecCmd()
-	saveCmd.cmd.AddCommand(savePackageCmd.cmd)
-	saveCmd.cmd.AddCommand(saveImageCmd.cmd)
-	saveCmd.cmd.AddCommand(saveSpecCmd.cmd)
-	return saveCmd
-}
-
-func InitialiseImportCmd() *ImportCmd {
-	importCmd := NewImportCmd()
-	importPackageCmd := NewImportPackageCmd()
-	importSpecCmd := NewImportSpecCmd()
-	importCmd.cmd.AddCommand(importPackageCmd.cmd)
-	importCmd.cmd.AddCommand(importSpecCmd.cmd)
-	return importCmd
+func InitialiseSpecCommand() *SpecCmd {
+	specCmd := NewSpecCmd()
+	specExportCmd := NewSpecExportCmd()
+	specImportCmd := NewSpecImportCmd()
+	specDownCmd := NewSpecDownCmd()
+	specCmd.cmd.AddCommand(specExportCmd.cmd)
+	specCmd.cmd.AddCommand(specImportCmd.cmd)
+	specCmd.cmd.AddCommand(specDownCmd.cmd)
+	return specCmd
 }
 
 func InitialiseEnvCommand() *EnvCmd {
