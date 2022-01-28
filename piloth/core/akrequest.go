@@ -33,7 +33,7 @@ func NewAKToken(clientInfo userKeyInfo, hostInfo *ctl.HostInfo) AKToken {
 	return AKToken{
 		info:       clientInfo,
 		Username:   clientInfo.Username,
-		MacAddress: hostInfo.MacAddress[0],
+		MacAddress: hostInfo.PrimaryMAC,
 		IpAddress:  hostInfo.HostIP,
 		Hostname:   hostInfo.HostName,
 		Time:       time.Now(),
@@ -116,7 +116,7 @@ func activate(info *ctl.HostInfo) {
 		ErrorLogger.Printf("cannot launch pilot: activation key expired\n")
 		os.Exit(1)
 	}
-	// check if the mac-adress is valid
+	// check if the mac-address is valid
 	validMac := false
 	for _, address := range info.MacAddress {
 		if address == A.MacAddress {
