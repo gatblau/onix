@@ -10,9 +10,7 @@ package types
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/shirou/gopsutil/cpu"
 	hostUtil "github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
@@ -48,12 +46,12 @@ func NewHostInfo() (*HostInfo, error) {
 		return nil, err
 	}
 	// get the host IP address
-	hostIp, err := externalIP()
+	hostIp, err := getPrimaryIP()
 	if err != nil {
 		// if it failed to retrieve IP set to unknown
 		hostIp = "unknown"
 	}
-	primaryMAC, macList, err := macAddr()
+	primaryMAC, macList, err := macAddr(hostIp)
 	if err != nil {
 		// if it failed to retrieve media access control addresses set to unknown
 		macList = []string{"unknown"}
@@ -98,51 +96,8 @@ func (h *HostInfo) String() string {
 	return string(bytes)
 }
 
-// externalIP return host external IP
-func externalIP() (string, error) {
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		return "", err
-	}
-	for _, iface := range ifaces {
-		if iface.Flags&net.FlagUp == 0 {
-			continue // interface down
-		}
-		if iface.Flags&net.FlagLoopback != 0 {
-			continue // loop back interface
-		}
-		addrs, err := iface.Addrs()
-		if err != nil {
-			return "", err
-		}
-		for _, addr := range addrs {
-			var ip net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-			case *net.IPAddr:
-				ip = v.IP
-			}
-			if ip == nil || ip.IsLoopback() {
-				continue
-			}
-			ip = ip.To4()
-			if ip == nil {
-				continue // not an ipv4 address
-			}
-			return ip.String(), nil
-		}
-	}
-	return "", errors.New("are you connected to the network?\n")
-}
-
-// create a Universally Unique Identifier without hyphens
-func newUUID() string {
-	return strings.Replace(uuid.New().String(), "-", "", -1)
-}
-
 // retrieve a list of mac addresses for the host
-func macAddr() (string, []string, error) {
+func macAddr(primaryIp string) (string, []string, error) {
 	var primaryMAC string
 	// get all network interfaces
 	ifas, err := net.Interfaces()
@@ -151,11 +106,6 @@ func macAddr() (string, []string, error) {
 	}
 	// fetch mac addresses from all interfaces
 	var as []string
-	// get the IP address of the primary network interface
-	primaryIp, err := getPrimaryIP()
-	if err != nil {
-		return "", nil, fmt.Errorf("cannot retrieve primary ip: %s", err)
-	}
 	for _, ifa := range ifas {
 		addrs, err2 := ifa.Addrs()
 		if err2 != nil {
