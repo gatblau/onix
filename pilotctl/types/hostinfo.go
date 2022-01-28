@@ -1,16 +1,17 @@
-package types
-
 /*
   Onix Config Manager - Pilot Control
-  Copyright (c) 2018-2021 by www.gatblau.org
+  Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
 
+package types
+
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/shirou/gopsutil/cpu"
 	hostUtil "github.com/shirou/gopsutil/host"
@@ -38,6 +39,7 @@ type HostInfo struct {
 	HostIP          string
 	BootTime        time.Time
 	MacAddress      []string
+	PrimaryMAC      string
 }
 
 func NewHostInfo() (*HostInfo, error) {
@@ -51,10 +53,10 @@ func NewHostInfo() (*HostInfo, error) {
 		// if it failed to retrieve IP set to unknown
 		hostIp = "unknown"
 	}
-	macAddr, err := macAddr()
+	primaryMAC, macList, err := macAddr()
 	if err != nil {
 		// if it failed to retrieve media access control addresses set to unknown
-		macAddr = []string{"unknown"}
+		macList = []string{"unknown"}
 	}
 	var (
 		memory float64
@@ -81,7 +83,8 @@ func NewHostInfo() (*HostInfo, error) {
 		BootTime:    time.Unix(int64(i.BootTime), 0),
 		TotalMemory: memory,
 		CPUs:        cpus,
-		MacAddress:  macAddr,
+		MacAddress:  macList,
+		PrimaryMAC:  primaryMAC,
 	}
 	// return
 	return info, nil
@@ -139,19 +142,81 @@ func newUUID() string {
 }
 
 // retrieve a list of mac addresses for the host
-func macAddr() ([]string, error) {
+func macAddr() (string, []string, error) {
+	var primaryMAC string
 	// get all network interfaces
 	ifas, err := net.Interfaces()
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	// fetch mac addresses from all interfaces
 	var as []string
+	// get the IP address of the primary network interface
+	primaryIp, err := getPrimaryIP()
+	if err != nil {
+		return "", nil, fmt.Errorf("cannot retrieve primary ip: %s", err)
+	}
 	for _, ifa := range ifas {
+		addrs, err2 := ifa.Addrs()
+		if err2 != nil {
+			return "", nil, fmt.Errorf("cannot retrieve list of unicast interface addresses for network interface: %s", err2)
+		}
+		// var ip net.IP
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			// process IP address
+			if ip.To4() != nil && ip.To4().String() == primaryIp {
+				primaryMAC = ifa.HardwareAddr.String()
+				break
+			}
+		}
 		a := ifa.HardwareAddr.String()
 		if a != "" {
 			as = append(as, a)
 		}
 	}
-	return as, nil
+	return primaryMAC, as, nil
+}
+
+// getPrimaryIP gets the IP address of the primary network interface
+// In oder to find the primary interface, it triggers a fake udp connection so that the underlying host
+// can resolve the route to use
+func getPrimaryIP() (string, error) {
+	conn, err := net.Dial("udp", "1.2.3.4:80")
+	if err != nil {
+		return "", fmt.Errorf("cannot dial connection to retrieve primary IP address: %s", err)
+	}
+	defer conn.Close()
+	ipAddress := conn.LocalAddr().(*net.UDPAddr)
+	return ipAddress.IP.String(), nil
+}
+
+func test() {
+	ifaces, _ := net.Interfaces()
+	// handle err
+	for _, i := range ifaces {
+		addrs, _ := i.Addrs()
+		// handle err
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			// process IP address
+			if ip.To4() != nil {
+				fmt.Printf("IP is -> %s\n", ip.To4().String())
+			} else {
+				fmt.Printf("IP is -> %s\n", ip.String())
+			}
+		}
+	}
 }
