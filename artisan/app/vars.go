@@ -8,7 +8,9 @@
 
 package app
 
-import "sort"
+import (
+	"sort"
+)
 
 // Vars the list of variables used by an application
 type Vars struct {
@@ -27,6 +29,18 @@ type AppVar struct {
 	Secret bool `yaml:"secret,omitempty"`
 	// the name of the service that originated the variable
 	Service string `yaml:"service,omitempty"`
+}
+
+func (a *Vars) Append(v AppVar) {
+	found := false
+	for _, item := range a.Items {
+		if item.Name == v.Name {
+			found = true
+		}
+	}
+	if !found {
+		a.Items = append(a.Items, v)
+	}
 }
 
 func (a *Vars) SortByService() {

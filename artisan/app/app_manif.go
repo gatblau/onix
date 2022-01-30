@@ -403,9 +403,9 @@ func (m *Manifest) wire() (*Manifest, error) {
 									return nil, fmt.Errorf("variable %s='%s' in service '%s' request schema_ui from service '%s' but is missing\n", v.Name, v.Value, service.Name, parts[0])
 								}
 							} else if strings.HasPrefix(parts[1], "port") {
-								port, err := m.getSvcTargetPort(parts[0], portKey(parts[1]), binding)
-								if err != nil {
-									return nil, err
+								port, err2 := m.getSvcTargetPort(parts[0], portKey(parts[1]), binding)
+								if err2 != nil {
+									return nil, err2
 								}
 								if len(port) > 0 {
 									appMan.Services[six].Info.Var[vix].Value = strings.Replace(appMan.Services[six].Info.Var[vix].Value, binding, port, 1)
@@ -739,13 +739,27 @@ func (m *Manifest) wire() (*Manifest, error) {
 							if !exists {
 								return nil, fmt.Errorf("package key %s not found in spec version %s", parts[1], m.Spec.Version)
 							}
-							appMan.Services[six].Info.Script[i].Content = strings.Replace(appMan.Services[six].Info.Script[i].Content, binding, pkg, 1)
+							appMan.Services[six].Info.Script[i].Content = strings.Replace(appMan.Services[six].Info.Script[i].Content, binding, fmt.Sprintf("${%s}", parts[1]), 1)
+							appMan.Var.Append(AppVar{
+								Name:        parts[1],
+								Description: "artisan package as defined in spec.yaml",
+								Value:       pkg,
+								Secret:      false,
+								Service:     service.Name,
+							})
 						} else if strings.HasPrefix(parts[0], "img") {
 							img, exists := m.Spec.Images[parts[1]]
 							if !exists {
 								return nil, fmt.Errorf("image key %s not found in spec version %s", parts[1], m.Spec.Version)
 							}
-							appMan.Services[six].Info.Script[i].Content = strings.Replace(appMan.Services[six].Info.Script[i].Content, binding, img, 1)
+							appMan.Services[six].Info.Script[i].Content = strings.Replace(appMan.Services[six].Info.Script[i].Content, binding, fmt.Sprintf("${%s}", parts[1]), 1)
+							appMan.Var.Append(AppVar{
+								Name:        parts[1],
+								Description: "container image as defined in spec.yaml",
+								Value:       img,
+								Secret:      false,
+								Service:     service.Name,
+							})
 						} else {
 							return nil, fmt.Errorf("invalid spec spec binding '%s' in init script for service '%s'\n", binding, service.Name)
 						}
