@@ -13,18 +13,23 @@ profiles:
   - name: nexus
     services:
       - name: nexus-app
+        is:
+          public:
 
 services:
   - name: nexus-app
     description: Nexus 3 repository manager service
     uri: ../../deploy/svc/nexus-app.yaml
-    image: sonatype/nexus3
-    port: "8081"
+    image: IMAGE_NEXUS3
+    port:
+      http: "8081"
+      docker-http: "5000"
+      docker-https: "5001"
 
   - name: artreg-app
     description: Artisan Registry
     uri: ../../deploy/svc/artreg-app.yaml
-    image: quay.io/gatblau/artisan-registry:0.0.4-011021162133879-a3dedecb3f-RC1
+    image: IMAGE_ARTISAN_REGISTRY
     port: "8082"
     is:
       public: artreg.mydomain.com
