@@ -660,68 +660,77 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 	}
 }
 
-func (r *LocalRegistry) Remove(names []*core.PackageName) error {
-	for _, name := range names {
-		// try and get the package by complete URI or id ref
-		localPackage := r.FindPackage(name)
-		// if the package is not found by name:tag
-		if localPackage == nil {
-			// try finding it by Id (passed in the name part of the package name)
-			list := r.FindPackageNamesById(name.Name)
-			if len(list) == 0 {
-				fmt.Printf("name %s not found\n", name.Name)
-				continue
-			} else {
-				// call the remove with the new names
-				err := r.Remove(list)
+func (r *LocalRegistry) removePkg(pkg *Package) error {
+	repoIxList := r.findRepositoryIxByPackageId(pkg.Id)
+	for _, repoIx := range repoIxList {
+		// if the repository contains the package
+		if r.Repositories[repoIx].FindPackage(pkg.Id) != nil {
+			// remove the package
+			r.Repositories[repoIx].Packages = r.removePackageById(r.Repositories[repoIx].Packages, pkg.Id)
+		}
+		// if the repo does not have more packages
+		if len(r.Repositories[repoIx].Packages) == 0 {
+			// removes the repo
+			r.Repositories = r.removeRepo(r.Repositories, *r.Repositories[repoIx])
+		}
+	}
+	err := r.removeFiles(pkg)
+	if err != nil {
+		return err
+	}
+	r.save()
+	return nil
+}
+
+func (r *LocalRegistry) removeByName(name *core.PackageName) error {
+	pkg := r.FindPackage(name)
+	if pkg == nil {
+		return fmt.Errorf("no package %s:%s found", name.FullyQualifiedName(), name.Tag)
+	}
+	// get the repos the package is in
+	repos := r.findRepositoryByPackageId(pkg.Id)
+	// try to remove it using full name
+	// remove the specified tag
+	length := len(pkg.Tags)
+	// untag the package
+	r.unTag(name, name.Tag)
+	// if the tag was successfully deleted
+	if len(pkg.Tags) < length {
+		// if the package is only in one repo
+		if len(repos) == 1 {
+			// if there are no more tags
+			if len(pkg.Tags) == 0 {
+				// can remove repo
+				r.Repositories = r.removeRepo(r.Repositories, repos[0])
+				// and remove the files
+				err := r.removeFiles(pkg)
 				if err != nil {
 					return err
 				}
-			}
-		} else {
-			// try to remove it using full name
-			// remove the specified tag
-			length := len(localPackage.Tags)
-			r.unTag(name, name.Tag)
-			// if the tag was successfully deleted
-			if len(localPackage.Tags) < length {
-				// if there are no tags left at the end then remove the repository
-				if len(localPackage.Tags) == 0 {
-					r.Repositories = r.removeRepoByName(r.Repositories, name)
-					// only remove the files if there are no other repositories containing the same package!
-					found := false
-				Loop:
-					for _, repo := range r.Repositories {
-						for _, pack := range repo.Packages {
-							if pack.Id == localPackage.Id {
-								found = true
-								break Loop
-							}
-						}
-					}
-					// no other repo contains the package so safe to remove the files
-					if !found {
-						err := r.removeFiles(localPackage)
-						if err != nil {
-							return err
-						}
-					}
-				}
-				// persist changes
-				r.save()
-				log.Print(name)
-			} else {
-				// attempt to remove by Id (stored in the Name)
-				repo := r.findRepository(name)
-				err := r.removeFiles(localPackage)
-				if err != nil {
-					return err
-				}
-				repo.Packages = r.removePackageById(repo.Packages, name.Name)
-				r.save()
-				log.Print(localPackage.Id)
 			}
 		}
+		r.save()
+		return nil
+	}
+	return fmt.Errorf("cannot untag package %s:%s", name.FullyQualifiedName(), name.Tag)
+}
+
+func (r *LocalRegistry) Remove(names []string) error {
+	for _, name := range names {
+		// try and find the package using its unique ID
+		pkg := r.FindPackageById(name)
+		// if the package was found
+		if pkg != nil {
+			// remove it completely including files and references in repositories
+			return r.removePkg(pkg)
+		}
+		// the package was not found by its ID, so try by name
+		pkgName, err := core.ParseName(name)
+		if err != nil {
+			return fmt.Errorf("invalid package name: %s", err)
+		}
+		// remove the package name (if there is not more associated names then removes the package files)
+		return r.removeByName(pkgName)
 	}
 	return nil
 }
@@ -1097,9 +1106,9 @@ func (r *LocalRegistry) unTagAll(name *core.PackageName) {
 
 // remove a given tag from an Package
 func (r *LocalRegistry) unTag(name *core.PackageName, tag string) {
-	artie := r.FindPackage(name)
-	if artie != nil {
-		artie.Tags = core.RemoveElement(artie.Tags, tag)
+	pkg := r.FindPackage(name)
+	if pkg != nil {
+		pkg.Tags = core.RemoveElement(pkg.Tags, tag)
 	}
 }
 
@@ -1127,6 +1136,25 @@ func (r *LocalRegistry) removeRepoByName(a []*Repository, name *core.PackageName
 	// find an package with the specified tag
 	for ix := 0; ix < len(a); ix++ {
 		if a[ix].Repository == name.FullyQualifiedName() {
+			i = ix
+			break
+		}
+	}
+	if i == -1 {
+		return a
+	}
+	// Remove the element at index i from a.
+	a[i] = a[len(a)-1] // Copy last element to index i.
+	a[len(a)-1] = nil  // Erase last element (write zero value).
+	a = a[:len(a)-1]   // Truncate slice.
+	return a
+}
+
+func (r *LocalRegistry) removeRepo(a []*Repository, repo Repository) []*Repository {
+	i := -1
+	// find an package with the specified tag
+	for ix := 0; ix < len(a); ix++ {
+		if a[ix].Repository == repo.Repository {
 			i = ix
 			break
 		}
@@ -1197,7 +1225,7 @@ func (r *LocalRegistry) moveDanglingToRepo(srcPackage *Package, targetName strin
 	if srcRepo == nil {
 		return fmt.Errorf("cannot find repository for package Id %6s", srcPackage.Id)
 	}
-	if srcRepo != nil && !srcRepo.IsDangling() {
+	if srcRepo != nil && len(srcRepo) > 1 || len(srcRepo) == 0 {
 		return fmt.Errorf("the package with Id %6s is not in the dangling repository", srcPackage.Id)
 	}
 	// parse the target name
@@ -1224,7 +1252,7 @@ func (r *LocalRegistry) moveDanglingToRepo(srcPackage *Package, targetName strin
 		r.Repositories = append(r.Repositories, tgtRepo)
 	}
 	// remove the package from the dangling repo
-	srcRepo.Packages = r.removePackageById(srcRepo.Packages, srcPackage.Id)
+	srcRepo[0].Packages = r.removePackageById(srcRepo[0].Packages, srcPackage.Id)
 	// update the src package tag
 	srcPackage.Tags = []string{tgtName.Tag}
 	// add the package  to the target repo
@@ -1239,15 +1267,28 @@ func (r *LocalRegistry) moveToRepo(sourcePackage *Package, name string) error {
 }
 
 // findRepositoryByPackageId find the repository a package with a specific Id is in
-func (r *LocalRegistry) findRepositoryByPackageId(id string) *Repository {
+func (r *LocalRegistry) findRepositoryByPackageId(id string) []Repository {
+	var repos []Repository
 	for _, repository := range r.Repositories {
 		for _, p := range repository.Packages {
 			if p.Id == id {
-				return repository
+				repos = append(repos, *repository)
 			}
 		}
 	}
-	return nil
+	return repos
+}
+
+func (r *LocalRegistry) findRepositoryIxByPackageId(id string) []int {
+	var ix []int
+	for rix, repository := range r.Repositories {
+		for _, p := range repository.Packages {
+			if p.Id == id {
+				ix = append(ix, rix)
+			}
+		}
+	}
+	return ix
 }
 
 // checks if a file exists

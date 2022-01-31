@@ -1,3 +1,11 @@
+/*
+  Onix Config Manager - Artisan
+  Copyright (c) 2018-Present by www.gatblau.org
+  Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
+  Contributors to this project, hereby assign copyright in this code to the project,
+  to be licensed under the same terms as the rest of the code.
+*/
+
 package cmd
 
 import (
@@ -154,7 +162,15 @@ func TestImport(t *testing.T) {
 	// create a local registry
 	r := registry.NewLocalRegistry()
 	// import the tar archive(s)
-	err := r.Import([]string{"../archive.tar"}, "", "./app1")
+	err := r.Import([]string{"../archive.tar"}, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRemove(t *testing.T) {
+	r := registry.NewLocalRegistry()
+	err := r.Remove([]string{"TestPK"})
 	if err != nil {
 		t.Fatal(err)
 	}

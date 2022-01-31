@@ -25,7 +25,7 @@ func TestTagV1ToLatestExist(t *testing.T) {
 	testV1, _ := core.ParseName("test:V1")
 	// clear registry if previous packages exist
 	// TODO: ensure all packages are removed
-	reg.Remove([]*core.PackageName{testLatest, testV1})
+	reg.Remove([]string{"test:latest", "test:V1"})
 	// build latest
 	builder := build.NewBuilder()
 	builder.Build(".", "", "", testLatest, "test1", false, false, "")
@@ -61,7 +61,7 @@ func TestTagV1ToLatest(t *testing.T) {
 	// cleanup
 	testLatest, _ := core.ParseName("test:latest")
 	testV1, _ := core.ParseName("test:V1")
-	reg.Remove([]*core.PackageName{testLatest, testV1})
+	reg.Remove([]string{"test:latest", "test:V1"})
 	// build latest
 	builder := build.NewBuilder()
 	// build V1
