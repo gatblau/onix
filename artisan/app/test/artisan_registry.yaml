@@ -13,8 +13,6 @@ profiles:
   - name: nexus
     services:
       - name: nexus-app
-        is:
-          public:
 
 services:
   - name: nexus-app
@@ -25,6 +23,8 @@ services:
       http: "8081"
       docker-http: "5000"
       docker-https: "5001"
+    is:
+      public: nexus.mydomain.com
 
   - name: artreg-app
     description: Artisan Registry
