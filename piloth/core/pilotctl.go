@@ -50,7 +50,7 @@ func (r *PilotCtl) Register() (*ctl.RegistrationResponse, error) {
 	// set the machine id
 	reg := &ctl.RegistrationRequest{
 		Hostname:    i.HostName,
-		MachineId:   i.MachineId,
+		MachineId:   i.HostUUID,
 		OS:          i.OS,
 		Platform:    fmt.Sprintf("%s, %s, %s", i.Platform, i.PlatformFamily, i.PlatformVersion),
 		Virtual:     i.Virtual,
