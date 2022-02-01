@@ -27,7 +27,7 @@ func NewSpecDownCmd() *SpecDownCmd {
 			Use: "down [FLAGS] URI",
 			Short: "downloads a specification (tarball files) from a remote URI to a file system folder but does not " +
 				"actually perform the import",
-			Long: `Usage: art import spec-download [FLAGS] URI
+			Long: `Usage: art spec down [FLAGS] URI
 
 Use this command to download a specification (package export tarball files) from a remote URI to a file system folder 
 but does not actually perform the import.
