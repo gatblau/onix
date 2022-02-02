@@ -356,6 +356,18 @@ func (r *LocalRegistry) Tag(srcName, tgtName string) error {
 	return nil
 }
 
+func (r *LocalRegistry) AllPackages() []string {
+	var packages []string
+	for _, repo := range r.Repositories {
+		for _, p := range repo.Packages {
+			for _, tag := range p.Tags {
+				packages = append(packages, fmt.Sprintf("%s:%s", repo.Repository, tag))
+			}
+		}
+	}
+	return packages
+}
+
 // List packages to stdout
 func (r *LocalRegistry) List() {
 	// get a table writer for the stdout
@@ -685,34 +697,50 @@ func (r *LocalRegistry) removePkg(pkg *Package) error {
 func (r *LocalRegistry) removeByName(name *core.PackageName) error {
 	pkg := r.FindPackage(name)
 	if pkg == nil {
-		return fmt.Errorf("no package %s:%s found", name.FullyQualifiedName(), name.Tag)
+		return fmt.Errorf("package %s does not exist", name.FullyQualifiedNameTag())
 	}
-	// get the repos the package is in
-	repos := r.findRepositoryByPackageId(pkg.Id)
-	// try to remove it using full name
-	// remove the specified tag
-	length := len(pkg.Tags)
-	// untag the package
-	r.unTag(name, name.Tag)
-	// if the tag was successfully deleted
-	if len(pkg.Tags) < length {
-		// if the package is only in one repo
-		if len(repos) == 1 {
-			// if there are no more tags
-			if len(pkg.Tags) == 0 {
-				// can remove repo
-				r.Repositories = r.removeRepo(r.Repositories, repos[0])
-				// and remove the files
-				err := r.removeFiles(pkg)
-				if err != nil {
-					return err
+	// get repository by name
+	repoIx := -1
+	for ix, repository := range r.Repositories {
+		if repository.Repository == name.FullyQualifiedName() {
+			repoIx = ix
+			break
+		}
+	}
+	if repoIx == -1 {
+		return fmt.Errorf("package %s does not exist", name.FullyQualifiedNameTag())
+	}
+	for pix, p := range r.Repositories[repoIx].Packages {
+		for _, tag := range p.Tags {
+			if tag == name.Tag {
+				// remove the tag
+				r.Repositories[repoIx].Packages[pix].Tags = removeItem(r.Repositories[repoIx].Packages[pix].Tags, tag)
+				// if there are no more tags
+				if len(r.Repositories[repoIx].Packages[pix].Tags) == 0 {
+					// remove the package
+					r.Repositories[repoIx].Packages = removePackage(r.Repositories[repoIx].Packages, p)
 				}
+				break
 			}
 		}
-		r.save()
-		return nil
 	}
-	return fmt.Errorf("cannot untag package %s:%s", name.FullyQualifiedName(), name.Tag)
+	// if there are no more packages in the repo
+	if len(r.Repositories[repoIx].Packages) == 0 {
+		// remove the repo
+		r.Repositories = r.removeRepo(r.Repositories, *r.Repositories[repoIx])
+	}
+	// check if there is any repos left for the package
+	rIx := r.findRepositoryIxByPackageId(pkg.Id)
+	// if not, then
+	if len(rIx) == 0 {
+		// remove the files
+		err := r.removeFiles(pkg)
+		if err != nil {
+			return err
+		}
+	}
+	r.save()
+	return nil
 }
 
 func (r *LocalRegistry) Remove(names []string) error {
@@ -730,7 +758,10 @@ func (r *LocalRegistry) Remove(names []string) error {
 			return fmt.Errorf("invalid package name: %s", err)
 		}
 		// remove the package name (if there is not more associated names then removes the package files)
-		return r.removeByName(pkgName)
+		err = r.removeByName(pkgName)
+		if err != nil {
+			return fmt.Errorf("cannot remove package: %s", err)
+		}
 	}
 	return nil
 }

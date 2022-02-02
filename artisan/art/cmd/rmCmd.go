@@ -12,12 +12,12 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/spf13/cobra"
-	"log"
 )
 
-// list local packages
+// RmCmd remove local packages
 type RmCmd struct {
 	cmd *cobra.Command
+	all *bool
 }
 
 func NewRmCmd() *RmCmd {
@@ -28,18 +28,25 @@ func NewRmCmd() *RmCmd {
 			Long:  `removes one or more packages from the local package registry`,
 		},
 	}
+	c.all = c.cmd.Flags().BoolP("all", "a", false, "remove all packages")
 	c.cmd.Run = c.Run
 	return c
 }
 
 func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
-	// check one or more package names have been provided
-	if len(args) == 0 {
-		log.Fatal("missing name(s) of the package(s) to remove")
+	// check one or more package names have been provided if remove all is not specified
+	if len(args) == 0 && !*c.all {
+		core.RaiseErr("missing name(s) of the package(s) to remove")
+	}
+	// cannot provide all flag and package name
+	if len(args) > 0 && *c.all {
+		core.RaiseErr("a package name %s should not be provided with the --all|-a flag", args[0])
 	}
 	//  create a local registry
 	local := registry.NewLocalRegistry()
-	// get the name(s) of the package(s) to remove
-	err := local.Remove(args)
-	core.CheckErr(err, "cannot remove package")
+	if *c.all {
+		core.CheckErr(local.Remove(local.AllPackages()), "cannot remove packages")
+	} else {
+		core.CheckErr(local.Remove(args), "cannot remove package")
+	}
 }

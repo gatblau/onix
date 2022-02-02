@@ -302,7 +302,26 @@ func removeItem(slice []string, item string) []string {
 	return slice
 }
 
+func removePackage(slice []*Package, p *Package) []*Package {
+	var ix int = -1
+	for i := 0; i < len(slice); i++ {
+		if slice[i] == p {
+			ix = i
+			break
+		}
+	}
+	if ix > -1 {
+		return removeP(slice, ix)
+	}
+	return slice
+}
+
 func remove(slice []string, ix int) []string {
+	slice[ix] = slice[len(slice)-1]
+	return slice[:len(slice)-1]
+}
+
+func removeP(slice []*Package, ix int) []*Package {
 	slice[ix] = slice[len(slice)-1]
 	return slice[:len(slice)-1]
 }
