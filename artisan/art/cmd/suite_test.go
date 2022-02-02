@@ -170,8 +170,16 @@ func TestImport(t *testing.T) {
 
 func TestRemove(t *testing.T) {
 	r := registry.NewLocalRegistry()
-	err := r.Remove([]string{"TestPK"})
+	p := r.AllPackages()
+	for _, s := range p {
+		fmt.Println(s)
+	}
+	err := r.Remove(p)
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestNewSpecPush(t *testing.T) {
+	// err := export.PushSpec()
 }

@@ -1,5 +1,3 @@
-package cmd
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,8 @@ package cmd
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package cmd
 
 func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
@@ -70,9 +70,11 @@ func InitialiseSpecCommand() *SpecCmd {
 	specExportCmd := NewSpecExportCmd()
 	specImportCmd := NewSpecImportCmd()
 	specDownCmd := NewSpecDownCmd()
+	specPushCmd := NewSpecPushCmd()
 	specCmd.cmd.AddCommand(specExportCmd.cmd)
 	specCmd.cmd.AddCommand(specImportCmd.cmd)
 	specCmd.cmd.AddCommand(specDownCmd.cmd)
+	specCmd.cmd.AddCommand(specPushCmd.cmd)
 	return specCmd
 }
 

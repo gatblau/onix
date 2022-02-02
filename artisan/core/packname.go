@@ -42,6 +42,10 @@ func (a *PackageName) FullyQualifiedName() string {
 	return fmt.Sprintf("%s/%s/%s", a.Domain, a.Group, a.Name)
 }
 
+func (a *PackageName) FullyQualifiedNameTag() string {
+	return fmt.Sprintf("%s/%s/%s:%s", a.Domain, a.Group, a.Name, a.Tag)
+}
+
 func (a *PackageName) Repository() string {
 	return fmt.Sprintf("%s/%s", a.Group, a.Name)
 }

@@ -422,7 +422,7 @@ func (r *LocalRegistry) ListQ() {
 	core.CheckErr(err, "failed to flush output")
 }
 
-func (r *LocalRegistry) Push(name *core.PackageName, credentials string) {
+func (r *LocalRegistry) Push(name *core.PackageName, credentials string) error {
 	// get a reference to the remote registry
 	api := r.api(name.Domain)
 	// get registry credentials
@@ -430,8 +430,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) {
 	// fetch the package info from the local registry
 	localPackage := r.FindPackage(name)
 	if localPackage == nil {
-		fmt.Printf("package '%s' not found in the local registry\n", name)
-		return
+		return fmt.Errorf("package '%s' not found in the local registry\n", name)
 	}
 	// assume tls enabled
 	tls := true
@@ -443,9 +442,11 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) {
 		remoteArt, err2 = api.GetPackageInfo(name.Group, name.Name, localPackage.Id, uname, pwd, false)
 		if err2 == nil {
 			tls = false
-			core.WarningLogger.Printf("artisan registry does not use TLS: the connection to the registry is not secure\n")
+			core.WarningLogger.Printf("the connection to the registry is not secure, considering connecting to a TLS enabled registry\n")
 		} else {
-			core.CheckErr(err2, "art push '%s' cannot retrieve remote package information", name.String())
+			if err2 != nil {
+				return fmt.Errorf("art push '%s' cannot retrieve remote package information", name.String())
+			}
 		}
 	}
 	// if the package exists in the remote registry
@@ -454,19 +455,22 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) {
 		if remoteArt.HasTag(name.Tag) {
 			// nothing to do, returns
 			i18n.Printf(i18n.INFO_NOTHING_TO_PUSH)
-			return
+			return nil
 		} else {
 			// the metadata has to be updated to include the new tag
 			remoteArt.Tags = append(remoteArt.Tags, name.Tag)
 			err = api.UpdatePackageInfo(name, remoteArt, uname, pwd, tls)
-			core.CheckErr(err, "cannot update remote package tags")
-			return
+			if err != nil {
+				return fmt.Errorf("cannot update remote package tags: %s", err)
+			}
 		}
 	}
 	// if the package does not exist in the remote registry
 	// check if the tag has been applied to another package in the repository
 	repo, err := api.GetRepositoryInfo(name.Group, name.Name, uname, pwd, tls)
-	core.CheckErr(err, "art push '%s' cannot retrieve repository information from registry", name.String())
+	if err != nil {
+		return fmt.Errorf("art push '%s' cannot retrieve repository information from registry", name.String())
+	}
 	// if so
 	if a, ok := repo.GetTag(name.Tag); ok {
 		// remove the tag from the package as it will be applied to the new package
@@ -476,7 +480,9 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) {
 			// adds a default tag matching the package file reference
 			a.Tags = append(a.Tags, a.FileRef)
 			// updates the metadata in the remote repo
-			core.CheckErr(api.UpdatePackageInfo(name, a, uname, pwd, tls), "cannot update package info")
+			if err = api.UpdatePackageInfo(name, a, uname, pwd, tls); err != nil {
+				return fmt.Errorf("cannot update package info: %s", err)
+			}
 		}
 	}
 	zipfile := openFile(fmt.Sprintf("%s/%s.zip", core.RegistryPath(), localPackage.FileRef))
@@ -486,7 +492,10 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) {
 	pack.Tags = []string{name.Tag}
 	// execute the upload
 	err = api.UploadPackage(name, localPackage.FileRef, zipfile, jsonfile, pack, uname, pwd, tls)
-	i18n.Err(err, i18n.ERR_CANT_PUSH_PACKAGE)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Package {

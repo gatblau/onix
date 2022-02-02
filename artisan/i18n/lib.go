@@ -5,6 +5,7 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package i18n
 
 import (
@@ -21,12 +22,17 @@ func String(key I18NKey) string {
 	return get(key)
 }
 
-// prints a localised message
+// Printf prints a localised message
 func Printf(key I18NKey, a ...interface{}) {
 	fmt.Printf(get(key), a...)
 }
 
-// checks for the  error and if it exists prints a localised error
+// Sprintf formats according to a format specifier and returns the resulting string
+func Sprintf(key I18NKey, a ...interface{}) string {
+	return fmt.Sprintf(get(key), a...)
+}
+
+// Err checks for the  error and if it exists prints a localised error
 func Err(err error, key I18NKey, a ...interface{}) {
 	if err != nil {
 		fmt.Printf("%s - %s\n", fmt.Sprintf(get(key), a...), err)

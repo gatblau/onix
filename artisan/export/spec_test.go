@@ -16,7 +16,7 @@ import (
 )
 
 func TestSpec_SaveSpec(t *testing.T) {
-	s, err := NewSpec(".")
+	s, err := NewSpec(".", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,14 +27,14 @@ func TestSpec_SaveSpec(t *testing.T) {
 }
 
 func TestSpec_ImportSpec(t *testing.T) {
-	err := ImportSpec("s3://localhost:9000/app1/v1", "minioadmin:minioadmin", "./app1")
+	err := ImportSpec("s3://localhost:9000/app1/v1", "minioadmin:minioadmin")
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestSpec_ExportSpec(t *testing.T) {
-	s, err := NewSpec("../../deploy/1.0")
+	s, err := NewSpec("../../deploy/1.0", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,4 +54,8 @@ func TestSpec_Unmarshal(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Errorf("cannot unmarshal spec.yaml: %s", err))
 	}
+}
+
+func TestDownloadSpec(t *testing.T) {
+	DownloadSpec("s3://localhost:9000/app1/1.0", "minioadmin:minioadmin", "./app1-spec")
 }

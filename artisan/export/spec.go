@@ -165,6 +165,88 @@ func DownloadSpec(targetUri, targetCreds, localPath string) error {
 	return nil
 }
 
+func PushSpec(specPath, host, group, creds string, image bool) error {
+	local := registry.NewLocalRegistry()
+	if strings.Contains(specPath, "://") {
+		return fmt.Errorf("spec path must be a location in the file system")
+	}
+	// load the spec
+	spec, err := NewSpec(specPath, "")
+	if err != nil {
+		return fmt.Errorf("cannot load spec.yaml: %s", err)
+	}
+	if !image {
+		for _, pac := range spec.Packages {
+			tgtNameStr, tgtName, tgtNameErr := targetName(pac, group, host)
+			if tgtNameErr != nil {
+				return fmt.Errorf("cannot work out target name: %s", tgtNameErr)
+			}
+			// tag the package with the target registry name
+			core.InfoLogger.Printf("tagging => '%s' to '%s'\n", pac, tgtNameStr)
+			err = local.Tag(pac, tgtNameStr)
+			if err != nil {
+				return err
+			}
+			// push to remote
+			core.InfoLogger.Printf("pushing => '%s'\n", tgtNameStr)
+			err = local.Push(tgtName, creds)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		if len(creds) > 0 {
+			return fmt.Errorf("credentials specified but not used, for images ensure you are logged to the destination registry")
+		}
+		cli, cmdErr := containerCmd()
+		if cmdErr != nil {
+			return cmdErr
+		}
+		for _, img := range spec.Images {
+			tgtNameStr, _, tgtNameErr := targetName(img, group, host)
+			if tgtNameErr != nil {
+				return fmt.Errorf("cannot work out target name: %s", tgtNameErr)
+			}
+			// tag the package with the target registry name
+			core.InfoLogger.Printf("tagging => '%s' to '%s'\n", img, targetName)
+			// docker tag image
+			_, err = build.Exe(fmt.Sprintf("%s tag %s %s", cli, img, tgtNameStr), ".", merge.NewEnVarFromSlice([]string{}), false)
+			if err != nil {
+				return err
+			}
+			// push to remote
+			core.InfoLogger.Printf("pushing => '%s'\n", tgtNameStr)
+			_, err = build.Exe(fmt.Sprintf("%s push %s", cli, tgtNameStr), ".", merge.NewEnVarFromSlice([]string{}), false)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func targetName(name string, group string, host string) (string, *core.PackageName, error) {
+	srcName, parseErr := core.ParseName(name)
+	if parseErr != nil {
+		return "", nil, parseErr
+	}
+	var tName string
+	// if a target group has been defined
+	if len(group) > 0 {
+		// build a target name using host and group but keeping source package name and tag
+		tName = fmt.Sprintf("%s/%s/%s:%s", host, group, srcName.Name, srcName.Tag)
+	} else {
+		// if a target group has not been specified, then
+		// build a target name using host but keeping source package group, name and tag
+		tName = fmt.Sprintf("%s/%s/%s:%s", host, srcName.Group, srcName.Name, srcName.Tag)
+	}
+	tgtName, parseTargetErr := core.ParseName(tName)
+	if parseTargetErr != nil {
+		return "", nil, parseTargetErr
+	}
+	return tName, tgtName, nil
+}
+
 func (s *Spec) ContainsImage(name string) bool {
 	for key, _ := range s.Images {
 		if name == key {

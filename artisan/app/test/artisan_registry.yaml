@@ -34,5 +34,4 @@ services:
     is:
       public: artreg.mydomain.com
       encrypted-in-transit:
-      load-balanced: 3
 ...
