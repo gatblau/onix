@@ -520,11 +520,17 @@ public class Lib implements InitializingBean {
             if (lowerCount < cfg.getPwdLower()) {
                 return String.format("Password must have at least %s lower case characters", cfg.getPwdUpper());
             }
-            if (digitCount < cfg.getPwdDigits()) {
+            if (digitCount <= cfg.getPwdDigits()) {
                 return String.format("Password must have at least %s digits", cfg.getPwdDigits());
             }
-            if (specialCount < cfg.getPwdSpecialChars()) {
-                return String.format("Password must have at least %s special characters", cfg.getPwdSpecialChars());
+            if (cfg.isPwdSpecialCharsAllowed()) {
+                if (specialCount <= cfg.getPwdSpecialChars()) {
+                    return String.format("Password must have at least %s special characters", cfg.getPwdSpecialChars());
+                }
+            } else {
+                if (specialCount > 0) {
+                    return String.format("Password must not include special characters");
+                }
             }
         } else {
             return String.format("Password must have at least %s characters", cfg.getPwdLen());
