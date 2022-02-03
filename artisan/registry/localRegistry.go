@@ -23,6 +23,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -624,31 +625,9 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 	seal, err := r.GetSeal(artie)
 	core.CheckErr(err, "cannot read package seal")
 	if !ignoreSignature {
-		// var pubKey *rsa.PublicKey
-		var pgp *crypto.PGP
-		if len(pubKeyPath) > 0 {
-			// retrieve the verification key from the specified location
-			pgp, err = crypto.LoadPGP(pubKeyPath, "")
-			core.CheckErr(err, "cannot load public key, cannot verify signature")
-		} else {
-			// otherwise load it from the registry store
-			pgp, err = crypto.LoadPGPPublicKey(name.Group, name.Name)
-			core.CheckErr(err, "cannot load public key, cannot verify signature")
-		}
 		// get the location of the package
 		zipFilename := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef))
-		// get a slice to have the unencrypted signature
-		sum := seal.Checksum(zipFilename)
-		// if in debug mode prints out signature
-		core.Debug("seal stored base64 encoded signature:\n>> start on next line\n%s\n>> ended on previous line\n", seal.Signature)
-		// decode the signature in the seal
-		sig, err := base64.StdEncoding.DecodeString(seal.Signature)
-		core.CheckErr(err, "cannot decode signature in the seal")
-		// if in debug mode prints out base64 decoded signature
-		core.Debug("seal stored signature:\n>> start on next line\n%s\n>> ended on previous line\n", string(sig))
-		// verify the signature
-		err = pgp.Verify(sum, sig)
-		core.CheckErr(err, "invalid digital signature")
+		core.CheckErr(checkSignature(name, pubKeyPath, seal, zipFilename), "invalid signature")
 	}
 	// now we are ready to open it
 	// if the target was already compressed (e.g. jar file, etc) then it should not unzip it but rename it
@@ -683,6 +662,36 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 			}
 		}
 	}
+}
+
+func checkSignature(name *core.PackageName, pubKeyPath string, seal *data.Seal, zipFilename string) error {
+	// var pubKey *rsa.PublicKey
+	var (
+		pgp *crypto.PGP
+		err error
+	)
+	if len(pubKeyPath) > 0 {
+		// retrieve the verification key from the specified location
+		pgp, err = crypto.LoadPGP(pubKeyPath, "")
+		core.CheckErr(err, "cannot load public key, cannot verify signature")
+	} else {
+		// otherwise load it from the registry store
+		pgp, err = crypto.LoadPGPPublicKey(name.Group, name.Name)
+		core.CheckErr(err, "cannot load public key, cannot verify signature")
+	}
+	// get a slice to have the unencrypted signature
+	sum := seal.Checksum(zipFilename)
+	// if in debug mode prints out signature
+	core.Debug("seal stored base64 encoded signature:\n>> start on next line\n%s\n>> ended on previous line\n", seal.Signature)
+	// decode the signature in the seal
+	sig, err := base64.StdEncoding.DecodeString(seal.Signature)
+	core.CheckErr(err, "cannot decode signature in the seal")
+	// if in debug mode prints out base64 decoded signature
+	core.Debug("seal stored signature:\n>> start on next line\n%s\n>> ended on previous line\n", string(sig))
+	// verify the signature
+	err = pgp.Verify(sum, sig)
+	core.CheckErr(err, "invalid digital signature")
+	return err
 }
 
 func (r *LocalRegistry) removePkg(pkg *Package) error {
@@ -1339,6 +1348,77 @@ func (r *LocalRegistry) findRepositoryIxByPackageId(id string) []int {
 		}
 	}
 	return ix
+}
+
+func (r *LocalRegistry) Sign(pac, pkPath, pubPath string) error {
+	// parses the package name
+	packageName, err := core.ParseName(pac)
+	if err != nil {
+		return err
+	}
+	// find the package by name
+	pkg := r.FindPackage(packageName)
+	if pkg == nil {
+		return fmt.Errorf("package %s not found", pac)
+	}
+	// works out the seal filename
+	sealFilename := r.regDirJsonFilename(pkg.FileRef)
+	// works out the zip filename
+	zipFilename := r.regDirZipFilename(pkg.FileRef)
+	// load the package seal
+	s, sealErr := r.loadSeal(sealFilename)
+	if sealErr != nil {
+		return sealErr
+	}
+	// if a public key has been provided, use it to verify the package digital signature
+	if len(pubPath) > 0 {
+		err = checkSignature(packageName, pubPath, s, zipFilename)
+		if err != nil {
+			return err
+		}
+	}
+	// gets a timestamp
+	t := time.Now()
+	timeStamp := fmt.Sprintf("%04s%02d%02d%02d%02d%02d%s", strconv.Itoa(t.Year()), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), strconv.Itoa(t.Nanosecond())[:3])
+	// add labels to the manifest to keep an audit trail of the re-signing operation
+	s.Manifest.Labels[fmt.Sprintf("source-signature:%s", timeStamp)] = s.Signature
+	// gets the combined checksum of the manifest and the package
+	sum := s.Checksum(zipFilename)
+	// load private key
+	var pk *crypto.PGP
+	// if no private key path has been provided
+	if len(pkPath) == 0 {
+		// load the key from the local registry
+		pk, err = crypto.LoadPGPPrivateKey(packageName.Group, packageName.Name)
+		if err != nil {
+			return fmt.Errorf("cannot load signing key: %s", err)
+		}
+	} else {
+		// uses the path provided
+		path, absErr := filepath.Abs(pkPath)
+		if absErr != nil {
+			return absErr
+		}
+		pk, err = crypto.LoadPGP(path, "")
+		if err != nil {
+			return fmt.Errorf("cannot load signing key: %s", err)
+		}
+	}
+	// create a PGP cryptographic signature
+	signature, err := pk.Sign(sum)
+	if err != nil {
+		return fmt.Errorf("cannot create cryptographic signature: %s", err)
+	}
+	// replace the signature
+	s.Signature = base64.StdEncoding.EncodeToString(signature)
+	// convert the seal to Json
+	dest := core.ToJsonBytes(s)
+	// save the seal
+	err = ioutil.WriteFile(sealFilename, dest, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("cannot update package seal file: %s", err)
+	}
+	return nil
 }
 
 // checks if a file exists
