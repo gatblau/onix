@@ -165,7 +165,7 @@ func DownloadSpec(targetUri, targetCreds, localPath string) error {
 	return nil
 }
 
-func PushSpec(specPath, host, group, creds string, image bool) error {
+func PushSpec(specPath, host, group, creds string, image, clean bool) error {
 	local := registry.NewLocalRegistry()
 	if strings.Contains(specPath, "://") {
 		return fmt.Errorf("spec path must be a location in the file system")
@@ -193,6 +193,15 @@ func PushSpec(specPath, host, group, creds string, image bool) error {
 			if err != nil {
 				return err
 			}
+			// if cleaning has been specified
+			if clean {
+				// remove the package from the local package registry
+				core.InfoLogger.Printf("removing => '%s'\n", tgtNameStr)
+				err = local.Remove([]string{tgtNameStr})
+				if err != nil {
+					return err
+				}
+			}
 		}
 	} else {
 		if len(creds) > 0 {
@@ -219,6 +228,15 @@ func PushSpec(specPath, host, group, creds string, image bool) error {
 			_, err = build.Exe(fmt.Sprintf("%s push %s", cli, tgtNameStr), ".", merge.NewEnVarFromSlice([]string{}), false)
 			if err != nil {
 				return err
+			}
+			// if cleaning has been specified
+			if clean {
+				// remove the image from the local container registry
+				core.InfoLogger.Printf("removing => '%s'\n", tgtNameStr)
+				_, err = build.Exe(fmt.Sprintf("%s rmi --force %s", cli, tgtNameStr), ".", merge.NewEnVarFromSlice([]string{}), false)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}

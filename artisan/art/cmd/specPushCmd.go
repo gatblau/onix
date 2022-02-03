@@ -20,6 +20,7 @@ type SpecPushCmd struct {
 	cmd    *cobra.Command
 	images bool
 	tag    string
+	clean  bool
 	creds  string
 }
 
@@ -44,6 +45,7 @@ Example:
 	c.cmd.Flags().StringVarP(&c.creds, "user", "u", "", "the credentials used to push to the artisan registry (no required for images, separate login might be needed)")
 	c.cmd.Flags().StringVarP(&c.tag, "tag", "t", "", "the target registry host and optionally user/group (e.g. <host>/<group>)")
 	c.cmd.Flags().BoolVarP(&c.images, "images", "i", false, "if defined, the command applies to images instead of packages")
+	c.cmd.Flags().BoolVar(&c.clean, "clean", false, "if defined, remove packages / images from local registries")
 	return c
 }
 
@@ -63,6 +65,5 @@ func (c *SpecPushCmd) Run(cmd *cobra.Command, args []string) {
 	if len(tagParts) > 0 {
 		group = strings.Join(tagParts[1:], "/")
 	}
-
-	core.CheckErr(export.PushSpec(args[0], host, group, c.creds, c.images), "cannot push spec")
+	core.CheckErr(export.PushSpec(args[0], host, group, c.creds, c.images, c.clean), "cannot push spec")
 }
