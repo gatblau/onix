@@ -5,6 +5,7 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package data
 
 import (
@@ -12,13 +13,13 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"io"
 	"io/ioutil"
-	"log"
 )
 
-// the digital Seal for a package
+// Seal the digital Seal for a package
 // the Seal contains information to determine if the package or its metadata has been compromised
 // and therefore the Seal is broken
 type Seal struct {
@@ -35,11 +36,11 @@ type Seal struct {
 	//     The seal is broken.
 	// - non-repudiation:
 	//     Since it is assumed that only the author (signer) has the knowledge of the signature key, they can only create unique signature on a given package.
-	//     Thus the receiver can present the package and the digital signature to a third party as evidence if any dispute arises in the future.
+	//     Thus, the receiver can present the package and the digital signature to a third party as evidence if any dispute arises in the future.
 	Signature string `json:"signature,omitempty"`
 }
 
-// takes the combined checksum of the Seal information and the compressed file
+// Checksum takes the combined checksum of the Seal information and the compressed file
 func (seal *Seal) Checksum(path string) []byte {
 	// precondition: the manifest is required
 	if seal.Manifest == nil {
@@ -63,14 +64,14 @@ func (seal *Seal) Checksum(path string) []byte {
 	return sum
 }
 
-// the package id calculated as the hex encoded SHA-256 digest of the artefact Seal
-func (seal *Seal) PackageId() string {
+// PackageId the package id calculated as the hex encoded SHA-256 digest of the artefact Seal
+func (seal *Seal) PackageId() (string, error) {
 	// serialise the seal info to json
 	info := core.ToJsonBytes(seal)
 	hash := sha256.New()
-	// copy the seal manifest into the hash
+	// copy the seal content into the hash
 	if _, err := io.Copy(hash, bytes.NewReader(info)); err != nil {
-		log.Fatal(err)
+		return "", fmt.Errorf("cannot create hash from package seal: %s", err)
 	}
-	return hex.EncodeToString(hash.Sum(nil))
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }

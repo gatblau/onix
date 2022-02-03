@@ -189,9 +189,13 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 		}
 		r.Repositories = append(r.Repositories, repo)
 	}
+	pkgId, err := s.PackageId()
+	if err != nil {
+		return err
+	}
 	// creates a new package
 	packages := append(repo.Packages, &Package{
-		Id:      s.PackageId(),
+		Id:      pkgId,
 		Type:    s.Manifest.Type,
 		FileRef: basenameNoExt,
 		Tags:    []string{name.Tag},
@@ -964,7 +968,7 @@ func (r *LocalRegistry) importTar(uri, creds string) error {
 			if err2 != nil {
 				return fmt.Errorf("cannot load package seal: %s", err2)
 			}
-			packageName, err2 := getPackageName(*repoIndex, seal.PackageId())
+			packageName, err2 := getPackageName(*repoIndex, seal)
 			if err2 != nil {
 				return fmt.Errorf("cannot parse package name: %s", err2)
 			}
@@ -1001,10 +1005,15 @@ func loadIndexFromPath(path string) (*LocalRegistry, error) {
 }
 
 // given the ID of a package, returns the package name with the last available tag (avoid latest)
-func getPackageName(repoIx LocalRegistry, packageId string) (*core.PackageName, error) {
+func getPackageName(repoIx LocalRegistry, seal *data.Seal) (*core.PackageName, error) {
+	// compute the package Id as a hex encoded hash of the seal
+	pkgId, err := seal.PackageId()
+	if err != nil {
+		return nil, err
+	}
 	for _, repo := range repoIx.Repositories {
 		for _, pack := range repo.Packages {
-			if pack.Id == packageId {
+			if pack.Id == pkgId {
 				tag := ""
 				if len(pack.Tags) > 0 {
 					// pick the last tag
@@ -1014,7 +1023,8 @@ func getPackageName(repoIx LocalRegistry, packageId string) (*core.PackageName, 
 			}
 		}
 	}
-	return nil, nil
+	return nil, fmt.Errorf("either the seal or repository index content are corrupted, " +
+		"the seal checksum does not match any entry held in the repository index")
 }
 
 // works out the destination folder and prefix for the key
