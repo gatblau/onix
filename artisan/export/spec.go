@@ -23,6 +23,7 @@ import (
 // Spec the specification for artisan artefacts to be exported
 type Spec struct {
 	Version  string            `yaml:"version"`
+	Info     string            `yaml:"info,omitempty"`
 	Images   map[string]string `yaml:"images,omitempty"`
 	Packages map[string]string `yaml:"packages,omitempty"`
 

@@ -72,11 +72,13 @@ func InitialiseSpecCommand() *SpecCmd {
 	specDownCmd := NewSpecDownCmd()
 	specPushCmd := NewSpecPushCmd()
 	specSignCmd := NewSpecSignCmd()
+	specInfoCmd := NewSpecInfoCmd()
 	specCmd.cmd.AddCommand(specExportCmd.cmd)
 	specCmd.cmd.AddCommand(specImportCmd.cmd)
 	specCmd.cmd.AddCommand(specDownCmd.cmd)
 	specCmd.cmd.AddCommand(specPushCmd.cmd)
 	specCmd.cmd.AddCommand(specSignCmd.cmd)
+	specCmd.cmd.AddCommand(specInfoCmd.cmd)
 	return specCmd
 }
 
