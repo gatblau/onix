@@ -47,6 +47,10 @@ public class Config implements Serializable {
         return smtpSMTPS;
     }
 
+    public boolean isPwdSpecialCharsAllowed() {
+        return pwdSpecialCharsAllowed;
+    }
+
     public enum AuthMode {
         Basic,
         OIDC,
@@ -166,6 +170,9 @@ public class Config implements Serializable {
     
     @Value("${wapi.pws.specialchars}")
     private int pwdSpecialChars;
+
+    @Value("${wapi.pws.specialcharsallowed}")
+    private boolean pwdSpecialCharsAllowed;
 
     @Value("${database.server.url}")
     private String dbServerUrl;
