@@ -32,8 +32,25 @@ Usage: art spec info [OPTIONS] SPEC-FILE-PATH
 If the path to the spec.yaml file is not specified, the current folder is assumed.
 
 Example:
-   # shows information in the spec.yaml in the current folder
-   art spec info
+
+given a spec.yaml as follows:
+
+spec.yaml
+---
+version: 1.0
+info: |
+	This is the  information for Release 1.0
+    More info here...
+...
+   
+# running the command below:
+art spec info .
+
+# should display the following:
+version: 1.0
+This is the  information for Release 1.0
+More info here...
+
 `,
 		},
 	}
