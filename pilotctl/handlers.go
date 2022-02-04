@@ -620,14 +620,14 @@ func getKeyHandler(w http.ResponseWriter, r *http.Request) {
 func registrationHandler(w http.ResponseWriter, r *http.Request) {
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Println(err)
+		log.Printf("cannot read payload: %s\n", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	var registrations []Registration
 	err = json.Unmarshal(bytes, &registrations)
 	if err != nil {
-		log.Println(err)
+		log.Printf("cannot unmarshal payload: %s\nthe payload was: '%s'\n", err, string(bytes[:]))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -643,7 +643,7 @@ func registrationHandler(w http.ResponseWriter, r *http.Request) {
 		// as the provisioning of the mac-address has been successful records the host in pilot-ctl db
 		err = api.SetRegistration(registration)
 		if err != nil {
-			log.Println(err)
+			log.Printf("cannot record registration information in database: %s\n", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
