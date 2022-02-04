@@ -5,6 +5,7 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package data
 
 import (
@@ -16,7 +17,7 @@ import (
 	"strings"
 )
 
-// structure of build.yaml file
+// BuildFile structure of build.yaml file
 type BuildFile struct {
 	// internal, the path from where the buildfile is loaded
 	path string
@@ -54,7 +55,7 @@ func (b *BuildFile) ExportFxs() bool {
 	return false
 }
 
-// return the default profile if exists
+// DefaultProfile return the default profile if exists
 func (b *BuildFile) DefaultProfile() *Profile {
 	for _, profile := range b.Profiles {
 		if profile.Default {
@@ -64,7 +65,7 @@ func (b *BuildFile) DefaultProfile() *Profile {
 	return nil
 }
 
-// return the function in the build file specified by its name
+// Fx return the function in the build file specified by its name
 func (b *BuildFile) Fx(name string) *Function {
 	for _, fx := range b.Functions {
 		if fx.Name == name {
@@ -102,12 +103,12 @@ type Profile struct {
 	MergedTarget string
 }
 
-// gets a slice of string with each element containing key=value
+// GetEnv gets a slice of string with each element containing key=value
 func (p *Profile) GetEnv() map[string]string {
 	return p.Env
 }
 
-// return the build profile specified by its name
+// Profile return the build profile specified by its name
 func (b *BuildFile) Profile(name string) *Profile {
 	for _, profile := range b.Profiles {
 		if profile.Name == name {
@@ -117,7 +118,7 @@ func (b *BuildFile) Profile(name string) *Profile {
 	return nil
 }
 
-// survey all missing variables in the profile
+// Survey all missing variables in the profile
 func (p *Profile) Survey(bf *BuildFile) map[string]string {
 	env := bf.Env
 	// merges the profile environment with the passed in environment
@@ -156,19 +157,21 @@ func LoadBuildFile(path string) (*BuildFile, error) {
 	if err != nil {
 		return nil, fmt.Errorf("syntax error in build file %s: %s", path, err)
 	}
-	if ok, err := anyBindingHasInput(buildFile); !ok {
-		return buildFile, err
+	if ok, validErr := buildFile.validate(); !ok {
+		return buildFile, validErr
 	}
 	return buildFile, nil
 }
 
-func anyBindingHasInput(b *BuildFile) (bool, error) {
+func (b *BuildFile) validate() (bool, error) {
+	// checks any binding has a corresponding input
 	for _, fx := range b.Functions {
 		if fx.Input != nil {
 			if fx.Input.Var != nil {
 				for _, v := range fx.Input.Var {
-					if !b.Input.HasVar(v) {
-						return false, fmt.Errorf("function '%s' in build file '%s' has a Var binding '%s' but not corresponding Var definition has been defined in the build file Input section.", fx.Name, b.path, v)
+					// if no inputs were defined whatsoever or inputs were defined but they do not match the bindings
+					if b.Input == nil || (b.Input != nil && !b.Input.HasVar(v)) {
+						return false, fmt.Errorf("function '%s' in build file '%s' has a Var binding '%s' but not corresponding Var definition has been defined in the build file Input section", fx.Name, b.path, v)
 					}
 				}
 			}

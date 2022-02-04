@@ -24,7 +24,7 @@ import (
 	"strings"
 )
 
-// describes exported input information required by functions or runtimes
+// Input describes exported input information required by functions or runtimes
 type Input struct {
 	// reguired by configuration files
 	File Files `yaml:"file,omitempty" json:"file,omitempty"`

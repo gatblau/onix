@@ -19,7 +19,6 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/google/uuid"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"os"
@@ -55,7 +54,7 @@ func NewBuilder() *Builder {
 	return builder
 }
 
-// Build build the package
+// Build the package
 // from: the source to build, either http based git repository or local system git repository
 // gitToken: if provided it is used to clone a remote repository that has authentication enabled
 // name: the full name of the package to be built including the tag
@@ -91,7 +90,7 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 	// compress the target defined in the build.yaml' profile
 	b.zipPackage(targetPath)
 	// creates a seal
-	s := b.createSeal(name, buildProfile, pkPath)
+	s, _ := b.createSeal(name, buildProfile, pkPath)
 	// add the package to the local repo
 	b.localReg.Add(b.workDirZipFilename(), b.repoName, s)
 	// cleanup all relevant folders and move package to target location
@@ -484,14 +483,14 @@ func (b *Builder) inSourceDirectory(relativePath string) string {
 }
 
 // create the package Seal
-func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profile, pkPath string) *data.Seal {
+func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profile, pkPath string) (*data.Seal, error) {
 	filename := b.uniqueIdName
 	// merge the labels in the profile with the ones at the build file level
 	labels := mergeMaps(b.buildFile.Labels, profile.Labels)
 	// gets the size of the package
 	zipInfo, err := os.Stat(b.workDirZipFilename())
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	// prepare the seal info
 	info := &data.Manifest{
@@ -516,39 +515,31 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 	s.Manifest = info
 	// check if target is a folder containing a build.yaml
 	innerBuildFilePath := path.Join(b.from, profile.MergedTarget, "build.yaml")
-	buildYamlBytes, err := ioutil.ReadFile(innerBuildFilePath)
+	// load the build file
+	buildFile, err := data.LoadBuildFile(innerBuildFilePath)
+	if err != nil {
+		return nil, err
+	}
 	// only export functions if the target contains a build.yaml
-	if err == nil {
-		// unmarshal the packaged build.yaml
-		buildFile := new(data.BuildFile)
-		buildFilePath := path.Join(profile.MergedTarget, "build.yaml")
-		err = yaml.Unmarshal(buildYamlBytes, buildFile)
-		core.CheckErr(err, "invalid YAML format in build file '%s'", buildFilePath)
-
-		// if the manifest contains exported functions then include the runtime
-		// image that should be used to execute such functions
-		if buildFile.ExportFxs() {
-			// pick the runtime at the buildfile level if exists
-			if len(buildFile.Runtime) > 0 {
-				s.Manifest.Runtime = buildFile.Runtime
-			}
+	// if the manifest contains exported functions then include the runtime
+	// image that should be used to execute such functions
+	if buildFile.ExportFxs() {
+		// pick the runtime at the build file level if exists
+		if len(buildFile.Runtime) > 0 {
+			s.Manifest.Runtime = buildFile.Runtime
 		}
-		// add exported functions to the manifest
-		for _, fx := range buildFile.Functions {
-			// if the function is exported
-			if fx.Export != nil && *fx.Export {
-				// then garb the required inputs
-				s.Manifest.Functions = append(s.Manifest.Functions, &data.FxInfo{
-					Name:        fx.Name,
-					Description: fx.Description,
-					Input:       data.SurveyInputFromBuildFile(fx.Name, buildFile, false, true, merge.NewEnVarFromSlice(os.Environ())),
-					Runtime:     fx.Runtime,
-				})
-				// a runtime must be specified for exported functions
-				if len(fx.Runtime) == 0 && len(buildFile.Runtime) == 0 {
-					core.RaiseErr("a runtime must be specified at the exported function '%s' level or the overall '%s' file level", fx.Name, buildFilePath)
-				}
-			}
+	}
+	// add exported functions to the manifest
+	for _, fx := range buildFile.Functions {
+		// if the function is exported
+		if fx.Export != nil && *fx.Export {
+			// then garb the required inputs
+			s.Manifest.Functions = append(s.Manifest.Functions, &data.FxInfo{
+				Name:        fx.Name,
+				Description: fx.Description,
+				Input:       data.SurveyInputFromBuildFile(fx.Name, buildFile, false, true, merge.NewEnVarFromSlice(os.Environ())),
+				Runtime:     fx.Runtime,
+			})
 		}
 	}
 	// gets the combined checksum of the manifest and the package
@@ -577,7 +568,7 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 	dest := core.ToJsonBytes(s)
 	// save the seal
 	core.CheckErr(ioutil.WriteFile(b.workDirJsonFilename(), dest, os.ModePerm), "failed to write package seal file")
-	return s
+	return s, nil
 }
 
 func (b *Builder) sourceDir() string {
