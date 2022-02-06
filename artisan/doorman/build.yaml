@@ -1,0 +1,32 @@
+---
+labels:
+  author: onix@gatblau.org
+  application: Artisan's Doorman
+  description: A secure gateway for transferring artisan packages.
+  architecture: amd64
+
+env:
+  CGO_ENABLED: 0
+  GOARCH: amd64
+  REPO_NAME: quay.io/gatblau
+  ART_DOORMAN: artisan-doorman
+
+functions:
+  - name: set-version
+    description: set-version on the parent build, updating global version
+    run:
+      - art run set-version ../
+
+  - name: build-linux
+    description: builds Doorman for the linux platform
+    env:
+      GOOS: linux
+    run:
+      - $(set-version)
+      - go build -o bin/linux/doorman -v
+
+  - name: swagen
+    description: generates/refreshes the OpenAPI specifications for Artisan Doorman's HTTP API
+    run:
+      - swag init -d ./ -g handlers.go --parseDependency types/*.go
+...

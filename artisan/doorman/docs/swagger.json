@@ -1,0 +1,109 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Transfer (pull, verify, scan, resign and push) artefacts between networks",
+        "title": "Artisan's Doorman",
+        "contact": {
+            "name": "gatblau",
+            "url": "http://onix.gatblau.org/",
+            "email": "onix@gatblau.org"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "0.0.4"
+    },
+    "paths": {
+        "/": {
+            "get": {
+                "description": "Checks that the HTTP server is listening on the required port.\nUse a liveliness probe.\nIt does not guarantee the server is ready to accept calls.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "Check that the HTTP API is live",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/key": {
+            "post": {
+                "description": "uploads a new key used by doorman for cryptographic operations",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Keys"
+                ],
+                "summary": "Upload a new key",
+                "parameters": [
+                    {
+                        "description": "the data for the key to persist",
+                        "name": "key",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.Key"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "types.Key": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "a description of the intended use of the key",
+                    "type": "string"
+                },
+                "isPrivate": {
+                    "description": "indicates if the key is private, otherwise public",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "a unique identifier for the digital key",
+                    "type": "string"
+                },
+                "owner": {
+                    "description": "the name of the entity owning the key",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "the actual content of the key",
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
