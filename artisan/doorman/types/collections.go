@@ -11,5 +11,6 @@ package types
 type Collection string
 
 const (
-	KeysColl Collection = "keys"
+	KeysColl     Collection = "keys"
+	CommandsColl Collection = "commands"
 )

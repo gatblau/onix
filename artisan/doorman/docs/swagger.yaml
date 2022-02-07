@@ -1,10 +1,34 @@
 definitions:
+  types.Command:
+    properties:
+      description:
+        description: the command description
+        example: scan files in specified path
+        type: string
+      errorRegex:
+        description: a regex used to determine if the command execution has errored
+        example: '.*Infected files: [^0].*'
+        type: string
+      name:
+        description: a unique name for the command
+        example: clamscan
+        type: string
+      stopOnError:
+        description: determines if the process should stop on a command execution
+          error
+        example: true
+        type: boolean
+      value:
+        description: the value of the command
+        example: freshclam && clamscan -r ${path}
+        type: string
+    type: object
   types.Key:
     properties:
       description:
         description: a description of the intended use of the key
         type: string
-      isPrivate:
+      is_private:
         description: indicates if the key is private, otherwise public
         type: boolean
       name:
@@ -45,6 +69,34 @@ paths:
       summary: Check that the HTTP API is live
       tags:
       - General
+  /command:
+    post:
+      description: creates  a new command
+      parameters:
+      - description: the data for the command to persist
+        in: body
+        name: key
+        required: true
+        schema:
+          $ref: '#/definitions/types.Command'
+      produces:
+      - text/plain
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create a new command
+      tags:
+      - Commands
   /key:
     post:
       description: uploads a new key used by doorman for cryptographic operations

@@ -52,6 +52,49 @@ var doc = `{
                 }
             }
         },
+        "/command": {
+            "post": {
+                "description": "creates  a new command",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Commands"
+                ],
+                "summary": "Create a new command",
+                "parameters": [
+                    {
+                        "description": "the data for the command to persist",
+                        "name": "key",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.Command"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/key": {
             "post": {
                 "description": "uploads a new key used by doorman for cryptographic operations",
@@ -97,6 +140,36 @@ var doc = `{
         }
     },
     "definitions": {
+        "types.Command": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "the command description",
+                    "type": "string",
+                    "example": "scan files in specified path"
+                },
+                "errorRegex": {
+                    "description": "a regex used to determine if the command execution has errored",
+                    "type": "string",
+                    "example": ".*Infected files: [^0].*"
+                },
+                "name": {
+                    "description": "a unique name for the command",
+                    "type": "string",
+                    "example": "clamscan"
+                },
+                "stopOnError": {
+                    "description": "determines if the process should stop on a command execution error",
+                    "type": "boolean",
+                    "example": true
+                },
+                "value": {
+                    "description": "the value of the command",
+                    "type": "string",
+                    "example": "freshclam \u0026\u0026 clamscan -r ${path}"
+                }
+            }
+        },
         "types.Key": {
             "type": "object",
             "properties": {
@@ -104,7 +177,7 @@ var doc = `{
                     "description": "a description of the intended use of the key",
                     "type": "string"
                 },
-                "isPrivate": {
+                "is_private": {
                     "description": "indicates if the key is private, otherwise public",
                     "type": "boolean"
                 },

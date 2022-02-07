@@ -19,6 +19,7 @@ func main() {
 	// add handlers
 	s.Http = func(router *mux.Router) {
 		router.HandleFunc("/key", newKeyHandler).Methods("POST")
+		router.HandleFunc("/command", newCommandHandler).Methods("POST")
 	}
 	s.Serve()
 }

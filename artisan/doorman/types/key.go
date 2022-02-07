@@ -14,20 +14,21 @@ import (
 )
 
 // Key a digital key
+// @Description a digital key used to sign or verify signatures
 type Key struct {
 	// a unique identifier for the digital key
-	Name string `bson:"_id" yaml:"name"`
+	Name string `bson:"_id" json:"name"`
 	// the name of the entity owning the key
-	Owner string `bson:"owner "yaml:"owner"`
+	Owner string `bson:"owner" json:"owner"`
 	// a description of the intended use of the key
-	Description string `bson:"description" yaml:"description"`
+	Description string `bson:"description" json:"description"`
 	// the actual content of the key
-	Value string `bson:"value" yaml:"value"`
+	Value string `bson:"value" json:"value"`
 	// indicates if the key is private, otherwise public
-	IsPrivate bool `bson:"is_private" yaml:"is_private"`
+	IsPrivate bool `bson:"is_private" json:"is_private"`
 }
 
-func (k *Key) Valid() error {
+func (k Key) Valid() error {
 	if len(k.Name) == 0 {
 		return fmt.Errorf("name attribute must be prodided")
 	}
@@ -42,6 +43,6 @@ func (k *Key) Valid() error {
 	return nil
 }
 
-func (k *Key) GetName() string {
+func (k Key) GetName() string {
 	return k.Name
 }
