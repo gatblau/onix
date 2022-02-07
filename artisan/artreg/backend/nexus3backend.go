@@ -41,7 +41,7 @@ func NewNexus3Backend(domain string) Backend {
 		domain: domain,
 		tmp:    core.TmpPath(),
 		client: &http.Client{
-			Timeout: time.Second * 10,
+			Timeout: time.Second * 120,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: true,
