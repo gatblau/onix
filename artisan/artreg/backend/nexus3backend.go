@@ -196,7 +196,9 @@ func (r *Nexus3Backend) postMultipart(b bytes.Buffer, writer *multipart.Writer, 
 	// Submit the request
 	res, err := r.client.Do(req)
 	// must close the body
-	res.Body.Close()
+	if res.Body != nil {
+		res.Body.Close()
+	}
 	if err != nil {
 		return err
 	}
