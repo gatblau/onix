@@ -52,11 +52,11 @@ func newKeyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	db := core.NewDb()
-	if db.KeyExists(key.Name) {
+	if db.ObjectExists(types.KeysColl, key.Name) {
 		isErr(w, fmt.Errorf("key with name %s already exist\n", key.Name), http.StatusBadRequest, "")
 		return
 	}
-	_, err = db.NewKey(key)
+	_, err = db.InsertObject(types.KeysColl, key)
 	if isErr(w, err, http.StatusInternalServerError, "cannot insert key in database") {
 		return
 	}

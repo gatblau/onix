@@ -41,3 +41,7 @@ func (k *Key) Valid() error {
 	}
 	return nil
 }
+
+func (k *Key) GetName() string {
+	return k.Name
+}
