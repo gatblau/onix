@@ -2423,7 +2423,7 @@ public class PgSqlRepository implements DbRepository {
             claims = jwt.parseJWT(pwdResetData.getJwt());
         } catch (Exception ex) {
             // the jwt is not valid, so cannot proceed
-			result.setError(true);
+	    result.setError(true);
             result.setMessage(String.format("attempt to change password failed for '%s' , invalid jwt: %s", email, ex.getMessage()));
             return result;
         }
