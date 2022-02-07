@@ -15,11 +15,18 @@ env:
 
 functions:
   - name: build-linux
-    description: builds Doorman for the linux platform
+    description: builds Doorman for Linux
     env:
       GOOS: linux
     run:
       - go build -ldflags="-X 'github.com/gatblau/onix/artisan/doorman/core.Version=${BUILD_VERSION}'" -o bin/linux/doorman -v
+
+  - name: build-mac
+    description: builds Doorman for MacOS
+    env:
+      GOOS: darwin
+    run:
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/doorman/core.Version=${BUILD_VERSION}'" -o bin/darwin/doorman -v
 
   - name: swagen
     description: generates/refreshes the OpenAPI specifications for Doorman HTTP API
