@@ -10,23 +10,37 @@ env:
   GOARCH: amd64
   REPO_NAME: quay.io/gatblau
   ART_DOORMAN: artisan-doorman
+  APP_VERSION: 0.0.4
+  BUILD_VERSION: ${APP_VERSION}-${ARTISAN_REF}
 
 functions:
-  - name: set-version
-    description: set-version on the parent build, updating global version
-    run:
-      - art run set-version ../
-
   - name: build-linux
     description: builds Doorman for the linux platform
     env:
       GOOS: linux
     run:
-      - $(set-version)
-      - go build -o bin/linux/doorman -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/doorman/core.Version=${BUILD_VERSION}'" -o bin/linux/doorman -v
 
   - name: swagen
-    description: generates/refreshes the OpenAPI specifications for Artisan Doorman's HTTP API
+    description: generates/refreshes the OpenAPI specifications for Doorman HTTP API
     run:
       - swag init -d ./ -g handlers.go --parseDependency types/*.go
+        
+  - name: build
+    description: creates a Doorman image
+    run:
+      - $(build-linux)
+      - docker build -t ${REPO_NAME}/${ART_DOORMAN}:${BUILD_VERSION} .
+      - docker tag ${REPO_NAME}/${ART_DOORMAN}:${BUILD_VERSION} ${REPO_NAME}/${ART_DOORMAN}:latest
+
+  - name: publish
+    description: publishes the Doorman image
+    run:
+      - docker push ${REPO_NAME}/${ART_DOORMAN}:${BUILD_VERSION}
+      - docker push ${REPO_NAME}/${ART_DOORMAN}:latest
+
+  - name: debug
+    description: starts doorman container using sleep infinity command
+    run:
+      - docker run --name doorman -itd quay.io/gatblau/artisan-doorman sleep infinity
 ...
