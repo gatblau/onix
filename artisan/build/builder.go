@@ -544,7 +544,7 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 		}
 	}
 	// gets the combined checksum of the manifest and the package
-	sum := s.Checksum(b.workDirZipFilename())
+	sum, digest := s.Checksum(b.workDirZipFilename())
 	// load private key
 	var pk *crypto.PGP
 	if len(pkPath) == 0 {
@@ -560,7 +560,7 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 	// if in debug mode prints out signature
 	core.Debug("package %s signature: \n>> start on next line\n%s\n>> ended on previous line\n", packageName, string(signature))
 	// the combined checksum of the seal info and the package
-	s.Digest = fmt.Sprintf("sha256:%s", base64.StdEncoding.EncodeToString(sum))
+	s.Digest = digest
 	// the crypto signature
 	s.Signature = base64.StdEncoding.EncodeToString(signature)
 	// if in debug mode prints out base64 encoded signature

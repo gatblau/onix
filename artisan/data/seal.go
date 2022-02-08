@@ -41,7 +41,7 @@ type Seal struct {
 }
 
 // Checksum takes the combined checksum of the Seal information and the compressed file
-func (seal *Seal) Checksum(path string) []byte {
+func (seal *Seal) Checksum(path string) (checksum []byte, digest string) {
 	// precondition: the manifest is required
 	if seal.Manifest == nil {
 		core.RaiseErr("seal has no manifest, cannot create checksum")
@@ -59,9 +59,10 @@ func (seal *Seal) Checksum(path string) []byte {
 	written, err = hash.Write(info)
 	core.CheckErr(err, "cannot write manifest to hash")
 	core.Debug("%d bytes from manifest written to hash", written)
-	sum := hash.Sum(nil)
-	core.Debug("seal calculated base64 encoded checksum:\n>> start on next line\n%s\n>> ended on previous line", base64.StdEncoding.EncodeToString(sum))
-	return sum
+	checksum = hash.Sum(nil)
+	core.Debug("seal calculated base64 encoded checksum:\n>> start on next line\n%s\n>> ended on previous line", base64.StdEncoding.EncodeToString(checksum))
+	digest = fmt.Sprintf("sha256:%s", base64.StdEncoding.EncodeToString(checksum))
+	return checksum, digest
 }
 
 // PackageId the package id calculated as the hex encoded SHA-256 digest of the artefact Seal
