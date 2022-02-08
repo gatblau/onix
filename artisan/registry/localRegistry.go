@@ -680,7 +680,7 @@ func checkSignature(name *core.PackageName, pubKeyPath string, seal *data.Seal, 
 		core.CheckErr(err, "cannot load public key, cannot verify signature")
 	}
 	// get a slice to have the unencrypted signature
-	sum := seal.Checksum(zipFilename)
+	sum, _ := seal.Checksum(zipFilename)
 	// if in debug mode prints out signature
 	core.Debug("seal stored base64 encoded signature:\n>> start on next line\n%s\n>> ended on previous line\n", seal.Signature)
 	// decode the signature in the seal
@@ -1383,7 +1383,7 @@ func (r *LocalRegistry) Sign(pac, pkPath, pubPath string) error {
 	// add labels to the manifest to keep an audit trail of the re-signing operation
 	s.Manifest.Labels[fmt.Sprintf("source-signature:%s", timeStamp)] = s.Signature
 	// gets the combined checksum of the manifest and the package
-	sum := s.Checksum(zipFilename)
+	sum, _ := s.Checksum(zipFilename)
 	// load private key
 	var pk *crypto.PGP
 	// if no private key path has been provided
