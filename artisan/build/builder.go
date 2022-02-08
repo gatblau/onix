@@ -90,7 +90,8 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 	// compress the target defined in the build.yaml' profile
 	b.zipPackage(targetPath)
 	// creates a seal
-	s, _ := b.createSeal(name, buildProfile, pkPath)
+	s, err := b.createSeal(name, buildProfile, pkPath)
+	core.CheckErr(err, "cannot create package seal")
 	// add the package to the local repo
 	b.localReg.Add(b.workDirZipFilename(), b.repoName, s)
 	// cleanup all relevant folders and move package to target location
