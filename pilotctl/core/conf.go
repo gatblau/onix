@@ -9,6 +9,7 @@ package core
 */
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -34,6 +35,7 @@ const (
 	ConfActUser                  ConfKey = "OX_PILOTCTL_ACTIVATION_USER"
 	ConfActPwd                   ConfKey = "OX_PILOTCTL_ACTIVATION_PWD"
 	ConfTenant                   ConfKey = "OX_PILOTCTL_TENANT"
+	ConfDbMaxConn                ConfKey = "OX_PILOTCTL_DB_MAXCONN"
 )
 
 type Conf struct {
@@ -151,4 +153,18 @@ func (c *Conf) getOxWapiInsecureSkipVerify() bool {
 		os.Exit(1)
 	}
 	return b
+}
+
+func (c *Conf) getDbMaxConn() int {
+	defaultMaxConn := 10
+	value := os.Getenv(string(ConfDbMaxConn))
+	if len(value) == 0 {
+		return defaultMaxConn
+	}
+	maxConn, err := strconv.Atoi(value)
+	if err != nil {
+		log.Printf("WARNING: failed to parse db max connections: %s, defaulting to %d\n", err, defaultMaxConn)
+		return defaultMaxConn
+	}
+	return maxConn
 }

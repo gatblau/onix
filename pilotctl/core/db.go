@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-func NewDb(host, port, db, uname, pwd string) (*Db, error) {
+func NewDb(host, port, db, uname, pwd string, maxConn int) (*Db, error) {
 	d := &Db{
 		db:    db,
 		host:  host,
@@ -28,7 +28,7 @@ func NewDb(host, port, db, uname, pwd string) (*Db, error) {
 		pwd:   pwd,
 		port:  port,
 	}
-	pool, err := newPool(connStr(uname, pwd, host, port, db))
+	pool, err := newPool(connStr(uname, pwd, host, port, db, maxConn))
 	if err != nil {
 		return nil, err
 	}
@@ -47,16 +47,16 @@ type Db struct {
 
 // this type carries either a connection or an error
 // used in a channel used by the connection go routine
-type conn struct {
+type connection struct {
 	conn *pgxpool.Pool
 	err  error
 }
 
 // create a new database connection pool
-// if it cannot connect within 5 seconds, it returns an error
+// if it cannot connect within a given period, it returns an error
 func newPool(connStr string) (*pgxpool.Pool, error) {
 	// this channel receives a connection
-	connect := make(chan conn, 1)
+	connect := make(chan connection, 1)
 	// this channel receives a timeout flag
 	timeout := make(chan bool, 1)
 
@@ -65,23 +65,23 @@ func newPool(connStr string) (*pgxpool.Pool, error) {
 		// connects to the database
 		c, e := pgxpool.Connect(context.Background(), connStr)
 		// sends connection through the channel
-		connect <- conn{conn: c, err: e}
+		connect <- connection{conn: c, err: e}
 	}()
 	// launch a go routine
 	go func() {
-		// timeout period is 5 secs
-		time.Sleep(5e9)
+		// timeout period is 2 minutes
+		time.Sleep(120 * time.Second)
 		timeout <- true
 	}()
 
 	select {
 	// the connection has been established before the timeout
-	case connection := <-connect:
+	case c := <-connect:
 		{
-			if connection.err != nil {
-				return nil, connection.err
+			if c.err != nil {
+				return nil, c.err
 			}
-			return connection.conn, nil
+			return c.conn, nil
 		}
 	// the connection has not yet returned when the timeout happens
 	case <-timeout:
@@ -92,8 +92,8 @@ func newPool(connStr string) (*pgxpool.Pool, error) {
 }
 
 // return the connection string
-func connStr(uname, pwd, host, port, db string) string {
-	return fmt.Sprintf("postgresql://%v:%v@%v:%v/%v", uname, pwd, host, port, db)
+func connStr(uname, pwd, host, port, db string, maxConn int) string {
+	return fmt.Sprintf("postgresql://%v:%v@%v:%v/%v?pool_max_conns=%d", uname, pwd, host, port, db, maxConn)
 }
 
 // return an enhanced error

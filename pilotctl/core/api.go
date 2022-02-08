@@ -40,7 +40,7 @@ type API struct {
 }
 
 func NewAPI(cfg *Conf) (*API, error) {
-	db, err := NewDb(cfg.getDbHost(), cfg.getDbPort(), cfg.getDbName(), cfg.getDbUser(), cfg.getDbPwd())
+	db, err := NewDb(cfg.getDbHost(), cfg.getDbPort(), cfg.getDbName(), cfg.getDbUser(), cfg.getDbPwd(), cfg.getDbMaxConn())
 	if err != nil {
 		return nil, err
 	}
