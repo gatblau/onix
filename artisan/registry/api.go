@@ -1,5 +1,3 @@
-package registry
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package registry
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package registry
+
 import (
 	"bufio"
 	"bytes"
@@ -42,7 +43,7 @@ func NewGenericAPI(domain string) *Api {
 		domain: domain,
 		tmp:    core.TmpPath(),
 		client: &http.Client{
-			Timeout: time.Second * 60,
+			Timeout: time.Minute * 10,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: true,
