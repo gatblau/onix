@@ -10,6 +10,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/gatblau/onix/artisan/doorman/types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -21,6 +22,11 @@ import (
 )
 
 const DbName = "doorman"
+
+var (
+	ErrDocumentAlreadyExists = errors.New("mongo: the document already exists")
+	ErrDocumentNotFound      = errors.New("mongo: the document was not found")
+)
 
 // Db manage MongoDb connections
 type Db struct {
@@ -58,7 +64,7 @@ func (db *Db) InsertObject(collection types.Collection, obj types.Nameable) (int
 	}
 	// if the key was found
 	if item.Err() != mongo.ErrNoDocuments {
-		return nil, fmt.Errorf("object in %s collection with name %s already exist", collection, obj.GetName())
+		return nil, ErrDocumentAlreadyExists
 	}
 	c := ctx()
 	client, err := mongo.Connect(c, db.options)
@@ -73,6 +79,47 @@ func (db *Db) InsertObject(collection types.Collection, obj types.Nameable) (int
 		return nil, fmt.Errorf("cannot insert object into %s collection: %s", collection, err)
 	}
 	return result.InsertedID, nil
+}
+
+func (db *Db) UpdateObject(collection types.Collection, obj types.Nameable) (interface{}, error) {
+	item, err := db.FindByName(collection, obj.GetName())
+	if err != nil {
+		return nil, err
+	}
+	// if the key was not found
+	if item.Err() == mongo.ErrNoDocuments {
+		return nil, ErrDocumentNotFound
+	}
+	c := ctx()
+	client, err := mongo.Connect(c, db.options)
+	if err != nil {
+		return nil, err
+	}
+	defer client.Disconnect(c)
+	coll := client.Database(DbName).Collection(string(collection))
+	result, updateErr := coll.UpdateOne(c, bson.M{"_id": obj.GetName()}, bson.M{"$set": obj})
+	if updateErr != nil {
+		return nil, updateErr
+	}
+	return result, nil
+}
+
+func (db *Db) UpsertObject(collection types.Collection, obj types.Nameable) (result interface{}, err error, resultCode int) {
+	result, err = db.InsertObject(collection, obj)
+	if err == nil {
+		resultCode = 201
+	} else if err == ErrDocumentAlreadyExists {
+		// performs an update instead
+		result, err = db.UpdateObject(collection, obj)
+		if err != nil {
+			resultCode = 500
+			return nil, fmt.Errorf("cannot update document in collection %s with name %s: %s", collection, obj.GetName(), err), -1
+		}
+		resultCode = 200
+	} else {
+		resultCode = 500
+	}
+	return
 }
 
 // FindByName find an object by name

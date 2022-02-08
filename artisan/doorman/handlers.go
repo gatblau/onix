@@ -31,12 +31,13 @@ import (
 // @Summary Upload a new key
 // @Description uploads a new key used by doorman for cryptographic operations
 // @Tags Keys
-// @Router /key [post]
+// @Router /key [put]
 // @Param key body types.Key true "the data for the key to persist"
 // @Produce plain
 // @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
-// @Success 201 {string} created
+// @Success 200 {string} object has been updated
+// @Success 201 {string} object has been created
 func newKeyHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if isErr(w, err, http.StatusBadRequest, "cannot read request body") {
@@ -52,26 +53,24 @@ func newKeyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	db := core.NewDb()
-	if db.ObjectExists(types.KeysColl, key.Name) {
-		isErr(w, fmt.Errorf("key with name %s already exist\n", key.Name), http.StatusBadRequest, "")
+	var resultCode int
+	_, err, resultCode = db.UpsertObject(types.KeysColl, key)
+	if isErr(w, err, resultCode, "cannot update key in database") {
 		return
 	}
-	_, err = db.InsertObject(types.KeysColl, key)
-	if isErr(w, err, http.StatusInternalServerError, "cannot insert key in database") {
-		return
-	}
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(resultCode)
 }
 
 // @Summary Create a new command
 // @Description creates  a new command
 // @Tags Commands
-// @Router /command [post]
+// @Router /command [put]
 // @Param key body types.Command true "the data for the command to persist"
 // @Produce plain
 // @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
-// @Success 201 {string} created
+// @Success 200 {string} object has been updated
+// @Success 201 {string} object has been created
 func newCommandHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if isErr(w, err, http.StatusBadRequest, "cannot read request body") {
@@ -87,15 +86,12 @@ func newCommandHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	db := core.NewDb()
-	if db.ObjectExists(types.CommandsColl, cmd.Name) {
-		isErr(w, fmt.Errorf("command with name %s already exists\n", cmd.Name), http.StatusBadRequest, "")
+	var resultCode int
+	_, err, resultCode = db.UpsertObject(types.CommandsColl, cmd)
+	if isErr(w, err, resultCode, "cannot update command in database") {
 		return
 	}
-	_, err = db.InsertObject(types.CommandsColl, cmd)
-	if isErr(w, err, http.StatusInternalServerError, "cannot insert command in database") {
-		return
-	}
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(resultCode)
 }
 
 func isErr(w http.ResponseWriter, err error, statusCode int, msg string) bool {

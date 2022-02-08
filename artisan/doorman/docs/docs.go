@@ -53,7 +53,7 @@ var doc = `{
             }
         },
         "/command": {
-            "post": {
+            "put": {
                 "description": "creates  a new command",
                 "produces": [
                     "text/plain"
@@ -74,6 +74,12 @@ var doc = `{
                     }
                 ],
                 "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "201": {
                         "description": "Created",
                         "schema": {
@@ -96,7 +102,7 @@ var doc = `{
             }
         },
         "/key": {
-            "post": {
+            "put": {
                 "description": "uploads a new key used by doorman for cryptographic operations",
                 "produces": [
                     "text/plain"
@@ -117,6 +123,12 @@ var doc = `{
                     }
                 ],
                 "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "201": {
                         "description": "Created",
                         "schema": {

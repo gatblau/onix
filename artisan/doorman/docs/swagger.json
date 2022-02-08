@@ -36,7 +36,7 @@
             }
         },
         "/command": {
-            "post": {
+            "put": {
                 "description": "creates  a new command",
                 "produces": [
                     "text/plain"
@@ -57,6 +57,12 @@
                     }
                 ],
                 "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "201": {
                         "description": "Created",
                         "schema": {
@@ -79,7 +85,7 @@
             }
         },
         "/key": {
-            "post": {
+            "put": {
                 "description": "uploads a new key used by doorman for cryptographic operations",
                 "produces": [
                     "text/plain"
@@ -100,6 +106,12 @@
                     }
                 ],
                 "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "201": {
                         "description": "Created",
                         "schema": {

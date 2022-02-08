@@ -70,7 +70,7 @@ paths:
       tags:
       - General
   /command:
-    post:
+    put:
       description: creates  a new command
       parameters:
       - description: the data for the command to persist
@@ -82,6 +82,10 @@ paths:
       produces:
       - text/plain
       responses:
+        "200":
+          description: OK
+          schema:
+            type: string
         "201":
           description: Created
           schema:
@@ -98,7 +102,7 @@ paths:
       tags:
       - Commands
   /key:
-    post:
+    put:
       description: uploads a new key used by doorman for cryptographic operations
       parameters:
       - description: the data for the key to persist
@@ -110,6 +114,10 @@ paths:
       produces:
       - text/plain
       responses:
+        "200":
+          description: OK
+          schema:
+            type: string
         "201":
           description: Created
           schema:
