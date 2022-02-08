@@ -190,11 +190,15 @@ func (s *Server) LoggingMiddleware(next http.Handler) http.Handler {
 func (s *Server) AuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// holds user principal
-		var user *oxc.UserPrincipal
+		var (
+			user    *oxc.UserPrincipal
+			matched bool
+			err     error
+		)
 		// loop through specific authentication by URL path
 		for urlPattern, authenticate := range s.Auth {
 			// if the request URL match the authentication function pattern
-			matched, err := regexp.Match(urlPattern, []byte(r.URL.Path))
+			matched, err = regexp.Match(urlPattern, []byte(r.URL.Path))
 			// regex error?
 			if err != nil {
 				// Write an error and stop the handler chain
@@ -204,21 +208,24 @@ func (s *Server) AuthenticationMiddleware(next http.Handler) http.Handler {
 			}
 			// if the regex matched the URL path
 			if matched {
-				// then try and authenticate using the specified function
-				user = authenticate(*r)
-				// if authentication fails the there is no user principal returned
-				if user == nil {
-					// Write an error and stop the handler chain
-					http.Error(w, "Forbidden", http.StatusForbidden)
-					return
-				} else {
-					// exit loop
-					break
+				// if we have an authentication function defined
+				if authenticate != nil {
+					// then try and authenticate using the specified function
+					user = authenticate(*r)
+					// if authentication fails the there is no user principal returned
+					if user == nil {
+						// Write an error and stop the handler chain
+						http.Error(w, "Forbidden", http.StatusForbidden)
+						return
+					} else {
+						// exit loop
+						break
+					}
 				}
 			}
 		}
 		// if not authenticated by a custom handler then use default handler
-		if user == nil {
+		if user == nil && !matched {
 			// no specific authentication function matched the request URL, so tries
 			// the default authentication function if it has been defined
 			// if no function has been defined then do not authenticate the request
