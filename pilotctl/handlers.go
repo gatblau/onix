@@ -316,22 +316,14 @@ func newJobHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func getJobsHandler(w http.ResponseWriter, r *http.Request) {
-	var (
-		bid *int64
-		id  int64
-		err error
-	)
+	var bid *int64
 	batchId := r.FormValue("bid")
 	// if a batch id was provided
 	if len(batchId) > 0 {
-		// try and parse to int64
-		id, err = strconv.ParseInt(batchId, 10, 64)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		id, parseErr := strconv.ParseInt(batchId, 10, 64)
+		if isErr(w, parseErr, http.StatusBadRequest, "cannot parse batch Id") {
 			return
 		}
-		// update pointer variable
 		bid = &id
 	}
 	orgGroup := r.FormValue("og")
@@ -340,9 +332,7 @@ func getJobsHandler(w http.ResponseWriter, r *http.Request) {
 	location := r.FormValue("lo")
 
 	jobs, err := api.GetJobs(orgGroup, org, area, location, bid)
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if isErr(w, err, http.StatusBadRequest, "cannot retrieve jobs from database") {
 		return
 	}
 	httpserver.Write(w, r, jobs)
@@ -674,4 +664,15 @@ func activationHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func isErr(w http.ResponseWriter, err error, statusCode int, msg string) bool {
+	if err != nil {
+		msg = fmt.Sprintf("%s: %s\n", msg, err)
+		log.Printf(msg)
+		w.WriteHeader(statusCode)
+		w.Write([]byte(msg))
+		return true
+	}
+	return false
 }
