@@ -3,14 +3,21 @@ labels:
   application: Test 1
   description: Very simple test!
 
-runtime: ubi-min
+input:
+  var:
+    - name: HELLO_WORD
+      description: "the hello word in the language of choice"
+      required: true
 
 functions:
   - name: t1
     export: true
     description: run test 1
     run:
-      - echo "Hello World"
+      - echo "${HELLO_WORD}"
+    input:
+      var:
+        - HELLO_WORD
 
   - name: t2
     export: true
