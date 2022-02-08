@@ -110,6 +110,8 @@ func activate(info *ctl.HostInfo) {
 	}
 	// set the activation
 	A = akInfo
+	// validate the activation key
+	A.Validate()
 	// check expiration date
 	if A.Expiry.Before(time.Now()) {
 		// if activation expired the exit

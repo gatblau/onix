@@ -34,6 +34,25 @@ type AKInfo struct {
 	VerifyKey  string    `json:"verify_key"`
 }
 
+func (a AKInfo) Validate() {
+	// if the verification key is not provided
+	if len(a.VerifyKey) == 0 {
+		// cannot continue
+		ErrorLogger.Printf("cannot launch pilot: activation key does not have a verification key\n")
+		os.Exit(1)
+	}
+	if len(a.MacAddress) == 0 {
+		// cannot continue
+		ErrorLogger.Printf("cannot launch pilot: activation key does not have a MAC address\n")
+		os.Exit(1)
+	}
+	if len(a.HostUUID) == 0 {
+		// cannot continue
+		ErrorLogger.Printf("cannot launch pilot: activation key does not have a host identifier\n")
+		os.Exit(1)
+	}
+}
+
 func AkExist() bool {
 	_, err := os.Stat(AkFile())
 	return err == nil
