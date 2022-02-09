@@ -76,3 +76,13 @@ func (seal *Seal) PackageId() (string, error) {
 	}
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
+
+// Valid checks that the digest stored in the seal is the same as the digest generated using the passed-in zip file path
+// and the seal
+// path: the path to the package zip file to validate
+func (seal *Seal) Valid(path string) bool {
+	// calculates the digest using the zip file
+	_, digest := seal.Checksum(path)
+	// compare to the digest stored in the seal
+	return seal.Digest == digest
+}
