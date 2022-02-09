@@ -10,10 +10,14 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	ctlCore "github.com/gatblau/onix/pilotctl/core"
 	ctl "github.com/gatblau/onix/pilotctl/types"
 	"io/ioutil"
 	"net/http"
+	"strings"
+
+	// "strings"
 	"time"
 )
 
@@ -30,18 +34,44 @@ func NewPilotCtl(worker *Worker, hostInfo *ctl.HostInfo) (*PilotCtl, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg := &ctlCore.ClientConf{
-		BaseURI:            A.CtlURI,
-		Username:           "_",
-		Password:           "_",
-		InsecureSkipVerify: true,
-		Timeout:            60 * time.Second,
+	// breaks URI in activation key based on CSV format
+	// note: more than one URI can be configured using a comma separated value list
+	// pilot will attempt to connect to an URI in the list following the defined order
+	// if a connection is successful, the URI will be elected as the pilotctl URI
+	// this process only when pilot re-starts
+	ctlURIs := strings.Split(A.CtlURI, ",")
+	// start a loop to probe a resolvable URI and return the successful http client
+	for _, uri := range ctlURIs {
+		// create a new http client for the uri
+		cfg := &ctlCore.ClientConf{
+			BaseURI:            uri,
+			Username:           "_",
+			Password:           "_",
+			InsecureSkipVerify: true,
+			Timeout:            5 * time.Minute,
+		}
+		client, clientErr := ctlCore.NewClient(cfg)
+		if clientErr != nil {
+			return nil, fmt.Errorf("failed to create PilotCtl http client: %s", clientErr)
+		}
+		core.InfoLogger.Printf("trying to connect to control URI %s\n", uri)
+		// issue a http get to the unauthenticated root to check for a valid response
+		resp, _ := client.Get(uri, nil)
+		// if there is a response
+		if resp != nil {
+			// and the response is OK
+			if resp.StatusCode == 200 {
+				// return a client ready  to connect to such endpoint
+				core.InfoLogger.Printf("connected to control URI %s\n", uri)
+				return &PilotCtl{client: client, cfg: cfg, host: hostInfo, worker: worker}, nil
+			} else {
+				// otherwise, return the error
+				return nil, fmt.Errorf("endpoint found but could not connect, reason: %s", resp.Status)
+			}
+		}
 	}
-	c, err := ctlCore.NewClient(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create PilotCtl http client: %s", err)
-	}
-	return &PilotCtl{client: c, cfg: cfg, host: hostInfo, worker: worker}, nil
+	// if no endpoint was found return error
+	return nil, fmt.Errorf("cannot resolve a valid endpoint for pilotctl")
 }
 
 // Register the host
