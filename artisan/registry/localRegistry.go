@@ -77,6 +77,17 @@ func (r *LocalRegistry) Prune() error {
 	}
 	danglingRepo.Packages = nil
 	r.save()
+
+	// clears the content of the tmp folder
+	err2 := cleanFolder(core.TmpPath())
+	if err2 != nil {
+		return fmt.Errorf("cannot clean tmp folder: %s", err2)
+	}
+	// clears the content of the build folder
+	err2 = cleanFolder(path.Join(core.RegistryPath(), "build"))
+	if err2 != nil {
+		return fmt.Errorf("cannot clean build folder: %s", err2)
+	}
 	return nil
 }
 

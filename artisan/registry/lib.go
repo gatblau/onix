@@ -325,3 +325,14 @@ func removeP(slice []*Package, ix int) []*Package {
 	slice[ix] = slice[len(slice)-1]
 	return slice[:len(slice)-1]
 }
+
+func cleanFolder(pathToClean string) error {
+	names, err := ioutil.ReadDir(pathToClean)
+	if err != nil {
+		return err
+	}
+	for _, entry := range names {
+		os.RemoveAll(path.Join([]string{pathToClean, entry.Name()}...))
+	}
+	return nil
+}
