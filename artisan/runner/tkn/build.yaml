@@ -10,34 +10,33 @@ env:
   GOARCH: amd64
   REPO_NAME: quay.io/gatblau
   ART_RUNNER: artisan-runner
+  APP_VERSION: 0.0.4
+  BUILD_VERSION: ${APP_VERSION}-${ARTISAN_REF}
 
 profiles:
 
 functions:
-  - name: set-version
-    description: set-version on the parent build, updating global version
-    run:
-      - art run set-version ../
-
   - name: build-linux
     description: builds the Artisan Flow Runner for the linux platform
     env:
       GOOS: linux
     run:
-      - $(set-version)
-      - go build -o bin/linux/runner -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/runner/tkn/core.Version=${BUILD_VERSION}'"  -o bin/linux/runner -v
 
-  - name: build
+  - name: build-mac
+    description: builds the Artisan Flow Runner for the MacOS platform
+    env:
+      GOOS: darwin
+    run:
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/runner/tkn/core.Version=${BUILD_VERSION}'"  -o bin/linux/runner -v
+
+  - name: release
     description: creates an Artisan Flow Runner image
     run:
       - $(build-linux)
-      - docker build -t ${REPO_NAME}/${ART_RUNNER}:$((cat ../version)) .
-      - docker tag ${REPO_NAME}/${ART_RUNNER}:$((cat ../version)) ${REPO_NAME}/${ART_RUNNER}:latest
-
-  - name: publish
-    description: publishes the Artisan Registry image
-    run:
-      - docker push ${REPO_NAME}/${ART_RUNNER}:$((cat ../version))
+      - docker build -t ${REPO_NAME}/${ART_RUNNER}:${BUILD_VERSION} .
+      - docker tag ${REPO_NAME}/${ART_RUNNER}:${BUILD_VERSION} ${REPO_NAME}/${ART_RUNNER}:latest
+      - docker push ${REPO_NAME}/${ART_RUNNER}:${BUILD_VERSION}
       - docker push ${REPO_NAME}/${ART_RUNNER}:latest
 
   - name: swagen

@@ -124,6 +124,8 @@ github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI
 github.com/form3tech-oss/jwt-go v3.2.2+incompatible/go.mod h1:pbq4aXjuKjdthFRnoDwaVPLA+WlJuPGy+QneDUgJi2k=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
+github.com/gatblau/onix/artisan/artrunner v0.0.0-20220209074203-8518846402a3 h1:hnwnDQDiWTDaWRqszRJBzzsJniDYgtS9pshx2iTldJY=
+github.com/gatblau/onix/artisan/artrunner v0.0.0-20220209074203-8518846402a3/go.mod h1:ElE7+87udc5L7kxw3RILXUgqLj/QPjp36BiReDe1+qk=
 github.com/gatblau/oxc v0.0.0-20210810120109-3c7f200d87d2 h1:/o8uiZsqxaKqje3eEo2T1jyXVh2H/ycPdctT15Z0494=
 github.com/gatblau/oxc v0.0.0-20210810120109-3c7f200d87d2/go.mod h1:2cOuWfNu1kLsveFl6qLgG5tQFiAvT9TU8UaRTbOZ8TM=
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=

@@ -1,5 +1,3 @@
-package main
-
 /*
   Onix Config Manager - Artisan Runner
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package main
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package main
+
 import (
 	"fmt"
 	"os"
