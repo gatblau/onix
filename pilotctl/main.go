@@ -1,5 +1,3 @@
-package main
-
 /*
   Onix Config Manager - Pilot Control
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -7,28 +5,16 @@ package main
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package main
+
 import (
-	"fmt"
 	"github.com/gatblau/onix/oxlib/httpserver"
 	"github.com/gatblau/onix/oxlib/oxc"
 	"github.com/gatblau/onix/pilotctl/core"
 	"github.com/gorilla/mux"
 	"net/http"
-	"os"
 )
-
-var (
-	api *core.API
-)
-
-func init() {
-	var err error
-	api, err = core.NewAPI(new(core.Conf))
-	if err != nil {
-		fmt.Printf("ERROR: fail to create backend services API: %s", err)
-		os.Exit(1)
-	}
-}
 
 func main() {
 	// creates a generic http server
@@ -83,15 +69,15 @@ func main() {
 // specified in server.Auth map
 var pilotAuth = func(r http.Request) *oxc.UserPrincipal {
 	token := r.Header.Get("Authorization")
-	return api.AuthenticatePilot(token)
+	return core.Api().AuthenticatePilot(token)
 }
 
 // the default authentication mechanism user by the authentication middleware
 var defaultAuth = func(r http.Request) *oxc.UserPrincipal {
-	return api.AuthenticateUser(r)
+	return core.Api().AuthenticateUser(r)
 }
 
 // authenticates requests from the activation service
 var activationSvc = func(r http.Request) *oxc.UserPrincipal {
-	return api.AuthenticateActivationSvc(r)
+	return core.Api().AuthenticateActivationSvc(r)
 }

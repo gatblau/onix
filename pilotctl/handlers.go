@@ -55,7 +55,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		// if the ping request contains a job result
 		if pingRequest.Result != nil {
 			// persist the result of the job
-			err = api.CompleteJob(pingRequest.Result)
+			err = core.Api().CompleteJob(pingRequest.Result)
 			if err != nil {
 				log.Printf("cannot set job status: %s\n", err)
 				http.Error(w, "set job status, check the server logs\n", http.StatusBadRequest)
@@ -65,18 +65,18 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		// if the ping request contains syslog events
 		if pingRequest.Events != nil && len(pingRequest.Events.Events) > 0 {
 			// adds extra information to the events
-			events, err := api.Augment(pingRequest.Events)
+			events, err := core.Api().Augment(pingRequest.Events)
 			// if the augmentation fails
 			if err != nil && len(events.Events) > 0 {
 				// log a warning but continue
 				log.Printf("WARNING: event augmentation failed for host uuid '%s': %s", events.Events[0].HostUUID, err)
 			}
 			// publish those events to registered sources
-			api.PublishEvents(events)
+			core.Api().PublishEvents(events)
 		}
 	}
 	// todo: add support for fx version
-	jobId, fxKey, _, err := api.Ping()
+	jobId, fxKey, _, err := core.Api().Ping()
 	if err != nil {
 		log.Printf("can't record ping time: %v\n", err)
 		http.Error(w, "can't record ping time, check the server logs\n", http.StatusInternalServerError)
@@ -89,7 +89,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	// if we have a job to execute
 	if jobId > 0 {
 		// fetches the definition for the job function to run from Onix
-		cmdValue, err = api.GetCommandValue(fxKey)
+		cmdValue, err = core.Api().GetCommandValue(fxKey)
 		if err != nil {
 			log.Printf("can't retrieve Artisan function definition from Onix: %v\n", err)
 			http.Error(w, "can't retrieve Artisan function definition from Onix, check server logs\n", http.StatusInternalServerError)
@@ -98,7 +98,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 		// set the job reference
 		cmdValue.JobId = jobId
 	}
-	cr, err := NewPingResponse(*cmdValue, api.PingInterval())
+	cr, err := NewPingResponse(*cmdValue, core.Api().PingInterval())
 	if err != nil {
 		log.Printf("can't sign ping response: %v\n", err)
 		http.Error(w, "can't sign ping response, check the server logs\n", http.StatusInternalServerError)
@@ -135,7 +135,7 @@ func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 	if len(labels) > 0 {
 		label = strings.Split(labels, "|")
 	}
-	hosts, err := api.GetHosts(orgGroup, org, area, location, label)
+	hosts, err := core.Api().GetHosts(orgGroup, org, area, location, label)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -161,7 +161,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "can't unmarshal body, check the server logs for more details", http.StatusBadRequest)
 		return
 	}
-	regInfo, err := api.Register(reg)
+	regInfo, err := core.Api().Register(reg)
 	if err != nil {
 		log.Printf("Failed to register host, Onix responded with an error: %v", err)
 		http.Error(w, "Failed to register host, Onix responded with an error, check the server logs for more details", http.StatusInternalServerError)
@@ -201,7 +201,7 @@ func updateCmdHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = api.PutCommand(cmd)
+	err = core.Api().PutCommand(cmd)
 	if err != nil {
 		log.Printf("failed to set command: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -222,7 +222,7 @@ func updateCmdHandler(w http.ResponseWriter, r *http.Request) {
 func getCmdHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
-	cmd, err := api.GetCommand(name)
+	cmd, err := core.Api().GetCommand(name)
 	if err != nil {
 		log.Printf("can't query command with name '%s': %v\n", name, err)
 		http.Error(w, fmt.Sprintf("can't query command with name '%s': %v\n", name, err), http.StatusInternalServerError)
@@ -243,7 +243,7 @@ func getCmdHandler(w http.ResponseWriter, r *http.Request) {
 func deleteCmdHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
-	resultingOperation, err := api.DeleteCommand(name)
+	resultingOperation, err := core.Api().DeleteCommand(name)
 	if err != nil {
 		log.Printf("can't delete command with name '%s': %v\n", name, err)
 		http.Error(w, fmt.Sprintf("can't delete command with name '%s', check server logs for more details\n", name), http.StatusInternalServerError)
@@ -261,7 +261,7 @@ func deleteCmdHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func getAllCmdHandler(w http.ResponseWriter, r *http.Request) {
-	cmds, err := api.GetAllCommands()
+	cmds, err := core.Api().GetAllCommands()
 	if err != nil {
 		log.Printf("can't query list of commands: %v\n", err)
 		http.Error(w, fmt.Sprintf("can't query list of commands: %s\n", err), http.StatusInternalServerError)
@@ -293,7 +293,7 @@ func newJobHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("can't unmarshal http body, check the server logs\n"), http.StatusInternalServerError)
 		return
 	}
-	jobBatchId, err := api.CreateJobBatch(*batch)
+	jobBatchId, err := core.Api().CreateJobBatch(*batch)
 	if err != nil {
 		log.Printf("can't create job batch: %v\n", err)
 		http.Error(w, fmt.Sprintf("can't create job batch, check the server logs\n"), http.StatusInternalServerError)
@@ -331,7 +331,7 @@ func getJobsHandler(w http.ResponseWriter, r *http.Request) {
 	area := r.FormValue("ar")
 	location := r.FormValue("lo")
 
-	jobs, err := api.GetJobs(orgGroup, org, area, location, bid)
+	jobs, err := core.Api().GetJobs(orgGroup, org, area, location, bid)
 	if isErr(w, err, http.StatusBadRequest, "cannot retrieve jobs from database") {
 		return
 	}
@@ -391,7 +391,7 @@ func getJobBatchHandler(w http.ResponseWriter, r *http.Request) {
 	if len(ownerParam) > 0 {
 		owner = &ownerParam
 	}
-	batches, err := api.GetJobBatches(name, owner, fromTime, toTime, &label)
+	batches, err := core.Api().GetJobBatches(name, owner, fromTime, toTime, &label)
 	if err != nil {
 		log.Printf("failed to retrieve job batches: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -411,7 +411,7 @@ func getJobBatchHandler(w http.ResponseWriter, r *http.Request) {
 func getAreasHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	orgGroup := vars["org-group"]
-	areas, err := api.GetAreas(orgGroup)
+	areas, err := core.Api().GetAreas(orgGroup)
 	if err != nil {
 		log.Printf("failed to retrieve areas: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -428,7 +428,7 @@ func getAreasHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func getOrgGroupsHandler(w http.ResponseWriter, r *http.Request) {
-	areas, err := api.GetOrgGroups()
+	areas, err := core.Api().GetOrgGroups()
 	if err != nil {
 		log.Printf("failed to retrieve org groups: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -448,7 +448,7 @@ func getOrgGroupsHandler(w http.ResponseWriter, r *http.Request) {
 func getOrgHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	orgGroup := vars["org-group"]
-	areas, err := api.GetOrgs(orgGroup)
+	areas, err := core.Api().GetOrgs(orgGroup)
 	if err != nil {
 		log.Printf("failed to retrieve organisations: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -468,7 +468,7 @@ func getOrgHandler(w http.ResponseWriter, r *http.Request) {
 func getLocationsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	area := vars["area"]
-	areas, err := api.GetLocations(area)
+	areas, err := core.Api().GetLocations(area)
 	if err != nil {
 		log.Printf("failed to retrieve organisations: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -502,7 +502,7 @@ func setAdmissionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, admission := range admissions {
-		err = api.SetAdmission(admission)
+		err = core.Api().SetAdmission(admission)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -519,7 +519,7 @@ func setAdmissionHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func getPackagesHandler(w http.ResponseWriter, r *http.Request) {
-	packages, err := api.GetPackages()
+	packages, err := core.Api().GetPackages()
 	if err != nil {
 		log.Printf("failed to retrieve package list from Artisan Registry: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -544,7 +544,7 @@ func getPackagesApiHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("failed to unescape package name '%s': %s\n", name, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	api, err := api.GetPackageAPI(n)
+	api, err := core.Api().GetPackageAPI(n)
 	if err != nil {
 		log.Printf("failed to get package API from registry: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -631,7 +631,7 @@ func registrationHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// as the provisioning of the mac-address has been successful records the host in pilot-ctl db
-		err = api.SetRegistration(registration)
+		err = core.Api().SetRegistration(registration)
 		if err != nil {
 			log.Printf("cannot record registration information in database: %s\n", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -658,7 +658,7 @@ func activationHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("failed to unescape host UUID '%s': %s\n", uuid, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	err = api.AdmitRegistered(ma, id)
+	err = core.Api().AdmitRegistered(ma, id)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -1,5 +1,3 @@
-package core
-
 /*
   Onix Pilot Host Control Service
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -7,13 +5,36 @@ package core
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package core
+
 import (
 	"encoding/base64"
 	"fmt"
 	"github.com/gatblau/onix/artisan/data"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
+
+var (
+	api *API
+)
+
+func Api() *API {
+	var (
+		err    error
+		newAPI *API
+	)
+	if api == nil {
+		newAPI, err = NewAPI(new(Conf))
+		if err != nil {
+			log.Fatalf("ERROR: fail to create backend services API: %s", err)
+		}
+		api = newAPI
+	}
+	return api
+}
 
 func basicAuthToken(user, pwd string) string {
 	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, pwd))))
