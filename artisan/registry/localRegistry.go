@@ -472,7 +472,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) error {
 	}
 	// if the package does not exist in the remote registry
 	// check if the tag has been applied to another package in the repository
-	repo, err := api.GetRepositoryInfo(name.Group, name.Name, uname, pwd, tls)
+	repo, err, _ := api.GetRepositoryInfo(name.Group, name.Name, uname, pwd, tls)
 	if err != nil {
 		return fmt.Errorf("art push '%s' cannot retrieve repository information from registry", name.String())
 	}
@@ -511,11 +511,21 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 	// assume tls enabled
 	tls := true
 	// get remote repository information
-	repo, err := api.GetRepositoryInfo(name.Group, name.Name, uname, pwd, tls)
+	repoInfo := &repositoryInfo{
+		name:  *name,
+		uname: uname,
+		pwd:   pwd,
+		tls:   tls,
+		api:   *api,
+	}
+	err := getRepositoryInfoRetry(repoInfo)
+	repo := repoInfo.repo
 	if err != nil {
 		var err2 error
 		// attempt not to use tls
-		repo, err2 = api.GetRepositoryInfo(name.Group, name.Name, uname, pwd, false)
+		repoInfo.tls = false
+		err2 = getRepositoryInfoRetry(repoInfo)
+		repo = repoInfo.repo
 		// if successful means remote endpoint in not tls enabled
 		if err2 == nil {
 			// switches tls off
@@ -536,16 +546,48 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 	localPackage := r.findPackageByRepoAndId(name, remoteArt.Id)
 	// if the local registry does not have the package then download it
 	if localPackage == nil {
-		// download package seal file from registry
-		sealFilename, err := api.Download(name.Group, name.Name, fmt.Sprintf("%s.json", remoteArt.FileRef), uname, pwd, tls)
-		core.CheckErr(err, "failed to download package seal file")
+		// download package seal
+		info := &downloadInfo{
+			name:     *name,
+			filename: fmt.Sprintf("%s.json", remoteArt.FileRef),
+			uname:    uname,
+			pwd:      pwd,
+			tls:      tls,
+			api:      *api,
+		}
+		downErr := downloadFileRetry(info)
+		core.CheckErr(downErr, "failed to download package seal file")
+		sealFilename := info.downloadedFilename
 
-		// download package file from registry
-		packageFilename, err := api.Download(name.Group, name.Name, fmt.Sprintf("%s.zip", remoteArt.FileRef), uname, pwd, tls)
-		core.CheckErr(err, "failed to download package file")
+		// download package zip
+		info = &downloadInfo{
+			name:     *name,
+			filename: fmt.Sprintf("%s.zip", remoteArt.FileRef),
+			uname:    uname,
+			pwd:      pwd,
+			tls:      tls,
+			api:      *api,
+		}
+		downErr = downloadFileRetry(info)
+		core.CheckErr(downErr, "failed to download package file")
+		packageFilename := info.downloadedFilename
 
 		seal, err := r.loadSeal(sealFilename)
 		core.CheckErr(err, "cannot load package seal")
+
+		// if the downloaded package digest does not match the one stored in the seal manifest
+		if !seal.Valid(packageFilename) {
+			core.InfoLogger.Printf("package digest check failed, retrying download, stand by\n")
+
+			// retry the download
+			downErr = downloadFileRetry(info)
+			core.CheckErr(downErr, "failed to download package file")
+			packageFilename = info.downloadedFilename
+
+			if !seal.Valid(packageFilename) {
+				core.RaiseErr("cannot pull package: digest check failed after retries")
+			}
+		}
 
 		// add the package to the local registry
 		err2 := r.Add(packageFilename, name, seal)

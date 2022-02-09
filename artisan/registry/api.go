@@ -127,11 +127,11 @@ func (r *Api) UpdatePackageInfo(name *core.PackageName, pack *Package, user stri
 	return nil
 }
 
-func (r *Api) GetRepositoryInfo(group, name, user, pwd string, https bool) (*Repository, error) {
+func (r *Api) GetRepositoryInfo(group, name, user, pwd string, https bool) (*Repository, error, int) {
 	// note: repoURI() escape the group
 	req, err := http.NewRequest("GET", r.repoURI(group, name, https), nil)
 	if err != nil {
-		return nil, err
+		return nil, err, 0
 	}
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
@@ -140,36 +140,39 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string, https bool) (*Rep
 	// Submit the request
 	resp, err := r.client.Do(req)
 	if err != nil {
-		return nil, err
+		if resp != nil {
+			return nil, err, resp.StatusCode
+		}
+		return nil, err, -1
 	}
 	defer resp.Body.Close()
 	switch resp.StatusCode {
 	case http.StatusNotFound:
 		// if repository is nil then the client is not talking to the proper package registry
-		return nil, fmt.Errorf("\"%s\" does not conform to the Package Registry API, are you sure the package domain is correct?", r.domain)
+		return nil, fmt.Errorf("\"%s\" does not conform to the Package Registry API, are you sure the package domain is correct?", r.domain), resp.StatusCode
 	case http.StatusForbidden:
-		return nil, fmt.Errorf("access to the registry is forbidden")
+		return nil, fmt.Errorf("access to the registry is forbidden"), resp.StatusCode
 	case http.StatusUnauthorized:
-		return nil, fmt.Errorf("invalid credentials, access to the registry is unauthorised")
+		return nil, fmt.Errorf("invalid credentials, access to the registry is unauthorised"), resp.StatusCode
 	}
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, err, resp.StatusCode
 	}
 	// if the result body is not in JSON format is likely that the domain of package does not exist
 	if !core.IsJSON(string(b)) {
-		return nil, fmt.Errorf("the package was not found: its domain/group/name is likely to be incorrect")
+		return nil, fmt.Errorf("the package was not found: its domain/group/name is likely to be incorrect"), resp.StatusCode
 	}
 	// if not response then return an empty repository
 	if len(b) == 0 {
 		return &Repository{
 			Repository: fmt.Sprintf("%s/%s", group, name),
 			Packages:   make([]*Package, 0),
-		}, nil
+		}, nil, resp.StatusCode
 	}
 	repo := new(Repository)
 	err = json.Unmarshal(b, repo)
-	return repo, err
+	return repo, err, resp.StatusCode
 }
 
 func (r *Api) GetPackageInfo(group, name, id, user, pwd string, https bool) (*Package, error) {
@@ -207,10 +210,10 @@ func (r *Api) GetPackageInfo(group, name, id, user, pwd string, https bool) (*Pa
 	return pack, err
 }
 
-func (r *Api) Download(group, name, filename, user, pwd string, https bool) (string, error) {
+func (r *Api) Download(group, name, filename, user, pwd string, https bool) (string, error, int) {
 	req, err := http.NewRequest("GET", r.fileURI(group, name, filename, https), nil)
 	if err != nil {
-		return "", err
+		return "", err, 0
 	}
 	req.Header.Set("accept", "application/json")
 	if len(user) > 0 && len(pwd) > 0 {
@@ -218,8 +221,12 @@ func (r *Api) Download(group, name, filename, user, pwd string, https bool) (str
 	}
 	// Submit the request
 	res, err := r.client.Do(req)
+	status := 0
+	if res != nil {
+		status = res.StatusCode
+	}
 	if err != nil {
-		return "", err
+		return "", err, status
 	}
 	defer res.Body.Close()
 
@@ -227,7 +234,7 @@ func (r *Api) Download(group, name, filename, user, pwd string, https bool) (str
 	// retrieve the content length to download from the http reader
 	limit, err := strconv.ParseInt(res.Header.Get("Content-Length"), 0, 64)
 	if err != nil {
-		return "", err
+		return "", err, status
 	}
 	// start simple new progress bar
 	bar := pb.Simple.Start64(limit)
@@ -243,31 +250,31 @@ func (r *Api) Download(group, name, filename, user, pwd string, https bool) (str
 	// create proxy reader for the progress bar
 	reader := bar.NewProxyReader(res.Body)
 
-	switch res.StatusCode {
+	switch status {
 	case http.StatusNotFound:
-		return "", fmt.Errorf("file '%s' not found in registry", filename)
+		return "", fmt.Errorf("file '%s' not found in registry", filename), status
 	case http.StatusForbidden:
-		return "", fmt.Errorf("invalid credentials, access to the registry is forbidden")
+		return "", fmt.Errorf("invalid credentials, access to the registry is forbidden"), status
 	}
 	// write response to a temp file
 	var b bytes.Buffer
 	out := bufio.NewWriter(&b)
 	_, err = io.Copy(out, reader)
 	if err != nil {
-		return "", err
+		return "", err, status
 	}
 	err = out.Flush()
 	if err != nil {
-		return "", err
+		return "", err, status
 	}
 	file, err := os.Create(filepath.Join(r.tmp, filename))
 	if err != nil {
-		return "", err
+		return "", err, status
 	}
 	_, err = file.Write(b.Bytes())
 	file.Close()
 	bar.Finish()
-	return file.Name(), err
+	return file.Name(), err, status
 }
 
 func (r *Api) repoURI(group, name string, https bool) string {
