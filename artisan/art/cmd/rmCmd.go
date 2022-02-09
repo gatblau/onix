@@ -45,6 +45,9 @@ func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 	//  create a local registry
 	local := registry.NewLocalRegistry()
 	if *c.all {
+		// prune dangling packages first
+		core.CheckErr(local.Prune(), "cannot prune packages")
+		// remove all packages
 		core.CheckErr(local.Remove(local.AllPackages()), "cannot remove packages")
 	} else {
 		core.CheckErr(local.Remove(args), "cannot remove package")
