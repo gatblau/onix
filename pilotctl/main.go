@@ -60,6 +60,7 @@ func main() {
 		"/ping":             pilotAuth,
 		"/activation/.*/.*": activationSvc,
 		"/pub":              nil,
+		"/":                 nil,
 	}
 	s.DefaultAuth = defaultAuth
 	s.Serve()
