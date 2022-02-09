@@ -13,6 +13,11 @@ import (
 	"time"
 )
 
+func init() {
+	// randomises the seed generator
+	rand.Seed(time.Now().UnixNano())
+}
+
 // StopRetry is a wrapper for an error to tell the Retry function that the retry loop should finish before
 // it has reached the total number of retries
 type StopRetry struct {
