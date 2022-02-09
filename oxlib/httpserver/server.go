@@ -221,6 +221,8 @@ func (s *Server) AuthenticationMiddleware(next http.Handler) http.Handler {
 						// exit loop
 						break
 					}
+				} else {
+					break
 				}
 			}
 		}
