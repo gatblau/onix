@@ -84,23 +84,21 @@ func (w *Worker) Start() {
 					var errorMsg string
 					// if it cannot read jobs
 					if job == nil {
-						errorMsg = fmt.Sprintf("cannot list jobs: %s", err)
+						ErrorLogger.Printf("cannot list jobs: %s", err)
 					} else {
 						// otherwise
-						errorMsg = fmt.Sprintf("pilot could not read the next job to process from the local queue, possibly due to the file '%s' being corrupted: %s\n", job.file.Name(), err)
-					}
-					// logs the error
-					ErrorLogger.Printf(errorMsg)
-					// if a Job Id is known
-					if job.cmd != nil && job.cmd.JobId > 0 {
-						// send the error result for that job
-						sendResult(job.cmd.JobId, "", errorMsg)
-					} else {
-						// if no Job could be found, remove the job from the local queue to avoid retrying over and over
-						err = os.Remove(processDir(job.file.Name()))
-						// and write to syslog
-						if err == nil {
-							SyslogWriter.Err(fmt.Sprintf("forcedly removed file %s from local queue, due to being unable to read it to avoid retrying\n", err))
+						ErrorLogger.Printf("pilot could not read the next job to process from the local queue, possibly due to the file '%s' being corrupted: %s\n", job.file.Name(), err)
+						// if a Job Id is known
+						if job.cmd != nil && job.cmd.JobId > 0 {
+							// send the error result for that job
+							sendResult(job.cmd.JobId, "", errorMsg)
+						} else {
+							// if no Job could be found, remove the job from the local queue to avoid retrying over and over
+							err = os.Remove(processDir(job.file.Name()))
+							// and write to syslog
+							if err == nil {
+								SyslogWriter.Err(fmt.Sprintf("forcedly removed file %s from local queue, due to being unable to read it to avoid retrying\n", err))
+							}
 						}
 					}
 					// restart the loop to avoid retrying execution all over
