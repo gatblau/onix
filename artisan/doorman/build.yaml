@@ -34,15 +34,18 @@ functions:
       - swag init -d ./ -g handlers.go --parseDependency types/*.go
         
   - name: build
-    description: creates a Doorman image
+    description: builds a Doorman image
     run:
       - $(build-linux)
       - docker build -t ${REPO_NAME}/${ART_DOORMAN}:${BUILD_VERSION} .
       - docker tag ${REPO_NAME}/${ART_DOORMAN}:${BUILD_VERSION} ${REPO_NAME}/${ART_DOORMAN}:latest
 
   - name: publish
-    description: publishes the Doorman image
+    description: builds and publishes the Doorman image
     run:
+      - $(build-linux)
+      - docker build -t ${REPO_NAME}/${ART_DOORMAN}:${BUILD_VERSION} .
+      - docker tag ${REPO_NAME}/${ART_DOORMAN}:${BUILD_VERSION} ${REPO_NAME}/${ART_DOORMAN}:latest
       - docker push ${REPO_NAME}/${ART_DOORMAN}:${BUILD_VERSION}
       - docker push ${REPO_NAME}/${ART_DOORMAN}:latest
 
