@@ -12,6 +12,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/export"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 // SpecExportCmd save one or more packages or images tar archives using a specification of artefacts to export in a yaml file
@@ -76,7 +77,12 @@ func (c *SpecExportCmd) Run(cmd *cobra.Command, args []string) {
 	} else {
 		path = args[0]
 	}
+	// checks the path points to a local folder
+	if strings.Contains(path, "://") {
+		core.RaiseErr("SPEC-FILE-PATH should point to a local folder, instead it was %s", path)
+	}
+	// load the spec file
 	spec, err := export.NewSpec(path, "")
 	core.CheckErr(err, "cannot load spec.yaml")
-	core.CheckErr(spec.Export(c.output, c.srcCreds, c.targetCreds), "cannot export spec")
+	core.CheckErr(export.ExportSpec(*spec, c.output, c.srcCreds, c.targetCreds), "cannot export spec")
 }

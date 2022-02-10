@@ -68,7 +68,7 @@ func NewSpec(path, creds string) (*Spec, error) {
 	return spec, nil
 }
 
-func (s *Spec) Export(targetUri, sourceCreds, targetCreds string) error {
+func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds string) error {
 	// first, save the spec to the target location
 	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
 	err := core.WriteFile(s.content, uri, targetCreds)
