@@ -185,13 +185,13 @@ func DownloadSpec(targetUri, targetCreds, localPath string) error {
 	return nil
 }
 
-func PushSpec(specPath, host, group, creds string, image, clean bool) error {
+func PushSpec(specPath, host, group, user, creds string, image, clean bool) error {
 	local := registry.NewLocalRegistry()
 	if strings.Contains(specPath, "://") {
 		return fmt.Errorf("spec path must be a location in the file system")
 	}
 	// load the spec
-	spec, err := NewSpec(specPath, "")
+	spec, err := NewSpec(specPath, creds)
 	if err != nil {
 		return fmt.Errorf("cannot load spec.yaml: %s", err)
 	}
@@ -209,7 +209,7 @@ func PushSpec(specPath, host, group, creds string, image, clean bool) error {
 			}
 			// push to remote
 			core.InfoLogger.Printf("pushing => '%s'\n", tgtNameStr)
-			err = local.Push(tgtName, creds)
+			err = local.Push(tgtName, user)
 			if err != nil {
 				return err
 			}
@@ -224,7 +224,7 @@ func PushSpec(specPath, host, group, creds string, image, clean bool) error {
 			}
 		}
 	} else {
-		if len(creds) > 0 {
+		if len(user) > 0 {
 			return fmt.Errorf("credentials specified but not used, for images ensure you are logged to the destination registry")
 		}
 		cli, cmdErr := containerCmd()
