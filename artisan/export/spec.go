@@ -31,14 +31,33 @@ type Spec struct {
 }
 
 func NewSpec(path, creds string) (*Spec, error) {
-	path, err := filepath.Abs(path)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get absolute path: %s", err)
+	var (
+		content []byte
+		err     error
+	)
+	// if the path does not contain a spec file
+	if !strings.HasSuffix(path, "spec.yaml") {
+		if strings.HasSuffix(path, "yaml") || strings.HasSuffix(path, "yml") || strings.HasSuffix(path, "txt") || strings.HasSuffix(path, "json") {
+			return nil, fmt.Errorf("invalid spec file, it should be sepc.yaml")
+		}
+		path = fmt.Sprintf("%s/spec.yaml", path)
 	}
-	specFile := filepath.Join(path, "spec.yaml")
-	content, err := core.ReadFile(specFile, creds)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read spec file %s: %s", specFile, err)
+	// if path contains scheme it is remote
+	if strings.Contains(path, "://") {
+		content, err = core.ReadFile(path, creds)
+		if err != nil {
+			return nil, fmt.Errorf("cannot read remote spec file: %s", err)
+		}
+	} else {
+		path, err = filepath.Abs(path)
+		if err != nil {
+			return nil, fmt.Errorf("cannot get absolute path: %s", err)
+		}
+		specFile := filepath.Join(path, "spec.yaml")
+		content, err = core.ReadFile(specFile, creds)
+		if err != nil {
+			return nil, fmt.Errorf("cannot read spec file %s: %s", specFile, err)
+		}
 	}
 	spec := new(Spec)
 	err = yaml.Unmarshal(content, spec)
