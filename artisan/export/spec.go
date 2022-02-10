@@ -187,10 +187,6 @@ func DownloadSpec(targetUri, targetCreds, localPath string) error {
 
 func PushSpec(specPath, host, group, user, creds string, image, clean bool) error {
 	local := registry.NewLocalRegistry()
-	if strings.Contains(specPath, "://") {
-		return fmt.Errorf("spec path must be a location in the file system")
-	}
-	// load the spec
 	spec, err := NewSpec(specPath, creds)
 	if err != nil {
 		return fmt.Errorf("cannot load spec.yaml: %s", err)
