@@ -64,6 +64,7 @@ Examples:
 	c.cmd.Flags().StringVarP(&c.output, "output", "o", "", "the URI where the tar archive(s) will be saved; URI can be file system (absolute or relative path) or s3 bucket (s3:// or s3s:// using TLS)")
 	c.cmd.Flags().StringVarP(&c.srcCreds, "user", "u", "", "the credentials used to pull packages from an authenticated artisan registry, if the packages are not already in the local registry")
 	c.cmd.Flags().StringVarP(&c.targetCreds, "creds", "c", "", "the credentials to write packages to a destination, if such destination implements authentication (e.g. s3)")
+	c.cmd.MarkFlagRequired("output")
 	return c
 }
 
