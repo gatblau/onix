@@ -10,23 +10,23 @@ package types
 
 import "fmt"
 
-// Pipeline represents a pipeline to transfer artefacts between inbound and outbound endpoints
-type Pipeline struct {
+// PipelineConf a pipeline configuration used to connect inbound and outbound routes
+type PipelineConf struct {
 	// Name the name uniquely identifying the pipeline
 	Name string `bson:"_id" json:"name" example:"ACME_PIPELINE"`
 	// InboundRoute  the name of the inbound route to use in the pipeline
-	InboundRoute string `yaml:"in_route"`
+	InboundRoute string `json:"in_route"`
 	// OutboundRoute  the name of the outbound route to use in the pipeline
-	OutboundRoute string `yaml:"out_route"`
+	OutboundRoute string `json:"out_route"`
 	// Commands a list of the command names to be executed between inbound and outbound routes
-	Commands []string `yaml:"commands"`
+	Commands []string `json:"commands"`
 }
 
-func (r Pipeline) GetName() string {
+func (r PipelineConf) GetName() string {
 	return r.Name
 }
 
-func (r Pipeline) Valid() error {
+func (r PipelineConf) Valid() error {
 	if len(r.InboundRoute) == 0 {
 		return fmt.Errorf("pipeline %s must define an inbound route", r.Name)
 	}
@@ -34,4 +34,16 @@ func (r Pipeline) Valid() error {
 		return fmt.Errorf("pipeline %s must define an outbound route", r.Name)
 	}
 	return nil
+}
+
+// Pipeline provides all information for one pipeline
+type Pipeline struct {
+	// Name the name uniquely identifying the pipeline
+	Name string `json:"name"`
+	// InboundRoute  the name of the inbound route to use in the pipeline
+	InboundRoute InRoute `json:"in_route"`
+	// OutboundRoute  the name of the outbound route to use in the pipeline
+	OutboundRoute OutRoute `json:"out_route"`
+	// Commands a list of the command names to be executed between inbound and outbound routes
+	Commands []string `json:"commands"`
 }

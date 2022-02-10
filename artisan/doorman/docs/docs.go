@@ -167,7 +167,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.Pipeline"
+                            "$ref": "#/definitions/types.PipelineConf"
                         }
                     }
                 ],
@@ -186,6 +186,55 @@ var doc = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/pipe/{name}": {
+            "get": {
+                "description": "gets a pipeline",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Pipelines"
+                ],
+                "summary": "Gets a pipeline",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the name of the pipeline to retrieve",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "string"
                         }
@@ -459,7 +508,7 @@ var doc = `{
                 }
             }
         },
-        "types.Pipeline": {
+        "types.PipelineConf": {
             "type": "object",
             "properties": {
                 "commands": {
@@ -469,7 +518,7 @@ var doc = `{
                         "type": "string"
                     }
                 },
-                "inboundRoute": {
+                "in_route": {
                     "description": "InboundRoute  the name of the inbound route to use in the pipeline",
                     "type": "string"
                 },
@@ -478,7 +527,7 @@ var doc = `{
                     "type": "string",
                     "example": "ACME_PIPELINE"
                 },
-                "outboundRoute": {
+                "out_route": {
                     "description": "OutboundRoute  the name of the outbound route to use in the pipeline",
                     "type": "string"
                 }

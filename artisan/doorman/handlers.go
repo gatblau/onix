@@ -23,6 +23,8 @@ import (
 	"github.com/gatblau/onix/artisan/doorman/core"
 	_ "github.com/gatblau/onix/artisan/doorman/docs"
 	"github.com/gatblau/onix/artisan/doorman/types"
+	"github.com/gatblau/onix/oxlib/httpserver"
+	"github.com/gorilla/mux"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -165,7 +167,7 @@ func upsertOutboundRouteHandler(w http.ResponseWriter, r *http.Request) {
 // @Description creates or updates an inbound route
 // @Tags Pipelines
 // @Router /pipe [put]
-// @Param key body types.Pipeline true "the data for the pipeline to persist"
+// @Param key body types.PipelineConf true "the data for the pipeline to persist"
 // @Produce plain
 // @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
@@ -176,7 +178,7 @@ func upsertPipelineHandler(w http.ResponseWriter, r *http.Request) {
 	if isErr(w, err, http.StatusBadRequest, "cannot read pipeline data") {
 		return
 	}
-	pipe := new(types.Pipeline)
+	pipe := new(types.PipelineConf)
 	err = json.Unmarshal(body, pipe)
 	if isErr(w, err, http.StatusBadRequest, "cannot unmarshal pipeline data") {
 		return
@@ -200,6 +202,56 @@ func upsertPipelineHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(resultCode)
+}
+
+// @Summary Gets a pipeline
+// @Description gets a pipeline
+// @Tags Pipelines
+// @Router /pipe/{name} [get]
+// @Param name path string true "the name of the pipeline to retrieve"
+// @Produce application/json, application/yaml, application/xml
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 404 {string} not found: the requested object does not exist
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 200 {string} success
+func getPipelineHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	pipeName := vars["name"]
+	db := core.NewDb()
+	result, err := db.FindByName(types.PipelineCollection, pipeName)
+	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve pipeline %s: %s", pipeName, err)) {
+		return
+	}
+	pipeConf := new(types.PipelineConf)
+	err = result.Decode(pipeConf)
+	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot decode pipeline %s: %s", pipeName, err)) {
+		return
+	}
+	result, err = db.FindByName(types.InRouteCollection, pipeConf.InboundRoute)
+	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve inbound route %s: %s", pipeConf.InboundRoute, err)) {
+		return
+	}
+	inRoute := new(types.InRoute)
+	err = result.Decode(inRoute)
+	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot decode inbound route %s: %s", pipeConf.InboundRoute, err)) {
+		return
+	}
+	result, err = db.FindByName(types.OutRouteCollection, pipeConf.OutboundRoute)
+	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve outbound route %s: %s", pipeConf.OutboundRoute, err)) {
+		return
+	}
+	outRoute := new(types.OutRoute)
+	err = result.Decode(outRoute)
+	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot decode outbound route %s: %s", pipeConf.OutboundRoute, err)) {
+		return
+	}
+	pipe := types.Pipeline{
+		Name:          pipeConf.Name,
+		InboundRoute:  *inRoute,
+		OutboundRoute: *outRoute,
+		Commands:      pipeConf.Commands,
+	}
+	httpserver.Write(w, r, pipe)
 }
 
 func isErr(w http.ResponseWriter, err error, statusCode int, msg string) bool {

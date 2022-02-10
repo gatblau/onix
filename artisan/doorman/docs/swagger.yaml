@@ -123,7 +123,7 @@ definitions:
         example: test_user
         type: string
     type: object
-  types.Pipeline:
+  types.PipelineConf:
     properties:
       commands:
         description: Commands a list of the command names to be executed between inbound
@@ -131,14 +131,14 @@ definitions:
         items:
           type: string
         type: array
-      inboundRoute:
+      in_route:
         description: InboundRoute  the name of the inbound route to use in the pipeline
         type: string
       name:
         description: Name the name uniquely identifying the pipeline
         example: ACME_PIPELINE
         type: string
-      outboundRoute:
+      out_route:
         description: OutboundRoute  the name of the outbound route to use in the pipeline
         type: string
     type: object
@@ -245,7 +245,7 @@ paths:
         name: key
         required: true
         schema:
-          $ref: '#/definitions/types.Pipeline'
+          $ref: '#/definitions/types.PipelineConf'
       produces:
       - text/plain
       responses:
@@ -266,6 +266,39 @@ paths:
           schema:
             type: string
       summary: Creates or updates an inbound route
+      tags:
+      - Pipelines
+  /pipe/{name}:
+    get:
+      description: gets a pipeline
+      parameters:
+      - description: the name of the pipeline to retrieve
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Gets a pipeline
       tags:
       - Pipelines
   /route/in:
