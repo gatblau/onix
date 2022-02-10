@@ -14,7 +14,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -144,29 +143,4 @@ func SubmitPath() string {
 // ProcessPath returns the path of the local folder used to cache jobs to be processed by pilot
 func ProcessPath() string {
 	return filepath.Join(DataPath(), "process")
-}
-
-// CheckPaths check all required local folders used by the pilot to cache data exist and if not creates them
-func CheckPaths() {
-	_, err := os.Stat(DataPath())
-	if err != nil {
-		err = os.MkdirAll(DataPath(), os.ModePerm)
-		if err != nil {
-			panic(err)
-		}
-	}
-	_, err = os.Stat(path.Join(DataPath(), "submit"))
-	if err != nil {
-		err = os.MkdirAll(path.Join(DataPath(), "submit"), os.ModePerm)
-		if err != nil {
-			panic(err)
-		}
-	}
-	_, err = os.Stat(path.Join(DataPath(), "process"))
-	if err != nil {
-		err = os.MkdirAll(path.Join(DataPath(), "process"), os.ModePerm)
-		if err != nil {
-			panic(err)
-		}
-	}
 }

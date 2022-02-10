@@ -11,6 +11,7 @@ import (
 	"fmt"
 	ctl "github.com/gatblau/onix/pilotctl/types"
 	"os"
+	"path"
 	"strings"
 	"time"
 )
@@ -28,6 +29,18 @@ type Pilot struct {
 }
 
 func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
+	// https://textkool.com/en/ascii-art-generator?hl=default&vl=default&font=Lean&text=PILOT%0A
+	fmt.Println(`+-----------------| ONIX CONFIG MANAGER |-----------------+
+|      _/_/_/    _/_/_/  _/          _/_/    _/_/_/_/_/   |
+|     _/    _/    _/    _/        _/    _/      _/        |
+|    _/_/_/      _/    _/        _/    _/      _/         |
+|   _/          _/    _/        _/    _/      _/          |
+|  _/        _/_/_/  _/_/_/_/    _/_/        _/           |
+|                     Host Controller                     | 
++---------------------------------------------------------+`)
+	InfoLogger.Printf("launching pilot version %s\n", Version)
+	InfoLogger.Printf("using Host UUID = '%s'\n", hostInfo.HostUUID)
+	checkPaths()
 	activate(hostInfo)
 	// read configuration
 	cfg := &Config{}
@@ -37,8 +50,7 @@ func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
 	}
 	// create a new job worker
 	worker := NewCmdRequestWorker()
-	// start the worker
-	worker.Start()
+	// create proxy to talk to pilotctl
 	r, err := NewPilotCtl(worker, hostInfo)
 	if err != nil {
 		return nil, err
@@ -54,19 +66,6 @@ func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
 }
 
 func (p *Pilot) Start() {
-	// https://textkool.com/en/ascii-art-generator?hl=default&vl=default&font=Lean&text=PILOT%0A
-	fmt.Println(`+-----------------| ONIX CONFIG MANAGER |-----------------+
-|      _/_/_/    _/_/_/  _/          _/_/    _/_/_/_/_/   |
-|     _/    _/    _/    _/        _/    _/      _/        |
-|    _/_/_/      _/    _/        _/    _/      _/         |
-|   _/          _/    _/        _/    _/      _/          |
-|  _/        _/_/_/  _/_/_/_/    _/_/        _/           |
-|                     Host Controller                     | 
-+---------------------------------------------------------+`)
-	InfoLogger.Printf("launching pilot version %s\n", Version)
-	InfoLogger.Printf("using Host UUID = '%s'\n", p.info.HostUUID)
-	// create local cache folder in pilot's current location
-	CheckPaths()
 	// starts the collector service
 	if collectorEnabled() {
 		// creates a new SysLog collector
@@ -86,6 +85,8 @@ func (p *Pilot) Start() {
 	}
 	// registers the host
 	p.register()
+	// starts the jobs worker
+	p.worker.Start()
 	// initiates the ping loop
 	p.ping()
 }
@@ -165,5 +166,30 @@ func (p *Pilot) ping() {
 		}
 		// waits for the requested interval
 		time.Sleep(p.pingInterval)
+	}
+}
+
+// checkPaths check all required local folders used by the pilot to cache data exist and if not creates them
+func checkPaths() {
+	_, err := os.Stat(DataPath())
+	if err != nil {
+		err = os.MkdirAll(DataPath(), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
+	_, err = os.Stat(path.Join(DataPath(), "submit"))
+	if err != nil {
+		err = os.MkdirAll(path.Join(DataPath(), "submit"), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
+	_, err = os.Stat(path.Join(DataPath(), "process"))
+	if err != nil {
+		err = os.MkdirAll(path.Join(DataPath(), "process"), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
