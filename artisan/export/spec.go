@@ -233,7 +233,7 @@ func PushSpec(specPath, host, group, user, creds string, image, clean bool) erro
 				return fmt.Errorf("cannot work out target name: %s", tgtNameErr)
 			}
 			// tag the package with the target registry name
-			core.InfoLogger.Printf("tagging => '%s' to '%s'\n", img, targetName)
+			core.InfoLogger.Printf("tagging => '%s' to '%s'\n", img, tgtNameStr)
 			// docker tag image
 			_, err = build.Exe(fmt.Sprintf("%s tag %s %s", cli, img, tgtNameStr), ".", merge.NewEnVarFromSlice([]string{}), false)
 			if err != nil {
