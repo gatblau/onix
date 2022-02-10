@@ -10,7 +10,7 @@ package main
 
 // @title Artisan's Doorman
 // @version 0.0.4
-// @description Transfer (pull, verify, scan, resign and push) artefacts between networks
+// @description Transfer (pull, verify, scan, resign and push) artefacts between repositories
 // @contact.name gatblau
 // @contact.url http://onix.gatblau.org/
 // @contact.email onix@gatblau.org
