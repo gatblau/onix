@@ -458,7 +458,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) error {
 		remoteArt, err2 = api.GetPackageInfo(name.Group, name.Name, localPackage.Id, uname, pwd, false)
 		if err2 == nil {
 			tls = false
-			core.WarningLogger.Printf("the connection to the registry is not secure, considering connecting to a TLS enabled registry\n")
+			core.WarningLogger.Printf("the connection to the registry is not secure, consider connecting to a TLS enabled registry\n")
 		} else {
 			if err2 != nil {
 				return fmt.Errorf("art push '%s' cannot retrieve remote package information", name.String())
