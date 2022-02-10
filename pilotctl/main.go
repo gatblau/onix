@@ -56,11 +56,11 @@ func main() {
 	}
 	// set up specific authentication for host pilot agents
 	s.Auth = map[string]func(http.Request) *oxc.UserPrincipal{
-		"/register":         pilotAuth,
-		"/ping":             pilotAuth,
-		"/activation/.*/.*": activationSvc,
-		"/pub":              nil,
-		"/":                 nil,
+		"^/register":         pilotAuth,
+		"^/ping":             pilotAuth,
+		"^/activation/.*/.*": activationSvc,
+		"^/pub":              nil,
+		"^/$":                nil,
 	}
 	s.DefaultAuth = defaultAuth
 	s.Serve()
