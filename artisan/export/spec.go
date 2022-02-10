@@ -161,7 +161,7 @@ func DownloadSpec(targetUri, targetCreds, localPath string) error {
 		if err2 != nil {
 			return err2
 		}
-		pkgPath := filepath.Join(localPath, filepath.Base(targetUri))
+		pkgPath := filepath.Join(localPath, filepath.Base(pkgUri))
 		core.InfoLogger.Printf("writing => %s\n", pkgPath)
 		err = os.WriteFile(pkgPath, tarBytes, 0755)
 		if err != nil {
