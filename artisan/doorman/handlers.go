@@ -28,8 +28,9 @@ import (
 	"net/http"
 )
 
-// @Summary Upload a new key
-// @Description uploads a new key used by doorman for cryptographic operations
+// @Summary Creates or updates a cryptographic key
+// @Description creates or updates a cryptographic key used by either inbound or outbound routes to verify or sign
+// @Description packages respectively
 // @Tags Keys
 // @Router /key [put]
 // @Param key body types.Key true "the data for the key to persist"
@@ -38,31 +39,31 @@ import (
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 200 {string} object has been updated
 // @Success 201 {string} object has been created
-func newKeyHandler(w http.ResponseWriter, r *http.Request) {
+func upsertKeyHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
-	if isErr(w, err, http.StatusBadRequest, "cannot read request body") {
+	if isErr(w, err, http.StatusBadRequest, "cannot read key data") {
 		return
 	}
 	key := new(types.Key)
 	err = json.Unmarshal(body, key)
-	if isErr(w, err, http.StatusBadRequest, "cannot unmarshal request body") {
+	if isErr(w, err, http.StatusBadRequest, "cannot unmarshal key data") {
 		return
 	}
 	// validate the data in the key struct
-	if isErr(w, key.Valid(), http.StatusBadRequest, "invalid payload") {
+	if isErr(w, key.Valid(), http.StatusBadRequest, "invalid key data") {
 		return
 	}
 	db := core.NewDb()
 	var resultCode int
-	_, err, resultCode = db.UpsertObject(types.KeysColl, key)
+	_, err, resultCode = db.UpsertObject(types.KeysCollection, key)
 	if isErr(w, err, resultCode, "cannot update key in database") {
 		return
 	}
 	w.WriteHeader(resultCode)
 }
 
-// @Summary Create a new command
-// @Description creates  a new command
+// @Summary Creates or updates a command
+// @Description creates or updates a command
 // @Tags Commands
 // @Router /command [put]
 // @Param key body types.Command true "the data for the command to persist"
@@ -71,24 +72,131 @@ func newKeyHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 200 {string} object has been updated
 // @Success 201 {string} object has been created
-func newCommandHandler(w http.ResponseWriter, r *http.Request) {
+func upsertCommandHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
-	if isErr(w, err, http.StatusBadRequest, "cannot read request body") {
+	if isErr(w, err, http.StatusBadRequest, "cannot read command data") {
 		return
 	}
 	cmd := new(types.Command)
 	err = json.Unmarshal(body, cmd)
-	if isErr(w, err, http.StatusBadRequest, "cannot unmarshal request body") {
+	if isErr(w, err, http.StatusBadRequest, "cannot unmarshal command data") {
 		return
 	}
 	// validate the data in the key struct
-	if isErr(w, cmd.Valid(), http.StatusBadRequest, "invalid payload") {
+	if isErr(w, cmd.Valid(), http.StatusBadRequest, "invalid command data") {
 		return
 	}
 	db := core.NewDb()
 	var resultCode int
-	_, err, resultCode = db.UpsertObject(types.CommandsColl, cmd)
+	_, err, resultCode = db.UpsertObject(types.CommandsCollection, cmd)
 	if isErr(w, err, resultCode, "cannot update command in database") {
+		return
+	}
+	w.WriteHeader(resultCode)
+}
+
+// @Summary Creates or updates an inbound route
+// @Description creates or updates an inbound route
+// @Tags Routes
+// @Router /route/in [put]
+// @Param key body types.InRoute true "the data for the inbound route to persist"
+// @Produce plain
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 200 {string} object has been updated
+// @Success 201 {string} object has been created
+func upsertInboundRouteHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if isErr(w, err, http.StatusBadRequest, "cannot read inbound route data") {
+		return
+	}
+	inRoute := new(types.InRoute)
+	err = json.Unmarshal(body, inRoute)
+	if isErr(w, err, http.StatusBadRequest, "cannot unmarshal inbound route data") {
+		return
+	}
+	// validate the data in the key struct
+	if isErr(w, inRoute.Valid(), http.StatusBadRequest, "invalid inbound route data") {
+		return
+	}
+	db := core.NewDb()
+	var resultCode int
+	_, err, resultCode = db.UpsertObject(types.InRouteCollection, inRoute)
+	if isErr(w, err, resultCode, "cannot update inbound route in database") {
+		return
+	}
+	w.WriteHeader(resultCode)
+}
+
+// @Summary Creates or updates an inbound route
+// @Description creates or updates an inbound route
+// @Tags Routes
+// @Router /route/out [put]
+// @Param key body types.OutRoute true "the data for the outbound route to persist"
+// @Produce plain
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 200 {string} object has been updated
+// @Success 201 {string} object has been created
+func upsertOutboundRouteHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if isErr(w, err, http.StatusBadRequest, "cannot read outbound route data") {
+		return
+	}
+	outRoute := new(types.OutRoute)
+	err = json.Unmarshal(body, outRoute)
+	if isErr(w, err, http.StatusBadRequest, "cannot unmarshal outbound route data") {
+		return
+	}
+	// validate the data in the key struct
+	if isErr(w, outRoute.Valid(), http.StatusBadRequest, "invalid outbound route data") {
+		return
+	}
+	db := core.NewDb()
+	var resultCode int
+	_, err, resultCode = db.UpsertObject(types.OutRouteCollection, outRoute)
+	if isErr(w, err, resultCode, "cannot update outbound route in database") {
+		return
+	}
+	w.WriteHeader(resultCode)
+}
+
+// @Summary Creates or updates an inbound route
+// @Description creates or updates an inbound route
+// @Tags Pipelines
+// @Router /pipe [put]
+// @Param key body types.Pipeline true "the data for the pipeline to persist"
+// @Produce plain
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 200 {string} object has been updated
+// @Success 201 {string} object has been created
+func upsertPipelineHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if isErr(w, err, http.StatusBadRequest, "cannot read pipeline data") {
+		return
+	}
+	pipe := new(types.Pipeline)
+	err = json.Unmarshal(body, pipe)
+	if isErr(w, err, http.StatusBadRequest, "cannot unmarshal pipeline data") {
+		return
+	}
+	// validate the data in the key struct
+	if isErr(w, pipe.Valid(), http.StatusBadRequest, "invalid pipeline data") {
+		return
+	}
+	db := core.NewDb()
+	_, err = db.FindByName(types.InRouteCollection, pipe.InboundRoute)
+	if isErr(w, err, http.StatusBadRequest, fmt.Sprintf("cannot find inbound route %s for pipeline %s: %s", pipe.InboundRoute, pipe.Name, err)) {
+		return
+	}
+	_, err = db.FindByName(types.OutRouteCollection, pipe.OutboundRoute)
+	if isErr(w, err, http.StatusBadRequest, fmt.Sprintf("cannot find outbound route %s for pipeline %s: %s", pipe.OutboundRoute, pipe.Name, err)) {
+		return
+	}
+	var resultCode int
+	_, err, resultCode = db.UpsertObject(types.PipelineCollection, pipe)
+	if isErr(w, err, resultCode, "cannot update pipeline in database") {
 		return
 	}
 	w.WriteHeader(resultCode)

@@ -37,14 +37,14 @@
         },
         "/command": {
             "put": {
-                "description": "creates  a new command",
+                "description": "creates or updates a command",
                 "produces": [
                     "text/plain"
                 ],
                 "tags": [
                     "Commands"
                 ],
-                "summary": "Create a new command",
+                "summary": "Creates or updates a command",
                 "parameters": [
                     {
                         "description": "the data for the command to persist",
@@ -86,14 +86,14 @@
         },
         "/key": {
             "put": {
-                "description": "uploads a new key used by doorman for cryptographic operations",
+                "description": "creates or updates a cryptographic key used by either inbound or outbound routes to verify or sign\npackages respectively",
                 "produces": [
                     "text/plain"
                 ],
                 "tags": [
                     "Keys"
                 ],
-                "summary": "Upload a new key",
+                "summary": "Creates or updates a cryptographic key",
                 "parameters": [
                     {
                         "description": "the data for the key to persist",
@@ -102,6 +102,153 @@
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/types.Key"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/pipe": {
+            "put": {
+                "description": "creates or updates an inbound route",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Pipelines"
+                ],
+                "summary": "Creates or updates an inbound route",
+                "parameters": [
+                    {
+                        "description": "the data for the pipeline to persist",
+                        "name": "key",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.Pipeline"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/route/in": {
+            "put": {
+                "description": "creates or updates an inbound route",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Routes"
+                ],
+                "summary": "Creates or updates an inbound route",
+                "parameters": [
+                    {
+                        "description": "the data for the inbound route to persist",
+                        "name": "key",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.InRoute"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/route/out": {
+            "put": {
+                "description": "creates or updates an inbound route",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Routes"
+                ],
+                "summary": "Creates or updates an inbound route",
+                "parameters": [
+                    {
+                        "description": "the data for the outbound route to persist",
+                        "name": "key",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.OutRoute"
                         }
                     }
                 ],
@@ -165,6 +312,60 @@
                 }
             }
         },
+        "types.ImageRegistry": {
+            "type": "object",
+            "properties": {
+                "pwd": {
+                    "description": "Pwd the password to authenticate with the container image registry",
+                    "type": "string"
+                },
+                "uri": {
+                    "description": "URI the location of the container image registry",
+                    "type": "string",
+                    "example": "images.acme.com:5000"
+                },
+                "user": {
+                    "description": "User the username to authenticate with the container image registry",
+                    "type": "string"
+                }
+            }
+        },
+        "types.InRoute": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "Description a description indicating the purpose of the route",
+                    "type": "string",
+                    "example": "the inbound route for supplier A"
+                },
+                "name": {
+                    "description": "Name the name of the route",
+                    "type": "string",
+                    "example": "SUPPLIER_A_IN_ROUTE"
+                },
+                "public_key": {
+                    "description": "PublicKey the PGP public key used to verify the author of the downloaded files",
+                    "type": "string"
+                },
+                "pwd": {
+                    "description": "Pwd the password to authenticate against the remote URI",
+                    "type": "string"
+                },
+                "uri": {
+                    "description": "URI the remote URI from where inbound files should be downloaded",
+                    "type": "string",
+                    "example": "s3.supplier-a.com"
+                },
+                "user": {
+                    "description": "User the username to authenticate against the remote URI",
+                    "type": "string"
+                },
+                "verify": {
+                    "description": "Verify a flag indicating whether author verification should be enabled",
+                    "type": "boolean"
+                }
+            }
+        },
         "types.Key": {
             "type": "object",
             "properties": {
@@ -186,6 +387,82 @@
                 },
                 "value": {
                     "description": "the actual content of the key",
+                    "type": "string"
+                }
+            }
+        },
+        "types.OutRoute": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "Description describes the purpose of the route",
+                    "type": "string",
+                    "example": "outbound route for ACME company logistics department"
+                },
+                "image_registry": {
+                    "$ref": "#/definitions/types.ImageRegistry"
+                },
+                "name": {
+                    "description": "Name the name uniquely identifying the outbound route",
+                    "type": "string",
+                    "example": "ACME_OUT_LOGISTICS"
+                },
+                "package_registry": {
+                    "$ref": "#/definitions/types.PackageRegistry"
+                }
+            }
+        },
+        "types.PackageRegistry": {
+            "type": "object",
+            "properties": {
+                "private_key": {
+                    "description": "PrivateKey the name of the private PGP key used to re-sign the packages",
+                    "type": "string",
+                    "example": "SIGNING_KEY_01"
+                },
+                "pwd": {
+                    "description": "Pwd the password to authenticate with the package registry",
+                    "type": "string",
+                    "example": "d8y2b9fc97y23!$^"
+                },
+                "sign": {
+                    "description": "Sign a flag indicating whether packages pushed to the registry should be resigned",
+                    "type": "boolean",
+                    "example": true
+                },
+                "uri": {
+                    "description": "URI the location of the package registry",
+                    "type": "string",
+                    "example": "packages.acme.com:8082"
+                },
+                "user": {
+                    "description": "User the username to authenticate with the package registry",
+                    "type": "string",
+                    "example": "test_user"
+                }
+            }
+        },
+        "types.Pipeline": {
+            "type": "object",
+            "properties": {
+                "commands": {
+                    "description": "Commands a list of the command names to be executed between inbound and outbound routes",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "inboundRoute": {
+                    "description": "InboundRoute  the name of the inbound route to use in the pipeline",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name the name uniquely identifying the pipeline",
+                    "type": "string",
+                    "example": "ACME_PIPELINE"
+                },
+                "outboundRoute": {
+                    "description": "OutboundRoute  the name of the outbound route to use in the pipeline",
                     "type": "string"
                 }
             }

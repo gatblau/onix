@@ -11,6 +11,9 @@ package types
 type Collection string
 
 const (
-	KeysColl     Collection = "keys"
-	CommandsColl Collection = "commands"
+	KeysCollection     Collection = "keys"
+	CommandsCollection Collection = "commands"
+	InRouteCollection  Collection = "inbound-routes"
+	OutRouteCollection Collection = "outbound-routes"
+	PipelineCollection Collection = "pipelines"
 )

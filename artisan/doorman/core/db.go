@@ -168,7 +168,7 @@ func (db *Db) ObjectExists(collection types.Collection, name string) bool {
 // FindKeys retrieves one or more keys matching the specifies criteria decrypting the value of any private key
 func (db *Db) FindKeys(filter bson.M) ([]types.Key, error) {
 	var results []types.Key
-	err := db.FindMany(types.KeysColl, filter, results)
+	err := db.FindMany(types.KeysCollection, filter, results)
 	if err != nil {
 		return nil, err
 	}

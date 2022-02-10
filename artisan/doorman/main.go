@@ -18,8 +18,11 @@ func main() {
 	s := httpserver.New("doorman")
 	// add handlers
 	s.Http = func(router *mux.Router) {
-		router.HandleFunc("/key", newKeyHandler).Methods("PUT")
-		router.HandleFunc("/command", newCommandHandler).Methods("PUT")
+		router.HandleFunc("/key", upsertKeyHandler).Methods("PUT")
+		router.HandleFunc("/command", upsertCommandHandler).Methods("PUT")
+		router.HandleFunc("/route/in", upsertInboundRouteHandler).Methods("PUT")
+		router.HandleFunc("/route/out", upsertOutboundRouteHandler).Methods("PUT")
+		router.HandleFunc("/pipe", upsertPipelineHandler).Methods("PUT")
 	}
 	s.Serve()
 }
