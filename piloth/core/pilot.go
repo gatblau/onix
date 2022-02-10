@@ -39,9 +39,9 @@ func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
 |                     Host Controller                     | 
 +---------------------------------------------------------+`)
 	InfoLogger.Printf("launching pilot version %s\n", Version)
-	InfoLogger.Printf("using Host UUID = '%s'\n", hostInfo.HostUUID)
 	checkPaths()
 	activate(hostInfo)
+	InfoLogger.Printf("using Host UUID = '%s'\n", hostInfo.HostUUID)
 	// read configuration
 	cfg := &Config{}
 	err := cfg.Load()
