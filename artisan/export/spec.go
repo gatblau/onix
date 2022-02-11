@@ -40,7 +40,7 @@ func NewSpec(path, creds string) (*Spec, error) {
 		if strings.HasSuffix(path, "yaml") || strings.HasSuffix(path, "yml") || strings.HasSuffix(path, "txt") || strings.HasSuffix(path, "json") {
 			return nil, fmt.Errorf("invalid spec file, it should be spec.yaml")
 		}
-		path = filepath.Join(path, "spec.yaml")
+		path = fmt.Sprintf("%s/spec.yaml", path)
 	}
 	// if path contains scheme it is remote
 	if strings.Contains(path, "://") {
