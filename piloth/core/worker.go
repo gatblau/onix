@@ -160,7 +160,7 @@ func (w *Worker) Jobs() int {
 func (w *Worker) AddJob(job ctl.CmdInfo) {
 	err := addJob(Job{cmd: &job})
 	if err != nil {
-		ErrorLogger.Printf("%s\n", err)
+		ErrorLogger.Printf("cannot write job to process queue: %s\n", err)
 	}
 }
 
