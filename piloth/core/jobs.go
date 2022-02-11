@@ -41,13 +41,15 @@ func peekJob() (job *Job, err error) {
 		if !file.IsDir() && path.Ext(file.Name()) == ".job" {
 			bytes, err = ioutil.ReadFile(processDir(file.Name()))
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("cannot read job file %s: %s", file.Name(), err)
+			}
+			if len(bytes) == 0 {
+				return nil, fmt.Errorf("job file %s is empty: %s", file.Name(), err)
 			}
 			var cmdInfo ctl.CmdInfo
 			err = json.Unmarshal(bytes, &cmdInfo)
 			if err != nil {
-				// try and extract job it from file name
-				// regex to extract job Id number from filename
+				// try and extract job Id from the file name with the following regex
 				re := regexp.MustCompile(`\d[\d,]*`)
 				// extract the job id
 				jobIdString := re.FindString(file.Name())
@@ -115,9 +117,10 @@ func ls(dirname string) ([]os.FileInfo, error) {
 	// read files from folder
 	files, err := ioutil.ReadDir(dirname)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot read process directory for a list of jobs: %s", err)
 	}
 	// sort the file slice by ModTime()
+	// ensuring older job is processed first
 	sort.Slice(files, func(i, j int) bool {
 		return files[i].ModTime().UnixNano() <= files[j].ModTime().UnixNano()
 	})
