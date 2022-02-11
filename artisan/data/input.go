@@ -561,6 +561,7 @@ func surveyVar(variable *Var) {
 }
 
 func surveySecret(secret *Secret) {
+	var validator survey.Validator
 	// check if an env var has been set
 	envVal := os.Getenv(secret.Name)
 	// if so, skip survey
@@ -576,7 +577,15 @@ func surveySecret(secret *Secret) {
 	prompt := &survey.Password{
 		Message: fmt.Sprintf("secret => %s (%s):", secret.Name, desc),
 	}
-	core.HandleCtrlC(survey.AskOne(prompt, &secret.Value, survey.WithValidator(survey.Required)))
+	// if required then add required validator
+	if secret.Required {
+		validator = survey.ComposeValidators(survey.Required)
+	}
+	var askOpts survey.AskOpt
+	if validator != nil {
+		askOpts = survey.WithValidator(validator)
+	}
+	core.HandleCtrlC(survey.AskOne(prompt, &secret.Value, askOpts))
 }
 
 func surveyKey(key *Key) {

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// describes the secrets required by functions
+// Secret describes the secrets required by functions
 type Secret struct {
 	// the unique reference for the secret
 	Name string `yaml:"name" json:"name"`
@@ -16,6 +16,8 @@ type Secret struct {
 	Description string `yaml:"description" json:"description"`
 	// the value of the secret
 	Value string `yaml:"value,omitempty" json:"value,omitempty"`
+	// the value is required
+	Required bool `yaml:"required,omitempty" json:"required,omitempty"`
 }
 
 func (s *Secret) Encrypt(pubKey *crypto.PGP) error {
