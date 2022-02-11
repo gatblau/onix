@@ -38,9 +38,9 @@ func NewSpec(path, creds string) (*Spec, error) {
 	// if the path does not contain a spec file
 	if !strings.HasSuffix(path, "spec.yaml") {
 		if strings.HasSuffix(path, "yaml") || strings.HasSuffix(path, "yml") || strings.HasSuffix(path, "txt") || strings.HasSuffix(path, "json") {
-			return nil, fmt.Errorf("invalid spec file, it should be sepc.yaml")
+			return nil, fmt.Errorf("invalid spec file, it should be spec.yaml")
 		}
-		path = fmt.Sprintf("%s/spec.yaml", path)
+		path = filepath.Join(path, "spec.yaml")
 	}
 	// if path contains scheme it is remote
 	if strings.Contains(path, "://") {
@@ -53,10 +53,9 @@ func NewSpec(path, creds string) (*Spec, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot get absolute path: %s", err)
 		}
-		specFile := filepath.Join(path, "spec.yaml")
-		content, err = core.ReadFile(specFile, creds)
+		content, err = core.ReadFile(path, creds)
 		if err != nil {
-			return nil, fmt.Errorf("cannot read spec file %s: %s", specFile, err)
+			return nil, fmt.Errorf("cannot read spec file %s: %s", path, err)
 		}
 	}
 	spec := new(Spec)
