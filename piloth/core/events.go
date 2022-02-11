@@ -1,5 +1,3 @@
-package core
-
 /*
   Onix Config Manager - Pilot
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -7,6 +5,9 @@ package core
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package core
+
 import (
 	"encoding/json"
 	ctl "github.com/gatblau/onix/pilotctl/types"
@@ -16,6 +17,7 @@ import (
 
 // getEvents retrieve event log entries
 func getEvents(max int) (*ctl.Events, error) {
+	defer TRA(CE())
 	dir := submitDir("")
 	files, err := ls(dir)
 	if err != nil {
@@ -70,6 +72,7 @@ func getEvents(max int) (*ctl.Events, error) {
 
 // remove events that have been submitted
 func removeEvents() error {
+	defer TRA(CE())
 	// work out the file path where events
 	dir := dataDir("events.json")
 	bytes, err := os.ReadFile(dir)

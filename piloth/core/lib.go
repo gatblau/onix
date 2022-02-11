@@ -1,5 +1,3 @@
-package core
-
 /*
   Onix Config Manager - Host Pilot
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -7,6 +5,9 @@ package core
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package core
+
 import (
 	"encoding/base64"
 	"fmt"
@@ -22,6 +23,7 @@ import (
 
 // HomeDir pilot's home directory
 func HomeDir() string {
+	defer TRA(CE())
 	usr, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
@@ -31,6 +33,7 @@ func HomeDir() string {
 
 // reverse the passed-in string
 func reverse(str string) (result string) {
+	defer TRA(CE())
 	for _, v := range str {
 		result = string(v) + result
 	}
@@ -38,6 +41,7 @@ func reverse(str string) (result string) {
 }
 
 func newToken(hostUUID, hostIP, hostName string) string {
+	defer TRA(CE())
 	// create an authentication token as follows:
 	// 1. takes host uuid (i.e. machine Id + hostname hash), host ip, name and unix time
 	// 2. base 64 encode
@@ -48,6 +52,7 @@ func newToken(hostUUID, hostIP, hostName string) string {
 }
 
 func commandExists(cmd string) bool {
+	defer TRA(CE())
 	_, err := exec.LookPath(cmd)
 	return err == nil
 }
@@ -59,6 +64,7 @@ func commandExists(cmd string) bool {
 //   - n is the number of failures that have occurred
 //   - multiplier is an arbitrary multiplier that can be replaced with any suitable value
 func nextInterval(failureCount float64) time.Duration {
+	defer TRA(CE())
 	// multiplier 2.0 yields 15s, 60s, 135s, 240s, 375s, 540s, etc
 	interval := 15 * math.Pow(2.0, failureCount)
 	// puts a maximum limit of 1 hour
@@ -76,6 +82,7 @@ func nextInterval(failureCount float64) time.Duration {
 // uses PILOT_LOG_COLLECTION, if its value is not set then the collector is enabled by default
 // to disable the collector set PILOT_LOG_COLLECTION=false (possible values "0", "f", "F", "false", "FALSE", "False")
 func collectorEnabled() (enabled bool) {
+	defer TRA(CE())
 	var err error
 	collection := os.Getenv("PILOT_LOG_COLLECTION")
 	if len(collection) > 0 {
@@ -97,6 +104,7 @@ func (p *Pilot) debug(msg string, a ...interface{}) {
 }
 
 func Abs(path string) string {
+	defer TRA(CE())
 	if !filepath.IsAbs(path) {
 		p, err := filepath.Abs(path)
 		if err != nil {

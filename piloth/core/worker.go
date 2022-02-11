@@ -1,5 +1,3 @@
-package core
-
 /*
   Onix Config Manager - Pilot
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -7,6 +5,9 @@ package core
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package core
+
 import (
 	"context"
 	"fmt"
@@ -53,6 +54,7 @@ type Worker struct {
 // NewWorker create new worker using the specified runnable function
 // Runnable: the function that processes each job
 func NewWorker(run Runnable) *Worker {
+	defer TRA(CE())
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Worker{
 		status: stopped,
@@ -64,11 +66,13 @@ func NewWorker(run Runnable) *Worker {
 
 // NewCmdRequestWorker create a new worker to process pilotctl command requests
 func NewCmdRequestWorker() *Worker {
+	defer TRA(CE())
 	return NewWorker(run)
 }
 
 // Start starts the worker execution loop
 func (w *Worker) Start() {
+	defer TRA(CE())
 	// if the worker is stopped then it can start
 	if w.status == stopped {
 		// changes the
@@ -137,11 +141,13 @@ func (w *Worker) Start() {
 
 // Stop stops the worker execution loop
 func (w *Worker) Stop() {
+	defer TRA(CE())
 	w.cancel()
 	w.status = stopped
 }
 
 func (w *Worker) Jobs() int {
+	defer TRA(CE())
 	dir := processDir("")
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -158,6 +164,7 @@ func (w *Worker) Jobs() int {
 
 // AddJob add a new job for processing to the worker
 func (w *Worker) AddJob(job ctl.CmdInfo) {
+	defer TRA(CE())
 	err := addJob(Job{cmd: &job})
 	if err != nil {
 		ErrorLogger.Printf("cannot write job to process queue: %s\n", err)
@@ -166,10 +173,12 @@ func (w *Worker) AddJob(job ctl.CmdInfo) {
 
 // Result returns the next
 func (w *Worker) Result() (*ctl.JobResult, error) {
+	defer TRA(CE())
 	return peekJobResult()
 }
 
 func run(data interface{}) (string, error) {
+	defer TRA(CE())
 	// unbox the data
 	cmd, ok := data.(ctl.CmdInfo)
 	if !ok {
@@ -205,22 +214,26 @@ func run(data interface{}) (string, error) {
 }
 
 func (w *Worker) debug(msg string, a ...interface{}) {
+	defer TRA(CE())
 	if len(os.Getenv("PILOT_DEBUG")) > 0 {
 		DebugLogger.Printf(fmt.Sprintf("DEBUG: %s", msg), a...)
 	}
 }
 
 func (w *Worker) RemoveResult(result *ctl.JobResult) error {
+	defer TRA(CE())
 	return removeJobResult(*result)
 }
 
 func mask(value, user, pwd string) string {
+	defer TRA(CE())
 	str := strings.Replace(value, user, "****", -1)
 	str = strings.Replace(str, pwd, "xxxx", -1)
 	return str
 }
 
 func sendResult(jobId int64, log, errorMsg string) {
+	defer TRA(CE())
 	result := &ctl.JobResult{
 		JobId:   jobId,
 		Success: len(errorMsg) == 0,

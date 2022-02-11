@@ -1,5 +1,3 @@
-package core
-
 /*
   Onix Config Manager - Pilot
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -7,6 +5,9 @@ package core
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package core
+
 import (
 	"fmt"
 	ctl "github.com/gatblau/onix/pilotctl/types"
@@ -66,6 +67,7 @@ func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
 }
 
 func (p *Pilot) Start() {
+	defer TRA(CE())
 	// starts the collector service
 	if collectorEnabled() {
 		// creates a new SysLog collector
@@ -93,6 +95,7 @@ func (p *Pilot) Start() {
 
 // register the host, keep retrying indefinitely until a registration is successful
 func (p *Pilot) register() {
+	defer TRA(CE())
 	var failures float64 = 0
 	// starts a loop
 	for {
@@ -130,6 +133,7 @@ func (p *Pilot) register() {
 }
 
 func (p *Pilot) ping() {
+	defer TRA(CE())
 	for {
 		resp, err := p.ctl.Ping()
 		if err != nil {

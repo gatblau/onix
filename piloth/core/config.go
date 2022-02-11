@@ -50,6 +50,7 @@ const (
 )
 
 func (c *Config) getActivationURI() string {
+	defer TRA(CE())
 	uri := c.Get(PilotActivationURI)
 	if len(uri) == 0 {
 		ErrorLogger.Printf("cannot launch pilot: missing %s\n", PilotActivationURI.String())
@@ -63,6 +64,7 @@ func (c *Config) getActivationURI() string {
 }
 
 func (c *Config) getSyslogPort() string {
+	defer TRA(CE())
 	port := c.Get(PilotSyslogPort)
 	if len(port) == 0 {
 		// set default
@@ -72,15 +74,18 @@ func (c *Config) getSyslogPort() string {
 }
 
 func (c *Config) Get(key ConfigKey) string {
+	defer TRA(CE())
 	return os.Getenv(key.String())
 }
 
 func (c *Config) GetBool(key ConfigKey) bool {
+	defer TRA(CE())
 	b, _ := strconv.ParseBool(c.Get(key))
 	return b
 }
 
 func (c *Config) Load() error {
+	defer TRA(CE())
 	// set the file path to where pilot is running
 	// c.path = currentPath()
 	c.path = CurrentPath()
@@ -101,6 +106,7 @@ func (c *Config) Load() error {
 }
 
 func CurrentPath() string {
+	defer TRA(CE())
 	// check if the current path is overridden
 	path := os.Getenv("PILOT_CFG_PATH")
 	// if so
@@ -123,20 +129,24 @@ func CurrentPath() string {
 }
 
 func AkFile() string {
+	defer TRA(CE())
 	return fmt.Sprintf("%s/.pilot", CurrentPath())
 }
 
 func UserKeyFile() string {
+	defer TRA(CE())
 	return fmt.Sprintf("%s/.userkey", CurrentPath())
 }
 
 // DataPath returns the path of the root local folder where files are cached
 func DataPath() string {
+	defer TRA(CE())
 	return filepath.Join(CurrentPath(), "data")
 }
 
 // SubmitPath returns the path of the local folder used to cache information to be submitted to pilotctl
 func SubmitPath() string {
+	defer TRA(CE())
 	return filepath.Join(DataPath(), "submit")
 }
 

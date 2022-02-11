@@ -29,6 +29,7 @@ type PilotCtl struct {
 }
 
 func NewPilotCtl(worker *Worker, hostInfo *ctl.HostInfo) (*PilotCtl, error) {
+	defer TRA(CE())
 	conf := &Config{}
 	err := conf.Load()
 	if err != nil {
@@ -76,6 +77,7 @@ func NewPilotCtl(worker *Worker, hostInfo *ctl.HostInfo) (*PilotCtl, error) {
 
 // Register the host
 func (r *PilotCtl) Register() (*ctl.RegistrationResponse, error) {
+	defer TRA(CE())
 	i := r.host
 	// set the machine id
 	reg := &ctl.RegistrationRequest{
@@ -108,6 +110,7 @@ func (r *PilotCtl) Register() (*ctl.RegistrationResponse, error) {
 
 // Ping send a ping to the remote server
 func (r *PilotCtl) Ping() (ctl.PingResponse, error) {
+	defer TRA(CE())
 	// is there a result from a job ready?
 	var (
 		payload ctlCore.Serializable
@@ -170,6 +173,7 @@ func (r *PilotCtl) Ping() (ctl.PingResponse, error) {
 }
 
 func (r *PilotCtl) addToken(req *http.Request, payload ctlCore.Serializable) error {
+	defer TRA(CE())
 	payload = nil
 	// add an authentication token to the request
 	req.Header.Set("Authorization", newToken(r.host.HostUUID, r.host.HostIP, r.host.HostName))

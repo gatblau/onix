@@ -31,6 +31,7 @@ type Job struct {
 //   The start mark is removed when the job result has been submitted
 //   If a submitted mark is found, the remove job is called and the next jon is peeked
 func peekJob() (job *Job, err error) {
+	defer TRA(CE())
 	var bytes []byte
 	dir := processDir("")
 	files, err := ls(dir)
@@ -91,6 +92,7 @@ func peekJob() (job *Job, err error) {
 // removeJob remove the specified job from the directory it is in
 // failsafe: removes the submitted marker
 func removeJob(jobId int64) error {
+	defer TRA(CE())
 	dir := dataDir(fmt.Sprintf("job_%d.submitted", jobId))
 	// remove submitted marker
 	err := os.Remove(dir)
@@ -104,6 +106,7 @@ func removeJob(jobId int64) error {
 
 // addJob add a new job to the process queue
 func addJob(job Job) error {
+	defer TRA(CE())
 	bytes, err := json.Marshal(job.cmd)
 	if err != nil {
 		return err
@@ -114,6 +117,7 @@ func addJob(job Job) error {
 
 // ls files in a folder by date (oldest modified time first)
 func ls(dirname string) ([]os.FileInfo, error) {
+	defer TRA(CE())
 	// read files from folder
 	files, err := ioutil.ReadDir(dirname)
 	if err != nil {
@@ -128,6 +132,7 @@ func ls(dirname string) ([]os.FileInfo, error) {
 }
 
 func startedMarker(job *Job) error {
+	defer TRA(CE())
 	if job == nil {
 		return nil
 	}
@@ -136,6 +141,7 @@ func startedMarker(job *Job) error {
 }
 
 func processDir(file string) string {
+	defer TRA(CE())
 	fp := os.Getenv("PILOT_HOME")
 	fp, _ = filepath.Abs(fp)
 	if len(fp) == 0 {
@@ -145,6 +151,7 @@ func processDir(file string) string {
 }
 
 func dataDir(file string) string {
+	defer TRA(CE())
 	fp := os.Getenv("PILOT_HOME")
 	fp, _ = filepath.Abs(fp)
 	if len(fp) == 0 {
@@ -154,6 +161,7 @@ func dataDir(file string) string {
 }
 
 func submitDir(file string) string {
+	defer TRA(CE())
 	fp := os.Getenv("PILOT_HOME")
 	fp, _ = filepath.Abs(fp)
 	if len(fp) == 0 {

@@ -1,5 +1,3 @@
-package core
-
 /*
   Onix Config Manager - Pilot
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -7,6 +5,9 @@ package core
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package core
+
 import (
 	"bytes"
 	"crypto/aes"
@@ -19,10 +20,10 @@ import (
 	c "github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/gatblau/onix/artisan/crypto"
 	"os"
-	"path/filepath"
 )
 
 func decrypt(key string, cypherText string, iv string) (string, error) {
+	defer TRA(CE())
 	keyBytes, _ := hex.DecodeString(key)
 	ciphertext, _ := hex.DecodeString(cypherText)
 	ivBytes, _ := hex.DecodeString(iv)
@@ -43,6 +44,7 @@ func decrypt(key string, cypherText string, iv string) (string, error) {
 }
 
 func encrypt(key []byte, plaintext string, iv []byte) string {
+	defer TRA(CE())
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		fmt.Printf(err.Error())
@@ -58,6 +60,7 @@ func encrypt(key []byte, plaintext string, iv []byte) string {
 }
 
 func verify(text, signature string) (bool, error) {
+	defer TRA(CE())
 	msg := c.NewPlainMessageFromString(text)
 	sigBytes, err := hex.DecodeString(signature)
 	if err != nil {
@@ -82,6 +85,7 @@ func verify(text, signature string) (bool, error) {
 
 // sign create a cryptographic signature for the passed-in object
 func verify2(obj interface{}, signature string) error {
+	defer TRA(CE())
 	// decode the  signature
 	sig, err := base64.StdEncoding.DecodeString(signature)
 	if err != nil {
@@ -107,6 +111,7 @@ func verify2(obj interface{}, signature string) error {
 
 // checksum create a checksum of the passed-in object
 func checksum(obj interface{}) ([]byte, error) {
+	defer TRA(CE())
 	source, err := json.Marshal(obj)
 	if err != nil {
 		return nil, fmt.Errorf("checksum => cannot convert object to JSON to produce checksum: %s", err)
@@ -127,20 +132,4 @@ func checksum(obj interface{}) ([]byte, error) {
 	// obtain checksum
 	sum := hash.Sum(nil)
 	return sum, nil
-}
-
-func executablePath() string {
-	ex, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
-	return filepath.Dir(ex)
-}
-
-func homePath() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		panic(err)
-	}
-	return home
 }

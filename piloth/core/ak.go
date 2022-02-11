@@ -35,6 +35,7 @@ type AKInfo struct {
 }
 
 func (a AKInfo) Validate() {
+	defer TRA(CE())
 	// if the verification key is not provided
 	if len(a.VerifyKey) == 0 {
 		// cannot continue
@@ -54,16 +55,19 @@ func (a AKInfo) Validate() {
 }
 
 func AkExist() bool {
+	defer TRA(CE())
 	_, err := os.Stat(AkFile())
 	return err == nil
 }
 
 func UserKeyExist() bool {
+	defer TRA(CE())
 	_, err := os.Stat(UserKeyFile())
 	return err == nil
 }
 
 func readAKey(ak AK) (*AKInfo, error) {
+	defer TRA(CE())
 	if valid, err := verify(ak.Data, ak.Signature); !valid {
 		return nil, fmt.Errorf("signature verification failed: %s\n", err)
 	}
@@ -80,6 +84,7 @@ func readAKey(ak AK) (*AKInfo, error) {
 }
 
 func loadAKey(path string) (*AK, error) {
+	defer TRA(CE())
 	path = Abs(path)
 	keyBytes, err := os.ReadFile(path)
 	if err != nil {

@@ -34,6 +34,7 @@ type userKeyInfo struct {
 }
 
 func loadUserKey(path string) (*userKey, error) {
+	defer TRA(CE())
 	if len(path) == 0 {
 		path = ".userkey"
 	}
@@ -56,6 +57,7 @@ func loadUserKey(path string) (*userKey, error) {
 
 // readUserKey read the content of an encoded user key and verifies its digital signature
 func readUserKey(key userKey) (*userKeyInfo, error) {
+	defer TRA(CE())
 	// check the validity of the key's digital signature
 	if valid, err := verify(string(key.Key), key.Signature); !valid {
 		return nil, fmt.Errorf("invalid user key signature: %s\n", err)

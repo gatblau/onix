@@ -30,6 +30,7 @@ type AKToken struct {
 }
 
 func NewAKToken(clientInfo userKeyInfo, hostInfo *ctl.HostInfo) AKToken {
+	defer TRA(CE())
 	return AKToken{
 		info:       clientInfo,
 		Username:   clientInfo.Username,
@@ -41,6 +42,7 @@ func NewAKToken(clientInfo userKeyInfo, hostInfo *ctl.HostInfo) AKToken {
 }
 
 func (t AKToken) String() string {
+	defer TRA(CE())
 	b, err := json.Marshal(t)
 	if err != nil {
 		ErrorLogger.Printf("cannot create activation key request bearer token: %s\n", err)
@@ -50,6 +52,7 @@ func (t AKToken) String() string {
 }
 
 func activate(info *ctl.HostInfo) {
+	defer TRA(CE())
 	var (
 		failures float64 = 0
 		interval time.Duration
@@ -113,11 +116,11 @@ func activate(info *ctl.HostInfo) {
 	// validate the activation key
 	A.Validate()
 	// check expiration date
-	if A.Expiry.Before(time.Now()) {
-		// if activation expired the exit
-		ErrorLogger.Printf("cannot launch pilot: activation key expired\n")
-		os.Exit(1)
-	}
+	// if A.Expiry.Before(time.Now()) {
+	// 	// if activation expired the exit
+	// 	ErrorLogger.Printf("cannot launch pilot: activation key expired\n")
+	// 	os.Exit(1)
+	// }
 	// check if the mac-address is valid
 	validMac := false
 	for _, address := range info.MacAddress {

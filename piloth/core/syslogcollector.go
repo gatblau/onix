@@ -21,6 +21,7 @@ type SyslogCollector struct {
 
 // NewCollector creates an instance of a syslog collection service
 func NewCollector(bindIP, port string) (*SyslogCollector, error) {
+	defer TRA(CE())
 	channel := make(syslog.LogPartsChannel)
 	sysServ := syslog.NewServer()
 	sysServ.SetHandler(syslog.NewChannelHandler(channel))
@@ -54,16 +55,19 @@ func NewCollector(bindIP, port string) (*SyslogCollector, error) {
 
 // Start the server
 func (s *SyslogCollector) Start() error {
+	defer TRA(CE())
 	InfoLogger.Printf("starting syslog collector on port %s\n", s.port)
 	return s.server.Boot()
 }
 
 // Wait the server
 func (s *SyslogCollector) Wait() {
+	defer TRA(CE())
 	s.server.Wait()
 }
 
 // Stop the server
 func (s *SyslogCollector) Stop() error {
+	defer TRA(CE())
 	return s.server.Kill()
 }

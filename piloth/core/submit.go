@@ -21,6 +21,7 @@ import (
 // fail-safe: remove start mark created by peek
 //   create a submitted mark in case host goes before removing the job from the queue
 func submitJobResult(result types.JobResult) error {
+	defer TRA(CE())
 	dir := submitDir(fmt.Sprintf("job_%d.result", result.JobId))
 	bytes, err := json.Marshal(result)
 	if err != nil {
@@ -34,6 +35,7 @@ func submitJobResult(result types.JobResult) error {
 }
 
 func submittedMarker(jobId int64) error {
+	defer TRA(CE())
 	dir := dataDir(fmt.Sprintf("job_%d.submitted", jobId))
 	// creates a submitted marker
 	err := ioutil.WriteFile(dir, []byte{}, os.ModePerm)
@@ -51,12 +53,14 @@ func submittedMarker(jobId int64) error {
 }
 
 func submittedMarkerExists(jobId int64) bool {
+	defer TRA(CE())
 	dir := dataDir(fmt.Sprintf("job_%d.submitted", jobId))
 	_, err := os.Stat(dir)
 	return err == nil
 }
 
 func peekJobResult() (jobResult *types.JobResult, err error) {
+	defer TRA(CE())
 	var bytes []byte
 	dir := submitDir("")
 	files, err := ls(dir)
@@ -82,6 +86,7 @@ func peekJobResult() (jobResult *types.JobResult, err error) {
 }
 
 func removeJobResult(result types.JobResult) error {
+	defer TRA(CE())
 	// remove job from queue
 	dir := submitDir(fmt.Sprintf("job_%d.result", result.JobId))
 	return os.Remove(dir)
