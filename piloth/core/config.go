@@ -106,7 +106,6 @@ func (c *Config) Load() error {
 }
 
 func CurrentPath() string {
-	defer TRA(CE())
 	// check if the current path is overridden
 	path := os.Getenv("PILOT_CFG_PATH")
 	// if so
@@ -140,7 +139,6 @@ func UserKeyFile() string {
 
 // DataPath returns the path of the root local folder where files are cached
 func DataPath() string {
-	defer TRA(CE())
 	return filepath.Join(CurrentPath(), "data")
 }
 
