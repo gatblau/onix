@@ -1,5 +1,4 @@
-// +build !cpu
-// +build !mem
+// +build mem
 
 /*
   Onix Config Manager - Host Pilot
@@ -11,6 +10,10 @@
 
 package main
 
+import "github.com/pkg/profile"
+
 func main() {
+	// memory profiling
+	defer profile.Start(profile.MemProfile).Stop()
 	run()
 }

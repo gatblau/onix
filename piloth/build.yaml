@@ -43,6 +43,63 @@ functions:
     run:
       - go build -ldflags="-X 'github.com/gatblau/onix/piloth/core.Version=${BUILD_VERSION}'" -o bin/arm/pilot -v
 
+  - name: build-with-profiling
+    description: builds the host pilot binary for the specified platform with the specified profile tag
+    run:
+      - go build -tags ${PROFILE_TAG} -ldflags="-X 'github.com/gatblau/onix/piloth/core.Version=${BUILD_VERSION}-${PROFILE_TAG}'" -o ${BIN_PATH} -v
+
+  - name: build-linux-cpu
+    description: builds pilot for linux with CPU profiling
+    env:
+      BIN_PATH: bin/linux/pilot
+      PROFILE_TAG: cpu
+      GOOS: linux
+    run:
+      - $(build-with-profiling)
+
+  - name: build-mem-linux
+    description: builds pilot for linux with MEMORY profiling
+    env:
+      BIN_PATH: bin/linux/pilot
+      PROFILE_TAG: mem
+      GOOS: linux
+    run:
+      - $(build-with-profiling)
+
+  - name: build-cpu-darwin
+    env:
+      BIN_PATH: bin/darwin/pilot
+      PROFILE_TAG: cpu
+      GOOS: darwin
+    run:
+      - $(build-with-profiling)
+
+  - name: build-mem-darwin
+    env:
+      BIN_PATH: bin/darwin/pilot
+      PROFILE_TAG: mem
+      GOOS: darwin
+    run:
+      - $(build-with-profiling)
+
+  - name: analyse
+    run:
+      - go tool pprof --pdf ${BIN_PATH} ${PPROF_PATH} > ${PROFILE_TAG}.pdf
+
+  - name: analyse-cpu-linux
+    env:
+      BIN_PATH: bin/linux/pilot
+      PROFILE_TAG: cpu
+    run:
+      - go tool pprof --pdf ${BIN_PATH} ${PPROF_PATH} > ${PROFILE_TAG}.pdf
+
+  - name: analyse-mem-linux
+    env:
+      BIN_PATH: bin/linux/pilot
+      PROFILE_TAG: mem
+    run:
+      - go tool pprof --pdf ${BIN_PATH} ${PPROF_PATH} > ${PROFILE_TAG}.pdf
+
 profiles:
   - name: linux
     default: true
