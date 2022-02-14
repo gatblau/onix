@@ -951,6 +951,9 @@ func (m *Manifest) eval(t string) (string, error) {
 }
 
 func (m *Manifest) loadSpec(uri string) (*export.Spec, error) {
+	if !strings.Contains(uri, "/") {
+		uri = fmt.Sprintf("./%s", uri)
+	}
 	root := uri[:strings.LastIndex(uri, "/")]
 	specBytes, err := core.ReadFile(fmt.Sprintf("%s/%s/%s", root, m.Version, "spec.yaml"), m.credentials)
 	if err != nil {
