@@ -1,4 +1,5 @@
 // +build mem
+// +build !cpu
 
 /*
   Onix Config Manager - Host Pilot
