@@ -16,8 +16,9 @@ import (
 
 // SpecImportCmd Import the contents from a tarball to create an artisan package in the local registry
 type SpecImportCmd struct {
-	cmd   *cobra.Command
-	creds string
+	cmd             *cobra.Command
+	creds           string
+	ignoreSignature *bool
 }
 
 func NewSpecImportCmd() *SpecImportCmd {
@@ -40,6 +41,7 @@ Examples:
 	}
 	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials used to retrieve the specification from an endpoint")
+	c.ignoreSignature = c.cmd.Flags().BoolP("ignore-sig", "s", false, "ignore signature verification on import")
 	return c
 }
 
@@ -49,6 +51,6 @@ func (c *SpecImportCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("the URI of the specification is required")
 	}
 	// import the tar archive(s)
-	err := export.ImportSpec(args[0], c.creds)
+	err := export.ImportSpec(args[0], c.creds, *c.ignoreSignature)
 	core.CheckErr(err, "cannot import spec")
 }

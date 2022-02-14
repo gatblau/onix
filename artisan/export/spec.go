@@ -101,7 +101,7 @@ func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds string) error {
 	return nil
 }
 
-func ImportSpec(targetUri, targetCreds string) error {
+func ImportSpec(targetUri, targetCreds string, ignoreSignature bool) error {
 	r := registry.NewLocalRegistry()
 	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
 	core.InfoLogger.Printf("retrieving %s\n", uri)
@@ -130,7 +130,11 @@ func ImportSpec(targetUri, targetCreds string) error {
 			return fmt.Errorf("cannot read %s.tar: %s", pkgName(image), err)
 		}
 		core.InfoLogger.Printf("loading => %s\n", image)
-		_, err2 = build.Exe(fmt.Sprintf("art exe %s import", image), ".", merge.NewEnVarFromSlice([]string{}), false)
+		ignoreSigFlag := ""
+		if ignoreSignature {
+			ignoreSigFlag = "-s"
+		}
+		_, err2 = build.Exe(fmt.Sprintf("art exe %s import %s", image, ignoreSigFlag), ".", merge.NewEnVarFromSlice([]string{}), false)
 		if err2 != nil {
 			return fmt.Errorf("cannot import image %s: %s", image, err2)
 		}
