@@ -116,21 +116,24 @@ func (w *Worker) Start() {
 					// dump env vars if in debug mode
 					w.debug(job.cmd.PrintEnv())
 					// execute the job
-					out, err := w.run(*job.cmd)
-					if err != nil {
-						InfoLogger.Printf("job %d, %s -> %s failed: %s", job.cmd.JobId, job.cmd.Package, job.cmd.Function, mask(err.Error(), job.cmd.User, job.cmd.Pwd))
+					out, runErr := w.run(*job.cmd)
+					if runErr != nil {
+						InfoLogger.Printf("job %d, %s -> %s failed: %s", job.cmd.JobId, job.cmd.Package, job.cmd.Function, mask(runErr.Error(), job.cmd.User, job.cmd.Pwd))
 					} else {
 						InfoLogger.Printf("job %d, %s -> %s succeeded", job.cmd.JobId, job.cmd.Package, job.cmd.Function)
 					}
 					// check for an error
 					var errorMsg string
-					if err != nil {
+					if runErr != nil {
 						// build an error message masking registry credentials
-						errorMsg = mask(err.Error(), job.cmd.User, job.cmd.Pwd)
+						errorMsg = mask(runErr.Error(), job.cmd.User, job.cmd.Pwd)
 					}
 					// send the result to control
 					sendResult(job.cmd.JobId, out, errorMsg)
 					w.status = ready
+				} else {
+					// if no jobs wait for a little while until more jobs are available
+					time.Sleep(5 * time.Second)
 				}
 			}
 		}()
