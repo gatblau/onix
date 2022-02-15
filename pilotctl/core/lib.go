@@ -64,12 +64,12 @@ func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
 				if !ok || len(typeValue) == 0 {
 					typeValue = "string"
 				}
-				required, ok := varMap["required"].(bool)
+				requiredValue, ok := varMap["required"].(bool)
 				if !ok {
-					required = false
+					requiredValue = false
 				}
 				valueValue, ok := varMap["value"].(string)
-				if !ok && required {
+				if !ok && requiredValue {
 					return nil, fmt.Errorf("variable %s VALUE not provided, can't process payload\n", nameValue)
 				}
 				vv := &data.Var{
@@ -77,6 +77,7 @@ func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
 					Description: descValue,
 					Value:       valueValue,
 					Type:        typeValue,
+					Required:    requiredValue,
 				}
 				input.Var = append(input.Var, vv)
 			}
@@ -96,6 +97,10 @@ func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
 				if !ok {
 					descValue = ""
 				}
+				requiredValue, ok := varMap["required"].(bool)
+				if !ok {
+					requiredValue = false
+				}
 				valueValue, ok := varMap["value"].(string)
 				if !ok {
 					return nil, fmt.Errorf("secret %s VALUE not provided, can't process payload\n", nameValue)
@@ -104,6 +109,7 @@ func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
 					Name:        nameValue,
 					Description: descValue,
 					Value:       valueValue,
+					Required:    requiredValue,
 				}
 				input.Secret = append(input.Secret, vv)
 			}
