@@ -143,9 +143,6 @@ func ImportSpec(targetUri, targetCreds string, ignoreSignature bool) error {
 }
 
 func DownloadSpec(targetUri, targetCreds, localPath string) error {
-	if !strings.Contains(targetUri, "://") {
-		return fmt.Errorf("invalid URI, it must have an scheme (e.g. scheme://)")
-	}
 	spec, err := NewSpec(targetUri, targetCreds)
 	if err != nil {
 		return fmt.Errorf("cannot load specification: %s", err)
@@ -181,6 +178,34 @@ func DownloadSpec(targetUri, targetCreds, localPath string) error {
 		targetFile := filepath.Join(localPath, fmt.Sprintf("%s.tar", pkgName(image)))
 		core.InfoLogger.Printf("writing => %s\n", targetFile)
 		err = os.WriteFile(targetFile, tarBytes, 0755)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func PullSpec(targetUri, targetCreds, sourceCreds string) error {
+	cli, cmdErr := containerCmd()
+	if cmdErr != nil {
+		return cmdErr
+	}
+	local := registry.NewLocalRegistry()
+	spec, err := NewSpec(targetUri, targetCreds)
+	if err != nil {
+		return fmt.Errorf("cannot load specification: %s", err)
+	}
+	for _, pkg := range spec.Packages {
+		p, parseErr := core.ParseName(pkg)
+		if parseErr != nil {
+			return parseErr
+		}
+		core.InfoLogger.Printf("pulling => %s\n", pkg)
+		local.Pull(p, sourceCreds)
+	}
+	for _, image := range spec.Images {
+		core.InfoLogger.Printf("pulling => %s\n", image)
+		_, err = build.Exe(fmt.Sprintf("%s pull %s", cli, image), ".", merge.NewEnVarFromSlice([]string{}), false)
 		if err != nil {
 			return err
 		}
