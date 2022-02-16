@@ -136,7 +136,27 @@ func (db *Db) FindByName(collection types.Collection, name string) (*mongo.Singl
 }
 
 // FindMany find a number of objects matching the specified filter
-func (db *Db) FindMany(collection types.Collection, filter bson.M, results interface{}) error {
+func (db *Db) FindMany(collection types.Collection, filter bson.M, query Query) error {
+	if filter == nil {
+		filter = bson.M{}
+	}
+	client, err := mongo.Connect(context.Background(), db.options)
+	if err != nil {
+		return err
+	}
+	defer client.Disconnect(context.Background())
+	coll := client.Database(DbName).Collection(string(collection))
+	cursor, findErr := coll.Find(context.Background(), filter)
+	defer cursor.Close(context.Background())
+	if findErr != nil {
+		return findErr
+	}
+	return query(cursor)
+}
+
+type Query func(cursor *mongo.Cursor) error
+
+func (db *Db) FindAll(collection types.Collection, results interface{}) error {
 	c := ctx()
 	client, err := mongo.Connect(c, db.options)
 	if err != nil {
@@ -144,15 +164,12 @@ func (db *Db) FindMany(collection types.Collection, filter bson.M, results inter
 	}
 	defer client.Disconnect(c)
 	coll := client.Database(DbName).Collection(string(collection))
-	cursor, findErr := coll.Find(ctx(), filter)
-	if findErr != nil {
-		return findErr
-	}
-	// return elements that match the criteria
-	if err = cursor.All(ctx(), &results); err != nil {
+	cursor, err := coll.Find(c, make(map[string]interface{}))
+	defer cursor.Close(c)
+	if err != nil {
 		return err
 	}
-	return nil
+	return cursor.All(c, &results)
 }
 
 // ObjectExists checks if an object exists in the specified collection
@@ -163,23 +180,4 @@ func (db *Db) ObjectExists(collection types.Collection, name string) bool {
 		return false
 	}
 	return item.Err() != mongo.ErrNoDocuments
-}
-
-// FindKeys retrieves one or more keys matching the specifies criteria decrypting the value of any private key
-func (db *Db) FindKeys(filter bson.M) ([]types.Key, error) {
-	var results []types.Key
-	err := db.FindMany(types.KeysCollection, filter, results)
-	if err != nil {
-		return nil, err
-	}
-	for i, key := range results {
-		if key.IsPrivate {
-			dec, decErr := decrypt(key.Value)
-			if decErr != nil {
-				return nil, err
-			}
-			results[i].Value = dec
-		}
-	}
-	return results, nil
 }
