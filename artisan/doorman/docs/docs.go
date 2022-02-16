@@ -151,6 +151,44 @@ var doc = `{
             }
         },
         "/pipe": {
+            "get": {
+                "description": "gets all pipelines",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Pipelines"
+                ],
+                "summary": "Gets all pipelines",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "creates or updates an inbound route",
                 "produces": [
@@ -552,7 +590,7 @@ var SwaggerInfo = swaggerInfo{
 	BasePath:    "",
 	Schemes:     []string{},
 	Title:       "Artisan's Doorman",
-	Description: "Transfer (pull, verify, scan, resign and push) artefacts between networks",
+	Description: "Transfer (pull, verify, scan, resign and push) artefacts between repositories",
 }
 
 type s struct{}

@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Transfer (pull, verify, scan, resign and push) artefacts between networks",
+        "description": "Transfer (pull, verify, scan, resign and push) artefacts between repositories",
         "title": "Artisan's Doorman",
         "contact": {
             "name": "gatblau",
@@ -134,6 +134,44 @@
             }
         },
         "/pipe": {
+            "get": {
+                "description": "gets all pipelines",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Pipelines"
+                ],
+                "summary": "Gets all pipelines",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "creates or updates an inbound route",
                 "produces": [

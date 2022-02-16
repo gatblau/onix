@@ -24,6 +24,7 @@ func main() {
 		router.HandleFunc("/route/out", upsertOutboundRouteHandler).Methods("PUT")
 		router.HandleFunc("/pipe", upsertPipelineHandler).Methods("PUT")
 		router.HandleFunc("/pipe/{name}", getPipelineHandler).Methods("GET")
+		router.HandleFunc("/pipe", getAllPipelinesHandler).Methods("GET")
 	}
 	s.Serve()
 }

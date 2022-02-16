@@ -174,6 +174,10 @@ func upsertOutboundRouteHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {string} object has been updated
 // @Success 201 {string} object has been created
 func upsertPipelineHandler(w http.ResponseWriter, r *http.Request) {
+	var (
+		err  error
+		code int
+	)
 	body, err := ioutil.ReadAll(r.Body)
 	if isErr(w, err, http.StatusBadRequest, "cannot read pipeline data") {
 		return
@@ -187,21 +191,11 @@ func upsertPipelineHandler(w http.ResponseWriter, r *http.Request) {
 	if isErr(w, pipe.Valid(), http.StatusBadRequest, "invalid pipeline data") {
 		return
 	}
-	db := core.NewDb()
-	_, err = db.FindByName(types.InRouteCollection, pipe.InboundRoute)
-	if isErr(w, err, http.StatusBadRequest, fmt.Sprintf("cannot find inbound route %s for pipeline %s: %s", pipe.InboundRoute, pipe.Name, err)) {
+	err, code = core.UpsertPipeline(*pipe)
+	if isErr(w, err, http.StatusBadRequest, "cannot create or update pipeline configuration") {
 		return
 	}
-	_, err = db.FindByName(types.OutRouteCollection, pipe.OutboundRoute)
-	if isErr(w, err, http.StatusBadRequest, fmt.Sprintf("cannot find outbound route %s for pipeline %s: %s", pipe.OutboundRoute, pipe.Name, err)) {
-		return
-	}
-	var resultCode int
-	_, err, resultCode = db.UpsertObject(types.PipelineCollection, pipe)
-	if isErr(w, err, resultCode, "cannot update pipeline in database") {
-		return
-	}
-	w.WriteHeader(resultCode)
+	w.WriteHeader(code)
 }
 
 // @Summary Gets a pipeline
@@ -217,41 +211,29 @@ func upsertPipelineHandler(w http.ResponseWriter, r *http.Request) {
 func getPipelineHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pipeName := vars["name"]
-	db := core.NewDb()
-	result, err := db.FindByName(types.PipelineCollection, pipeName)
+	pipe, err := core.FindPipeline(pipeName)
 	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve pipeline %s: %s", pipeName, err)) {
 		return
 	}
-	pipeConf := new(types.PipelineConf)
-	err = result.Decode(pipeConf)
-	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot decode pipeline %s: %s", pipeName, err)) {
-		return
-	}
-	result, err = db.FindByName(types.InRouteCollection, pipeConf.InboundRoute)
-	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve inbound route %s: %s", pipeConf.InboundRoute, err)) {
-		return
-	}
-	inRoute := new(types.InRoute)
-	err = result.Decode(inRoute)
-	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot decode inbound route %s: %s", pipeConf.InboundRoute, err)) {
-		return
-	}
-	result, err = db.FindByName(types.OutRouteCollection, pipeConf.OutboundRoute)
-	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve outbound route %s: %s", pipeConf.OutboundRoute, err)) {
-		return
-	}
-	outRoute := new(types.OutRoute)
-	err = result.Decode(outRoute)
-	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot decode outbound route %s: %s", pipeConf.OutboundRoute, err)) {
-		return
-	}
-	pipe := types.Pipeline{
-		Name:          pipeConf.Name,
-		InboundRoute:  *inRoute,
-		OutboundRoute: *outRoute,
-		Commands:      pipeConf.Commands,
-	}
+	pipe.OutboundRoute.PackageRegistry.PrivateKey = "*******"
 	httpserver.Write(w, r, pipe)
+}
+
+// @Summary Gets all pipelines
+// @Description gets all pipelines
+// @Tags Pipelines
+// @Router /pipe [get]
+// @Produce application/json, application/yaml, application/xml
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 404 {string} not found: the requested object does not exist
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 200 {string} success
+func getAllPipelinesHandler(w http.ResponseWriter, r *http.Request) {
+	pipelines, err := core.FindAllPipelines()
+	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve pipelines: %s", err)) {
+		return
+	}
+	httpserver.Write(w, r, pipelines)
 }
 
 func isErr(w http.ResponseWriter, err error, statusCode int, msg string) bool {
