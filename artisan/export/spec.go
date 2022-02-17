@@ -17,6 +17,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -67,22 +68,27 @@ func NewSpec(path, creds string) (*Spec, error) {
 	return spec, nil
 }
 
-func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds string) error {
-	// first, save the spec to the target location
-	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
-	err := core.WriteFile(s.content, uri, targetCreds)
-	if err != nil {
-		return fmt.Errorf("cannot save spec file: %s", err)
-	}
-	core.InfoLogger.Printf("writing spec.yaml to %s", targetUri)
+func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds, filter string) error {
 	// save packages first
 	l := registry.NewLocalRegistry()
 	for _, value := range s.Packages {
-		name, err2 := core.ParseName(value)
-		if err2 != nil {
+		// if there is a filter defined
+		if len(filter) > 0 {
+			matched, err := regexp.MatchString(filter, value)
+			if err != nil {
+				core.WarningLogger.Printf("cannot apply filter expression '%s': %s\n", err)
+			}
+			// if the filter does not match then skip this package
+			if !matched {
+				core.InfoLogger.Printf("skipping package %s\n", value)
+				continue
+			}
+		}
+		name, err := core.ParseName(value)
+		if err != nil {
 			return fmt.Errorf("invalid package name: %s", err)
 		}
-		uri = fmt.Sprintf("%s/%s.tar", targetUri, pkgName(value))
+		uri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(value))
 		err = l.ExportPackage([]core.PackageName{*name}, sourceCreds, uri, targetCreds)
 		if err != nil {
 			return fmt.Errorf("cannot save package %s: %s", value, err)
@@ -90,14 +96,35 @@ func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds string) error {
 	}
 	// save images
 	for _, value := range s.Images {
+		// if there is a filter defined
+		if len(filter) > 0 {
+			matched, err := regexp.MatchString(filter, value)
+			if err != nil {
+				core.WarningLogger.Printf("cannot apply filter expression '%s': %s\n", err)
+			}
+			// if the filter does not match then skip this image
+			if !matched {
+				core.InfoLogger.Printf("skipping image %s\n", value)
+				continue
+			}
+		}
 		// note: the package is saved with a name exactly the same as the container image
 		// to avoid the art package name parsing from failing, any images with no host or user/group in the name should be avoided
 		// e.g. docker.io/mongo-express:latest will fail so use docker.io/library/mongo-express:latest instead
-		err = ExportImage(value, value, targetUri, targetCreds)
+		err := ExportImage(value, value, targetUri, targetCreds)
 		if err != nil {
 			return fmt.Errorf("cannot save image %s: %s", value, err)
 		}
 	}
+	// finally, save the spec to the target location
+	// note: this is done last so that a minio notification can be triggered based on this file
+	// once all other artefacts have been exported
+	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
+	err := core.WriteFile(s.content, uri, targetCreds)
+	if err != nil {
+		return fmt.Errorf("cannot save spec file: %s", err)
+	}
+	core.InfoLogger.Printf("writing spec.yaml to %s", targetUri)
 	return nil
 }
 

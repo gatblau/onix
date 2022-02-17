@@ -21,6 +21,7 @@ type SpecExportCmd struct {
 	srcCreds    string
 	targetCreds string
 	output      string
+	filter      string
 }
 
 func NewSpecExportCmd() *SpecExportCmd {
@@ -65,6 +66,7 @@ Examples:
 	c.cmd.Flags().StringVarP(&c.output, "output", "o", "", "the URI where the tar archive(s) will be saved; URI can be file system (absolute or relative path) or s3 bucket (s3:// or s3s:// using TLS)")
 	c.cmd.Flags().StringVarP(&c.srcCreds, "user", "u", "", "the credentials used to pull packages from an authenticated artisan registry, if the packages are not already in the local registry")
 	c.cmd.Flags().StringVarP(&c.targetCreds, "creds", "c", "", "the credentials to write packages to a destination, if such destination implements authentication (e.g. s3)")
+	c.cmd.Flags().StringVarP(&c.filter, "filter", "f", "", "a regular expression used to select items in the spec to export; any items not matched by the filter are skipped (e.g. -f \"^quay.*$\")")
 	c.cmd.MarkFlagRequired("output")
 	return c
 }
@@ -84,5 +86,5 @@ func (c *SpecExportCmd) Run(cmd *cobra.Command, args []string) {
 	// load the spec file
 	spec, err := export.NewSpec(path, "")
 	core.CheckErr(err, "cannot load spec.yaml")
-	core.CheckErr(export.ExportSpec(*spec, c.output, c.srcCreds, c.targetCreds), "cannot export spec")
+	core.CheckErr(export.ExportSpec(*spec, c.output, c.srcCreds, c.targetCreds, c.filter), "cannot export spec")
 }
