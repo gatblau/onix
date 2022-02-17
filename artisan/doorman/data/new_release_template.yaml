@@ -1,0 +1,8 @@
+---
+name: NEW_RELEASE_TEMPLATE
+subject: New Release <<release-name>> is available
+content: |
+   A new release has been published and is now available to deploy.
+   Available artefacts:
+   <<release-artefacts>>
+...

@@ -1,0 +1,9 @@
+---
+name: TEST_IN_ROUTE
+description: a testing inbound route
+uri: http://localhost:9000
+user: admin
+pwd: 1234567890
+public_key: TEST_PUB
+verify: true
+...

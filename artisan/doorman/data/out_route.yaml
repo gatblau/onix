@@ -1,0 +1,14 @@
+---
+name: TEST_OUT_ROUTE
+description: a testing outbound route
+image_registry:
+  uri: http://localhost:5000
+  user: admin
+  pwd: admin
+package_registry:
+  uri: http://localhost:8082
+  user: admin
+  pwd: admin
+  sign: true
+  private_key: TEST_PK
+...

@@ -1,0 +1,6 @@
+---
+name: FAIL_SCAN_NOTIFICATION
+recipient: test@email.com
+type: email
+template: QUARANTINE_TEMPLATE
+...
