@@ -69,20 +69,16 @@ func NewSpec(path, creds string) (*Spec, error) {
 }
 
 func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds, filter string) error {
+	var skipArtefact bool
 	// save packages first
 	l := registry.NewLocalRegistry()
 	for _, value := range s.Packages {
-		// if there is a filter defined
-		if len(filter) > 0 {
-			matched, err := regexp.MatchString(filter, value)
-			if err != nil {
-				core.WarningLogger.Printf("cannot apply filter expression '%s': %s\n", err)
+		if skipArtefact, filter = skip(filter, value); skipArtefact {
+			if len(filter) == 0 {
+				core.WarningLogger.Printf("invalid filter expression '%s'\n", filter)
 			}
-			// if the filter does not match then skip this package
-			if !matched {
-				core.InfoLogger.Printf("skipping package %s\n", value)
-				continue
-			}
+			core.InfoLogger.Printf("skipping package %s\n", value)
+			continue
 		}
 		name, err := core.ParseName(value)
 		if err != nil {
@@ -96,17 +92,12 @@ func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds, filter string) erro
 	}
 	// save images
 	for _, value := range s.Images {
-		// if there is a filter defined
-		if len(filter) > 0 {
-			matched, err := regexp.MatchString(filter, value)
-			if err != nil {
-				core.WarningLogger.Printf("cannot apply filter expression '%s': %s\n", err)
+		if skipArtefact, filter = skip(filter, value); skipArtefact {
+			if len(filter) == 0 {
+				core.WarningLogger.Printf("invalid filter expression '%s'\n", filter)
 			}
-			// if the filter does not match then skip this image
-			if !matched {
-				core.InfoLogger.Printf("skipping image %s\n", value)
-				continue
-			}
+			core.InfoLogger.Printf("skipping image %s\n", value)
+			continue
 		}
 		// note: the package is saved with a name exactly the same as the container image
 		// to avoid the art package name parsing from failing, any images with no host or user/group in the name should be avoided
@@ -128,7 +119,8 @@ func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds, filter string) erro
 	return nil
 }
 
-func ImportSpec(targetUri, targetCreds string, ignoreSignature bool) error {
+func ImportSpec(targetUri, targetCreds, filter string, ignoreSignature bool) error {
+	var skipArtefact bool
 	r := registry.NewLocalRegistry()
 	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
 	core.InfoLogger.Printf("retrieving %s\n", uri)
@@ -143,6 +135,13 @@ func ImportSpec(targetUri, targetCreds string, ignoreSignature bool) error {
 	}
 	// import packages
 	for _, pkName := range spec.Packages {
+		if skipArtefact, filter = skip(filter, pkName); skipArtefact {
+			if len(filter) == 0 {
+				core.WarningLogger.Printf("invalid filter expression '%s'\n", filter)
+			}
+			core.InfoLogger.Printf("skipping image %s\n", pkName)
+			continue
+		}
 		name := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(pkName))
 		err2 := r.Import([]string{name}, targetCreds)
 		if err2 != nil {
@@ -151,6 +150,13 @@ func ImportSpec(targetUri, targetCreds string, ignoreSignature bool) error {
 	}
 	// import images
 	for _, image := range spec.Images {
+		if skipArtefact, filter = skip(filter, image); skipArtefact {
+			if len(filter) == 0 {
+				core.WarningLogger.Printf("invalid filter expression '%s'\n", filter)
+			}
+			core.InfoLogger.Printf("skipping image %s\n", image)
+			continue
+		}
 		name := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(image))
 		err2 := r.Import([]string{name}, targetCreds)
 		if err2 != nil {
@@ -363,4 +369,16 @@ func checkPath(path string) error {
 		}
 	}
 	return nil
+}
+
+func skip(filter, value string) (bool, string) {
+	// if there is a filter defined
+	if len(filter) > 0 {
+		matched, err := regexp.MatchString(filter, value)
+		if err != nil {
+			return false, ""
+		}
+		return !matched, filter
+	}
+	return false, filter
 }

@@ -19,6 +19,7 @@ type SpecImportCmd struct {
 	cmd             *cobra.Command
 	creds           string
 	ignoreSignature *bool
+	filter          string
 }
 
 func NewSpecImportCmd() *SpecImportCmd {
@@ -42,6 +43,7 @@ Examples:
 	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials used to retrieve the specification from an endpoint")
 	c.ignoreSignature = c.cmd.Flags().BoolP("ignore-sig", "s", false, "ignore signature verification on import")
+	c.cmd.Flags().StringVarP(&c.filter, "filter", "f", "", "a regular expression used to select spec artefacts to be imported; any artefacts not matched by the filter are skipped (e.g. -f \"^quay.*$\")")
 	return c
 }
 
@@ -51,6 +53,6 @@ func (c *SpecImportCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("the URI of the specification is required")
 	}
 	// import the tar archive(s)
-	err := export.ImportSpec(args[0], c.creds, *c.ignoreSignature)
+	err := export.ImportSpec(args[0], c.creds, c.filter, *c.ignoreSignature)
 	core.CheckErr(err, "cannot import spec")
 }
