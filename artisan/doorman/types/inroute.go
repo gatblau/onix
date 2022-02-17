@@ -13,19 +13,19 @@ import "fmt"
 // InRoute the definition of an inbound route
 type InRoute struct {
 	// Name the name of the route
-	Name string `bson:"_id" json:"name" example:"SUPPLIER_A_IN_ROUTE"`
+	Name string `bson:"_id" json:"name" yaml:"name" example:"SUPPLIER_A_IN_ROUTE"`
 	// Description a description indicating the purpose of the route
-	Description string `bson:"description "json:"description" example:"the inbound route for supplier A"`
+	Description string `bson:"description "json:"description" yaml:"description" example:"the inbound route for supplier A"`
 	// URI the remote URI from where inbound files should be downloaded
-	URI string `bson:"uri" json:"uri" example:"s3.supplier-a.com"`
+	URI string `bson:"uri" json:"uri" yaml:"uri" example:"s3.supplier-a.com"`
 	// User the username to authenticate against the remote URI
-	User string `bson:"user "json:"user"`
+	User string `bson:"user "json:"user" yaml:"user"`
 	// Pwd the password to authenticate against the remote URI
-	Pwd string `bson:"pwd" json:"pwd"`
+	Pwd string `bson:"pwd" json:"pwd" yaml:"pwd"`
 	// PublicKey the PGP public key used to verify the author of the downloaded files
-	PublicKey string `bson:"public_key" json:"public_key"`
+	PublicKey string `bson:"public_key" json:"public_key" yaml:"public_key"`
 	// Verify a flag indicating whether author verification should be enabled
-	Verify bool `bson:"verify" json:"verify"`
+	Verify bool `bson:"verify" json:"verify" yaml:"verify"`
 }
 
 func (r InRoute) GetName() string {

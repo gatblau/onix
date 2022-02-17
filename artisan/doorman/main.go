@@ -22,9 +22,14 @@ func main() {
 		router.HandleFunc("/command", upsertCommandHandler).Methods("PUT")
 		router.HandleFunc("/route/in", upsertInboundRouteHandler).Methods("PUT")
 		router.HandleFunc("/route/out", upsertOutboundRouteHandler).Methods("PUT")
+		router.HandleFunc("/notification", upsertNotificationHandler).Methods("PUT")
+		router.HandleFunc("/notification", getAllNotificationsHandler).Methods("GET")
+		router.HandleFunc("/notification-template", upsertNotificationTemplateHandler).Methods("PUT")
+		router.HandleFunc("/notification-template", getAllNotificationTemplatesHandler).Methods("GET")
 		router.HandleFunc("/pipe", upsertPipelineHandler).Methods("PUT")
 		router.HandleFunc("/pipe/{name}", getPipelineHandler).Methods("GET")
 		router.HandleFunc("/pipe", getAllPipelinesHandler).Methods("GET")
+		router.HandleFunc("/event/minio", eventMinioHandler).Methods("POST")
 	}
 	s.Serve()
 }

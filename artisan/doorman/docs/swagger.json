@@ -38,6 +38,10 @@
         "/command": {
             "put": {
                 "description": "creates or updates a command",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
                 "produces": [
                     "text/plain"
                 ],
@@ -84,9 +88,56 @@
                 }
             }
         },
+        "/event/minio": {
+            "post": {
+                "description": "Triggers the ingestion of a specification from a MinIO bucket notification",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Triggers the ingestion of an artisan spec artefacts from a MinIO bucket notification",
+                "parameters": [
+                    {
+                        "description": "the payload sent by minio notification",
+                        "name": "key",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.S3MinioEvent"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/key": {
             "put": {
                 "description": "creates or updates a cryptographic key used by either inbound or outbound routes to verify or sign\npackages respectively",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
                 "produces": [
                     "text/plain"
                 ],
@@ -102,6 +153,188 @@
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/types.Key"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/notification": {
+            "get": {
+                "description": "gets all notifications",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Gets all notifications",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "creates or updates a notification",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Creates or updates a notification",
+                "parameters": [
+                    {
+                        "description": "the data for the notification to persist",
+                        "name": "key",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.Notification"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/notification-template": {
+            "get": {
+                "description": "gets all notification templates",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Gets all notification templates",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "creates or updates a notification template",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Creates or updates a notification template",
+                "parameters": [
+                    {
+                        "description": "the data for the notification template to persist",
+                        "name": "key",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.NotificationTemplate"
                         }
                     }
                 ],
@@ -174,6 +407,10 @@
             },
             "put": {
                 "description": "creates or updates an inbound route",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
                 "produces": [
                     "text/plain"
                 ],
@@ -272,6 +509,10 @@
         "/route/in": {
             "put": {
                 "description": "creates or updates an inbound route",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
                 "produces": [
                     "text/plain"
                 ],
@@ -321,6 +562,10 @@
         "/route/out": {
             "put": {
                 "description": "creates or updates an inbound route",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
                 "produces": [
                     "text/plain"
                 ],
@@ -369,6 +614,20 @@
         }
     },
     "definitions": {
+        "types.Bucket": {
+            "type": "object",
+            "properties": {
+                "arn": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ownerIdentity": {
+                    "$ref": "#/definitions/types.OwnerIdentity"
+                }
+            }
+        },
         "types.Command": {
             "type": "object",
             "properties": {
@@ -377,7 +636,7 @@
                     "type": "string",
                     "example": "scan files in specified path"
                 },
-                "errorRegex": {
+                "error_regex": {
                     "description": "a regex used to determine if the command execution has errored",
                     "type": "string",
                     "example": ".*Infected files: [^0].*"
@@ -478,6 +737,70 @@
                 }
             }
         },
+        "types.Notification": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "unique identifier for the notification",
+                    "type": "string"
+                },
+                "recipient": {
+                    "description": "Recipient of the notification if type is email",
+                    "type": "string"
+                },
+                "template": {
+                    "description": "Template to use for content of the notification",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type of the notification (e.g. email, snow, etc.)",
+                    "type": "string"
+                }
+            }
+        },
+        "types.NotificationTemplate": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Content of the template",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name unique identifier for notification template",
+                    "type": "string"
+                },
+                "subject": {
+                    "description": "Subject of the notification",
+                    "type": "string"
+                }
+            }
+        },
+        "types.Object": {
+            "type": "object",
+            "properties": {
+                "contentType": {
+                    "type": "string"
+                },
+                "eTag": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "sequencer": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "userMetadata": {
+                    "$ref": "#/definitions/types.UserMetadata"
+                },
+                "versionId": {
+                    "type": "string"
+                }
+            }
+        },
         "types.OutRoute": {
             "type": "object",
             "properties": {
@@ -496,6 +819,14 @@
                 },
                 "package_registry": {
                     "$ref": "#/definitions/types.PackageRegistry"
+                }
+            }
+        },
+        "types.OwnerIdentity": {
+            "type": "object",
+            "properties": {
+                "principalId": {
+                    "type": "string"
                 }
             }
         },
@@ -532,12 +863,20 @@
         "types.PipelineConf": {
             "type": "object",
             "properties": {
+                "cmd_failed_notification": {
+                    "description": "CmdFailedNotification notification to use in case of command failure",
+                    "type": "string"
+                },
                 "commands": {
                     "description": "Commands a list of the command names to be executed between inbound and outbound routes",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
+                },
+                "error_notification": {
+                    "description": "ErrorNotification notification to use in case of errors",
+                    "type": "string"
                 },
                 "in_route": {
                     "description": "InboundRoute  the name of the inbound route to use in the pipeline",
@@ -550,6 +889,140 @@
                 },
                 "out_route": {
                     "description": "OutboundRoute  the name of the outbound route to use in the pipeline",
+                    "type": "string"
+                },
+                "success_notification": {
+                    "description": "SuccessNotification notification to use in case of success",
+                    "type": "string"
+                }
+            }
+        },
+        "types.Records": {
+            "type": "object",
+            "properties": {
+                "awsRegion": {
+                    "type": "string"
+                },
+                "eventName": {
+                    "type": "string"
+                },
+                "eventSource": {
+                    "type": "string"
+                },
+                "eventTime": {
+                    "type": "string"
+                },
+                "eventVersion": {
+                    "type": "string"
+                },
+                "requestParameters": {
+                    "$ref": "#/definitions/types.RequestParameters"
+                },
+                "responseElements": {
+                    "$ref": "#/definitions/types.ResponseElements"
+                },
+                "s3": {
+                    "$ref": "#/definitions/types.S3"
+                },
+                "source": {
+                    "$ref": "#/definitions/types.Source"
+                },
+                "userIdentity": {
+                    "$ref": "#/definitions/types.UserIdentity"
+                }
+            }
+        },
+        "types.RequestParameters": {
+            "type": "object",
+            "properties": {
+                "accessKey": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "sourceIPAddress": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.ResponseElements": {
+            "type": "object",
+            "properties": {
+                "content-length": {
+                    "type": "string"
+                },
+                "x-amz-request-id": {
+                    "type": "string"
+                },
+                "x-minio-deployment-id": {
+                    "type": "string"
+                },
+                "x-minio-origin-endpoint": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.S3": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "$ref": "#/definitions/types.Bucket"
+                },
+                "configurationId": {
+                    "type": "string"
+                },
+                "object": {
+                    "$ref": "#/definitions/types.Object"
+                },
+                "s3SchemaVersion": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.S3MinioEvent": {
+            "type": "object",
+            "properties": {
+                "EventName": {
+                    "type": "string"
+                },
+                "Key": {
+                    "type": "string"
+                },
+                "Records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.Records"
+                    }
+                }
+            }
+        },
+        "types.Source": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "string"
+                },
+                "userAgent": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.UserIdentity": {
+            "type": "object",
+            "properties": {
+                "principalId": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.UserMetadata": {
+            "type": "object",
+            "properties": {
+                "content-type": {
                     "type": "string"
                 }
             }
