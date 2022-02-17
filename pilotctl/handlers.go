@@ -641,6 +641,32 @@ func registrationHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+// @Summary Undo a Host Registration
+// @Description undoes a host registration providing the host has not yet activated / admitted
+// @Tags Activation
+// @Router /registration/{mac-address} [delete]
+// @Param mac-address path string true "the mac address of the host to be un-registered"
+// @Produce json
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func undoRegistrationHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	mac, err := url.QueryUnescape(vars["mac-address"])
+	if err != nil {
+		log.Printf("cannot unsecape path variable mac-address: %v", err)
+		http.Error(w, fmt.Sprintf("cannot unsecape path variable mac-address: %v", err), http.StatusBadRequest)
+		return
+	}
+	err = core.Api().UndoRegistration(mac)
+	if err != nil {
+		log.Printf("Failed to unregister host: %v", err)
+		http.Error(w, fmt.Sprintf("Failed to unregister host: %v", err), http.StatusInternalServerError)
+		return
+	}
+	log.Printf("mac address %s unregistered", mac)
+	w.WriteHeader(http.StatusOK)
+}
+
 // activationHandler notifies PilotCtl of a Host Activation
 // used by the activation service to notify pilot control that a host has been issued with an activation key
 // not in swagger as it authenticates with activation service credentials

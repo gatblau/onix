@@ -817,6 +817,41 @@ var doc = `{
                 }
             }
         },
+        "/registration/{mac-address}": {
+            "delete": {
+                "description": "undoes a host registration providing the host has not yet activated / admitted",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activation"
+                ],
+                "summary": "Undo a Host Registration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the mac address of the host to be un-registered",
+                        "name": "mac-address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/user": {
             "get": {
                 "description": "Retrieve the logged user principal containing a list of access controls granted to the user\nuse it primarily to log in user interface services and retrieve a list of access controls to inform which\noperations are available to the user via the user interface",
@@ -952,6 +987,10 @@ var doc = `{
                 "name": {
                     "description": "the unique reference for the secret",
                     "type": "string"
+                },
+                "required": {
+                    "description": "the value is required",
+                    "type": "boolean"
                 },
                 "value": {
                     "description": "the value of the secret",

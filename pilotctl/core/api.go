@@ -765,6 +765,13 @@ func (r *API) AuthenticateActivationSvc(request http.Request) *oxc.UserPrincipal
 	return nil
 }
 
+func (r *API) UndoRegistration(mac string) error {
+	if len(mac) == 0 {
+		return fmt.Errorf("MAC-ADDRESS is missing")
+	}
+	return r.db.RunCommand("select pilotctl_unset_registration($1)", mac)
+}
+
 func reverse(str string) (result string) {
 	for _, v := range str {
 		result = string(v) + result

@@ -53,6 +53,8 @@ func main() {
 
 		router.HandleFunc("/activation/{macAddress}/{uuid}", activationHandler).Methods("POST")
 		router.HandleFunc("/registration", registrationHandler).Methods("POST")
+		router.HandleFunc("/registration/{mac-address}", undoRegistrationHandler).Methods("DELETE")
+
 	}
 	// set up specific authentication for host pilot agents
 	s.Auth = map[string]func(http.Request) *oxc.UserPrincipal{
