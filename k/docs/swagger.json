@@ -1,0 +1,39 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Onix Config Manager Service to Deploy and Continuously Configure Kubernetes",
+        "title": "K - Kubernetes Cluster Ops Manager",
+        "contact": {
+            "name": "gatblau",
+            "url": "http://onix.gatblau.org/",
+            "email": "onix@gatblau.org"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "0.0.4"
+    },
+    "paths": {
+        "/": {
+            "get": {
+                "description": "Checks that the HTTP server is listening on the required port.\nUse a liveliness probe.\nIt does not guarantee the server is ready to accept calls.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "Check that the HTTP API is live",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
