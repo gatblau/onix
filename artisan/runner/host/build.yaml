@@ -1,0 +1,61 @@
+---
+labels:
+  author: onix@gatblau.org
+  application: Host runner
+  description: The environment to run artison flows
+  architecture: AMD64
+
+env:
+  GROUP_NAME: aps
+  APP_NAME: host-runner
+  APP_VERSION: 0.2.0
+  CGO_ENABLED: 0
+  GOARCH: amd64
+  APP_VERSION: 0.0.4
+  BUILD_VERSION: ${APP_VERSION}-${ARTISAN_REF}
+
+profiles:
+  - name: build-push
+    default: true
+    application: host-runner
+    type: content/binary
+    license: Apache Version 2
+    labels:
+      platform: linux
+    env:
+      GOOS: linux
+    target: bin
+
+functions:
+  - name: go-build
+    description: builds the Artisan CLI for the linux platform
+    env:
+      GOOS: linux
+    run:
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/host-runner -v
+
+  - name: set-version
+    description: set new version reference
+    run:
+      - bash -c "echo ${ARTISAN_REF} > ${PWD}/version"
+
+  - name: build
+    description: build Artisan package
+    run:
+      - $(go-build)
+      - art build . -t ${ART_REG}/${GROUP_NAME}/${APP_NAME}:$((cat ./version)) -p build-push
+      - art tag ${ART_REG}/${GROUP_NAME}/${APP_NAME}:$((cat ./version)) ${ART_REG}/${GROUP_NAME}/${APP_NAME}:latest
+
+  - name: push
+    description: push to Artisan registry
+    run:
+      - art push ${ART_REG}/${GROUP_NAME}/${APP_NAME}:$((cat ./version))
+      - art push ${ART_REG}/${GROUP_NAME}/${APP_NAME}:latest
+
+  - name: all
+    description: run new version, build and push
+    run:
+      - $(set-version)
+      - $(build)
+      - $(push)
+...
