@@ -113,6 +113,12 @@ func IsErr(w http.ResponseWriter, err error, statusCode int, msg string) bool {
 	return false
 }
 
+func Err(w http.ResponseWriter, statusCode int, msg string) {
+	log.Printf("%s\n", msg)
+	w.WriteHeader(statusCode)
+	w.Write([]byte(msg))
+}
+
 func Unmarshal(r *http.Request, v interface{}) error {
 	contentType := r.Header.Get("Content-Type")
 	body, err := ioutil.ReadAll(r.Body)
