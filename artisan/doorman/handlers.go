@@ -273,7 +273,9 @@ func getPipelineHandler(w http.ResponseWriter, r *http.Request) {
 	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve pipeline %s: %s", pipeName, err)) {
 		return
 	}
-	pipe.OutboundRoute.PackageRegistry.PrivateKey = "*******"
+	for i := 0; i < len(pipe.OutboundRoutes); i++ {
+		pipe.OutboundRoutes[i].PackageRegistry.PrivateKey = "*******"
+	}
 	httpserver.Write(w, r, pipe)
 }
 

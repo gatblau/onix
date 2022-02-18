@@ -27,42 +27,55 @@ func FindPipeline(pipeName string) (*types.Pipeline, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot decode pipeline %s: %s", pipeName, err)
 	}
-	result, err = db.FindByName(types.InRouteCollection, pipeConf.InboundRoute)
-	if err != nil {
-		return nil, fmt.Errorf("cannot retrieve inbound route %s: %s", pipeConf.InboundRoute, err)
+	var inRoutes []types.InRoute
+	for _, route := range pipeConf.InboundRoutes {
+		result, err = db.FindByName(types.InRouteCollection, route)
+		if err != nil {
+			return nil, fmt.Errorf("cannot retrieve inbound route %s: %s", pipeConf.InboundRoutes, err)
+		}
+		inRoute := new(types.InRoute)
+		err = result.Decode(inRoute)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode inbound route %s: %s", pipeConf.InboundRoutes, err)
+		}
+		inRoutes = append(inRoutes, *inRoute)
 	}
-	inRoute := new(types.InRoute)
-	err = result.Decode(inRoute)
-	if err != nil {
-		return nil, fmt.Errorf("cannot decode inbound route %s: %s", pipeConf.InboundRoute, err)
-	}
-	result, err = db.FindByName(types.OutRouteCollection, pipeConf.OutboundRoute)
-	if err != nil {
-		return nil, fmt.Errorf("cannot retrieve outbound route %s: %s", pipeConf.OutboundRoute, err)
-	}
-	outRoute := new(types.OutRoute)
-	err = result.Decode(outRoute)
-	if err != nil {
-		return nil, fmt.Errorf("cannot decode outbound route %s: %s", pipeConf.OutboundRoute, err)
+	var outRoutes []types.OutRoute
+	for _, route := range pipeConf.OutboundRoutes {
+		result, err = db.FindByName(types.OutRouteCollection, route)
+		if err != nil {
+			return nil, fmt.Errorf("cannot retrieve outbound route %s: %s", pipeConf.OutboundRoutes, err)
+		}
+		outRoute := new(types.OutRoute)
+		err = result.Decode(outRoute)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode outbound route %s: %s", pipeConf.OutboundRoutes, err)
+		}
+		outRoutes = append(outRoutes, *outRoute)
 	}
 	pipe := &types.Pipeline{
-		Name:          pipeConf.Name,
-		InboundRoute:  *inRoute,
-		OutboundRoute: *outRoute,
-		Commands:      pipeConf.Commands,
+		Name:           pipeConf.Name,
+		InboundRoutes:  inRoutes,
+		OutboundRoutes: outRoutes,
+		Commands:       pipeConf.Commands,
 	}
 	return pipe, nil
 }
 
 func UpsertPipeline(pipe types.PipelineConf) (error, int) {
+	var err error
 	db := NewDb()
-	_, err := db.FindByName(types.InRouteCollection, pipe.InboundRoute)
-	if err != nil {
-		return fmt.Errorf("cannot find inbound route %s for pipeline %s: %s", pipe.InboundRoute, pipe.Name, err), http.StatusBadRequest
+	for _, route := range pipe.InboundRoutes {
+		_, err = db.FindByName(types.InRouteCollection, route)
+		if err != nil {
+			return fmt.Errorf("cannot find inbound route %s for pipeline %s: %s", route, pipe.Name, err), http.StatusBadRequest
+		}
 	}
-	_, err = db.FindByName(types.OutRouteCollection, pipe.OutboundRoute)
-	if err != nil {
-		return fmt.Errorf("cannot find outbound route %s for pipeline %s: %s", pipe.OutboundRoute, pipe.Name, err), http.StatusBadRequest
+	for _, route := range pipe.OutboundRoutes {
+		_, err = db.FindByName(types.OutRouteCollection, route)
+		if err != nil {
+			return fmt.Errorf("cannot find outbound route %s for pipeline %s: %s", route, pipe.Name, err), http.StatusBadRequest
+		}
 	}
 	var resultCode int
 	_, err, resultCode = db.UpsertObject(types.PipelineCollection, pipe)

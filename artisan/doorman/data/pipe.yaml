@@ -1,7 +1,9 @@
 ---
 name: TEST_PIPELINE
-inbound_route: TEST_IN_ROUTE
-outbound_route: TEST_OUT_ROUTE
+inbound_routes:
+  - TEST_IN_ROUTE
+outbound_routes:
+  - TEST_OUT_ROUTE
 commands:
   - CLAM_SCAN_CMD
 success_notification: SUCCESSFUL_RELEASE_NOTIFICATION
