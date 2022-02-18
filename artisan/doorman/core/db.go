@@ -147,7 +147,12 @@ func (db *Db) FindMany(collection types.Collection, filter bson.M, query Query) 
 	defer client.Disconnect(context.Background())
 	coll := client.Database(DbName).Collection(string(collection))
 	cursor, findErr := coll.Find(context.Background(), filter)
-	defer cursor.Close(context.Background())
+	defer func() {
+		// only closes the cursor if it exists
+		if cursor != nil {
+			cursor.Close(context.Background())
+		}
+	}()
 	if findErr != nil {
 		return findErr
 	}

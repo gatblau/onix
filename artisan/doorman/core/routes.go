@@ -15,22 +15,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// FindKeys retrieves one or more keys matching the specifies criteria decrypting the value of any private key
-func (db *Db) FindKeys(filter bson.M) ([]types.Key, error) {
-	var keys []types.Key
-	if err := db.FindMany(types.KeysCollection, filter, func(cursor *mongo.Cursor) error {
-		return cursor.All(context.Background(), &keys)
+func FindInboundRoutesByURI(uri string) ([]types.InRoute, error) {
+	var routes []types.InRoute
+	db := NewDb()
+	if err := db.FindMany(types.InRouteCollection, bson.M{"uri": uri}, func(cursor *mongo.Cursor) error {
+		return cursor.All(context.Background(), &routes)
 	}); err != nil {
 		return nil, err
 	}
-	for i, key := range keys {
-		if key.IsPrivate {
-			dec, decErr := decrypt(key.Value)
-			if decErr != nil {
-				return nil, decErr
-			}
-			keys[i].Value = dec
-		}
-	}
-	return keys, nil
+	return routes, nil
 }
