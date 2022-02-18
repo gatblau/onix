@@ -1,0 +1,227 @@
+definitions:
+  main.Bucket:
+    properties:
+      arn:
+        type: string
+      name:
+        type: string
+      ownerIdentity:
+        $ref: '#/definitions/main.OwnerIdentity'
+    type: object
+  main.MinioS3Event:
+    properties:
+      EventName:
+        type: string
+      Key:
+        type: string
+      Records:
+        items:
+          $ref: '#/definitions/main.Records'
+        type: array
+    type: object
+  main.Notification:
+    properties:
+      content:
+        description: Content of the template
+        example: A new event has been received.
+        type: string
+      recipient:
+        description: Recipient of the notification if type is email
+        example: info@email.com
+        type: string
+      subject:
+        description: Subject of the notification
+        example: New Notification
+        type: string
+      type:
+        description: Type of the notification (e.g. email, snow, etc.)
+        example: email
+        type: string
+    type: object
+  main.Object:
+    properties:
+      contentType:
+        type: string
+      eTag:
+        type: string
+      key:
+        type: string
+      sequencer:
+        type: string
+      size:
+        type: integer
+      userMetadata:
+        $ref: '#/definitions/main.UserMetadata'
+      versionId:
+        type: string
+    type: object
+  main.OwnerIdentity:
+    properties:
+      principalId:
+        type: string
+    type: object
+  main.Records:
+    properties:
+      awsRegion:
+        type: string
+      eventName:
+        type: string
+      eventSource:
+        type: string
+      eventTime:
+        type: string
+      eventVersion:
+        type: string
+      requestParameters:
+        $ref: '#/definitions/main.RequestParameters'
+      responseElements:
+        $ref: '#/definitions/main.ResponseElements'
+      s3:
+        $ref: '#/definitions/main.S3'
+      source:
+        $ref: '#/definitions/main.Source'
+      userIdentity:
+        $ref: '#/definitions/main.UserIdentity'
+    type: object
+  main.RequestParameters:
+    properties:
+      accessKey:
+        type: string
+      region:
+        type: string
+      sourceIPAddress:
+        type: string
+    type: object
+  main.ResponseElements:
+    properties:
+      content-length:
+        type: string
+      x-amz-request-id:
+        type: string
+      x-minio-deployment-id:
+        type: string
+      x-minio-origin-endpoint:
+        type: string
+    type: object
+  main.S3:
+    properties:
+      bucket:
+        $ref: '#/definitions/main.Bucket'
+      configurationId:
+        type: string
+      object:
+        $ref: '#/definitions/main.Object'
+      s3SchemaVersion:
+        type: string
+    type: object
+  main.Source:
+    properties:
+      host:
+        type: string
+      port:
+        type: string
+      userAgent:
+        type: string
+    type: object
+  main.UserIdentity:
+    properties:
+      principalId:
+        type: string
+    type: object
+  main.UserMetadata:
+    properties:
+      content-type:
+        type: string
+    type: object
+info:
+  contact:
+    email: onix@gatblau.org
+    name: gatblau
+    url: http://onix.gatblau.org/
+  description: Notifications & Event Sources for Doorman
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Artisan's Doorman Proxy
+  version: 0.0.4
+paths:
+  /:
+    get:
+      description: |-
+        Checks that the HTTP server is listening on the required port.
+        Use a liveliness probe.
+        It does not guarantee the server is ready to accept calls.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Check that the HTTP API is live
+      tags:
+      - General
+  /events/minio:
+    post:
+      consumes:
+      - application/yaml
+      - ' application/json'
+      description: receives a s3:ObjectCreated:Put event sent by a MinIO format compatible
+        source
+      parameters:
+      - description: the notification information to send
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/main.MinioS3Event'
+      produces:
+      - text/plain
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: A Webhook for MinIO compatible event sources
+      tags:
+      - Event Sources
+  /notify:
+    post:
+      consumes:
+      - application/yaml
+      - ' application/json'
+      description: sends a notification of the specified type
+      parameters:
+      - description: the notification information to send
+        in: body
+        name: notification
+        required: true
+        schema:
+          $ref: '#/definitions/main.Notification'
+      produces:
+      - text/plain
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Sends a new notification
+      tags:
+      - Notifications
+swagger: "2.0"
