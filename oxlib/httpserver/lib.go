@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/oxlib/oxc"
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -97,6 +98,45 @@ func GetUserPrincipal(r *http.Request) *oxc.UserPrincipal {
 		if value, ok := principal.(*oxc.UserPrincipal); ok {
 			return value
 		}
+	}
+	return nil
+}
+
+func IsErr(w http.ResponseWriter, err error, statusCode int, msg string) bool {
+	if err != nil {
+		msg = fmt.Sprintf("%s: %s\n", msg, err)
+		log.Printf(msg)
+		w.WriteHeader(statusCode)
+		w.Write([]byte(msg))
+		return true
+	}
+	return false
+}
+
+func Unmarshal(r *http.Request, v interface{}) error {
+	contentType := r.Header.Get("Content-Type")
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return fmt.Errorf("cannot read input data: %s\n", err)
+	}
+	switch contentType {
+	case "application/json":
+		err = json.Unmarshal(body, v)
+		if err != nil {
+			return fmt.Errorf("cannot unmarshal input data: %s\n", err)
+		}
+	case "application/yaml":
+		err = yaml.Unmarshal(body, v)
+		if err != nil {
+			return fmt.Errorf("cannot unmarshal input data: %s\n", err)
+		}
+	case "application/xml":
+		err = xml.Unmarshal(body, v)
+		if err != nil {
+			return fmt.Errorf("cannot unmarshal input data: %s\n", err)
+		}
+	default:
+		return fmt.Errorf("invalid Content-Type %s\n", contentType)
 	}
 	return nil
 }
