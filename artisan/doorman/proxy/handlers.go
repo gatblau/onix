@@ -13,6 +13,7 @@ import (
 	_ "github.com/gatblau/onix/artisan/doorman/proxy/docs"
 	util "github.com/gatblau/onix/oxlib/httpserver"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -66,5 +67,53 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 201 {string} event has been processed
 func minioEventsHandler(w http.ResponseWriter, r *http.Request) {
-
+	event := new(MinioS3Event)
+	err := util.Unmarshal(r, event)
+	if util.IsErr(w, err, http.StatusBadRequest, "cannot unmarshal webhook payload") {
+		return
+	}
+	if event.Records == nil {
+		util.Err(w, http.StatusBadRequest, "incorrect webhook payload, missing Records, cannot continue")
+		return
+	}
+	object := event.Records[0].S3.Object
+	if !strings.HasSuffix(object.Key, "spec.yaml") {
+		util.Err(w, http.StatusBadRequest, fmt.Sprintf("invalid event, changed object was %s but required spec.yaml", object.Key))
+		return
+	}
+	bucket := event.Records[0].S3.Bucket.Name
+	endpoint := event.Records[0].ResponseElements.XMinioOriginEndpoint
+	// constructs the URI of the object that changed
+	referralURI := fmt.Sprintf("%s/%s", endpoint, bucket)
+	// call doorman passing the referral URI
+	doormanBaseURI, err := getDoormanBaseURI()
+	if util.IsErr(w, err, http.StatusInternalServerError, "missing configuration") {
+		return
+	}
+	requestURI := fmt.Sprintf("%s/event/%s", doormanBaseURI, url.PathEscape(referralURI))
+	req, err := http.NewRequest("POST", requestURI, nil)
+	if util.IsErr(w, err, http.StatusInternalServerError, "cannot create Doorman http request") {
+		return
+	}
+	user, err := getDoormanUser()
+	if util.IsErr(w, err, http.StatusInternalServerError, "missing configuration") {
+		return
+	}
+	pwd, err := getDoormanPwd()
+	if util.IsErr(w, err, http.StatusInternalServerError, "missing configuration") {
+		return
+	}
+	req.Header.Add("Authorization", util.BasicToken(user, pwd))
+	resp, err := http.DefaultClient.Do(req)
+	// do we have a nil response?
+	if resp == nil {
+		util.Err(w, http.StatusBadGateway, fmt.Sprintf("response was empty for resource: %s\n", requestURI))
+		return
+	}
+	// check error status codes
+	if resp.StatusCode > 201 {
+		util.Err(w, http.StatusBadGateway, fmt.Sprintf("response returned status: %s; resource: %s", resp.Status, requestURI))
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }

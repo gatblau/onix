@@ -18,7 +18,7 @@ func main() {
 	s := httpserver.New("doorman")
 	// add handlers
 	s.Http = func(router *mux.Router) {
-		router.HandleFunc("/minio/events", minioEventsHandler).Methods("POST")
+		router.HandleFunc("/events/minio", minioEventsHandler).Methods("POST")
 		router.HandleFunc("/notify", notifyHandler).Methods("POST")
 	}
 	s.Serve()

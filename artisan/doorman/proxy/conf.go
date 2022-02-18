@@ -10,9 +10,15 @@ package main
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
 	"os"
 	"strconv"
 )
+
+func init() {
+	// load env vars from file if present
+	godotenv.Load("proxy.env")
+}
 
 func getEmailFrom() (string, error) {
 	value := os.Getenv("DPROXY_EMAIL_FROM")
@@ -48,4 +54,28 @@ func getSmtpPort() (int, error) {
 		return -1, fmt.Errorf("invalid DPROXY_SMTP_PORT value: %s; %s", value, err)
 	}
 	return port, nil
+}
+
+func getDoormanBaseURI() (string, error) {
+	value := os.Getenv("DPROXY_DOORMAN_URI")
+	if len(value) == 0 {
+		return "", fmt.Errorf("variable DPROXY_DOORMAN_URI is required and not defined")
+	}
+	return value, nil
+}
+
+func getDoormanUser() (string, error) {
+	value := os.Getenv("DPROXY_DOORMAN_USER")
+	if len(value) == 0 {
+		return "", fmt.Errorf("variable DPROXY_DOORMAN_USER is required and not defined")
+	}
+	return value, nil
+}
+
+func getDoormanPwd() (string, error) {
+	value := os.Getenv("DPROXY_DOORMAN_PWD")
+	if len(value) == 0 {
+		return "", fmt.Errorf("variable DPROXY_DOORMAN_PWD is required and not defined")
+	}
+	return value, nil
 }

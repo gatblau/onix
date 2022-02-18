@@ -44,3 +44,11 @@ The notifications API naming convention is:
 A swagger UI for the proxy is available at:
 
 **http(s)://proxy-host:proxy-port/api/**
+
+## Security
+
+The proxy acts an intermediary between doorman and any system raising events ensuring that only sanitised events are passed to doorman.
+
+Additionaly, doorman's API dows not have to be publicly exposed, only the proxy endpoint.
+
+![proxy](proxy.drawio.png)
