@@ -1,12 +1,137 @@
 definitions:
-  types.Bucket:
+  main.Bucket:
     properties:
       arn:
         type: string
       name:
         type: string
       ownerIdentity:
-        $ref: '#/definitions/types.OwnerIdentity'
+        $ref: '#/definitions/main.OwnerIdentity'
+    type: object
+  main.MinioS3Event:
+    properties:
+      EventName:
+        type: string
+      Key:
+        type: string
+      Records:
+        items:
+          $ref: '#/definitions/main.Records'
+        type: array
+    type: object
+  main.Notification:
+    properties:
+      content:
+        description: Content of the template
+        example: A new event has been received.
+        type: string
+      recipient:
+        description: Recipient of the notification if type is email
+        example: info@email.com
+        type: string
+      subject:
+        description: Subject of the notification
+        example: New Notification
+        type: string
+      type:
+        description: Type of the notification (e.g. email, snow, etc.)
+        example: email
+        type: string
+    type: object
+  main.Object:
+    properties:
+      contentType:
+        type: string
+      eTag:
+        type: string
+      key:
+        type: string
+      sequencer:
+        type: string
+      size:
+        type: integer
+      userMetadata:
+        $ref: '#/definitions/main.UserMetadata'
+      versionId:
+        type: string
+    type: object
+  main.OwnerIdentity:
+    properties:
+      principalId:
+        type: string
+    type: object
+  main.Records:
+    properties:
+      awsRegion:
+        type: string
+      eventName:
+        type: string
+      eventSource:
+        type: string
+      eventTime:
+        type: string
+      eventVersion:
+        type: string
+      requestParameters:
+        $ref: '#/definitions/main.RequestParameters'
+      responseElements:
+        $ref: '#/definitions/main.ResponseElements'
+      s3:
+        $ref: '#/definitions/main.S3'
+      source:
+        $ref: '#/definitions/main.Source'
+      userIdentity:
+        $ref: '#/definitions/main.UserIdentity'
+    type: object
+  main.RequestParameters:
+    properties:
+      accessKey:
+        type: string
+      region:
+        type: string
+      sourceIPAddress:
+        type: string
+    type: object
+  main.ResponseElements:
+    properties:
+      content-length:
+        type: string
+      x-amz-request-id:
+        type: string
+      x-minio-deployment-id:
+        type: string
+      x-minio-origin-endpoint:
+        type: string
+    type: object
+  main.S3:
+    properties:
+      bucket:
+        $ref: '#/definitions/main.Bucket'
+      configurationId:
+        type: string
+      object:
+        $ref: '#/definitions/main.Object'
+      s3SchemaVersion:
+        type: string
+    type: object
+  main.Source:
+    properties:
+      host:
+        type: string
+      port:
+        type: string
+      userAgent:
+        type: string
+    type: object
+  main.UserIdentity:
+    properties:
+      principalId:
+        type: string
+    type: object
+  main.UserMetadata:
+    properties:
+      content-type:
+        type: string
     type: object
   types.Command:
     properties:
@@ -119,23 +244,6 @@ definitions:
         description: Subject of the notification
         type: string
     type: object
-  types.Object:
-    properties:
-      contentType:
-        type: string
-      eTag:
-        type: string
-      key:
-        type: string
-      sequencer:
-        type: string
-      size:
-        type: integer
-      userMetadata:
-        $ref: '#/definitions/types.UserMetadata'
-      versionId:
-        type: string
-    type: object
   types.OutRoute:
     properties:
       description:
@@ -150,11 +258,6 @@ definitions:
         type: string
       package_registry:
         $ref: '#/definitions/types.PackageRegistry'
-    type: object
-  types.OwnerIdentity:
-    properties:
-      principalId:
-        type: string
     type: object
   types.PackageRegistry:
     properties:
@@ -213,90 +316,6 @@ definitions:
         type: array
       success_notification:
         description: SuccessNotification notification to use in case of success
-        type: string
-    type: object
-  types.Records:
-    properties:
-      awsRegion:
-        type: string
-      eventName:
-        type: string
-      eventSource:
-        type: string
-      eventTime:
-        type: string
-      eventVersion:
-        type: string
-      requestParameters:
-        $ref: '#/definitions/types.RequestParameters'
-      responseElements:
-        $ref: '#/definitions/types.ResponseElements'
-      s3:
-        $ref: '#/definitions/types.S3'
-      source:
-        $ref: '#/definitions/types.Source'
-      userIdentity:
-        $ref: '#/definitions/types.UserIdentity'
-    type: object
-  types.RequestParameters:
-    properties:
-      accessKey:
-        type: string
-      region:
-        type: string
-      sourceIPAddress:
-        type: string
-    type: object
-  types.ResponseElements:
-    properties:
-      content-length:
-        type: string
-      x-amz-request-id:
-        type: string
-      x-minio-deployment-id:
-        type: string
-      x-minio-origin-endpoint:
-        type: string
-    type: object
-  types.S3:
-    properties:
-      bucket:
-        $ref: '#/definitions/types.Bucket'
-      configurationId:
-        type: string
-      object:
-        $ref: '#/definitions/types.Object'
-      s3SchemaVersion:
-        type: string
-    type: object
-  types.S3MinioEvent:
-    properties:
-      EventName:
-        type: string
-      Key:
-        type: string
-      Records:
-        items:
-          $ref: '#/definitions/types.Records'
-        type: array
-    type: object
-  types.Source:
-    properties:
-      host:
-        type: string
-      port:
-        type: string
-      userAgent:
-        type: string
-    type: object
-  types.UserIdentity:
-    properties:
-      principalId:
-        type: string
-    type: object
-  types.UserMetadata:
-    properties:
-      content-type:
         type: string
     type: object
 info:
@@ -362,16 +381,15 @@ paths:
       summary: Creates or updates a command
       tags:
       - Commands
-  /event/minio:
+  /event/{uri}:
     post:
-      description: Triggers the ingestion of a specification from a MinIO bucket notification
+      description: Triggers the ingestion of a specification
       parameters:
-      - description: the payload sent by minio notification
-        in: body
-        name: key
+      - description: the URI of the service where a spec has been uploaded
+        in: path
+        name: uri
         required: true
-        schema:
-          $ref: '#/definitions/types.S3MinioEvent'
+        type: string
       produces:
       - text/plain
       responses:
@@ -387,10 +405,41 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Triggers the ingestion of an artisan spec artefacts from a MinIO bucket
-        notification
+      summary: Triggers the ingestion of an artisan spec artefacts
       tags:
       - Events
+  /events/minio:
+    post:
+      consumes:
+      - application/yaml
+      - ' application/json'
+      description: receives a s3:ObjectCreated:Put event sent by a MinIO format compatible
+        source
+      parameters:
+      - description: the notification information to send
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/main.MinioS3Event'
+      produces:
+      - text/plain
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: A Webhook for MinIO compatible event sources
+      tags:
+      - Event Sources
   /key:
     put:
       consumes:
@@ -548,6 +597,37 @@ paths:
           schema:
             type: string
       summary: Creates or updates a notification template
+      tags:
+      - Notifications
+  /notify:
+    post:
+      consumes:
+      - application/yaml
+      - ' application/json'
+      description: sends a notification of the specified type
+      parameters:
+      - description: the notification information to send
+        in: body
+        name: notification
+        required: true
+        schema:
+          $ref: '#/definitions/main.Notification'
+      produces:
+      - text/plain
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Sends a new notification
       tags:
       - Notifications
   /pipe:

@@ -105,24 +105,69 @@ var doc = `{
                 }
             }
         },
-        "/event/minio": {
+        "/event/{uri}": {
             "post": {
-                "description": "Triggers the ingestion of a specification from a MinIO bucket notification",
+                "description": "Triggers the ingestion of a specification",
                 "produces": [
                     "text/plain"
                 ],
                 "tags": [
                     "Events"
                 ],
-                "summary": "Triggers the ingestion of an artisan spec artefacts from a MinIO bucket notification",
+                "summary": "Triggers the ingestion of an artisan spec artefacts",
                 "parameters": [
                     {
-                        "description": "the payload sent by minio notification",
-                        "name": "key",
+                        "type": "string",
+                        "description": "the URI of the service where a spec has been uploaded",
+                        "name": "uri",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/events/minio": {
+            "post": {
+                "description": "receives a s3:ObjectCreated:Put event sent by a MinIO format compatible source",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Event Sources"
+                ],
+                "summary": "A Webhook for MinIO compatible event sources",
+                "parameters": [
+                    {
+                        "description": "the notification information to send",
+                        "name": "event",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.S3MinioEvent"
+                            "$ref": "#/definitions/main.MinioS3Event"
                         }
                     }
                 ],
@@ -362,6 +407,53 @@ var doc = `{
                             "type": "string"
                         }
                     },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/notify": {
+            "post": {
+                "description": "sends a notification of the specified type",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Sends a new notification",
+                "parameters": [
+                    {
+                        "description": "the notification information to send",
+                        "name": "notification",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.Notification"
+                        }
+                    }
+                ],
+                "responses": {
                     "201": {
                         "description": "Created",
                         "schema": {
@@ -631,7 +723,7 @@ var doc = `{
         }
     },
     "definitions": {
-        "types.Bucket": {
+        "main.Bucket": {
             "type": "object",
             "properties": {
                 "arn": {
@@ -641,7 +733,196 @@ var doc = `{
                     "type": "string"
                 },
                 "ownerIdentity": {
-                    "$ref": "#/definitions/types.OwnerIdentity"
+                    "$ref": "#/definitions/main.OwnerIdentity"
+                }
+            }
+        },
+        "main.MinioS3Event": {
+            "type": "object",
+            "properties": {
+                "EventName": {
+                    "type": "string"
+                },
+                "Key": {
+                    "type": "string"
+                },
+                "Records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/main.Records"
+                    }
+                }
+            }
+        },
+        "main.Notification": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Content of the template",
+                    "type": "string",
+                    "example": "A new event has been received."
+                },
+                "recipient": {
+                    "description": "Recipient of the notification if type is email",
+                    "type": "string",
+                    "example": "info@email.com"
+                },
+                "subject": {
+                    "description": "Subject of the notification",
+                    "type": "string",
+                    "example": "New Notification"
+                },
+                "type": {
+                    "description": "Type of the notification (e.g. email, snow, etc.)",
+                    "type": "string",
+                    "example": "email"
+                }
+            }
+        },
+        "main.Object": {
+            "type": "object",
+            "properties": {
+                "contentType": {
+                    "type": "string"
+                },
+                "eTag": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "sequencer": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "userMetadata": {
+                    "$ref": "#/definitions/main.UserMetadata"
+                },
+                "versionId": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.OwnerIdentity": {
+            "type": "object",
+            "properties": {
+                "principalId": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.Records": {
+            "type": "object",
+            "properties": {
+                "awsRegion": {
+                    "type": "string"
+                },
+                "eventName": {
+                    "type": "string"
+                },
+                "eventSource": {
+                    "type": "string"
+                },
+                "eventTime": {
+                    "type": "string"
+                },
+                "eventVersion": {
+                    "type": "string"
+                },
+                "requestParameters": {
+                    "$ref": "#/definitions/main.RequestParameters"
+                },
+                "responseElements": {
+                    "$ref": "#/definitions/main.ResponseElements"
+                },
+                "s3": {
+                    "$ref": "#/definitions/main.S3"
+                },
+                "source": {
+                    "$ref": "#/definitions/main.Source"
+                },
+                "userIdentity": {
+                    "$ref": "#/definitions/main.UserIdentity"
+                }
+            }
+        },
+        "main.RequestParameters": {
+            "type": "object",
+            "properties": {
+                "accessKey": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "sourceIPAddress": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.ResponseElements": {
+            "type": "object",
+            "properties": {
+                "content-length": {
+                    "type": "string"
+                },
+                "x-amz-request-id": {
+                    "type": "string"
+                },
+                "x-minio-deployment-id": {
+                    "type": "string"
+                },
+                "x-minio-origin-endpoint": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.S3": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "$ref": "#/definitions/main.Bucket"
+                },
+                "configurationId": {
+                    "type": "string"
+                },
+                "object": {
+                    "$ref": "#/definitions/main.Object"
+                },
+                "s3SchemaVersion": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.Source": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "string"
+                },
+                "userAgent": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.UserIdentity": {
+            "type": "object",
+            "properties": {
+                "principalId": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.UserMetadata": {
+            "type": "object",
+            "properties": {
+                "content-type": {
+                    "type": "string"
                 }
             }
         },
@@ -792,32 +1073,6 @@ var doc = `{
                 }
             }
         },
-        "types.Object": {
-            "type": "object",
-            "properties": {
-                "contentType": {
-                    "type": "string"
-                },
-                "eTag": {
-                    "type": "string"
-                },
-                "key": {
-                    "type": "string"
-                },
-                "sequencer": {
-                    "type": "string"
-                },
-                "size": {
-                    "type": "integer"
-                },
-                "userMetadata": {
-                    "$ref": "#/definitions/types.UserMetadata"
-                },
-                "versionId": {
-                    "type": "string"
-                }
-            }
-        },
         "types.OutRoute": {
             "type": "object",
             "properties": {
@@ -836,14 +1091,6 @@ var doc = `{
                 },
                 "package_registry": {
                     "$ref": "#/definitions/types.PackageRegistry"
-                }
-            }
-        },
-        "types.OwnerIdentity": {
-            "type": "object",
-            "properties": {
-                "principalId": {
-                    "type": "string"
                 }
             }
         },
@@ -916,136 +1163,6 @@ var doc = `{
                 },
                 "success_notification": {
                     "description": "SuccessNotification notification to use in case of success",
-                    "type": "string"
-                }
-            }
-        },
-        "types.Records": {
-            "type": "object",
-            "properties": {
-                "awsRegion": {
-                    "type": "string"
-                },
-                "eventName": {
-                    "type": "string"
-                },
-                "eventSource": {
-                    "type": "string"
-                },
-                "eventTime": {
-                    "type": "string"
-                },
-                "eventVersion": {
-                    "type": "string"
-                },
-                "requestParameters": {
-                    "$ref": "#/definitions/types.RequestParameters"
-                },
-                "responseElements": {
-                    "$ref": "#/definitions/types.ResponseElements"
-                },
-                "s3": {
-                    "$ref": "#/definitions/types.S3"
-                },
-                "source": {
-                    "$ref": "#/definitions/types.Source"
-                },
-                "userIdentity": {
-                    "$ref": "#/definitions/types.UserIdentity"
-                }
-            }
-        },
-        "types.RequestParameters": {
-            "type": "object",
-            "properties": {
-                "accessKey": {
-                    "type": "string"
-                },
-                "region": {
-                    "type": "string"
-                },
-                "sourceIPAddress": {
-                    "type": "string"
-                }
-            }
-        },
-        "types.ResponseElements": {
-            "type": "object",
-            "properties": {
-                "content-length": {
-                    "type": "string"
-                },
-                "x-amz-request-id": {
-                    "type": "string"
-                },
-                "x-minio-deployment-id": {
-                    "type": "string"
-                },
-                "x-minio-origin-endpoint": {
-                    "type": "string"
-                }
-            }
-        },
-        "types.S3": {
-            "type": "object",
-            "properties": {
-                "bucket": {
-                    "$ref": "#/definitions/types.Bucket"
-                },
-                "configurationId": {
-                    "type": "string"
-                },
-                "object": {
-                    "$ref": "#/definitions/types.Object"
-                },
-                "s3SchemaVersion": {
-                    "type": "string"
-                }
-            }
-        },
-        "types.S3MinioEvent": {
-            "type": "object",
-            "properties": {
-                "EventName": {
-                    "type": "string"
-                },
-                "Key": {
-                    "type": "string"
-                },
-                "Records": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.Records"
-                    }
-                }
-            }
-        },
-        "types.Source": {
-            "type": "object",
-            "properties": {
-                "host": {
-                    "type": "string"
-                },
-                "port": {
-                    "type": "string"
-                },
-                "userAgent": {
-                    "type": "string"
-                }
-            }
-        },
-        "types.UserIdentity": {
-            "type": "object",
-            "properties": {
-                "principalId": {
-                    "type": "string"
-                }
-            }
-        },
-        "types.UserMetadata": {
-            "type": "object",
-            "properties": {
-                "content-type": {
                     "type": "string"
                 }
             }

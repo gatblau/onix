@@ -29,7 +29,7 @@ func main() {
 		router.HandleFunc("/pipe", upsertPipelineHandler).Methods("PUT")
 		router.HandleFunc("/pipe/{name}", getPipelineHandler).Methods("GET")
 		router.HandleFunc("/pipe", getAllPipelinesHandler).Methods("GET")
-		router.HandleFunc("/event/minio", eventMinioHandler).Methods("POST")
+		router.HandleFunc("/event/{uri}", eventHandler).Methods("POST")
 	}
 	s.Serve()
 }

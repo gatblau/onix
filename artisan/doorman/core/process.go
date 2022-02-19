@@ -10,14 +10,13 @@ package core
 
 import (
 	"fmt"
-	"github.com/gatblau/onix/artisan/doorman/types"
 )
 
 // ProcessAsync starts processing a pipeline asynchronously
-func ProcessAsync(ev types.NewSpecEvent) {
-	go process(ev)
+func ProcessAsync(uri string) {
+	go process(uri)
 }
 
-func process(ev types.NewSpecEvent) {
-	fmt.Printf("start processing of event from %s %s\n", ev.URI, ev.Bucket)
+func process(uri string) {
+	fmt.Printf("start processing of event from %s\n", uri)
 }
