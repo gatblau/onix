@@ -112,7 +112,7 @@ var doc = `{
                     "text/plain"
                 ],
                 "tags": [
-                    "Events"
+                    "Webhook"
                 ],
                 "summary": "Triggers the ingestion of an artisan spec artefacts",
                 "parameters": [
@@ -720,6 +720,46 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/wh-token/{token}": {
+            "get": {
+                "description": "checks that an opaque string / authentication token sent to a webhook has been defined for\nan inbound route, returning required referrer URL and IP white list\nNOTE: this endpoint is called by the proxy to authenticate its webhook",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Webhook"
+                ],
+                "summary": "Get information about a webhook token",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1007,6 +1047,18 @@ var doc = `{
                 "verify": {
                     "description": "Verify a flag indicating whether author verification should be enabled",
                     "type": "boolean"
+                },
+                "webhook_token": {
+                    "description": "WebhookToken an authentication token to be passed by an event sender to be authenticated by the doorman's proxy webhook\nits value can be anything, but it is typically a base64 encoded global unique identifier",
+                    "type": "string",
+                    "example": "JFkxnsn++02UilVkYFFC9w=="
+                },
+                "webhook_whitelist": {
+                    "description": "WebhookWhitelist the list of IP addresses accepted by the webhook (whitelist)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

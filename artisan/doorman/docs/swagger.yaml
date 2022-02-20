@@ -198,6 +198,18 @@ definitions:
         description: Verify a flag indicating whether author verification should be
           enabled
         type: boolean
+      webhook_token:
+        description: |-
+          WebhookToken an authentication token to be passed by an event sender to be authenticated by the doorman's proxy webhook
+          its value can be anything, but it is typically a base64 encoded global unique identifier
+        example: JFkxnsn++02UilVkYFFC9w==
+        type: string
+      webhook_whitelist:
+        description: WebhookWhitelist the list of IP addresses accepted by the webhook
+          (whitelist)
+        items:
+          type: string
+        type: array
     type: object
   types.Key:
     properties:
@@ -407,7 +419,7 @@ paths:
             type: string
       summary: Triggers the ingestion of an artisan spec artefacts
       tags:
-      - Events
+      - Webhook
   /events/minio:
     post:
       consumes:
@@ -794,4 +806,34 @@ paths:
       summary: Creates or updates an inbound route
       tags:
       - Routes
+  /wh-token/{token}:
+    get:
+      description: |-
+        checks that an opaque string / authentication token sent to a webhook has been defined for
+        an inbound route, returning required referrer URL and IP white list
+        NOTE: this endpoint is called by the proxy to authenticate its webhook
+      produces:
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get information about a webhook token
+      tags:
+      - Webhook
 swagger: "2.0"

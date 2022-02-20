@@ -26,6 +26,11 @@ type InRoute struct {
 	PublicKey string `bson:"public_key" json:"public_key" yaml:"public_key"`
 	// Verify a flag indicating whether author verification should be enabled
 	Verify bool `bson:"verify" json:"verify" yaml:"verify"`
+	// WebhookToken an authentication token to be passed by an event sender to be authenticated by the doorman's proxy webhook
+	// its value can be anything, but it is typically a base64 encoded global unique identifier
+	WebhookToken string `bson:"webhook_token" json:"webhook_token" yaml:"webhook_token" example:"JFkxnsn++02UilVkYFFC9w=="`
+	// WebhookWhitelist the list of IP addresses accepted by the webhook (whitelist)
+	WebhookWhitelist []string `bson:"webhook_whitelist" json:"webhook_whitelist" yaml:"webhook_whitelist"`
 }
 
 func (r InRoute) GetName() string {

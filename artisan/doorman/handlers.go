@@ -328,7 +328,7 @@ func getAllNotificationTemplatesHandler(w http.ResponseWriter, r *http.Request) 
 
 // @Summary Triggers the ingestion of an artisan spec artefacts
 // @Description Triggers the ingestion of a specification
-// @Tags Events
+// @Tags Webhook
 // @Router /event/{uri} [post]
 // @Param uri path string true "the URI of the service where a spec has been uploaded"
 // @Produce plain
@@ -340,4 +340,41 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 	uri := vars["uri"]
 	core.ProcessAsync(uri)
 	w.WriteHeader(http.StatusCreated)
+}
+
+// @Summary Get information about a webhook token
+// @Description checks that an opaque string / authentication token sent to a webhook has been defined for
+// @Description an inbound route, returning required referrer URL and IP white list
+// @Description NOTE: this endpoint is called by the proxy to authenticate its webhook
+// @Tags Webhook
+// @Router /wh-token/{token} [get]
+// @Produce application/json, application/yaml, application/xml
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 404 {string} not found: the specified token has not been found
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 200 {string} success
+func getWebhookAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	token := vars["token"]
+	if len(token) == 0 {
+		util.Err(w, http.StatusBadRequest, "token is required")
+		return
+	}
+	routes, err := core.FindInboundRoutesByWebHookToken(token)
+	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve inbound routes for token %s: %s", token, err)) {
+		return
+	}
+	// if no routes exists then return not found
+	if len(routes) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	var info []types.WebhookAuthInfo
+	for _, route := range routes {
+		info = append(info, types.WebhookAuthInfo{
+			ReferrerURL: route.URI,
+			Whitelist:   route.WebhookWhitelist,
+		})
+	}
+	util.Write(w, r, info)
 }

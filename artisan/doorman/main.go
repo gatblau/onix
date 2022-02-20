@@ -30,6 +30,7 @@ func main() {
 		router.HandleFunc("/pipe/{name}", getPipelineHandler).Methods("GET")
 		router.HandleFunc("/pipe", getAllPipelinesHandler).Methods("GET")
 		router.HandleFunc("/event/{uri}", eventHandler).Methods("POST")
+		router.HandleFunc("/wh-token/{token}", getWebhookAuthInfoHandler).Methods("GET")
 	}
 	s.Serve()
 }

@@ -6,4 +6,7 @@ user: admin
 pwd: 1234567890
 public_key: TEST_PUB
 verify: true
+webhook_token: JFkxnsn++02UilVkYFFC9w==
+webhook_whitelist:
+  - 127.0.0.1
 ...
