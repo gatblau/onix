@@ -1,7 +1,7 @@
 ---
 name: TEST_IN_ROUTE
 description: a testing inbound route
-uri: http://localhost:9000
+bucket_uri: http://192.168.0.43:9000/onix
 user: admin
 pwd: 1234567890
 public_key: TEST_PUB

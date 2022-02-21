@@ -56,8 +56,8 @@ var doc = `{
             "post": {
                 "description": "receives a s3:ObjectCreated:Put event sent by a MinIO format compatible source",
                 "consumes": [
-                    "application/yaml",
-                    " application/json"
+                    "application/json",
+                    " application/yaml"
                 ],
                 "produces": [
                     "text/plain"

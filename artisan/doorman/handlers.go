@@ -25,6 +25,7 @@ import (
 	util "github.com/gatblau/onix/oxlib/httpserver"
 	"github.com/gorilla/mux"
 	"net/http"
+	"net/url"
 )
 
 // @Summary Creates or updates a cryptographic key
@@ -338,6 +339,10 @@ func getAllNotificationTemplatesHandler(w http.ResponseWriter, r *http.Request) 
 func eventHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uri := vars["uri"]
+	uri, err := url.PathUnescape(uri)
+	if util.IsErr(w, err, http.StatusInternalServerError, "cannot unescape path") {
+		return
+	}
 	core.ProcessAsync(uri)
 	w.WriteHeader(http.StatusCreated)
 }
@@ -374,7 +379,7 @@ func getWebhookAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
 	for _, route := range routes {
 		info = append(info, types.WebhookAuthInfo{
 			WebhookToken: route.WebhookToken,
-			ReferrerURL:  route.URI,
+			ReferrerURL:  route.BucketURI,
 			Whitelist:    route.WebhookWhitelist,
 			Filter:       route.Filter,
 		})
@@ -402,7 +407,7 @@ func getWebhookAllAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
 	for _, route := range routes {
 		info = append(info, types.WebhookAuthInfo{
 			WebhookToken: route.WebhookToken,
-			ReferrerURL:  route.URI,
+			ReferrerURL:  route.BucketURI,
 			Whitelist:    route.WebhookWhitelist,
 			Filter:       route.Filter,
 		})

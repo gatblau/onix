@@ -16,11 +16,11 @@ type InRoute struct {
 	Name string `bson:"_id" json:"name" yaml:"name" example:"SUPPLIER_A_IN_ROUTE"`
 	// Description a description indicating the purpose of the route
 	Description string `bson:"description "json:"description" yaml:"description" example:"the inbound route for supplier A"`
-	// URI the remote URI from where inbound files should be downloaded
-	URI string `bson:"uri" json:"uri" yaml:"uri" example:"s3.supplier-a.com"`
-	// User the username to authenticate against the remote URI
+	// BucketURI the remote BucketURI from where inbound files should be downloaded
+	BucketURI string `bson:"bucket_uri" json:"bucket_uri" yaml:"bucket_uri" example:"s3.supplier-a.com"`
+	// User the username to authenticate against the remote BucketURI
 	User string `bson:"user "json:"user" yaml:"user"`
-	// Pwd the password to authenticate against the remote URI
+	// Pwd the password to authenticate against the remote BucketURI
 	Pwd string `bson:"pwd" json:"pwd" yaml:"pwd"`
 	// PublicKey the PGP public key used to verify the author of the downloaded files
 	PublicKey string `bson:"public_key" json:"public_key" yaml:"public_key"`
@@ -41,7 +41,7 @@ func (r InRoute) GetName() string {
 }
 
 func (r InRoute) Valid() error {
-	if len(r.URI) == 0 {
+	if len(r.BucketURI) == 0 {
 		return fmt.Errorf("inbound route %s URI is mandatory", r.Name)
 	}
 	if (len(r.User) > 0 && len(r.Pwd) == 0) || (len(r.User) == 0 && len(r.Pwd) > 0) {

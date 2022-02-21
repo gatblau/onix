@@ -61,7 +61,7 @@ func notifyHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags Event Sources
 // @Router /events/minio [post]
 // @Param event body MinioS3Event true "the notification information to send"
-// @Accept application/yaml, application/json
+// @Accept application/json, application/yaml
 // @Produce plain
 // @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
@@ -84,36 +84,20 @@ func minioEventsHandler(w http.ResponseWriter, r *http.Request) {
 	bucket := event.Records[0].S3.Bucket.Name
 	endpoint := event.Records[0].ResponseElements.XMinioOriginEndpoint
 	// constructs the URI of the object that changed
-	referralURI := fmt.Sprintf("%s/%s", endpoint, bucket)
-	// call doorman passing the referral URI
 	doormanBaseURI, err := getDoormanBaseURI()
 	if util.IsErr(w, err, http.StatusInternalServerError, "missing configuration") {
 		return
 	}
+	key, unescapeErr := url.PathUnescape(object.Key)
+	if util.IsErr(w, unescapeErr, http.StatusInternalServerError, fmt.Sprintf("cannot unescape object key %s", object.Key)) {
+		return
+	}
+	referralURI := fmt.Sprintf("%s/%s/%s", endpoint, bucket, key)
 	requestURI := fmt.Sprintf("%s/event/%s", doormanBaseURI, url.PathEscape(referralURI))
-	req, err := http.NewRequest("POST", requestURI, nil)
-	if util.IsErr(w, err, http.StatusInternalServerError, "cannot create Doorman http request") {
+	if _, postErr, code := newRequest("POST", requestURI); postErr != nil {
+		w.WriteHeader(code)
+		w.Write([]byte(postErr.Error()))
 		return
 	}
-	user, err := getDoormanUser()
-	if util.IsErr(w, err, http.StatusInternalServerError, "missing configuration") {
-		return
-	}
-	pwd, err := getDoormanPwd()
-	if util.IsErr(w, err, http.StatusInternalServerError, "missing configuration") {
-		return
-	}
-	req.Header.Add("Authorization", util.BasicToken(user, pwd))
-	resp, err := http.DefaultClient.Do(req)
-	// do we have a nil response?
-	if resp == nil {
-		util.Err(w, http.StatusBadGateway, fmt.Sprintf("response was empty for resource: %s\n", requestURI))
-		return
-	}
-	// check error status codes
-	if resp.StatusCode > 201 {
-		util.Err(w, http.StatusBadGateway, fmt.Sprintf("response returned status: %s; resource: %s", resp.Status, requestURI))
-		return
-	}
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 }

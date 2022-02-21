@@ -147,7 +147,7 @@ var doc = `{
             }
         },
         "/events/minio": {
-            "post": {
+            "put": {
                 "description": "receives a s3:ObjectCreated:Put event sent by a MinIO format compatible source",
                 "consumes": [
                     "application/yaml",
@@ -1066,6 +1066,11 @@ var doc = `{
         "types.InRoute": {
             "type": "object",
             "properties": {
+                "bucket_uri": {
+                    "description": "BucketURI the remote BucketURI from where inbound files should be downloaded",
+                    "type": "string",
+                    "example": "s3.supplier-a.com"
+                },
                 "description": {
                     "description": "Description a description indicating the purpose of the route",
                     "type": "string",
@@ -1085,16 +1090,11 @@ var doc = `{
                     "type": "string"
                 },
                 "pwd": {
-                    "description": "Pwd the password to authenticate against the remote URI",
+                    "description": "Pwd the password to authenticate against the remote BucketURI",
                     "type": "string"
                 },
-                "uri": {
-                    "description": "URI the remote URI from where inbound files should be downloaded",
-                    "type": "string",
-                    "example": "s3.supplier-a.com"
-                },
                 "user": {
-                    "description": "User the username to authenticate against the remote URI",
+                    "description": "User the username to authenticate against the remote BucketURI",
                     "type": "string"
                 },
                 "verify": {

@@ -164,8 +164,8 @@ paths:
   /events/minio:
     post:
       consumes:
-      - application/yaml
-      - ' application/json'
+      - application/json
+      - ' application/yaml'
       description: receives a s3:ObjectCreated:Put event sent by a MinIO format compatible
         source
       parameters:

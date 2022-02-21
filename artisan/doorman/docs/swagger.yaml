@@ -172,6 +172,11 @@ definitions:
     type: object
   types.InRoute:
     properties:
+      bucket_uri:
+        description: BucketURI the remote BucketURI from where inbound files should
+          be downloaded
+        example: s3.supplier-a.com
+        type: string
       description:
         description: Description a description indicating the purpose of the route
         example: the inbound route for supplier A
@@ -190,14 +195,10 @@ definitions:
           downloaded files
         type: string
       pwd:
-        description: Pwd the password to authenticate against the remote URI
-        type: string
-      uri:
-        description: URI the remote URI from where inbound files should be downloaded
-        example: s3.supplier-a.com
+        description: Pwd the password to authenticate against the remote BucketURI
         type: string
       user:
-        description: User the username to authenticate against the remote URI
+        description: User the username to authenticate against the remote BucketURI
         type: string
       verify:
         description: Verify a flag indicating whether author verification should be
@@ -426,7 +427,7 @@ paths:
       tags:
       - Webhook
   /events/minio:
-    post:
+    put:
       consumes:
       - application/yaml
       - ' application/json'

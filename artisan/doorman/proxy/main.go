@@ -9,17 +9,91 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"github.com/gatblau/onix/artisan/doorman/types"
 	"github.com/gatblau/onix/oxlib/httpserver"
+	"github.com/gatblau/onix/oxlib/oxc"
 	"github.com/gorilla/mux"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+)
+
+var (
+	WhInfo      []types.WebhookAuthInfo
+	defaultAuth func(r http.Request) *oxc.UserPrincipal
 )
 
 func main() {
+	// load web hook information from doorman (requires doorman to be up and running)
+	WhInfo = loadWhInfo()
 	// creates a generic http server
 	s := httpserver.New("doorman")
 	// add handlers
 	s.Http = func(router *mux.Router) {
+		// apply authentication
+		router.Use(s.AuthenticationMiddleware)
+
 		router.HandleFunc("/events/minio", minioEventsHandler).Methods("POST")
 		router.HandleFunc("/notify", notifyHandler).Methods("POST")
 	}
+	// grab a reference to default auth to use it in the proxy override below
+	defaultAuth = s.DefaultAuth
+	// set up specific authentication for doorman proxy
+	s.Auth = map[string]func(http.Request) *oxc.UserPrincipal{
+		"^/events/.*": whAuth,
+	}
 	s.Serve()
+}
+
+// whAuth authenticates web hook requests using opaque string (bearer token)
+func whAuth(r http.Request) *oxc.UserPrincipal {
+	token := r.Header.Get("Authorization")
+	for _, info := range WhInfo {
+		if strings.HasSuffix(token, info.WebhookToken) {
+			return &oxc.UserPrincipal{
+				Username: "webhook-user",
+				Created:  time.Now(),
+				Context:  token,
+			}
+		}
+	}
+	// try with a admin credentials
+	if defaultAuth != nil {
+		if principal := defaultAuth(r); principal != nil {
+			return principal
+		}
+	}
+	// otherwise, fail authentication
+	return nil
+}
+
+func loadWhInfo() []types.WebhookAuthInfo {
+	fmt.Printf("INFO: contacting doorman to load webhook configuration\n")
+	doormanBaseURI, err := getDoormanBaseURI()
+	if err != nil {
+		fmt.Printf("ERROR: cannot retrieve configuration: %s, exiting\n", err)
+		os.Exit(1)
+	}
+	requestURI := fmt.Sprintf("%s/token", doormanBaseURI)
+	resp, err, _ := newRequest("GET", requestURI)
+	if err != nil {
+		fmt.Printf("ERROR: cannot contact doorman: %s, exiting\n", err)
+		os.Exit(1)
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("ERROR: cannot read doorman's response: %s, exiting\n", err)
+		os.Exit(1)
+	}
+	var info []types.WebhookAuthInfo
+	err = json.Unmarshal(body, &info)
+	if err != nil {
+		fmt.Printf("ERROR: cannot unmarshal doorman's response body: %s, exiting\n", err)
+		os.Exit(1)
+	}
+	return info
 }
