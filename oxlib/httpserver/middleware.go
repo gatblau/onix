@@ -106,7 +106,7 @@ func (s *Server) AuthenticationMiddleware(next http.Handler) http.Handler {
 					user = s.DefaultAuth(*r)
 					if user == nil {
 						// if the authentication failed, write an error and stop the handler chain
-						http.Error(w, "Forbidden", http.StatusForbidden)
+						http.Error(w, "Forbidden", http.StatusUnauthorized)
 						return
 					}
 				}
