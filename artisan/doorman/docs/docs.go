@@ -721,7 +721,47 @@ var doc = `{
                 }
             }
         },
-        "/wh-token/{token}": {
+        "/token": {
+            "get": {
+                "description": "get authentication information for all webhook tokens\nan inbound route, returning required referrer URL and IP white list\nNOTE: this endpoint is called by the proxy to authenticate its webhook",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Webhook"
+                ],
+                "summary": "get authentication information for all webhook tokens",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/token/{token-value}": {
             "get": {
                 "description": "checks that an opaque string / authentication token sent to a webhook has been defined for\nan inbound route, returning required referrer URL and IP white list\nNOTE: this endpoint is called by the proxy to authenticate its webhook",
                 "produces": [
@@ -732,7 +772,16 @@ var doc = `{
                 "tags": [
                     "Webhook"
                 ],
-                "summary": "Get information about a webhook token",
+                "summary": "Get authentication information for specified webhook token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the authentication token presented to dorrman proxy webhook",
+                        "name": "token-value",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1021,6 +1070,10 @@ var doc = `{
                     "description": "Description a description indicating the purpose of the route",
                     "type": "string",
                     "example": "the inbound route for supplier A"
+                },
+                "filter": {
+                    "description": "Filter a regular expression to filter publication events and prevent doorman from being invoked\nif not defined, no filter is applied",
+                    "type": "string"
                 },
                 "name": {
                     "description": "Name the name of the route",

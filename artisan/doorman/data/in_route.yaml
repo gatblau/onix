@@ -9,4 +9,5 @@ verify: true
 webhook_token: JFkxnsn++02UilVkYFFC9w==
 webhook_whitelist:
   - 127.0.0.1
+filter: "*.-dev"
 ...

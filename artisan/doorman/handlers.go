@@ -342,12 +342,13 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-// @Summary Get information about a webhook token
+// @Summary Get authentication information for specified webhook token
 // @Description checks that an opaque string / authentication token sent to a webhook has been defined for
 // @Description an inbound route, returning required referrer URL and IP white list
 // @Description NOTE: this endpoint is called by the proxy to authenticate its webhook
 // @Tags Webhook
-// @Router /wh-token/{token} [get]
+// @Router /token/{token-value} [get]
+// @Param token-value path string true "the authentication token presented to dorrman proxy webhook"
 // @Produce application/json, application/yaml, application/xml
 // @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
 // @Failure 404 {string} not found: the specified token has not been found
@@ -355,7 +356,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {string} success
 func getWebhookAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	token := vars["token"]
+	token := vars["token-value"]
 	if len(token) == 0 {
 		util.Err(w, http.StatusBadRequest, "token is required")
 		return
@@ -372,8 +373,38 @@ func getWebhookAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
 	var info []types.WebhookAuthInfo
 	for _, route := range routes {
 		info = append(info, types.WebhookAuthInfo{
-			ReferrerURL: route.URI,
-			Whitelist:   route.WebhookWhitelist,
+			WebhookToken: route.WebhookToken,
+			ReferrerURL:  route.URI,
+			Whitelist:    route.WebhookWhitelist,
+			Filter:       route.Filter,
+		})
+	}
+	util.Write(w, r, info)
+}
+
+// @Summary get authentication information for all webhook tokens
+// @Description get authentication information for all webhook tokens
+// @Description an inbound route, returning required referrer URL and IP white list
+// @Description NOTE: this endpoint is called by the proxy to authenticate its webhook
+// @Tags Webhook
+// @Router /token [get]
+// @Produce application/json, application/yaml, application/xml
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 404 {string} not found: the specified token has not been found
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 200 {string} success
+func getWebhookAllAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
+	routes, err := core.FindAllInRoutes()
+	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve inbound routes: %s", err)) {
+		return
+	}
+	var info []types.WebhookAuthInfo
+	for _, route := range routes {
+		info = append(info, types.WebhookAuthInfo{
+			WebhookToken: route.WebhookToken,
+			ReferrerURL:  route.URI,
+			Whitelist:    route.WebhookWhitelist,
+			Filter:       route.Filter,
 		})
 	}
 	util.Write(w, r, info)

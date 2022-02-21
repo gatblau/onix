@@ -10,10 +10,15 @@ package types
 
 // WebhookAuthInfo the information returned to doorman's proxy so that it can authenticate the Webhook caller
 type WebhookAuthInfo struct {
+	// WebhookToken the opaque string used for webhook authentication
+	WebhookToken string
 	// ReferrerURL the URL the referrer of the token should come from to be considered valid
 	// this is the URL of the S3 bucket where the spec files were uploaded
 	ReferrerURL string
 	// Whitelist one or more IP addresses that are considered valid for authentication of the Webhook caller
 	// this is the real IP of the webhook caller
 	Whitelist []string `json:"whitelist" yaml:"whitelist"`
+	// Filter a regular expression to filter publication events and prevent the doorman to be invoked if the
+	// S3 resource matches the filter; if no defined, no filter is applied
+	Filter string
 }

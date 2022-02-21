@@ -31,6 +31,9 @@ type InRoute struct {
 	WebhookToken string `bson:"webhook_token" json:"webhook_token" yaml:"webhook_token" example:"JFkxnsn++02UilVkYFFC9w=="`
 	// WebhookWhitelist the list of IP addresses accepted by the webhook (whitelist)
 	WebhookWhitelist []string `bson:"webhook_whitelist" json:"webhook_whitelist" yaml:"webhook_whitelist"`
+	// Filter a regular expression to filter publication events and prevent doorman from being invoked
+	// if not defined, no filter is applied
+	Filter string `bson:"filter" json:"filter" yaml:"filter"`
 }
 
 func (r InRoute) GetName() string {

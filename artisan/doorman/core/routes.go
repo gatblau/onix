@@ -36,3 +36,14 @@ func FindInboundRoutesByWebHookToken(token string) ([]types.InRoute, error) {
 	}
 	return routes, nil
 }
+
+func FindAllInRoutes() ([]types.InRoute, error) {
+	var routes []types.InRoute
+	db := NewDb()
+	if err := db.FindMany(types.InRouteCollection, nil, func(cursor *mongo.Cursor) error {
+		return cursor.All(context.Background(), &routes)
+	}); err != nil {
+		return nil, err
+	}
+	return routes, nil
+}
