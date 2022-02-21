@@ -19,20 +19,6 @@ import (
 	"regexp"
 )
 
-// WhitelistMiddleware blocks any IP that are not in the whitelist
-func (s *Server) WhitelistMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// if a whitelist has been defined and the request IP is not in the list
-		if s.Whitelist != nil && !s.Whitelist(*r, FindRealIP(r)) {
-			// blocks the request and returns an unauthorised error
-			http.Error(w, "sender not in whitelist, request blocked", 401)
-			return
-		}
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
-		next.ServeHTTP(w, r)
-	})
-}
-
 // LoggingMiddleware log http requests to stdout
 func (s *Server) LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
