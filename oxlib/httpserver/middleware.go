@@ -77,7 +77,7 @@ func (s *Server) AuthenticationMiddleware(next http.Handler) http.Handler {
 					// if authentication fails the there is no user principal returned
 					if user == nil {
 						// Write an error and stop the handler chain
-						http.Error(w, "Forbidden", http.StatusForbidden)
+						http.Error(w, "Forbidden", http.StatusUnauthorized)
 						return
 					} else {
 						// exit loop
