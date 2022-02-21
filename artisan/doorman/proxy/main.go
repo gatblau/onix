@@ -51,9 +51,25 @@ func main() {
 
 // whAuth authenticates web hook requests using opaque string (bearer token)
 func whAuth(r http.Request) *oxc.UserPrincipal {
+	ip := httpserver.FindRealIP(&r)
 	token := r.Header.Get("Authorization")
 	for _, info := range WhInfo {
+		// if the bearer token is ok
 		if strings.HasSuffix(token, info.WebhookToken) {
+			var whitelisted bool
+			// if a whitelist has been set up for the webhook
+			if info.Whitelist != nil && len(info.Whitelist) > 0 {
+				// check that the requester real IP is in the whitelist
+				for _, listedIp := range info.Whitelist {
+					if ip == listedIp {
+						whitelisted = true
+					}
+				}
+				// if it is not then block the request
+				if !whitelisted {
+					return nil
+				}
+			}
 			return &oxc.UserPrincipal{
 				Username: "webhook-user",
 				Created:  time.Now(),

@@ -49,6 +49,9 @@ A swagger UI for the proxy is available at:
 
 The proxy acts an intermediary between doorman and any system raising events ensuring that only sanitised events are passed to doorman.
 
-Additionaly, doorman's API dows not have to be publicly exposed, only the proxy endpoint.
+Additionally, doorman's API does not have to be publicly exposed, only the proxy endpoint.
+
+Proxy endpoints are authenticated with a different bearer token per S3 source and can be IP whitelisted as an additional measure
+tp block requests from untrusted sources.
 
 ![proxy](proxy.drawio.png)
