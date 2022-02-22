@@ -72,6 +72,9 @@ definitions:
       name:
         description: the unique reference for the secret
         type: string
+      required:
+        description: the value is required
+        type: boolean
       value:
         description: the value of the secret
         type: string
@@ -771,6 +774,30 @@ paths:
           schema:
             type: string
       summary: Registers a Host so that it can be activated
+      tags:
+      - Activation
+  /registration/{mac-address}:
+    delete:
+      description: undoes a host registration providing the host has not yet activated
+        / admitted
+      parameters:
+      - description: the mac address of the host to be un-registered
+        in: path
+        name: mac-address
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Undo a Host Registration
       tags:
       - Activation
   /user:

@@ -74,3 +74,21 @@ type Labels struct {
 type PipelineRef struct {
 	Name string `yaml:"name,omitempty"`
 }
+
+type Annotations struct {
+	Description string `yaml:"description,omitempty"`
+}
+
+type Port struct {
+	TargetPort string `yaml:"targetPort,omitempty"`
+}
+
+type TLS struct {
+	InsecureEdgeTerminationPolicy string `yaml:"insecureEdgeTerminationPolicy,omitempty"`
+	Termination                   string `yaml:"termination,omitempty"`
+}
+
+type To struct {
+	Kind string `yaml:"kind,omitempty"`
+	Name string `yaml:"name,omitempty"`
+}

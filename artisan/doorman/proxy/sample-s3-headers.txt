@@ -1,0 +1,7 @@
+request from: 127.0.0.1:59027 POST /events/minio
+POST /events/minio HTTP/1.1
+Host: 127.0.0.1:9998
+Authorization: Bearer JFkxnsn++02UilVkYFFC9w==
+Content-Length: 982
+Content-Type: application/json
+User-Agent: Go-http-client/1.1

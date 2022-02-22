@@ -13,13 +13,19 @@ import "fmt"
 // PipelineConf a pipeline configuration used to connect inbound and outbound routes
 type PipelineConf struct {
 	// Name the name uniquely identifying the pipeline
-	Name string `bson:"_id" json:"name" example:"ACME_PIPELINE"`
-	// InboundRoute  the name of the inbound route to use in the pipeline
-	InboundRoute string `json:"in_route"`
-	// OutboundRoute  the name of the outbound route to use in the pipeline
-	OutboundRoute string `json:"out_route"`
+	Name string `bson:"_id" json:"name" yaml:"name" example:"ACME_PIPELINE"`
+	// InboundRoutes  the name of the inbound route to use in the pipeline
+	InboundRoutes []string `json:"inbound_routes" yaml:"inbound_routes" bson:"inbound_routes"`
+	// OutboundRoutes  the name of the outbound route to use in the pipeline
+	OutboundRoutes []string `json:"outbound_routes" yaml:"outbound_routes" bson:"outbound_routes"`
 	// Commands a list of the command names to be executed between inbound and outbound routes
-	Commands []string `json:"commands"`
+	Commands []string `json:"commands" yaml:"commands" bson:"commands"`
+	// SuccessNotification notification to use in case of success
+	SuccessNotification string `json:"success_notification" yaml:"success_notification" bson:"success_notification"`
+	// ErrorNotification notification to use in case of errors
+	ErrorNotification string `json:"error_notification" yaml:"error_notification" bson:"error_notification"`
+	// CmdFailedNotification notification to use in case of command failure
+	CmdFailedNotification string `json:"cmd_failed_notification" yaml:"cmd_failed_notification" bson:"cmd_failed_notification"`
 }
 
 func (r PipelineConf) GetName() string {
@@ -27,10 +33,10 @@ func (r PipelineConf) GetName() string {
 }
 
 func (r PipelineConf) Valid() error {
-	if len(r.InboundRoute) == 0 {
+	if len(r.InboundRoutes) == 0 {
 		return fmt.Errorf("pipeline %s must define an inbound route", r.Name)
 	}
-	if len(r.OutboundRoute) == 0 {
+	if len(r.OutboundRoutes) == 0 {
 		return fmt.Errorf("pipeline %s must define an outbound route", r.Name)
 	}
 	return nil
@@ -40,10 +46,10 @@ func (r PipelineConf) Valid() error {
 type Pipeline struct {
 	// Name the name uniquely identifying the pipeline
 	Name string `json:"name"`
-	// InboundRoute  the name of the inbound route to use in the pipeline
-	InboundRoute InRoute `json:"in_route"`
-	// OutboundRoute  the name of the outbound route to use in the pipeline
-	OutboundRoute OutRoute `json:"out_route"`
+	// InboundRoutes  the name of the inbound route to use in the pipeline
+	InboundRoutes []InRoute `json:"in_route"`
+	// OutboundRoutes  the name of the outbound route to use in the pipeline
+	OutboundRoutes []OutRoute `json:"out_route"`
 	// Commands a list of the command names to be executed between inbound and outbound routes
 	Commands []string `json:"commands"`
 }

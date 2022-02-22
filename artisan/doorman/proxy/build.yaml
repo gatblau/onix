@@ -1,0 +1,56 @@
+---
+labels:
+  author: onix@gatblau.org
+  application: Artisan's Doorman Proxy
+  description: Notifications and Event Sources for Doorman
+  architecture: amd64
+
+env:
+  CGO_ENABLED: 0
+  GOARCH: amd64
+  REPO_NAME: quay.io/gatblau
+  APP_NAME: dproxy
+  APP_VERSION: 0.0.4
+  BUILD_VERSION: ${APP_VERSION}-${ARTISAN_REF}
+
+functions:
+  - name: build-linux
+    description: builds Doorman Proxy for Linux
+    env:
+      GOOS: linux
+    run:
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/doorman/proxy/Version=${BUILD_VERSION}'" -o bin/linux/dproxy -v
+
+  - name: build-mac
+    description: builds Doorman for MacOS
+    env:
+      GOOS: darwin
+    run:
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/doorman/proxy/Version=${BUILD_VERSION}'" -o bin/darwin/dproxy -v
+
+  - name: swagen
+    description: generates/refreshes the OpenAPI specifications for Doorman's Proxy HTTP API
+    run:
+      - swag init -d ./ -g handlers.go --parseDependency *.go
+        
+  - name: build
+    description: builds a Doorman's Proxy image
+    run:
+      - $(build-linux)
+      - docker build -t ${REPO_NAME}/${APP_NAME}:${BUILD_VERSION} .
+      - docker tag ${REPO_NAME}/${APP_NAME}:${BUILD_VERSION} ${REPO_NAME}/${APP_NAME}:latest
+
+  - name: publish
+    description: builds and publishes the Doorman image
+    run:
+      - $(build-linux)
+      - docker build -t ${REPO_NAME}/${APP_NAME}:${BUILD_VERSION} .
+      - docker tag ${REPO_NAME}/${APP_NAME}:${BUILD_VERSION} ${REPO_NAME}/${APP_NAME}:latest
+      - docker push ${REPO_NAME}/${APP_NAME}:${BUILD_VERSION}
+      - docker push ${REPO_NAME}/${APP_NAME}:latest
+
+  - name: debug
+    description: starts doorman proxy container using sleep infinity command
+    run:
+      - docker run --name dproxy -itd ${REPO_NAME}/${APP_NAME}:latest sleep infinity
+...

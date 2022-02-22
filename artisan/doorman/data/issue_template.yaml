@@ -1,0 +1,7 @@
+---
+name: ISSUE_TEMPLATE
+subject: Issue on new release <<release-name>>
+content: |
+   A new release has been published but failed ingestion:
+   <<issue-log>>
+...

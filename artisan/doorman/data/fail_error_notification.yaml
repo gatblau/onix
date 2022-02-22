@@ -1,0 +1,6 @@
+---
+name: FAIL_ERROR_NOTIFICATION
+recipient: test@email.com
+type: email
+template: ISSUE_TEMPLATE
+...

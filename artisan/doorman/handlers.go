@@ -18,16 +18,14 @@ package main
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/artisan/doorman/core"
 	_ "github.com/gatblau/onix/artisan/doorman/docs"
 	"github.com/gatblau/onix/artisan/doorman/types"
-	"github.com/gatblau/onix/oxlib/httpserver"
+	util "github.com/gatblau/onix/oxlib/httpserver"
 	"github.com/gorilla/mux"
-	"io/ioutil"
-	"log"
 	"net/http"
+	"net/url"
 )
 
 // @Summary Creates or updates a cryptographic key
@@ -36,29 +34,28 @@ import (
 // @Tags Keys
 // @Router /key [put]
 // @Param key body types.Key true "the data for the key to persist"
+// @Accept application/yaml, application/json
 // @Produce plain
 // @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 200 {string} object has been updated
 // @Success 201 {string} object has been created
 func upsertKeyHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if isErr(w, err, http.StatusBadRequest, "cannot read key data") {
-		return
-	}
 	key := new(types.Key)
-	err = json.Unmarshal(body, key)
-	if isErr(w, err, http.StatusBadRequest, "cannot unmarshal key data") {
+	err := util.Unmarshal(r, key)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
 		return
 	}
 	// validate the data in the key struct
-	if isErr(w, key.Valid(), http.StatusBadRequest, "invalid key data") {
+	if util.IsErr(w, key.Valid(), http.StatusBadRequest, "invalid key data") {
 		return
 	}
 	db := core.NewDb()
 	var resultCode int
 	_, err, resultCode = db.UpsertObject(types.KeysCollection, key)
-	if isErr(w, err, resultCode, "cannot update key in database") {
+	if util.IsErr(w, err, resultCode, "cannot update key in database") {
 		return
 	}
 	w.WriteHeader(resultCode)
@@ -69,29 +66,31 @@ func upsertKeyHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags Commands
 // @Router /command [put]
 // @Param key body types.Command true "the data for the command to persist"
+// @Accept application/yaml, application/json
 // @Produce plain
 // @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 200 {string} object has been updated
 // @Success 201 {string} object has been created
 func upsertCommandHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if isErr(w, err, http.StatusBadRequest, "cannot read command data") {
+	cmd := new(types.Command)
+	err := util.Unmarshal(r, cmd)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
 		return
 	}
-	cmd := new(types.Command)
-	err = json.Unmarshal(body, cmd)
-	if isErr(w, err, http.StatusBadRequest, "cannot unmarshal command data") {
+	if util.IsErr(w, err, http.StatusBadRequest, "cannot unmarshal command data") {
 		return
 	}
 	// validate the data in the key struct
-	if isErr(w, cmd.Valid(), http.StatusBadRequest, "invalid command data") {
+	if util.IsErr(w, cmd.Valid(), http.StatusBadRequest, "invalid command data") {
 		return
 	}
 	db := core.NewDb()
 	var resultCode int
 	_, err, resultCode = db.UpsertObject(types.CommandsCollection, cmd)
-	if isErr(w, err, resultCode, "cannot update command in database") {
+	if util.IsErr(w, err, resultCode, "cannot update command in database") {
 		return
 	}
 	w.WriteHeader(resultCode)
@@ -102,29 +101,26 @@ func upsertCommandHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags Routes
 // @Router /route/in [put]
 // @Param key body types.InRoute true "the data for the inbound route to persist"
+// @Accept application/yaml, application/json
 // @Produce plain
 // @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 200 {string} object has been updated
 // @Success 201 {string} object has been created
 func upsertInboundRouteHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if isErr(w, err, http.StatusBadRequest, "cannot read inbound route data") {
-		return
-	}
 	inRoute := new(types.InRoute)
-	err = json.Unmarshal(body, inRoute)
-	if isErr(w, err, http.StatusBadRequest, "cannot unmarshal inbound route data") {
+	err := util.Unmarshal(r, inRoute)
+	if util.IsErr(w, err, http.StatusBadRequest, "cannot unmarshal inbound route data") {
 		return
 	}
 	// validate the data in the key struct
-	if isErr(w, inRoute.Valid(), http.StatusBadRequest, "invalid inbound route data") {
+	if util.IsErr(w, inRoute.Valid(), http.StatusBadRequest, "invalid inbound route data") {
 		return
 	}
 	db := core.NewDb()
 	var resultCode int
 	_, err, resultCode = db.UpsertObject(types.InRouteCollection, inRoute)
-	if isErr(w, err, resultCode, "cannot update inbound route in database") {
+	if util.IsErr(w, err, resultCode, "cannot update inbound route in database") {
 		return
 	}
 	w.WriteHeader(resultCode)
@@ -135,29 +131,26 @@ func upsertInboundRouteHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags Routes
 // @Router /route/out [put]
 // @Param key body types.OutRoute true "the data for the outbound route to persist"
+// @Accept application/yaml, application/json
 // @Produce plain
 // @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 200 {string} object has been updated
 // @Success 201 {string} object has been created
 func upsertOutboundRouteHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if isErr(w, err, http.StatusBadRequest, "cannot read outbound route data") {
-		return
-	}
 	outRoute := new(types.OutRoute)
-	err = json.Unmarshal(body, outRoute)
-	if isErr(w, err, http.StatusBadRequest, "cannot unmarshal outbound route data") {
+	err := util.Unmarshal(r, outRoute)
+	if util.IsErr(w, err, http.StatusBadRequest, "cannot unmarshal outbound route data") {
 		return
 	}
 	// validate the data in the key struct
-	if isErr(w, outRoute.Valid(), http.StatusBadRequest, "invalid outbound route data") {
+	if util.IsErr(w, outRoute.Valid(), http.StatusBadRequest, "invalid outbound route data") {
 		return
 	}
 	db := core.NewDb()
 	var resultCode int
 	_, err, resultCode = db.UpsertObject(types.OutRouteCollection, outRoute)
-	if isErr(w, err, resultCode, "cannot update outbound route in database") {
+	if util.IsErr(w, err, resultCode, "cannot update outbound route in database") {
 		return
 	}
 	w.WriteHeader(resultCode)
@@ -168,6 +161,7 @@ func upsertOutboundRouteHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags Pipelines
 // @Router /pipe [put]
 // @Param key body types.PipelineConf true "the data for the pipeline to persist"
+// @Accept application/yaml, application/json
 // @Produce plain
 // @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
@@ -178,21 +172,82 @@ func upsertPipelineHandler(w http.ResponseWriter, r *http.Request) {
 		err  error
 		code int
 	)
-	body, err := ioutil.ReadAll(r.Body)
-	if isErr(w, err, http.StatusBadRequest, "cannot read pipeline data") {
-		return
-	}
 	pipe := new(types.PipelineConf)
-	err = json.Unmarshal(body, pipe)
-	if isErr(w, err, http.StatusBadRequest, "cannot unmarshal pipeline data") {
+	err = util.Unmarshal(r, pipe)
+	if util.IsErr(w, err, http.StatusBadRequest, "cannot unmarshal pipeline data") {
 		return
 	}
 	// validate the data in the key struct
-	if isErr(w, pipe.Valid(), http.StatusBadRequest, "invalid pipeline data") {
+	if util.IsErr(w, pipe.Valid(), http.StatusBadRequest, "invalid pipeline data") {
 		return
 	}
 	err, code = core.UpsertPipeline(*pipe)
-	if isErr(w, err, http.StatusBadRequest, "cannot create or update pipeline configuration") {
+	if util.IsErr(w, err, http.StatusBadRequest, "cannot create or update pipeline configuration") {
+		return
+	}
+	w.WriteHeader(code)
+}
+
+// @Summary Creates or updates a notification template
+// @Description creates or updates a notification template
+// @Tags Notifications
+// @Router /notification-template [put]
+// @Param key body types.NotificationTemplate true "the data for the notification template to persist"
+// @Accept application/yaml, application/json
+// @Produce plain
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 200 {string} object has been updated
+// @Success 201 {string} object has been created
+func upsertNotificationTemplateHandler(w http.ResponseWriter, r *http.Request) {
+	var (
+		err  error
+		code int
+	)
+	template := new(types.NotificationTemplate)
+	err = util.Unmarshal(r, template)
+	if util.IsErr(w, err, http.StatusBadRequest, "cannot unmarshal notification template data") {
+		return
+	}
+	// validate the data in the key struct
+	if util.IsErr(w, template.Valid(), http.StatusBadRequest, "invalid notification template data") {
+		return
+	}
+	db := core.NewDb()
+	_, err, code = db.UpsertObject(types.NotificationTemplatesCollection, *template)
+	if util.IsErr(w, err, code, "cannot create or update notification template configuration") {
+		return
+	}
+	w.WriteHeader(code)
+}
+
+// @Summary Creates or updates a notification
+// @Description creates or updates a notification
+// @Tags Notifications
+// @Router /notification [put]
+// @Param key body types.Notification true "the data for the notification to persist"
+// @Accept application/yaml, application/json
+// @Produce plain
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 200 {string} object has been updated
+// @Success 201 {string} object has been created
+func upsertNotificationHandler(w http.ResponseWriter, r *http.Request) {
+	var (
+		err  error
+		code int
+	)
+	notification := new(types.Notification)
+	err = util.Unmarshal(r, notification)
+	if util.IsErr(w, err, http.StatusBadRequest, "cannot unmarshal notification data") {
+		return
+	}
+	// validate the data in the key struct
+	if util.IsErr(w, notification.Valid(), http.StatusBadRequest, "invalid notification data") {
+		return
+	}
+	err, code = core.UpsertNotification(*notification)
+	if util.IsErr(w, err, code, "cannot create or update notification configuration") {
 		return
 	}
 	w.WriteHeader(code)
@@ -212,11 +267,13 @@ func getPipelineHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pipeName := vars["name"]
 	pipe, err := core.FindPipeline(pipeName)
-	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve pipeline %s: %s", pipeName, err)) {
+	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve pipeline %s: %s", pipeName, err)) {
 		return
 	}
-	pipe.OutboundRoute.PackageRegistry.PrivateKey = "*******"
-	httpserver.Write(w, r, pipe)
+	for i := 0; i < len(pipe.OutboundRoutes); i++ {
+		pipe.OutboundRoutes[i].PackageRegistry.PrivateKey = "*******"
+	}
+	util.Write(w, r, pipe)
 }
 
 // @Summary Gets all pipelines
@@ -230,19 +287,130 @@ func getPipelineHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {string} success
 func getAllPipelinesHandler(w http.ResponseWriter, r *http.Request) {
 	pipelines, err := core.FindAllPipelines()
-	if isErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve pipelines: %s", err)) {
+	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve pipelines: %s", err)) {
 		return
 	}
-	httpserver.Write(w, r, pipelines)
+	util.Write(w, r, pipelines)
 }
 
-func isErr(w http.ResponseWriter, err error, statusCode int, msg string) bool {
-	if err != nil {
-		msg = fmt.Sprintf("%s: %s\n", msg, err)
-		log.Printf(msg)
-		w.WriteHeader(statusCode)
-		w.Write([]byte(msg))
-		return true
+// @Summary Gets all notifications
+// @Description gets all notifications
+// @Tags Notifications
+// @Router /notification [get]
+// @Produce application/json, application/yaml, application/xml
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 404 {string} not found: the requested object does not exist
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 200 {string} success
+func getAllNotificationsHandler(w http.ResponseWriter, r *http.Request) {
+	pipelines, err := core.FindAllNotifications()
+	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve notifications: %s", err)) {
+		return
 	}
-	return false
+	util.Write(w, r, pipelines)
+}
+
+// @Summary Gets all notification templates
+// @Description gets all notification templates
+// @Tags Notifications
+// @Router /notification-template [get]
+// @Produce application/json, application/yaml, application/xml
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 404 {string} not found: the requested object does not exist
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 200 {string} success
+func getAllNotificationTemplatesHandler(w http.ResponseWriter, r *http.Request) {
+	notificationTemplates, err := core.FindAllNotificationTemplates()
+	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve notification templates: %s", err)) {
+		return
+	}
+	util.Write(w, r, notificationTemplates)
+}
+
+// @Summary Triggers the ingestion of an artisan spec artefacts
+// @Description Triggers the ingestion of a specification
+// @Tags Webhook
+// @Router /event/{uri} [post]
+// @Param uri path string true "the URI of the service where a spec has been uploaded"
+// @Produce plain
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 201 {string} ingestion process has started
+func eventHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	uri := vars["uri"]
+	uri, err := url.PathUnescape(uri)
+	if util.IsErr(w, err, http.StatusInternalServerError, "cannot unescape path") {
+		return
+	}
+	core.ProcessAsync(uri)
+	w.WriteHeader(http.StatusCreated)
+}
+
+// @Summary Get authentication information for specified webhook token
+// @Description checks that an opaque string / authentication token sent to a webhook has been defined for
+// @Description an inbound route, returning required referrer URL and IP white list
+// @Description NOTE: this endpoint is called by the proxy to authenticate its webhook
+// @Tags Webhook
+// @Router /token/{token-value} [get]
+// @Param token-value path string true "the authentication token presented to dorrman proxy webhook"
+// @Produce application/json, application/yaml, application/xml
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 404 {string} not found: the specified token has not been found
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 200 {string} success
+func getWebhookAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	token := vars["token-value"]
+	if len(token) == 0 {
+		util.Err(w, http.StatusBadRequest, "token is required")
+		return
+	}
+	routes, err := core.FindInboundRoutesByWebHookToken(token)
+	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve inbound routes for token %s: %s", token, err)) {
+		return
+	}
+	// if no routes exists then return not found
+	if len(routes) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	var info []types.WebhookAuthInfo
+	for _, route := range routes {
+		info = append(info, types.WebhookAuthInfo{
+			WebhookToken: route.WebhookToken,
+			ReferrerURL:  route.BucketURI,
+			Whitelist:    route.WebhookWhitelist,
+			Filter:       route.Filter,
+		})
+	}
+	util.Write(w, r, info)
+}
+
+// @Summary get authentication information for all webhook tokens
+// @Description get authentication information for all webhook tokens
+// @Description an inbound route, returning required referrer URL and IP white list
+// @Description NOTE: this endpoint is called by the proxy to authenticate its webhook
+// @Tags Webhook
+// @Router /token [get]
+// @Produce application/json, application/yaml, application/xml
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 404 {string} not found: the specified token has not been found
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 200 {string} success
+func getWebhookAllAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
+	routes, err := core.FindAllInRoutes()
+	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve inbound routes: %s", err)) {
+		return
+	}
+	var info []types.WebhookAuthInfo
+	for _, route := range routes {
+		info = append(info, types.WebhookAuthInfo{
+			WebhookToken: route.WebhookToken,
+			ReferrerURL:  route.BucketURI,
+			Whitelist:    route.WebhookWhitelist,
+			Filter:       route.Filter,
+		})
+	}
+	util.Write(w, r, info)
 }

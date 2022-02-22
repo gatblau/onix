@@ -1,0 +1,53 @@
+{
+  "EventName": "s3:ObjectCreated:Put",
+  "Key": "onix/1.0/spec.yaml",
+  "Records": [
+    {
+      "eventVersion": "2.0",
+      "eventSource": "minio:s3",
+      "awsRegion": "",
+      "eventTime": "2022-02-21T16:29:08.965Z",
+      "eventName": "s3:ObjectCreated:Put",
+      "userIdentity": {
+        "principalId": "admin"
+      },
+      "requestParameters": {
+        "principalId": "admin",
+        "region": "",
+        "sourceIPAddress": "::1"
+      },
+      "responseElements": {
+        "content-length": "0",
+        "x-amz-request-id": "16D5DA03D7CC5550",
+        "x-minio-deployment-id": "415edcb3-16db-4f6d-828a-48c5bc33e01b",
+        "x-minio-origin-endpoint": "http://192.168.0.43:9000"
+      },
+      "s3": {
+        "s3SchemaVersion": "1.0",
+        "configurationId": "Config",
+        "bucket": {
+          "name": "onix",
+          "ownerIdentity": {
+            "principalId": "admin"
+          },
+          "arn": "arn:aws:s3:::onix"
+        },
+        "object": {
+          "key": "1.0%2Fspec.yaml",
+          "size": 629,
+          "eTag": "8db65a840599a3f5dfb3e853ebcf5a5d",
+          "contentType": "application/octet-stream",
+          "userMetadata": {
+            "content-type": "application/octet-stream"
+          },
+          "sequencer": "16D5DA03DAE28278"
+        }
+      },
+      "source": {
+        "host": "::1",
+        "port": "",
+        "userAgent": "MinIO (darwin; amd64) minio-go/v7.0.21"
+      }
+    }
+  ]
+}

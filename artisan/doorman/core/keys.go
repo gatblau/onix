@@ -34,3 +34,24 @@ func (db *Db) FindKeys(filter bson.M) ([]types.Key, error) {
 	}
 	return keys, nil
 }
+
+// FindKeyByName retrieves the key with the specified name decrypting its value if it is a private key
+func (db *Db) FindKeyByName(name string) (*types.Key, error) {
+	var key types.Key
+	result, err := db.FindByName(types.KeysCollection, name)
+	if err != nil {
+		return nil, err
+	}
+	err = result.Decode(&key)
+	if err != nil {
+		return nil, err
+	}
+	if key.IsPrivate {
+		dec, decErr := decrypt(key.Value)
+		if decErr != nil {
+			return nil, decErr
+		}
+		key.Value = dec
+	}
+	return &key, nil
+}

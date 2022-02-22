@@ -1,0 +1,13 @@
+---
+name: TEST_IN_ROUTE
+description: a testing inbound route
+bucket_uri: http://192.168.0.43:9000/onix
+user: admin
+pwd: 1234567890
+public_key: TEST_PUB
+verify: true
+webhook_token: JFkxnsn++02UilVkYFFC9w==
+webhook_whitelist:
+  - 127.0.0.1
+filter: "*.-dev"
+...

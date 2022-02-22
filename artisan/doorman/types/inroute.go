@@ -13,19 +13,27 @@ import "fmt"
 // InRoute the definition of an inbound route
 type InRoute struct {
 	// Name the name of the route
-	Name string `bson:"_id" json:"name" example:"SUPPLIER_A_IN_ROUTE"`
+	Name string `bson:"_id" json:"name" yaml:"name" example:"SUPPLIER_A_IN_ROUTE"`
 	// Description a description indicating the purpose of the route
-	Description string `bson:"description "json:"description" example:"the inbound route for supplier A"`
-	// URI the remote URI from where inbound files should be downloaded
-	URI string `bson:"uri" json:"uri" example:"s3.supplier-a.com"`
-	// User the username to authenticate against the remote URI
-	User string `bson:"user "json:"user"`
-	// Pwd the password to authenticate against the remote URI
-	Pwd string `bson:"pwd" json:"pwd"`
+	Description string `bson:"description "json:"description" yaml:"description" example:"the inbound route for supplier A"`
+	// BucketURI the remote BucketURI from where inbound files should be downloaded
+	BucketURI string `bson:"bucket_uri" json:"bucket_uri" yaml:"bucket_uri" example:"s3.supplier-a.com"`
+	// User the username to authenticate against the remote BucketURI
+	User string `bson:"user "json:"user" yaml:"user"`
+	// Pwd the password to authenticate against the remote BucketURI
+	Pwd string `bson:"pwd" json:"pwd" yaml:"pwd"`
 	// PublicKey the PGP public key used to verify the author of the downloaded files
-	PublicKey string `bson:"public_key" json:"public_key"`
+	PublicKey string `bson:"public_key" json:"public_key" yaml:"public_key"`
 	// Verify a flag indicating whether author verification should be enabled
-	Verify bool `bson:"verify" json:"verify"`
+	Verify bool `bson:"verify" json:"verify" yaml:"verify"`
+	// WebhookToken an authentication token to be passed by an event sender to be authenticated by the doorman's proxy webhook
+	// its value can be anything, but it is typically a base64 encoded global unique identifier
+	WebhookToken string `bson:"webhook_token" json:"webhook_token" yaml:"webhook_token" example:"JFkxnsn++02UilVkYFFC9w=="`
+	// WebhookWhitelist the list of IP addresses accepted by the webhook (whitelist)
+	WebhookWhitelist []string `bson:"webhook_whitelist" json:"webhook_whitelist" yaml:"webhook_whitelist"`
+	// Filter a regular expression to filter publication events and prevent doorman from being invoked
+	// if not defined, no filter is applied
+	Filter string `bson:"filter" json:"filter" yaml:"filter"`
 }
 
 func (r InRoute) GetName() string {
@@ -33,7 +41,7 @@ func (r InRoute) GetName() string {
 }
 
 func (r InRoute) Valid() error {
-	if len(r.URI) == 0 {
+	if len(r.BucketURI) == 0 {
 		return fmt.Errorf("inbound route %s URI is mandatory", r.Name)
 	}
 	if (len(r.User) > 0 && len(r.Pwd) == 0) || (len(r.User) == 0 && len(r.Pwd) > 0) {

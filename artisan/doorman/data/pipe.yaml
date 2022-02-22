@@ -1,0 +1,12 @@
+---
+name: TEST_PIPELINE
+inbound_routes:
+  - TEST_IN_ROUTE
+outbound_routes:
+  - TEST_OUT_ROUTE
+commands:
+  - CLAM_SCAN_CMD
+success_notification: SUCCESSFUL_RELEASE_NOTIFICATION
+error_notification: FAIL_ERROR_NOTIFICATION
+cmd_failed_notification: FAIL_SCAN_NOTIFICATION
+...

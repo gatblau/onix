@@ -1,5 +1,3 @@
-package tkn
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package tkn
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package tkn
+
 import (
 	"bytes"
 	"fmt"
@@ -17,10 +18,9 @@ import (
 )
 
 const (
-	ApiVersionSecret        = "v1"
-	ApiVersionRoute         = "route.openshift.io/v1"
-	ApiVersionTekton        = "tekton.dev/v1alpha1"
-	ApiVersionTektonTrigger = "triggers.tekton.dev/v1alpha1"
+	ApiVersionSecret      = "v1"
+	ApiVersionTektonAlpha = "tekton.dev/v1alpha1"
+	ApiVersionTektonBeta  = "tekton.dev/v1beta1"
 
 	// ServiceAccountName account below is created by the tekton operator in OpenShift but has to be created manually
 	// if a plain Kubernetes version is used
@@ -92,24 +92,6 @@ func (b *Builder) Build() ([][]byte, string, bool) {
 		// tekton pipeline resource
 		pipelineResource := b.newPipelineResource()
 		result = append(result, ToYaml(pipelineResource, "PipelineResource"))
-
-		// NOTE: resources below are OpenShift specific so removing so it is compatible across all K8S implementations
-		//
-		// // tekton event listener
-		// eventListener := b.newEventListener()
-		// result = append(result, ToYaml(eventListener, "EventListener"))
-		//
-		// // k8s route
-		// route := b.newRoute()
-		// result = append(result, ToYaml(route, "Route"))
-		//
-		// // tekton trigger binding
-		// triggerBinding := b.newTriggerBinding()
-		// result = append(result, ToYaml(triggerBinding, "TriggerBinding"))
-		//
-		// // tekton trigger template
-		// triggerTemplate := b.newTriggerTemplate()
-		// result = append(result, ToYaml(triggerTemplate, "TriggerTemplate"))
 	}
 	result = append(result, ToYaml(pipelineRun, "Pipeline Run"))
 	return result, pipelineRun.Metadata.Name, b.flow.RequiresGitSource()
@@ -118,7 +100,7 @@ func (b *Builder) Build() ([][]byte, string, bool) {
 // task
 func (b *Builder) newTask() *Task {
 	t := new(Task)
-	t.APIVersion = ApiVersionTekton
+	t.APIVersion = ApiVersionTektonBeta
 	t.Kind = "Task"
 	t.Metadata = &Metadata{
 		Name:      b.buildTaskName(b.flow.Name),
@@ -397,7 +379,7 @@ func (b *Builder) newFileSecrets() *Secret {
 func (b *Builder) newPipeline() *Pipeline {
 	p := new(Pipeline)
 	p.Kind = "Pipeline"
-	p.APIVersion = ApiVersionTekton
+	p.APIVersion = ApiVersionTektonBeta
 	p.Metadata = &Metadata{
 		Name:      b.pipelineName(b.flow.Name),
 		Namespace: b.namespace(),
@@ -447,7 +429,7 @@ func (b *Builder) newPipeline() *Pipeline {
 // pipeline resource
 func (b *Builder) newPipelineResource() *PipelineResource {
 	r := new(PipelineResource)
-	r.APIVersion = ApiVersionTekton
+	r.APIVersion = ApiVersionTektonAlpha
 	r.Kind = "PipelineResource"
 	r.Metadata = &Metadata{
 		Name:      b.codeRepoResourceName(b.flow.Name),
@@ -474,7 +456,7 @@ func (b *Builder) newPipelineRun() *PipelineRun {
 func (b *Builder) NewNamedPipelineRun(flowName, namespace string) *PipelineRun {
 	r := new(PipelineRun)
 	r.Kind = "PipelineRun"
-	r.APIVersion = ApiVersionTekton
+	r.APIVersion = ApiVersionTektonBeta
 	r.Spec = &Spec{
 		// this is the default service account created by the Tekton operator
 		ServiceAccountName: "pipeline",
@@ -501,183 +483,6 @@ func (b *Builder) NewNamedPipelineRun(flowName, namespace string) *PipelineRun {
 	r.Metadata = &Metadata{
 		Name:      b.pipelineRunName(flowName),
 		Namespace: namespace,
-	}
-	return r
-}
-
-// event listener
-func (b *Builder) newEventListener() *EventListener {
-	e := new(EventListener)
-	e.APIVersion = ApiVersionTektonTrigger
-	e.Kind = "EventListener"
-	e.Metadata = &Metadata{
-		Name:      encode(b.flow.Name),
-		Namespace: b.namespace(),
-		Labels: &Labels{
-			AppOpenshiftIoRuntime: b.flow.AppIcon,
-		},
-	}
-	e.Spec = &Spec{
-		ServiceAccountName: ServiceAccountName,
-		Triggers: []*Triggers{
-			{
-				Bindings: []*Bindings{
-					{
-						Name: encode(b.flow.Name),
-					},
-				},
-				Template: &Template{
-					Name: encode(b.flow.Name),
-				},
-			},
-		},
-	}
-	return e
-}
-
-// route
-func (b *Builder) newRoute() *Route {
-	r := new(Route)
-	r.APIVersion = ApiVersionRoute
-	r.Kind = "Route"
-	r.Metadata = &Metadata{
-		Name:      fmt.Sprintf("el-%s", encode(b.flow.Name)),
-		Namespace: b.namespace(),
-		Labels: &Labels{
-			Application: fmt.Sprintf("%s-https", encode(b.flow.Name)),
-		},
-		Annotations: &Annotations{
-			Description: "Route for the Pipeline Event Listener.",
-		},
-	}
-	r.Spec = &Spec{
-		Port: &Port{
-			TargetPort: "8080",
-		},
-		TLS: &TLS{
-			InsecureEdgeTerminationPolicy: "Redirect",
-			Termination:                   "edge",
-		},
-		To: &To{
-			Kind: "Service",
-			Name: fmt.Sprintf("el-%s", encode(b.flow.Name)),
-		},
-	}
-	return r
-}
-
-// trigger binding
-func (b *Builder) newTriggerBinding() *TriggerBinding {
-	t := new(TriggerBinding)
-	t.APIVersion = ApiVersionTektonTrigger
-	t.Kind = "TriggerBinding"
-	t.Metadata = &Metadata{
-		Name:      encode(b.flow.Name),
-		Namespace: b.namespace(),
-	}
-	t.Spec = &Spec{
-		Params: []*Params{
-			{
-				Name:  "git-repo-url",
-				Value: "$(body.project.web_url)",
-			},
-			{
-				Name:  "git-repo-name",
-				Value: "$(body.repository.name)",
-			},
-			{
-				Name:  "git-revision",
-				Value: "$(body.commits[0].id)",
-			},
-		},
-	}
-	return t
-}
-
-// trigger template
-func (b *Builder) newTriggerTemplate() *PipelineRun {
-	pipeResx := b.newPipelineResourceTriggerTemplate()
-	pipeRun := b.newPipelineRunTriggerTemplate()
-
-	t := new(PipelineRun)
-	t.APIVersion = ApiVersionTektonTrigger
-	t.Kind = "TriggerTemplate"
-	t.Metadata = &Metadata{
-		Name:      encode(b.flow.Name),
-		Namespace: b.namespace(),
-	}
-	t.Spec = &Spec{
-		Params: []*Params{
-			{
-				Name:        "git-repo-url",
-				Description: "The git repository url",
-			},
-			{
-				Name:        "git-repo-name",
-				Description: "The git repository name",
-			},
-			{
-				Name:        "git-revision",
-				Description: "The git revision",
-				Default:     "master",
-			},
-		},
-		ResourceTemplates: []interface{}{pipeResx, pipeRun},
-	}
-	return t
-}
-
-func (b *Builder) newPipelineResourceTriggerTemplate() *PipelineResource {
-	r := new(PipelineResource)
-	r.APIVersion = ApiVersionTekton
-	r.Kind = "PipelineResource"
-	r.Metadata = &Metadata{
-		Name:      "$(params.git-repo-name)-git-repo-$(uid)",
-		Namespace: b.namespace(),
-	}
-	r.Spec = &Spec{
-		Type: "git",
-		Params: []*Params{
-			{
-				Name:  "revision",
-				Value: "$(params.git-revision)",
-			},
-			{
-				Name:  "url",
-				Value: b.flow.GitURI,
-			},
-		},
-	}
-	return r
-}
-
-func (b *Builder) newPipelineRunTriggerTemplate() *PipelineRun {
-	r := new(PipelineRun)
-	r.Kind = "PipelineRun"
-	r.APIVersion = ApiVersionTekton
-	r.Metadata = &Metadata{
-		Name:      "$(params.git-repo-name)-app-pr-$(uid)",
-		Namespace: b.namespace(),
-	}
-	r.Spec = &Spec{
-		ServiceAccountName: ServiceAccountName,
-		PipelineRef: &PipelineRef{
-			Name: b.pipelineName(b.flow.Name),
-		},
-		Resources: []*Resources{
-			{
-				Name: b.codeRepoResourceName(b.flow.Name),
-				ResourceRef: &ResourceRef{
-					Name: "$(params.git-repo-name)-git-repo-$(uid)",
-				},
-			},
-		},
-		Params: []*Params{
-			{
-				Name:  "deployment-name",
-				Value: "$(params.git-repo-name)",
-			},
-		},
 	}
 	return r
 }

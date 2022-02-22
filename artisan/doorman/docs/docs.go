@@ -55,6 +55,10 @@ var doc = `{
         "/command": {
             "put": {
                 "description": "creates or updates a command",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
                 "produces": [
                     "text/plain"
                 ],
@@ -101,9 +105,101 @@ var doc = `{
                 }
             }
         },
+        "/event/{uri}": {
+            "post": {
+                "description": "Triggers the ingestion of a specification",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Webhook"
+                ],
+                "summary": "Triggers the ingestion of an artisan spec artefacts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the URI of the service where a spec has been uploaded",
+                        "name": "uri",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/events/minio": {
+            "put": {
+                "description": "receives a s3:ObjectCreated:Put event sent by a MinIO format compatible source",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Event Sources"
+                ],
+                "summary": "A Webhook for MinIO compatible event sources",
+                "parameters": [
+                    {
+                        "description": "the notification information to send",
+                        "name": "event",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.MinioS3Event"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/key": {
             "put": {
                 "description": "creates or updates a cryptographic key used by either inbound or outbound routes to verify or sign\npackages respectively",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
                 "produces": [
                     "text/plain"
                 ],
@@ -129,6 +225,235 @@ var doc = `{
                             "type": "string"
                         }
                     },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/notification": {
+            "get": {
+                "description": "gets all notifications",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Gets all notifications",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "creates or updates a notification",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Creates or updates a notification",
+                "parameters": [
+                    {
+                        "description": "the data for the notification to persist",
+                        "name": "key",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.Notification"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/notification-template": {
+            "get": {
+                "description": "gets all notification templates",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Gets all notification templates",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "creates or updates a notification template",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Creates or updates a notification template",
+                "parameters": [
+                    {
+                        "description": "the data for the notification template to persist",
+                        "name": "key",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.NotificationTemplate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/notify": {
+            "post": {
+                "description": "sends a notification of the specified type",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Sends a new notification",
+                "parameters": [
+                    {
+                        "description": "the notification information to send",
+                        "name": "notification",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.Notification"
+                        }
+                    }
+                ],
+                "responses": {
                     "201": {
                         "description": "Created",
                         "schema": {
@@ -191,6 +516,10 @@ var doc = `{
             },
             "put": {
                 "description": "creates or updates an inbound route",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
                 "produces": [
                     "text/plain"
                 ],
@@ -289,6 +618,10 @@ var doc = `{
         "/route/in": {
             "put": {
                 "description": "creates or updates an inbound route",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
                 "produces": [
                     "text/plain"
                 ],
@@ -338,6 +671,10 @@ var doc = `{
         "/route/out": {
             "put": {
                 "description": "creates or updates an inbound route",
+                "consumes": [
+                    "application/yaml",
+                    " application/json"
+                ],
                 "produces": [
                     "text/plain"
                 ],
@@ -383,9 +720,301 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/token": {
+            "get": {
+                "description": "get authentication information for all webhook tokens\nan inbound route, returning required referrer URL and IP white list\nNOTE: this endpoint is called by the proxy to authenticate its webhook",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Webhook"
+                ],
+                "summary": "get authentication information for all webhook tokens",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/token/{token-value}": {
+            "get": {
+                "description": "checks that an opaque string / authentication token sent to a webhook has been defined for\nan inbound route, returning required referrer URL and IP white list\nNOTE: this endpoint is called by the proxy to authenticate its webhook",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Webhook"
+                ],
+                "summary": "Get authentication information for specified webhook token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the authentication token presented to dorrman proxy webhook",
+                        "name": "token-value",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "main.Bucket": {
+            "type": "object",
+            "properties": {
+                "arn": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ownerIdentity": {
+                    "$ref": "#/definitions/main.OwnerIdentity"
+                }
+            }
+        },
+        "main.MinioS3Event": {
+            "type": "object",
+            "properties": {
+                "EventName": {
+                    "type": "string"
+                },
+                "Key": {
+                    "type": "string"
+                },
+                "Records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/main.Records"
+                    }
+                }
+            }
+        },
+        "main.Notification": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Content of the template",
+                    "type": "string",
+                    "example": "A new event has been received."
+                },
+                "recipient": {
+                    "description": "Recipient of the notification if type is email",
+                    "type": "string",
+                    "example": "info@email.com"
+                },
+                "subject": {
+                    "description": "Subject of the notification",
+                    "type": "string",
+                    "example": "New Notification"
+                },
+                "type": {
+                    "description": "Type of the notification (e.g. email, snow, etc.)",
+                    "type": "string",
+                    "example": "email"
+                }
+            }
+        },
+        "main.Object": {
+            "type": "object",
+            "properties": {
+                "contentType": {
+                    "type": "string"
+                },
+                "eTag": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "sequencer": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "userMetadata": {
+                    "$ref": "#/definitions/main.UserMetadata"
+                },
+                "versionId": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.OwnerIdentity": {
+            "type": "object",
+            "properties": {
+                "principalId": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.Records": {
+            "type": "object",
+            "properties": {
+                "awsRegion": {
+                    "type": "string"
+                },
+                "eventName": {
+                    "type": "string"
+                },
+                "eventSource": {
+                    "type": "string"
+                },
+                "eventTime": {
+                    "type": "string"
+                },
+                "eventVersion": {
+                    "type": "string"
+                },
+                "requestParameters": {
+                    "$ref": "#/definitions/main.RequestParameters"
+                },
+                "responseElements": {
+                    "$ref": "#/definitions/main.ResponseElements"
+                },
+                "s3": {
+                    "$ref": "#/definitions/main.S3"
+                },
+                "source": {
+                    "$ref": "#/definitions/main.Source"
+                },
+                "userIdentity": {
+                    "$ref": "#/definitions/main.UserIdentity"
+                }
+            }
+        },
+        "main.RequestParameters": {
+            "type": "object",
+            "properties": {
+                "accessKey": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "sourceIPAddress": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.ResponseElements": {
+            "type": "object",
+            "properties": {
+                "content-length": {
+                    "type": "string"
+                },
+                "x-amz-request-id": {
+                    "type": "string"
+                },
+                "x-minio-deployment-id": {
+                    "type": "string"
+                },
+                "x-minio-origin-endpoint": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.S3": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "$ref": "#/definitions/main.Bucket"
+                },
+                "configurationId": {
+                    "type": "string"
+                },
+                "object": {
+                    "$ref": "#/definitions/main.Object"
+                },
+                "s3SchemaVersion": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.Source": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "string"
+                },
+                "userAgent": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.UserIdentity": {
+            "type": "object",
+            "properties": {
+                "principalId": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.UserMetadata": {
+            "type": "object",
+            "properties": {
+                "content-type": {
+                    "type": "string"
+                }
+            }
+        },
         "types.Command": {
             "type": "object",
             "properties": {
@@ -394,7 +1023,7 @@ var doc = `{
                     "type": "string",
                     "example": "scan files in specified path"
                 },
-                "errorRegex": {
+                "error_regex": {
                     "description": "a regex used to determine if the command execution has errored",
                     "type": "string",
                     "example": ".*Infected files: [^0].*"
@@ -437,10 +1066,19 @@ var doc = `{
         "types.InRoute": {
             "type": "object",
             "properties": {
+                "bucket_uri": {
+                    "description": "BucketURI the remote BucketURI from where inbound files should be downloaded",
+                    "type": "string",
+                    "example": "s3.supplier-a.com"
+                },
                 "description": {
                     "description": "Description a description indicating the purpose of the route",
                     "type": "string",
                     "example": "the inbound route for supplier A"
+                },
+                "filter": {
+                    "description": "Filter a regular expression to filter publication events and prevent doorman from being invoked\nif not defined, no filter is applied",
+                    "type": "string"
                 },
                 "name": {
                     "description": "Name the name of the route",
@@ -452,21 +1090,28 @@ var doc = `{
                     "type": "string"
                 },
                 "pwd": {
-                    "description": "Pwd the password to authenticate against the remote URI",
+                    "description": "Pwd the password to authenticate against the remote BucketURI",
                     "type": "string"
                 },
-                "uri": {
-                    "description": "URI the remote URI from where inbound files should be downloaded",
-                    "type": "string",
-                    "example": "s3.supplier-a.com"
-                },
                 "user": {
-                    "description": "User the username to authenticate against the remote URI",
+                    "description": "User the username to authenticate against the remote BucketURI",
                     "type": "string"
                 },
                 "verify": {
                     "description": "Verify a flag indicating whether author verification should be enabled",
                     "type": "boolean"
+                },
+                "webhook_token": {
+                    "description": "WebhookToken an authentication token to be passed by an event sender to be authenticated by the doorman's proxy webhook\nits value can be anything, but it is typically a base64 encoded global unique identifier",
+                    "type": "string",
+                    "example": "JFkxnsn++02UilVkYFFC9w=="
+                },
+                "webhook_whitelist": {
+                    "description": "WebhookWhitelist the list of IP addresses accepted by the webhook (whitelist)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -491,6 +1136,44 @@ var doc = `{
                 },
                 "value": {
                     "description": "the actual content of the key",
+                    "type": "string"
+                }
+            }
+        },
+        "types.Notification": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "unique identifier for the notification",
+                    "type": "string"
+                },
+                "recipient": {
+                    "description": "Recipient of the notification if type is email",
+                    "type": "string"
+                },
+                "template": {
+                    "description": "Template to use for content of the notification",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type of the notification (e.g. email, snow, etc.)",
+                    "type": "string"
+                }
+            }
+        },
+        "types.NotificationTemplate": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Content of the template",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name unique identifier for notification template",
+                    "type": "string"
+                },
+                "subject": {
+                    "description": "Subject of the notification",
                     "type": "string"
                 }
             }
@@ -549,6 +1232,10 @@ var doc = `{
         "types.PipelineConf": {
             "type": "object",
             "properties": {
+                "cmd_failed_notification": {
+                    "description": "CmdFailedNotification notification to use in case of command failure",
+                    "type": "string"
+                },
                 "commands": {
                     "description": "Commands a list of the command names to be executed between inbound and outbound routes",
                     "type": "array",
@@ -556,17 +1243,31 @@ var doc = `{
                         "type": "string"
                     }
                 },
-                "in_route": {
-                    "description": "InboundRoute  the name of the inbound route to use in the pipeline",
+                "error_notification": {
+                    "description": "ErrorNotification notification to use in case of errors",
                     "type": "string"
+                },
+                "inbound_routes": {
+                    "description": "InboundRoutes  the name of the inbound route to use in the pipeline",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "name": {
                     "description": "Name the name uniquely identifying the pipeline",
                     "type": "string",
                     "example": "ACME_PIPELINE"
                 },
-                "out_route": {
-                    "description": "OutboundRoute  the name of the outbound route to use in the pipeline",
+                "outbound_routes": {
+                    "description": "OutboundRoutes  the name of the outbound route to use in the pipeline",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "success_notification": {
+                    "description": "SuccessNotification notification to use in case of success",
                     "type": "string"
                 }
             }
