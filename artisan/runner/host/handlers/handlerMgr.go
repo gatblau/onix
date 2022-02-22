@@ -18,26 +18,29 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/gorilla/mux"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
+
 type HandlerManager struct {
-	handlerMapping  map[string]EventHandler
+	handlerMapping map[string]EventHandler
 }
 
 func NewHandlerManager() *HandlerManager {
 	mgr := new(HandlerManager)
 	mgr.handlerMapping = make(map[string]EventHandler)
 	// adding S3EventHandler to map
-	s3 := S3EventHandler{}
-	var s3e EventHandler
-	s3e = s3
-	mgr.handlerMapping["patching-package-builder"]=s3e
+	osph := OSpatchingHandler{}
+	var h EventHandler
+	h = osph
+	//map's key must be the package name
+	mgr.handlerMapping["patching-package-builder"] = h
 
 	return mgr
 }
 
-func (h HandlerManager) ServeHTTP(w http.ResponseWriter, r *http.Request){
+func (h HandlerManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pkgName := vars["package"]
 	eh := h.handlerMapping[pkgName]
@@ -46,7 +49,7 @@ func (h HandlerManager) ServeHTTP(w http.ResponseWriter, r *http.Request){
 		fmt.Printf(msg)
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
-	}else{
-		eh.HandleEvent(w,r)
+	} else {
+		eh.HandleEvent(w, r)
 	}
 }

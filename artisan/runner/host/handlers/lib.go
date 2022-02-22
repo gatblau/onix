@@ -17,7 +17,7 @@ func checkErr(w http.ResponseWriter, msg string, err error) bool {
 	return err != nil
 }
 
-func execute(name string, w http.ResponseWriter, args []string) error {
+func execute(w http.ResponseWriter, name string, args []string) error {
 	command := exec.Command(name, args...)
 
 	stdout, err := command.StdoutPipe()
