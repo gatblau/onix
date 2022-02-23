@@ -96,11 +96,11 @@ type ImageRegistry struct {
 // S3Store the details of the target S3 store within an outbound route
 type S3Store struct {
 	// URI the URI of the folder where to upload the spec tar files
-	BucketURI string `bson:"s3_bucket_uri" json:"s3_bucket_uri" yaml:"s3_bucket_uri"`
+	BucketURI string `bson:"bucket_uri" json:"bucket_uri" yaml:"bucket_uri"`
 	// User the username of the outbound S3 bucket
-	User string `bson:"s3_user" json:"s3_user" yaml:"s3_user"`
+	User string `bson:"user" json:"user" yaml:"user"`
 	// Pwd the password of the outbound S3 bucket
-	Pwd string `bson:"s3_pwd" json:"s3_pwd" yaml:"s3_pwd"`
+	Pwd string `bson:"pwd" json:"pwd" yaml:"pwd"`
 	// Sign a flag indicating whether packages pushed to the S3 service should be resigned
 	Sign bool `bson:"sign" json:"sign" yaml:"sign" example:"true"`
 	// PrivateKey the name of the private PGP key used to re-sign the packages in the tarball files
