@@ -51,5 +51,5 @@ type Pipeline struct {
 	// OutboundRoutes  the name of the outbound route to use in the pipeline
 	OutboundRoutes []OutRoute `json:"out_route"`
 	// Commands a list of the command names to be executed between inbound and outbound routes
-	Commands []string `json:"commands"`
+	Commands []Command `json:"commands"`
 }

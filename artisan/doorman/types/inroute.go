@@ -8,7 +8,9 @@
 
 package types
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // InRoute the definition of an inbound route
 type InRoute struct {
@@ -18,6 +20,8 @@ type InRoute struct {
 	Description string `bson:"description "json:"description" yaml:"description" example:"the inbound route for supplier A"`
 	// BucketURI the remote BucketURI from where inbound files should be downloaded
 	BucketURI string `bson:"bucket_uri" json:"bucket_uri" yaml:"bucket_uri" example:"s3.supplier-a.com"`
+	// BucketId a unique identifier for the bucket sent in the S3 event payload
+	BucketId string `bson:"bucket_id" json:"bucket_id" yaml:"bucket_id"`
 	// User the username to authenticate against the remote BucketURI
 	User string `bson:"user "json:"user" yaml:"user"`
 	// Pwd the password to authenticate against the remote BucketURI

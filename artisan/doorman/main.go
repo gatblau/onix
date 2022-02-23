@@ -45,7 +45,7 @@ func main() {
 		router.HandleFunc("/pipe", getAllPipelinesHandler).Methods("GET")
 
 		// doorman proxy facing endpoints
-		router.HandleFunc("/event/{uri}", eventHandler).Methods("POST")
+		router.HandleFunc("/event/{deployment-id}/{bucket-path}", eventHandler).Methods("POST")
 		router.HandleFunc("/token/{token-value}", getWebhookAuthInfoHandler).Methods("GET")
 		router.HandleFunc("/token", getWebhookAllAuthInfoHandler).Methods("GET")
 	}

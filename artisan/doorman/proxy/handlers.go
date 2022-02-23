@@ -81,19 +81,17 @@ func minioEventsHandler(w http.ResponseWriter, r *http.Request) {
 		util.Err(w, http.StatusBadRequest, fmt.Sprintf("invalid event, changed object was %s but required spec.yaml", object.Key))
 		return
 	}
-	bucket := event.Records[0].S3.Bucket.Name
-	endpoint := event.Records[0].ResponseElements.XMinioOriginEndpoint
+	cut := strings.LastIndex(object.Key, "/")
+	// get the path within the bucket
+	path := url.PathEscape(object.Key[:cut])
+	// get the unique identifier for the bucket
+	deploymentId := event.Records[0].ResponseElements.XMinioDeploymentID
 	// constructs the URI of the object that changed
 	doormanBaseURI, err := getDoormanBaseURI()
 	if util.IsErr(w, err, http.StatusInternalServerError, "missing configuration") {
 		return
 	}
-	key, unescapeErr := url.PathUnescape(object.Key)
-	if util.IsErr(w, unescapeErr, http.StatusInternalServerError, fmt.Sprintf("cannot unescape object key %s", object.Key)) {
-		return
-	}
-	referralURI := fmt.Sprintf("%s/%s/%s", endpoint, bucket, key)
-	requestURI := fmt.Sprintf("%s/event/%s", doormanBaseURI, url.PathEscape(referralURI))
+	requestURI := fmt.Sprintf("%s/event/%s/%s", doormanBaseURI, deploymentId, path)
 	if _, postErr, code := newRequest("POST", requestURI); postErr != nil {
 		w.WriteHeader(code)
 		w.Write([]byte(postErr.Error()))

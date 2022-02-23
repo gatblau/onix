@@ -32,12 +32,12 @@ func FindPipeline(pipeName string) (*types.Pipeline, error) {
 	for _, route := range pipeConf.InboundRoutes {
 		result, err = db.FindByName(types.InRouteCollection, route)
 		if err != nil {
-			return nil, fmt.Errorf("cannot retrieve inbound route %s: %s", pipeConf.InboundRoutes, err)
+			return nil, fmt.Errorf("cannot retrieve inbound route %s: %s", route, err)
 		}
 		inRoute := new(types.InRoute)
 		err = result.Decode(inRoute)
 		if err != nil {
-			return nil, fmt.Errorf("cannot decode inbound route %s: %s", pipeConf.InboundRoutes, err)
+			return nil, fmt.Errorf("cannot decode inbound route %s: %s", route, err)
 		}
 		inRoutes = append(inRoutes, *inRoute)
 	}
@@ -45,20 +45,33 @@ func FindPipeline(pipeName string) (*types.Pipeline, error) {
 	for _, route := range pipeConf.OutboundRoutes {
 		result, err = db.FindByName(types.OutRouteCollection, route)
 		if err != nil {
-			return nil, fmt.Errorf("cannot retrieve outbound route %s: %s", pipeConf.OutboundRoutes, err)
+			return nil, fmt.Errorf("cannot retrieve outbound route %s: %s", route, err)
 		}
 		outRoute := new(types.OutRoute)
 		err = result.Decode(outRoute)
 		if err != nil {
-			return nil, fmt.Errorf("cannot decode outbound route %s: %s", pipeConf.OutboundRoutes, err)
+			return nil, fmt.Errorf("cannot decode outbound route %s: %s", route, err)
 		}
 		outRoutes = append(outRoutes, *outRoute)
+	}
+	var cmds []types.Command
+	for _, cmd := range pipeConf.Commands {
+		result, err = db.FindByName(types.CommandsCollection, cmd)
+		if err != nil {
+			return nil, fmt.Errorf("cannot retrieve command %s: %s", cmd, err)
+		}
+		cmdObj := new(types.Command)
+		err = result.Decode(cmdObj)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode command %s: %s", cmd, err)
+		}
+		cmds = append(cmds, *cmdObj)
 	}
 	pipe := &types.Pipeline{
 		Name:           pipeConf.Name,
 		InboundRoutes:  inRoutes,
 		OutboundRoutes: outRoutes,
-		Commands:       pipeConf.Commands,
+		Commands:       cmds,
 	}
 	return pipe, nil
 }
@@ -97,6 +110,38 @@ func FindAllPipelines() ([]types.PipelineConf, error) {
 	return pipelines, nil
 }
 
+func FindPipelinesByInboundId(id string) ([]types.Pipeline, error) {
+	var (
+		pipes    []types.Pipeline
+		routes   []types.InRoute
+		pipeline *types.Pipeline
+		err      error
+	)
+	routes, err = FindInboundRoutesById(id)
+	if err != nil {
+		return nil, err
+	}
+	db := NewDb()
+	var pipeConfs []types.PipelineConf
+	for _, route := range routes {
+		// any pipeline having route.Name in their inbound routes array
+		filter := bson.M{"inbound_routes": bson.M{"$all": []string{route.Name}}}
+		if err = db.FindMany(types.PipelineCollection, filter, func(cursor *mongo.Cursor) error {
+			return cursor.All(context.Background(), &pipeConfs)
+		}); err != nil {
+			return nil, err
+		}
+	}
+	for _, conf := range pipeConfs {
+		pipeline, err = FindPipeline(conf.Name)
+		if err != nil {
+			return nil, err
+		}
+		pipes = append(pipes, *pipeline)
+	}
+	return pipes, nil
+}
+
 func FindPipelinesByInboundURI(uri string) ([]types.Pipeline, error) {
 	var (
 		pipes    []types.Pipeline
@@ -105,6 +150,38 @@ func FindPipelinesByInboundURI(uri string) ([]types.Pipeline, error) {
 		err      error
 	)
 	routes, err = FindInboundRoutesByURI(uri)
+	if err != nil {
+		return nil, err
+	}
+	db := NewDb()
+	var pipeConfs []types.PipelineConf
+	for _, route := range routes {
+		// any pipeline having route.Name in their inbound routes array
+		filter := bson.M{"inbound_routes": bson.M{"$all": []string{route.Name}}}
+		if err = db.FindMany(types.PipelineCollection, filter, func(cursor *mongo.Cursor) error {
+			return cursor.All(context.Background(), &pipeConfs)
+		}); err != nil {
+			return nil, err
+		}
+	}
+	for _, conf := range pipeConfs {
+		pipeline, err = FindPipeline(conf.Name)
+		if err != nil {
+			return nil, err
+		}
+		pipes = append(pipes, *pipeline)
+	}
+	return pipes, nil
+}
+
+func FindPipelinesByBucketId(id string) ([]types.Pipeline, error) {
+	var (
+		pipes    []types.Pipeline
+		routes   []types.InRoute
+		pipeline *types.Pipeline
+		err      error
+	)
+	routes, err = FindInboundRoutesById(id)
 	if err != nil {
 		return nil, err
 	}

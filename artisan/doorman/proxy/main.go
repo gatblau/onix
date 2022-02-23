@@ -34,6 +34,7 @@ func main() {
 	s := httpserver.New("doorman")
 	// add handlers
 	s.Http = func(router *mux.Router) {
+		router.Use(s.LoggingMiddleware)
 		// apply authentication
 		router.Use(s.AuthenticationMiddleware)
 

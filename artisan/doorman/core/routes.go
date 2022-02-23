@@ -18,7 +18,18 @@ import (
 func FindInboundRoutesByURI(uri string) ([]types.InRoute, error) {
 	var routes []types.InRoute
 	db := NewDb()
-	if err := db.FindMany(types.InRouteCollection, bson.M{"uri": uri}, func(cursor *mongo.Cursor) error {
+	if err := db.FindMany(types.InRouteCollection, bson.M{"bucket_uri": uri}, func(cursor *mongo.Cursor) error {
+		return cursor.All(context.Background(), &routes)
+	}); err != nil {
+		return nil, err
+	}
+	return routes, nil
+}
+
+func FindInboundRoutesById(id string) ([]types.InRoute, error) {
+	var routes []types.InRoute
+	db := NewDb()
+	if err := db.FindMany(types.InRouteCollection, bson.M{"bucket_id": id}, func(cursor *mongo.Cursor) error {
 		return cursor.All(context.Background(), &routes)
 	}); err != nil {
 		return nil, err

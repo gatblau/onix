@@ -1,21 +1,23 @@
 ---
 env:
-  DOORMAN_URI: http://localhost:8080
+  DOORMAN_URI: http://localhost:9999
+  USER: admin
+  PWD: adm1n
 
 functions:
   - name: configure
     description: configure a testing pipeline in doorman
     run:
-      - art curl -X PUT ${DOORMAN_URI}/notification-template -H 'Content-Type:application/yaml' -f new_release_template.yaml -C 400
-      - art curl -X PUT ${DOORMAN_URI}/notification-template -H 'Content-Type:application/yaml' -f issue_template.yaml -C 400
-      - art curl -X PUT ${DOORMAN_URI}/notification-template -H 'Content-Type:application/yaml' -f quarantine_template.yaml -C 400
-      - art curl -X PUT ${DOORMAN_URI}/notification -H 'Content-Type:application/yaml' -f success_notification.yaml -C 400
-      - art curl -X PUT ${DOORMAN_URI}/notification -H 'Content-Type:application/yaml' -f fail_error_notification.yaml -C 400
-      - art curl -X PUT ${DOORMAN_URI}/notification -H 'Content-Type:application/yaml' -f fail_scan_notification.yaml -C 400
-      - art curl -X PUT ${DOORMAN_URI}/key -H 'Content-Type:application/yaml' -f pub_key.yaml -C 400
-      - art curl -X PUT ${DOORMAN_URI}/key -H 'Content-Type:application/yaml' -f pk_key.yaml -C 400
-      - art curl -X PUT ${DOORMAN_URI}/route/in -H 'Content-Type:application/yaml' -f in_route.yaml -C 400
-      - art curl -X PUT ${DOORMAN_URI}/route/out -H 'Content-Type:application/yaml' -f out_route.yaml -C 400
-      - art curl -X PUT ${DOORMAN_URI}/command -H 'Content-Type:application/yaml' -f clam_cmd.yaml -C 400
-      - art curl -X PUT ${DOORMAN_URI}/pipe -H 'Content-Type:application/yaml' -f pipe.yaml -C 400
+      - art curl -X PUT ${DOORMAN_URI}/notification-template -H 'Content-Type:application/yaml' -f new_release_template.yaml -C 400 -u ${USER}:${PWD}
+      - art curl -X PUT ${DOORMAN_URI}/notification-template -H 'Content-Type:application/yaml' -f issue_template.yaml -C 400 -u ${USER}:${PWD}
+      - art curl -X PUT ${DOORMAN_URI}/notification-template -H 'Content-Type:application/yaml' -f quarantine_template.yaml -C 400 -u ${USER}:${PWD}
+      - art curl -X PUT ${DOORMAN_URI}/notification -H 'Content-Type:application/yaml' -f success_notification.yaml -C 400 -u ${USER}:${PWD}
+      - art curl -X PUT ${DOORMAN_URI}/notification -H 'Content-Type:application/yaml' -f fail_error_notification.yaml -C 400 -u ${USER}:${PWD}
+      - art curl -X PUT ${DOORMAN_URI}/notification -H 'Content-Type:application/yaml' -f fail_scan_notification.yaml -C 400 -u ${USER}:${PWD}
+      - art curl -X PUT ${DOORMAN_URI}/key -H 'Content-Type:application/yaml' -f pub_key.yaml -C 400 -u ${USER}:${PWD}
+      - art curl -X PUT ${DOORMAN_URI}/key -H 'Content-Type:application/yaml' -f pk_key.yaml -C 400 -u ${USER}:${PWD}
+      - art curl -X PUT ${DOORMAN_URI}/route/in -H 'Content-Type:application/yaml' -f in_route.yaml -C 400 -u ${USER}:${PWD}
+      - art curl -X PUT ${DOORMAN_URI}/route/out -H 'Content-Type:application/yaml' -f out_route.yaml -C 400 -u ${USER}:${PWD}
+      - art curl -X PUT ${DOORMAN_URI}/command -H 'Content-Type:application/yaml' -f clam_cmd.yaml -C 400 -u ${USER}:${PWD}
+      - art curl -X PUT ${DOORMAN_URI}/pipe -H 'Content-Type:application/yaml' -f pipe.yaml -C 400 -u ${USER}:${PWD}
 ...

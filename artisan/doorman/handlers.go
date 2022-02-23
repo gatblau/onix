@@ -330,20 +330,27 @@ func getAllNotificationTemplatesHandler(w http.ResponseWriter, r *http.Request) 
 // @Summary Triggers the ingestion of an artisan spec artefacts
 // @Description Triggers the ingestion of a specification
 // @Tags Webhook
-// @Router /event/{uri} [post]
-// @Param uri path string true "the URI of the service where a spec has been uploaded"
+// @Router /event/{deployment-id}/{bucket-path} [post]
+// @Param deployment-id path string true "a unique identifier for the bucket endpoint (e.g. x-minio-deployment-id for MinIO)"
+// @Param bucket-path path string true "the path to the folder within the bucket that contains the uploaded files"
 // @Produce plain
 // @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 201 {string} ingestion process has started
 func eventHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	uri := vars["uri"]
-	uri, err := url.PathUnescape(uri)
-	if util.IsErr(w, err, http.StatusInternalServerError, "cannot unescape path") {
+	id := vars["deployment-id"]
+	id, err := url.PathUnescape(id)
+	if util.IsErr(w, err, http.StatusInternalServerError, "cannot unescape deployment-id") {
 		return
 	}
-	core.ProcessAsync(uri)
+	bucketPath := vars["bucket-path"]
+	bucketPath, err = url.PathUnescape(bucketPath)
+	if util.IsErr(w, err, http.StatusInternalServerError, "cannot unescape bucket-path") {
+		return
+	}
+	processor := core.NewProcessor(id, bucketPath)
+	processor.Start()
 	w.WriteHeader(http.StatusCreated)
 }
 
