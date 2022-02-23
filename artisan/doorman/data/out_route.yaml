@@ -12,7 +12,7 @@ package_registry:
   sign: true
   private_key: TEST_PK
 s3_store:
-  bucker_uri: s3://localhost:9000/target-bucket
+  bucket_uri: s3://localhost:9000/target-bucket
   user: admin
   pwd: password
   private_key: TEST_PK
