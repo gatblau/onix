@@ -153,18 +153,19 @@ func (r *API) GetHosts(oGroup, or, ar, loc string, label []string) ([]Host, erro
 		return nil, fmt.Errorf("cannot get hosts: %s\n", err)
 	}
 	var (
-		uuId      string
-		connected bool
-		lastSeen  sql.NullTime
-		orgGroup  sql.NullString
-		org       sql.NullString
-		area      sql.NullString
-		location  sql.NullString
-		inService bool
-		labels    []string
+		uuId       string
+		macAddress string
+		connected  bool
+		lastSeen   sql.NullTime
+		orgGroup   sql.NullString
+		org        sql.NullString
+		area       sql.NullString
+		location   sql.NullString
+		inService  bool
+		labels     []string
 	)
 	for rows.Next() {
-		err = rows.Scan(&uuId, &connected, &lastSeen, &orgGroup, &org, &area, &location, &inService, &labels)
+		err = rows.Scan(&uuId, &macAddress, &connected, &lastSeen, &orgGroup, &org, &area, &location, &inService, &labels)
 		if err != nil {
 			return nil, err
 		}
@@ -181,16 +182,17 @@ func (r *API) GetHosts(oGroup, or, ar, loc string, label []string) ([]Host, erro
 			}
 		}
 		hosts = append(hosts, Host{
-			HostUUID:  uuId,
-			OrgGroup:  orgGroup.String,
-			Org:       org.String,
-			Area:      area.String,
-			Location:  location.String,
-			Connected: connected,
-			LastSeen:  tt,
-			Since:     since,
-			SinceType: sinceType,
-			Label:     labels,
+			HostUUID:       uuId,
+			HostMacAddress: macAddress,
+			OrgGroup:       orgGroup.String,
+			Org:            org.String,
+			Area:           area.String,
+			Location:       location.String,
+			Connected:      connected,
+			LastSeen:       tt,
+			Since:          since,
+			SinceType:      sinceType,
+			Label:          labels,
 		})
 	}
 	return hosts, rows.Err()
