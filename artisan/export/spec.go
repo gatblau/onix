@@ -222,6 +222,47 @@ func DownloadSpec(targetUri, targetCreds, localPath string) error {
 	return nil
 }
 
+func UploadSpec(targetUri, targetCreds, localPath string) error {
+	spec, err := NewSpec(localPath, targetCreds)
+	if err != nil {
+		return fmt.Errorf("cannot load specification: %s", err)
+	}
+	if err = checkPath(localPath); err != nil {
+		return fmt.Errorf("cannot create local path: %s", err)
+	}
+	err = core.WriteFile(spec.content, fmt.Sprintf("%s/spec.yaml", targetUri), targetCreds)
+	if err != nil {
+		return err
+	}
+	for _, pkg := range spec.Packages {
+		localUri := fmt.Sprintf("%s/%s.tar", localPath, pkgName(pkg))
+		remoteUri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(pkg))
+		core.InfoLogger.Printf("uploading => %s\n", remoteUri)
+		content, readErr := os.ReadFile(localUri)
+		if readErr != nil {
+			return readErr
+		}
+		err = core.WriteFile(content, remoteUri, targetCreds)
+		if err != nil {
+			return err
+		}
+	}
+	for _, image := range spec.Images {
+		localUri := fmt.Sprintf("%s/%s.tar", localPath, pkgName(image))
+		remoteUri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(image))
+		core.InfoLogger.Printf("uploading => %s\n", remoteUri)
+		content, readErr := os.ReadFile(localUri)
+		if readErr != nil {
+			return readErr
+		}
+		err = core.WriteFile(content, remoteUri, targetCreds)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func PullSpec(targetUri, targetCreds, sourceCreds string) error {
 	cli, cmdErr := containerCmd()
 	if cmdErr != nil {
