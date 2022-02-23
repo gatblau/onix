@@ -119,7 +119,11 @@ func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds, filter string) erro
 	return nil
 }
 
-func ImportSpec(targetUri, targetCreds, filter string, ignoreSignature bool) error {
+func ImportSpec(targetUri, targetCreds, filter, pubKeyPath string, ignoreSignature bool) error {
+	// if it is not ignoring the package signature, then a public key path must be provided
+	if !ignoreSignature && len(pubKeyPath) == 0 {
+		return fmt.Errorf("the path to a public key must be provided to verify the package author, otherwise ignore signature")
+	}
 	var skipArtefact bool
 	r := registry.NewLocalRegistry()
 	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
@@ -143,7 +147,7 @@ func ImportSpec(targetUri, targetCreds, filter string, ignoreSignature bool) err
 			continue
 		}
 		name := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(pkName))
-		err2 := r.Import([]string{name}, targetCreds)
+		err2 := r.Import([]string{name}, targetCreds, pubKeyPath, ignoreSignature)
 		if err2 != nil {
 			return fmt.Errorf("cannot read %s.tar: %s", pkgName(pkName), err2)
 		}
@@ -158,7 +162,7 @@ func ImportSpec(targetUri, targetCreds, filter string, ignoreSignature bool) err
 			continue
 		}
 		name := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(image))
-		err2 := r.Import([]string{name}, targetCreds)
+		err2 := r.Import([]string{name}, targetCreds, pubKeyPath, ignoreSignature)
 		if err2 != nil {
 			return fmt.Errorf("cannot read %s.tar: %s", pkgName(image), err)
 		}
@@ -246,7 +250,27 @@ func PullSpec(targetUri, targetCreds, sourceCreds string) error {
 	return nil
 }
 
-func PushSpec(specPath, host, group, user, creds string, image, clean bool) error {
+func PushSpec(specPath, host, group, user, creds string, image, clean, logout bool) error {
+	var (
+		cli, usr, pwd string
+		err           error
+	)
+	// if pushing images and user credentials have been defined
+	if image && len(user) > 0 {
+		// preforms a docker login
+		cli, err = containerCmd()
+		if err != nil {
+			return err
+		}
+		core.InfoLogger.Printf("logging to docker registry")
+		// executes docker login --username=right-username --password=""
+		usr, pwd = core.UserPwd(user)
+		out, eErr := build.Exe(fmt.Sprintf("%s login %s --username=%s --password=%s", cli, host, usr, pwd), ".", merge.NewEnVarFromSlice([]string{}), false)
+		if eErr != nil {
+			return eErr
+		}
+		core.InfoLogger.Printf("%s\n", out)
+	}
 	local := registry.NewLocalRegistry()
 	spec, err := NewSpec(specPath, creds)
 	if err != nil {
@@ -281,13 +305,6 @@ func PushSpec(specPath, host, group, user, creds string, image, clean bool) erro
 			}
 		}
 	} else {
-		if len(user) > 0 {
-			return fmt.Errorf("credentials specified but not used, for images ensure you are logged to the destination registry")
-		}
-		cli, cmdErr := containerCmd()
-		if cmdErr != nil {
-			return cmdErr
-		}
 		for _, img := range spec.Images {
 			tgtNameStr, _, tgtNameErr := targetName(img, group, host)
 			if tgtNameErr != nil {
@@ -314,6 +331,13 @@ func PushSpec(specPath, host, group, user, creds string, image, clean bool) erro
 				if err != nil {
 					return err
 				}
+			}
+		}
+		// if a logout was requested
+		if image && len(user) > 0 && logout {
+			_, err = build.Exe(fmt.Sprintf("%s logout %s", cli, host), ".", merge.NewEnVarFromSlice([]string{}), false)
+			if err != nil {
+				return err
 			}
 		}
 	}
