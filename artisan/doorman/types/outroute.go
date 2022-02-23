@@ -100,7 +100,7 @@ type S3Store struct {
 	// User the username of the outbound S3 bucket
 	User string `bson:"s3_user" json:"s3_user" yaml:"s3_user"`
 	// Pwd the password of the outbound S3 bucket
-	Pwd string `bson:"s3_pwd" json:"s3_user" yaml:"s3_user"`
+	Pwd string `bson:"s3_pwd" json:"s3_pwd" yaml:"s3_pwd"`
 	// Sign a flag indicating whether packages pushed to the S3 service should be resigned
 	Sign bool `bson:"sign" json:"sign" yaml:"sign" example:"true"`
 	// PrivateKey the name of the private PGP key used to re-sign the packages in the tarball files
