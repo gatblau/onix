@@ -20,6 +20,11 @@ func init() {
 	godotenv.Load("proxy.env")
 }
 
+func isLoggingEnabled() bool {
+	value := os.Getenv("DPROXY_LOGGING")
+	return len(value) > 0
+}
+
 func getEmailFrom() (string, error) {
 	value := os.Getenv("DPROXY_EMAIL_FROM")
 	if len(value) == 0 {

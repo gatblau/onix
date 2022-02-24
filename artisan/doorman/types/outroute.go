@@ -95,7 +95,7 @@ type ImageRegistry struct {
 
 // S3Store the details of the target S3 store within an outbound route
 type S3Store struct {
-	// URI the URI of the folder where to upload the spec tar files
+	// BucketURI the URI of the folder where to upload the spec tar files
 	BucketURI string `bson:"bucket_uri" json:"bucket_uri" yaml:"bucket_uri"`
 	// User the username of the outbound S3 bucket
 	User string `bson:"user" json:"user" yaml:"user"`

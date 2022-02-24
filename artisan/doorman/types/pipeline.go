@@ -53,3 +53,17 @@ type Pipeline struct {
 	// Commands a list of the command names to be executed between inbound and outbound routes
 	Commands []Command `json:"commands"`
 }
+
+func (p Pipeline) Valid() error {
+	for _, route := range p.InboundRoutes {
+		if err := route.Valid(); err != nil {
+			return err
+		}
+	}
+	for _, route := range p.OutboundRoutes {
+		if err := route.Valid(); err != nil {
+			return err
+		}
+	}
+	return nil
+}

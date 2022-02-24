@@ -178,14 +178,8 @@ definitions:
     type: object
   types.InRoute:
     properties:
-      bucket_id:
-        description: BucketId a unique identifier for the bucket sent in the S3 event
-          payload
-        type: string
-      bucket_uri:
-        description: BucketURI the remote BucketURI from where inbound files should
-          be downloaded
-        example: s3.supplier-a.com
+      bucket_name:
+        description: BucketName the name of the S3 bucket containing files to download
         type: string
       description:
         description: Description a description indicating the purpose of the route
@@ -205,10 +199,19 @@ definitions:
           downloaded files
         type: string
       pwd:
-        description: Pwd the password to authenticate against the remote BucketURI
+        description: Pwd the password to authenticate against the remote ServiceHost
+        type: string
+      service_host:
+        description: ServiceHost the remote host from where inbound files should be
+          downloaded
+        example: s3.supplier-a.com
+        type: string
+      service_id:
+        description: ServiceId a unique identifier for the S3 service where inbound
+          files should be downloaded
         type: string
       user:
-        description: User the username to authenticate against the remote BucketURI
+        description: User the username to authenticate against the remote ServiceHost
         type: string
       verify:
         description: Verify a flag indicating whether author verification should be
@@ -362,15 +365,16 @@ definitions:
     type: object
   types.S3Store:
     properties:
+      bucket_uri:
+        description: BucketURI the URI of the folder where to upload the spec tar
+          files
+        type: string
       private_key:
         description: PrivateKey the name of the private PGP key used to re-sign the
           packages in the tarball files
         example: SIGNING_KEY_01
         type: string
-      s3_bucket_uri:
-        description: URI the URI of the folder where to upload the spec tar files
-        type: string
-      s3_user:
+      pwd:
         description: Pwd the password of the outbound S3 bucket
         type: string
       sign:
@@ -378,6 +382,9 @@ definitions:
           should be resigned
         example: true
         type: boolean
+      user:
+        description: User the username of the outbound S3 bucket
+        type: string
     type: object
 info:
   contact:
@@ -442,7 +449,7 @@ paths:
       summary: Creates or updates a command
       tags:
       - Commands
-  /event/{deployment-id}/{bucket-path}:
+  /event/{service-id}/{bucket-name}/{folder-name}:
     post:
       description: Triggers the ingestion of a specification
       parameters:
@@ -452,10 +459,15 @@ paths:
         name: deployment-id
         required: true
         type: string
-      - description: the path to the folder within the bucket that contains the uploaded
+      - description: the name of the bucket that contains the uploaded files
+        in: path
+        name: bucket-name
+        required: true
+        type: string
+      - description: the name of the folder within the bucket that contains the uploaded
           files
         in: path
-        name: bucket-path
+        name: folder-name
         required: true
         type: string
       produces:

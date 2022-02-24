@@ -55,3 +55,18 @@ func (db *Db) FindKeyByName(name string) (*types.Key, error) {
 	}
 	return &key, nil
 }
+
+func (db *Db) UpsertKey(key *types.Key) (error, int) {
+	if key.IsPrivate {
+		enc, err := encrypt(key.Value)
+		if err != nil {
+			return err, -1
+		}
+		key.Value = enc
+	}
+	_, err, resultCode := db.UpsertObject(types.KeysCollection, key)
+	if err != nil {
+		return err, resultCode
+	}
+	return nil, resultCode
+}

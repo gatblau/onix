@@ -54,7 +54,7 @@ func upsertKeyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	db := core.NewDb()
 	var resultCode int
-	_, err, resultCode = db.UpsertObject(types.KeysCollection, key)
+	err, resultCode = db.UpsertKey(key)
 	if util.IsErr(w, err, resultCode, "cannot update key in database") {
 		return
 	}
@@ -330,26 +330,32 @@ func getAllNotificationTemplatesHandler(w http.ResponseWriter, r *http.Request) 
 // @Summary Triggers the ingestion of an artisan spec artefacts
 // @Description Triggers the ingestion of a specification
 // @Tags Webhook
-// @Router /event/{deployment-id}/{bucket-path} [post]
+// @Router /event/{service-id}/{bucket-name}/{folder-name} [post]
 // @Param deployment-id path string true "a unique identifier for the bucket endpoint (e.g. x-minio-deployment-id for MinIO)"
-// @Param bucket-path path string true "the path to the folder within the bucket that contains the uploaded files"
+// @Param bucket-name path string true "the name of the bucket that contains the uploaded files"
+// @Param folder-name path string true "the name of the folder within the bucket that contains the uploaded files"
 // @Produce plain
 // @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 201 {string} ingestion process has started
 func eventHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id := vars["deployment-id"]
+	id := vars["service-id"]
 	id, err := url.PathUnescape(id)
 	if util.IsErr(w, err, http.StatusInternalServerError, "cannot unescape deployment-id") {
 		return
 	}
-	bucketPath := vars["bucket-path"]
-	bucketPath, err = url.PathUnescape(bucketPath)
-	if util.IsErr(w, err, http.StatusInternalServerError, "cannot unescape bucket-path") {
+	bucketName := vars["bucket-name"]
+	bucketName, err = url.PathUnescape(bucketName)
+	if util.IsErr(w, err, http.StatusInternalServerError, "cannot unescape bucket-name") {
 		return
 	}
-	processor := core.NewProcessor(id, bucketPath)
+	folderName := vars["folder-name"]
+	folderName, err = url.PathUnescape(folderName)
+	if util.IsErr(w, err, http.StatusInternalServerError, "cannot unescape folderName") {
+		return
+	}
+	processor := core.NewProcessor(id, bucketName, folderName)
 	processor.Start()
 	w.WriteHeader(http.StatusCreated)
 }
@@ -386,7 +392,7 @@ func getWebhookAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
 	for _, route := range routes {
 		info = append(info, types.WebhookAuthInfo{
 			WebhookToken: route.WebhookToken,
-			ReferrerURL:  route.BucketURI,
+			ReferrerURL:  route.ServiceHost,
 			Whitelist:    route.WebhookWhitelist,
 			Filter:       route.Filter,
 		})
@@ -414,7 +420,7 @@ func getWebhookAllAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
 	for _, route := range routes {
 		info = append(info, types.WebhookAuthInfo{
 			WebhookToken: route.WebhookToken,
-			ReferrerURL:  route.BucketURI,
+			ReferrerURL:  route.ServiceHost,
 			Whitelist:    route.WebhookWhitelist,
 			Filter:       route.Filter,
 		})

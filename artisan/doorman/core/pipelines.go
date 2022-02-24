@@ -110,38 +110,6 @@ func FindAllPipelines() ([]types.PipelineConf, error) {
 	return pipelines, nil
 }
 
-func FindPipelinesByInboundId(id string) ([]types.Pipeline, error) {
-	var (
-		pipes    []types.Pipeline
-		routes   []types.InRoute
-		pipeline *types.Pipeline
-		err      error
-	)
-	routes, err = FindInboundRoutesById(id)
-	if err != nil {
-		return nil, err
-	}
-	db := NewDb()
-	var pipeConfs []types.PipelineConf
-	for _, route := range routes {
-		// any pipeline having route.Name in their inbound routes array
-		filter := bson.M{"inbound_routes": bson.M{"$all": []string{route.Name}}}
-		if err = db.FindMany(types.PipelineCollection, filter, func(cursor *mongo.Cursor) error {
-			return cursor.All(context.Background(), &pipeConfs)
-		}); err != nil {
-			return nil, err
-		}
-	}
-	for _, conf := range pipeConfs {
-		pipeline, err = FindPipeline(conf.Name)
-		if err != nil {
-			return nil, err
-		}
-		pipes = append(pipes, *pipeline)
-	}
-	return pipes, nil
-}
-
 func FindPipelinesByInboundURI(uri string) ([]types.Pipeline, error) {
 	var (
 		pipes    []types.Pipeline
@@ -174,14 +142,14 @@ func FindPipelinesByInboundURI(uri string) ([]types.Pipeline, error) {
 	return pipes, nil
 }
 
-func FindPipelinesByBucketId(id string) ([]types.Pipeline, error) {
+func MatchPipelines(serviceId, bucketName string) ([]types.Pipeline, error) {
 	var (
 		pipes    []types.Pipeline
 		routes   []types.InRoute
 		pipeline *types.Pipeline
 		err      error
 	)
-	routes, err = FindInboundRoutesById(id)
+	routes, err = MatchInboundRoutes(serviceId, bucketName)
 	if err != nil {
 		return nil, err
 	}
@@ -199,6 +167,9 @@ func FindPipelinesByBucketId(id string) ([]types.Pipeline, error) {
 	for _, conf := range pipeConfs {
 		pipeline, err = FindPipeline(conf.Name)
 		if err != nil {
+			return nil, err
+		}
+		if err = pipeline.Valid(); err != nil {
 			return nil, err
 		}
 		pipes = append(pipes, *pipeline)

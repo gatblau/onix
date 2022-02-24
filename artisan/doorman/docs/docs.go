@@ -105,7 +105,7 @@ var doc = `{
                 }
             }
         },
-        "/event/{deployment-id}/{bucket-path}": {
+        "/event/{service-id}/{bucket-name}/{folder-name}": {
             "post": {
                 "description": "Triggers the ingestion of a specification",
                 "produces": [
@@ -125,8 +125,15 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "the path to the folder within the bucket that contains the uploaded files",
-                        "name": "bucket-path",
+                        "description": "the name of the bucket that contains the uploaded files",
+                        "name": "bucket-name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the name of the folder within the bucket that contains the uploaded files",
+                        "name": "folder-name",
                         "in": "path",
                         "required": true
                     }
@@ -1078,14 +1085,9 @@ var doc = `{
         "types.InRoute": {
             "type": "object",
             "properties": {
-                "bucket_id": {
-                    "description": "BucketId a unique identifier for the bucket sent in the S3 event payload",
+                "bucket_name": {
+                    "description": "BucketName the name of the S3 bucket containing files to download",
                     "type": "string"
-                },
-                "bucket_uri": {
-                    "description": "BucketURI the remote BucketURI from where inbound files should be downloaded",
-                    "type": "string",
-                    "example": "s3.supplier-a.com"
                 },
                 "description": {
                     "description": "Description a description indicating the purpose of the route",
@@ -1106,11 +1108,20 @@ var doc = `{
                     "type": "string"
                 },
                 "pwd": {
-                    "description": "Pwd the password to authenticate against the remote BucketURI",
+                    "description": "Pwd the password to authenticate against the remote ServiceHost",
+                    "type": "string"
+                },
+                "service_host": {
+                    "description": "ServiceHost the remote host from where inbound files should be downloaded",
+                    "type": "string",
+                    "example": "s3.supplier-a.com"
+                },
+                "service_id": {
+                    "description": "ServiceId a unique identifier for the S3 service where inbound files should be downloaded",
                     "type": "string"
                 },
                 "user": {
-                    "description": "User the username to authenticate against the remote BucketURI",
+                    "description": "User the username to authenticate against the remote ServiceHost",
                     "type": "string"
                 },
                 "verify": {
@@ -1302,16 +1313,16 @@ var doc = `{
         "types.S3Store": {
             "type": "object",
             "properties": {
+                "bucket_uri": {
+                    "description": "BucketURI the URI of the folder where to upload the spec tar files",
+                    "type": "string"
+                },
                 "private_key": {
                     "description": "PrivateKey the name of the private PGP key used to re-sign the packages in the tarball files",
                     "type": "string",
                     "example": "SIGNING_KEY_01"
                 },
-                "s3_bucket_uri": {
-                    "description": "URI the URI of the folder where to upload the spec tar files",
-                    "type": "string"
-                },
-                "s3_user": {
+                "pwd": {
                     "description": "Pwd the password of the outbound S3 bucket",
                     "type": "string"
                 },
@@ -1319,6 +1330,10 @@ var doc = `{
                     "description": "Sign a flag indicating whether packages pushed to the S3 service should be resigned",
                     "type": "boolean",
                     "example": true
+                },
+                "user": {
+                    "description": "User the username of the outbound S3 bucket",
+                    "type": "string"
                 }
             }
         }

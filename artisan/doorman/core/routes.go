@@ -26,10 +26,10 @@ func FindInboundRoutesByURI(uri string) ([]types.InRoute, error) {
 	return routes, nil
 }
 
-func FindInboundRoutesById(id string) ([]types.InRoute, error) {
+func MatchInboundRoutes(serviceId, bucketName string) ([]types.InRoute, error) {
 	var routes []types.InRoute
 	db := NewDb()
-	if err := db.FindMany(types.InRouteCollection, bson.M{"bucket_id": id}, func(cursor *mongo.Cursor) error {
+	if err := db.FindMany(types.InRouteCollection, bson.M{"service_id": serviceId, "bucket_name": bucketName}, func(cursor *mongo.Cursor) error {
 		return cursor.All(context.Background(), &routes)
 	}); err != nil {
 		return nil, err

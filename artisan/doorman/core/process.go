@@ -25,26 +25,28 @@ import (
 )
 
 type Processor struct {
-	id   string
-	path string
-	tmp  string
-	out  *bytes.Buffer
-	db   Db
-	reg  *registry.LocalRegistry
+	serviceId  string
+	bucketName string
+	folderName string
+	tmp        string
+	out        *bytes.Buffer
+	db         Db
+	reg        *registry.LocalRegistry
+	spec       *export.Spec
 }
 
-func NewProcessor(deploymentId, bucketPath string) Processor {
+func NewProcessor(serviceId, bucketPath, folderName string) Processor {
 	p := Processor{}
-	// p.bucketURI, p.releaseURI = getURIs(id)
-	p.id = deploymentId
-	p.path = bucketPath
+	p.serviceId = serviceId
+	p.bucketName = bucketPath
+	p.folderName = folderName
 	p.out = new(bytes.Buffer)
 	p.db = *NewDb()
 	p.reg = registry.NewLocalRegistry()
 	return p
 }
 
-func (p Processor) Info(format string, a ...interface{}) {
+func (p *Processor) Info(format string, a ...interface{}) {
 	format = fmt.Sprintf("%s INFO %s\n", time.Now().Format("02-01-06 15:04:05"), format)
 	_, err := p.out.WriteString(fmt.Sprintf(format, a...))
 	if err != nil {
@@ -52,31 +54,32 @@ func (p Processor) Info(format string, a ...interface{}) {
 	}
 }
 
-func (p Processor) Error(format string, a ...interface{}) error {
+func (p *Processor) Error(format string, a ...interface{}) error {
 	format = fmt.Sprintf("%s ERROR %s", time.Now().Format("02-01-06 15:04:05"), format)
 	msg := fmt.Sprintf(format, a...)
 	p.out.WriteString(fmt.Sprintf("%s\n", msg))
 	return fmt.Errorf(msg)
 }
 
-func (p Processor) Warn(format string, a ...interface{}) {
+func (p *Processor) Warn(format string, a ...interface{}) {
 	format = fmt.Sprintf("%s WARN %s\n", time.Now().Format("02-01-06 15:04:05"), format)
 	p.out.WriteString(fmt.Sprintf(format, a...))
 }
 
 // Start starts processing a pipeline asynchronously
-func (p Processor) Start() error {
-	return p.process()
+func (p *Processor) Start() {
+	p.process()
+	fmt.Println(p.out.String())
 }
 
-func (p Processor) process() error {
-	p.Info("start processing release Id=%s - Path=%s", p.id, p.path)
-	pipes, err := FindPipelinesByBucketId(p.id)
+func (p *Processor) process() error {
+	p.Info("processing release Id=%s → %s/%s", p.serviceId, p.bucketName, p.folderName)
+	pipes, err := MatchPipelines(p.serviceId, p.bucketName)
 	if err != nil {
-		return p.Error("cannot retrieve pipelines for bucket Id='%s': %s\n", p.id, err)
+		return p.Error("cannot retrieve pipelines for bucket Id='%s': %s\n", p.serviceId, err)
 	}
 	if len(pipes) == 0 {
-		return p.Error("no pipeline configuration found for release Id=%s\n", p.id)
+		return p.Error("no pipeline configuration found for release Id=%s\n", p.serviceId)
 	}
 	for _, pipe := range pipes {
 		err = p.processPipeline(pipe)
@@ -87,8 +90,7 @@ func (p Processor) process() error {
 	return nil
 }
 
-func (p Processor) processPipeline(pipe types.Pipeline) error {
-	_ = registry.NewLocalRegistry()
+func (p *Processor) processPipeline(pipe types.Pipeline) error {
 	// create a new temp folder for processing
 	tmp, err := core.NewTempDir()
 	if err != nil {
@@ -98,7 +100,7 @@ func (p Processor) processPipeline(pipe types.Pipeline) error {
 	// find inbound route
 	for _, inRoute := range pipe.InboundRoutes {
 		// find the inbound route matching the bucket Id
-		if inRoute.BucketId == p.id {
+		if inRoute.ServiceId == p.serviceId {
 			// process the inbound route and run any specified commands
 			err = p.processInboundRoute(pipe, inRoute)
 			if err != nil {
@@ -117,13 +119,14 @@ func (p Processor) processPipeline(pipe types.Pipeline) error {
 	return nil
 }
 
-func (p Processor) processInboundRoute(pipe types.Pipeline, route types.InRoute) error {
+func (p *Processor) processInboundRoute(pipe types.Pipeline, route types.InRoute) error {
 	// download spec
 	p.Info("downloading specification: started")
-	err := export.DownloadSpec(fmt.Sprintf("%s/%s", route.BucketURI, p.path), fmt.Sprintf("%s:%s", route.User, route.Pwd), p.tmp)
+	spec, err := export.DownloadSpec(fmt.Sprintf("%s/%s", route.ServiceHost, p.bucketPath()), route.Creds(), p.tmp)
 	if err != nil {
 		return p.Error("cannot download specification: %s\n", err)
 	}
+	p.spec = spec
 	p.Info("downloading specification: complete")
 	// execute commands
 	p.Info("verifying downloaded files: started")
@@ -159,7 +162,7 @@ func (p Processor) processInboundRoute(pipe types.Pipeline, route types.InRoute)
 	return nil
 }
 
-func (p Processor) processOutboundRoute(inRoute types.InRoute, outRoute types.OutRoute) error {
+func (p *Processor) processOutboundRoute(inRoute types.InRoute, outRoute types.OutRoute) error {
 	var userPwd string
 	p.Info("processing outbound route %s: started", outRoute.Name)
 	if outRoute.S3Store != nil {
@@ -182,10 +185,17 @@ func (p Processor) processOutboundRoute(inRoute types.InRoute, outRoute types.Ou
 			}
 			// resign packages
 			p.Info("re-signing packages with key %s: started", outRoute.PackageRegistry.PrivateKey)
-			r := registry.NewLocalRegistry()
-			err = r.Sign("", p.signKeyS3File(), "")
-			if err != nil {
-				return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
+			for _, pac := range p.spec.Packages {
+				err = p.reg.Sign(pac, p.signKeyS3File(), "")
+				if err != nil {
+					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
+				}
+			}
+			for _, pac := range p.spec.Images {
+				err = p.reg.Sign(pac, p.signKeyS3File(), "")
+				if err != nil {
+					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
+				}
 			}
 			p.Info("re-signing packages with key %s: completed", outRoute.PackageRegistry.PrivateKey)
 		}
@@ -195,7 +205,7 @@ func (p Processor) processOutboundRoute(inRoute types.InRoute, outRoute types.Ou
 		if err != nil {
 			return p.Error("cannot load spec.yaml from working folder: %s", err)
 		}
-		targetURI := fmt.Sprintf("%s/%s", outRoute.S3Store.BucketURI, p.path)
+		targetURI := fmt.Sprintf("%s/%s", outRoute.S3Store.BucketURI, p.folderName)
 		err = export.ExportSpec(*spec, targetURI, "", outRoute.S3Store.Creds(), "")
 		if err != nil {
 			return p.Error("cannot export spec to %s: %s", targetURI, err)
@@ -203,7 +213,7 @@ func (p Processor) processOutboundRoute(inRoute types.InRoute, outRoute types.Ou
 		p.Info("exporting re-signed packages: completed")
 		userPwd = fmt.Sprintf("%s:%s", outRoute.S3Store.User, outRoute.S3Store.Pwd)
 		p.Info("uploading to S3 store %s: started", outRoute.S3Store.BucketURI)
-		err = export.UploadSpec(outRoute.S3Store.BucketURI, userPwd, "")
+		err = export.UploadSpec(fmt.Sprintf("%s/%s", outRoute.S3Store.BucketURI, p.folderName), userPwd, p.tmp)
 		if err != nil {
 			return p.Error("cannot upload spec tarball files to S3 store %s: %s", outRoute.S3Store.BucketURI, err)
 		}
@@ -228,17 +238,24 @@ func (p Processor) processOutboundRoute(inRoute types.InRoute, outRoute types.Ou
 			}
 			// resign packages
 			p.Info("re-signing packages with key %s: started", outRoute.PackageRegistry.PrivateKey)
-			r := registry.NewLocalRegistry()
-			err = r.Sign("", p.signKeyArtFile(), "")
-			if err != nil {
-				return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
+			for _, pac := range p.spec.Packages {
+				err = p.reg.Sign(pac, p.signKeyArtFile(), "")
+				if err != nil {
+					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
+				}
+			}
+			for _, pac := range p.spec.Images {
+				err = p.reg.Sign(pac, p.signKeyArtFile(), "")
+				if err != nil {
+					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
+				}
 			}
 			p.Info("re-signing packages with key %s: completed", outRoute.PackageRegistry.PrivateKey)
 		}
 		// tagging artefacts & pushing
 		p.Info("tagging and pushing artefacts to package registry: started")
 		userPwd = fmt.Sprintf("%s:%s", outRoute.PackageRegistry.User, outRoute.PackageRegistry.Pwd)
-		err := export.PushSpec(p.tmp, outRoute.PackageRegistry.Domain, outRoute.PackageRegistry.Group, userPwd, "", false, true, false)
+		err := export.PushSpec(p.tmp, outRoute.PackageRegistry.Domain, outRoute.PackageRegistry.Group, userPwd, "", false, true, true)
 		if err != nil {
 			return p.Error("cannot push spec artefacts to package registry: %s", err)
 		}
@@ -248,7 +265,7 @@ func (p Processor) processOutboundRoute(inRoute types.InRoute, outRoute types.Ou
 		// tagging images & pushing
 		p.Info("tagging and pushing images to docker registry: started")
 		userPwd = fmt.Sprintf("%s:%s", outRoute.ImageRegistry.User, outRoute.ImageRegistry.Pwd)
-		err := export.PushSpec(p.tmp, outRoute.PackageRegistry.Domain, outRoute.PackageRegistry.Group, userPwd, "", false, true, true)
+		err := export.PushSpec(p.tmp, outRoute.ImageRegistry.Domain, outRoute.ImageRegistry.Group, userPwd, "", true, true, true)
 		if err != nil {
 			return p.Error("cannot push spec artefacts to image registry: %s", err)
 		}
@@ -259,23 +276,24 @@ func (p Processor) processOutboundRoute(inRoute types.InRoute, outRoute types.Ou
 	return nil
 }
 
-func (p Processor) verifyKeyFile() string {
+func (p *Processor) verifyKeyFile() string {
 	return filepath.Join(p.tmp, "verify_key.pgp")
 }
 
-func (p Processor) signKeyS3File() string {
+func (p *Processor) signKeyS3File() string {
 	return filepath.Join(p.tmp, "sign_key_s3.pgp")
 }
 
-func (p Processor) signKeyArtFile() string {
+func (p *Processor) signKeyArtFile() string {
 	return filepath.Join(p.tmp, "sign_key_art.pgp")
 }
 
 func (p Processor) importSpec() error {
 	// import artefacts
 	p.Info("importing specification files: started")
-	// prune local registry
-	err := p.reg.Prune()
+	// remove all artefacts from local registry
+	// NOTE: do not use prune() to avoid removing tmp folder!
+	err := p.reg.Remove(p.reg.AllPackages())
 	if err != nil {
 		return p.Error("cannot prune local registry: %s", err)
 	}
@@ -284,18 +302,12 @@ func (p Processor) importSpec() error {
 	if err != nil {
 		return p.Error("cannot import spec: %s", err)
 	}
+	// reload the registry changes
+	p.reg.Load()
 	p.Info("importing specification files: complete")
 	return nil
 }
 
-// func getURIs(uri string) (bucketURI, releaseURI string) {
-//     parts := strings.Split(uri, "/")
-//     for i := 0; i < len(parts)-2; i++ {
-//         if i == 0 {
-//             bucketURI = parts[i]
-//         } else {
-//             bucketURI = fmt.Sprintf("%s/%s", bucketURI, parts[i])
-//         }
-//     }
-//     return bucketURI, fmt.Sprintf("%s/%s", bucketURI, parts[len(parts)-2])
-// }
+func (p Processor) bucketPath() string {
+	return fmt.Sprintf("%s/%s", p.bucketName, p.folderName)
+}

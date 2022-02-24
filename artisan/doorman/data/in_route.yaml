@@ -1,8 +1,9 @@
 ---
 name: TEST_IN_ROUTE
 description: a testing inbound route
-bucket_uri: http://127.0.0.1:9000/onix
-bucket_id: 415edcb3-16db-4f6d-828a-48c5bc33e01b
+service_id: 415edcb3-16db-4f6d-828a-48c5bc33e01b
+service_host: s3://127.0.0.1:9000
+bucket_name: onix
 user: admin
 pwd: password
 public_key: TEST_PUB

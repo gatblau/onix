@@ -12,8 +12,9 @@ package_registry:
   sign: true
   private_key: TEST_PK
 s3_store:
-  bucket_uri: s3://localhost:9000/target-bucket
+  bucket_uri: s3://localhost:9000/onix2
   user: admin
   pwd: password
+  sign: true
   private_key: TEST_PK
 ...

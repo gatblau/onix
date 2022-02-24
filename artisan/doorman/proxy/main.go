@@ -31,10 +31,13 @@ func main() {
 	// load web hook information from doorman (requires doorman to be up and running)
 	WhInfo = loadWhInfo()
 	// creates a generic http server
-	s := httpserver.New("doorman")
+	s := httpserver.New("doorman-proxy")
 	// add handlers
 	s.Http = func(router *mux.Router) {
-		router.Use(s.LoggingMiddleware)
+		// add http request login for debugging purposes (using DPROXY_LOGGING env variable)
+		if isLoggingEnabled() {
+			router.Use(s.LoggingMiddleware)
+		}
 		// apply authentication
 		router.Use(s.AuthenticationMiddleware)
 
@@ -47,6 +50,13 @@ func main() {
 	s.Auth = map[string]func(http.Request) *oxc.UserPrincipal{
 		"^/events/.*": whAuth,
 	}
+	fmt.Print(`
++++++++++++| ONIX CONFIG MANAGER |+++++++++++
+|     ___   ___   ___   ___   _     _       |
+|    | | \ | |_) | |_) / / \ \ \_/ \ \_/    |
+|    |_|_/ |_|   |_| \ \_\_/ /_/ \  |_|     |
++++++++++++|  doorman's  proxy  |++++++++++++
+`)
 	s.Serve()
 }
 
