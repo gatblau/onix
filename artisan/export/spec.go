@@ -179,30 +179,30 @@ func ImportSpec(targetUri, targetCreds, filter, pubKeyPath string, ignoreSignatu
 	return nil
 }
 
-func DownloadSpec(targetUri, targetCreds, localPath string) error {
+func DownloadSpec(targetUri, targetCreds, localPath string) (*Spec, error) {
 	spec, err := NewSpec(targetUri, targetCreds)
 	if err != nil {
-		return fmt.Errorf("cannot load specification: %s", err)
+		return nil, fmt.Errorf("cannot load specification: %s", err)
 	}
 	if err = checkPath(localPath); err != nil {
-		return fmt.Errorf("cannot create local path: %s", err)
+		return nil, fmt.Errorf("cannot create local path: %s", err)
 	}
 	err = os.WriteFile(filepath.Join(localPath, "spec.yaml"), spec.content, 0755)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, pkg := range spec.Packages {
 		pkgUri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(pkg))
 		core.InfoLogger.Printf("downloading => %s\n", pkgUri)
 		tarBytes, err2 := core.ReadFile(pkgUri, targetCreds)
 		if err2 != nil {
-			return err2
+			return nil, err2
 		}
 		pkgPath := filepath.Join(localPath, filepath.Base(pkgUri))
 		core.InfoLogger.Printf("writing => %s\n", pkgPath)
 		err = os.WriteFile(pkgPath, tarBytes, 0755)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	for _, image := range spec.Images {
@@ -210,16 +210,16 @@ func DownloadSpec(targetUri, targetCreds, localPath string) error {
 		core.InfoLogger.Printf("downloading => %s\n", imageUri)
 		tarBytes, err2 := core.ReadFile(imageUri, targetCreds)
 		if err2 != nil {
-			return err2
+			return nil, err2
 		}
 		targetFile := filepath.Join(localPath, fmt.Sprintf("%s.tar", pkgName(image)))
 		core.InfoLogger.Printf("writing => %s\n", targetFile)
 		err = os.WriteFile(targetFile, tarBytes, 0755)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return spec, nil
 }
 
 func UploadSpec(targetUri, targetCreds, localPath string) error {

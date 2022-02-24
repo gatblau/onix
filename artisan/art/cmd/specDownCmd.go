@@ -57,6 +57,6 @@ func (c *SpecDownCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("the URI of the specification is required")
 	}
 	// import the tar archive(s)
-	err := export.DownloadSpec(args[0], c.creds, c.localPath)
+	_, err := export.DownloadSpec(args[0], c.creds, c.localPath)
 	core.CheckErr(err, "cannot download spec")
 }
