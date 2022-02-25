@@ -15,6 +15,7 @@ import (
 	"github.com/gatblau/onix/oxlib/oxc"
 	"github.com/gorilla/mux"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -27,7 +28,10 @@ func main() {
 	s.Http = func(router *mux.Router) {
 		// enable encoded path  vars
 		router.UseEncodedPath()
-
+		// conditionally enable middleware
+		if len(os.Getenv("DOORMAN_LOGGING")) > 0 {
+			router.Use(s.LoggingMiddleware)
+		}
 		// apply authentication
 		router.Use(s.AuthenticationMiddleware)
 

@@ -86,6 +86,11 @@ func minioEventsHandler(w http.ResponseWriter, r *http.Request) {
 	if util.IsErr(w, err, http.StatusBadRequest, fmt.Sprintf("cannot unescape object key %s", object.Key)) {
 		return
 	}
+	// checks if the release has been doen within a folder, if not it is not valid
+	if !strings.Contains(key, "/") {
+		util.Err(w, http.StatusBadRequest, "no release folder specified in bucket, cannot accept event")
+		return
+	}
 	cut := strings.LastIndex(key, "/")
 	// get the path within the bucket
 	folderName := key[:cut]
@@ -107,9 +112,25 @@ func minioEventsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("  ✔ type   = minio compatible\n")
 	fmt.Printf("--------------------------------------------------------------------\n\n")
 	requestURI := fmt.Sprintf("%s/event/%s/%s/%s", doormanBaseURI, deploymentId, bucketName, folderName)
-	if _, postErr, code := newRequest("POST", requestURI); postErr != nil {
+	resp, postErr, code := newRequest("POST", requestURI)
+	if postErr != nil {
 		w.WriteHeader(code)
 		w.Write([]byte(postErr.Error()))
+		return
+	}
+	if resp == nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprintf("cannot connect to doorman, service is down or URI is not correct: %s", requestURI)))
+		return
+	}
+	if resp.StatusCode == 404 {
+		w.WriteHeader(http.StatusBadGateway)
+		w.Write([]byte(fmt.Sprintf("cannot connect to doorman, service URI is not correct: %s", requestURI)))
+		return
+	}
+	if resp.StatusCode > 299 {
+		w.WriteHeader(http.StatusBadGateway)
+		w.Write([]byte(fmt.Sprintf("cannot connect to doorman: %s", resp.Status)))
 		return
 	}
 	w.WriteHeader(http.StatusCreated)

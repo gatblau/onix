@@ -338,7 +338,7 @@ func getAllNotificationTemplatesHandler(w http.ResponseWriter, r *http.Request) 
 // @Description Triggers the ingestion of a specification
 // @Tags Webhook
 // @Router /event/{service-id}/{bucket-name}/{folder-name} [post]
-// @Param deployment-id path string true "a unique identifier for the bucket endpoint (e.g. x-minio-deployment-id for MinIO)"
+// @Param service-id path string true "a unique identifier for the bucket endpoint (e.g. x-minio-deployment-id for MinIO)"
 // @Param bucket-name path string true "the name of the bucket that contains the uploaded files"
 // @Param folder-name path string true "the name of the folder within the bucket that contains the uploaded files"
 // @Produce plain
@@ -349,7 +349,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["service-id"]
 	id, err := url.PathUnescape(id)
-	if util.IsErr(w, err, http.StatusInternalServerError, "cannot unescape deployment-id") {
+	if util.IsErr(w, err, http.StatusInternalServerError, "cannot unescape service-id") {
 		return
 	}
 	bucketName := vars["bucket-name"]
