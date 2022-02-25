@@ -18,6 +18,7 @@ ENV GID=1000
 # the location of the artisan registry files in the image
 # NB if changed, ensure there is a trailing slash at the end of the path
 ENV ARTISAN_HOME=/opt/
+ENV OX_HTTP_PORT=9999
 
 RUN dnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y && \
     dnf install -y  https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm && \
@@ -45,4 +46,4 @@ COPY ./bin/linux/doorman ./
 
 CMD ["sh", "-c", "/app/doorman"]
 
-EXPOSE 8080/tcp
+EXPOSE 9999/tcp

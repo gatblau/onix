@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 // @title Artisan's Doorman Proxy
@@ -81,19 +82,31 @@ func minioEventsHandler(w http.ResponseWriter, r *http.Request) {
 		util.Err(w, http.StatusBadRequest, fmt.Sprintf("invalid event, changed object was %s but required spec.yaml", object.Key))
 		return
 	}
-	bucket := event.Records[0].S3.Bucket.Name
-	endpoint := event.Records[0].ResponseElements.XMinioOriginEndpoint
+	key, err := url.PathUnescape(object.Key)
+	if util.IsErr(w, err, http.StatusBadRequest, fmt.Sprintf("cannot unescape object key %s", object.Key)) {
+		return
+	}
+	cut := strings.LastIndex(key, "/")
+	// get the path within the bucket
+	folderName := key[:cut]
+	// get the unique identifier for the bucket
+	deploymentId := event.Records[0].ResponseElements.XMinioDeploymentID
+	// get the bucket name
+	bucketName := event.Records[0].S3.Bucket.Name
 	// constructs the URI of the object that changed
 	doormanBaseURI, err := getDoormanBaseURI()
 	if util.IsErr(w, err, http.StatusInternalServerError, "missing configuration") {
 		return
 	}
-	key, unescapeErr := url.PathUnescape(object.Key)
-	if util.IsErr(w, unescapeErr, http.StatusInternalServerError, fmt.Sprintf("cannot unescape object key %s", object.Key)) {
-		return
-	}
-	referralURI := fmt.Sprintf("%s/%s/%s", endpoint, bucket, key)
-	requestURI := fmt.Sprintf("%s/event/%s", doormanBaseURI, url.PathEscape(referralURI))
+	fmt.Printf("︎⚡️ new release:\n")
+	fmt.Printf("  ✔ from   = %s\n", event.Records[0].ResponseElements.XMinioOriginEndpoint)
+	fmt.Printf("  ✔ time   = %s\n", time.Now().UTC())
+	fmt.Printf("  ✔ id     = %s\n", deploymentId)
+	fmt.Printf("  ✔ bucket = %s\n", bucketName)
+	fmt.Printf("  ✔ folder = %s\n", folderName)
+	fmt.Printf("  ✔ type   = minio compatible\n")
+	fmt.Printf("--------------------------------------------------------------------\n\n")
+	requestURI := fmt.Sprintf("%s/event/%s/%s/%s", doormanBaseURI, deploymentId, bucketName, folderName)
 	if _, postErr, code := newRequest("POST", requestURI); postErr != nil {
 		w.WriteHeader(code)
 		w.Write([]byte(postErr.Error()))

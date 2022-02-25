@@ -43,9 +43,10 @@ func main() {
 		router.HandleFunc("/pipe", upsertPipelineHandler).Methods("PUT")
 		router.HandleFunc("/pipe/{name}", getPipelineHandler).Methods("GET")
 		router.HandleFunc("/pipe", getAllPipelinesHandler).Methods("GET")
+		router.HandleFunc("/job", getTopJobsHandler).Methods("GET")
 
 		// doorman proxy facing endpoints
-		router.HandleFunc("/event/{uri}", eventHandler).Methods("POST")
+		router.HandleFunc("/event/{service-id}/{bucket-name}/{folder-name}", eventHandler).Methods("POST")
 		router.HandleFunc("/token/{token-value}", getWebhookAuthInfoHandler).Methods("GET")
 		router.HandleFunc("/token", getWebhookAllAuthInfoHandler).Methods("GET")
 	}
@@ -56,6 +57,15 @@ func main() {
 		"^/token.*":  dProxyAuth,
 		"^/event/.*": dProxyAuth,
 	}
+	// https://textkool.com/en/ascii-art-generator?hl=default&vl=default&font=Broadway%20KB&text=dproxy%0A
+	fmt.Print(`
+++++++++++++++| ONIX CONFIG MANAGER |+++++++++++++++
+|    ___   ___   ___   ___   _       __    _       |
+|   | | \ / / \ / / \ | |_) | |\/|  / /\  | |\ |   |
+|   |_|_/ \_\_/ \_\_/ |_| \ |_|  | /_/--\ |_| \|   |
+|                                                  |
++++++++++++|  the artisan's doorman  |++++++++++++++
+`)
 	s.Serve()
 }
 

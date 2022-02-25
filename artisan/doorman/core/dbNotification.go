@@ -16,8 +16,7 @@ import (
 	"net/http"
 )
 
-func UpsertNotification(notification types.Notification) (error, int) {
-	db := NewDb()
+func (db *Db) UpsertNotification(notification types.Notification) (error, int) {
 	_, err := db.FindByName(types.NotificationTemplatesCollection, notification.Template)
 	if err != nil {
 		return fmt.Errorf("cannot find notification template %s for notification %s: %s", notification.Template, notification.Name, err), http.StatusBadRequest
@@ -30,8 +29,7 @@ func UpsertNotification(notification types.Notification) (error, int) {
 	return nil, resultCode
 }
 
-func FindAllNotifications() ([]types.Notification, error) {
-	db := NewDb()
+func (db *Db) FindAllNotifications() ([]types.Notification, error) {
 	var notifications []types.Notification
 	if err := db.FindMany(types.NotificationsCollection, nil, func(c *mongo.Cursor) error {
 		return c.All(context.Background(), &notifications)
@@ -41,8 +39,7 @@ func FindAllNotifications() ([]types.Notification, error) {
 	return notifications, nil
 }
 
-func FindAllNotificationTemplates() ([]types.NotificationTemplate, error) {
-	db := NewDb()
+func (db *Db) FindAllNotificationTemplates() ([]types.NotificationTemplate, error) {
 	var notificationTemplates []types.NotificationTemplate
 	if err := db.FindMany(types.NotificationTemplatesCollection, nil, func(c *mongo.Cursor) error {
 		return c.All(context.Background(), &notificationTemplates)

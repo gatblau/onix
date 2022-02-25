@@ -9,7 +9,7 @@ env:
   CGO_ENABLED: 0
   GOARCH: amd64
   REPO_NAME: quay.io/gatblau
-  APP_NAME: dproxy
+  APP_NAME: artisan-dproxy
   APP_VERSION: 0.0.4
   BUILD_VERSION: ${APP_VERSION}-${ARTISAN_REF}
 

@@ -2,13 +2,19 @@
 name: TEST_OUT_ROUTE
 description: a testing outbound route
 image_registry:
-  uri: http://localhost:5000
+  domain: localhost:5000
   user: admin
-  pwd: admin
+  pwd: nCWXqYwqORTf5doc
 package_registry:
-  uri: http://localhost:8082
+  domain: localhost:8082
   user: admin
-  pwd: admin
+  pwd: nCWXqYwqORTf5doc
+  sign: true
+  private_key: TEST_PK
+s3_store:
+  bucket_uri: s3://localhost:9000/onix2
+  user: admin
+  pwd: password
   sign: true
   private_key: TEST_PK
 ...

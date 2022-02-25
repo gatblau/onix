@@ -63,7 +63,6 @@ functions:
     env:
       GOOS: linux
     run:
-      - sh ./images/bin/version.sh ${APP_VERSION}-${ARTISAN_REF}-${LIFECYCLE_STAGE}
       - go fmt
       - go build -o images/bin/output/art -v
 

@@ -159,12 +159,18 @@ definitions:
     type: object
   types.ImageRegistry:
     properties:
-      pwd:
-        description: Pwd the password to authenticate with the container image registry
-        type: string
-      uri:
+      domain:
         description: URI the location of the container image registry
         example: images.acme.com:5000
+        type: string
+      group:
+        description: |-
+          Group the group (location withing the registry) where the packages should be placed
+          if not specified, the group from the package to push is used
+        example: test/groupA
+        type: string
+      pwd:
+        description: Pwd the password to authenticate with the container image registry
         type: string
       user:
         description: User the username to authenticate with the container image registry
@@ -172,10 +178,8 @@ definitions:
     type: object
   types.InRoute:
     properties:
-      bucket_uri:
-        description: BucketURI the remote BucketURI from where inbound files should
-          be downloaded
-        example: s3.supplier-a.com
+      bucket_name:
+        description: BucketName the name of the S3 bucket containing files to download
         type: string
       description:
         description: Description a description indicating the purpose of the route
@@ -195,10 +199,19 @@ definitions:
           downloaded files
         type: string
       pwd:
-        description: Pwd the password to authenticate against the remote BucketURI
+        description: Pwd the password to authenticate against the remote ServiceHost
+        type: string
+      service_host:
+        description: ServiceHost the remote host from where inbound files should be
+          downloaded
+        example: s3.supplier-a.com
+        type: string
+      service_id:
+        description: ServiceId a unique identifier for the S3 service where inbound
+          files should be downloaded
         type: string
       user:
-        description: User the username to authenticate against the remote BucketURI
+        description: User the username to authenticate against the remote ServiceHost
         type: string
       verify:
         description: Verify a flag indicating whether author verification should be
@@ -270,15 +283,33 @@ definitions:
         type: string
       image_registry:
         $ref: '#/definitions/types.ImageRegistry'
+        description: ImageRegistry the information about the image registry that is
+          the destination for the spec images
       name:
         description: Name the name uniquely identifying the outbound route
         example: ACME_OUT_LOGISTICS
         type: string
       package_registry:
         $ref: '#/definitions/types.PackageRegistry'
+        description: PackageRegistry the information about the artisan registry that
+          is the destination for the spec packages
+      s3_store:
+        $ref: '#/definitions/types.S3Store'
+        description: S3Store the information about the S3 service that is the destination
+          for the spec tarball files
     type: object
   types.PackageRegistry:
     properties:
+      domain:
+        description: URI the location of the package registry
+        example: packages.acme.com:8082
+        type: string
+      group:
+        description: |-
+          Group the group (location withing the registry) where the packages should be placed
+          if not specified, the group from the package to push is used
+        example: test/groupA
+        type: string
       private_key:
         description: PrivateKey the name of the private PGP key used to re-sign the
           packages
@@ -293,10 +324,6 @@ definitions:
           should be resigned
         example: true
         type: boolean
-      uri:
-        description: URI the location of the package registry
-        example: packages.acme.com:8082
-        type: string
       user:
         description: User the username to authenticate with the package registry
         example: test_user
@@ -334,6 +361,29 @@ definitions:
         type: array
       success_notification:
         description: SuccessNotification notification to use in case of success
+        type: string
+    type: object
+  types.S3Store:
+    properties:
+      bucket_uri:
+        description: BucketURI the URI of the folder where to upload the spec tar
+          files
+        type: string
+      private_key:
+        description: PrivateKey the name of the private PGP key used to re-sign the
+          packages in the tarball files
+        example: SIGNING_KEY_01
+        type: string
+      pwd:
+        description: Pwd the password of the outbound S3 bucket
+        type: string
+      sign:
+        description: Sign a flag indicating whether packages pushed to the S3 service
+          should be resigned
+        example: true
+        type: boolean
+      user:
+        description: User the username of the outbound S3 bucket
         type: string
     type: object
 info:
@@ -399,13 +449,25 @@ paths:
       summary: Creates or updates a command
       tags:
       - Commands
-  /event/{uri}:
+  /event/{service-id}/{bucket-name}/{folder-name}:
     post:
       description: Triggers the ingestion of a specification
       parameters:
-      - description: the URI of the service where a spec has been uploaded
+      - description: a unique identifier for the bucket endpoint (e.g. x-minio-deployment-id
+          for MinIO)
         in: path
-        name: uri
+        name: deployment-id
+        required: true
+        type: string
+      - description: the name of the bucket that contains the uploaded files
+        in: path
+        name: bucket-name
+        required: true
+        type: string
+      - description: the name of the folder within the bucket that contains the uploaded
+          files
+        in: path
+        name: folder-name
         required: true
         type: string
       produces:
@@ -427,10 +489,10 @@ paths:
       tags:
       - Webhook
   /events/minio:
-    put:
+    post:
       consumes:
-      - application/yaml
-      - ' application/json'
+      - application/json
+      - ' application/yaml'
       description: receives a s3:ObjectCreated:Put event sent by a MinIO format compatible
         source
       parameters:
@@ -458,6 +520,39 @@ paths:
       summary: A Webhook for MinIO compatible event sources
       tags:
       - Event Sources
+  /job:
+    get:
+      description: Gets a list of top job information logs
+      parameters:
+      - description: the number of top jobs to retrieve, if not specified returns
+          the top 1 job
+        in: query
+        name: count
+        type: integer
+      produces:
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Gets top jobs
+      tags:
+      - Jobs
   /key:
     put:
       consumes:
@@ -849,7 +944,7 @@ paths:
         an inbound route, returning required referrer URL and IP white list
         NOTE: this endpoint is called by the proxy to authenticate its webhook
       parameters:
-      - description: the authentication token presented to dorrman proxy webhook
+      - description: the authentication token presented to doorman proxy webhook
         in: path
         name: token-value
         required: true

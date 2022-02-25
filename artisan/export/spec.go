@@ -119,7 +119,11 @@ func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds, filter string) erro
 	return nil
 }
 
-func ImportSpec(targetUri, targetCreds, filter string, ignoreSignature bool) error {
+func ImportSpec(targetUri, targetCreds, filter, pubKeyPath string, ignoreSignature bool) error {
+	// if it is not ignoring the package signature, then a public key path must be provided
+	if !ignoreSignature && len(pubKeyPath) == 0 {
+		return fmt.Errorf("the path to a public key must be provided to verify the package author, otherwise ignore signature")
+	}
 	var skipArtefact bool
 	r := registry.NewLocalRegistry()
 	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
@@ -143,7 +147,7 @@ func ImportSpec(targetUri, targetCreds, filter string, ignoreSignature bool) err
 			continue
 		}
 		name := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(pkName))
-		err2 := r.Import([]string{name}, targetCreds)
+		err2 := r.Import([]string{name}, targetCreds, pubKeyPath, ignoreSignature)
 		if err2 != nil {
 			return fmt.Errorf("cannot read %s.tar: %s", pkgName(pkName), err2)
 		}
@@ -158,7 +162,7 @@ func ImportSpec(targetUri, targetCreds, filter string, ignoreSignature bool) err
 			continue
 		}
 		name := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(image))
-		err2 := r.Import([]string{name}, targetCreds)
+		err2 := r.Import([]string{name}, targetCreds, pubKeyPath, ignoreSignature)
 		if err2 != nil {
 			return fmt.Errorf("cannot read %s.tar: %s", pkgName(image), err)
 		}
@@ -175,30 +179,30 @@ func ImportSpec(targetUri, targetCreds, filter string, ignoreSignature bool) err
 	return nil
 }
 
-func DownloadSpec(targetUri, targetCreds, localPath string) error {
+func DownloadSpec(targetUri, targetCreds, localPath string) (*Spec, error) {
 	spec, err := NewSpec(targetUri, targetCreds)
 	if err != nil {
-		return fmt.Errorf("cannot load specification: %s", err)
+		return nil, fmt.Errorf("cannot load specification: %s", err)
 	}
 	if err = checkPath(localPath); err != nil {
-		return fmt.Errorf("cannot create local path: %s", err)
+		return nil, fmt.Errorf("cannot create local path: %s", err)
 	}
 	err = os.WriteFile(filepath.Join(localPath, "spec.yaml"), spec.content, 0755)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, pkg := range spec.Packages {
 		pkgUri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(pkg))
 		core.InfoLogger.Printf("downloading => %s\n", pkgUri)
 		tarBytes, err2 := core.ReadFile(pkgUri, targetCreds)
 		if err2 != nil {
-			return err2
+			return nil, err2
 		}
 		pkgPath := filepath.Join(localPath, filepath.Base(pkgUri))
 		core.InfoLogger.Printf("writing => %s\n", pkgPath)
 		err = os.WriteFile(pkgPath, tarBytes, 0755)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	for _, image := range spec.Images {
@@ -206,11 +210,52 @@ func DownloadSpec(targetUri, targetCreds, localPath string) error {
 		core.InfoLogger.Printf("downloading => %s\n", imageUri)
 		tarBytes, err2 := core.ReadFile(imageUri, targetCreds)
 		if err2 != nil {
-			return err2
+			return nil, err2
 		}
 		targetFile := filepath.Join(localPath, fmt.Sprintf("%s.tar", pkgName(image)))
 		core.InfoLogger.Printf("writing => %s\n", targetFile)
 		err = os.WriteFile(targetFile, tarBytes, 0755)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return spec, nil
+}
+
+func UploadSpec(targetUri, targetCreds, localPath string) error {
+	spec, err := NewSpec(localPath, targetCreds)
+	if err != nil {
+		return fmt.Errorf("cannot load specification: %s", err)
+	}
+	if err = checkPath(localPath); err != nil {
+		return fmt.Errorf("cannot create local path: %s", err)
+	}
+	err = core.WriteFile(spec.content, fmt.Sprintf("%s/spec.yaml", targetUri), targetCreds)
+	if err != nil {
+		return err
+	}
+	for _, pkg := range spec.Packages {
+		localUri := fmt.Sprintf("%s/%s.tar", localPath, pkgName(pkg))
+		remoteUri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(pkg))
+		core.InfoLogger.Printf("uploading => %s\n", remoteUri)
+		content, readErr := os.ReadFile(localUri)
+		if readErr != nil {
+			return readErr
+		}
+		err = core.WriteFile(content, remoteUri, targetCreds)
+		if err != nil {
+			return err
+		}
+	}
+	for _, image := range spec.Images {
+		localUri := fmt.Sprintf("%s/%s.tar", localPath, pkgName(image))
+		remoteUri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(image))
+		core.InfoLogger.Printf("uploading => %s\n", remoteUri)
+		content, readErr := os.ReadFile(localUri)
+		if readErr != nil {
+			return readErr
+		}
+		err = core.WriteFile(content, remoteUri, targetCreds)
 		if err != nil {
 			return err
 		}
@@ -246,7 +291,27 @@ func PullSpec(targetUri, targetCreds, sourceCreds string) error {
 	return nil
 }
 
-func PushSpec(specPath, host, group, user, creds string, image, clean bool) error {
+func PushSpec(specPath, host, group, user, creds string, image, clean, logout bool) error {
+	var (
+		cli, usr, pwd string
+		err           error
+	)
+	// if pushing images and user credentials have been defined
+	if image && len(user) > 0 {
+		// preforms a docker login
+		cli, err = containerCmd()
+		if err != nil {
+			return err
+		}
+		core.InfoLogger.Printf("logging to docker registry")
+		// executes docker login --username=right-username --password=""
+		usr, pwd = core.UserPwd(user)
+		out, eErr := build.Exe(fmt.Sprintf("%s login %s --username=%s --password=%s", cli, host, usr, pwd), ".", merge.NewEnVarFromSlice([]string{}), false)
+		if eErr != nil {
+			return eErr
+		}
+		core.InfoLogger.Printf("%s\n", out)
+	}
 	local := registry.NewLocalRegistry()
 	spec, err := NewSpec(specPath, creds)
 	if err != nil {
@@ -281,13 +346,6 @@ func PushSpec(specPath, host, group, user, creds string, image, clean bool) erro
 			}
 		}
 	} else {
-		if len(user) > 0 {
-			return fmt.Errorf("credentials specified but not used, for images ensure you are logged to the destination registry")
-		}
-		cli, cmdErr := containerCmd()
-		if cmdErr != nil {
-			return cmdErr
-		}
 		for _, img := range spec.Images {
 			tgtNameStr, _, tgtNameErr := targetName(img, group, host)
 			if tgtNameErr != nil {
@@ -314,6 +372,13 @@ func PushSpec(specPath, host, group, user, creds string, image, clean bool) erro
 				if err != nil {
 					return err
 				}
+			}
+		}
+		// if a logout was requested
+		if image && len(user) > 0 && logout {
+			_, err = build.Exe(fmt.Sprintf("%s logout %s", cli, host), ".", merge.NewEnVarFromSlice([]string{}), false)
+			if err != nil {
+				return err
 			}
 		}
 	}

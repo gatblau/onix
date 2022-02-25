@@ -105,7 +105,7 @@ var doc = `{
                 }
             }
         },
-        "/event/{uri}": {
+        "/event/{service-id}/{bucket-name}/{folder-name}": {
             "post": {
                 "description": "Triggers the ingestion of a specification",
                 "produces": [
@@ -118,8 +118,22 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "the URI of the service where a spec has been uploaded",
-                        "name": "uri",
+                        "description": "a unique identifier for the bucket endpoint (e.g. x-minio-deployment-id for MinIO)",
+                        "name": "deployment-id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the name of the bucket that contains the uploaded files",
+                        "name": "bucket-name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the name of the folder within the bucket that contains the uploaded files",
+                        "name": "folder-name",
                         "in": "path",
                         "required": true
                     }
@@ -147,11 +161,11 @@ var doc = `{
             }
         },
         "/events/minio": {
-            "put": {
+            "post": {
                 "description": "receives a s3:ObjectCreated:Put event sent by a MinIO format compatible source",
                 "consumes": [
-                    "application/yaml",
-                    " application/json"
+                    "application/json",
+                    " application/yaml"
                 ],
                 "produces": [
                     "text/plain"
@@ -180,6 +194,54 @@ var doc = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/job": {
+            "get": {
+                "description": "Gets a list of top job information logs",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Jobs"
+                ],
+                "summary": "Gets top jobs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "the number of top jobs to retrieve, if not specified returns the top 1 job",
+                        "name": "count",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "string"
                         }
@@ -776,7 +838,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "the authentication token presented to dorrman proxy webhook",
+                        "description": "the authentication token presented to doorman proxy webhook",
                         "name": "token-value",
                         "in": "path",
                         "required": true
@@ -1048,14 +1110,19 @@ var doc = `{
         "types.ImageRegistry": {
             "type": "object",
             "properties": {
-                "pwd": {
-                    "description": "Pwd the password to authenticate with the container image registry",
-                    "type": "string"
-                },
-                "uri": {
+                "domain": {
                     "description": "URI the location of the container image registry",
                     "type": "string",
                     "example": "images.acme.com:5000"
+                },
+                "group": {
+                    "description": "Group the group (location withing the registry) where the packages should be placed\nif not specified, the group from the package to push is used",
+                    "type": "string",
+                    "example": "test/groupA"
+                },
+                "pwd": {
+                    "description": "Pwd the password to authenticate with the container image registry",
+                    "type": "string"
                 },
                 "user": {
                     "description": "User the username to authenticate with the container image registry",
@@ -1066,10 +1133,9 @@ var doc = `{
         "types.InRoute": {
             "type": "object",
             "properties": {
-                "bucket_uri": {
-                    "description": "BucketURI the remote BucketURI from where inbound files should be downloaded",
-                    "type": "string",
-                    "example": "s3.supplier-a.com"
+                "bucket_name": {
+                    "description": "BucketName the name of the S3 bucket containing files to download",
+                    "type": "string"
                 },
                 "description": {
                     "description": "Description a description indicating the purpose of the route",
@@ -1090,11 +1156,20 @@ var doc = `{
                     "type": "string"
                 },
                 "pwd": {
-                    "description": "Pwd the password to authenticate against the remote BucketURI",
+                    "description": "Pwd the password to authenticate against the remote ServiceHost",
+                    "type": "string"
+                },
+                "service_host": {
+                    "description": "ServiceHost the remote host from where inbound files should be downloaded",
+                    "type": "string",
+                    "example": "s3.supplier-a.com"
+                },
+                "service_id": {
+                    "description": "ServiceId a unique identifier for the S3 service where inbound files should be downloaded",
                     "type": "string"
                 },
                 "user": {
-                    "description": "User the username to authenticate against the remote BucketURI",
+                    "description": "User the username to authenticate against the remote ServiceHost",
                     "type": "string"
                 },
                 "verify": {
@@ -1187,6 +1262,7 @@ var doc = `{
                     "example": "outbound route for ACME company logistics department"
                 },
                 "image_registry": {
+                    "description": "ImageRegistry the information about the image registry that is the destination for the spec images",
                     "$ref": "#/definitions/types.ImageRegistry"
                 },
                 "name": {
@@ -1195,13 +1271,28 @@ var doc = `{
                     "example": "ACME_OUT_LOGISTICS"
                 },
                 "package_registry": {
+                    "description": "PackageRegistry the information about the artisan registry that is the destination for the spec packages",
                     "$ref": "#/definitions/types.PackageRegistry"
+                },
+                "s3_store": {
+                    "description": "S3Store the information about the S3 service that is the destination for the spec tarball files",
+                    "$ref": "#/definitions/types.S3Store"
                 }
             }
         },
         "types.PackageRegistry": {
             "type": "object",
             "properties": {
+                "domain": {
+                    "description": "URI the location of the package registry",
+                    "type": "string",
+                    "example": "packages.acme.com:8082"
+                },
+                "group": {
+                    "description": "Group the group (location withing the registry) where the packages should be placed\nif not specified, the group from the package to push is used",
+                    "type": "string",
+                    "example": "test/groupA"
+                },
                 "private_key": {
                     "description": "PrivateKey the name of the private PGP key used to re-sign the packages",
                     "type": "string",
@@ -1216,11 +1307,6 @@ var doc = `{
                     "description": "Sign a flag indicating whether packages pushed to the registry should be resigned",
                     "type": "boolean",
                     "example": true
-                },
-                "uri": {
-                    "description": "URI the location of the package registry",
-                    "type": "string",
-                    "example": "packages.acme.com:8082"
                 },
                 "user": {
                     "description": "User the username to authenticate with the package registry",
@@ -1268,6 +1354,33 @@ var doc = `{
                 },
                 "success_notification": {
                     "description": "SuccessNotification notification to use in case of success",
+                    "type": "string"
+                }
+            }
+        },
+        "types.S3Store": {
+            "type": "object",
+            "properties": {
+                "bucket_uri": {
+                    "description": "BucketURI the URI of the folder where to upload the spec tar files",
+                    "type": "string"
+                },
+                "private_key": {
+                    "description": "PrivateKey the name of the private PGP key used to re-sign the packages in the tarball files",
+                    "type": "string",
+                    "example": "SIGNING_KEY_01"
+                },
+                "pwd": {
+                    "description": "Pwd the password of the outbound S3 bucket",
+                    "type": "string"
+                },
+                "sign": {
+                    "description": "Sign a flag indicating whether packages pushed to the S3 service should be resigned",
+                    "type": "boolean",
+                    "example": true
+                },
+                "user": {
+                    "description": "User the username of the outbound S3 bucket",
                     "type": "string"
                 }
             }

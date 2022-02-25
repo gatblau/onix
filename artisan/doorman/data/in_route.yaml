@@ -1,9 +1,11 @@
 ---
 name: TEST_IN_ROUTE
 description: a testing inbound route
-bucket_uri: http://192.168.0.43:9000/onix
+service_id: 415edcb3-16db-4f6d-828a-48c5bc33e01b
+service_host: s3://127.0.0.1:9000
+bucket_name: onix
 user: admin
-pwd: 1234567890
+pwd: password
 public_key: TEST_PUB
 verify: true
 webhook_token: JFkxnsn++02UilVkYFFC9w==

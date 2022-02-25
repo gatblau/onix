@@ -15,10 +15,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func FindInboundRoutesByURI(uri string) ([]types.InRoute, error) {
+func (db *Db) FindInboundRoutesByURI(uri string) ([]types.InRoute, error) {
 	var routes []types.InRoute
-	db := NewDb()
-	if err := db.FindMany(types.InRouteCollection, bson.M{"uri": uri}, func(cursor *mongo.Cursor) error {
+	if err := db.FindMany(types.InRouteCollection, bson.M{"bucket_uri": uri}, func(cursor *mongo.Cursor) error {
 		return cursor.All(context.Background(), &routes)
 	}); err != nil {
 		return nil, err
@@ -26,9 +25,18 @@ func FindInboundRoutesByURI(uri string) ([]types.InRoute, error) {
 	return routes, nil
 }
 
-func FindInboundRoutesByWebHookToken(token string) ([]types.InRoute, error) {
+func (db *Db) MatchInboundRoutes(serviceId, bucketName string) ([]types.InRoute, error) {
 	var routes []types.InRoute
-	db := NewDb()
+	if err := db.FindMany(types.InRouteCollection, bson.M{"service_id": serviceId, "bucket_name": bucketName}, func(cursor *mongo.Cursor) error {
+		return cursor.All(context.Background(), &routes)
+	}); err != nil {
+		return nil, err
+	}
+	return routes, nil
+}
+
+func (db *Db) FindInboundRoutesByWebHookToken(token string) ([]types.InRoute, error) {
+	var routes []types.InRoute
 	if err := db.FindMany(types.InRouteCollection, bson.M{"webhook_token": token}, func(cursor *mongo.Cursor) error {
 		return cursor.All(context.Background(), &routes)
 	}); err != nil {
@@ -37,9 +45,8 @@ func FindInboundRoutesByWebHookToken(token string) ([]types.InRoute, error) {
 	return routes, nil
 }
 
-func FindAllInRoutes() ([]types.InRoute, error) {
+func (db *Db) FindAllInRoutes() ([]types.InRoute, error) {
 	var routes []types.InRoute
-	db := NewDb()
 	if err := db.FindMany(types.InRouteCollection, nil, func(cursor *mongo.Cursor) error {
 		return cursor.All(context.Background(), &routes)
 	}); err != nil {
