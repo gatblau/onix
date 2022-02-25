@@ -49,7 +49,11 @@ func NewProcessor(serviceId, bucketPath, folderName string) Processor {
 
 func (p *Processor) Info(format string, a ...interface{}) {
 	format = fmt.Sprintf("%s INFO %s\n", time.Now().Format("02-01-06 15:04:05"), format)
-	_, err := p.log.WriteString(fmt.Sprintf(format, a...))
+	msg := fmt.Sprintf(format, a...)
+	if len(os.Getenv("DOORMAN_LOGGING")) > 0 {
+		fmt.Println(msg)
+	}
+	_, err := p.log.WriteString(msg)
 	if err != nil {
 		fmt.Printf("cannot log INFO: %s\n", err)
 	}
@@ -58,13 +62,20 @@ func (p *Processor) Info(format string, a ...interface{}) {
 func (p *Processor) Error(format string, a ...interface{}) error {
 	format = fmt.Sprintf("%s ERROR %s", time.Now().Format("02-01-06 15:04:05"), format)
 	msg := fmt.Sprintf(format, a...)
+	if len(os.Getenv("DOORMAN_LOGGING")) > 0 {
+		fmt.Println(msg)
+	}
 	p.log.WriteString(fmt.Sprintf("%s\n", msg))
 	return fmt.Errorf(msg)
 }
 
 func (p *Processor) Warn(format string, a ...interface{}) {
 	format = fmt.Sprintf("%s WARN %s\n", time.Now().Format("02-01-06 15:04:05"), format)
-	p.log.WriteString(fmt.Sprintf(format, a...))
+	msg := fmt.Sprintf(format, a...)
+	if len(os.Getenv("DOORMAN_LOGGING")) > 0 {
+		fmt.Println(msg)
+	}
+	p.log.WriteString(msg)
 }
 
 // Start starts processing a pipeline asynchronously
