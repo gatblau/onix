@@ -96,6 +96,8 @@ func minioEventsHandler(w http.ResponseWriter, r *http.Request) {
 	folderName := key[:cut]
 	// get the unique identifier for the bucket
 	deploymentId := event.Records[0].ResponseElements.XMinioDeploymentID
+	// get the bucket name
+	bucketName := event.Records[0].S3.Bucket.Name
 	// constructs the URI of the object that changed
 	doormanBaseURI, err := getDoormanBaseURI()
 	if util.IsErr(w, err, http.StatusInternalServerError, "missing configuration") {
