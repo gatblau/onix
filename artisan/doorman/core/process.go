@@ -87,12 +87,12 @@ func (p *Processor) process() error {
 	p.Info("processing release Id=%s → %s/%s", p.serviceId, p.bucketName, p.folderName)
 	pipes, err := p.db.MatchPipelines(p.serviceId, p.bucketName)
 	if err != nil {
-		e := p.Error("cannot retrieve pipelines for bucket Id='%s': %s\n", p.serviceId, err)
+		e := p.Error("cannot retrieve pipelines for bucket Id='%s' and bucket name='%s': %s\n", p.serviceId, p.bucketName, err)
 		fmt.Println(e)
 		return e
 	}
 	if len(pipes) == 0 {
-		e := p.Error("no pipeline configuration found for release Id=%s\n", p.serviceId)
+		e := p.Error("no pipeline configuration found for release Id=%s and bucket name='%s': %s\n", p.serviceId, p.bucketName)
 		fmt.Println(e)
 		return e
 	}
