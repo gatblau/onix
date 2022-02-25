@@ -456,7 +456,7 @@ paths:
       - description: a unique identifier for the bucket endpoint (e.g. x-minio-deployment-id
           for MinIO)
         in: path
-        name: deployment-id
+        name: service-id
         required: true
         type: string
       - description: the name of the bucket that contains the uploaded files

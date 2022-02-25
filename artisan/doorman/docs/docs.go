@@ -119,7 +119,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "a unique identifier for the bucket endpoint (e.g. x-minio-deployment-id for MinIO)",
-                        "name": "deployment-id",
+                        "name": "service-id",
                         "in": "path",
                         "required": true
                     },
