@@ -112,9 +112,15 @@ func minioEventsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("  ✔ type   = minio compatible\n")
 	fmt.Printf("--------------------------------------------------------------------\n\n")
 	requestURI := fmt.Sprintf("%s/event/%s/%s/%s", doormanBaseURI, deploymentId, bucketName, folderName)
-	if _, postErr, code := newRequest("POST", requestURI); postErr != nil {
+	resp, postErr, code := newRequest("POST", requestURI)
+	if postErr != nil {
 		w.WriteHeader(code)
 		w.Write([]byte(postErr.Error()))
+		return
+	}
+	if resp == nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprintf("cannot connect to doorman, service is down or URI is not correct: %s", requestURI)))
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
