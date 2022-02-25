@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"errors"
 	"fmt"
-	"os"
+	"net/url"
+	"strings"
 )
 
 type S3Event struct {
@@ -21,10 +21,10 @@ type S3Event struct {
 			SourceIPAddress string `json:"sourceIPAddress"`
 		} `json:"requestParameters"`
 		ResponseElements struct {
-			Content_length          string `json:"content-length"`
-			X_amz_request_id        string `json:"x-amz-request-id"`
-			X_minio_deployment_id   string `json:"x-minio-deployment-id"`
-			X_minio_origin_endpoint string `json:"x-minio-origin-endpoint"`
+			Content_length       string `json:"content-length"`
+			XAmzRequestId        string `json:"x-amz-request-id"`
+			XMinioDeploymentId   string `json:"x-minio-deployment-id"`
+			XMinioOriginEndpoint string `json:"x-minio-origin-endpoint"`
 		} `json:"responseElements"`
 		S3 struct {
 			Bucket struct {
@@ -60,30 +60,15 @@ type S3Event struct {
 }
 
 func (e S3Event) GetObjectDownloadURL() (string, error) {
-	d := os.Getenv("OBJECT_STORE_DOMAIN")
-	err := e.validate()
-	if err != nil {
-		return "", err
-	} else {
-		url := fmt.Sprintf("%s/%s", d, e.Key)
-		return url, nil
-	}
-}
 
-func (e S3Event) validate() error {
-	d := os.Getenv("OBJECT_STORE_DOMAIN")
-	msg := ""
-	if len(d) == 0 {
-		msg = fmt.Sprintf("\n%s\n%s", "Error value for environment variable OBJECT_STORE_DOMAIN missing", msg)
-		return errors.New(msg)
+	object := e.Records[0].S3.Object
+	bucket := e.Records[0].S3.Bucket.Name
+	//endpoint := os.Getenv("OBJECT_STORE_DOMAIN")
+	endpoint := strings.Replace(e.Records[0].ResponseElements.XMinioOriginEndpoint, "http", "s3", 1)
+	key, unescapeErr := url.PathUnescape(object.Key)
+	if unescapeErr != nil {
+		return "", unescapeErr
 	}
-	if len(e.Key) == 0 {
-		msg = fmt.Sprintf("\n%s\n%s", "Error bucket details missing from event ", msg)
-		return errors.New(msg)
-	}
-
-	if len(msg) != 0 {
-		return errors.New(msg)
-	}
-	return nil
+	url := fmt.Sprintf("%s/%s/%s", endpoint, bucket, key)
+	return url, nil
 }

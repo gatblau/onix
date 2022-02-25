@@ -34,18 +34,18 @@ func NewHandlerManager() *HandlerManager {
 	osph := OSpatchingHandler{}
 	var h EventHandler
 	h = osph
-	//map's key must be the package name
-	mgr.handlerMapping["patching-package-builder"] = h
+	//map's key must be the same as the key stored in the onix db table item for item-type ART_FX
+	mgr.handlerMapping["build-patching-pkg"] = h
 
 	return mgr
 }
 
 func (h HandlerManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	pkgName := vars["package"]
-	eh := h.handlerMapping[pkgName]
+	flowkey := vars["flow-key"]
+	eh := h.handlerMapping[flowkey]
 	if eh == nil {
-		msg := fmt.Sprintf("No handler is registered for package %s\n", pkgName)
+		msg := fmt.Sprintf("No handler is registered for flow-key %s\n", flowkey)
 		fmt.Printf(msg)
 		http.Error(w, msg, http.StatusInternalServerError)
 		return

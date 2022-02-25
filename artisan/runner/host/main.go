@@ -16,39 +16,14 @@ import (
 )
 
 func main() {
-	/*
-		cmd := exec.Command("art", "pull", "aps-edge-registry.amosonline.io/aps/keys/pk-registry:latest", "-u", "admin:n3xU5@APS")
-		var outb, errb bytes.Buffer
-		cmd.Stdout = &outb
-		cmd.Stderr = &errb
-		err := cmd.Run()
-		if err != nil {
-			fmt.Println("ERROR  occurred out -:", outb.String(), "err -:", errb.String())
-			log.Fatal(err)
-		}
-		fmt.Println("out ===", outb.String(), "err ==", errb.String())
-	*/
 
 	// creates a generic http server
 	handlerMgr := handlers.NewHandlerManager()
 	s := httpserver.New("art-host-runner")
 	// add handlers
 	s.Http = func(router *mux.Router) {
-		fmt.Printf("handler is registered...")
-		router.Handle("/host/{package}/{function}", handlerMgr).Methods("POST")
+		fmt.Printf("handler is registered...\n")
+		router.Handle("/host/{flow-key}", handlerMgr).Methods("POST")
 	}
 	s.Serve()
-
-	/*
-		// creates a generic http server
-		s := httpserver.New("art-host-runner")
-		// add handlers
-		s.Http = func(router *mux.Router) {
-			fmt.Printf("new handler is registered...\n")
-			router.HandleFunc("/host/{package}/{function}", createOSPatchingHandler).Methods("POST")
-		}
-		s.Serve()
-
-	*/
-
 }
