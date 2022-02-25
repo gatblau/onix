@@ -32,9 +32,6 @@ func (r OutRoute) GetName() string {
 }
 
 func (r OutRoute) Valid() error {
-	if r.PackageRegistry == nil && r.ImageRegistry == nil {
-		return fmt.Errorf("outbound route %s must specify at least one registry", r.Name)
-	}
 	if r.PackageRegistry != nil {
 		if len(r.PackageRegistry.Domain) == 0 {
 			return fmt.Errorf("inbound route %s requires package registry Domain", r.Name)
