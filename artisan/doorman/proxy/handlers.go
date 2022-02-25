@@ -86,13 +86,16 @@ func minioEventsHandler(w http.ResponseWriter, r *http.Request) {
 	if util.IsErr(w, err, http.StatusBadRequest, fmt.Sprintf("cannot unescape object key %s", object.Key)) {
 		return
 	}
+	// checks if the release has been doen within a folder, if not it is not valid
+	if !strings.Contains(key, "/") {
+		util.Err(w, http.StatusBadRequest, "no release folder specified in bucket, cannot accept event")
+		return
+	}
 	cut := strings.LastIndex(key, "/")
 	// get the path within the bucket
 	folderName := key[:cut]
 	// get the unique identifier for the bucket
 	deploymentId := event.Records[0].ResponseElements.XMinioDeploymentID
-	// get the bucket name
-	bucketName := event.Records[0].S3.Bucket.Name
 	// constructs the URI of the object that changed
 	doormanBaseURI, err := getDoormanBaseURI()
 	if util.IsErr(w, err, http.StatusInternalServerError, "missing configuration") {
