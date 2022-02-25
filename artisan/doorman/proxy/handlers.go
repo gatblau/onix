@@ -123,5 +123,15 @@ func minioEventsHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(fmt.Sprintf("cannot connect to doorman, service is down or URI is not correct: %s", requestURI)))
 		return
 	}
+	if resp.StatusCode == 404 {
+		w.WriteHeader(http.StatusBadGateway)
+		w.Write([]byte(fmt.Sprintf("cannot connect to doorman, service URI is not correct: %s", requestURI)))
+		return
+	}
+	if resp.StatusCode > 299 {
+		w.WriteHeader(http.StatusBadGateway)
+		w.Write([]byte(fmt.Sprintf("cannot connect to doorman: %s", resp.Status)))
+		return
+	}
 	w.WriteHeader(http.StatusCreated)
 }
