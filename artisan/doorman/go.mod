@@ -11,6 +11,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/gatblau/onix/artisan v0.0.0-00010101000000-000000000000
 	github.com/gatblau/onix/oxlib v0.0.0-00010101000000-000000000000
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/joho/godotenv v1.4.0
 	github.com/swaggo/swag v1.7.0

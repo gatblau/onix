@@ -26,6 +26,7 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 // @Summary Creates or updates a cryptographic key
@@ -181,7 +182,8 @@ func upsertPipelineHandler(w http.ResponseWriter, r *http.Request) {
 	if util.IsErr(w, pipe.Valid(), http.StatusBadRequest, "invalid pipeline data") {
 		return
 	}
-	err, code = core.UpsertPipeline(*pipe)
+	db := core.NewDb()
+	err, code = db.UpsertPipeline(*pipe)
 	if util.IsErr(w, err, http.StatusBadRequest, "cannot create or update pipeline configuration") {
 		return
 	}
@@ -246,7 +248,8 @@ func upsertNotificationHandler(w http.ResponseWriter, r *http.Request) {
 	if util.IsErr(w, notification.Valid(), http.StatusBadRequest, "invalid notification data") {
 		return
 	}
-	err, code = core.UpsertNotification(*notification)
+	db := core.NewDb()
+	err, code = db.UpsertNotification(*notification)
 	if util.IsErr(w, err, code, "cannot create or update notification configuration") {
 		return
 	}
@@ -266,7 +269,8 @@ func upsertNotificationHandler(w http.ResponseWriter, r *http.Request) {
 func getPipelineHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pipeName := vars["name"]
-	pipe, err := core.FindPipeline(pipeName)
+	db := core.NewDb()
+	pipe, err := db.FindPipeline(pipeName)
 	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve pipeline %s: %s", pipeName, err)) {
 		return
 	}
@@ -286,7 +290,8 @@ func getPipelineHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 200 {string} success
 func getAllPipelinesHandler(w http.ResponseWriter, r *http.Request) {
-	pipelines, err := core.FindAllPipelines()
+	db := core.NewDb()
+	pipelines, err := db.FindAllPipelines()
 	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve pipelines: %s", err)) {
 		return
 	}
@@ -303,7 +308,8 @@ func getAllPipelinesHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 200 {string} success
 func getAllNotificationsHandler(w http.ResponseWriter, r *http.Request) {
-	pipelines, err := core.FindAllNotifications()
+	db := core.NewDb()
+	pipelines, err := db.FindAllNotifications()
 	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve notifications: %s", err)) {
 		return
 	}
@@ -320,7 +326,8 @@ func getAllNotificationsHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 200 {string} success
 func getAllNotificationTemplatesHandler(w http.ResponseWriter, r *http.Request) {
-	notificationTemplates, err := core.FindAllNotificationTemplates()
+	db := core.NewDb()
+	notificationTemplates, err := db.FindAllNotificationTemplates()
 	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve notification templates: %s", err)) {
 		return
 	}
@@ -366,7 +373,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 // @Description NOTE: this endpoint is called by the proxy to authenticate its webhook
 // @Tags Webhook
 // @Router /token/{token-value} [get]
-// @Param token-value path string true "the authentication token presented to dorrman proxy webhook"
+// @Param token-value path string true "the authentication token presented to doorman proxy webhook"
 // @Produce application/json, application/yaml, application/xml
 // @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
 // @Failure 404 {string} not found: the specified token has not been found
@@ -379,7 +386,8 @@ func getWebhookAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
 		util.Err(w, http.StatusBadRequest, "token is required")
 		return
 	}
-	routes, err := core.FindInboundRoutesByWebHookToken(token)
+	db := core.NewDb()
+	routes, err := db.FindInboundRoutesByWebHookToken(token)
 	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve inbound routes for token %s: %s", token, err)) {
 		return
 	}
@@ -412,7 +420,8 @@ func getWebhookAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 200 {string} success
 func getWebhookAllAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
-	routes, err := core.FindAllInRoutes()
+	db := core.NewDb()
+	routes, err := db.FindAllInRoutes()
 	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve inbound routes: %s", err)) {
 		return
 	}
@@ -426,4 +435,35 @@ func getWebhookAllAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	util.Write(w, r, info)
+}
+
+// @Summary Gets top jobs
+// @Description Gets a list of top job information logs
+// @Tags Jobs
+// @Router /job [get]
+// @Param count query int false "the number of top jobs to retrieve, if not specified returns the top 1 job"
+// @Produce application/json, application/yaml, application/xml
+// @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
+// @Failure 404 {string} not found: the requested object does not exist
+// @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
+// @Success 200 {string} success
+func getTopJobsHandler(w http.ResponseWriter, r *http.Request) {
+	var (
+		count = 1
+		err   error
+	)
+	countStr := r.URL.Query().Get("count")
+	if len(countStr) > 0 {
+		count, err = strconv.Atoi(countStr)
+		if err != nil {
+			util.Err(w, http.StatusBadRequest, "job count is invalid")
+			return
+		}
+	}
+	db := core.NewDb()
+	jobs, err := db.FindTopJobs(count)
+	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve jobs: %s", err)) {
+		return
+	}
+	util.Write(w, r, jobs)
 }

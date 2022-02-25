@@ -17,8 +17,7 @@ import (
 	"net/http"
 )
 
-func FindPipeline(pipeName string) (*types.Pipeline, error) {
-	db := NewDb()
+func (db *Db) FindPipeline(pipeName string) (*types.Pipeline, error) {
 	result, err := db.FindByName(types.PipelineCollection, pipeName)
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve pipeline %s: %s", pipeName, err)
@@ -76,9 +75,8 @@ func FindPipeline(pipeName string) (*types.Pipeline, error) {
 	return pipe, nil
 }
 
-func UpsertPipeline(pipe types.PipelineConf) (error, int) {
+func (db *Db) UpsertPipeline(pipe types.PipelineConf) (error, int) {
 	var err error
-	db := NewDb()
 	for _, route := range pipe.InboundRoutes {
 		_, err = db.FindByName(types.InRouteCollection, route)
 		if err != nil {
@@ -99,8 +97,7 @@ func UpsertPipeline(pipe types.PipelineConf) (error, int) {
 	return nil, resultCode
 }
 
-func FindAllPipelines() ([]types.PipelineConf, error) {
-	db := NewDb()
+func (db *Db) FindAllPipelines() ([]types.PipelineConf, error) {
 	var pipelines []types.PipelineConf
 	if err := db.FindMany(types.PipelineCollection, nil, func(c *mongo.Cursor) error {
 		return c.All(context.Background(), &pipelines)
@@ -110,18 +107,17 @@ func FindAllPipelines() ([]types.PipelineConf, error) {
 	return pipelines, nil
 }
 
-func FindPipelinesByInboundURI(uri string) ([]types.Pipeline, error) {
+func (db *Db) FindPipelinesByInboundURI(uri string) ([]types.Pipeline, error) {
 	var (
 		pipes    []types.Pipeline
 		routes   []types.InRoute
 		pipeline *types.Pipeline
 		err      error
 	)
-	routes, err = FindInboundRoutesByURI(uri)
+	routes, err = db.FindInboundRoutesByURI(uri)
 	if err != nil {
 		return nil, err
 	}
-	db := NewDb()
 	var pipeConfs []types.PipelineConf
 	for _, route := range routes {
 		// any pipeline having route.Name in their inbound routes array
@@ -133,7 +129,7 @@ func FindPipelinesByInboundURI(uri string) ([]types.Pipeline, error) {
 		}
 	}
 	for _, conf := range pipeConfs {
-		pipeline, err = FindPipeline(conf.Name)
+		pipeline, err = db.FindPipeline(conf.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -142,18 +138,17 @@ func FindPipelinesByInboundURI(uri string) ([]types.Pipeline, error) {
 	return pipes, nil
 }
 
-func MatchPipelines(serviceId, bucketName string) ([]types.Pipeline, error) {
+func (db *Db) MatchPipelines(serviceId, bucketName string) ([]types.Pipeline, error) {
 	var (
 		pipes    []types.Pipeline
 		routes   []types.InRoute
 		pipeline *types.Pipeline
 		err      error
 	)
-	routes, err = MatchInboundRoutes(serviceId, bucketName)
+	routes, err = db.MatchInboundRoutes(serviceId, bucketName)
 	if err != nil {
 		return nil, err
 	}
-	db := NewDb()
 	var pipeConfs []types.PipelineConf
 	for _, route := range routes {
 		// any pipeline having route.Name in their inbound routes array
@@ -165,7 +160,7 @@ func MatchPipelines(serviceId, bucketName string) ([]types.Pipeline, error) {
 		}
 	}
 	for _, conf := range pipeConfs {
-		pipeline, err = FindPipeline(conf.Name)
+		pipeline, err = db.FindPipeline(conf.Name)
 		if err != nil {
 			return nil, err
 		}

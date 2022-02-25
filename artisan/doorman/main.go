@@ -43,6 +43,7 @@ func main() {
 		router.HandleFunc("/pipe", upsertPipelineHandler).Methods("PUT")
 		router.HandleFunc("/pipe/{name}", getPipelineHandler).Methods("GET")
 		router.HandleFunc("/pipe", getAllPipelinesHandler).Methods("GET")
+		router.HandleFunc("/job", getTopJobsHandler).Methods("GET")
 
 		// doorman proxy facing endpoints
 		router.HandleFunc("/event/{service-id}/{bucket-name}/{folder-name}", eventHandler).Methods("POST")

@@ -29,10 +29,11 @@ type Processor struct {
 	bucketName string
 	folderName string
 	tmp        string
-	out        *bytes.Buffer
+	log        *bytes.Buffer
 	db         Db
 	reg        *registry.LocalRegistry
 	spec       *export.Spec
+	jobNo      string
 }
 
 func NewProcessor(serviceId, bucketPath, folderName string) Processor {
@@ -40,7 +41,7 @@ func NewProcessor(serviceId, bucketPath, folderName string) Processor {
 	p.serviceId = serviceId
 	p.bucketName = bucketPath
 	p.folderName = folderName
-	p.out = new(bytes.Buffer)
+	p.log = new(bytes.Buffer)
 	p.db = *NewDb()
 	p.reg = registry.NewLocalRegistry()
 	return p
@@ -48,7 +49,7 @@ func NewProcessor(serviceId, bucketPath, folderName string) Processor {
 
 func (p *Processor) Info(format string, a ...interface{}) {
 	format = fmt.Sprintf("%s INFO %s\n", time.Now().Format("02-01-06 15:04:05"), format)
-	_, err := p.out.WriteString(fmt.Sprintf(format, a...))
+	_, err := p.log.WriteString(fmt.Sprintf(format, a...))
 	if err != nil {
 		fmt.Printf("cannot log INFO: %s\n", err)
 	}
@@ -57,24 +58,23 @@ func (p *Processor) Info(format string, a ...interface{}) {
 func (p *Processor) Error(format string, a ...interface{}) error {
 	format = fmt.Sprintf("%s ERROR %s", time.Now().Format("02-01-06 15:04:05"), format)
 	msg := fmt.Sprintf(format, a...)
-	p.out.WriteString(fmt.Sprintf("%s\n", msg))
+	p.log.WriteString(fmt.Sprintf("%s\n", msg))
 	return fmt.Errorf(msg)
 }
 
 func (p *Processor) Warn(format string, a ...interface{}) {
 	format = fmt.Sprintf("%s WARN %s\n", time.Now().Format("02-01-06 15:04:05"), format)
-	p.out.WriteString(fmt.Sprintf(format, a...))
+	p.log.WriteString(fmt.Sprintf(format, a...))
 }
 
 // Start starts processing a pipeline asynchronously
 func (p *Processor) Start() {
-	p.process()
-	fmt.Println(p.out.String())
+	go p.process()
 }
 
 func (p *Processor) process() error {
 	p.Info("processing release Id=%s → %s/%s", p.serviceId, p.bucketName, p.folderName)
-	pipes, err := MatchPipelines(p.serviceId, p.bucketName)
+	pipes, err := p.db.MatchPipelines(p.serviceId, p.bucketName)
 	if err != nil {
 		return p.Error("cannot retrieve pipelines for bucket Id='%s': %s\n", p.serviceId, err)
 	}
@@ -82,15 +82,40 @@ func (p *Processor) process() error {
 		return p.Error("no pipeline configuration found for release Id=%s\n", p.serviceId)
 	}
 	for _, pipe := range pipes {
+		// record the start of a new job and obtains a new job number
+		jobNo, startTime, jobErr := p.db.StartJob(&pipe, p)
+		if jobErr != nil {
+			return jobErr
+		}
+		p.jobNo = jobNo
+		// process the pipeline
 		err = p.processPipeline(pipe)
+		// if there was an error
 		if err != nil {
+			// record the job as failed passing the logs
+			jobErr = p.db.FailJob(startTime, &pipe, p)
+			if jobErr != nil {
+				return jobErr
+			}
 			return err
+		}
+		// if no error, record the job as completed passing the logs
+		jobErr = p.db.CompleteJob(startTime, &pipe, p)
+		if jobErr != nil {
+			return jobErr
 		}
 	}
 	return nil
 }
 
+func (p *Processor) logs() []string {
+	l := p.log.String()
+	lines := strings.Split(l, "\n")
+	return lines[:len(lines)-1]
+}
+
 func (p *Processor) processPipeline(pipe types.Pipeline) error {
+	defer p.cleanup()
 	// create a new temp folder for processing
 	tmp, err := core.NewTempDir()
 	if err != nil {
@@ -291,9 +316,9 @@ func (p *Processor) signKeyArtFile() string {
 func (p Processor) importSpec() error {
 	// import artefacts
 	p.Info("importing specification files: started")
-	// remove all artefacts from local registry
+	// remove spec specific artefacts from local registry
 	// NOTE: do not use prune() to avoid removing tmp folder!
-	err := p.reg.Remove(p.reg.AllPackages())
+	err := p.cleanSpec()
 	if err != nil {
 		return p.Error("cannot prune local registry: %s", err)
 	}
@@ -310,4 +335,19 @@ func (p Processor) importSpec() error {
 
 func (p Processor) bucketPath() string {
 	return fmt.Sprintf("%s/%s", p.bucketName, p.folderName)
+}
+
+func (p *Processor) cleanSpec() error {
+	var names []string
+	for _, name := range p.spec.Packages {
+		names = append(names, name)
+	}
+	for _, name := range p.spec.Images {
+		names = append(names, name)
+	}
+	return p.reg.Remove(names)
+}
+
+func (p *Processor) cleanup() {
+	os.RemoveAll(p.tmp)
 }

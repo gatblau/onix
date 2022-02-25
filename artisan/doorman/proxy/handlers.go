@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 // @title Artisan's Doorman Proxy
@@ -99,10 +100,12 @@ func minioEventsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Printf("︎⚡️ new release:\n")
 	fmt.Printf("  ✔ from   = %s\n", event.Records[0].ResponseElements.XMinioOriginEndpoint)
+	fmt.Printf("  ✔ time   = %s\n", time.Now().UTC())
 	fmt.Printf("  ✔ id     = %s\n", deploymentId)
 	fmt.Printf("  ✔ bucket = %s\n", bucketName)
 	fmt.Printf("  ✔ folder = %s\n", folderName)
-	fmt.Println("  ✔ type   = minio compatible")
+	fmt.Printf("  ✔ type   = minio compatible\n")
+	fmt.Printf("--------------------------------------------------------------------\n\n")
 	requestURI := fmt.Sprintf("%s/event/%s/%s/%s", doormanBaseURI, deploymentId, bucketName, folderName)
 	if _, postErr, code := newRequest("POST", requestURI); postErr != nil {
 		w.WriteHeader(code)

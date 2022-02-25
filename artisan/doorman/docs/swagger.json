@@ -190,6 +190,54 @@
                 }
             }
         },
+        "/job": {
+            "get": {
+                "description": "Gets a list of top job information logs",
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Jobs"
+                ],
+                "summary": "Gets top jobs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "the number of top jobs to retrieve, if not specified returns the top 1 job",
+                        "name": "count",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/key": {
             "put": {
                 "description": "creates or updates a cryptographic key used by either inbound or outbound routes to verify or sign\npackages respectively",
@@ -773,7 +821,7 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "the authentication token presented to dorrman proxy webhook",
+                        "description": "the authentication token presented to doorman proxy webhook",
                         "name": "token-value",
                         "in": "path",
                         "required": true

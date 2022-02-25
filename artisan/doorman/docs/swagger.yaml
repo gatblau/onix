@@ -520,6 +520,39 @@ paths:
       summary: A Webhook for MinIO compatible event sources
       tags:
       - Event Sources
+  /job:
+    get:
+      description: Gets a list of top job information logs
+      parameters:
+      - description: the number of top jobs to retrieve, if not specified returns
+          the top 1 job
+        in: query
+        name: count
+        type: integer
+      produces:
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Gets top jobs
+      tags:
+      - Jobs
   /key:
     put:
       consumes:
@@ -911,7 +944,7 @@ paths:
         an inbound route, returning required referrer URL and IP white list
         NOTE: this endpoint is called by the proxy to authenticate its webhook
       parameters:
-      - description: the authentication token presented to dorrman proxy webhook
+      - description: the authentication token presented to doorman proxy webhook
         in: path
         name: token-value
         required: true

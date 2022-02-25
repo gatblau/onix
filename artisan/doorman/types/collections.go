@@ -18,4 +18,5 @@ const (
 	PipelineCollection              Collection = "pipelines"
 	NotificationTemplatesCollection Collection = "templates"
 	NotificationsCollection         Collection = "notifications"
+	JobsCollection                  Collection = "jobs"
 )
