@@ -1,4 +1,23 @@
 definitions:
+  core.NotificationMsg:
+    properties:
+      content:
+        description: Content of the template
+        example: A new event has been received.
+        type: string
+      recipient:
+        description: Recipient of the notification if type is email
+        example: info@email.com
+        type: string
+      subject:
+        description: Subject of the notification
+        example: New Notification
+        type: string
+      type:
+        description: Type of the notification (e.g. email, snow, etc.)
+        example: email
+        type: string
+    type: object
   main.Bucket:
     properties:
       arn:
@@ -18,25 +37,6 @@ definitions:
         items:
           $ref: '#/definitions/main.Records'
         type: array
-    type: object
-  main.Notification:
-    properties:
-      content:
-        description: Content of the template
-        example: A new event has been received.
-        type: string
-      recipient:
-        description: Recipient of the notification if type is email
-        example: info@email.com
-        type: string
-      subject:
-        description: Subject of the notification
-        example: New Notification
-        type: string
-      type:
-        description: Type of the notification (e.g. email, snow, etc.)
-        example: email
-        type: string
     type: object
   main.Object:
     properties:
@@ -205,7 +205,7 @@ paths:
         name: notification
         required: true
         schema:
-          $ref: '#/definitions/main.Notification'
+          $ref: '#/definitions/core.NotificationMsg'
       produces:
       - text/plain
       responses:
