@@ -66,11 +66,26 @@ func (db *Db) FindPipeline(pipeName string) (*types.Pipeline, error) {
 		}
 		cmds = append(cmds, *cmdObj)
 	}
+	successN, err := db.FindNotification(pipeConf.SuccessNotification)
+	if err != nil {
+		return nil, fmt.Errorf("cannot retrieve success notification %s: %s", pipeConf.SuccessNotification, err)
+	}
+	cmdFailedN, err := db.FindNotification(pipeConf.CmdFailedNotification)
+	if err != nil {
+		return nil, fmt.Errorf("cannot retrieve command failed notification %s: %s", pipeConf.CmdFailedNotification, err)
+	}
+	errorN, err := db.FindNotification(pipeConf.ErrorNotification)
+	if err != nil {
+		return nil, fmt.Errorf("cannot retrieve error notification %s: %s", pipeConf.ErrorNotification, err)
+	}
 	pipe := &types.Pipeline{
-		Name:           pipeConf.Name,
-		InboundRoutes:  inRoutes,
-		OutboundRoutes: outRoutes,
-		Commands:       cmds,
+		Name:                  pipeConf.Name,
+		InboundRoutes:         inRoutes,
+		OutboundRoutes:        outRoutes,
+		Commands:              cmds,
+		SuccessNotification:   successN,
+		CmdFailedNotification: cmdFailedN,
+		ErrorNotification:     errorN,
 	}
 	return pipe, nil
 }

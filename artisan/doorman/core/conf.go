@@ -7,8 +7,11 @@ import (
 )
 
 const (
-	DoormanProxyUser = "DOORMAN_PROXY_USER"
-	DoormanProxyPwd  = "DOORMAN_PROXY_PWD"
+	DoormanProxyUser        = "DOORMAN_PROXY_USER"
+	DoormanProxyPwd         = "DOORMAN_PROXY_PWD"
+	DoormanNotificationURI  = "DOORMAN_NOTIFICATION_URI"
+	DoormanNotificationUser = "DOORMAN_NOTIFICATION_USER"
+	DoormanNotificationPwd  = "DOORMAN_NOTIFICATION_PWD"
 )
 
 func init() {
@@ -30,4 +33,16 @@ func GetProxyUser() (string, error) {
 
 func GetProxyPwd() (string, error) {
 	return getString(DoormanProxyPwd)
+}
+
+func GetNotificationURI() (string, error) {
+	return getString(DoormanNotificationURI)
+}
+
+func GetNotificationUser() (string, error) {
+	return getString(DoormanNotificationUser)
+}
+
+func GetNotificationPwd() (string, error) {
+	return getString(DoormanNotificationPwd)
 }

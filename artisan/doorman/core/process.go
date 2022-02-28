@@ -10,6 +10,7 @@ package core
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
@@ -17,6 +18,8 @@ import (
 	"github.com/gatblau/onix/artisan/export"
 	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/registry"
+	util "github.com/gatblau/onix/oxlib/httpserver"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -34,6 +37,8 @@ type Processor struct {
 	reg        *registry.LocalRegistry
 	spec       *export.Spec
 	jobNo      string
+	cmdLog     string
+	pipe       *types.Pipeline
 }
 
 func NewProcessor(serviceId, bucketPath, folderName string) Processor {
@@ -80,7 +85,27 @@ func (p *Processor) Warn(format string, a ...interface{}) {
 
 // Start starts processing a pipeline asynchronously
 func (p *Processor) Start() {
-	go p.process()
+	go p.launch()
+}
+
+func (p *Processor) launch() {
+	err := p.process()
+	if err != nil {
+		if len(p.cmdLog) == 0 {
+			if err = p.SendNotification(ErrorNotification); err != nil {
+				fmt.Printf("cannot send error notification: %s\n", err)
+			}
+		} else {
+			if err = p.SendNotification(CmdFailedNotification); err != nil {
+				fmt.Printf("cannot send command failed notification: %s\n", err)
+			}
+			p.cmdLog = ""
+		}
+	} else {
+		if err = p.SendNotification(SuccessNotification); err != nil {
+			fmt.Printf("cannot send success notification: %s\n", err)
+		}
+	}
 }
 
 func (p *Processor) process() error {
@@ -96,7 +121,9 @@ func (p *Processor) process() error {
 		fmt.Println(e)
 		return e
 	}
-	for _, pipe := range pipes {
+	for i, pipe := range pipes {
+		// set the current pipeline
+		p.pipe = &pipes[i]
 		// record the start of a new job and obtains a new job number
 		jobNo, startTime, jobErr := p.db.StartJob(&pipe, p)
 		if jobErr != nil {
@@ -104,7 +131,7 @@ func (p *Processor) process() error {
 		}
 		p.jobNo = jobNo
 		// process the pipeline
-		err = p.processPipeline(pipe)
+		err = p.processPipeline(&pipe)
 		// if there was an error
 		if err != nil {
 			// record the job as failed passing the logs
@@ -129,7 +156,7 @@ func (p *Processor) logs() []string {
 	return lines[:len(lines)-1]
 }
 
-func (p *Processor) processPipeline(pipe types.Pipeline) error {
+func (p *Processor) processPipeline(pipe *types.Pipeline) error {
 	defer p.cleanup()
 	// create a new temp folder for processing
 	tmp, err := core.NewTempDir()
@@ -148,7 +175,7 @@ func (p *Processor) processPipeline(pipe types.Pipeline) error {
 			}
 			// process the outbound route(s)
 			for _, outRoute := range pipe.OutboundRoutes {
-				err = p.processOutboundRoute(inRoute, outRoute)
+				err = p.processOutboundRoute(outRoute)
 				if err != nil {
 					return err
 				}
@@ -159,7 +186,7 @@ func (p *Processor) processPipeline(pipe types.Pipeline) error {
 	return nil
 }
 
-func (p *Processor) processInboundRoute(pipe types.Pipeline, route types.InRoute) error {
+func (p *Processor) processInboundRoute(pipe *types.Pipeline, route types.InRoute) error {
 	// download spec
 	p.Info("downloading specification: started")
 	spec, err := export.DownloadSpec(fmt.Sprintf("%s/%s", route.ServiceHost, p.bucketPath()), route.Creds(), p.tmp)
@@ -184,7 +211,9 @@ func (p *Processor) processInboundRoute(pipe types.Pipeline, route types.InRoute
 		}
 		// if the regex matched return error and content of command output
 		if matched {
-			return p.Error("command %s failed:\n%s", out)
+			cmdErr := fmt.Sprintf("command %s failed:\n%s", command.Name, out)
+			p.cmdLog = cmdErr
+			return p.Error(cmdErr)
 		}
 	}
 	p.Info("verifying downloaded files: complete")
@@ -202,7 +231,7 @@ func (p *Processor) processInboundRoute(pipe types.Pipeline, route types.InRoute
 	return nil
 }
 
-func (p *Processor) processOutboundRoute(inRoute types.InRoute, outRoute types.OutRoute) error {
+func (p *Processor) processOutboundRoute(outRoute types.OutRoute) error {
 	var userPwd string
 	p.Info("processing outbound route %s: started", outRoute.Name)
 	if outRoute.S3Store != nil {
@@ -365,4 +394,119 @@ func (p *Processor) cleanSpec() error {
 
 func (p *Processor) cleanup() {
 	os.RemoveAll(p.tmp)
+}
+
+func (p *Processor) SendNotification(nType NotificationType) error {
+	var n *types.PipeNotification
+	switch nType {
+	case SuccessNotification:
+		n = p.pipe.SuccessNotification
+	case CmdFailedNotification:
+		n = p.pipe.CmdFailedNotification
+	case ErrorNotification:
+		n = p.pipe.ErrorNotification
+	default:
+		return fmt.Errorf("notification type %s is not supported", nType)
+	}
+	// merges release-name
+	subject := strings.ReplaceAll(n.Subject, "<<release-name>>", fmt.Sprintf("%s:%s", p.bucketName, p.folderName))
+	// merges release-artefacts
+	buf := bytes.Buffer{}
+	count := 0
+	for _, pac := range p.spec.Packages {
+		if count == 0 {
+			buf.WriteString(fmt.Sprintf("packages:\n"))
+		}
+		buf.WriteString(fmt.Sprintf("%s\n", pac))
+		count++
+	}
+	count = 0
+	for _, img := range p.spec.Images {
+		if count == 0 {
+			buf.WriteString(fmt.Sprintf("images:\n"))
+		}
+		buf.WriteString(fmt.Sprintf("%s\n", img))
+		count++
+	}
+	content := n.Content
+	content = strings.ReplaceAll(content, "<<release-artefacts>>", buf.String())
+	content = strings.ReplaceAll(content, "<<issue-log>>", p.issueLog())
+	content = strings.ReplaceAll(content, "<<scan-log>>", p.cmdLog)
+	return postNotification(NotificationMsg{
+		Recipient: n.Recipient,
+		Type:      n.Type,
+		Subject:   subject,
+		Content:   content,
+	})
+}
+
+func (p *Processor) issueLog() string {
+	var issue []string
+	log := strings.Split(p.log.String(), "\n")
+	for _, line := range log {
+		if strings.Contains(line, "ERROR") {
+			issue = append(issue, line)
+		}
+	}
+	return strings.Join(issue, "\n")
+}
+
+type NotificationMsg struct {
+	// Recipient of the notification if type is email
+	Recipient string `yaml:"recipient" json:"recipient" example:"info@email.com"`
+	// Type of the notification (e.g. email, snow, etc.)
+	Type string `yaml:"type" json:"type" example:"email"`
+	// Subject of the notification
+	Subject string `yaml:"subject" json:"subject" example:"New Notification"`
+	// Content of the template
+	Content string `yaml:"content" json:"content" example:"A new event has been received."`
+}
+
+func (m NotificationMsg) Valid() error {
+	if len(m.Subject) == 0 {
+		return fmt.Errorf("subject is required")
+	}
+	if len(m.Content) == 0 {
+		return fmt.Errorf("content is required")
+	}
+	if len(m.Recipient) == 0 {
+		return fmt.Errorf("recipient is required")
+	}
+	return nil
+}
+
+func postNotification(n NotificationMsg) error {
+	content, err := json.Marshal(n)
+	if err != nil {
+		return err
+	}
+	uri, err := GetNotificationURI()
+	if err != nil {
+		return err
+	}
+	requestURI := fmt.Sprintf("%s/notify", uri)
+	req, err := http.NewRequest("POST", requestURI, bytes.NewReader(content))
+	if err != nil {
+		return fmt.Errorf("cannot create http request: %s", err)
+	}
+	user, err := GetNotificationUser()
+	if err != nil {
+		return fmt.Errorf("missing configuration")
+	}
+	pwd, err := GetNotificationPwd()
+	if err != nil {
+		return fmt.Errorf("missing configuration")
+	}
+	req.Header.Add("Authorization", util.BasicToken(user, pwd))
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	// do we have a nil response?
+	if resp == nil {
+		return fmt.Errorf("response was empty for resource: %s", requestURI)
+	}
+	// check error status codes
+	if resp.StatusCode > 201 {
+		return fmt.Errorf("response returned status: %s; resource: %s", resp.Status, requestURI)
+	}
+	return nil
 }
