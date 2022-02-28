@@ -245,7 +245,10 @@ fi
 `))
 	s.WriteString(fmt.Sprintf(`
 # ensure attachable docker network is already created
-docker network create %[1]s
+if [ ! "$(docker network ls | grep %[1]s)" ]
+then
+  docker network create %[1]s
+fi
 `, b.network()))
 	s.WriteString("\n# create docker volumes\n")
 	for _, service := range b.manifest.Services {
