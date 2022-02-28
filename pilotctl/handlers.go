@@ -18,6 +18,7 @@ package main
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
 import (
+	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -623,8 +624,12 @@ func registrationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	c := core.NewConf()
 	for _, registration := range registrations {
+		client := &http.Client{
+			Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+			Timeout:   60 * time.Second,
+		}
 		// call activation service and reserve the mac-address for this tenant
-		_, err = core.HttpRequest(&http.Client{Timeout: 60 * time.Second}, fmt.Sprintf("%s/provision/%s/%s", c.GetActivationURI(), c.GetTenant(), registration.MacAddress), "POST", c.GetActivationUser(), c.GetActivationPwd(), 201)
+		_, err = core.HttpRequest(client, fmt.Sprintf("%s/provision/%s/%s", c.GetActivationURI(), c.GetTenant(), registration.MacAddress), "POST", c.GetActivationUser(), c.GetActivationPwd(), 201)
 		if err != nil {
 			log.Printf("cannot provision mac-address %s with activation service: %s\n", registration.MacAddress, err)
 			http.Error(w, fmt.Sprintf("cannot provision mac-address %s with activation service, check the server logs for more information\n", registration.MacAddress), http.StatusInternalServerError)
