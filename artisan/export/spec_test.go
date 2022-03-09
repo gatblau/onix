@@ -20,14 +20,14 @@ func TestSpec_SaveSpec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.Export("s3://localhost:9000/app1/v1", "", "minioadmin:minioadmin")
+	err = ExportSpec(*s, "", "minioadmin:minioadmin", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestSpec_ImportSpec(t *testing.T) {
-	err := ImportSpec("s3://localhost:9000/app1/v1", "minioadmin:minioadmin")
+	err := ImportSpec("s3://localhost:9000/app1/v1", "minioadmin:minioadmin", "", "", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func TestSpec_ExportSpec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.Export("s3://localhost:9000/app1/v1", "", "minioadmin:minioadmin")
+	err = ExportSpec(*s, "", "minioadmin:minioadmin", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,5 +57,9 @@ func TestSpec_Unmarshal(t *testing.T) {
 }
 
 func TestDownloadSpec(t *testing.T) {
-	DownloadSpec("s3://localhost:9000/app1/1.0", "minioadmin:minioadmin", "./app1-spec")
+	DownloadSpec("s3://s3.cmsee.cloud/cmsee/1.0.2", " a667925:YWUwM2ExNDhiMmUy", "./app1-spec")
+}
+
+func TestSpec_Push(t *testing.T) {
+	PushSpec("./", "localhost:5000", "", "", "", true, false, false)
 }

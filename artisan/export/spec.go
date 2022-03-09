@@ -296,21 +296,24 @@ func PushSpec(specPath, host, group, user, creds string, image, clean, logout bo
 		cli, usr, pwd string
 		err           error
 	)
-	// if pushing images and user credentials have been defined
-	if image && len(user) > 0 {
-		// preforms a docker login
+	// if it needs to work with container images
+	if image {
+		// obtain docker command name
 		cli, err = containerCmd()
 		if err != nil {
 			return err
 		}
-		core.InfoLogger.Printf("logging to docker registry")
-		// executes docker login --username=right-username --password=""
-		usr, pwd = core.UserPwd(user)
-		out, eErr := build.Exe(fmt.Sprintf("%s login %s --username=%s --password=%s", cli, host, usr, pwd), ".", merge.NewEnVarFromSlice([]string{}), false)
-		if eErr != nil {
-			return eErr
+		// if credentials have been provided to connect to registry
+		if len(user) > 0 {
+			core.InfoLogger.Printf("logging to docker registry")
+			// executes docker login --username=right-username --password=""
+			usr, pwd = core.UserPwd(user)
+			out, eErr := build.Exe(fmt.Sprintf("%s login %s --username=%s --password=%s", cli, host, usr, pwd), ".", merge.NewEnVarFromSlice([]string{}), false)
+			if eErr != nil {
+				return eErr
+			}
+			core.InfoLogger.Printf("%s\n", out)
 		}
-		core.InfoLogger.Printf("%s\n", out)
 	}
 	local := registry.NewLocalRegistry()
 	spec, err := NewSpec(specPath, creds)
