@@ -50,6 +50,7 @@ Example:
 	c.cmd.Flags().BoolVar(&c.logout, "logout", false, "if defined, logs out the docker login session")
 	c.cmd.Flags().BoolVar(&c.clean, "clean", false, "if defined, remove packages / images from local registries")
 	c.cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials to retrieve the spec file from a remote destination")
+	c.cmd.MarkFlagRequired("tag")
 	return c
 }
 
@@ -59,9 +60,6 @@ func (c *SpecPushCmd) Run(cmd *cobra.Command, args []string) {
 	}
 	if args != nil && len(args) < 1 {
 		core.RaiseErr("the URI of the specification is required")
-	}
-	if len(c.tag) == 0 {
-		core.RaiseErr("a tag is required, use the -t flag")
 	}
 	tagParts := strings.Split(c.tag, "/")
 	host := tagParts[0]
