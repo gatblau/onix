@@ -138,7 +138,7 @@ func (r *Nexus3Backend) UpdatePackageInfo(group, name string, packageInfo *regis
 	return r.postMultipart(b, writer, user, pwd)
 }
 
-// Upload a package
+// UploadPackage upload a new package
 func (r *Nexus3Backend) UploadPackage(group, name, packageRef string, zipfile multipart.File, jsonFile multipart.File, repo multipart.File, user string, pwd string) error {
 	// ensure files are properly closed
 	defer zipfile.Close()
@@ -181,6 +181,26 @@ func (r *Nexus3Backend) UploadPackage(group, name, packageRef string, zipfile mu
 	return r.postMultipart(b, writer, user, pwd)
 }
 
+// DeletePackage delete a specific package
+func (r *Nexus3Backend) DeletePackage(group, name, packageRef, user, pwd string) error {
+	assetList, err := r.getAssets(user, pwd)
+	if err != nil {
+		return fmt.Errorf("cannot get list of assets in Nexus: %s", err)
+	}
+	var ids []string
+	for _, asset := range assetList.Items {
+		if strings.HasPrefix(asset.Path, fmt.Sprintf("%s/%s/%s", group, name, packageRef)) {
+			ids = append(ids, asset.ID)
+		}
+	}
+	for _, id := range ids {
+		if err = r.deleteComponent(id, user, pwd); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *Nexus3Backend) postMultipart(b bytes.Buffer, writer *multipart.Writer, user string, pwd string) error {
 	// Now that you have a form, you can submit it to your handler.
 	req, err := http.NewRequest("POST", r.componentsURI(), &b)
@@ -207,6 +227,39 @@ func (r *Nexus3Backend) postMultipart(b bytes.Buffer, writer *multipart.Writer, 
 		return fmt.Errorf("failed to push, the remote server responded with status code %d: %s", res.StatusCode, res.Status)
 	}
 	return nil
+}
+
+func (r *Nexus3Backend) deleteComponent(id, user, pwd string) error {
+	req, err := http.NewRequest("DELETE", r.componentsWithIdURI(id), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("accept", "application/json")
+	if len(user) > 0 && len(pwd) > 0 {
+		req.Header.Add("authorization", httpserver.BasicToken(user, pwd))
+	}
+	res, err := r.client.Do(req)
+	// must close the body
+	if res.Body != nil {
+		res.Body.Close()
+	}
+	if err != nil {
+		return err
+	}
+	// success
+	switch res.StatusCode {
+	case 204:
+		// success
+		return nil
+	case 403:
+		return fmt.Errorf("insufficient permissions to delete component")
+	case 404:
+		return fmt.Errorf("component not found")
+	case 422:
+		return fmt.Errorf("malformed id")
+	default:
+		return fmt.Errorf("unknown response status: %s", res.Status)
+	}
 }
 
 func (r *Nexus3Backend) GetRepositoryInfo(group, name, user, pwd string) (*registry.Repository, error) {
@@ -281,7 +334,7 @@ func (r *Nexus3Backend) GetPackageInfo(group, name, id, user, pwd string) (*regi
 	return nil, nil
 }
 
-func (r *Nexus3Backend) GetManifest(group, name, tag, user, pwd string) (*data.Manifest, error) {
+func (r *Nexus3Backend) GetPackageManifest(group, name, tag, user, pwd string) (*data.Manifest, error) {
 	repo, err := r.GetRepositoryInfo(group, name, user, pwd)
 	if err != nil {
 		return nil, err
@@ -348,6 +401,10 @@ func (r *Nexus3Backend) addFile(writer *multipart.Writer, fieldName, fileName st
 
 func (r *Nexus3Backend) componentsURI() string {
 	return fmt.Sprintf("%s/service/rest/v1/components?repository=artisan", r.domain)
+}
+
+func (r *Nexus3Backend) componentsWithIdURI(id string) string {
+	return fmt.Sprintf("%s/service/rest/v1/components/%s", r.domain, id)
 }
 
 func (r *Nexus3Backend) assetsURI(continuationToken string) string {

@@ -396,7 +396,7 @@ func (s *Server) getManifestHandler(w http.ResponseWriter, r *http.Request) {
 	repoName := vars["repository-name"]
 	repoGroup, _ = url.PathUnescape(repoGroup)
 	tag := vars["tag"]
-	manifest, err := GetBackend().GetManifest(repoGroup, repoName, tag, s.conf.HttpUser(), s.conf.HttpPwd())
+	manifest, err := GetBackend().GetPackageManifest(repoGroup, repoName, tag, s.conf.HttpUser(), s.conf.HttpPwd())
 	if err != nil {
 		s.writeError(w, err, 500)
 		return
