@@ -120,7 +120,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.Notification"
+                            "$ref": "#/definitions/core.NotificationMsg"
                         }
                     }
                 ],
@@ -148,6 +148,31 @@ var doc = `{
         }
     },
     "definitions": {
+        "core.NotificationMsg": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Content of the template",
+                    "type": "string",
+                    "example": "A new event has been received."
+                },
+                "recipient": {
+                    "description": "Recipient of the notification if type is email",
+                    "type": "string",
+                    "example": "info@email.com"
+                },
+                "subject": {
+                    "description": "Subject of the notification",
+                    "type": "string",
+                    "example": "New Notification"
+                },
+                "type": {
+                    "description": "Type of the notification (e.g. email, snow, etc.)",
+                    "type": "string",
+                    "example": "email"
+                }
+            }
+        },
         "main.Bucket": {
             "type": "object",
             "properties": {
@@ -176,31 +201,6 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/main.Records"
                     }
-                }
-            }
-        },
-        "main.Notification": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "description": "Content of the template",
-                    "type": "string",
-                    "example": "A new event has been received."
-                },
-                "recipient": {
-                    "description": "Recipient of the notification if type is email",
-                    "type": "string",
-                    "example": "info@email.com"
-                },
-                "subject": {
-                    "description": "Subject of the notification",
-                    "type": "string",
-                    "example": "New Notification"
-                },
-                "type": {
-                    "description": "Type of the notification (e.g. email, snow, etc.)",
-                    "type": "string",
-                    "example": "email"
                 }
             }
         },

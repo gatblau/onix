@@ -10,11 +10,12 @@ package main
 
 import (
 	"crypto/tls"
+	"github.com/gatblau/onix/artisan/doorman/core"
 	gomail "gopkg.in/mail.v2"
 	"strings"
 )
 
-func sendMail(notification Notification) error {
+func sendMail(notification core.NotificationMsg) error {
 	// gets the sender information
 	from, err := getEmailFrom()
 	if err != nil {

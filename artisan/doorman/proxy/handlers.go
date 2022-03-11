@@ -10,6 +10,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/gatblau/onix/artisan/doorman/core"
 	_ "github.com/gatblau/onix/artisan/doorman/proxy/docs"
 	util "github.com/gatblau/onix/oxlib/httpserver"
 	"net/http"
@@ -31,14 +32,14 @@ import (
 // @Description sends a notification of the specified type
 // @Tags Notifications
 // @Router /notify [post]
-// @Param notification body Notification true "the notification information to send"
+// @Param notification body core.NotificationMsg true "the notification information to send"
 // @Accept application/yaml, application/json
 // @Produce plain
 // @Failure 400 {string} bad request: the server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 201 {string} notification has been sent
 func notifyHandler(w http.ResponseWriter, r *http.Request) {
-	notification := new(Notification)
+	notification := new(core.NotificationMsg)
 	err := util.Unmarshal(r, notification)
 	if util.IsErr(w, err, http.StatusBadRequest, "cannot unmarshal notification") {
 		return

@@ -52,6 +52,12 @@ type Pipeline struct {
 	OutboundRoutes []OutRoute `json:"out_route"`
 	// Commands a list of the command names to be executed between inbound and outbound routes
 	Commands []Command `json:"commands"`
+	// SuccessNotification the key of the notification sent in case of success
+	SuccessNotification *PipeNotification `bson:"success_notification" json:"success_notification" yaml:"success_notification"`
+	// CmdFailedNotification the key of the notification sent in case of command failures
+	CmdFailedNotification *PipeNotification `bson:"cmd_failed_notification" json:"cmd_failed_notification" yaml:"cmd_failed_notification"`
+	// ErrorNotification the key of the notification sent in case of processing errors
+	ErrorNotification *PipeNotification `bson:"error_notification" json:"error_notification" yaml:"error_notification"`
 }
 
 func (p Pipeline) Valid() error {

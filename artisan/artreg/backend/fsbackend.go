@@ -23,6 +23,14 @@ type FsBackend struct {
 	path string
 }
 
+func (fs *FsBackend) DeletePackage(group, name, packageRef, user, pwd string) error {
+	panic("implement me")
+}
+
+func (fs *FsBackend) GetPackageManifest(group, name, tag, user, pwd string) (*data.Manifest, error) {
+	panic("implement me")
+}
+
 func NewFsBackend() *FsBackend {
 	fs := &FsBackend{
 		path: "data",

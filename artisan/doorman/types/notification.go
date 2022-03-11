@@ -8,6 +8,19 @@
 
 package types
 
+type PipeNotification struct {
+	// unique identifier for the notification
+	Name string `yaml:"name" json:"name" bson:"_id"`
+	// Recipient of the notification if type is email
+	Recipient string `yaml:"recipient" json:"recipient" bson:"recipient"`
+	// Type of the notification (e.g. email, snow, etc.)
+	Type string `yaml:"type" json:"type" bson:"type"`
+	// Subject of the notification
+	Subject string `yaml:"subject" json:"subject" bson:"subject"`
+	// Content of the template
+	Content string `yaml:"content" json:"content" bson:"content"`
+}
+
 type Notification struct {
 	// unique identifier for the notification
 	Name string `yaml:"name" json:"name" bson:"_id"`

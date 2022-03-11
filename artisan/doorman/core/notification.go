@@ -16,6 +16,43 @@ import (
 	"net/http"
 )
 
+type NotificationType string
+
+const (
+	SuccessNotification   NotificationType = "SUCCESS"
+	CmdFailedNotification NotificationType = "CMD_FAILED"
+	ErrorNotification     NotificationType = "ERROR"
+)
+
+func (db *Db) FindNotification(name string) (*types.PipeNotification, error) {
+	notif := new(types.Notification)
+	result, err := db.FindByName(types.NotificationsCollection, name)
+	if err != nil {
+		return nil, err
+	}
+	err = result.Decode(notif)
+	if err != nil {
+		return nil, err
+	}
+	// load the template
+	templ := new(types.NotificationTemplate)
+	result, err = db.FindByName(types.NotificationTemplatesCollection, notif.Template)
+	if err != nil {
+		return nil, err
+	}
+	err = result.Decode(templ)
+	if err != nil {
+		return nil, err
+	}
+	return &types.PipeNotification{
+		Name:      notif.Name,
+		Recipient: notif.Recipient,
+		Type:      notif.Type,
+		Subject:   templ.Subject,
+		Content:   templ.Content,
+	}, nil
+}
+
 func (db *Db) UpsertNotification(notification types.Notification) (error, int) {
 	_, err := db.FindByName(types.NotificationTemplatesCollection, notification.Template)
 	if err != nil {
