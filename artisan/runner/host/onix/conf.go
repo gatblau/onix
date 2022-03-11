@@ -9,7 +9,6 @@ package onix
 */
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 )
@@ -17,15 +16,9 @@ import (
 type ConfKey string
 
 const (
-	ConfDbName                   ConfKey = "OX_PILOTCTL_DB_NAME"
-	ConfDbHost                   ConfKey = "OX_PILOTCTL_DB_HOST"
-	ConfDbPort                   ConfKey = "OX_PILOTCTL_DB_PORT"
-	ConfDbUser                   ConfKey = "OX_PILOTCTL_DB_USER"
-	ConfDbPwd                    ConfKey = "OX_PILOTCTL_DB_PWD"
 	ConfOxWapiUri                ConfKey = "OX_WAPI_URI"
 	ConfOxWapiUser               ConfKey = "OX_WAPI_USER"
 	ConfOxWapiPwd                ConfKey = "OX_WAPI_PWD"
-	ConfDbMaxConn                ConfKey = "OX_PILOTCTL_DB_MAXCONN"
 	ConfOxWapiInsecureSkipVerify ConfKey = "OX_WAPI_INSECURE_SKIP_VERIFY"
 )
 
@@ -38,34 +31,6 @@ func NewConf() *Conf {
 
 func (c *Conf) get(key ConfKey) string {
 	return os.Getenv(string(key))
-}
-
-func (c *Conf) getDbName() string {
-	value := os.Getenv(string(ConfDbName))
-	if len(value) == 0 {
-		return "pilotctl"
-	}
-	return value
-}
-
-func (c *Conf) getDbHost() string {
-	return c.getValue(ConfDbHost)
-}
-
-func (c *Conf) getDbPort() string {
-	value := os.Getenv(string(ConfDbPort))
-	if len(value) == 0 {
-		return "5432"
-	}
-	return value
-}
-
-func (c *Conf) getDbUser() string {
-	return c.getValue(ConfDbUser)
-}
-
-func (c *Conf) getDbPwd() string {
-	return c.getValue(ConfDbPwd)
 }
 
 func (c *Conf) getOxWapiUrl() string {
@@ -96,18 +61,4 @@ func (c *Conf) getOxWapiInsecureSkipVerify() bool {
 		os.Exit(1)
 	}
 	return b
-}
-
-func (c *Conf) getDbMaxConn() int {
-	defaultMaxConn := 10
-	value := os.Getenv(string(ConfDbMaxConn))
-	if len(value) == 0 {
-		return defaultMaxConn
-	}
-	maxConn, err := strconv.Atoi(value)
-	if err != nil {
-		log.Printf("WARNING: failed to parse db max connections: %s, defaulting to %d\n", err, defaultMaxConn)
-		return defaultMaxConn
-	}
-	return maxConn
 }

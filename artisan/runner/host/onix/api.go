@@ -62,11 +62,11 @@ func (r *API) GetCommand(cmdName string) (*Cmd, error) {
 
 	item, err := r.ox.GetItem(&oxc.Item{Key: cmdName})
 	if err != nil {
-		return nil, fmt.Errorf("cannot get command with key '%s' from Onix: %s", cmdName, err)
+		return nil, fmt.Errorf("Failed to get command with key '%s' from Onix: %s", cmdName, err)
 	}
 	input, err := getInputFromMap(item.Meta)
 	if err != nil {
-		return nil, fmt.Errorf("cannot transform input map: %s", err)
+		return nil, fmt.Errorf("Failed to transform input map: %s", err)
 	}
 	return &Cmd{
 		Key:         item.Key,

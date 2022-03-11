@@ -24,7 +24,7 @@ profiles:
       platform: linux
     env:
       GOOS: linux
-    target: bin
+    target: binary
 
 functions:
   - name: go-build
@@ -32,7 +32,7 @@ functions:
     env:
       GOOS: linux
     run:
-      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/host-runner -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o binary/host-runner -v
 
   - name: set-version
     description: set new version reference
