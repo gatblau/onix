@@ -100,9 +100,9 @@ var doc = `{
                 }
             }
         },
-        "/package/manifest/{repository-group}/{repository-name}/{tag}": {
+        "/package/info/{repository-group}/{repository-name}/id/{package-id}": {
             "get": {
-                "description": "gets the manifest associated with a specific package",
+                "description": "gets meta-data about the package identified by its id",
                 "consumes": [
                     "text/html",
                     " application/json",
@@ -116,59 +116,7 @@ var doc = `{
                     " application/xml"
                 ],
                 "tags": [
-                    "Packages"
-                ],
-                "summary": "Get manifest",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "the package repository group name",
-                        "name": "repository-group",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "the package repository name",
-                        "name": "repository-name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "the package tag",
-                        "name": "tag",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/package/{repository-group}/{repository-name}/id/{package-id}": {
-            "get": {
-                "description": "gets meta data about the package identified by its id",
-                "consumes": [
-                    "text/html",
-                    " application/json",
-                    " application/yaml",
-                    " application/xml",
-                    " application/xhtml+xml"
-                ],
-                "produces": [
-                    "application/json",
-                    " application/yaml",
-                    " application/xml"
-                ],
-                "tags": [
-                    "Packages"
+                    "Package Information"
                 ],
                 "summary": "Get information about the specified package",
                 "parameters": [
@@ -204,9 +152,9 @@ var doc = `{
                 }
             },
             "put": {
-                "description": "updates meta data about the package identified by its id",
+                "description": "updates meta-data about the package identified by its id",
                 "tags": [
-                    "Packages"
+                    "Package Information"
                 ],
                 "summary": "Update information about the specified package",
                 "parameters": [
@@ -249,6 +197,96 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "deletes the meta-data associated with the package identified by its id",
+                "tags": [
+                    "Package Information"
+                ],
+                "summary": "Delete the meta-data associated with the specified package",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the package repository group name",
+                        "name": "repository-group",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package repository name",
+                        "name": "repository-name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package unique identifier",
+                        "name": "package-id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/package/manifest/{repository-group}/{repository-name}/{tag}": {
+            "get": {
+                "description": "gets the manifest associated with a specific package",
+                "consumes": [
+                    "text/html",
+                    " application/json",
+                    " application/yaml",
+                    " application/xml",
+                    " application/xhtml+xml"
+                ],
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Package Information"
+                ],
+                "summary": "Get manifest",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the package repository group name",
+                        "name": "repository-group",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package repository name",
+                        "name": "repository-name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package tag",
+                        "name": "tag",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
             }
         },
         "/package/{repository-group}/{repository-name}/tag/{package-tag}": {
@@ -260,7 +298,7 @@ var doc = `{
                 "tags": [
                     "Packages"
                 ],
-                "summary": "Push an package to the configured backend",
+                "summary": "Push a package to the configured backend",
                 "parameters": [
                     {
                         "type": "string",
@@ -319,11 +357,58 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "deletes the package file and its seal from the pre-configured backend (e.g. Nexus, etc)",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Packages"
+                ],
+                "summary": "Delete a package from the configured backend",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the package repository group name",
+                        "name": "repository-group",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package repository name",
+                        "name": "repository-name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the package reference name",
+                        "name": "tag",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
             }
         },
         "/repository": {
             "get": {
-                "description": "gets meta data about packages in the specified repository",
+                "description": "gets meta-data about packages in the specified repository",
                 "consumes": [
                     "text/html",
                     " application/json",
@@ -337,7 +422,7 @@ var doc = `{
                     " application/xml"
                 ],
                 "tags": [
-                    "Repositories"
+                    "Repository Information"
                 ],
                 "summary": "Get information about all repositories in the package registry",
                 "responses": {
@@ -352,7 +437,7 @@ var doc = `{
         },
         "/repository/{repository-group}/{repository-name}": {
             "get": {
-                "description": "gets meta data about packages in the specified repository",
+                "description": "gets meta-data about packages in the specified repository",
                 "consumes": [
                     "text/html",
                     " application/json",
@@ -366,7 +451,7 @@ var doc = `{
                     " application/xml"
                 ],
                 "tags": [
-                    "Repositories"
+                    "Repository Information"
                 ],
                 "summary": "Get information about the packages in a repository",
                 "parameters": [
@@ -434,7 +519,7 @@ var doc = `{
                 }
             },
             "post": {
-                "description": "create the webhook configuration for a specified repository and url",
+                "description": "creates the webhook configuration for a specified repository and url",
                 "tags": [
                     "Webhooks"
                 ],

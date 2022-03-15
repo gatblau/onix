@@ -1,5 +1,3 @@
-package registry
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package registry
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package registry
+
 import (
 	"bytes"
 	"encoding/base64"
@@ -35,7 +36,7 @@ type LocalRegistry struct {
 }
 
 func (r *LocalRegistry) api(domain string) *Api {
-	return NewGenericAPI(domain)
+	return newGenericAPI(domain)
 }
 
 // NewLocalRegistry create a localRepo management structure
@@ -460,67 +461,73 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) error {
 	// assume tls enabled
 	tls := true
 	// check the status of the package in the remote registry
-	remoteArt, err := api.GetPackageInfo(name.Group, name.Name, localPackage.Id, uname, pwd, tls)
+	remotePackage, err := api.GetPackageInfo(name.Group, name.Name, localPackage.Id, uname, pwd, tls)
 	if err != nil {
 		// try without tls
 		var err2 error
-		remoteArt, err2 = api.GetPackageInfo(name.Group, name.Name, localPackage.Id, uname, pwd, false)
+		remotePackage, err2 = api.GetPackageInfo(name.Group, name.Name, localPackage.Id, uname, pwd, false)
 		if err2 == nil {
 			tls = false
 			core.WarningLogger.Printf("the connection to the registry is not secure, consider connecting to a TLS enabled registry\n")
 		} else {
 			if err2 != nil {
-				return fmt.Errorf("art push '%s' cannot retrieve remote package information", name.String())
+				return fmt.Errorf("art push '%s' cannot retrieve remote package information: %s", name.String(), err2)
 			}
 		}
 	}
 	// if the package exists in the remote registry
-	if remoteArt != nil {
-		// check if the tag already exist in the remote repository
-		if remoteArt.HasTag(name.Tag) {
+	if remotePackage != nil {
+		// if the tag is the same then nothing to do
+		if remotePackage.HasTag(name.Tag) {
 			// nothing to do, returns
 			i18n.Printf(i18n.INFO_NOTHING_TO_PUSH)
 			return nil
 		} else {
-			// the metadata has to be updated to include the new tag
-			remoteArt.Tags = append(remoteArt.Tags, name.Tag)
-			err = api.UpdatePackageInfo(name, remoteArt, uname, pwd, tls)
+			// if the package has a different tag then the metadata has to be updated to include the new tag
+			remotePackage.Tags = append(remotePackage.Tags, name.Tag)
+			err = api.UpsertPackageInfo(name, remotePackage, uname, pwd, tls)
 			if err != nil {
 				return fmt.Errorf("cannot update remote package tags: %s", err)
 			}
+			i18n.Printf(i18n.INFO_TAGGED, name.String())
+			// once the new tag has been added to the remote repository, exits
+			return nil
 		}
 	}
-	// if the package does not exist in the remote registry
-	// check if the tag has been applied to another package in the repository
+	// if the package does not exist in the remote registry, it could be that the name:tag is already used by another package
+	// so, it checks if the tag has been applied to another package in the remote repository
 	repo, err, _ := api.GetRepositoryInfo(name.Group, name.Name, uname, pwd, tls)
 	if err != nil {
 		return fmt.Errorf("art push '%s' cannot retrieve repository information from registry", name.String())
 	}
-	// if so
-	if a, ok := repo.GetTag(name.Tag); ok {
-		// remove the tag from the package as it will be applied to the new package
-		a.RemoveTag(name.Tag)
-		// if the package has no tags left
-		if len(a.Tags) == 0 {
-			// adds a default tag matching the package file reference
-			a.Tags = append(a.Tags, a.FileRef)
-			// updates the metadata in the remote repo
-			if err = api.UpdatePackageInfo(name, a, uname, pwd, tls); err != nil {
-				return fmt.Errorf("cannot update package info: %s", err)
-			}
+	// if the tag is in use
+	var ok bool
+	if remotePackage, ok = repo.GetTag(name.Tag); ok {
+		// ==========================
+		// removes overridden package
+		// ==========================
+		// first deletes the old package files
+		err = api.DeletePackage(name.Group, name.Name, name.Tag, uname, pwd, tls)
+		if err != nil {
+			return fmt.Errorf("art push '%s' cannot remove old package from remote registry: %s", name.String(), err)
+		}
+		// then can remove the old package metadata form the remote repository
+		// if not done in this order delete package would fail with 404 not found
+		err = api.DeletePackageInfo(name.Group, name.Name, remotePackage.Id, uname, pwd, tls)
+		if err != nil {
+			return fmt.Errorf("art push '%s' cannot remove old package metadata from remote registry: %s", name.String(), err)
 		}
 	}
+	// ==========================
+	// adds new package
+	// ==========================
 	zipfile := openFile(fmt.Sprintf("%s/%s.zip", core.RegistryPath(), localPackage.FileRef))
 	jsonfile := openFile(fmt.Sprintf("%s/%s.json", core.RegistryPath(), localPackage.FileRef))
 	// prepare the package to upload
 	pack := localPackage
 	pack.Tags = []string{name.Tag}
 	// execute the upload
-	err = api.UploadPackage(name, localPackage.FileRef, zipfile, jsonfile, pack, uname, pwd, tls)
-	if err != nil {
-		return err
-	}
-	return nil
+	return api.UploadPackage(name, localPackage.FileRef, zipfile, jsonfile, pack, uname, pwd, tls)
 }
 
 func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Package {

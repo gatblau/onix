@@ -41,23 +41,30 @@ func (r *Repository) FindPackage(id string) *Package {
 	return nil
 }
 
-// UpdatePackage updates the specified package
-func (r *Repository) UpdatePackage(a *Package) bool {
+// UpsertPackage updates the specified package information if exists, otherwise adds it to the repository
+// returns true if the package info was updated or false if the package info was added
+func (r *Repository) UpsertPackage(a *Package) (updated bool) {
 	position := -1
+	// try and find the package using its unique Id
 	for ix, pack := range r.Packages {
 		if pack.Id == a.Id {
 			position = ix
 			break
 		}
 	}
+	// if the package was found
 	if position != -1 {
+		// replaces the package info
 		r.Packages[position] = a
 		return true
+	} else {
+		// adds the package to the list of packages
+		r.Packages = append(r.Packages, a)
 	}
 	return false
 }
 
-// GetTag determines if the repository contains an package with the specified tag
+// GetTag determines if the repository contains a package with the specified tag
 func (r *Repository) GetTag(tag string) (*Package, bool) {
 	for _, pack := range r.Packages {
 		if pack.HasTag(tag) {
@@ -65,6 +72,25 @@ func (r *Repository) GetTag(tag string) (*Package, bool) {
 		}
 	}
 	return nil, false
+}
+
+func (r *Repository) RemovePackage(id string) error {
+	for i := 0; i < len(r.Packages); i++ {
+		if r.Packages[i].Id == id {
+			r.Packages = removePackage(r.Packages, r.Packages[i])
+			return nil
+		}
+	}
+	return fmt.Errorf("cannot find package with id=%s to remove", id)
+}
+
+func (r *Repository) FindPackageByRef(ref string) *Package {
+	for _, p := range r.Packages {
+		if p.FileRef == ref {
+			return p
+		}
+	}
+	return nil
 }
 
 // Package metadata for an Artisan package

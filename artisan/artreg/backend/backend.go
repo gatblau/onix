@@ -1,12 +1,13 @@
-package backend
-
 /*
-  Onix Config Manager - Artisan
+  Onix Config Manager - Artisan Registry
   Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package backend
+
 import (
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
@@ -23,8 +24,10 @@ type Backend interface {
 	DeletePackage(group, name, packageRef, user, pwd string) error
 	// GetPackageInfo get package information
 	GetPackageInfo(group, name, id, user, pwd string) (*registry.Package, error)
-	// UpdatePackageInfo update package information
-	UpdatePackageInfo(group, name string, packageInfo *registry.Package, user string, pwd string) error
+	// UpsertPackageInfo update package information
+	UpsertPackageInfo(group, name string, packageInfo *registry.Package, user string, pwd string) error
+	// DeletePackageInfo deletes the metadata for a specific package
+	DeletePackageInfo(group, name string, packageId string, user string, pwd string) error
 	// GetPackageManifest get the package manifest
 	GetPackageManifest(group, name, tag, user, pwd string) (*data.Manifest, error)
 

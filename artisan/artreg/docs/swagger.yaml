@@ -85,15 +85,10 @@ paths:
       summary: Download a file from the registry
       tags:
       - Files
-  /package/{repository-group}/{repository-name}/id/{package-id}:
-    get:
-      consumes:
-      - text/html
-      - ' application/json'
-      - ' application/yaml'
-      - ' application/xml'
-      - ' application/xhtml+xml'
-      description: gets meta data about the package identified by its id
+  /package/{repository-group}/{repository-name}/tag/{package-tag}:
+    delete:
+      description: deletes the package file and its seal from the pre-configured backend
+        (e.g. Nexus, etc)
       parameters:
       - description: the package repository group name
         in: path
@@ -105,56 +100,25 @@ paths:
         name: repository-name
         required: true
         type: string
-      - description: the package unique Id
+      - description: the package reference name
         in: path
-        name: package-id
+        name: tag
         required: true
         type: string
       produces:
-      - application/json
-      - ' application/yaml'
-      - ' application/xml'
+      - text/plain
       responses:
-        "200":
-          description: OK
+        "204":
+          description: No Content
           schema:
             type: string
-      summary: Get information about the specified package
-      tags:
-      - Packages
-    put:
-      description: updates meta data about the package identified by its id
-      parameters:
-      - description: the package repository group name
-        in: path
-        name: repository-group
-        required: true
-        type: string
-      - description: the package repository name
-        in: path
-        name: repository-name
-        required: true
-        type: string
-      - description: the package unique identifier
-        in: path
-        name: package-id
-        required: true
-        type: string
-      - description: the package information to be updated
-        in: body
-        name: package-info
-        required: true
-        schema:
-          type: object
-      responses:
-        "200":
-          description: OK
+        "404":
+          description: Not Found
           schema:
             type: string
-      summary: Update information about the specified package
+      summary: Delete a package from the configured backend
       tags:
       - Packages
-  /package/{repository-group}/{repository-name}/tag/{package-tag}:
     post:
       description: uploads the package file and its seal to the pre-configured backend
         (e.g. Nexus, etc)
@@ -200,9 +164,105 @@ paths:
           description: Locked
           schema:
             type: string
-      summary: Push an package to the configured backend
+      summary: Push a package to the configured backend
       tags:
       - Packages
+  /package/info/{repository-group}/{repository-name}/id/{package-id}:
+    delete:
+      description: deletes the meta-data associated with the package identified by
+        its id
+      parameters:
+      - description: the package repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the package repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the package unique identifier
+        in: path
+        name: package-id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+      summary: Delete the meta-data associated with the specified package
+      tags:
+      - Package Information
+    get:
+      consumes:
+      - text/html
+      - ' application/json'
+      - ' application/yaml'
+      - ' application/xml'
+      - ' application/xhtml+xml'
+      description: gets meta-data about the package identified by its id
+      parameters:
+      - description: the package repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the package repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the package unique Id
+        in: path
+        name: package-id
+        required: true
+        type: string
+      produces:
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Get information about the specified package
+      tags:
+      - Package Information
+    put:
+      description: updates meta-data about the package identified by its id
+      parameters:
+      - description: the package repository group name
+        in: path
+        name: repository-group
+        required: true
+        type: string
+      - description: the package repository name
+        in: path
+        name: repository-name
+        required: true
+        type: string
+      - description: the package unique identifier
+        in: path
+        name: package-id
+        required: true
+        type: string
+      - description: the package information to be updated
+        in: body
+        name: package-info
+        required: true
+        schema:
+          type: object
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Update information about the specified package
+      tags:
+      - Package Information
   /package/manifest/{repository-group}/{repository-name}/{tag}:
     get:
       consumes:
@@ -239,7 +299,7 @@ paths:
             type: string
       summary: Get manifest
       tags:
-      - Packages
+      - Package Information
   /repository:
     get:
       consumes:
@@ -248,7 +308,7 @@ paths:
       - ' application/yaml'
       - ' application/xml'
       - ' application/xhtml+xml'
-      description: gets meta data about packages in the specified repository
+      description: gets meta-data about packages in the specified repository
       produces:
       - application/json
       - ' application/yaml'
@@ -260,7 +320,7 @@ paths:
             type: string
       summary: Get information about all repositories in the package registry
       tags:
-      - Repositories
+      - Repository Information
   /repository/{repository-group}/{repository-name}:
     get:
       consumes:
@@ -269,7 +329,7 @@ paths:
       - ' application/yaml'
       - ' application/xml'
       - ' application/xhtml+xml'
-      description: gets meta data about packages in the specified repository
+      description: gets meta-data about packages in the specified repository
       parameters:
       - description: the package repository group name
         in: path
@@ -292,7 +352,7 @@ paths:
             type: string
       summary: Get information about the packages in a repository
       tags:
-      - Repositories
+      - Repository Information
   /webhook/{repository-group}/{repository-name}:
     get:
       description: get a list of webhook configurations for the specified repository
@@ -320,7 +380,7 @@ paths:
       tags:
       - Webhooks
     post:
-      description: create the webhook configuration for a specified repository and
+      description: creates the webhook configuration for a specified repository and
         url
       parameters:
       - description: the package repository group name

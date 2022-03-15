@@ -16,19 +16,23 @@ import (
 
 // RmCmd remove local packages
 type RmCmd struct {
-	cmd *cobra.Command
-	all *bool
+	cmd    *cobra.Command
+	all    *bool
+	remote string
+	creds  string
 }
 
 func NewRmCmd() *RmCmd {
 	c := &RmCmd{
 		cmd: &cobra.Command{
 			Use:   "rm PACKAGE [PACKAGE...]",
-			Short: "removes one or more packages from the local package registry",
-			Long:  `removes one or more packages from the local package registry`,
+			Short: "removes one or more packages from the local package registry or a remote registry",
+			Long:  `removes one or more packages from the local package registry or a remote registry`,
 		},
 	}
 	c.all = c.cmd.Flags().BoolP("all", "a", false, "remove all packages")
+	c.cmd.Flags().StringVarP(&c.remote, "remote", "r", "", "the domain name or IP of the remote repository (e.g. my-remote-registry); port can also be specified using a colon syntax")
+	c.cmd.Flags().StringVarP(&c.creds, "user", "u", "", "the credentials used to retrieve the information from the remote registry")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -42,14 +46,26 @@ func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) > 0 && *c.all {
 		core.RaiseErr("a package name %s should not be provided with the --all|-a flag", args[0])
 	}
-	//  create a local registry
-	local := registry.NewLocalRegistry()
-	if *c.all {
-		// prune dangling packages first
-		core.CheckErr(local.Prune(), "cannot prune packages")
-		// remove all packages
-		core.CheckErr(local.Remove(local.AllPackages()), "cannot remove packages")
+	// if no remote specified then it is a local operation
+	if len(c.remote) == 0 {
+		//  create a local registry
+		local := registry.NewLocalRegistry()
+		if *c.all {
+			// prune dangling packages first
+			core.CheckErr(local.Prune(), "cannot prune packages")
+			// remove all packages
+			core.CheckErr(local.Remove(local.AllPackages()), "cannot remove packages")
+		} else {
+			core.CheckErr(local.Remove(args), "cannot remove package")
+		}
 	} else {
-		core.CheckErr(local.Remove(args), "cannot remove package")
+		uname, pwd := core.RegUserPwd(c.creds)
+		remote, err := registry.NewRemoteRegistry(c.remote, uname, pwd)
+		core.CheckErr(err, "invalid remote")
+		// otherwise, it is a remote operation
+		if *c.all {
+			core.RaiseErr("--all flag is not valid for remote registries, use a filter expression instead")
+		}
+		core.CheckErr(remote.Remove(args[0]), "cannot remove packages from remote registry")
 	}
 }
