@@ -12,14 +12,15 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/registry"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 // RmCmd remove local packages
 type RmCmd struct {
-	cmd    *cobra.Command
-	all    *bool
-	remote string
-	creds  string
+	cmd      *cobra.Command
+	all      *bool
+	registry *bool
+	creds    string
 }
 
 func NewRmCmd() *RmCmd {
@@ -28,10 +29,21 @@ func NewRmCmd() *RmCmd {
 			Use:   "rm PACKAGE [PACKAGE...]",
 			Short: "removes one or more packages from the local package registry or a remote registry",
 			Long:  `removes one or more packages from the local package registry or a remote registry`,
+			Example: `
+# delete all packages in local registry
+art rm -a
+
+# delete specific packages from the local registry
+art rm package-1 package-2
+
+# delete all packages in the remote registry at localhost:8082
+# note the use of the wildcard "localhost:8082/*" - any other valid regular expressions are acceptable
+art rm -ru <user>:<pwd> "localhost:8082/*"
+`,
 		},
 	}
-	c.all = c.cmd.Flags().BoolP("all", "a", false, "remove all packages")
-	c.cmd.Flags().StringVarP(&c.remote, "remote", "r", "", "the domain name or IP of the remote repository (e.g. my-remote-registry); port can also be specified using a colon syntax")
+	c.cmd.Flags().BoolVarP(c.all, "all", "a", false, "remove all packages")
+	c.cmd.Flags().BoolVarP(c.registry, "registry", "r", false, "indicates to use a remote artisan registry")
 	c.cmd.Flags().StringVarP(&c.creds, "user", "u", "", "the credentials used to retrieve the information from the remote registry")
 	c.cmd.Run = c.Run
 	return c
@@ -47,7 +59,7 @@ func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("a package name %s should not be provided with the --all|-a flag", args[0])
 	}
 	// if no remote specified then it is a local operation
-	if len(c.remote) == 0 {
+	if !*c.registry {
 		//  create a local registry
 		local := registry.NewLocalRegistry()
 		if *c.all {
@@ -59,8 +71,9 @@ func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 			core.CheckErr(local.Remove(args), "cannot remove package")
 		}
 	} else {
+
 		uname, pwd := core.RegUserPwd(c.creds)
-		remote, err := registry.NewRemoteRegistry(c.remote, uname, pwd)
+		remote, err := registry.NewRemoteRegistry(domain(args[0]), uname, pwd)
 		core.CheckErr(err, "invalid remote")
 		// otherwise, it is a remote operation
 		if *c.all {
@@ -68,4 +81,11 @@ func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 		}
 		core.CheckErr(remote.Remove(args[0]), "cannot remove packages from remote registry")
 	}
+}
+
+func domain(name string) string {
+	if strings.Contains(name, "//") {
+		core.RaiseErr("invalid host name")
+	}
+	return strings.Split(name, "/")[0]
 }
