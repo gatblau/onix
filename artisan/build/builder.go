@@ -622,7 +622,6 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 	local.Open(
 		name,
 		credentials,
-		noTLS,
 		path,
 		certPath,
 		ignoreSignature)

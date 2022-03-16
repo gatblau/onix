@@ -663,7 +663,7 @@ func (r *LocalRegistry) loadSeal(sealFilename string) (*data.Seal, error) {
 	return seal, nil
 }
 
-func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS bool, targetPath string, certPath string, ignoreSignature bool) {
+func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetPath string, certPath string, ignoreSignature bool) {
 	var (
 		pubKeyPath = certPath
 		err        error

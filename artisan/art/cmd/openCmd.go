@@ -1,5 +1,3 @@
-package cmd
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package cmd
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package cmd
+
 import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/i18n"
@@ -15,7 +16,7 @@ import (
 	"log"
 )
 
-// OpenCmd opens an package in the specified path
+// OpenCmd opens a package in the specified path
 type OpenCmd struct {
 	cmd             *cobra.Command
 	credentials     string
@@ -35,7 +36,6 @@ func NewOpenCmd() *OpenCmd {
 	}
 	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
-	c.noTLS = c.cmd.Flags().BoolP("no-tls", "t", false, "use -t or --no-tls to connect to a artisan registry over plain HTTP")
 	c.ignoreSignature = c.cmd.Flags().BoolP("ignore-sig", "s", false, "-s or --ignore-sig to ignore signature verification")
 	c.cmd.Flags().StringVarP(&c.pubPath, "pub", "p", "", "-p=/path/to/public/key or --pub=/path/to/public/key to load a public PGP key to verify the package digital signature")
 	return c
@@ -61,5 +61,5 @@ func (c *OpenCmd) Run(cmd *cobra.Command, args []string) {
 	// create a local registry
 	local := registry.NewLocalRegistry()
 	// attempt to open from local registry
-	local.Open(artie, c.credentials, *c.noTLS, path, c.pubPath, *c.ignoreSignature)
+	local.Open(artie, c.credentials, path, c.pubPath, *c.ignoreSignature)
 }
