@@ -50,7 +50,7 @@ func (r *RemoteRegistry) List(quiet bool) {
 	var w *tabwriter.Writer
 	if quiet {
 		// get a table writer for the stdout
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 10, ' ', 0)
+		w = tabwriter.NewWriter(os.Stdout, 0, 0, 10, ' ', 0)
 		// repository, tag, package id, created, size
 		for _, repo := range repos {
 			for _, a := range repo.Packages {
