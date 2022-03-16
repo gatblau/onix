@@ -48,6 +48,24 @@ var (
 	api *o.API
 )
 
+func (h OSpatchingHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
+
+	err := h.initialize(r)
+	if checkErr(w, "initialization of OSpatchingHandler failed :", err) {
+		return
+	}
+
+	err = h.downloadAndCopyFile()
+	if checkErr(w, "error while downloading and copying object from s3 bucket :", err) {
+		return
+	}
+
+	err = h.executeCommand(w)
+	if checkErr(w, "error while executing artisan function in the host machine :", err) {
+		return
+	}
+}
+
 func (h *OSpatchingHandler) initialize(r *http.Request) error {
 
 	vars := mux.Vars(r)
@@ -85,62 +103,6 @@ func (h *OSpatchingHandler) initialize(r *http.Request) error {
 	return nil
 }
 
-func (h OSpatchingHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
-
-	err := h.initialize(r)
-	if checkErr(w, "initialization of OSpatchingHandler failed :", err) {
-		return
-	}
-
-	err = h.downloadAndCopyFile()
-	if checkErr(w, "error while downloading and copying object from s3 bucket :", err) {
-		return
-	}
-
-	err = h.executeCommand(w)
-	if checkErr(w, "error while executing artisan function in the host machine :", err) {
-		return
-	}
-}
-
-func (h OSpatchingHandler) executeCommand(w http.ResponseWriter) error {
-
-	// get the variables in the host environment
-	hostEnv := merge.NewEnVarFromSlice(os.Environ())
-	// get the variables in the command
-	cmdEnv := merge.NewEnVarFromSlice(h.cmd.Env())
-	// if not containerised add PATH to execution environment
-	hostEnv.Merge(cmdEnv)
-	cmdEnv = hostEnv
-	// if running in verbose mode
-	if h.cmd.Verbose {
-		// add ARTISAN_DEBUG to execution environment
-		cmdEnv.Vars["ARTISAN_DEBUG"] = "true"
-	}
-	// create the command statement to run
-	cmdString := fmt.Sprintf("art %s -u %s:%s %s %s", "exe", h.cmd.User, h.cmd.Pwd, h.cmd.Package, h.cmd.Function)
-	// run and return
-	out, err := build.ExeAsync(cmdString, ".", cmdEnv, false)
-	if err != nil {
-		msg := fmt.Sprintf("%s [%s %s ] : %s\n", "Error while executing artisan package function using command", h.cmd.Package, h.cmd.Function, err)
-		fmt.Printf(msg)
-		return errors.New(msg)
-	} else {
-		msg := fmt.Sprintf("%s [%s %s ] : [ %s ] \n", "Result of executing artisan package function using command", h.cmd.Package, h.cmd.Function, out)
-		fmt.Printf(msg)
-	}
-
-	//once patching package is created rename the scan result file with current date time
-	newFileName := fmt.Sprintf("%s-%s", h.scanedFile, time.Now().Format("2006-01-02-15-04-05"))
-	err = os.Rename(h.scanedFile, newFileName)
-	if err != nil {
-		msg := fmt.Sprintf("After patching package completion error while renaming file [ %s ] to [ %s ] : %s\n", h.scanedFile, newFileName, err)
-		fmt.Printf(msg)
-		return errors.New(msg)
-	}
-	return nil
-}
-
 func (h OSpatchingHandler) downloadAndCopyFile() error {
 
 	ev, err := parser.NewS3Event(h.body)
@@ -151,7 +113,6 @@ func (h OSpatchingHandler) downloadAndCopyFile() error {
 	}
 
 	link, err := ev.GetObjectDownloadURL()
-	fmt.Printf("File download link is ===> ", link)
 	if err != nil {
 		msg := fmt.Sprintf("%s: %s\n", "Error while getting object download url from s3 event :", err)
 		fmt.Printf(msg)
@@ -184,5 +145,44 @@ func (h OSpatchingHandler) downloadAndCopyFile() error {
 		return errors.New(msg)
 	}
 
+	return nil
+}
+
+func (h OSpatchingHandler) executeCommand(w http.ResponseWriter) error {
+
+	// get the variables in the host environment
+	hostEnv := merge.NewEnVarFromSlice(os.Environ())
+	// get the variables in the command
+	cmdEnv := merge.NewEnVarFromSlice(h.cmd.Env())
+	// if not containerised add PATH to execution environment
+	hostEnv.Merge(cmdEnv)
+	cmdEnv = hostEnv
+	// if running in verbose mode
+	if h.cmd.Verbose {
+		// add ARTISAN_DEBUG to execution environment
+		cmdEnv.Vars["ARTISAN_DEBUG"] = "true"
+	}
+	// create the command statement to run
+	cmdString := fmt.Sprintf("art %s -u %s:%s %s %s", "exe", h.cmd.User, h.cmd.Pwd, h.cmd.Package, h.cmd.Function)
+	// run and return
+	out, err := build.ExeAsync(cmdString, ".", cmdEnv, false)
+	if err != nil {
+		msg := fmt.Sprintf("%s [%s %s ] : %s\n", "Error while executing artisan package function using command", h.cmd.Package, h.cmd.Function, err)
+		fmt.Printf(msg)
+		return errors.New(msg)
+	} else {
+		msg := fmt.Sprintf("%s [%s %s ] : [ %s ] \n", "Result of executing artisan package function using command", h.cmd.Package, h.cmd.Function, out)
+		fmt.Printf(msg)
+	}
+
+	//once patching package is created rename the scan result file with current date time as backup,
+	// so we know when this scanned result file was processed and corresponding artisan package was created.
+	newFileName := fmt.Sprintf("%s-%s", h.scanedFile, time.Now().Format("2006-01-02-15-04-05"))
+	err = os.Rename(h.scanedFile, newFileName)
+	if err != nil {
+		msg := fmt.Sprintf("After patching package completion error while renaming file [ %s ] to [ %s ] : %s\n", h.scanedFile, newFileName, err)
+		fmt.Printf(msg)
+		return errors.New(msg)
+	}
 	return nil
 }

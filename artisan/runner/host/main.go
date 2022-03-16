@@ -10,7 +10,6 @@ package main
 import (
 	"fmt"
 
-	"github.com/gatblau/onix/artisan/runner/host/handlers"
 	"github.com/gatblau/onix/oxlib/httpserver"
 	"github.com/gorilla/mux"
 )
@@ -18,12 +17,11 @@ import (
 func main() {
 
 	// creates a generic http server
-	handlerMgr := handlers.NewHandlerManager()
 	s := httpserver.New("art-host-runner")
 	// add handlers
 	s.Http = func(router *mux.Router) {
 		fmt.Printf("handler is registered...\n")
-		router.Handle("/host/{flow-key}", handlerMgr).Methods("POST")
+		router.HandleFunc("/host/{flow-key}", createOSPatchingHandler).Methods("POST")
 	}
 	s.Serve()
 }

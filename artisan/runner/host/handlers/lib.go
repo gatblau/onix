@@ -1,11 +1,8 @@
 package handlers
 
 import (
-	"bufio"
 	"fmt"
 	"net/http"
-	"os/exec"
-	"syscall"
 )
 
 func checkErr(w http.ResponseWriter, msg string, err error) bool {
@@ -17,6 +14,7 @@ func checkErr(w http.ResponseWriter, msg string, err error) bool {
 	return err != nil
 }
 
+/*
 func execute(w http.ResponseWriter, name string, args []string) error {
 	command := exec.Command(name, args...)
 
@@ -67,4 +65,4 @@ func handleReader(reader *bufio.Reader, w http.ResponseWriter) {
 		w.Write([]byte(str))
 		fmt.Printf("! %s\n", []byte(str))
 	}
-}
+}*/
