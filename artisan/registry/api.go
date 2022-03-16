@@ -37,7 +37,7 @@ type Api struct {
 	tmp    string
 }
 
-func NewGenericAPI(domain string) *Api {
+func newGenericAPI(domain string) *Api {
 	core.TmpExists()
 	return &Api{
 		domain: domain,
@@ -79,7 +79,7 @@ func (r *Api) UploadPackage(name *core.PackageName, packageRef string, zipfile m
 	// create proxy reader
 	reader := bar.NewProxyReader(&b)
 	// Now that you have a form, you can submit it to your handler.
-	req, err := http.NewRequest("POST", r.packageTagURI(name.Group, name.Name, name.Tag, https), reader)
+	req, err := http.NewRequest("POST", r.packageWithTagURI(name.Group, name.Name, name.Tag, https), reader)
 	core.CheckErr(err, "cannot create http request")
 	// Don't forget to set the content type, this will contain the boundary.
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -103,13 +103,27 @@ func (r *Api) UploadPackage(name *core.PackageName, packageRef string, zipfile m
 	return nil
 }
 
-func (r *Api) UpdatePackageInfo(name *core.PackageName, pack *Package, user string, pwd string, https bool) error {
-	b, err := json.Marshal(pack)
+func (r *Api) DeletePackage(group, name, tag, user, pwd string, https bool) error {
+	req, err := http.NewRequest("DELETE", r.packageWithTagURI(group, name, tag, https), nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot create package http delete request: %s", err)
 	}
-	body := bytes.NewReader([]byte(b))
-	req, err := http.NewRequest("PUT", r.packageIdURI(name.Group, name.Name, pack.Id, https), body)
+	req.Header.Set("accept", "application/json")
+	if len(user) > 0 && len(pwd) > 0 {
+		req.Header.Add("authorization", httpserver.BasicToken(user, pwd))
+	}
+	res, err := r.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("cannot delete package: %s", err)
+	}
+	if res.StatusCode != 204 {
+		return fmt.Errorf("cannot delete package, server response: %s", res.Status)
+	}
+	return nil
+}
+
+func (r *Api) DeletePackageInfo(group, name, packageId, user, pwd string, https bool) error {
+	req, err := http.NewRequest("DELETE", r.packageInfoWithIdURI(group, name, packageId, https), nil)
 	if err != nil {
 		return err
 	}
@@ -119,7 +133,36 @@ func (r *Api) UpdatePackageInfo(name *core.PackageName, pack *Package, user stri
 	}
 	// Submit the request
 	res, err := r.client.Do(req)
-	core.CheckErr(err, "cannot post to backend")
+	if err != nil {
+		return fmt.Errorf("cannot post to backend: %s", err)
+	}
+	if res.StatusCode > 299 {
+		return fmt.Errorf("failed to delete package info, the remote server responded with: %s", res.Status)
+	}
+	return nil
+}
+
+func (r *Api) UpsertPackageInfo(name *core.PackageName, pack *Package, user string, pwd string, https bool) error {
+	if pack == nil {
+		return fmt.Errorf("package must be provided: UpsertPackageInfo")
+	}
+	b, err := json.Marshal(pack)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("PUT", r.packageInfoWithIdURI(name.Group, name.Name, pack.Id, https), bytes.NewReader(b))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("accept", "application/json")
+	if len(user) > 0 && len(pwd) > 0 {
+		req.Header.Add("authorization", httpserver.BasicToken(user, pwd))
+	}
+	// Submit the request
+	res, err := r.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("cannot post to backend: %s", err)
+	}
 	// Check the response
 	if res.StatusCode > 299 {
 		return fmt.Errorf("failed to update package info, the remote server responded with: %s", res.Status)
@@ -175,8 +218,70 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string, https bool) (*Rep
 	return repo, err, resp.StatusCode
 }
 
+// getAllRepositoryInfoTLS
+func (r *Api) getAllRepositoryInfo(user, pwd string, tls bool) ([]Repository, error, int) {
+	// note: repoURI() escape the group
+	req, err := http.NewRequest("GET", r.allRepoURI(tls), nil)
+	if err != nil {
+		return nil, err, 0
+	}
+	req.Header.Set("accept", "application/json")
+	if len(user) > 0 && len(pwd) > 0 {
+		req.Header.Add("authorization", httpserver.BasicToken(user, pwd))
+	}
+	// Submit the request
+	resp, err := r.client.Do(req)
+
+	if err != nil {
+		if resp != nil {
+			return nil, err, resp.StatusCode
+		}
+		return nil, err, -1
+	}
+	defer resp.Body.Close()
+	switch resp.StatusCode {
+	case http.StatusNotFound:
+		// if repository is nil then the client is not talking to the proper package registry
+		return nil, fmt.Errorf("\"%s\" does not conform to the Package Registry API, are you sure the package domain is correct?", r.domain), resp.StatusCode
+	case http.StatusForbidden:
+		return nil, fmt.Errorf("access to the registry is forbidden"), resp.StatusCode
+	case http.StatusUnauthorized:
+		return nil, fmt.Errorf("invalid credentials, access to the registry is unauthorised"), resp.StatusCode
+	}
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err, resp.StatusCode
+	}
+	// if not response then return an empty repository
+	if len(b) == 0 {
+		return []Repository{}, nil, resp.StatusCode
+	}
+	var repo []Repository
+	err = json.Unmarshal(b, &repo)
+	return repo, err, resp.StatusCode
+}
+
+func (r *Api) GetAllRepositoryInfo(user, pwd string) ([]Repository, error, int, bool) {
+	tls := true
+	repo, err, code := r.getAllRepositoryInfo(user, pwd, tls)
+	if err != nil {
+		// try without tls
+		var err2 error
+		repo, err2, code = r.getAllRepositoryInfo(user, pwd, false)
+		if err2 == nil {
+			tls = false
+			core.WarningLogger.Printf("the connection to the registry is not secure, consider connecting to a TLS enabled registry\n")
+		} else {
+			if err2 != nil {
+				return nil, fmt.Errorf("cannot retrieve remote registry information: %s", err2), http.StatusInternalServerError, tls
+			}
+		}
+	}
+	return repo, nil, code, tls
+}
+
 func (r *Api) GetPackageInfo(group, name, id, user, pwd string, https bool) (*Package, error) {
-	req, err := http.NewRequest("GET", r.packageIdURI(group, name, id, https), nil)
+	req, err := http.NewRequest("GET", r.packageInfoWithIdURI(group, name, id, https), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -286,6 +391,15 @@ func (r *Api) repoURI(group, name string, https bool) string {
 	return fmt.Sprintf("%s://%s/repository/%s/%s", scheme, r.domain, Escape(group), name)
 }
 
+func (r *Api) allRepoURI(https bool) string {
+	scheme := "http"
+	if https {
+		scheme = fmt.Sprintf("%ss", scheme)
+	}
+	// {scheme}://{domain}/repository
+	return fmt.Sprintf("%s://%s/repository", scheme, r.domain)
+}
+
 func (r *Api) packageURI(group, name string, https bool) string {
 	scheme := "http"
 	if https {
@@ -295,13 +409,22 @@ func (r *Api) packageURI(group, name string, https bool) string {
 	return fmt.Sprintf("%s://%s/package/%s/%s", scheme, r.domain, Escape(group), name)
 }
 
-func (r *Api) packageTagURI(group, name, tag string, https bool) string {
+func (r *Api) packageInfoURI(group, name string, https bool) string {
+	scheme := "http"
+	if https {
+		scheme = fmt.Sprintf("%ss", scheme)
+	}
+	// {scheme}://{domain}/package/{repository-group}/{repository-name}/{tag}
+	return fmt.Sprintf("%s://%s/package/info/%s/%s", scheme, r.domain, Escape(group), name)
+}
+
+func (r *Api) packageWithTagURI(group, name, tag string, https bool) string {
 	return fmt.Sprintf("%s/tag/%s", r.packageURI(group, name, https), tag)
 }
 
-func (r *Api) packageIdURI(group, name, id string, https bool) string {
+func (r *Api) packageInfoWithIdURI(group, name, id string, https bool) string {
 	// group escaped by packageURI()
-	return fmt.Sprintf("%s/id/%s", r.packageURI(group, name, https), id)
+	return fmt.Sprintf("%s/id/%s", r.packageInfoURI(group, name, https), id)
 }
 
 func (r *Api) fileURI(group, name, filename string, https bool) string {

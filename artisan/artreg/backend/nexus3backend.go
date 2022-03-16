@@ -103,17 +103,46 @@ func (r *Nexus3Backend) Download(repoGroup, repoName, fileName, user, pwd string
 	return f, err
 }
 
-func (r *Nexus3Backend) UpdatePackageInfo(group, name string, packageInfo *registry.Package, user string, pwd string) error {
+func (r *Nexus3Backend) UpsertPackageInfo(group, name string, packageInfo *registry.Package, user string, pwd string) error {
 	// get the repository info
 	repo, err := r.GetRepositoryInfo(group, name, user, pwd)
 	if err != nil {
 		return err
 	}
 	// update the repository
-	updated := repo.UpdatePackage(packageInfo)
-	if !updated {
-		return fmt.Errorf("package not found in remote repository, no update was made")
+	repo.UpsertPackage(packageInfo)
+	// turn the repository into a file to upload
+	// create a repository file
+	repoFile, err := core.ToJsonFile(repo)
+	if err != nil {
+		return err
 	}
+	var b bytes.Buffer
+	writer := multipart.NewWriter(&b)
+	err = r.addField(writer, "raw.directory", fmt.Sprintf("%s/%s", group, name))
+	if err != nil {
+		return err
+	}
+	err = r.addField(writer, "raw.asset1.filename", "repository.json")
+	if err != nil {
+		return err
+	}
+	err = r.addFile(writer, "raw.asset1", "repository.json", repoFile)
+	if err != nil {
+		return err
+	}
+	writer.Close()
+	return r.postMultipart(b, writer, user, pwd)
+}
+
+func (r *Nexus3Backend) DeletePackageInfo(group, name string, packageId string, user string, pwd string) error {
+	// get the repository info
+	repo, err := r.GetRepositoryInfo(group, name, user, pwd)
+	if err != nil {
+		return err
+	}
+	// update the repository
+	repo.RemovePackage(packageId)
 	// turn the repository into a file to upload
 	// create a repository file
 	repoFile, err := core.ToJsonFile(repo)
@@ -183,14 +212,14 @@ func (r *Nexus3Backend) UploadPackage(group, name, packageRef string, zipfile mu
 
 // DeletePackage delete a specific package
 func (r *Nexus3Backend) DeletePackage(group, name, packageRef, user, pwd string) error {
-	assetList, err := r.getAssets(user, pwd)
+	componentList, err := r.getComponents(user, pwd)
 	if err != nil {
 		return fmt.Errorf("cannot get list of assets in Nexus: %s", err)
 	}
 	var ids []string
-	for _, asset := range assetList.Items {
-		if strings.HasPrefix(asset.Path, fmt.Sprintf("%s/%s/%s", group, name, packageRef)) {
-			ids = append(ids, asset.ID)
+	for _, component := range componentList.Items {
+		if strings.HasPrefix(component.Name, fmt.Sprintf("%s/%s/%s", group, name, packageRef)) {
+			ids = append(ids, component.ID)
 		}
 	}
 	for _, id := range ids {

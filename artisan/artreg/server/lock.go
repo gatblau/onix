@@ -28,7 +28,7 @@ func (l *lock) acquire(repository string) (int, error) {
 	// if the lock does not exist we are good to go
 	if os.IsNotExist(err) {
 		// create it
-		_, err := os.Create(lockName)
+		_, err = os.Create(lockName)
 		// if the creation failed
 		if err != nil {
 			return 0, err

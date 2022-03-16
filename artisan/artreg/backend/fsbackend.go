@@ -23,6 +23,14 @@ type FsBackend struct {
 	path string
 }
 
+func (fs *FsBackend) UpsertPackageInfo(group, name string, packageInfo *registry.Package, user string, pwd string) error {
+	panic("implement me")
+}
+
+func (fs *FsBackend) DeletePackageInfo(group, name string, packageId string, user string, pwd string) error {
+	panic("implement me")
+}
+
 func (fs *FsBackend) DeletePackage(group, name, packageRef, user, pwd string) error {
 	panic("implement me")
 }

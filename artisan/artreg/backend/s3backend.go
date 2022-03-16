@@ -126,7 +126,7 @@ func (s3 *S3Backend) UpdatePackageInfo(group, name string, packageInfo *registry
 		return err
 	}
 	// update the repository
-	updated := repo.UpdatePackage(packageInfo)
+	updated := repo.UpsertPackage(packageInfo)
 	if !updated {
 		return fmt.Errorf("package not found in remote repository, no update was made\n")
 	}

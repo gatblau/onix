@@ -1,10 +1,11 @@
 /*
-  Onix Config Manager - Artisan
+  Onix Config Manager - Artisan Registry
   Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package server
 
 // @title Artisan Package Registry
@@ -83,12 +84,14 @@ func (s *Server) Serve() {
 		router.Handle("/metrics", promhttp.Handler()).Methods("GET")
 	}
 
-	// push an package using a tag
+	// manage package content
 	router.HandleFunc("/package/{repository-group}/{repository-name}/tag/{package-tag}", s.packageUploadHandler).Methods("POST")
+	router.HandleFunc("/package/{repository-group}/{repository-name}/tag/{package-tag}", s.packageDeleteHandler).Methods("DELETE")
 
-	// update package information by id
-	router.HandleFunc("/package/{repository-group}/{repository-name}/id/{package-id}", s.packageInfoUpdateHandler).Methods("PUT")
-	router.HandleFunc("/package/{repository-group}/{repository-name}/id/{package-id}", s.packageInfoGetHandler).Methods("GET")
+	// manage package metadata
+	router.HandleFunc("/package/info/{repository-group}/{repository-name}/id/{package-id}", s.packageInfoUpdateHandler).Methods("PUT")
+	router.HandleFunc("/package/info/{repository-group}/{repository-name}/id/{package-id}", s.packageInfoGetHandler).Methods("GET")
+	router.HandleFunc("/package/info/{repository-group}/{repository-name}/id/{package-id}", s.packageInfoDeleteHandler).Methods("DELETE")
 
 	// package manifest
 	router.HandleFunc("/package/manifest/{repository-group}/{repository-name}/{tag}", s.getManifestHandler).Methods("GET")
@@ -175,7 +178,7 @@ func (s *Server) fileDownloadHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// @Summary Push an package to the configured backend
+// @Summary Push a package to the configured backend
 // @Description uploads the package file and its seal to the pre-configured backend (e.g. Nexus, etc)
 // @Tags Packages
 // @Produce  plain
@@ -226,7 +229,7 @@ func (s *Server) packageUploadHandler(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, fmt.Errorf("error retrieving package zip file: %s", err), http.StatusBadRequest)
 		return
 	}
-	// convert the meta file into an package
+	// convert the meta file into a package
 	packageMeta := new(registry.Package)
 	err = json.Unmarshal(meta, packageMeta)
 	if err != nil {
@@ -240,7 +243,7 @@ func (s *Server) packageUploadHandler(w http.ResponseWriter, r *http.Request) {
 	// retrieve the repository meta data
 	repo, err := back.GetRepositoryInfo(repoGroup, repoName, s.conf.HttpUser(), s.conf.HttpPwd())
 	if err != nil {
-		s.writeError(w, fmt.Errorf("cannot retrieve repository information form the backend: %s", err), http.StatusInternalServerError)
+		s.writeError(w, fmt.Errorf("cannot retrieve repository information from backend: %s", err), http.StatusInternalServerError)
 		return
 	}
 	// try to find the package being pushed in the remote backend
@@ -258,11 +261,11 @@ func (s *Server) packageUploadHandler(w http.ResponseWriter, r *http.Request) {
 		// if the tag does not exist then add the tag to the backend package
 		backendPackage.Tags = append(backendPackage.Tags, packageTag)
 		// update the package information
-		if !repo.UpdatePackage(backendPackage) {
+		if !repo.UpsertPackage(backendPackage) {
 			s.writeError(w, fmt.Errorf("cannot update repository information: %s", backendPackage.Id), http.StatusInternalServerError)
 			return
 		}
-		err = back.UpdatePackageInfo(name.Group, name.Name, backendPackage, s.conf.HttpUser(), s.conf.HttpPwd())
+		err = back.UpsertPackageInfo(name.Group, name.Name, backendPackage, s.conf.HttpUser(), s.conf.HttpPwd())
 		if err != nil {
 			s.writeError(w, fmt.Errorf("cannot update package information in Nexus backend: %s", err), http.StatusInternalServerError)
 			return
@@ -301,16 +304,84 @@ func (s *Server) packageUploadHandler(w http.ResponseWriter, r *http.Request) {
 		// returns a created code to indicate the package was added
 		w.WriteHeader(http.StatusCreated)
 	} else {
-		err := s.lock.tryRelease(repoPath, 15)
+		err = s.lock.tryRelease(repoPath, 15)
 		if err != nil {
 			s.writeError(w, fmt.Errorf("error trying to release lock: %s", err), http.StatusLocked)
 		}
 	}
 }
 
+// @Summary Delete a package from the configured backend
+// @Description deletes the package file and its seal from the pre-configured backend (e.g. Nexus, etc)
+// @Tags Packages
+// @Produce plain
+// @Success 204 {string} package has been deleted successfully. the server has nothing to respond.
+// @Success 404 {string} package has not been found or does not exist.
+// @Router /package/{repository-group}/{repository-name}/tag/{package-tag} [delete]
+// @Param repository-group path string true "the package repository group name"
+// @Param repository-name path string true "the package repository name"
+// @Param tag path string true "the package reference name"
+func (s *Server) packageDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	// get request variables
+	vars := mux.Vars(r)
+	repoGroup := vars["repository-group"]
+	repoName := vars["repository-name"]
+	packageTag := vars["package-tag"]
+
+	// work out the repository path for the lock
+	repoPath := fmt.Sprintf("%s/%s", repoGroup, repoName)
+	// get the backend to use
+	back := GetBackend()
+	// retrieve the remote repository meta data
+	repo, err := back.GetRepositoryInfo(repoGroup, repoName, s.conf.HttpUser(), s.conf.HttpPwd())
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot retrieve repository information the backend: %s", err), http.StatusInternalServerError)
+		return
+	}
+	var (
+		pac *registry.Package
+		ok  bool
+	)
+	// check if the name:tag of package to delete exists in the remote repository
+	if pac, ok = repo.GetTag(packageTag); !ok {
+		// the package does not exist, nothing to delete
+		s.writeError(w, fmt.Errorf("package not found in registry, nothing to delete"), http.StatusNotFound)
+		return
+	}
+	// try and acquire a lock
+	locked, err := s.lock.acquire(repoPath)
+	if err != nil {
+		s.writeError(w, fmt.Errorf("cannot acquire lock as it already exists: %s", err), http.StatusBadRequest)
+		return
+	}
+	// if the lock has been acquired
+	if locked > 0 {
+		// try and delete the package with the same name:tag as the one being pushed
+		err = back.DeletePackage(repoGroup, repoName, pac.FileRef, s.conf.HttpUser(), s.conf.HttpPwd())
+		// release the lock
+		_, e := s.lock.release(repoPath)
+		if e != nil {
+			s.writeError(w, fmt.Errorf("cannot release lock on repository: %s, %s", repoPath, err), http.StatusInternalServerError)
+			return
+		}
+		if err != nil {
+			log.Printf("error whilst pushing to %s backend: %s", s.conf.Backend(), err)
+			s.writeError(w, fmt.Errorf("error whilst pushing to %s backend: %s", s.conf.Backend(), err), http.StatusInternalServerError)
+			return
+		}
+		// returns a no content code to indicate the package was deleted
+		w.WriteHeader(http.StatusNoContent)
+		return
+	} else {
+		// there is a lock on the repository
+		w.WriteHeader(http.StatusLocked)
+		return
+	}
+}
+
 // @Summary Get information about the packages in a repository
-// @Description gets meta data about packages in the specified repository
-// @Tags Repositories
+// @Description gets meta-data about packages in the specified repository
+// @Tags Repository Information
 // @Accept text/html, application/json, application/yaml, application/xml, application/xhtml+xml
 // @Produce application/json, application/yaml, application/xml
 // @Success 200 {string} OK
@@ -333,8 +404,8 @@ func (s *Server) repositoryInfoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // @Summary Get information about all repositories in the package registry
-// @Description gets meta data about packages in the specified repository
-// @Tags Repositories
+// @Description gets meta-data about packages in the specified repository
+// @Tags Repository Information
 // @Accept text/html, application/json, application/yaml, application/xml, application/xhtml+xml
 // @Produce application/json, application/yaml, application/xml
 // @Success 200 {string} OK
@@ -350,12 +421,12 @@ func (s *Server) repositoryAllInfoHandler(w http.ResponseWriter, r *http.Request
 }
 
 // @Summary Get information about the specified package
-// @Description gets meta data about the package identified by its id
-// @Tags Packages
+// @Description gets meta-data about the package identified by its id
+// @Tags Package Information
 // @Accept text/html, application/json, application/yaml, application/xml, application/xhtml+xml
 // @Produce application/json, application/yaml, application/xml
 // @Success 200 {string} OK
-// @Router /package/{repository-group}/{repository-name}/id/{package-id} [get]
+// @Router /package/info/{repository-group}/{repository-name}/id/{package-id} [get]
 // @Param repository-group path string true "the package repository group name"
 // @Param repository-name path string true "the package repository name"
 // @Param package-id path string true "the package unique Id"
@@ -380,35 +451,11 @@ func (s *Server) packageInfoGetHandler(w http.ResponseWriter, r *http.Request) {
 	s.write(w, r, pack)
 }
 
-// @Summary Get manifest
-// @Description gets the manifest associated with a specific package
-// @Tags Packages
-// @Accept text/html, application/json, application/yaml, application/xml, application/xhtml+xml
-// @Produce application/json, application/yaml, application/xml
-// @Success 200 {string} OK
-// @Router /package/manifest/{repository-group}/{repository-name}/{tag} [get]
-// @Param repository-group path string true "the package repository group name"
-// @Param repository-name path string true "the package repository name"
-// @Param tag path string true "the package tag"
-func (s *Server) getManifestHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	repoGroup := vars["repository-group"]
-	repoName := vars["repository-name"]
-	repoGroup, _ = url.PathUnescape(repoGroup)
-	tag := vars["tag"]
-	manifest, err := GetBackend().GetPackageManifest(repoGroup, repoName, tag, s.conf.HttpUser(), s.conf.HttpPwd())
-	if err != nil {
-		s.writeError(w, err, 500)
-		return
-	}
-	s.write(w, r, manifest)
-}
-
 // @Summary Update information about the specified package
-// @Description updates meta data about the package identified by its id
-// @Tags Packages
+// @Description updates meta-data about the package identified by its id
+// @Tags Package Information
 // @Success 200 {string} OK
-// @Router /package/{repository-group}/{repository-name}/id/{package-id} [put]
+// @Router /package/info/{repository-group}/{repository-name}/id/{package-id} [put]
 // @Param repository-group path string true "the package repository group name"
 // @Param repository-name path string true "the package repository name"
 // @Param package-id path string true "the package unique identifier"
@@ -436,14 +483,62 @@ func (s *Server) packageInfoUpdateHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 	// updates the repository metadata in Nexus
-	if err = GetBackend().UpdatePackageInfo(repoGroup, repoName, artie, s.conf.HttpUser(), s.conf.HttpPwd()); err != nil {
+	if err = GetBackend().UpsertPackageInfo(repoGroup, repoName, artie, s.conf.HttpUser(), s.conf.HttpPwd()); err != nil {
 		s.writeError(w, fmt.Errorf("cannot update repository information in Nexus backend: %s", err), http.StatusInternalServerError)
 		return
 	}
 }
 
+// @Summary Delete the meta-data associated with the specified package
+// @Description deletes the meta-data associated with the package identified by its id
+// @Tags Package Information
+// @Success 204 {string} OK - delete successful - no content in the response
+// @Router /package/info/{repository-group}/{repository-name}/id/{package-id} [delete]
+// @Param repository-group path string true "the package repository group name"
+// @Param repository-name path string true "the package repository name"
+// @Param package-id path string true "the package unique identifier"
+func (s *Server) packageInfoDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	// get request variables
+	vars := mux.Vars(r)
+	repoGroup := vars["repository-group"]
+	repoName := vars["repository-name"]
+	repoGroup, _ = url.PathUnescape(repoGroup)
+	id := vars["package-id"]
+	// updates the repository metadata in Nexus
+	if err := GetBackend().DeletePackageInfo(repoGroup, repoName, id, s.conf.HttpUser(), s.conf.HttpPwd()); err != nil {
+		s.writeError(w, fmt.Errorf("cannot delete repository information in Nexus backend: %s", err), http.StatusInternalServerError)
+		return
+	}
+	// returns successful no-content response
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// @Summary Get manifest
+// @Description gets the manifest associated with a specific package
+// @Tags Package Information
+// @Accept text/html, application/json, application/yaml, application/xml, application/xhtml+xml
+// @Produce application/json, application/yaml, application/xml
+// @Success 200 {string} OK
+// @Router /package/manifest/{repository-group}/{repository-name}/{tag} [get]
+// @Param repository-group path string true "the package repository group name"
+// @Param repository-name path string true "the package repository name"
+// @Param tag path string true "the package tag"
+func (s *Server) getManifestHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	repoGroup := vars["repository-group"]
+	repoName := vars["repository-name"]
+	repoGroup, _ = url.PathUnescape(repoGroup)
+	tag := vars["tag"]
+	manifest, err := GetBackend().GetPackageManifest(repoGroup, repoName, tag, s.conf.HttpUser(), s.conf.HttpPwd())
+	if err != nil {
+		s.writeError(w, err, 500)
+		return
+	}
+	s.write(w, r, manifest)
+}
+
 // @Summary creates a webhook configuration
-// @Description create the webhook configuration for a specified repository and url
+// @Description creates the webhook configuration for a specified repository and url
 // @Tags Webhooks
 // @Accepts json
 // @Success 200 {string} returns the new webhook Id
@@ -496,7 +591,7 @@ func (s *Server) webhookCreateHandler(w http.ResponseWriter, r *http.Request) {
 	s.write(w, r, fmt.Sprintf("{ id:\"%s\" }", id))
 }
 
-// @Summary delete a webhook configuration by Id
+// @Summary deletes a webhook configuration by Id
 // @Description delete the specified webhook configuration
 // @Tags Webhooks
 // @Success 200 {string} successfully deleted
@@ -527,8 +622,8 @@ func (s *Server) webhookDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary get a list of webhooks
-// @Description get a list of webhook configurations for the specified repository
+// @Summary gets a list of webhooks
+// @Description gets a list of webhook configurations for the specified repository
 // @Tags Webhooks
 // @Success 200 {string} successfully deleted
 // @Failure 500 {string} internal error
@@ -595,6 +690,7 @@ func (s *Server) listen(handler http.Handler) {
 func (s *Server) writeError(w http.ResponseWriter, err error, errorCode int) {
 	fmt.Printf(fmt.Sprintf("%s\n", err))
 	w.WriteHeader(errorCode)
+	w.Write([]byte(err.Error()))
 }
 
 // log http requests to stdout

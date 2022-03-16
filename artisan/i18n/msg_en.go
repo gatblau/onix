@@ -5,6 +5,7 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package i18n
 
 // english
@@ -24,6 +25,7 @@ var msg_en = map[I18NKey]string{
 	// information messages
 	INFO_PUSHED:          "pushed: %s\n",
 	INFO_NOTHING_TO_PUSH: "nothing to push\n",
+	INFO_TAGGED:          "tagged: %s\n",
 	// labels
 	LBL_LS_HEADER: "REPOSITORY\tTAG\tPACKAGE ID\tPACKAGE TYPE\tCREATED\tSIZE",
 }

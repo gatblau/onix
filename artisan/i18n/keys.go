@@ -5,6 +5,7 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package i18n
 
 type I18NKey string
@@ -25,6 +26,7 @@ const (
 	// information messages
 	INFO_PUSHED          = "INFO_PUSHED"
 	INFO_NOTHING_TO_PUSH = "INFO_NOTHING_TO_PUSH"
+	INFO_TAGGED          = "INFO_TAGGED"
 	// labels
 	LBL_LS_HEADER = "LBL_LS_HEADER"
 )
