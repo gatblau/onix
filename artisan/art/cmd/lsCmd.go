@@ -25,11 +25,15 @@ type ListCmd struct {
 func NewListCmd() *ListCmd {
 	c := &ListCmd{
 		cmd: &cobra.Command{
-			Use:   "ls [FLAGS] ",
+			Use:   "ls [FLAGS]",
 			Short: "list packages in the local or a remote registry",
 			Long:  `list packages in the local or a remote registry`,
 			Example: `
+# list packages in local registry
+art ls
 
+# list packages from remote registry at localhost:8082
+art ls -r localhost:8082 -u <user>:<pwd>
 `,
 		},
 	}
