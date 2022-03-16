@@ -54,7 +54,7 @@ func (r *RemoteRegistry) List(quiet bool) {
 		// repository, tag, package id, created, size
 		for _, repo := range repos {
 			for _, a := range repo.Packages {
-				_, err := fmt.Fprintln(w, fmt.Sprintf("%s", a.Id[0:12]))
+				_, err = fmt.Fprintln(w, fmt.Sprintf("%s", a.Id[0:12]))
 				core.CheckErr(err, "failed to write package Id")
 			}
 		}
@@ -69,7 +69,7 @@ func (r *RemoteRegistry) List(quiet bool) {
 			for _, a := range repo.Packages {
 				for _, tag := range a.Tags {
 					_, err = fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s",
-						repo.Repository,
+						fmt.Sprintf("%s:%s", r.domain, repo.Repository),
 						tag,
 						a.Id[0:12],
 						a.Type,
