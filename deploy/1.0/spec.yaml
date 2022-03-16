@@ -5,7 +5,7 @@ images:
   IMAGE_MONGO_DB: docker.io/library/mongo:5
   IMAGE_PILOTCTL_EVR_MONGODB: quay.io/gatblau/pilotctl-evr-mongodb:0.0.4-300921174051295-11aab8b6cc
   IMAGE_NEXUS3: docker.io/sonatype/nexus3:latest
-  IMAGE_ARTISAN_REGISTRY: quay.io/gatblau/artisan-registry:0.0.4-011021162133879-a3dedecb3f-RC1
+  IMAGE_ARTISAN_REGISTRY: quay.io/gatblau/artisan-registry:0.0.4-20220316143112662-5ab8dc5c40-RC1
   IMAGE_ONIX_WAPI: quay.io/gatblau/onix-snapshot:v0.0.4-1af14bb-021021131813
   IMAGE_PILOTCTL: quay.io/gatblau/pilotctl:0.0.4-161021085624494-f2346825d0
   IMAGE_PGADMIN: docker.io/dpage/pgadmin4:latest
