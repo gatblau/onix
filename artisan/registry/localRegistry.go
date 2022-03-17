@@ -716,7 +716,8 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetP
 		err = unzip(path.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef)), targetPath)
 		core.CheckErr(err, "cannot unzip package %s", fmt.Sprintf("%s.zip", artie.FileRef))
 		// check if the target path is a folder
-		info, err := os.Stat(targetPath)
+		var info os.FileInfo
+		info, err = os.Stat(targetPath)
 		core.CheckErr(err, "cannot stat target path %s", targetPath)
 		// only get rid of the target folder if there is one
 		if info.IsDir() {
@@ -734,18 +735,17 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetP
 }
 
 func checkSignature(name *core.PackageName, pubKeyPath string, seal *data.Seal, zipFilename string) error {
-	// var pubKey *rsa.PublicKey
 	var (
-		pgp *crypto.PGP
-		err error
+		primaryKey, backupKey *crypto.PGP
+		err                   error
 	)
 	if len(pubKeyPath) > 0 {
 		// retrieve the verification key from the specified location
-		pgp, err = crypto.LoadPGP(pubKeyPath, "")
+		primaryKey, err = crypto.LoadPGP(pubKeyPath, "")
 		core.CheckErr(err, "cannot load public key, cannot verify signature")
 	} else {
 		// otherwise, loads it from the registry store
-		pgp, _, err = crypto.LoadKeys(*name, false)
+		primaryKey, backupKey, err = crypto.LoadKeys(*name, false)
 		core.CheckErr(err, "cannot load public key, cannot verify signature")
 	}
 	// get a slice to have the unencrypted signature
@@ -757,9 +757,21 @@ func checkSignature(name *core.PackageName, pubKeyPath string, seal *data.Seal, 
 	core.CheckErr(err, "cannot decode signature in the seal")
 	// if in debug mode prints out base64 decoded signature
 	core.Debug("seal stored signature:\n>> start on next line\n%s\n>> ended on previous line\n", string(sig))
-	// verify the signature
-	err = pgp.Verify(sum, sig)
-	core.CheckErr(err, "invalid digital signature")
+	// verify the signature using the primary key
+	err = primaryKey.Verify(sum, sig)
+	// if the verification failed
+	if err != nil {
+		// if a backup key exists
+		if backupKey != nil {
+			core.InfoLogger.Printf("invalid digital signature using primary key, attempting verification using backup key")
+			// verify the signature using the backup key
+			err = backupKey.Verify(sum, sig)
+			core.CheckErr(err, "invalid digital signature (used both, primary and backup keys)")
+		} else {
+			// raise the error as no backup key exists
+			core.CheckErr(err, "invalid digital signature (used primary key)")
+		}
+	}
 	return err
 }
 
