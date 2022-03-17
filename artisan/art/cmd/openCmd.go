@@ -20,7 +20,6 @@ import (
 type OpenCmd struct {
 	cmd             *cobra.Command
 	credentials     string
-	noTLS           *bool
 	ignoreSignature *bool
 	path            string
 	pubPath         string
@@ -42,9 +41,6 @@ func NewOpenCmd() *OpenCmd {
 }
 
 func (c *OpenCmd) Run(cmd *cobra.Command, args []string) {
-	if *c.noTLS {
-		log.Printf("info: Transport Level Security is disabled\n")
-	}
 	// check an package name has been provided
 	if len(args) < 1 {
 		log.Fatal("name of the package to open is required")
