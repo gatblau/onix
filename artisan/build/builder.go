@@ -44,6 +44,7 @@ type Builder struct {
 	loadFrom         string
 	env              *merge.Envar
 	zip              bool // if the target is already zipped before packaging (e.g. jar, zip files, etc)
+	useBackupKey     bool
 }
 
 func NewBuilder() *Builder {
@@ -61,9 +62,11 @@ func NewBuilder() *Builder {
 // profileName: the name of the profile to be built. If empty then the default profile is built. If no default profile exists, the first profile is built.
 // copy: indicates whether a copy should be made of the project files before packaging (only valid for from location in the file system)
 // interactive: true if the console should survey for missing variables
-// pk: the path of the private PGP key to use to sign the package, if empty then load from artisan local registry
-func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName, profileName string, copy bool, interactive bool, pkPath string) {
+// pkPath: the path of the private PGP key to use to sign the package, if empty then load from artisan local registry
+// useBackupKey: true if the backup of the private key in the local registry should be used to sign the package
+func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName, profileName string, copy bool, interactive bool, pkPath string, useBackupKey bool) {
 	b.from = from
+	b.useBackupKey = useBackupKey
 	// prepare the source ready for the build
 	repo := b.prepareSource(from, fromPath, gitToken, name, copy)
 	// set the unique identifier name for both the zip file and the seal file
@@ -399,7 +402,7 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 		// if a profile name has been provided then build it
 		if len(profileName) > 0 && profile.Name == profileName {
 			// get the profile environment and merge any subshell command
-			vars := b.evalSubshell(profile.GetEnv(), execDir, env, interactive)
+			vars = b.evalSubshell(profile.GetEnv(), execDir, env, interactive)
 			// combine the current environment with the profile environment
 			buildEnv := env.Append(vars)
 			// add build specific variables
@@ -545,17 +548,33 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 	}
 	// gets the combined checksum of the manifest and the package
 	sum, digest := s.Checksum(b.workDirZipFilename())
-	// load private key
-	var pk *crypto.PGP
+	// load private key to sign the package
+	var (
+		primaryKey, backupKey *crypto.PGP
+		signature             []byte
+	)
 	if len(pkPath) == 0 {
-		pk, _, err = crypto.LoadKeys(*packageName, true)
+		primaryKey, backupKey, err = crypto.LoadKeys(*packageName, true)
 		core.CheckErr(err, "cannot load signing key")
 	} else {
-		pk, err = crypto.LoadPGP(pkPath, "")
+		primaryKey, err = crypto.LoadPGP(pkPath, "")
 		core.CheckErr(err, "cannot load signing key")
 	}
 	// create a PGP cryptographic signature
-	signature, err := pk.Sign(sum)
+	// if the command requested the use of the backup key
+	if b.useBackupKey {
+		// if a backup key exists
+		if backupKey != nil {
+			// signs the package with the backup key
+			signature, err = backupKey.Sign(sum)
+		} else {
+			// errors as backup key is not available
+			core.RaiseErr("backup key not available to sign package: use \"art pgp import -kb ...\" command to setup a private backup key")
+		}
+	} else {
+		// signs the package with the primary key
+		signature, err = primaryKey.Sign(sum)
+	}
 	core.CheckErr(err, "failed to create cryptographic signature")
 	// if in debug mode prints out signature
 	core.Debug("package %s signature: \n>> start on next line\n%s\n>> ended on previous line\n", packageName, string(signature))
