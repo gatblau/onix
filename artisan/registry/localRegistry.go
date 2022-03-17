@@ -872,38 +872,35 @@ func (r *LocalRegistry) GetSeal(name *Package) (*data.Seal, error) {
 	return seal, err
 }
 
-func (r *LocalRegistry) ImportKey(keyPath string, isPrivate bool, repoGroup string, repoName string) {
+func (r *LocalRegistry) ImportKey(keyPath string, isPrivate, isBackup bool, repoGroup string, repoName string) error {
+	var err error
 	if !filepath.IsAbs(keyPath) {
-		keyPath, err := filepath.Abs(keyPath)
+		keyPath, err = filepath.Abs(keyPath)
 		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
 	}
-	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
 	// only check it can read the key
-	_, err := crypto.LoadPGP(keyPath, "")
+	_, err = crypto.LoadPGP(keyPath, "")
 	core.CheckErr(err, "cannot read pgp key '%s'", keyPath)
-	// if so, then move the key to the correct location to preserve PEM block data
-	if isPrivate {
-		CopyFile(keyPath, path.Join(destPath, crypto.PrivateKeyName(prefix, "pgp")))
-	} else {
-		CopyFile(keyPath, path.Join(destPath, crypto.PublicKeyName(prefix, "pgp")))
+	destFile := crypto.KeyPath(repoGroup, repoName, isPrivate, isBackup)
+	destFolder := path.Dir(destFile)
+	// check if the target directory exists and if not creates it
+	if _, err = os.Stat(destFolder); os.IsNotExist(err) {
+		err = os.MkdirAll(destFolder, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("cannot create key directory '%s': %s", destFolder, err)
+		}
 	}
+	// if so, then move the key to the correct location to preserve PEM block data
+	return CopyFile(keyPath, destFile)
 }
 
-func (r *LocalRegistry) ExportKey(keyPath string, isPrivate bool, repoGroup string, repoName string) {
+func (r *LocalRegistry) ExportKey(keyPath string, isPrivate, isBackup bool, repoGroup string, repoName string) error {
+	var err error
 	if !filepath.IsAbs(keyPath) {
-		keyPath, err := filepath.Abs(keyPath)
+		keyPath, err = filepath.Abs(keyPath)
 		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
 	}
-	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
-	if isPrivate {
-		keyName := crypto.PrivateKeyName(prefix, "pgp")
-		err := CopyFile(path.Join(destPath, keyName), path.Join(keyPath, keyName))
-		core.CheckErr(err, "cannot export private key")
-	} else {
-		keyName := crypto.PublicKeyName(prefix, "pgp")
-		err := CopyFile(path.Join(destPath, keyName), path.Join(keyPath, keyName))
-		core.CheckErr(err, "cannot export public key")
-	}
+	return CopyFile(crypto.KeyPath(repoGroup, repoName, isPrivate, isBackup), keyPath)
 }
 
 func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {

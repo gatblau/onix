@@ -13,6 +13,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -64,6 +65,28 @@ func resolveKeyPath(name core.PackageName, isPrivate bool) (primary, backup stri
 		backup = filepath.Join(core.KeysPath(), path, fmt.Sprintf("%s_backup%s", strings.ReplaceAll(path, "/", "_"), keySuffix(isPrivate)))
 	}
 	return primary, backup
+}
+
+// KeyPath workout the fully qualified to the key based on
+// isPrivate: is it private or public key?
+// isBackup: is it a primary or a backup key?
+// if no group and name are specified then it produces a root key
+func KeyPath(group, name string, isPrivate, isBackup bool) string {
+	backupTag := ""
+	if isBackup {
+		backupTag = "_backup"
+	}
+	// if no group / name were provided it produces a root key name
+	if len(group) == 0 && len(name) == 0 {
+		return path.Join(core.KeysPath(), fmt.Sprintf("root%s%s", backupTag, keySuffix(isPrivate)))
+	}
+	groupForName := strings.ReplaceAll(group, "/", "_")
+	// if no name was specified produces a key for the group
+	if len(name) == 0 {
+		return path.Join(core.KeysPath(), group, fmt.Sprintf("%s%s%s", groupForName, backupTag, keySuffix(isPrivate)))
+	}
+	// otherwise, it produces a key for the full name
+	return path.Join(core.KeysPath(), group, name, fmt.Sprintf("%s_%s%s%s", groupForName, name, backupTag, keySuffix(isPrivate)))
 }
 
 // getAllKeyPaths returns a list of all possible key paths in the priority they should be used
