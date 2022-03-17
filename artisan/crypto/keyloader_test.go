@@ -14,20 +14,14 @@ import (
 	"testing"
 )
 
-func TestLoader(t *testing.T) {
-	l := newKeyLoader()
-	for _, k := range l.m {
-		fmt.Printf("%s\n", k)
-	}
-}
-
 func TestLoadPrivate(t *testing.T) {
 	name, _ := core.ParseName("localhost:8082/test/testpk/aabb:latest")
-	l := newKeyLoader()
-	k, err := l.Key(name, true)
+	primaryKey, backupKey, err := LoadKeys(*name, false)
 	if err != nil {
 		t.Errorf(err.Error())
-		t.FailNow()
 	}
-	fmt.Printf("Key Id: %d\n", k.entity.PrimaryKey.KeyId)
+	fmt.Println(primaryKey.entity.PrimaryKey.Fingerprint)
+	if backupKey != nil {
+		fmt.Println(backupKey.entity.PrimaryKey.Fingerprint)
+	}
 }
