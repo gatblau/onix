@@ -61,7 +61,8 @@ func (b *PGPEncryptCmd) Run(cmd *cobra.Command, args []string) {
 	} else
 	// load the key based on the local repository resolution process
 	{
-		pgp, err = crypto.LoadPGPPublicKey(b.group, b.name)
+		name, _ := core.ParseName(fmt.Sprintf("%s/%s", b.group, b.name))
+		pgp, _, err = crypto.LoadKeys(*name, false)
 		core.CheckErr(err, "cannot load public key")
 	}
 	// read the file to encrypt

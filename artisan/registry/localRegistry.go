@@ -744,8 +744,8 @@ func checkSignature(name *core.PackageName, pubKeyPath string, seal *data.Seal, 
 		pgp, err = crypto.LoadPGP(pubKeyPath, "")
 		core.CheckErr(err, "cannot load public key, cannot verify signature")
 	} else {
-		// otherwise load it from the registry store
-		pgp, err = crypto.LoadPGPPublicKey(name.Group, name.Name)
+		// otherwise, loads it from the registry store
+		pgp, _, err = crypto.LoadKeys(*name, false)
 		core.CheckErr(err, "cannot load public key, cannot verify signature")
 	}
 	// get a slice to have the unencrypted signature
@@ -1468,7 +1468,7 @@ func (r *LocalRegistry) Sign(pac, pkPath, pubPath string) error {
 	// if no private key path has been provided
 	if len(pkPath) == 0 {
 		// load the key from the local registry
-		pk, err = crypto.LoadPGPPrivateKey(packageName.Group, packageName.Name)
+		pk, _, err = crypto.LoadKeys(*packageName, true)
 		if err != nil {
 			return fmt.Errorf("cannot load signing key: %s", err)
 		}
