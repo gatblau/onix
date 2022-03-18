@@ -79,7 +79,7 @@ func (r *LocalRegistry) Prune() error {
 	danglingRepo.Packages = nil
 	r.save()
 	// clears the content of the tmp folder
-	if notExist(core.TmpPath()) {
+	if pathExist(core.TmpPath()) {
 		err := cleanFolder(core.TmpPath())
 		if err != nil {
 			return fmt.Errorf("cannot clean tmp folder: %s", err)
@@ -87,7 +87,7 @@ func (r *LocalRegistry) Prune() error {
 	}
 	// clears the content of the build folder
 	buildPath := path.Join(core.RegistryPath(), "build")
-	if notExist(buildPath) {
+	if pathExist(buildPath) {
 		err := cleanFolder(buildPath)
 		if err != nil {
 			return fmt.Errorf("cannot clean build folder: %s", err)
@@ -96,9 +96,9 @@ func (r *LocalRegistry) Prune() error {
 	return nil
 }
 
-func notExist(path string) bool {
+func pathExist(path string) bool {
 	_, err := os.Stat(path)
-	return os.IsNotExist(err)
+	return !os.IsNotExist(err)
 }
 
 // FindPackage return the package that matches the specified:
