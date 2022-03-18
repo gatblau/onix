@@ -75,10 +75,6 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 	// set the command execution directory
 	execDir := b.loadFrom
 	buildProfile := b.runProfile(profileName, execDir, interactive)
-	// check if a profile target exist, otherwise it cannot package
-	if len(buildProfile.Target) == 0 {
-		core.RaiseErr("profile '%s' target not specified, cannot continue", buildProfile.Name)
-	}
 	// if the build target is a file or subdirectory in current folder
 	if buildProfile.Target == "." || strings.HasPrefix(buildProfile.MergedTarget, "..") || strings.HasPrefix(buildProfile.MergedTarget, "/") {
 		core.RaiseErr("invalid build target, target must be a file or folder under the build file\n")
@@ -181,7 +177,21 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 	}
 	// read build.yaml
 	bf, err := data.LoadBuildFile(filepath.Join(b.loadFrom, "build.yaml"))
-	core.CheckErr(err, "cannot load build file")
+	// if it cannot find the build file
+	if err != nil {
+		core.WarningLogger.Printf("build file missing, packaging build target: %s\n", b.loadFrom)
+		// dynamically creates one that packages anything on the build target
+		bf = &data.BuildFile{
+			Profiles: []*data.Profile{
+				{
+					Name:    "content-only",
+					Default: true,
+					Target:  "", // leave blank
+					Type:    "files",
+				},
+			},
+		}
+	}
 	b.buildFile = bf
 	return repo
 }
@@ -521,8 +531,17 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 	innerBuildFilePath := path.Join(b.from, profile.MergedTarget, "build.yaml")
 	// load the build file
 	buildFile, err := data.LoadBuildFile(innerBuildFilePath)
+	// if it cannot load build file in target folder
 	if err != nil {
-		return nil, err
+		// then it is a content only package, so creates an empty build file so the process can continue
+		// without adding functions to package manifest
+		buildFile = &data.BuildFile{
+			Env:       map[string]string{},
+			Labels:    map[string]string{},
+			Input:     &data.Input{},
+			Profiles:  []*data.Profile{},
+			Functions: []*data.Function{},
+		}
 	}
 	// only export functions if the target contains a build.yaml
 	// if the manifest contains exported functions then include the runtime
