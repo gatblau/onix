@@ -573,8 +573,9 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 	localPackage := r.findPackageByRepoAndId(name, remoteArt.Id)
 	// if the local registry does not have the package then download it
 	if localPackage == nil {
-		// download package seal
-		info := &downloadInfo{
+		attempts := 5
+		// download package seal file
+		sealDownloadInfo := &downloadInfo{
 			name:     *name,
 			filename: fmt.Sprintf("%s.json", remoteArt.FileRef),
 			uname:    uname,
@@ -582,12 +583,12 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 			tls:      tls,
 			api:      *api,
 		}
-		downErr := downloadFileRetry(info)
+		downErr := downloadFileRetry(sealDownloadInfo, attempts)
 		core.CheckErr(downErr, "failed to download package seal file")
-		sealFilename := info.downloadedFilename
+		sealFilename := sealDownloadInfo.downloadedFilename
 
-		// download package zip
-		info = &downloadInfo{
+		// download package zip file
+		packageDownloadInfo := &downloadInfo{
 			name:     *name,
 			filename: fmt.Sprintf("%s.zip", remoteArt.FileRef),
 			uname:    uname,
@@ -595,24 +596,33 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 			tls:      tls,
 			api:      *api,
 		}
-		downErr = downloadFileRetry(info)
-		core.CheckErr(downErr, "failed to download package file")
-		packageFilename := info.downloadedFilename
+		downErr = downloadFileRetry(packageDownloadInfo, attempts)
+		core.CheckErr(downErr, "failed to download package zip file")
+		packageFilename := packageDownloadInfo.downloadedFilename
 
-		seal, err := r.loadSeal(sealFilename)
+		var (
+			seal  *data.Seal
+			valid bool
+		)
+		seal, err = r.loadSeal(sealFilename)
 		core.CheckErr(err, "cannot load package seal")
 
 		// if the downloaded package digest does not match the one stored in the seal manifest
-		if !seal.Valid(packageFilename) {
-			core.InfoLogger.Printf("package digest check failed, retrying download, stand by\n")
+		if valid, err = seal.Valid(packageFilename); !valid {
+			core.InfoLogger.Printf("package files corruption detected after download: %s, retrying %d times, stand by...\n", err, attempts)
 
-			// retry the download
-			downErr = downloadFileRetry(info)
-			core.CheckErr(downErr, "failed to download package file")
-			packageFilename = info.downloadedFilename
+			// retry the download of the package seal file
+			downErr = downloadFileRetry(sealDownloadInfo, attempts)
+			core.CheckErr(downErr, "retry failed to download the package seal file")
+			sealFilename = sealDownloadInfo.downloadedFilename
 
-			if !seal.Valid(packageFilename) {
-				core.RaiseErr("cannot pull package: digest check failed after retries")
+			// retry the download of the package zip file
+			downErr = downloadFileRetry(packageDownloadInfo, attempts)
+			core.CheckErr(downErr, "retry failed to download the package zip file")
+			packageFilename = packageDownloadInfo.downloadedFilename
+
+			if valid, err = seal.Valid(packageFilename); !valid {
+				core.RaiseErr("package files corruption detected after retry: %s", err)
 			}
 		}
 

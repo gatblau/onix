@@ -24,8 +24,7 @@ func init() {
 // downloadFileRetry download the file specified by the passed-in info (either package seal or zip)
 // using retry with exponential back-off
 // note: downloadInfo parameter should be a pointer so that downloadedFilename can be passed back to the calling code
-func downloadFileRetry(downloadInfo interface{}) error {
-	attempts := 3
+func downloadFileRetry(downloadInfo interface{}, attempts int) error {
 	startingInterval := 5 * time.Second
 	// retry attempts number of times applying exponential back-off intervals
 	// adds jitter to the interval to prevent creating a Thundering Herd effect
@@ -119,6 +118,7 @@ type stop struct {
 // The actual error that is returned by the retry function will be the original non-wrapped error.
 // This allows for later checks like err == ErrUnauthorized.
 func retry(attempts int, sleep time.Duration, f func(input interface{}) error, input interface{}) error {
+	core.InfoLogger.Printf("retry in progress...\n")
 	if err := f(input); err != nil {
 		str := fmt.Sprintf("%T\n", err)
 		if strings.Contains(str, "stop") {
