@@ -1,13 +1,21 @@
+/*
+  Onix Config Manager - Artisan Host Runner
+  Copyright (c) 2018-Present by www.gatblau.org
+  Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
+  Contributors to this project, hereby assign copyright in this code to the project,
+  to be licensed under the same terms as the rest of the code.
+*/
+
 package parser
 
 import (
 	"encoding/json"
 )
 
-func NewS3Event(f []byte) (*S3Event,error) {
-	s3event := S3Event{}
-	if err := json.Unmarshal(f, &s3event); err != nil {
+func NewMinioEvent(f []byte) (*MinioEvent, error) {
+	event := MinioEvent{}
+	if err := json.Unmarshal(f, &event); err != nil {
 		return nil, err
 	}
-	return &s3event, nil
+	return &event, nil
 }

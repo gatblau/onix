@@ -8,7 +8,6 @@ labels:
 env:
   GROUP_NAME: aps
   APP_NAME: host-runner
-  APP_VERSION: 0.2.0
   CGO_ENABLED: 0
   GOARCH: amd64
   APP_VERSION: 0.0.4
@@ -32,6 +31,7 @@ functions:
     env:
       GOOS: linux
     run:
+      - rm -f binary/host-runner     
       - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o binary/host-runner -v
 
   - name: set-version
@@ -58,4 +58,9 @@ functions:
       - $(set-version)
       - $(build)
       - $(push)
+
+  - name: swagen
+    description: generates/refreshes the OpenAPI specifications for Artisan's HTTP API
+    run:
+      - swag init -d ./ -g handlers.go
 ...

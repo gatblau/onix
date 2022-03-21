@@ -1,15 +1,16 @@
 /*
-  Onix Config Manager - Artisan Runner
+  Onix Config Manager - Artisan Host Runner
   Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package handlers
 
 // @title Artisan Host Runner
 // @version 0.0.4
-// @description Run Artisan flows in host
+// @description Run Artisan command in host
 // @contact.name gatblau
 // @contact.url http://onix.gatblau.org/
 // @contact.email onix@gatblau.org
@@ -38,7 +39,7 @@ type OSpatchingHandler struct {
 	// access and secret key for object store
 	accessKey  string
 	secretKey  string
-	flowkey    string
+	cmdkey     string
 	body       []byte
 	cmd        *o.Cmd
 	scanedFile string
@@ -69,16 +70,16 @@ func (h OSpatchingHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 func (h *OSpatchingHandler) initialize(r *http.Request) error {
 
 	vars := mux.Vars(r)
-	h.flowkey = vars["flow-key"]
+	h.cmdkey = vars["cmd-key"]
 	api = o.Api()
-	cmd, err := api.GetCommand(h.flowkey)
+	cmd, err := api.GetCommand(h.cmdkey)
 	if err != nil {
-		msg := fmt.Sprintf("%s: %s\n", "Error while getting command using flow key ", h.flowkey, err)
+		msg := fmt.Sprintf("%s: %s\n", "Error while getting command using cmd key ", h.cmdkey, err)
 		fmt.Printf(msg)
 		return err
 	}
 	if cmd == nil {
-		msg := fmt.Sprintf("%s: %s\n", "No command item for item type ART_FX found in database for flow key, please check if it was created ", h.flowkey)
+		msg := fmt.Sprintf("%s: %s\n", "No command item for item type ART_FX found in database for cmd key, please check if it was created ", h.cmdkey)
 		fmt.Printf(msg)
 		return errors.New(msg)
 	}
@@ -105,7 +106,7 @@ func (h *OSpatchingHandler) initialize(r *http.Request) error {
 
 func (h OSpatchingHandler) downloadAndCopyFile() error {
 
-	ev, err := parser.NewS3Event(h.body)
+	ev, err := parser.NewMinioEvent(h.body)
 	if err != nil {
 		msg := fmt.Sprintf("%s: %s\n", "Error while parsing s3 event :", err)
 		fmt.Printf(msg)

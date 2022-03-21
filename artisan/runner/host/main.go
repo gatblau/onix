@@ -1,5 +1,5 @@
 /*
-  Onix Config Manager - Artisan Runner
+  Onix Config Manager - Artisan Host Runner
   Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
@@ -21,7 +21,7 @@ func main() {
 	// add handlers
 	s.Http = func(router *mux.Router) {
 		fmt.Printf("handler is registered...\n")
-		router.HandleFunc("/host/{flow-key}", createOSPatchingHandler).Methods("POST")
+		router.HandleFunc("/host/{cmd-key}", createOSPatchingHandler).Methods("POST")
 	}
 	s.Serve()
 }
