@@ -1,5 +1,3 @@
-package crypto
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,11 +5,13 @@ package crypto
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package crypto
+
 import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"os"
-	"path"
 	"path/filepath"
 	"time"
 )
@@ -48,46 +48,6 @@ func GeneratePGPKeys(path, prefix, name, comment, email, version string, size in
 	core.CheckErr(pgp.SavePrivateKey(keyFilename, version, ""), "cannot save private key")
 }
 
-func LoadPGPPrivateKey(group, name string) (*PGP, error) {
-	// first attempt to load the key from the registry/keys/group/name path
-	private, _ := KeyNames(path.Join(core.RegistryPath(), "keys", group, name), fmt.Sprintf("%s_%s", group, name), "pgp")
-	key, err := LoadPGP(private, "")
-	if err != nil {
-		// if no luck, attempt to load the key from the registry/keys/group path
-		private, _ = KeyNames(path.Join(core.RegistryPath(), "keys", group), group, "pgp")
-		key, err = LoadPGP(private, "")
-		if err != nil {
-			// final attempt to load the key from the registry/keys/ path
-			private, _ = KeyNames(path.Join(core.RegistryPath(), "keys"), "root", "pgp")
-			key, err = LoadPGP(private, "")
-			if err != nil {
-				return nil, fmt.Errorf("cannot read private pgp key: %s", err)
-			}
-		}
-	}
-	return key, nil
-}
-
-func LoadPGPPublicKey(group, name string) (*PGP, error) {
-	// first attempt to load the key from the registry/keys/group/name path
-	_, public := KeyNames(path.Join(core.RegistryPath(), "keys", group, name), fmt.Sprintf("%s_%s", group, name), "pgp")
-	key, err := LoadPGP(public, "")
-	if err != nil {
-		// if no luck, attempt to load the key from the registry/keys/group path
-		_, public = KeyNames(path.Join(core.RegistryPath(), "keys", group), group, "pgp")
-		key, err = LoadPGP(public, "")
-		if err != nil {
-			// final attempt to load the key from the registry/keys/ path
-			_, public = KeyNames(path.Join(core.RegistryPath(), "keys"), "root", "pgp")
-			key, err = LoadPGP(public, "")
-			if err != nil {
-				return nil, fmt.Errorf("cannot read public pgp key: %s", err)
-			}
-		}
-	}
-	return key, nil
-}
-
 func KeyNamePrefix(group, name string) string {
 	if len(group) == 0 && len(name) == 0 {
 		return "root"
@@ -112,7 +72,7 @@ func PublicKeyName(prefix string, extension string) string {
 	return fmt.Sprintf("%s_rsa_pub.%s", prefix, extension)
 }
 
-// works out the fully qualified names of the private and public RSA keys
+// KeyNames works out the fully qualified names of the private and public RSA keys
 func KeyNames(path, prefix string, extension string) (key string, pub string) {
 	if len(path) == 0 {
 		path = "."

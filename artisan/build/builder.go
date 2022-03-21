@@ -44,6 +44,7 @@ type Builder struct {
 	loadFrom         string
 	env              *merge.Envar
 	zip              bool // if the target is already zipped before packaging (e.g. jar, zip files, etc)
+	useBackupKey     bool
 }
 
 func NewBuilder() *Builder {
@@ -61,9 +62,11 @@ func NewBuilder() *Builder {
 // profileName: the name of the profile to be built. If empty then the default profile is built. If no default profile exists, the first profile is built.
 // copy: indicates whether a copy should be made of the project files before packaging (only valid for from location in the file system)
 // interactive: true if the console should survey for missing variables
-// pk: the path of the private PGP key to use to sign the package, if empty then load from artisan local registry
-func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName, profileName string, copy bool, interactive bool, pkPath string) {
+// pkPath: the path of the private PGP key to use to sign the package, if empty then load from artisan local registry
+// useBackupKey: true if the backup of the private key in the local registry should be used to sign the package
+func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName, profileName string, copy bool, interactive bool, pkPath string, useBackupKey bool) {
 	b.from = from
+	b.useBackupKey = useBackupKey
 	// prepare the source ready for the build
 	repo := b.prepareSource(from, fromPath, gitToken, name, copy)
 	// set the unique identifier name for both the zip file and the seal file
@@ -72,10 +75,6 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 	// set the command execution directory
 	execDir := b.loadFrom
 	buildProfile := b.runProfile(profileName, execDir, interactive)
-	// check if a profile target exist, otherwise it cannot package
-	if len(buildProfile.Target) == 0 {
-		core.RaiseErr("profile '%s' target not specified, cannot continue", buildProfile.Name)
-	}
 	// if the build target is a file or subdirectory in current folder
 	if buildProfile.Target == "." || strings.HasPrefix(buildProfile.MergedTarget, "..") || strings.HasPrefix(buildProfile.MergedTarget, "/") {
 		core.RaiseErr("invalid build target, target must be a file or folder under the build file\n")
@@ -178,7 +177,21 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 	}
 	// read build.yaml
 	bf, err := data.LoadBuildFile(filepath.Join(b.loadFrom, "build.yaml"))
-	core.CheckErr(err, "cannot load build file")
+	// if it cannot find the build file
+	if err != nil {
+		core.WarningLogger.Printf("build file missing, packaging build target: %s\n", b.loadFrom)
+		// dynamically creates one that packages anything on the build target
+		bf = &data.BuildFile{
+			Profiles: []*data.Profile{
+				{
+					Name:    "content-only",
+					Default: true,
+					Target:  "", // leave blank
+					Type:    "files",
+				},
+			},
+		}
+	}
 	b.buildFile = bf
 	return repo
 }
@@ -399,7 +412,7 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 		// if a profile name has been provided then build it
 		if len(profileName) > 0 && profile.Name == profileName {
 			// get the profile environment and merge any subshell command
-			vars := b.evalSubshell(profile.GetEnv(), execDir, env, interactive)
+			vars = b.evalSubshell(profile.GetEnv(), execDir, env, interactive)
 			// combine the current environment with the profile environment
 			buildEnv := env.Append(vars)
 			// add build specific variables
@@ -518,8 +531,17 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 	innerBuildFilePath := path.Join(b.from, profile.MergedTarget, "build.yaml")
 	// load the build file
 	buildFile, err := data.LoadBuildFile(innerBuildFilePath)
+	// if it cannot load build file in target folder
 	if err != nil {
-		return nil, err
+		// then it is a content only package, so creates an empty build file so the process can continue
+		// without adding functions to package manifest
+		buildFile = &data.BuildFile{
+			Env:       map[string]string{},
+			Labels:    map[string]string{},
+			Input:     &data.Input{},
+			Profiles:  []*data.Profile{},
+			Functions: []*data.Function{},
+		}
 	}
 	// only export functions if the target contains a build.yaml
 	// if the manifest contains exported functions then include the runtime
@@ -545,17 +567,33 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 	}
 	// gets the combined checksum of the manifest and the package
 	sum, digest := s.Checksum(b.workDirZipFilename())
-	// load private key
-	var pk *crypto.PGP
+	// load private key to sign the package
+	var (
+		primaryKey, backupKey *crypto.PGP
+		signature             []byte
+	)
 	if len(pkPath) == 0 {
-		pk, err = crypto.LoadPGPPrivateKey(packageName.Group, packageName.Name)
+		primaryKey, backupKey, err = crypto.LoadKeys(*packageName, true)
 		core.CheckErr(err, "cannot load signing key")
 	} else {
-		pk, err = crypto.LoadPGP(pkPath, "")
+		primaryKey, err = crypto.LoadPGP(pkPath, "")
 		core.CheckErr(err, "cannot load signing key")
 	}
 	// create a PGP cryptographic signature
-	signature, err := pk.Sign(sum)
+	// if the command requested the use of the backup key
+	if b.useBackupKey {
+		// if a backup key exists
+		if backupKey != nil {
+			// signs the package with the backup key
+			signature, err = backupKey.Sign(sum)
+		} else {
+			// errors as backup key is not available
+			core.RaiseErr("backup key not available to sign package: use \"art pgp import -kb ...\" command to setup a private backup key")
+		}
+	} else {
+		// signs the package with the primary key
+		signature, err = primaryKey.Sign(sum)
+	}
 	core.CheckErr(err, "failed to create cryptographic signature")
 	// if in debug mode prints out signature
 	core.Debug("package %s signature: \n>> start on next line\n%s\n>> ended on previous line\n", packageName, string(signature))
@@ -622,7 +660,6 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 	local.Open(
 		name,
 		credentials,
-		noTLS,
 		path,
 		certPath,
 		ignoreSignature)

@@ -80,9 +80,12 @@ func (seal *Seal) PackageId() (string, error) {
 // Valid checks that the digest stored in the seal is the same as the digest generated using the passed-in zip file path
 // and the seal
 // path: the path to the package zip file to validate
-func (seal *Seal) Valid(path string) bool {
+func (seal *Seal) Valid(path string) (valid bool, err error) {
 	// calculates the digest using the zip file
 	_, digest := seal.Checksum(path)
 	// compare to the digest stored in the seal
-	return seal.Digest == digest
+	if seal.Digest == digest {
+		return true, nil
+	}
+	return false, fmt.Errorf("downloaded package digest: %s does not match digest in manifest %s", digest, seal.Digest)
 }

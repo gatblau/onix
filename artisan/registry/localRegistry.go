@@ -79,7 +79,7 @@ func (r *LocalRegistry) Prune() error {
 	danglingRepo.Packages = nil
 	r.save()
 	// clears the content of the tmp folder
-	if notExist(core.TmpPath()) {
+	if pathExist(core.TmpPath()) {
 		err := cleanFolder(core.TmpPath())
 		if err != nil {
 			return fmt.Errorf("cannot clean tmp folder: %s", err)
@@ -87,7 +87,7 @@ func (r *LocalRegistry) Prune() error {
 	}
 	// clears the content of the build folder
 	buildPath := path.Join(core.RegistryPath(), "build")
-	if notExist(buildPath) {
+	if pathExist(buildPath) {
 		err := cleanFolder(buildPath)
 		if err != nil {
 			return fmt.Errorf("cannot clean build folder: %s", err)
@@ -96,9 +96,9 @@ func (r *LocalRegistry) Prune() error {
 	return nil
 }
 
-func notExist(path string) bool {
+func pathExist(path string) bool {
 	_, err := os.Stat(path)
-	return os.IsNotExist(err)
+	return !os.IsNotExist(err)
 }
 
 // FindPackage return the package that matches the specified:
@@ -573,8 +573,9 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 	localPackage := r.findPackageByRepoAndId(name, remoteArt.Id)
 	// if the local registry does not have the package then download it
 	if localPackage == nil {
-		// download package seal
-		info := &downloadInfo{
+		attempts := 5
+		// download package seal file
+		sealDownloadInfo := &downloadInfo{
 			name:     *name,
 			filename: fmt.Sprintf("%s.json", remoteArt.FileRef),
 			uname:    uname,
@@ -582,12 +583,12 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 			tls:      tls,
 			api:      *api,
 		}
-		downErr := downloadFileRetry(info)
+		downErr := downloadFileRetry(sealDownloadInfo, attempts)
 		core.CheckErr(downErr, "failed to download package seal file")
-		sealFilename := info.downloadedFilename
+		sealFilename := sealDownloadInfo.downloadedFilename
 
-		// download package zip
-		info = &downloadInfo{
+		// download package zip file
+		packageDownloadInfo := &downloadInfo{
 			name:     *name,
 			filename: fmt.Sprintf("%s.zip", remoteArt.FileRef),
 			uname:    uname,
@@ -595,24 +596,33 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 			tls:      tls,
 			api:      *api,
 		}
-		downErr = downloadFileRetry(info)
-		core.CheckErr(downErr, "failed to download package file")
-		packageFilename := info.downloadedFilename
+		downErr = downloadFileRetry(packageDownloadInfo, attempts)
+		core.CheckErr(downErr, "failed to download package zip file")
+		packageFilename := packageDownloadInfo.downloadedFilename
 
-		seal, err := r.loadSeal(sealFilename)
+		var (
+			seal  *data.Seal
+			valid bool
+		)
+		seal, err = r.loadSeal(sealFilename)
 		core.CheckErr(err, "cannot load package seal")
 
 		// if the downloaded package digest does not match the one stored in the seal manifest
-		if !seal.Valid(packageFilename) {
-			core.InfoLogger.Printf("package digest check failed, retrying download, stand by\n")
+		if valid, err = seal.Valid(packageFilename); !valid {
+			core.InfoLogger.Printf("package files corruption detected after download: %s, retrying %d times, stand by...\n", err, attempts)
 
-			// retry the download
-			downErr = downloadFileRetry(info)
-			core.CheckErr(downErr, "failed to download package file")
-			packageFilename = info.downloadedFilename
+			// retry the download of the package seal file
+			downErr = downloadFileRetry(sealDownloadInfo, attempts)
+			core.CheckErr(downErr, "retry failed to download the package seal file")
+			sealFilename = sealDownloadInfo.downloadedFilename
 
-			if !seal.Valid(packageFilename) {
-				core.RaiseErr("cannot pull package: digest check failed after retries")
+			// retry the download of the package zip file
+			downErr = downloadFileRetry(packageDownloadInfo, attempts)
+			core.CheckErr(downErr, "retry failed to download the package zip file")
+			packageFilename = packageDownloadInfo.downloadedFilename
+
+			if valid, err = seal.Valid(packageFilename); !valid {
+				core.RaiseErr("package files corruption detected after retry: %s", err)
 			}
 		}
 
@@ -663,7 +673,7 @@ func (r *LocalRegistry) loadSeal(sealFilename string) (*data.Seal, error) {
 	return seal, nil
 }
 
-func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS bool, targetPath string, certPath string, ignoreSignature bool) {
+func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetPath string, certPath string, ignoreSignature bool) {
 	var (
 		pubKeyPath = certPath
 		err        error
@@ -716,7 +726,8 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 		err = unzip(path.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef)), targetPath)
 		core.CheckErr(err, "cannot unzip package %s", fmt.Sprintf("%s.zip", artie.FileRef))
 		// check if the target path is a folder
-		info, err := os.Stat(targetPath)
+		var info os.FileInfo
+		info, err = os.Stat(targetPath)
 		core.CheckErr(err, "cannot stat target path %s", targetPath)
 		// only get rid of the target folder if there is one
 		if info.IsDir() {
@@ -734,18 +745,17 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, noTLS b
 }
 
 func checkSignature(name *core.PackageName, pubKeyPath string, seal *data.Seal, zipFilename string) error {
-	// var pubKey *rsa.PublicKey
 	var (
-		pgp *crypto.PGP
-		err error
+		primaryKey, backupKey *crypto.PGP
+		err                   error
 	)
 	if len(pubKeyPath) > 0 {
 		// retrieve the verification key from the specified location
-		pgp, err = crypto.LoadPGP(pubKeyPath, "")
+		primaryKey, err = crypto.LoadPGP(pubKeyPath, "")
 		core.CheckErr(err, "cannot load public key, cannot verify signature")
 	} else {
-		// otherwise load it from the registry store
-		pgp, err = crypto.LoadPGPPublicKey(name.Group, name.Name)
+		// otherwise, loads it from the registry store
+		primaryKey, backupKey, err = crypto.LoadKeys(*name, false)
 		core.CheckErr(err, "cannot load public key, cannot verify signature")
 	}
 	// get a slice to have the unencrypted signature
@@ -757,9 +767,21 @@ func checkSignature(name *core.PackageName, pubKeyPath string, seal *data.Seal, 
 	core.CheckErr(err, "cannot decode signature in the seal")
 	// if in debug mode prints out base64 decoded signature
 	core.Debug("seal stored signature:\n>> start on next line\n%s\n>> ended on previous line\n", string(sig))
-	// verify the signature
-	err = pgp.Verify(sum, sig)
-	core.CheckErr(err, "invalid digital signature")
+	// verify the signature using the primary key
+	err = primaryKey.Verify(sum, sig)
+	// if the verification failed
+	if err != nil {
+		// if a backup key exists
+		if backupKey != nil {
+			core.InfoLogger.Printf("invalid digital signature using primary key, attempting verification using backup key")
+			// verify the signature using the backup key
+			err = backupKey.Verify(sum, sig)
+			core.CheckErr(err, "invalid digital signature (used both, primary and backup keys)")
+		} else {
+			// raise the error as no backup key exists
+			core.CheckErr(err, "invalid digital signature (used primary key)")
+		}
+	}
 	return err
 }
 
@@ -872,38 +894,35 @@ func (r *LocalRegistry) GetSeal(name *Package) (*data.Seal, error) {
 	return seal, err
 }
 
-func (r *LocalRegistry) ImportKey(keyPath string, isPrivate bool, repoGroup string, repoName string) {
+func (r *LocalRegistry) ImportKey(keyPath string, isPrivate, isBackup bool, repoGroup string, repoName string) error {
+	var err error
 	if !filepath.IsAbs(keyPath) {
-		keyPath, err := filepath.Abs(keyPath)
+		keyPath, err = filepath.Abs(keyPath)
 		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
 	}
-	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
 	// only check it can read the key
-	_, err := crypto.LoadPGP(keyPath, "")
+	_, err = crypto.LoadPGP(keyPath, "")
 	core.CheckErr(err, "cannot read pgp key '%s'", keyPath)
-	// if so, then move the key to the correct location to preserve PEM block data
-	if isPrivate {
-		CopyFile(keyPath, path.Join(destPath, crypto.PrivateKeyName(prefix, "pgp")))
-	} else {
-		CopyFile(keyPath, path.Join(destPath, crypto.PublicKeyName(prefix, "pgp")))
+	destFile := crypto.KeyPath(repoGroup, repoName, isPrivate, isBackup)
+	destFolder := path.Dir(destFile)
+	// check if the target directory exists and if not creates it
+	if _, err = os.Stat(destFolder); os.IsNotExist(err) {
+		err = os.MkdirAll(destFolder, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("cannot create key directory '%s': %s", destFolder, err)
+		}
 	}
+	// if so, then move the key to the correct location to preserve PEM block data
+	return CopyFile(keyPath, destFile)
 }
 
-func (r *LocalRegistry) ExportKey(keyPath string, isPrivate bool, repoGroup string, repoName string) {
+func (r *LocalRegistry) ExportKey(keyPath string, isPrivate, isBackup bool, repoGroup string, repoName string) error {
+	var err error
 	if !filepath.IsAbs(keyPath) {
-		keyPath, err := filepath.Abs(keyPath)
+		keyPath, err = filepath.Abs(keyPath)
 		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
 	}
-	destPath, prefix := r.keyDestinationFolder(repoName, repoGroup)
-	if isPrivate {
-		keyName := crypto.PrivateKeyName(prefix, "pgp")
-		err := CopyFile(path.Join(destPath, keyName), path.Join(keyPath, keyName))
-		core.CheckErr(err, "cannot export private key")
-	} else {
-		keyName := crypto.PublicKeyName(prefix, "pgp")
-		err := CopyFile(path.Join(destPath, keyName), path.Join(keyPath, keyName))
-		core.CheckErr(err, "cannot export public key")
-	}
+	return CopyFile(crypto.KeyPath(repoGroup, repoName, isPrivate, isBackup), keyPath)
 }
 
 func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
@@ -1468,7 +1487,7 @@ func (r *LocalRegistry) Sign(pac, pkPath, pubPath string) error {
 	// if no private key path has been provided
 	if len(pkPath) == 0 {
 		// load the key from the local registry
-		pk, err = crypto.LoadPGPPrivateKey(packageName.Group, packageName.Name)
+		pk, _, err = crypto.LoadKeys(*packageName, true)
 		if err != nil {
 			return fmt.Errorf("cannot load signing key: %s", err)
 		}

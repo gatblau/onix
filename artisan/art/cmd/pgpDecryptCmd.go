@@ -8,6 +8,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/i18n"
@@ -18,7 +19,7 @@ import (
 	"strings"
 )
 
-// list local packages
+// PGPDecryptCmd decrypts a file using pgp encryption
 type PGPDecryptCmd struct {
 	cmd     *cobra.Command
 	keyPath string
@@ -64,7 +65,8 @@ func (b *PGPDecryptCmd) Run(cmd *cobra.Command, args []string) {
 	} else
 	// load the key based on the local repository resolution process
 	{
-		pgp, err = crypto.LoadPGPPrivateKey(b.group, b.name)
+		name, _ := core.ParseName(fmt.Sprintf("%s/%s", b.group, b.name))
+		pgp, _, err = crypto.LoadKeys(*name, true)
 		i18n.Err(err, i18n.ERR_CANT_LOAD_PRIV_KEY)
 	}
 	// check the key file provided has a private key

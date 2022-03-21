@@ -28,9 +28,9 @@ func TestTagV1ToLatestExist(t *testing.T) {
 	reg.Remove([]string{"test:latest", "test:V1"})
 	// build latest
 	builder := build.NewBuilder()
-	builder.Build(".", "", "", testLatest, "test1", false, false, "")
+	builder.Build(".", "", "", testLatest, "test1", false, false, "", false)
 	// build V1
-	builder.Build(".", "", "", testV1, "test1", false, false, "")
+	builder.Build(".", "", "", testV1, "test1", false, false, "", false)
 	// reload the registry
 	reg.Load()
 	testV1PId := reg.FindPackage(testV1).Id
@@ -65,7 +65,7 @@ func TestTagV1ToLatest(t *testing.T) {
 	// build latest
 	builder := build.NewBuilder()
 	// build V1
-	builder.Build(".", "", "", testV1, "test1", false, false, "")
+	builder.Build(".", "", "", testV1, "test1", false, false, "", false)
 	// reload the registry
 	reg.Load()
 	// tag

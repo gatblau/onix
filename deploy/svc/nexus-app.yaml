@@ -73,7 +73,7 @@ scripts:
           http://${bind=nexus-app}:${bind=nexus-app:port[http]}/service/rest/v1/repositories/docker/hosted \
           -H 'accept: application/json','Content-Type: application/json' \
           -d '{
-          "name": "aps-docker-registry",
+          "name": "docker-registry",
           "online": true,
           "storage": {
             "blobStoreName": "default",

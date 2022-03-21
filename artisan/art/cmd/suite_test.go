@@ -54,7 +54,7 @@ func TestExe(t *testing.T) {
 func TestBuild(t *testing.T) {
 	packageName, _ := core.ParseName("test")
 	builder := build.NewBuilder()
-	builder.Build("test", "", "", packageName, "test1", false, false, "")
+	builder.Build("super", "", "", packageName, "", false, false, "", false)
 }
 
 func TestRunC(t *testing.T) {

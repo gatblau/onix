@@ -5,6 +5,7 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package cmd
 
 import (
@@ -13,12 +14,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// list local packages
+// PGPImportCmd import a pgp key into the local artisan registry
 type PGPImportCmd struct {
 	cmd       *cobra.Command
 	group     string // the repository group for which the key should be used - if empty then the root is used
 	name      string // the repository name for which the key should be used
-	isPrivate *bool  //  whether the key is public or private
+	isPrivate bool   //  whether the key is public or private
+	isBackup  bool   //  whether the key is a primary or a backup key
 }
 
 func NewPGPImportCmd() *PGPImportCmd {
@@ -29,14 +31,15 @@ func NewPGPImportCmd() *PGPImportCmd {
 			Long:  `a private PGP/RSA key is used to digitally sign an package upon build, a public RSA key is used to verify the digital signature when the package is opened`,
 		},
 	}
-	c.isPrivate = c.cmd.Flags().BoolP("private", "k", false, "A flag indicating if the key to import is the private or public key.")
+	c.cmd.Flags().BoolVarP(&c.isPrivate, "private", "k", false, "A flag indicating if the key to import is the private or the public key.")
+	c.cmd.Flags().BoolVarP(&c.isBackup, "backup", "b", false, "A flag indicating if the key to import is the primary or the backup key.")
 	c.cmd.Flags().StringVarP(&c.group, "group", "g", "", "The repository group to which the key should be applied. \nIf not specified, the key is applied to the registry root and it is used for all repositories.")
 	c.cmd.Flags().StringVarP(&c.name, "name", "n", "", "The repository name to which the key should be applied. \nIf not specified, the key is applied to the repository group and it is used for all repositories under the group.")
 	c.cmd.Run = c.Run
 	return c
 }
 
-func (b *PGPImportCmd) Run(cmd *cobra.Command, args []string) {
+func (c *PGPImportCmd) Run(cmd *cobra.Command, args []string) {
 	// check if a path to the key has been provided
 	if len(args) == 0 {
 		core.RaiseErr("the path to the key file to be imported must be provided when calling this command")
@@ -45,5 +48,5 @@ func (b *PGPImportCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("more than one argument have been provided, only the path to the key file is required")
 	}
 	l := registry.NewLocalRegistry()
-	l.ImportKey(args[0], *b.isPrivate, b.group, b.name)
+	core.CheckErr(l.ImportKey(args[0], c.isPrivate, c.isBackup, c.group, c.name), "cannot import key")
 }

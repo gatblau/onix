@@ -13,8 +13,6 @@ profiles:
       - name: artreg-app
       - name: ox-app
       - name: pilotctl-app
-        is:
-          load-balanced: 2
 
   - name: full-test-data
     description: deploys all services

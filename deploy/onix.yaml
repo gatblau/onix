@@ -29,15 +29,12 @@ profiles:
       - name: pilotctl-app
       - name: pgadmin-app
       - name: mongodb-gui-app
-      
+
   - name: config-db
     description: deploys the configuration database only
     services:
       - name: db
       - name: ox-app
-        is:
-          # overrides load-balanced behaviour in service
-          load-balanced: 2
 
   - name: art-reg
     description: deploys the artisan package registry only
@@ -56,6 +53,8 @@ services:
     uri: https://raw.githubusercontent.com/gatblau/onix/dev/deploy/svc/db.yaml
     image: IMAGE_POSTGRES
     port: "5432"
+    is:
+      public:
 
   - name: evr-mongo-db
     description: Mongo Database for Event Receiver
