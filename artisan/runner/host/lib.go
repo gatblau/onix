@@ -6,16 +6,18 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package parser
+package main
 
 import (
-	"encoding/json"
+	"fmt"
+	"net/http"
 )
 
-func NewMinioEvent(f []byte) (*MinioEvent, error) {
-	event := MinioEvent{}
-	if err := json.Unmarshal(f, &event); err != nil {
-		return nil, err
+func checkErr(w http.ResponseWriter, msg string, err error) bool {
+	if err != nil {
+		msg := fmt.Sprintf("%s: %s\n", msg, err)
+		fmt.Printf(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
 	}
-	return &event, nil
+	return err != nil
 }

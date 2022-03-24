@@ -20,8 +20,8 @@ func main() {
 	s := httpserver.New("art-host-runner")
 	// add handlers
 	s.Http = func(router *mux.Router) {
-		fmt.Printf("handler is registered...\n")
-		router.HandleFunc("/host/{cmd-key}", createOSPatchingHandler).Methods("POST")
+		router.HandleFunc("/host/{cmd-key}", executeCommandHandler).Methods("POST")
+		fmt.Printf("handler is registered...")
 	}
 	s.Serve()
 }

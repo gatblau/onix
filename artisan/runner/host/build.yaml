@@ -6,7 +6,7 @@ labels:
   architecture: AMD64
 
 env:
-  GROUP_NAME: aps
+  ART_GROUP: aps
   APP_NAME: host-runner
   CGO_ENABLED: 0
   GOARCH: amd64
@@ -43,24 +43,30 @@ functions:
     description: build Artisan package
     run:
       - $(go-build)
-      - art build . -t ${ART_REG}/${GROUP_NAME}/${APP_NAME}:$((cat ./version)) -p build-push
-      - art tag ${ART_REG}/${GROUP_NAME}/${APP_NAME}:$((cat ./version)) ${ART_REG}/${GROUP_NAME}/${APP_NAME}:latest
+      - art build . -t ${ART_REG}/${ART_GROUP}/${APP_NAME}:$((cat ./version)) -p build-push
+      - art tag ${ART_REG}/${ART_GROUP}/${APP_NAME}:$((cat ./version)) ${ART_REG}/${ART_GROUP}/${APP_NAME}:latest
 
   - name: push
     description: push to Artisan registry
     run:
-      - art push ${ART_REG}/${GROUP_NAME}/${APP_NAME}:$((cat ./version))
-      - art push ${ART_REG}/${GROUP_NAME}/${APP_NAME}:latest
+      - art push ${ART_REG}/${ART_GROUP}/${APP_NAME}:$((cat ./version))
+      - art push ${ART_REG}/${ART_GROUP}/${APP_NAME}:latest
 
   - name: all
     description: run new version, build and push
     run:
       - $(set-version)
       - $(build)
+      - $(manifest)
       - $(push)
 
   - name: swagen
     description: generates/refreshes the OpenAPI specifications for Artisan's HTTP API
     run:
       - swag init -d ./ -g handlers.go
+
+  - name: manifest
+    run:
+      - rm -f ./manifest.md
+      - art manifest ${ART_REG}/${ART_GROUP}/${APP_NAME}:$((cat ./version)) -o=mdf      
 ...

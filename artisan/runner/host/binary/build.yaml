@@ -11,14 +11,6 @@ input:
       required: true
       type: string
   secret:
-    - name: OBJECT_STORE_ACCESS_KEY
-      description: Object storage access key or user name that will be used to connect remote object store
-      required: true
-      type: string
-    - name: OBJECT_STORE_SECRET_KEY
-      description: Object storage secret key or password that will be used to connect remote object store
-      required: true
-      type: string
     - name: OX_WAPI_USER
       description: Onix wapi user name.
       required: true
@@ -38,8 +30,6 @@ functions:
         - OX_WAPI_URI
         - OX_WAPI_INSECURE_SKIP_VERIFY
       secret:
-        - OBJECT_STORE_ACCESS_KEY
-        - OBJECT_STORE_SECRET_KEY
         - OX_WAPI_USER
         - OX_WAPI_PWD
   - name: uninstall
