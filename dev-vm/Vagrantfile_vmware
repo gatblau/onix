@@ -24,7 +24,7 @@
 VM_NAME="vagrant1"
 VM_MEM=2048
 VM_CPU=2
-VM_USER="steve"
+VM_USER="gatblau"
 VM_USER_PUBKEY="ssh-rsa ....."
 # Note: the standard vagrant user uses 1000 by default - please do NOT use UID/GID of 1000 !
 VM_UID=1001
