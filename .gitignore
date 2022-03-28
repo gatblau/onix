@@ -15,3 +15,4 @@ version
 .vagrant
 artisan/art/art
 artisan/runner/host/env
+artisan/runner/host/binary/host-runner

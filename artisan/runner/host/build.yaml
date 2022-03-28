@@ -32,7 +32,7 @@ functions:
       GOOS: linux
     run:
       - rm -f binary/host-runner     
-      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o binary/host-runner -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o binary/${APP_NAME} -v
 
   - name: set-version
     description: set new version reference
@@ -59,6 +59,7 @@ functions:
       - $(build)
       - $(manifest)
       - $(push)
+      - rm -f binary/${APP_NAME}
 
   - name: swagen
     description: generates/refreshes the OpenAPI specifications for Artisan's HTTP API
