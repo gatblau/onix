@@ -1,6 +1,6 @@
 /*
-  Onix Config Manager - Pilot
-  Copyright (c) 2018-2021 by www.gatblau.org
+  Onix Config Manager - Host Pilot
+  Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
@@ -10,7 +10,9 @@ package core
 
 import (
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	ctl "github.com/gatblau/onix/pilotctl/types"
+	"github.com/pkg/profile"
 	"os"
 	"path"
 	"strings"
@@ -27,9 +29,20 @@ type Pilot struct {
 	worker       *Worker
 	connected    bool
 	pingInterval time.Duration
+	options      PilotOptions
 }
 
-func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
+type PilotOptions struct {
+	UseHwId            bool
+	Logs               bool
+	Tracing            bool
+	Info               *ctl.HostInfo
+	CPU                bool
+	MEM                bool
+	InsecureSkipVerify bool
+}
+
+func NewPilot(options PilotOptions) (*Pilot, error) {
 	// https://textkool.com/en/ascii-art-generator?hl=default&vl=default&font=Lean&text=PILOT%0A
 	fmt.Println(`+-----------------| ONIX CONFIG MANAGER |-----------------+
 |      _/_/_/    _/_/_/  _/          _/_/    _/_/_/_/_/   |
@@ -39,10 +52,13 @@ func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
 |  _/        _/_/_/  _/_/_/_/    _/_/        _/           |
 |                     Host Controller                     | 
 +---------------------------------------------------------+`)
+	// configure code execution trace
+	TRA, CE = NewTracer(options.Tracing)
 	InfoLogger.Printf("launching pilot version %s\n", Version)
+	info := options.Info
 	checkPaths()
-	activate(hostInfo)
-	InfoLogger.Printf("using Host UUID = '%s'\n", hostInfo.HostUUID)
+	activate(options)
+	InfoLogger.Printf("using Host UUID = '%s'\n", info.HostUUID)
 	// read configuration
 	cfg := &Config{}
 	err := cfg.Load()
@@ -52,15 +68,28 @@ func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
 	// create a new job worker
 	worker := NewCmdRequestWorker()
 	// create proxy to talk to pilotctl
-	r, err := NewPilotCtl(worker, hostInfo)
+	r, err := NewPilotCtl(worker, options)
 	if err != nil {
 		return nil, err
 	}
 	p := &Pilot{
-		cfg:    cfg,
-		info:   hostInfo,
-		ctl:    r,
-		worker: worker,
+		cfg:     cfg,
+		info:    info,
+		ctl:     r,
+		worker:  worker,
+		options: options,
+	}
+	// configure cpu or memory profiling
+	if options.CPU && !options.MEM {
+		// cpu profiling
+		core.InfoLogger.Printf("enabling CPU profiling\n")
+		defer profile.Start(profile.CPUProfile).Stop()
+	} else if options.MEM && !options.CPU {
+		// memory profiling
+		core.InfoLogger.Printf("enabling MEMORY profiling\n")
+		defer profile.Start(profile.MemProfile).Stop()
+	} else if options.MEM && options.CPU {
+		core.RaiseErr("cannot profile cpu and memory at the same time")
 	}
 	// return a new pilot
 	return p, nil
@@ -69,7 +98,7 @@ func NewPilot(hostInfo *ctl.HostInfo) (*Pilot, error) {
 func (p *Pilot) Start() {
 	defer TRA(CE())
 	// starts the collector service
-	if collectorEnabled() {
+	if p.options.Logs {
 		// creates a new SysLog collector
 		collector, err := NewCollector("0.0.0.0", p.cfg.getSyslogPort())
 		if err != nil {

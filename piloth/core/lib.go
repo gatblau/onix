@@ -17,7 +17,6 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
-	"strconv"
 	"time"
 )
 
@@ -76,25 +75,6 @@ func nextInterval(failureCount float64) time.Duration {
 		ErrorLogger.Printf(err.Error())
 	}
 	return duration
-}
-
-// collectorEnabled determine if the log collector should be enabled
-// uses PILOT_LOG_COLLECTION, if its value is not set then the collector is enabled by default
-// to disable the collector set PILOT_LOG_COLLECTION=false (possible values "0", "f", "F", "false", "FALSE", "False")
-func collectorEnabled() (enabled bool) {
-	defer TRA(CE())
-	var err error
-	collection := os.Getenv("PILOT_LOG_COLLECTION")
-	if len(collection) > 0 {
-		enabled, err = strconv.ParseBool(collection)
-		if err != nil {
-			WarningLogger.Printf("invalid format for PILOT_LOG_COLLECTION variable: %s\n; log collection is enabled by default", err)
-			enabled = true
-		}
-	} else {
-		enabled = true
-	}
-	return enabled
 }
 
 func (p *Pilot) debug(msg string, a ...interface{}) {

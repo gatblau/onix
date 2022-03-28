@@ -27,11 +27,11 @@ func (ak *AK) String() string {
 }
 
 type AKInfo struct {
-	HostUUID   string    `json:"host_uuid"`
-	MacAddress string    `json:"mac_address"`
-	CtlURI     string    `json:"ctl_uri"`
-	Expiry     time.Time `json:"expiry"`
-	VerifyKey  string    `json:"verify_key"`
+	HostUUID  string    `json:"host_uuid"`
+	DeviceId  string    `json:"device_id"`
+	CtlURI    string    `json:"ctl_uri"`
+	Expiry    time.Time `json:"expiry"`
+	VerifyKey string    `json:"verify_key"`
 }
 
 func (a AKInfo) Validate() {
@@ -42,9 +42,9 @@ func (a AKInfo) Validate() {
 		ErrorLogger.Printf("cannot launch pilot: activation key does not have a verification key\n")
 		os.Exit(1)
 	}
-	if len(a.MacAddress) == 0 {
+	if len(a.DeviceId) == 0 {
 		// cannot continue
-		ErrorLogger.Printf("cannot launch pilot: activation key does not have a MAC address\n")
+		ErrorLogger.Printf("cannot launch pilot: activation key does not have a device Id\n")
 		os.Exit(1)
 	}
 	if len(a.HostUUID) == 0 {

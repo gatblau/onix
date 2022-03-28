@@ -1,6 +1,6 @@
 /*
-  Onix Config Manager - Pilot
-  Copyright (c) 2018-2021 by www.gatblau.org
+  Onix Config Manager - Host Pilot
+  Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
@@ -13,35 +13,44 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	ctl "github.com/gatblau/onix/pilotctl/types"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
 )
 
-type AKToken struct {
-	info       userKeyInfo
-	Username   string    `json:"username"`
-	MacAddress string    `json:"mac_address"`
-	IpAddress  string    `json:"ip_address"`
-	Hostname   string    `json:"hostname"`
-	Time       time.Time `json:"time"`
+type AKRequestBearerToken struct {
+	info     userKeyInfo
+	Username string `json:"username"`
+	// DeviceId is either the host primary interface MAC address or the device hardware uuid
+	DeviceId  string    `json:"device_id"`
+	IpAddress string    `json:"ip_address"`
+	Hostname  string    `json:"hostname"`
+	Time      time.Time `json:"time"`
 }
 
-func NewAKToken(clientInfo userKeyInfo, hostInfo *ctl.HostInfo) AKToken {
+func NewAKRequestBearerToken(clientInfo userKeyInfo, options PilotOptions) AKRequestBearerToken {
 	defer TRA(CE())
-	return AKToken{
-		info:       clientInfo,
-		Username:   clientInfo.Username,
-		MacAddress: hostInfo.PrimaryMAC,
-		IpAddress:  hostInfo.HostIP,
-		Hostname:   hostInfo.HostName,
-		Time:       time.Now(),
+	var deviceId string
+	// if hardware id should be used to identify the device
+	if options.UseHwId {
+		// then set the device identifier to the hardware id
+		deviceId = options.Info.HardwareId
+	} else {
+		// otherwise, set it to the primary mac address
+		deviceId = options.Info.PrimaryMAC
+	}
+	return AKRequestBearerToken{
+		info:      clientInfo,
+		Username:  clientInfo.Username,
+		DeviceId:  deviceId,
+		IpAddress: options.Info.HostIP,
+		Hostname:  options.Info.HostName,
+		Time:      time.Now(),
 	}
 }
 
-func (t AKToken) String() string {
+func (t AKRequestBearerToken) String() string {
 	defer TRA(CE())
 	b, err := json.Marshal(t)
 	if err != nil {
@@ -51,7 +60,7 @@ func (t AKToken) String() string {
 	return fmt.Sprintf("Bearer %s %s", t.Username, encrypt(t.info.SK, hex.EncodeToString(b), t.info.IV))
 }
 
-func activate(info *ctl.HostInfo) {
+func activate(options PilotOptions) {
 	defer TRA(CE())
 	var (
 		failures float64 = 0
@@ -79,7 +88,7 @@ func activate(info *ctl.HostInfo) {
 			os.Exit(1)
 		}
 		// fetch remote key
-		fetched, err := requestAKey(*tenant, info)
+		fetched, err := requestAKey(*tenant, options)
 		// if failed retry
 		for !fetched {
 			// calculates wait interval with exponential backoff and jitter
@@ -89,7 +98,7 @@ func activate(info *ctl.HostInfo) {
 			time.Sleep(interval)
 			failures++
 			// try again
-			fetched, err = requestAKey(*tenant, info)
+			fetched, err = requestAKey(*tenant, options)
 			// if successful
 			if err == nil {
 				// break the loop
@@ -99,16 +108,9 @@ func activate(info *ctl.HostInfo) {
 		InfoLogger.Printf("activation key deployed, pilot is ready to launch\n")
 	}
 	// before doing anything, verify activation key
-	ak, err := loadAKey(AkFile())
+	akInfo, err := LoadActivationKey()
 	if err != nil {
-		// if it cannot load activation key exit
-		ErrorLogger.Printf("cannot launch pilot: cannot load activation key, %s\n", err)
-		os.Exit(1)
-	}
-	akInfo, err := readAKey(*ak)
-	if err != nil {
-		// if it cannot load activation key exit
-		ErrorLogger.Printf("cannot launch pilot: cannot read activation key, %s\n", err)
+		fmt.Errorf("cannot start pilot: %s", err)
 		os.Exit(1)
 	}
 	// set the activation
@@ -116,35 +118,58 @@ func activate(info *ctl.HostInfo) {
 	// validate the activation key
 	A.Validate()
 	// check expiration date
-	// if A.Expiry.Before(time.Now()) {
-	// 	// if activation expired the exit
-	// 	ErrorLogger.Printf("cannot launch pilot: activation key expired\n")
-	// 	os.Exit(1)
-	// }
-	// check if the mac-address is valid
-	validMac := false
-	for _, address := range info.MacAddress {
-		if address == A.MacAddress {
-			validMac = true
-			break
-		}
-	}
-	if !validMac {
+	if A.Expiry.Before(time.Now()) {
 		// if activation expired the exit
-		ErrorLogger.Printf("cannot launch pilot: invalid mac address\n")
+		ErrorLogger.Printf("cannot launch pilot: activation key expired\n")
 		os.Exit(1)
 	}
+	// if set to use hardware id for device identification
+	if options.UseHwId {
+		if A.DeviceId != options.Info.HardwareId {
+			// if the device Id is not the hardware id; then exit
+			ErrorLogger.Printf("cannot launch pilot: invalid host hardware id: %s\n", options.Info.HardwareId)
+			os.Exit(1)
+		}
+	} else { // use mac address for device identification
+		// check if the mac-address matches the device id in the activation key
+		matchedMac := false
+		for _, macAddress := range options.Info.MacAddress {
+			if A.DeviceId == macAddress {
+				matchedMac = true
+				break
+			}
+		}
+		// if the mac address does not match
+		if !matchedMac {
+			// if the device Id is not the hardware id; then exit
+			ErrorLogger.Printf("cannot launch pilot: invalid host mac address: %s\n", options.Info.PrimaryMAC)
+			os.Exit(1)
+		}
+	}
 	// set host UUID
-	info.HostUUID = A.HostUUID
+	options.Info.HostUUID = A.HostUUID
 }
 
-func requestAKey(clientKey userKeyInfo, info *ctl.HostInfo) (bool, error) {
-	bearerToken := NewAKToken(clientKey, info)
+func LoadActivationKey() (*AKInfo, error) {
+	ak, err := loadAKey(AkFile())
+	if err != nil {
+		// if it cannot load activation key exit
+		return nil, fmt.Errorf("cannot load activation key, %s\n", err)
+	}
+	akInfo, err := readAKey(*ak)
+	if err != nil {
+		// if it cannot load activation key exit
+		return nil, fmt.Errorf("cannot read activation key, %s\n", err)
+	}
+	return akInfo, nil
+}
+
+func requestAKey(clientKey userKeyInfo, options PilotOptions) (bool, error) {
+	bearerToken := NewAKRequestBearerToken(clientKey, options)
 	c := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				// TODO: set to false if in production!!!
-				InsecureSkipVerify: true,
+				InsecureSkipVerify: options.InsecureSkipVerify,
 			},
 		},
 		Timeout: time.Second * 60,

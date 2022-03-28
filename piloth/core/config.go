@@ -49,20 +49,6 @@ const (
 	PilotUserKey
 )
 
-func (c *Config) getActivationURI() string {
-	defer TRA(CE())
-	uri := c.Get(PilotActivationURI)
-	if len(uri) == 0 {
-		ErrorLogger.Printf("cannot launch pilot: missing %s\n", PilotActivationURI.String())
-		os.Exit(1)
-	}
-	if !strings.HasPrefix(uri, "http") {
-		ErrorLogger.Printf("activation URI %s=%s is missing protocol scheme\n", PilotActivationURI.String(), uri)
-		os.Exit(1)
-	}
-	return uri
-}
-
 func (c *Config) getSyslogPort() string {
 	defer TRA(CE())
 	port := c.Get(PilotSyslogPort)
