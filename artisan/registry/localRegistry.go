@@ -18,6 +18,7 @@ import (
 	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/i18n"
+	"github.com/gatblau/onix/oxlib/resx"
 	"io/ioutil"
 	"log"
 	"math"
@@ -1032,7 +1033,7 @@ func (r *LocalRegistry) Import(uri []string, creds, pubKeyPath string, ignoreSig
 
 func (r *LocalRegistry) importTar(uri, creds, pubKeyPath string, ignoreSignature bool) error {
 	core.InfoLogger.Printf("reading => %s\n", uri)
-	tarBytes, err := core.ReadFile(uri, creds)
+	tarBytes, err := resx.ReadFile(uri, creds)
 	if err != nil {
 		return err
 	}
