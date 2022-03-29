@@ -6,14 +6,15 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package main
+package cmd
 
-import "github.com/gatblau/onix/piloth/cmd"
-
-func main() {
-	rootCmd := cmd.InitialiseRootCmd()
-
-	// Execute adds all child commands to the root command and sets flags appropriately.
-	// This is called by main.main(). It only needs to happen once to the rootCmd.
-	rootCmd.Cmd.Execute()
+func InitialiseRootCmd() *RootCmd {
+	rootCmd := NewRootCmd()
+	launchCmd := NewLaunchCmd()
+	configCmd := NewConfigCmd()
+	rootCmd.Cmd.AddCommand(
+		launchCmd.cmd,
+		configCmd.cmd,
+	)
+	return rootCmd
 }

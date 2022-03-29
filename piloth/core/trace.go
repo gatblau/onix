@@ -1,6 +1,6 @@
 /*
-  Onix Config Manager - Pilot
-  Copyright (c) 2018-2021 by www.gatblau.org
+  Onix Config Manager - Host Pilot
+  Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
@@ -30,14 +30,19 @@ import (
 	"time"
 )
 
-var TRA, CE = NewTracer()
+type TraFx func(string)
+type CeFx func(...interface{}) string
 
-func NewTracer() (func(string), func(...interface{}) string) {
+var (
+	TRA TraFx
+	CE  CeFx
+)
+
+func NewTracer(enabled bool) (TraFx, CeFx) {
 	var logger *log.Logger
 	// check if tracing is enabled
-	t := os.Getenv("PILOT_TRACING")
-	if len(t) > 0 {
-		// if the trace folder does not exists, create it
+	if enabled {
+		// if the trace folder does not exist, create it
 		_, err := os.Stat(path.Join(DataPath(), "trace"))
 		if err != nil {
 			err = os.MkdirAll(path.Join(DataPath(), "trace"), os.ModePerm)
@@ -54,7 +59,7 @@ func NewTracer() (func(string), func(...interface{}) string) {
 	}
 	// return tracing functions
 	return newTrace(&Options{
-		DisableTracing:    len(t) == 0,
+		DisableTracing:    !enabled,
 		CustomLogger:      logger,
 		DisableDepthValue: false,
 		DisableNesting:    false,

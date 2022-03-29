@@ -1,12 +1,13 @@
-package core
-
 /*
-  Onix Config Manager - Pilot
-  Copyright (c) 2018-2021 by www.gatblau.org
+  Onix Config Manager - Host Pilot
+  Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package core
+
 import (
 	"encoding/json"
 	"fmt"
@@ -28,7 +29,7 @@ type PilotCtl struct {
 	worker *Worker
 }
 
-func NewPilotCtl(worker *Worker, hostInfo *ctl.HostInfo) (*PilotCtl, error) {
+func NewPilotCtl(worker *Worker, options PilotOptions) (*PilotCtl, error) {
 	defer TRA(CE())
 	conf := &Config{}
 	err := conf.Load()
@@ -48,7 +49,7 @@ func NewPilotCtl(worker *Worker, hostInfo *ctl.HostInfo) (*PilotCtl, error) {
 			BaseURI:            uri,
 			Username:           "_",
 			Password:           "_",
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: options.InsecureSkipVerify,
 			Timeout:            5 * time.Minute,
 		}
 		client, clientErr := ctlCore.NewClient(cfg)
@@ -64,7 +65,7 @@ func NewPilotCtl(worker *Worker, hostInfo *ctl.HostInfo) (*PilotCtl, error) {
 			if resp.StatusCode == 200 {
 				// return a client ready  to connect to such endpoint
 				core.InfoLogger.Printf("connected to control URI %s\n", uri)
-				return &PilotCtl{client: client, cfg: cfg, host: hostInfo, worker: worker}, nil
+				return &PilotCtl{client: client, cfg: cfg, host: options.Info, worker: worker}, nil
 			} else {
 				// otherwise, return the error
 				return nil, fmt.Errorf("endpoint found but could not connect, reason: %s", resp.Status)

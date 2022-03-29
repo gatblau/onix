@@ -1,5 +1,3 @@
-package core
-
 /*
   Onix Config Manager - Host Pilot
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -7,6 +5,8 @@ package core
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package core
 
 // Version placeholder variable for the version number displayed on cli
 // this value gets overridden at build time with the correct version in the build file
