@@ -35,8 +35,8 @@ func NewLaunchCmd() *LaunchCmd {
 		},
 	}
 	c.cmd.Flags().BoolVarP(&c.useHwId, "hw-id", "w", false, "use hardware uuid to identify device(instead of primary mac address)")
-	c.cmd.Flags().BoolVarP(&c.useHwId, "trace", "t", false, "enables tracing")
-	c.cmd.Flags().BoolVarP(&c.logCollector, "logs", "l", false, "enables log collection")
+	c.cmd.Flags().BoolVarP(&c.tracing, "trace", "t", false, "enables tracing")
+	c.cmd.Flags().BoolVarP(&c.logCollector, "syslog-collector", "s", false, "enables the syslog collector")
 	c.cpu = *c.cmd.Flags().Bool("cpu", false, "enables cpu profiling only; cannot profile memory")
 	c.mem = *c.cmd.Flags().Bool("mem", false, "enables memory profiling only; cannot profile cpu")
 	c.insecureSkipVerify = *c.cmd.Flags().Bool("insecureSkipVerify", false, "disables verification of certificates presented by the server and host name in that certificate; in this mode, TLS is susceptible to machine-in-the-middle attacks unless custom verification is used.")
