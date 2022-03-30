@@ -14,11 +14,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/crypto"
-	"github.com/gatblau/onix/artisan/data"
-	"github.com/gatblau/onix/artisan/i18n"
-	"github.com/gatblau/onix/oxlib/resx"
 	"io/ioutil"
 	"log"
 	"math"
@@ -29,6 +24,12 @@ import (
 	"strings"
 	"text/tabwriter"
 	"time"
+
+	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/crypto"
+	"github.com/gatblau/onix/artisan/data"
+	"github.com/gatblau/onix/artisan/i18n"
+	"github.com/gatblau/onix/oxlib/resx"
 )
 
 // LocalRegistry the default local registry implemented as a file system
@@ -1010,7 +1011,7 @@ func (r *LocalRegistry) ExportPackage(names []core.PackageName, sourceCreds, tar
 			}
 		}
 		core.InfoLogger.Printf("writing package tarball to %s", targetUri)
-		err = core.WriteFile(content, targetUri, targetCreds)
+		err = resx.WriteFile(content, targetUri, targetCreds)
 		if err != nil {
 			return err
 		}

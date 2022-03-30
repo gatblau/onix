@@ -10,17 +10,19 @@ package app
 
 import (
 	"fmt"
-	"github.com/gatblau/onix/artisan/build"
-	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/merge"
-	"github.com/google/uuid"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/gatblau/onix/artisan/build"
+	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/merge"
+	"github.com/gatblau/onix/oxlib/resx"
+	"github.com/google/uuid"
+	"gopkg.in/yaml.v2"
 )
 
 // loadSvcManFromImage extracts the service manifest from a docker image
@@ -86,7 +88,7 @@ func loadSvcManFromURI(svc SvcRef, credentials string) (*SvcManifest, error) {
 		content []byte
 		err     error
 	)
-	content, err = core.ReadFile(svc.URI, credentials)
+	content, err = resx.ReadFile(svc.URI, credentials)
 	if err != nil {
 		return nil, err
 	}

@@ -12,16 +12,17 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"github.com/gatblau/onix/artisan/app/behaviour"
-	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/export"
-	"gopkg.in/yaml.v2"
 	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"text/template"
+
+	"github.com/gatblau/onix/artisan/app/behaviour"
+	"github.com/gatblau/onix/artisan/export"
+	"github.com/gatblau/onix/oxlib/resx"
+	"gopkg.in/yaml.v2"
 )
 
 // Manifest the application manifest that is made up of one or more service manifests
@@ -146,7 +147,7 @@ func NewAppMan(uri, profile, credentials string) (man *Manifest, err error) {
 		}
 	}
 	// generically load the manifest
-	manBytes, err := core.ReadFile(uri, credentials)
+	manBytes, err := resx.ReadFile(uri, credentials)
 	if err != nil {
 		return
 	}
@@ -955,7 +956,7 @@ func (m *Manifest) loadSpec(uri string) (*export.Spec, error) {
 		uri = fmt.Sprintf("./%s", uri)
 	}
 	root := uri[:strings.LastIndex(uri, "/")]
-	specBytes, err := core.ReadFile(fmt.Sprintf("%s/%s/%s", root, m.Version, "spec.yaml"), m.credentials)
+	specBytes, err := resx.ReadFile(fmt.Sprintf("%s/%s/%s", root, m.Version, "spec.yaml"), m.credentials)
 	if err != nil {
 		return nil, err
 	}
