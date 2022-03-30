@@ -68,7 +68,7 @@ func executeCommandHandler(w http.ResponseWriter, r *http.Request) {
 	if checkErr(w, "Error while creating temp folder ", err) {
 		return
 	}
-	fmt.Printf("temp folder is =====> ", t)
+
 	d := path.Join(t, "request-body")
 	err = core.WriteFile(body, d, "")
 	if checkErr(w, fmt.Sprintf("%s: [ %s ]\n", "Error while writing request body to temp path ", d), err) {
@@ -88,7 +88,7 @@ func executeCommandHandler(w http.ResponseWriter, r *http.Request) {
 		cmdEnv.Vars["ARTISAN_DEBUG"] = "true"
 	}
 
-	cmdString := fmt.Sprintf("art %s -u %s:%s %s %s --path=%s -f", "exe", cmd.User, cmd.Pwd, cmd.Package, cmd.Function, t)
+	cmdString := fmt.Sprintf("art %s -u %s:%s %s %s --path=%s", "exe", cmd.User, cmd.Pwd, cmd.Package, cmd.Function, t)
 	// run and return
 	out, err := build.ExeAsync(cmdString, ".", cmdEnv, false)
 	if checkErr(w, fmt.Sprintf("Error while executing artisan package function using command [ %s ]", cmdString), err) {
