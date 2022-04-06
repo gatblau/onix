@@ -11,11 +11,15 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	"github.com/shirou/gopsutil/cpu"
 	hostUtil "github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
 	"math"
 	"net"
+	"os/exec"
+	"regexp"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -38,6 +42,7 @@ type HostInfo struct {
 	BootTime        time.Time
 	MacAddress      []string
 	PrimaryMAC      string
+	HardwareId      string
 }
 
 func NewHostInfo() (*HostInfo, error) {
@@ -83,6 +88,7 @@ func NewHostInfo() (*HostInfo, error) {
 		CPUs:        cpus,
 		MacAddress:  macList,
 		PrimaryMAC:  primaryMAC,
+		HardwareId:  getHwId(),
 	}
 	// return
 	return info, nil
@@ -147,26 +153,40 @@ func getPrimaryIP() (string, error) {
 	return ipAddress.IP.String(), nil
 }
 
-func test() {
-	ifaces, _ := net.Interfaces()
-	// handle err
-	for _, i := range ifaces {
-		addrs, _ := i.Addrs()
-		// handle err
-		for _, addr := range addrs {
-			var ip net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-			case *net.IPAddr:
-				ip = v.IP
-			}
-			// process IP address
-			if ip.To4() != nil {
-				fmt.Printf("IP is -> %s\n", ip.To4().String())
-			} else {
-				fmt.Printf("IP is -> %s\n", ip.String())
+func getHwId() string {
+	switch runtime.GOOS {
+	case "linux":
+		c := exec.Command("dmidecode", "-s", "system-uuid")
+		out, err := c.Output()
+		if err != nil {
+			core.ErrorLogger.Printf("cannot find system uuid: %s\n", err)
+			return ""
+		}
+		return string(out[:])
+	case "darwin":
+		// system_profiler SPHardwareDataType | grep "Hardware UUID"
+		c := exec.Command("system_profiler", "SPHardwareDataType")
+		out, err := c.Output()
+		if err != nil {
+			core.ErrorLogger.Printf("cannot find system uuid: %s\n", err)
+			return ""
+		}
+		r, _ := regexp.Compile(".*Hardware UUID: (?P<HW_ID>.*)\\b")
+		match := r.FindStringSubmatch(string(out[:]))
+		result := make(map[string]string)
+		for i, name := range r.SubexpNames() {
+			if i != 0 && name != "" {
+				result[name] = match[i]
 			}
 		}
+		if _, exists := result["HW_ID"]; !exists {
+			core.ErrorLogger.Printf("cannot find system uuid for OS '%s': %s\n", runtime.GOOS, out)
+			return ""
+		}
+		return result["HW_ID"]
+	default:
+		core.ErrorLogger.Printf("does not support finding system uuid for '%s'\n", runtime.GOOS)
+		return ""
 	}
+	return ""
 }
