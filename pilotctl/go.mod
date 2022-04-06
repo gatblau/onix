@@ -13,7 +13,6 @@ require (
 	github.com/gatblau/onix/artisan v0.0.0-00010101000000-000000000000
 	github.com/gatblau/onix/oxlib v0.0.0-00010101000000-000000000000
 	github.com/go-openapi/spec v0.20.4 // indirect
-	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/jackc/pgconn v1.8.1
 	github.com/jackc/pgtype v1.7.0

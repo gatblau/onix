@@ -33,6 +33,7 @@ func main() {
 
 		// apply authorisation to admin user http handlers
 		router.Handle("/host", s.Authorise(hostQueryHandler)).Methods("GET")
+		router.Handle("/host/{host-uuid}", s.Authorise(hostDecommissionHandler)).Methods("DELETE")
 		router.Handle("/cmd", s.Authorise(updateCmdHandler)).Methods("PUT")
 		router.Handle("/cmd", s.Authorise(getAllCmdHandler)).Methods("GET")
 		router.Handle("/cmd/{name}", s.Authorise(getCmdHandler)).Methods("GET")

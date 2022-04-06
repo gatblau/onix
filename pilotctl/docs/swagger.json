@@ -426,6 +426,41 @@
                 }
             }
         },
+        "/host/{host-uuid}": {
+            "delete": {
+                "description": "removes the host from the list of available hosts so that it can be no longer managed",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Host"
+                ],
+                "summary": "Decommissions a host",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the unique identifier for the host",
+                        "name": "host-uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/job": {
             "get": {
                 "description": "Returns a list of jobs filtered by the specified logistics tags",

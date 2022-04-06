@@ -527,6 +527,30 @@ paths:
       summary: Get All Hosts
       tags:
       - Host
+  /host/{host-uuid}:
+    delete:
+      description: removes the host from the list of available hosts so that it can
+        be no longer managed
+      parameters:
+      - description: the unique identifier for the host
+        in: path
+        name: host-uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Decommissions a host
+      tags:
+      - Host
   /job:
     get:
       description: Returns a list of jobs filtered by the specified logistics tags

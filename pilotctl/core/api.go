@@ -1,12 +1,13 @@
-package core
-
 /*
   Onix Pilot Host Control
-  Copyright (c) 2018-2021 by www.gatblau.org
+  Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package core
+
 import (
 	"database/sql"
 	"encoding/base64"
@@ -74,7 +75,7 @@ func (r *API) PublishEvents(events *Events) {
 func (r *API) Register(reg *RegistrationRequest) (*RegistrationResponse, error) {
 	// registers the host with the cmdb
 	result, err := r.ox.PutItem(&oxc.Item{
-		Key:         strings.ToUpper(fmt.Sprintf("HOST:%s:%s", reg.MachineId, reg.Hostname)),
+		Key:         strings.ToUpper(fmt.Sprintf("HOST:%s", reg.MachineId)),
 		Name:        strings.ToUpper(fmt.Sprintf("HOST_%s", strings.Replace(reg.Hostname, " ", "_", -1))),
 		Description: "Pilot registered remote host",
 		Status:      0,
@@ -772,6 +773,20 @@ func (r *API) UndoRegistration(mac string) error {
 		return fmt.Errorf("MAC-ADDRESS is missing")
 	}
 	return r.db.RunCommand("select pilotctl_unset_registration($1)", mac)
+}
+
+func (r *API) DecommissionHost(hostUUID string) error {
+	if len(hostUUID) == 0 {
+		return fmt.Errorf("HOST-UUID is missing")
+	}
+	// set a decom date for the host
+	err := r.db.RunCommand("select pilotctl_decom_host($1)", hostUUID)
+	if err != nil {
+		return err
+	}
+	// delete host from cmdb
+	_, err = r.ox.DeleteItem(&oxc.Item{Key: strings.ToUpper(fmt.Sprintf("HOST:%s", hostUUID))})
+	return err
 }
 
 func reverse(str string) (result string) {

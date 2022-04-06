@@ -145,6 +145,26 @@ func hostQueryHandler(w http.ResponseWriter, r *http.Request) {
 	httpserver.Write(w, r, hosts)
 }
 
+// @Summary Decommissions a host
+// @Description removes the host from the list of available hosts so that it can be no longer managed
+// @Tags Host
+// @Router /host/{host-uuid} [delete]
+// @Param host-uuid path string true "the unique identifier for the host"
+// @Produce json
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 204 {string} successful decommission
+func hostDecommissionHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	hostUUID := vars["host-uuid"]
+	err := core.Api().DecommissionHost(hostUUID)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // registerHandler excluded from swagger as it is accessed by pilot with a special time-bound access token
 func registerHandler(w http.ResponseWriter, r *http.Request) {
 	// get http body
