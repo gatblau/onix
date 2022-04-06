@@ -1,0 +1,39 @@
+---
+input:
+  var:
+    - name: OX_WAPI_URI
+      description: Onix wapi uri.
+      required: true
+      type: string
+    - name: OX_WAPI_INSECURE_SKIP_VERIFY
+      description: Whether to skip SSL insecure access to onix wapi api.
+      default: true
+      required: true
+      type: string
+  secret:
+    - name: OX_WAPI_USER
+      description: Onix wapi user name.
+      required: true
+      type: string
+    - name: OX_WAPI_PWD
+      description: Onix wapi password.
+      required: true
+      type: string      
+functions:
+  - name: install
+    description: Start the host-runner application
+    export: true
+    run:
+      - sh -c './install.sh'
+    input:
+      var:
+        - OX_WAPI_URI
+        - OX_WAPI_INSECURE_SKIP_VERIFY
+      secret:
+        - OX_WAPI_USER
+        - OX_WAPI_PWD
+  - name: uninstall
+    description: Stop the host-runner application
+    export: true
+    run:
+      - sh -c './uninstall.sh'
