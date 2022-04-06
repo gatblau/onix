@@ -69,7 +69,7 @@ func executeCommandHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d := path.Join(t, "request-body")
+	d := path.Join(t, "context")
 	err = core.WriteFile(body, d, "")
 	if checkErr(w, fmt.Sprintf("%s: [ %s ]\n", "Error while writing request body to temp path ", d), err) {
 		return
