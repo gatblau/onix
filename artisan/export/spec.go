@@ -10,15 +10,17 @@ package export
 
 import (
 	"fmt"
-	"github.com/gatblau/onix/artisan/build"
-	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/merge"
-	"github.com/gatblau/onix/artisan/registry"
-	"gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/gatblau/onix/artisan/build"
+	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/merge"
+	"github.com/gatblau/onix/artisan/registry"
+	"github.com/gatblau/onix/oxlib/resx"
+	"gopkg.in/yaml.v2"
 )
 
 // Spec the specification for artisan artefacts to be exported
@@ -45,7 +47,7 @@ func NewSpec(path, creds string) (*Spec, error) {
 	}
 	// if path contains scheme it is remote
 	if strings.Contains(path, "://") {
-		content, err = core.ReadFile(path, creds)
+		content, err = resx.ReadFile(path, creds)
 		if err != nil {
 			return nil, fmt.Errorf("cannot read remote spec file: %s", err)
 		}
@@ -54,7 +56,7 @@ func NewSpec(path, creds string) (*Spec, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot get absolute path: %s", err)
 		}
-		content, err = core.ReadFile(path, creds)
+		content, err = resx.ReadFile(path, creds)
 		if err != nil {
 			return nil, fmt.Errorf("cannot read spec file %s: %s", path, err)
 		}
@@ -111,7 +113,7 @@ func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds, filter string) erro
 	// note: this is done last so that a minio notification can be triggered based on this file
 	// once all other artefacts have been exported
 	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
-	err := core.WriteFile(s.content, uri, targetCreds)
+	err := resx.WriteFile(s.content, uri, targetCreds)
 	if err != nil {
 		return fmt.Errorf("cannot save spec file: %s", err)
 	}
@@ -128,7 +130,7 @@ func ImportSpec(targetUri, targetCreds, filter, pubKeyPath string, ignoreSignatu
 	r := registry.NewLocalRegistry()
 	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
 	core.InfoLogger.Printf("retrieving %s\n", uri)
-	specBytes, err := core.ReadFile(uri, targetCreds)
+	specBytes, err := resx.ReadFile(uri, targetCreds)
 	if err != nil {
 		return fmt.Errorf("cannot read spec.yaml: %s", err)
 	}
@@ -194,7 +196,7 @@ func DownloadSpec(targetUri, targetCreds, localPath string) (*Spec, error) {
 	for _, pkg := range spec.Packages {
 		pkgUri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(pkg))
 		core.InfoLogger.Printf("downloading => %s\n", pkgUri)
-		tarBytes, err2 := core.ReadFile(pkgUri, targetCreds)
+		tarBytes, err2 := resx.ReadFile(pkgUri, targetCreds)
 		if err2 != nil {
 			return nil, err2
 		}
@@ -208,7 +210,7 @@ func DownloadSpec(targetUri, targetCreds, localPath string) (*Spec, error) {
 	for _, image := range spec.Images {
 		imageUri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(image))
 		core.InfoLogger.Printf("downloading => %s\n", imageUri)
-		tarBytes, err2 := core.ReadFile(imageUri, targetCreds)
+		tarBytes, err2 := resx.ReadFile(imageUri, targetCreds)
 		if err2 != nil {
 			return nil, err2
 		}
@@ -230,7 +232,7 @@ func UploadSpec(targetUri, targetCreds, localPath string) error {
 	if err = checkPath(localPath); err != nil {
 		return fmt.Errorf("cannot create local path: %s", err)
 	}
-	err = core.WriteFile(spec.content, fmt.Sprintf("%s/spec.yaml", targetUri), targetCreds)
+	err = resx.WriteFile(spec.content, fmt.Sprintf("%s/spec.yaml", targetUri), targetCreds)
 	if err != nil {
 		return err
 	}
@@ -242,7 +244,7 @@ func UploadSpec(targetUri, targetCreds, localPath string) error {
 		if readErr != nil {
 			return readErr
 		}
-		err = core.WriteFile(content, remoteUri, targetCreds)
+		err = resx.WriteFile(content, remoteUri, targetCreds)
 		if err != nil {
 			return err
 		}
@@ -255,7 +257,7 @@ func UploadSpec(targetUri, targetCreds, localPath string) error {
 		if readErr != nil {
 			return readErr
 		}
-		err = core.WriteFile(content, remoteUri, targetCreds)
+		err = resx.WriteFile(content, remoteUri, targetCreds)
 		if err != nil {
 			return err
 		}
