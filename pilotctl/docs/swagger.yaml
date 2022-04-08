@@ -551,6 +551,44 @@ paths:
       summary: Decommissions a host
       tags:
       - Host
+  /info/sync:
+    post:
+      consumes:
+      - application/vnd.ms-excel
+      description: |-
+        uploads a spreadsheet file with logistics information (i.e. org groups, orgs, areas and locations)
+        and synchronises the data with the backend
+      parameters:
+      - description: a flag indicating whether a dry-run (health check) should be
+          performed without committing data to the backend
+        in: query
+        name: dry-run
+        type: boolean
+      - description: the spreadsheet file containing logistics information to be synced
+        in: formData
+        name: info-file
+        required: true
+        type: file
+      produces:
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Syncs logistics information
+      tags:
+      - Logistics
   /job:
     get:
       description: Returns a list of jobs filtered by the specified logistics tags

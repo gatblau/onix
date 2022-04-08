@@ -498,6 +498,59 @@ func getLocationsHandler(w http.ResponseWriter, r *http.Request) {
 	httpserver.Write(w, r, areas)
 }
 
+// @Summary Syncs logistics information
+// @Description uploads a spreadsheet file with logistics information (i.e. org groups, orgs, areas and locations)
+// @Description and synchronises the data with the backend
+// @Tags Logistics
+// @Accept application/vnd.ms-excel
+// @Produce application/json, application/yaml, application/xml
+// @Success 200 {string} data has been synced successfully
+// @Failure 400 {string} the uploaded file is in incorrect format
+// @Failure 500 {string} the server failed to complete the sync due to an unforeseen error
+// @Router /info/sync [post]
+// @Param dry-run query bool false "a flag indicating whether a dry-run (health check) should be performed without committing data to the backend"
+// @Param info-file formData file true "the spreadsheet file containing logistics information to be synced"
+func syncInfoHandler(w http.ResponseWriter, r *http.Request) {
+	// just in case dry-run by default
+	dryRun := true
+	dry := r.FormValue("dry-run")
+	if len(dry) > 0 {
+		dryRun, _ = strconv.ParseBool(dry)
+	}
+	// limits the size of incoming request bodies (in MB) to prevent clients from accidentally or maliciously
+	// sending a large request and wasting server resources
+	r.Body = http.MaxBytesReader(w, r.Body, 250<<20)
+
+	// parses the whole request body and up to a total of HttpUploadInMemoryLimit MB are stored in memory,
+	// with the remainder stored on disk in temporary files
+	err := r.ParseMultipartForm(150 << 20)
+	if err != nil {
+		log.Printf("error parsing info file: %s", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	infoFile, _, err := r.FormFile("info-file")
+	if err != nil {
+		log.Printf("error retrieving info file: %s", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	filePath, err := core.SaveInfo(infoFile)
+	if err != nil {
+		log.Printf("error saving info file: %s", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	out, err := core.SyncInfo(filePath, core.Api(), dryRun)
+	if err != nil {
+		log.Printf("error syncing info file: %s", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	httpserver.Write(w, r, out)
+}
+
 // @Summary Admits a host into service
 // @Description inform pilotctl to accept management connections coming from a host pilot agent
 // @Description admitting a host also requires associating the relevant logistic information such as org, area and location for the host

@@ -478,6 +478,58 @@ var doc = `{
                 }
             }
         },
+        "/info/sync": {
+            "post": {
+                "description": "uploads a spreadsheet file with logistics information (i.e. org groups, orgs, areas and locations)\nand synchronises the data with the backend",
+                "consumes": [
+                    "application/vnd.ms-excel"
+                ],
+                "produces": [
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
+                ],
+                "tags": [
+                    "Logistics"
+                ],
+                "summary": "Syncs logistics information",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "a flag indicating whether a dry-run (health check) should be performed without committing data to the backend",
+                        "name": "dry-run",
+                        "in": "query"
+                    },
+                    {
+                        "type": "file",
+                        "description": "the spreadsheet file containing logistics information to be synced",
+                        "name": "info-file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/job": {
             "get": {
                 "description": "Returns a list of jobs filtered by the specified logistics tags",

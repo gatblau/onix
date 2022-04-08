@@ -32,6 +32,7 @@ func main() {
 		router.HandleFunc("/register", registerHandler).Methods("POST")
 
 		// apply authorisation to admin user http handlers
+		router.Handle("/info/sync", s.Authorise(syncInfoHandler)).Methods("POST")
 		router.Handle("/host", s.Authorise(hostQueryHandler)).Methods("GET")
 		router.Handle("/host/{host-uuid}", s.Authorise(hostDecommissionHandler)).Methods("DELETE")
 		router.Handle("/cmd", s.Authorise(updateCmdHandler)).Methods("PUT")
