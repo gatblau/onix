@@ -62,6 +62,17 @@ func (link *Link) uri(baseUrl string) (string, error) {
 	return fmt.Sprintf("%s/link/%s", baseUrl, link.Key), nil
 }
 
+func uriLinks(baseUrl string) (string, error) {
+	return fmt.Sprintf("%s/link", baseUrl), nil
+}
+
+// Get the LinkList in the http Response
+func decodeLinkList(response *http.Response) (*LinkList, error) {
+	result := new(LinkList)
+	err := json.NewDecoder(response.Body).Decode(result)
+	return result, err
+}
+
 // Get a JSON bytes reader for the Serializable
 func (link *Link) reader() (*bytes.Reader, error) {
 	jsonBytes, err := link.bytes()
