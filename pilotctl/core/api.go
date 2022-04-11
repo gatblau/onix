@@ -199,6 +199,37 @@ func (r *API) GetHosts(oGroup, or, ar, loc string, label []string) ([]Host, erro
 	return hosts, rows.Err()
 }
 
+func (r *API) GetHostsAtLocations(locations []string) ([]Host, error) {
+	hosts := make([]Host, 0)
+	rows, err := r.db.Query("select * from pilotctl_get_host_at_location($1)", locations)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get hosts: %s\n", err)
+	}
+	var (
+		uuId       string
+		macAddress string
+		orgGroup   sql.NullString
+		org        sql.NullString
+		area       sql.NullString
+		location   sql.NullString
+	)
+	for rows.Next() {
+		err = rows.Scan(&uuId, &macAddress, &orgGroup, &org, &area, &location)
+		if err != nil {
+			return nil, err
+		}
+		hosts = append(hosts, Host{
+			HostUUID:       uuId,
+			HostMacAddress: macAddress,
+			OrgGroup:       orgGroup.String,
+			Org:            org.String,
+			Area:           area.String,
+			Location:       location.String,
+		})
+	}
+	return hosts, nil
+}
+
 func (r *API) SetAdmission(admission Admission) error {
 	if len(admission.HostUUID) == 0 {
 		return fmt.Errorf("host UUID is missing")

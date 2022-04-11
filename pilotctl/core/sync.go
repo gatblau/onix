@@ -13,13 +13,13 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
-	t "github.com/google/uuid"
+	"github.com/gatblau/onix/oxlib/oxc"
+	"github.com/google/uuid"
 	"github.com/xuri/excelize/v2"
 	"io"
 	"log"
 	"mime/multipart"
 	"os"
-	"os/user"
 	"path"
 	"path/filepath"
 	"strings"
@@ -30,14 +30,17 @@ func SaveInfo(f multipart.File) (string, error) {
 	filePath := path.Join(tmp, "sync.xlsx")
 	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, os.ModePerm)
 	if err != nil {
-		os.RemoveAll(tmp)
+		_ = os.RemoveAll(tmp)
 		return "", err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
+
 	// Copy the file to the destination path
 	_, err = io.Copy(file, f)
 	if err != nil {
-		os.RemoveAll(tmp)
+		_ = os.RemoveAll(tmp)
 		return "", err
 	}
 	return filePath, nil
@@ -46,7 +49,6 @@ func SaveInfo(f multipart.File) (string, error) {
 // SyncInfo syncs the content of the input spreadsheet file
 // compares the logistics information in the spreadsheet and commits any differences to Onix CMDB
 func SyncInfo(file string, api *API, dryRun bool) (diff *Diff, err error) {
-	out := new(strings.Builder)
 	file, _ = filepath.Abs(file)
 	f, err := excelize.OpenFile(file)
 	if err != nil {
@@ -55,24 +57,24 @@ func SyncInfo(file string, api *API, dryRun bool) (diff *Diff, err error) {
 	}
 	defer func() {
 		// Close the spreadsheet.
-		if err = f.Close(); err != nil {
-			fmt.Println(err)
+		if err2 := f.Close(); err2 != nil {
+			fmt.Println(err2)
 		}
-		os.RemoveAll(filepath.Dir(file))
+		_ = os.RemoveAll(filepath.Dir(file))
 	}()
-	og, err := loadSheet(f, out, "org-groups")
+	og, err := loadSheet(f, "org-groups")
 	if err != nil {
 		return nil, err
 	}
-	or, err := loadSheet(f, out, "orgs")
+	or, err := loadSheet(f, "orgs")
 	if err != nil {
 		return nil, err
 	}
-	ar, err := loadSheet(f, out, "areas")
+	ar, err := loadSheet(f, "areas")
 	if err != nil {
 		return nil, err
 	}
-	lo, err := loadSheet(f, out, "locations")
+	lo, err := loadSheet(f, "locations")
 	if err != nil {
 		return nil, err
 	}
@@ -92,107 +94,209 @@ func SyncInfo(file string, api *API, dryRun bool) (diff *Diff, err error) {
 	if err != nil {
 		return nil, err
 	}
-	// org groups
-	ogDiff := difference(*og, *ogd)
-	if ogDiff.Added != nil {
-		out.WriteString(fmt.Sprintf("ORG GROUPS\n"))
-		out.WriteString(fmt.Sprintf("To be added:\n"))
-		for _, i := range ogDiff.Added.Values {
-			out.WriteString(fmt.Sprintf("- %s -> %s\n", i.Key, i.Name))
-		}
+	links, err := loadLinks(f)
+	if err != nil {
+		return nil, err
 	}
-	if ogDiff.Removed != nil {
-		out.WriteString(fmt.Sprintf("To be removed:\n"))
-		for _, i := range ogDiff.Removed.Values {
-			out.WriteString(fmt.Sprintf("- %s -> %s\n", i.Key, i.Name))
-		}
-	}
-	if ogDiff.Updated != nil {
-		out.WriteString(fmt.Sprintf("To be updated:\n"))
-		for _, i := range ogDiff.Updated.Values {
-			out.WriteString(fmt.Sprintf("- %s -> %s\n", i.Key, i.Name))
-		}
+	linksDb, err := loadLinksDb(api)
+	if err != nil {
+		return nil, err
 	}
 
-	// orgs
-	orDiff := difference(*or, *ord)
-	if orDiff.Added != nil {
-		out.WriteString(fmt.Sprintf("ORGS\n"))
-		out.WriteString(fmt.Sprintf("To be added:\n"))
-		for _, i := range orDiff.Added.Values {
-			out.WriteString(fmt.Sprintf("- %s -> %s\n", i.Key, i.Name))
-		}
-	}
-	if orDiff.Removed != nil {
-		out.WriteString(fmt.Sprintf("To be removed:\n"))
-		for _, i := range orDiff.Removed.Values {
-			out.WriteString(fmt.Sprintf("- %s -> %s\n", i.Key, i.Name))
-		}
-	}
-	if orDiff.Updated != nil {
-		out.WriteString(fmt.Sprintf("To be updated:\n"))
-		for _, i := range orDiff.Updated.Values {
-			out.WriteString(fmt.Sprintf("- %s -> %s\n", i.Key, i.Name))
-		}
+	// take the difference
+	d := &Diff{
+		OG:    difference(*og, *ogd),
+		OR:    difference(*or, *ord),
+		AR:    difference(*ar, *ard),
+		LO:    difference(*lo, *lod),
+		LINKS: diffLinks(*links, *linksDb),
 	}
 
-	// areas
-	arDiff := difference(*ar, *ard)
-	if arDiff.Added != nil {
-		out.WriteString(fmt.Sprintf("AREAS\n"))
-		out.WriteString(fmt.Sprintf("To be added:\n"))
-		for _, i := range arDiff.Added.Values {
-			out.WriteString(fmt.Sprintf("- %s -> %s\n", i.Key, i.Name))
-		}
-	}
-	if arDiff.Updated != nil {
-		out.WriteString(fmt.Sprintf("To be removed:\n"))
-		for _, i := range arDiff.Updated.Values {
-			out.WriteString(fmt.Sprintf("- %s -> %s\n", i.Key, i.Name))
-		}
-	}
-	if arDiff.Updated != nil {
-		out.WriteString(fmt.Sprintf("To be updated:\n"))
-		for _, i := range arDiff.Updated.Values {
-			out.WriteString(fmt.Sprintf("- %s -> %s\n", i.Key, i.Name))
-		}
+	// check if there are any hosts in locations to be removed
+	err = canRemoveLocation(api, d.LO)
+	if err != nil {
+		return d, err
 	}
 
-	// locations
-	loDiff := difference(*lo, *lod)
-	if loDiff.Added != nil {
-		out.WriteString(fmt.Sprintf("LOCATIONS\n"))
-		out.WriteString(fmt.Sprintf("To be added:\n"))
-		for _, i := range loDiff.Added.Values {
-			out.WriteString(fmt.Sprintf("- %s -> %s\n", i.Key, i.Name))
+	// if this is not a dry run then apply the changes
+	if !dryRun {
+		// apply org group changes
+		err = applyItems(d.OG, "U_ORG_GROUP", api)
+		if err != nil {
+			return d, err
+		}
+		// apply orgs changes
+		err = applyItems(d.OR, "U_ORG", api)
+		if err != nil {
+			return d, err
+		}
+		// apply areas changes
+		err = applyItems(d.AR, "U_AREA", api)
+		if err != nil {
+			return d, err
+		}
+		// apply locations changes
+		err = applyItems(d.LO, "U_LOCATION", api)
+		if err != nil {
+			return d, err
+		}
+		// apply links
+		err = applyLinks(d.LINKS, api)
+		if err != nil {
+			return d, err
 		}
 	}
-	if loDiff.Removed != nil {
-		out.WriteString(fmt.Sprintf("To be removed:\n"))
-		for _, i := range loDiff.Removed.Values {
-			out.WriteString(fmt.Sprintf("- %s -> %s\n", i.Key, i.Name))
+	return d, nil
+}
+
+func applyLinks(links *DiffLinkReport, api *API) error {
+	for _, l := range links.Added {
+		r, err := api.ox.PutLink(&oxc.Link{
+			Key:          l.key(),
+			StartItemKey: l.From,
+			EndItemKey:   l.To,
+			Description:  fmt.Sprintf("link %s", l),
+			Type:         "U_RELATIONSHIP",
+		})
+		if r.Error {
+			return fmt.Errorf(r.Message)
+		}
+		if err != nil {
+			return err
 		}
 	}
-	if loDiff.Updated != nil {
-		out.WriteString(fmt.Sprintf("To be updated:\n"))
-		for _, i := range loDiff.Updated.Values {
-			out.WriteString(fmt.Sprintf("- %s -> %s\n", i.Key, i.Name))
+	return nil
+}
+
+func applyItems(d *DiffReport, itemType string, api *API) error {
+	if d.Added != nil {
+		for _, i := range d.Added.Values {
+			r, err := api.ox.PutItem(&oxc.Item{
+				Key:         i.Key,
+				Name:        i.Name,
+				Description: i.Description,
+				Txt:         i.Info,
+				Type:        itemType,
+			})
+			if r.Error {
+				return fmt.Errorf(r.Message)
+			}
+			if err != nil {
+				return err
+			}
 		}
 	}
-	return &Diff{
-		OG: ogDiff,
-		OR: orDiff,
-		AR: arDiff,
-		LO: loDiff,
-	}, nil
+	if d.Updated != nil {
+		for _, i := range d.Updated.Values {
+			r, err := api.ox.PutItem(&oxc.Item{
+				Key:         i.Key,
+				Name:        i.Name,
+				Description: i.Description,
+				Txt:         i.Info,
+				Type:        itemType,
+			})
+			if r.Error {
+				return fmt.Errorf(r.Message)
+			}
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if d.Removed != nil {
+		for _, i := range d.Removed.Values {
+			r, err := api.ox.DeleteItem(&oxc.Item{Key: i.Key})
+			if r.Error {
+				return fmt.Errorf(r.Message)
+			}
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func loadLinksDb(api *API) (*linkList, error) {
+	links, err := api.ox.GetLinks()
+	if err != nil {
+		return nil, err
+	}
+	list := &linkList{
+		Links: []linkInfo{},
+	}
+	for _, link := range links.Values {
+		// org-group -> org link
+		if strings.Contains(link.Key, "OG:") && strings.Contains(link.Key, "OR:") && !list.contains(link.StartItemKey, link.EndItemKey) {
+			list.Links = append(list.Links, linkInfo{From: link.StartItemKey, To: link.EndItemKey})
+		}
+		// org-group -> area link
+		if strings.Contains(link.Key, "OG:") && strings.Contains(link.Key, "AR:") && !list.contains(link.StartItemKey, link.EndItemKey) {
+			list.Links = append(list.Links, linkInfo{From: link.StartItemKey, To: link.EndItemKey})
+		}
+		// org -> location link
+		if strings.Contains(link.Key, "OR:") && strings.Contains(link.Key, "LO:") && !list.contains(link.StartItemKey, link.EndItemKey) {
+			list.Links = append(list.Links, linkInfo{From: link.StartItemKey, To: link.EndItemKey})
+		}
+		// area -> location link
+		if strings.Contains(link.Key, "AR:") && strings.Contains(link.Key, "LO:") && !list.contains(link.StartItemKey, link.EndItemKey) {
+			list.Links = append(list.Links, linkInfo{From: link.StartItemKey, To: link.EndItemKey})
+		}
+	}
+	return list, nil
+}
+
+func loadLinks(f *excelize.File) (*linkList, error) {
+	list := &linkList{
+		Links: []linkInfo{},
+	}
+	rows, err := f.GetRows("links")
+	if err != nil {
+		return nil, err
+	}
+	for ix, row := range rows {
+		// skips the header
+		if ix == 0 {
+			continue
+		}
+		for i := 0; i < 3; i++ {
+			key := value(row, i)
+			if !(strings.HasPrefix(key, "OG:") || strings.HasPrefix(key, "OR:") || strings.HasPrefix(key, "AR:") || strings.HasPrefix(key, "LO:")) {
+				return nil, fmt.Errorf("invalid key '%s' in links worksheet: prefix must be one of 'OG:', 'OR':, 'AR:' or 'LO:'", key)
+			}
+		}
+
+		// based on indices below
+		// 0: org-group
+		// 1: org
+		// 2: area
+		// 3: location
+
+		// org-group -> org link (0->1)
+		if !list.contains(value(row, 0), value(row, 1)) {
+			list.Links = append(list.Links, linkInfo{From: value(row, 0), To: value(row, 1)})
+		}
+		// org-group -> area link (0->2)
+		if !list.contains(value(row, 0), value(row, 2)) {
+			list.Links = append(list.Links, linkInfo{From: value(row, 0), To: value(row, 2)})
+		}
+		// org -> location link (1->3)
+		if !list.contains(value(row, 1), value(row, 3)) {
+			list.Links = append(list.Links, linkInfo{From: value(row, 1), To: value(row, 3)})
+		}
+		// area -> location link (2-3)
+		if !list.contains(value(row, 2), value(row, 3)) {
+			list.Links = append(list.Links, linkInfo{From: value(row, 2), To: value(row, 3)})
+		}
+	}
+	return list, nil
 }
 
 // load items from spreadsheet
-func loadSheet(f *excelize.File, out *strings.Builder, sheetName string) (*infoList, error) {
+func loadSheet(f *excelize.File, sheetName string) (*infoList, error) {
 	// loads the org group information
 	rows, err := f.GetRows(sheetName)
 	if err != nil {
-		out.WriteString(fmt.Sprintf("ERROR: %s\n", err))
 		return nil, err
 	}
 	return newInfo(rows)
@@ -217,7 +321,7 @@ func loadDb(api *API, itemType string) (*infoList, error) {
 }
 
 func SyncTemp() string {
-	uid := t.New()
+	uid := uuid.New()
 	folder := strings.Replace(uid.String(), "-", "", -1)[:12]
 	tempDirPath := filepath.Join(SyncPath(), folder)
 	err := os.MkdirAll(tempDirPath, os.ModePerm)
@@ -231,23 +335,42 @@ func SyncPath() string {
 	return path.Join(core.HomeDir(), "sync")
 }
 
-func SyncPathExists() {
-	tmp := SyncPath()
-	// ensure tmp folder exists for temp file operations
-	_, err := os.Stat(tmp)
-	if os.IsNotExist(err) {
-		_ = os.MkdirAll(tmp, os.ModePerm)
+func canRemoveLocation(api *API, diff *DiffReport) error {
+	if diff.Removed == nil {
+		return nil
 	}
+	hosts, err := api.GetHostsAtLocations(diff.Removed.keys())
+	if err != nil {
+		return fmt.Errorf("cannot verify hosts in locations: %s", err)
+	}
+	if len(hosts) > 0 {
+		buf := strings.Builder{}
+		buf.WriteString("cannot remove location(s):\n")
+		for _, host := range hosts {
+			buf.WriteString(fmt.Sprintf("%s: host %s is active in location\n", host.HostUUID, host.Location))
+		}
+		return fmt.Errorf(buf.String())
+	}
+	return nil
 }
 
-func HomeDir() string {
-	// if PILOTCTL_HOME is defined use it
-	if pilotCtlHome := os.Getenv("PILOTCTL_HOME"); len(pilotCtlHome) > 0 {
-		return pilotCtlHome
-	}
-	usr, _ := user.Current()
-	return usr.HomeDir
-}
+// func SyncPathExists() {
+//     tmp := SyncPath()
+//     // ensure tmp folder exists for temp file operations
+//     _, err := os.Stat(tmp)
+//     if os.IsNotExist(err) {
+//         _ = os.MkdirAll(tmp, os.ModePerm)
+//     }
+// }
+//
+// func HomeDir() string {
+//     // if PILOTCTL_HOME is defined use it
+//     if pilotCtlHome := os.Getenv("PILOTCTL_HOME"); len(pilotCtlHome) > 0 {
+//         return pilotCtlHome
+//     }
+//     usr, _ := user.Current()
+//     return usr.HomeDir
+// }
 
 func Key(iType, name string) string {
 	hasher := sha1.New()
@@ -284,6 +407,9 @@ func newInfo(rows [][]string) (*infoList, error) {
 		// validates key/name values
 		if len(key) == 0 {
 			return nil, fmt.Errorf("missing key value, invalid spreadsheet format")
+		}
+		if !(strings.HasPrefix(key, "OG:") || strings.HasPrefix(key, "OR:") || strings.HasPrefix(key, "AR:") || strings.HasPrefix(key, "LO:")) {
+			return nil, fmt.Errorf("invalid key '%s' in worksheet: prefix must be one of 'OG:', 'OR':, 'AR:' or 'LO:'", key)
 		}
 		if len(name) == 0 {
 			return nil, fmt.Errorf("missing name value, invalid spreadsheet format")
@@ -324,11 +450,43 @@ func (l *infoList) equals(item info) bool {
 	return false
 }
 
+func (l *infoList) keys() []string {
+	var keys []string
+	for _, v := range l.Values {
+		keys = append(keys, v.Key)
+	}
+	return keys
+}
+
 func value(row []string, ix int) string {
 	if len(row) <= ix {
 		return ""
 	}
 	return row[ix]
+}
+
+func diffLinks(source, target linkList) *DiffLinkReport {
+	var add, remove []linkInfo
+	for _, s := range source.Links {
+		if !target.contains(s.From, s.To) {
+			add = append(add, linkInfo{
+				From: s.From,
+				To:   s.To,
+			})
+		}
+	}
+	for _, t := range target.Links {
+		if !source.contains(t.From, t.To) {
+			remove = append(remove, linkInfo{
+				From: t.From,
+				To:   t.To,
+			})
+		}
+	}
+	return &DiffLinkReport{
+		Added:   add,
+		Removed: remove,
+	}
 }
 
 func difference(source, target infoList) *DiffReport {
@@ -349,7 +507,7 @@ func difference(source, target infoList) *DiffReport {
 	// update: are the ones in source and target that are different
 	update := new(infoList)
 	for _, s := range source.Values {
-		if target.equals(s) {
+		if !target.equals(s) && !add.contains(s.Key) {
 			update.Values = append(update.Values, s)
 		}
 	}
@@ -374,9 +532,50 @@ type DiffReport struct {
 	Updated *infoList `json:"updated" yaml:"updated,omitempty"`
 }
 
+type DiffLinkReport struct {
+	Added   []linkInfo `json:"added,omitempty" yaml:"added,omitempty"`
+	Removed []linkInfo `json:"removed" yaml:"removed,omitempty"`
+}
+
 type Diff struct {
-	OG *DiffReport `json:"org_groups" yaml:"org_groups"`
-	OR *DiffReport `json:"orgs" yaml:"orgs"`
-	AR *DiffReport `json:"areas" yaml:"areas"`
-	LO *DiffReport `json:"locations" yaml:"locations"`
+	OG    *DiffReport     `json:"org_groups" yaml:"org_groups"`
+	OR    *DiffReport     `json:"orgs" yaml:"orgs"`
+	AR    *DiffReport     `json:"areas" yaml:"areas"`
+	LO    *DiffReport     `json:"locations" yaml:"locations"`
+	LINKS *DiffLinkReport `json:"links" yaml:"links"`
+}
+
+type linkInfo struct {
+	From string `json:"from" yaml:"from"`
+	To   string `json:"to" yaml:"to"`
+}
+
+func (i linkInfo) key() string {
+	return fmt.Sprintf("%s->%s", strings.ToUpper(i.From), strings.ToUpper(i.To))
+}
+
+func (i linkInfo) equals(from, to string) bool {
+	return i.From == from && i.To == to
+}
+
+type linkList struct {
+	Links []linkInfo
+}
+
+func (l *linkList) contains(from, to string) bool {
+	for _, link := range l.Links {
+		if link.From == from && link.To == to {
+			return true
+		}
+	}
+	return false
+}
+
+func (l *linkList) equals(from string, to string) bool {
+	for _, i := range l.Links {
+		if i.equals(from, to) {
+			return true
+		}
+	}
+	return false
 }

@@ -541,10 +541,10 @@ func syncInfoHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	out, err := core.SyncInfo(filePath, core.Api(), dryRun)
-	if err != nil {
-		log.Printf("error syncing info file: %s", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	out, err2 := core.SyncInfo(filePath, core.Api(), dryRun)
+	if err2 != nil {
+		log.Printf("error syncing info file: %s", err2)
+		http.Error(w, err2.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
