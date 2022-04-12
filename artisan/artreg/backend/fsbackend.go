@@ -1,5 +1,3 @@
-package backend
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package backend
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package backend
+
 import (
 	"encoding/json"
 	"fmt"
@@ -66,6 +67,9 @@ func (fs *FsBackend) UploadPackage(group, name string, packageRef string, zipfil
 	defer jsonFile.Close()
 	defer repo.Close()
 
+	fs.checkPackagePath(group, name)
+
+	// seal file
 	seal := new(data.Seal)
 	sealBytes, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
@@ -75,17 +79,27 @@ func (fs *FsBackend) UploadPackage(group, name string, packageRef string, zipfil
 	if err != nil {
 		return fmt.Errorf("cannot unmarshal package seal file: %s", err)
 	}
-	err = ioutil.WriteFile(fs.sealFilename(seal), sealBytes, 0666)
+	err = os.WriteFile(fs.sealFilename(group, name, seal), sealBytes, 0666)
 	if err != nil {
 		return fmt.Errorf("cannot write package seal file to the backend file system: %s", err)
 	}
+	// zip file
 	packageBytes, err := ioutil.ReadAll(zipfile)
 	if err != nil {
 		return fmt.Errorf("cannot read package file: %s", err)
 	}
-	err = ioutil.WriteFile(fs.packFilename(seal), packageBytes, 0666)
+	err = os.WriteFile(fs.packFilename(group, name, seal), packageBytes, 0666)
 	if err != nil {
 		return fmt.Errorf("cannot write package file to the backend file system: %s", err)
+	}
+	// repository.json
+	repoBytes, err := ioutil.ReadAll(repo)
+	if err != nil {
+		return fmt.Errorf("cannot read repository.json file: %s", err)
+	}
+	err = os.WriteFile(fs.indexFilename(group, name), repoBytes, 0666)
+	if err != nil {
+		return fmt.Errorf("cannot write repository.json file to the backend file system: %s", err)
 	}
 	return nil
 }
@@ -101,6 +115,13 @@ func (fs *FsBackend) GetRepositoryInfo(group, name, user, pwd string) (*registry
 
 // GetPackageInfo get package information
 func (fs *FsBackend) GetPackageInfo(group, name, id, user, pwd string) (*registry.Package, error) {
+	repo, err := fs.GetRepositoryInfo(group, name, user, pwd)
+	if err != nil {
+		return nil, err
+	}
+	if repo != nil {
+		return repo.FindPackage(id), nil
+	}
 	return nil, nil
 }
 
@@ -121,15 +142,30 @@ func (fs *FsBackend) dataPath() string {
 func (fs *FsBackend) checkPath() {
 	_, err := os.Stat(fs.dataPath())
 	if os.IsNotExist(err) {
-		err := os.MkdirAll(fs.dataPath(), os.ModePerm)
+		err = os.MkdirAll(fs.dataPath(), os.ModePerm)
 		core.CheckErr(err, "cannot create Artisan registry file system backend path")
 	}
 }
 
-func (fs *FsBackend) sealFilename(seal *data.Seal) string {
-	return path.Join(fs.dataPath(), fmt.Sprintf("%s.json", seal.Manifest.Ref))
+func (fs *FsBackend) indexFilename(group, name string) string {
+	return path.Join(fs.dataPath(), group, name, "repository.json")
 }
 
-func (fs *FsBackend) packFilename(seal *data.Seal) string {
-	return path.Join(fs.dataPath(), fmt.Sprintf("%s.zip", seal.Manifest.Ref))
+func (fs *FsBackend) packagePath(group, name string) string {
+	return path.Join(fs.dataPath(), group, name)
+}
+
+func (fs *FsBackend) checkPackagePath(group, name string) {
+	packagePath := fs.packagePath(group, name)
+	if _, err := os.Stat(packagePath); os.IsNotExist(err) {
+		_ = os.MkdirAll(packagePath, os.ModePerm)
+	}
+}
+
+func (fs *FsBackend) sealFilename(group, name string, seal *data.Seal) string {
+	return path.Join(fs.packagePath(group, name), fmt.Sprintf("%s.json", seal.Manifest.Ref))
+}
+
+func (fs *FsBackend) packFilename(group, name string, seal *data.Seal) string {
+	return path.Join(fs.packagePath(group, name), fmt.Sprintf("%s.zip", seal.Manifest.Ref))
 }
