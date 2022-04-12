@@ -12,7 +12,6 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
-	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/oxlib/oxc"
 	"github.com/google/uuid"
 	"github.com/xuri/excelize/v2"
@@ -20,6 +19,7 @@ import (
 	"log"
 	"mime/multipart"
 	"os"
+	"os/user"
 	"path"
 	"path/filepath"
 	"strings"
@@ -51,10 +51,6 @@ func SaveInfo(f multipart.File) (string, error) {
 func SyncInfo(file string, api *API, dryRun bool) (diff *Diff, err error) {
 	file, _ = filepath.Abs(file)
 	f, err := excelize.OpenFile(file)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 	defer func() {
 		// Close the spreadsheet.
 		if err2 := f.Close(); err2 != nil {
@@ -62,6 +58,10 @@ func SyncInfo(file string, api *API, dryRun bool) (diff *Diff, err error) {
 		}
 		_ = os.RemoveAll(filepath.Dir(file))
 	}()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	og, err := loadSheet(f, "org-groups")
 	if err != nil {
 		return nil, err
@@ -332,7 +332,14 @@ func SyncTemp() string {
 }
 
 func SyncPath() string {
-	return path.Join(core.HomeDir(), "sync")
+	syncPath := os.Getenv("SYNC_PATH")
+	// if SYNC_PATH is not defined
+	if len(syncPath) == 0 {
+		// use a location within the user home
+		usr, _ := user.Current()
+		syncPath = path.Join(usr.HomeDir, ".pilotctl", "sync")
+	}
+	return syncPath
 }
 
 func canRemoveLocation(api *API, diff *DiffReport) error {
@@ -353,24 +360,6 @@ func canRemoveLocation(api *API, diff *DiffReport) error {
 	}
 	return nil
 }
-
-// func SyncPathExists() {
-//     tmp := SyncPath()
-//     // ensure tmp folder exists for temp file operations
-//     _, err := os.Stat(tmp)
-//     if os.IsNotExist(err) {
-//         _ = os.MkdirAll(tmp, os.ModePerm)
-//     }
-// }
-//
-// func HomeDir() string {
-//     // if PILOTCTL_HOME is defined use it
-//     if pilotCtlHome := os.Getenv("PILOTCTL_HOME"); len(pilotCtlHome) > 0 {
-//         return pilotCtlHome
-//     }
-//     usr, _ := user.Current()
-//     return usr.HomeDir
-// }
 
 func Key(iType, name string) string {
 	hasher := sha1.New()

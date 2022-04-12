@@ -13,15 +13,19 @@ LABEL artisan.svc.manifest="/app/svc.yaml"
 
 ARG UNAME=pilotctl
 
-ENV UID=100000000
-ENV GID=100000000
+ENV UID=100
+ENV GID=100
+
+ENV SYNC_PATH=/sync
 
 RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos -y && \
     microdnf install shadow-utils.x86_64 && \
     groupadd -g $GID -o $UNAME && \
     useradd -M -u $UID -g $GID $UNAME && \
     rm -rf /var/cache/yum && \
-    microdnf clean all
+    microdnf clean all && \
+    mkdir -p ${SYNC_PATH} && \
+    chown -R ${UNAME} ${SYNC_PATH}
 
 USER $UNAME
 
@@ -34,6 +38,9 @@ VOLUME /keys
 
 # mount for event receivers configuration file
 VOLUME /conf
+
+# mount for sync files
+VOLUME /sync
 
 CMD ["sh", "-c", "/app/pilotctl"]
 
