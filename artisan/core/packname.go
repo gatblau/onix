@@ -82,10 +82,10 @@ func splitName(packageName string) (domain, group, name, tag string, err error) 
 	switch len(parts) {
 	case 1:
 		name, tag, err = parseNameTag(parts[0])
-		domain = "art1san.net"
-		group = "library"
+		domain = "artr.gdn"
+		group = "lib"
 	case 2:
-		domain = "art1san.net"
+		domain = "artr.gdn"
 		group = parts[0]
 		name, tag, err = parseNameTag(parts[1])
 	case 3:
