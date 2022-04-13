@@ -118,7 +118,6 @@ type stop struct {
 // The actual error that is returned by the retry function will be the original non-wrapped error.
 // This allows for later checks like err == ErrUnauthorized.
 func retry(attempts int, sleep time.Duration, f func(input interface{}) error, input interface{}) error {
-	core.InfoLogger.Printf("retry in progress...\n")
 	if err := f(input); err != nil {
 		str := fmt.Sprintf("%T\n", err)
 		if strings.Contains(str, "stop") {
