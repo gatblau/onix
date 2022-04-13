@@ -371,7 +371,7 @@ func (r *Nexus3Backend) GetPackageManifest(group, name, tag, user, pwd string) (
 	if len(tag) == 0 {
 		tag = "latest"
 	}
-	ref, err := getFileRef(repo, tag)
+	ref, err := repo.GetFileRef(tag)
 	if err != nil {
 		return nil, err
 	}
@@ -390,17 +390,6 @@ func (r *Nexus3Backend) GetPackageManifest(group, name, tag, user, pwd string) (
 		return nil, err
 	}
 	return seal.Manifest, nil
-}
-
-func getFileRef(repo *registry.Repository, tag string) (string, error) {
-	for _, pack := range repo.Packages {
-		for _, t := range pack.Tags {
-			if t == tag {
-				return pack.FileRef, nil
-			}
-		}
-	}
-	return "", fmt.Errorf("package not found using tag %s\n", tag)
 }
 
 // add a field to a multipart form

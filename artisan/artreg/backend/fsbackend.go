@@ -18,26 +18,13 @@ import (
 	"mime/multipart"
 	"os"
 	"path"
+	"path/filepath"
+	"regexp"
 )
 
+// FsBackend file system backend
 type FsBackend struct {
 	path string
-}
-
-func (fs *FsBackend) UpsertPackageInfo(group, name string, packageInfo *registry.Package, user string, pwd string) error {
-	panic("implement me")
-}
-
-func (fs *FsBackend) DeletePackageInfo(group, name string, packageId string, user string, pwd string) error {
-	panic("implement me")
-}
-
-func (fs *FsBackend) DeletePackage(group, name, packageRef, user, pwd string) error {
-	panic("implement me")
-}
-
-func (fs *FsBackend) GetPackageManifest(group, name, tag, user, pwd string) (*data.Manifest, error) {
-	panic("implement me")
 }
 
 func NewFsBackend() *FsBackend {
@@ -48,14 +35,97 @@ func NewFsBackend() *FsBackend {
 	return fs
 }
 
-func (fs *FsBackend) GetManifest(group, name, tag, user, pwd string) (*data.Manifest, error) {
-	panic("implement me")
+// UpsertPackageInfo insert or update the package information in the repository index
+func (fs *FsBackend) UpsertPackageInfo(group, name string, packageInfo *registry.Package, user string, pwd string) error {
+	repo, err := fs.GetRepositoryInfo(group, name, user, pwd)
+	if err != nil {
+		return err
+	}
+	repo.UpsertPackage(packageInfo)
+	return fs.saveIndex(group, name, repo)
+}
+
+// DeletePackageInfo delete the package information from the repository index
+func (fs *FsBackend) DeletePackageInfo(group, name string, packageId string, user string, pwd string) error {
+	repo, err := fs.GetRepositoryInfo(group, name, user, pwd)
+	if err != nil {
+		return err
+	}
+	repo.RemovePackage(packageId)
+	return fs.saveIndex(group, name, repo)
+}
+
+// DeletePackage delete a specific package
+func (fs *FsBackend) DeletePackage(group, name, packageRef, user, pwd string) error {
+	root := fs.packagePath(group, name)
+	sealFile := fmt.Sprintf("%s.json", packageRef)
+	err := os.Remove(path.Join(root, sealFile))
+	if err != nil {
+		return fmt.Errorf("cannot remove package seal %s: %s", sealFile, err)
+	}
+	pacFile := fmt.Sprintf("%s.zip", packageRef)
+	err = os.Remove(path.Join(root, sealFile))
+	if err != nil {
+		return fmt.Errorf("cannot remove package file %s: %s", pacFile, err)
+	}
+	return nil
+}
+
+// GetPackageManifest get the manifest for a specific package
+func (fs *FsBackend) GetPackageManifest(group, name, tag, user, pwd string) (*data.Manifest, error) {
+	repo, err := fs.GetRepositoryInfo(group, name, user, pwd)
+	if err != nil {
+		return nil, err
+	}
+	if len(tag) == 0 {
+		tag = "latest"
+	}
+	ref, err := repo.GetFileRef(tag)
+	if err != nil {
+		return nil, err
+	}
+	manifestFile, err := fs.Download(group, name, fmt.Sprintf("%s.json", ref), user, pwd)
+	if err != nil {
+		return nil, err
+	}
+	defer manifestFile.Close()
+	bytes, err := ioutil.ReadAll(manifestFile)
+	if err != nil {
+		return nil, err
+	}
+	var seal data.Seal
+	err = json.Unmarshal(bytes, &seal)
+	if err != nil {
+		return nil, err
+	}
+	return seal.Manifest, nil
 }
 
 func (fs *FsBackend) GetAllRepositoryInfo(user, pwd string) ([]*registry.Repository, error) {
-	panic("implement me")
+	infos := make([]*registry.Repository, 0)
+	libRegEx, err := regexp.Compile("^.*repository.json$")
+	if err != nil {
+		return nil, err
+	}
+	err = filepath.Walk(fs.dataPath(), func(path string, info os.FileInfo, err error) error {
+		if err == nil && libRegEx.MatchString(info.Name()) {
+			bytes, err2 := os.ReadFile(path)
+			if err2 != nil {
+				return fmt.Errorf("cannot read file: %s", err)
+			}
+			repo := new(registry.Repository)
+			err2 = json.Unmarshal(bytes, repo)
+			if err2 != nil {
+				return fmt.Errorf("cannot unmarshal file: %s", err)
+			}
+			infos = append(infos, repo)
+		}
+		return nil
+	})
+	return infos, err
 }
 
+// Name of the backend
 func (fs *FsBackend) Name() string {
 	return "FILE_SYSTEM"
 }
@@ -106,11 +176,24 @@ func (fs *FsBackend) UploadPackage(group, name string, packageRef string, zipfil
 
 // GetRepositoryInfo get repository information
 func (fs *FsBackend) GetRepositoryInfo(group, name, user, pwd string) (*registry.Repository, error) {
-	// return an empty repository
-	return &registry.Repository{
-		Repository: fmt.Sprintf("%s/%s", group, name),
-		Packages:   make([]*registry.Package, 0),
-	}, nil
+	repoFile := fs.indexFilename(group, name)
+	if _, err := os.Stat(repoFile); os.IsNotExist(err) {
+		// return an empty repository
+		return &registry.Repository{
+			Repository: fmt.Sprintf("%s/%s", group, name),
+			Packages:   make([]*registry.Package, 0),
+		}, nil
+	}
+	repoBytes, err := os.ReadFile(repoFile)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read repository index: %s", err)
+	}
+	repository := new(registry.Repository)
+	err = json.Unmarshal(repoBytes, repository)
+	if err != nil {
+		return nil, fmt.Errorf("cannot unmarshal repository index: %s", err)
+	}
+	return repository, nil
 }
 
 // GetPackageInfo get package information
@@ -125,14 +208,14 @@ func (fs *FsBackend) GetPackageInfo(group, name, id, user, pwd string) (*registr
 	return nil, nil
 }
 
-// UpdatePackageInfo update package information
-func (fs *FsBackend) UpdatePackageInfo(group, name string, packageInfo *registry.Package, user string, pwd string) error {
-	return nil
-}
-
 // Download open a file for download
 func (fs *FsBackend) Download(repoGroup, repoName, fileName, user, pwd string) (*os.File, error) {
-	return nil, nil
+	fqn := filepath.Join(fs.packagePath(repoGroup, repoName), fileName)
+	f, err := os.Open(fqn)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open package file %s: file", fileName)
+	}
+	return f, nil
 }
 
 func (fs *FsBackend) dataPath() string {
@@ -168,4 +251,16 @@ func (fs *FsBackend) sealFilename(group, name string, seal *data.Seal) string {
 
 func (fs *FsBackend) packFilename(group, name string, seal *data.Seal) string {
 	return path.Join(fs.packagePath(group, name), fmt.Sprintf("%s.zip", seal.Manifest.Ref))
+}
+
+func (fs *FsBackend) saveIndex(group string, name string, repo *registry.Repository) error {
+	repoBytes, err := json.Marshal(repo)
+	if err != nil {
+		return fmt.Errorf("cannot marshal repository.json file: %s", err)
+	}
+	err = os.WriteFile(fs.indexFilename(group, name), repoBytes, 0666)
+	if err != nil {
+		return fmt.Errorf("cannot write repository.json file to the backend file system: %s", err)
+	}
+	return nil
 }
