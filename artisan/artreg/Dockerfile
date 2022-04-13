@@ -32,6 +32,7 @@ RUN microdnf update --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ub
         ${ARTISAN_HOME}.artisan/locks \
         ${ARTISAN_HOME}.artisan/tmp \
         ${ARTISAN_HOME}.artisan/hooks && \
+        ${ARTISAN_HOME}.artisan/data && \
     chown -R ${UNAME} ${ARTISAN_HOME}.artisan
 
 WORKDIR /app
