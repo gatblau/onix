@@ -23,6 +23,18 @@ type Repository struct {
 	Packages []*Package `json:"artefacts"`
 }
 
+// GetFileRef get the file reference for a specific tag
+func (r *Repository) GetFileRef(tag string) (string, error) {
+	for _, pack := range r.Packages {
+		for _, t := range pack.Tags {
+			if t == tag {
+				return pack.FileRef, nil
+			}
+		}
+	}
+	return "", fmt.Errorf("package not found using tag %s\n", tag)
+}
+
 func (r *Repository) ToJsonBytes() ([]byte, error) {
 	return json.Marshal(r)
 }
