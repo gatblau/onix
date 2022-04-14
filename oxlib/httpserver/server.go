@@ -202,16 +202,17 @@ func (s *Server) Write(w http.ResponseWriter, r *http.Request, obj interface{}) 
 		}
 	}
 	if err != nil {
-		s.writeError(w, err, 500)
+		s.WriteError(w, err, 500)
 	}
 	_, err = w.Write(bs)
 	if err != nil {
 		log.Printf("error writing data to response: %s", err)
-		s.writeError(w, err, 500)
+		s.WriteError(w, err, 500)
 	}
 }
 
-func (s *Server) writeError(w http.ResponseWriter, err error, errorCode int) {
+func (s *Server) WriteError(w http.ResponseWriter, err error, errorCode int) {
 	fmt.Printf(fmt.Sprintf("%s\n", err))
 	w.WriteHeader(errorCode)
+	w.Write([]byte(err.Error()))
 }
