@@ -31,6 +31,12 @@ profiles:
       - name: db
       - name: ox-app
 
+  - name: pilotctl
+    services:
+      - name: db
+      - name: ox-app
+      - name: pilotctl-app
+
 services:
   - name: db
     description: PostgreSQL Database service
