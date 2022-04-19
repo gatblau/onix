@@ -562,7 +562,7 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 			// issue warning
 			core.WarningLogger.Printf("artisan registry does not use TLS: the connection to the registry is not secure\n")
 		} else {
-			core.CheckErr(err, "art pull '%s' cannot retrieve repository information from registry", name.String())
+			core.CheckErr(err2, "art pull '%s' cannot retrieve repository information from registry", name.String())
 		}
 	}
 	// find the package to pull in the remote repository

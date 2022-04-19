@@ -69,7 +69,7 @@ func getRepositoryInfoRetry(repoInfo interface{}) error {
 	startingInterval := 5 * time.Second
 	if err := retry(attempts, startingInterval, getRepositoryInfo, repoInfo); err != nil {
 		// if the retry failed returns the error
-		return fmt.Errorf("cannot retrieve repository information after %d attempts: %s", attempts, err)
+		return fmt.Errorf("cannot retrieve repository information: %s", err)
 	}
 	return nil
 }
@@ -81,7 +81,7 @@ func getRepositoryInfo(info interface{}) error {
 	}
 	repo, err, code := i.api.GetRepositoryInfo(i.name.Group, i.name.Name, i.uname, i.pwd, i.tls)
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP response to HTTPS client") {
+		if strings.Contains(err.Error(), "HTTP response to HTTPS client") || code == 401 || code == 403 {
 			return &stop{err}
 		}
 	} else if code > 299 {
