@@ -19,8 +19,8 @@ require (
 	github.com/rs/zerolog v1.19.0 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.10.1
-	github.com/swaggo/http-swagger v1.1.2
-	github.com/swaggo/swag v1.7.6
+	github.com/swaggo/http-swagger v1.2.6
+	github.com/swaggo/swag v1.7.9
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
