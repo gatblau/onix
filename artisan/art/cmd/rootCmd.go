@@ -1,5 +1,3 @@
-package cmd
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package cmd
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package cmd
+
 import (
 	_ "embed"
 	"fmt"
@@ -37,7 +38,7 @@ version: %s`, core.Version),
 			Version: core.Version,
 		},
 	}
-	c.Cmd.SetVersionTemplate("Onix Artisan version: {{.Version}}\n")
+	c.Cmd.SetVersionTemplate("version: {{.Version}}\n")
 	cobra.OnInitialize(c.initConfig)
 	return c
 }

@@ -26,7 +26,7 @@ profiles:
       GOOS: linux
     run:
       - $(build-linux)
-    target: bin/linux/art
+    target: bin/linux/amd64/art
 
   - name: mac
     application: artisan
@@ -38,7 +38,7 @@ profiles:
       GOOS: darwin
     run:
       - $(build-mac)
-    target: bin/darwin/art
+    target: bin/darwin/amd64/art
 
   - name: windows
     application: artisan
@@ -55,7 +55,7 @@ functions:
     env:
       GOOS: darwin
     run:
-      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/${GOOS}/${GOARCH}/art -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION} (community)'" -o bin/${GOOS}/${GOARCH}/art -v
 
   - name: build-mac-new
     description: builds the Artisan CLI for MacOS
@@ -63,21 +63,21 @@ functions:
       GOOS: darwin
       GOARCH: arm64
     run:
-      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/${GOOS}/${GOARCH}/art -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION} (community)'" -o bin/${GOOS}/${GOARCH}/art -v
 
   - name: build-linux
     description: builds the Artisan CLI for the linux platform
     env:
       GOOS: linux
     run:
-      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/${GOOS}/${GOARCH}/art -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION} (community)'" -o bin/${GOOS}/${GOARCH}/art -v
 
   - name: build-win
     description: builds the Artisan CLI for the linux platform
     env:
       GOOS: windows
     run:
-      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/${GOOS}/${GOARCH}/art -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION} (community)'" -o bin/${GOOS}/${GOARCH}/art -v
 
   - name: zip
     run:

@@ -675,7 +675,7 @@ func (r *LocalRegistry) loadSeal(sealFilename string) (*data.Seal, error) {
 	return seal, nil
 }
 
-func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetPath string, certPath string, ignoreSignature bool) {
+func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetPath string, certPath string, ignoreSignature bool, v Verifier) {
 	var (
 		pubKeyPath = certPath
 		err        error
@@ -695,20 +695,13 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetP
 		// pull it
 		artie = r.Pull(name, credentials)
 	}
-	// get the path to the public key
-	if len(pubKeyPath) > 0 {
-		if !path.IsAbs(pubKeyPath) {
-			pubKeyPath, err = filepath.Abs(pubKeyPath)
-			core.CheckErr(err, "cannot retrieve absolute path for public key")
-		}
-	}
 	// get the package seal
 	seal, err := r.GetSeal(artie)
 	core.CheckErr(err, "cannot read package seal")
-	if !ignoreSignature {
+	if !ignoreSignature && v != nil {
 		// get the location of the package
 		zipFilename := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef))
-		core.CheckErr(checkSignature(name, pubKeyPath, seal, zipFilename), "invalid signature")
+		core.CheckErr(v.Verify(name, pubKeyPath, seal, zipFilename), "invalid signature")
 	}
 	// now we are ready to open it
 	// if the target was already compressed (e.g. jar file, etc) then it should not unzip it but rename it
@@ -746,7 +739,7 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetP
 	}
 }
 
-func checkSignature(name *core.PackageName, pubKeyPath string, seal *data.Seal, zipFilename string) error {
+func (r *LocalRegistry) Verify(name *core.PackageName, pubKeyPath string, seal *data.Seal, zipFilename string) error {
 	var (
 		primaryKey, backupKey *crypto.PGP
 		err                   error
@@ -1025,14 +1018,14 @@ func (r *LocalRegistry) ExportPackage(names []core.PackageName, sourceCreds, tar
 // localPath: if specified, it downloads the remote files to a target folder
 func (r *LocalRegistry) Import(uri []string, creds, pubKeyPath string, ignoreSignature bool) error {
 	for _, path := range uri {
-		if err := r.importTar(path, creds, pubKeyPath, ignoreSignature); err != nil {
+		if err := r.importTar(path, creds, pubKeyPath, ignoreSignature, r); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *LocalRegistry) importTar(uri, creds, pubKeyPath string, ignoreSignature bool) error {
+func (r *LocalRegistry) importTar(uri, creds, pubKeyPath string, ignoreSignature bool, v Verifier) error {
 	core.InfoLogger.Printf("reading => %s\n", uri)
 	tarBytes, err := resx.ReadFile(uri, creds)
 	if err != nil {
@@ -1076,7 +1069,7 @@ func (r *LocalRegistry) importTar(uri, creds, pubKeyPath string, ignoreSignature
 			// if not ignoring signature verification
 			if !ignoreSignature {
 				// use it to check the package digital signature
-				err = checkSignature(packageName, pubKeyPath, seal, packageFilename)
+				err = v.Verify(packageName, pubKeyPath, seal, packageFilename)
 				if err != nil {
 					return err
 				}
@@ -1450,7 +1443,7 @@ func (r *LocalRegistry) findRepositoryIxByPackageId(id string) []int {
 	return ix
 }
 
-func (r *LocalRegistry) Sign(pac, pkPath, pubPath string) error {
+func (r *LocalRegistry) Sign(pac, pkPath, pubPath string, v Verifier) error {
 	// parses the package name
 	packageName, err := core.ParseName(pac)
 	if err != nil {
@@ -1471,8 +1464,8 @@ func (r *LocalRegistry) Sign(pac, pkPath, pubPath string) error {
 		return sealErr
 	}
 	// if a public key has been provided, use it to verify the package digital signature
-	if len(pubPath) > 0 {
-		err = checkSignature(packageName, pubPath, s, zipFilename)
+	if len(pubPath) > 0 && v != nil {
+		err = v.Verify(packageName, pubPath, s, zipFilename)
 		if err != nil {
 			return err
 		}
@@ -1545,4 +1538,12 @@ func rmPackage(a []*Package, value *Package) []*Package {
 	a[len(a)-1] = nil  // Erase last element (write zero value).
 	a = a[:len(a)-1]   // Truncate slice.
 	return a
+}
+
+type Verifier interface {
+	Verify(name *core.PackageName, pubKeyPath string, seal *data.Seal, zipFilename string) error
+}
+
+type Signer interface {
+	Verify(name *core.PackageName, pubKeyPath string, seal *data.Seal, zipFilename string) error
 }

@@ -113,7 +113,7 @@ func ExportImage(imgName, packName, targetUri, creds string) error {
 		return fmt.Errorf("cannot save package build file: %s", err)
 	}
 	b := build.NewBuilder()
-	b.Build(tmp, "", "", pName, "", false, false, "", false)
+	b.Build(tmp, "", "", pName, "", false, false)
 	r := registry.NewLocalRegistry()
 	// export package
 	core.InfoLogger.Printf("exporting image package to tarball file")

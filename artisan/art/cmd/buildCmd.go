@@ -17,18 +17,16 @@ import (
 
 // BuildCmd builds an artisan package
 type BuildCmd struct {
-	cmd          *cobra.Command
-	branch       string
-	gitTag       string
-	packageName  string
-	gitToken     string
-	from         string
-	fromPath     string
-	profile      string
-	copySource   bool
-	interactive  bool
-	keyPath      string
-	useBackupKey bool
+	cmd         *cobra.Command
+	branch      string
+	gitTag      string
+	packageName string
+	gitToken    string
+	from        string
+	fromPath    string
+	profile     string
+	copySource  bool
+	interactive bool
 }
 
 func NewBuildCmd() *BuildCmd {
@@ -46,9 +44,7 @@ The command use to create Artisan packages.
 Packages are combinations of a zip file and a json file stored in a package registry:
 - the zip file can contain one or more files or folders.
 - the json file act as a digital seal that carries both package information (e.g. manifest) and the integrity check information
-  to determine the author and whether the package has been tampered.
-
-Packages are digitally signed using a PGP key and require the other key in the pair to open them.
+  to determine the integrity of the package (digest).
 
 Executable Packages:
 ===================
@@ -100,10 +96,8 @@ In order to create a content package do the following:
 	c.cmd.Flags().StringVarP(&c.packageName, "package-name", "t", "", "package name and optionally a tag in the 'name:tag' format")
 	c.cmd.Flags().StringVarP(&c.fromPath, "path", "f", "", "if a git repository is specified as the location to the build file, it defines the path within the git repository where the build file is")
 	c.cmd.Flags().StringVarP(&c.profile, "profile", "p", "", "the build profile to use. if not provided, the default profile defined in the build file is used. if no default profile is found, then the first profile in the build file is used.")
-	c.cmd.Flags().StringVar(&c.keyPath, "key", "", "the path to the PGP private key to use to sign the package, if not specified, the keys stored in the local registry are used")
 	c.cmd.Flags().BoolVarP(&c.interactive, "interactive", "i", false, "if true, it prompts the user for information if not provided")
 	c.cmd.Flags().BoolVarP(&c.copySource, "copy", "c", false, "indicates if a copy should be made of the project files before building the package. it is only applicable if the source is in the file system.")
-	c.cmd.Flags().BoolVar(&c.useBackupKey, "backup-key", false, "indicates if the backup private key in the local registry should be used to sign the package.")
 	return c
 }
 
@@ -117,11 +111,8 @@ func (b *BuildCmd) Run(_ *cobra.Command, args []string) {
 	default:
 		core.RaiseErr("too many arguments")
 	}
-	if len(b.keyPath) > 0 && b.useBackupKey {
-		core.RaiseErr("use either --backup-key or --key options, not both")
-	}
 	builder := build.NewBuilder()
 	name, err := core.ParseName(b.packageName)
 	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
-	builder.Build(b.from, b.fromPath, b.gitToken, name, b.profile, b.copySource, b.interactive, b.keyPath, b.useBackupKey)
+	builder.Build(b.from, b.fromPath, b.gitToken, name, b.profile, b.copySource, b.interactive)
 }
