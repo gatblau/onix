@@ -23,7 +23,6 @@ func InitialiseRootCmd() *RootCmd {
 	mergeCmd := NewMergeCmd()
 	pullCmd := NewPullCmd()
 	openCmd := NewOpenCmd()
-	pgpCmd := InitialisePGPCommand()
 	flowCmd := InitialiseFlowCommand()
 	tknCmd := InitialiseTknCommand()
 	manifCmd := NewManifestCmd()
@@ -49,7 +48,6 @@ func InitialiseRootCmd() *RootCmd {
 		mergeCmd.cmd,
 		pullCmd.cmd,
 		openCmd.cmd,
-		pgpCmd.cmd,
 		flowCmd.cmd,
 		manifCmd.cmd,
 		exeCmd.cmd,
@@ -113,15 +111,4 @@ func InitialiseTknCommand() *TknCmd {
 	tknGenCmd := NewTknGenCmd()
 	tknCmd.cmd.AddCommand(tknGenCmd.cmd)
 	return tknCmd
-}
-
-func InitialisePGPCommand() *PGPCmd {
-	pgpCmd := NewPGPCmd()
-	pgpGenCmd := NewPGPGenCmd()
-	pgpImportCmd := NewPGPImportCmd()
-	pgpExportCmd := NewPGPExportCmd()
-	pgpEncryptCmd := NewPGPEncryptCmd()
-	pgpDecryptCmd := NewPGPDecryptCmd()
-	pgpCmd.cmd.AddCommand(pgpGenCmd.cmd, pgpImportCmd.cmd, pgpExportCmd.cmd, pgpEncryptCmd.cmd, pgpDecryptCmd.cmd)
-	return pgpCmd
 }

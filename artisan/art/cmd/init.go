@@ -11,10 +11,8 @@ package cmd
 import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/i18n"
 	"os"
-	"path"
 	"runtime"
 )
 
@@ -36,19 +34,6 @@ func ensureRegistryDir() {
 		}
 		err = os.Mkdir(core.RegistryPath(), os.ModePerm)
 		i18n.Err(err, i18n.ERR_CANT_CREATE_REGISTRY_FOLDER, core.RegistryPath(), core.HomeDir())
-	}
-	keysPath := path.Join(core.RegistryPath(), "keys")
-	// check the keys directory exists
-	_, err = os.Stat(keysPath)
-	// if it does not
-	if os.IsNotExist(err) {
-		// create a key pair
-		err = os.Mkdir(keysPath, os.ModePerm)
-		if err != nil {
-			core.RaiseErr(err.Error())
-		}
-		host, _ := os.Hostname()
-		crypto.GeneratePGPKeys(keysPath, "root", fmt.Sprintf("root-%s", host), "", "", versionLabel(), 2048)
 	}
 	filesPath := core.FilesPath()
 	// check the files directory exists
