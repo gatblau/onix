@@ -1,5 +1,3 @@
-package cmd
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package cmd
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package cmd
+
 import (
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
@@ -16,17 +17,14 @@ import (
 	"os"
 )
 
-// executes an exported function
+// ExeCmd executes an exported function
 type ExeCmd struct {
-	cmd             *cobra.Command
-	interactive     *bool
-	credentials     string
-	noTLS           *bool
-	ignoreSignature *bool
-	path            string
-	pubPath         string
-	envFilename     string
-	preserveFiles   *bool
+	cmd           *cobra.Command
+	interactive   *bool
+	credentials   string
+	path          string
+	envFilename   string
+	preserveFiles *bool
 }
 
 func NewExeCmd() *ExeCmd {
@@ -39,9 +37,6 @@ func NewExeCmd() *ExeCmd {
 	}
 	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
 	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
-	c.noTLS = c.cmd.Flags().BoolP("no-tls", "t", false, "use -t or --no-tls to connect to a artisan registry over plain HTTP")
-	c.ignoreSignature = c.cmd.Flags().BoolP("ignore-sig", "s", false, "-s or --ignore-sig to ignore signature verification")
-	c.cmd.Flags().StringVarP(&c.pubPath, "pub", "p", "", "--pub=/path/to/public/key or -p=/path/to/public/key - public PGP key to verify package source")
 	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env")
 	c.cmd.Flags().StringVar(&c.path, "path", "", "--path=/path/to/package/files - specify the location where the Artisan package must be open. If not specified, Artisan opens the package in a temporary folder under a randomly generated name.")
 	c.preserveFiles = c.cmd.Flags().BoolP("preserve-files", "f", false, "use -f to preserve the open package files")
@@ -69,5 +64,5 @@ func (c *ExeCmd) Run(cmd *cobra.Command, args []string) {
 	// merge with existing environment
 	env.Merge(env2)
 	// run the function on the open package
-	builder.Execute(name, function, c.credentials, *c.noTLS, c.pubPath, *c.ignoreSignature, *c.interactive, c.path, *c.preserveFiles, env)
+	builder.Execute(name, function, c.credentials, "", true, *c.interactive, c.path, *c.preserveFiles, env, nil)
 }

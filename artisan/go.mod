@@ -18,17 +18,18 @@ require (
 	github.com/hashicorp/go-uuid v1.0.2
 	github.com/kevinburke/ssh_config v1.1.0 // indirect
 	github.com/kr/pty v1.1.5 // indirect
+	github.com/mattn/go-isatty v0.0.13 // indirect
+	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/ohler55/ojg v1.12.5
 	github.com/pelletier/go-toml v1.9.4
 	github.com/rs/zerolog v1.24.0 // indirect
-	github.com/schollz/progressbar/v3 v3.8.2
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.1 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/net v0.0.0-20210825183410-e898025ed96a // indirect
 	golang.org/x/sys v0.0.0-20210902050250-f475640dd07b // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )

@@ -255,13 +255,13 @@ func (p *Processor) processOutboundRoute(outRoute types.OutRoute) error {
 			// resign packages
 			p.Info("re-signing packages with key %s: started", outRoute.PackageRegistry.PrivateKey)
 			for _, pac := range p.spec.Packages {
-				err = p.reg.Sign(pac, p.signKeyS3File(), "")
+				err = p.reg.Sign(pac, p.signKeyS3File(), "", nil)
 				if err != nil {
 					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
 				}
 			}
 			for _, pac := range p.spec.Images {
-				err = p.reg.Sign(pac, p.signKeyS3File(), "")
+				err = p.reg.Sign(pac, p.signKeyS3File(), "", nil)
 				if err != nil {
 					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
 				}
@@ -308,13 +308,13 @@ func (p *Processor) processOutboundRoute(outRoute types.OutRoute) error {
 			// resign packages
 			p.Info("re-signing packages with key %s: started", outRoute.PackageRegistry.PrivateKey)
 			for _, pac := range p.spec.Packages {
-				err = p.reg.Sign(pac, p.signKeyArtFile(), "")
+				err = p.reg.Sign(pac, p.signKeyArtFile(), "", nil)
 				if err != nil {
 					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
 				}
 			}
 			for _, pac := range p.spec.Images {
-				err = p.reg.Sign(pac, p.signKeyArtFile(), "")
+				err = p.reg.Sign(pac, p.signKeyArtFile(), "", nil)
 				if err != nil {
 					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
 				}

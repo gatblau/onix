@@ -9,10 +9,8 @@ package build
 */
 import (
 	"archive/zip"
-	"encoding/base64"
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/registry"
@@ -44,7 +42,6 @@ type Builder struct {
 	loadFrom         string
 	env              *merge.Envar
 	zip              bool // if the target is already zipped before packaging (e.g. jar, zip files, etc)
-	useBackupKey     bool
 }
 
 func NewBuilder() *Builder {
@@ -62,11 +59,8 @@ func NewBuilder() *Builder {
 // profileName: the name of the profile to be built. If empty then the default profile is built. If no default profile exists, the first profile is built.
 // copy: indicates whether a copy should be made of the project files before packaging (only valid for from location in the file system)
 // interactive: true if the console should survey for missing variables
-// pkPath: the path of the private PGP key to use to sign the package, if empty then load from artisan local registry
-// useBackupKey: true if the backup of the private key in the local registry should be used to sign the package
-func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName, profileName string, copy bool, interactive bool, pkPath string, useBackupKey bool) {
+func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName, profileName string, copy bool, interactive bool) {
 	b.from = from
-	b.useBackupKey = useBackupKey
 	// prepare the source ready for the build
 	repo := b.prepareSource(from, fromPath, gitToken, name, copy)
 	// set the unique identifier name for both the zip file and the seal file
@@ -89,7 +83,7 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 	// compress the target defined in the build.yaml' profile
 	b.zipPackage(targetPath)
 	// creates a seal
-	s, err := b.createSeal(name, buildProfile, pkPath)
+	s, err := b.createSeal(buildProfile)
 	core.CheckErr(err, "cannot create package seal")
 	// add the package to the local repo
 	b.localReg.Add(b.workDirZipFilename(), b.repoName, s)
@@ -497,7 +491,7 @@ func (b *Builder) inSourceDirectory(relativePath string) string {
 }
 
 // create the package Seal
-func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profile, pkPath string) (*data.Seal, error) {
+func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 	filename := b.uniqueIdName
 	// merge the labels in the profile with the ones at the build file level
 	labels := mergeMaps(b.buildFile.Labels, profile.Labels)
@@ -565,48 +559,13 @@ func (b *Builder) createSeal(packageName *core.PackageName, profile *data.Profil
 			})
 		}
 	}
-	// gets the combined checksum of the manifest and the package
-	sum, digest := s.Checksum(b.workDirZipFilename())
-	// load private key to sign the package
-	var (
-		primaryKey, backupKey *crypto.PGP
-		signature             []byte
-	)
-	if len(pkPath) == 0 {
-		primaryKey, backupKey, err = crypto.LoadKeys(*packageName, true)
-		core.CheckErr(err, "cannot load signing key")
-	} else {
-		primaryKey, err = crypto.LoadPGP(pkPath, "")
-		core.CheckErr(err, "cannot load signing key")
-	}
-	// create a PGP cryptographic signature
-	// if the command requested the use of the backup key
-	if b.useBackupKey {
-		// if a backup key exists
-		if backupKey != nil {
-			// signs the package with the backup key
-			signature, err = backupKey.Sign(sum)
-		} else {
-			// errors as backup key is not available
-			core.RaiseErr("backup key not available to sign package: use \"art pgp import -kb ...\" command to setup a private backup key")
-		}
-	} else {
-		// signs the package with the primary key
-		signature, err = primaryKey.Sign(sum)
-	}
-	core.CheckErr(err, "failed to create cryptographic signature")
-	// if in debug mode prints out signature
-	core.Debug("package %s signature: \n>> start on next line\n%s\n>> ended on previous line\n", packageName, string(signature))
-	// the combined checksum of the seal info and the package
+	// calculates the package digest
+	// the digest is used to check package integrity
+	_, digest := s.Checksum(b.workDirZipFilename())
+	// writes the digest to the seal
 	s.Digest = digest
-	// the crypto signature
-	s.Signature = base64.StdEncoding.EncodeToString(signature)
-	// if in debug mode prints out base64 encoded signature
-	core.Debug("package %s base64 encoded signature: \n>> start on next line\n%s\n>> ended on previous line\n", packageName, s.Signature)
-	// convert the seal to Json
-	dest := core.ToJsonBytes(s)
 	// save the seal
-	core.CheckErr(ioutil.WriteFile(b.workDirJsonFilename(), dest, os.ModePerm), "failed to write package seal file")
+	core.CheckErr(ioutil.WriteFile(b.workDirJsonFilename(), core.ToJsonBytes(s), os.ModePerm), "failed to write package seal file")
 	return s, nil
 }
 
@@ -642,8 +601,8 @@ func (b *Builder) getBuildEnv() map[string]string {
 	return env
 }
 
-// execute an exported function in a package
-func (b *Builder) Execute(name *core.PackageName, function string, credentials string, noTLS bool, certPath string, ignoreSignature bool, interactive bool, path string, preserveFiles bool, env *merge.Envar) {
+// Execute an exported function in a package
+func (b *Builder) Execute(name *core.PackageName, function string, credentials string, certPath string, ignoreSignature bool, interactive bool, path string, preserveFiles bool, env *merge.Envar, v registry.Verifier) {
 	// get a local registry handle
 	local := registry.NewLocalRegistry()
 	// check the run path exist
@@ -662,7 +621,8 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 		credentials,
 		path,
 		certPath,
-		ignoreSignature)
+		ignoreSignature,
+		v)
 	a := local.FindPackage(name)
 	// get the package seal
 	seal, err := local.GetSeal(a)
@@ -685,4 +645,8 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 	} else {
 		core.RaiseErr("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile\n", function)
 	}
+}
+
+type Signer interface {
+	Sign(data []byte) ([]byte, error)
 }
