@@ -55,33 +55,43 @@ functions:
     env:
       GOOS: darwin
     run:
-      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/darwin/art -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/${GOOS}/${GOARCH}/art -v
+
+  - name: build-mac-new
+    description: builds the Artisan CLI for MacOS
+    env:
+      GOOS: darwin
+      GOARCH: arm64
+    run:
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/${GOOS}/${GOARCH}/art -v
 
   - name: build-linux
     description: builds the Artisan CLI for the linux platform
     env:
       GOOS: linux
     run:
-      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/linux/art -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/${GOOS}/${GOARCH}/art -v
 
   - name: build-win
     description: builds the Artisan CLI for the linux platform
     env:
       GOOS: windows
     run:
-      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/windows/art.exe -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o bin/${GOOS}/${GOARCH}/art -v
 
   - name: zip
     run:
-      - zip art.zip bin/windows/art.exe bin/linux/art bin/darwin/art
+      - zip art.zip bin/windows/amd64/art.exe bin/linux/amd64/art bin/darwin/amd64/art bin/darwin/arm64/art
 
   - name: release-bin
     description: creates zip files with the cli binaries for the different platforms
     run:
       - $(build-linux)
       - $(build-mac)
-      - $(build-win)
-      - tar -zcvf art_linux.tar.gz -C bin/linux .
-      - tar -zcvf art_darwin.tar.gz -C bin/darwin .
-      - zip -r -j art_win.zip bin/windows/art.exe
+      - $(build-mac-new)
+#      - $(build-win)
+      - tar -zcvf art_linux_amd64.tar.gz -C bin/linux/amd64 .
+      - tar -zcvf art_darwin_amd64.tar.gz -C bin/darwin/amd64 .
+      - tar -zcvf art_darwin_arm64.tar.gz -C bin/darwin/arm64 .
+#      - zip -r -j art_win_amd64.zip bin/windows/art.exe
 ...
