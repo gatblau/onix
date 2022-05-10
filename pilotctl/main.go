@@ -24,8 +24,17 @@ func main() {
 		// enable encoded path  vars
 		router.UseEncodedPath()
 		// middleware
-		// router.Use(s.LoggingMiddleware)
+		router.Use(s.LoggingMiddleware)
 		router.Use(s.AuthenticationMiddleware)
+		router.Use(mux.CORSMethodMiddleware(router))
+		
+		// we have to process cfg here and not pass it to
+		// CorsMiddlewhare because it will create
+		// circular dependency for now
+		cfg := core.NewConf()
+		origin := cfg.GetCorsOrigin()
+		headers := cfg.GetCorsHeaders()
+		router.Use(s.CorsMiddleware(origin, headers))
 
 		// pilot http handlers
 		router.HandleFunc("/ping", pingHandler).Methods("POST")
@@ -44,7 +53,7 @@ func main() {
 		router.Handle("/org-group/{org-group}/org", s.Authorise(getOrgHandler)).Methods("GET")
 		router.Handle("/area/{area}/location", s.Authorise(getLocationsHandler)).Methods("GET")
 		router.Handle("/admission", s.Authorise(setAdmissionHandler)).Methods("PUT")
-		router.Handle("/package", s.Authorise(getPackagesHandler)).Methods("GET")
+		router.Handle("/package", s.Authorise(getPackagesHandler)).Methods(http.MethodGet, http.MethodOptions)
 		router.Handle("/package/{name}/api", s.Authorise(getPackagesApiHandler)).Methods("GET")
 		router.Handle("/job", s.Authorise(newJobHandler)).Methods("POST")
 		router.Handle("/job", s.Authorise(getJobsHandler)).Methods("GET")
