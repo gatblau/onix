@@ -27,6 +27,7 @@ type BuildCmd struct {
 	profile     string
 	copySource  bool
 	interactive bool
+	target      string
 }
 
 func NewBuildCmd() *BuildCmd {
@@ -86,8 +87,8 @@ IMPORTANT: if the path used in the build command does not contain a build file, 
 Such package cannot execute any functions but it is only destined to serve as a packaging mechanism for general files.
 In order to create a content package do the following:
 1. create a folder and add any files you would like to package (note that a build file is not needed in the folder)
-2. run the build command as follows:
-  $ art build -t my-registry.com/repository-group/repository-name:tag ./path/to/folder
+2. run the build command with the --target flag as follows:
+  $ art build -t my-registry.com/repository-group/repository-name:tag --target ./folder/to/package
 `,
 		},
 	}
@@ -95,6 +96,7 @@ In order to create a content package do the following:
 	c.cmd.Flags().StringVarP(&c.gitToken, "token", "k", "", "the git access token to use to read a build file remotely stored in a protected git repository")
 	c.cmd.Flags().StringVarP(&c.packageName, "package-name", "t", "", "package name and optionally a tag in the 'name:tag' format")
 	c.cmd.Flags().StringVarP(&c.fromPath, "path", "f", "", "if a git repository is specified as the location to the build file, it defines the path within the git repository where the build file is")
+	c.cmd.Flags().StringVar(&c.target, "target", "", "if a explicit target folder is defined, then build the package without relying on a build file")
 	c.cmd.Flags().StringVarP(&c.profile, "profile", "p", "", "the build profile to use. if not provided, the default profile defined in the build file is used. if no default profile is found, then the first profile in the build file is used.")
 	c.cmd.Flags().BoolVarP(&c.interactive, "interactive", "i", false, "if true, it prompts the user for information if not provided")
 	c.cmd.Flags().BoolVarP(&c.copySource, "copy", "c", false, "indicates if a copy should be made of the project files before building the package. it is only applicable if the source is in the file system.")
@@ -114,5 +116,5 @@ func (b *BuildCmd) Run(_ *cobra.Command, args []string) {
 	builder := build.NewBuilder()
 	name, err := core.ParseName(b.packageName)
 	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
-	builder.Build(b.from, b.fromPath, b.gitToken, name, b.profile, b.copySource, b.interactive)
+	builder.Build(b.from, b.fromPath, b.gitToken, name, b.profile, b.copySource, b.interactive, b.target)
 }

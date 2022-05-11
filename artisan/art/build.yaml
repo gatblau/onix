@@ -83,6 +83,19 @@ functions:
     run:
       - zip art.zip bin/windows/amd64/art.exe bin/linux/amd64/art bin/darwin/amd64/art bin/darwin/arm64/art
 
+  - name: tar
+    run:
+      - tar -zcvf art_linux_amd64.tar.gz -C bin/linux/amd64 .
+      - tar -zcvf art_darwin_amd64.tar.gz -C bin/darwin/amd64 .
+      - tar -zcvf art_darwin_arm64.tar.gz -C bin/darwin/arm64 .
+
+  - name: build-all
+    description: creates zip files with the cli binaries for the different platforms
+    run:
+      - $(build-linux)
+      - $(build-mac)
+      - $(build-mac-new)
+
   - name: release-bin
     description: creates zip files with the cli binaries for the different platforms
     run:
@@ -90,8 +103,6 @@ functions:
       - $(build-mac)
       - $(build-mac-new)
 #      - $(build-win)
-      - tar -zcvf art_linux_amd64.tar.gz -C bin/linux/amd64 .
-      - tar -zcvf art_darwin_amd64.tar.gz -C bin/darwin/amd64 .
-      - tar -zcvf art_darwin_arm64.tar.gz -C bin/darwin/arm64 .
+      - ./owner.sh
 #      - zip -r -j art_win_amd64.zip bin/windows/art.exe
 ...

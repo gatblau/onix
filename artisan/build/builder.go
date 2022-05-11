@@ -59,10 +59,11 @@ func NewBuilder() *Builder {
 // profileName: the name of the profile to be built. If empty then the default profile is built. If no default profile exists, the first profile is built.
 // copy: indicates whether a copy should be made of the project files before packaging (only valid for from location in the file system)
 // interactive: true if the console should survey for missing variables
-func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName, profileName string, copy bool, interactive bool) {
+// target: a specific target without relying on a build file
+func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName, profileName string, copy bool, interactive bool, target string) {
 	b.from = from
 	// prepare the source ready for the build
-	repo := b.prepareSource(from, fromPath, gitToken, name, copy)
+	repo := b.prepareSource(from, fromPath, gitToken, name, copy, target)
 	// set the unique identifier name for both the zip file and the seal file
 	b.setUniqueIdName(repo)
 	// run commands
@@ -117,7 +118,7 @@ func (b *Builder) Run(function string, path string, interactive bool, env *merge
 }
 
 // either clone a remote git repo or copy a local one onto the source folder
-func (b *Builder) prepareSource(from string, fromPath string, gitToken string, tagName *core.PackageName, copy bool) *git.Repository {
+func (b *Builder) prepareSource(from string, fromPath string, gitToken string, tagName *core.PackageName, copy bool, target string) *git.Repository {
 	var repo *git.Repository
 	b.repoName = tagName
 	// creates a temporary working directory
@@ -173,17 +174,21 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 	bf, err := data.LoadBuildFile(filepath.Join(b.loadFrom, "build.yaml"))
 	// if it cannot find the build file
 	if err != nil {
-		core.WarningLogger.Printf("build file missing, packaging build target: %s\n", b.loadFrom)
-		// dynamically creates one that packages anything on the build target
-		bf = &data.BuildFile{
-			Profiles: []*data.Profile{
-				{
-					Name:    "content-only",
-					Default: true,
-					Target:  "", // leave blank
-					Type:    "files",
+		if len(target) > 0 {
+			core.WarningLogger.Printf("build file missing, packaging build target: %s\n", filepath.Join(b.loadFrom, target))
+			// dynamically creates one that packages anything on the build target
+			bf = &data.BuildFile{
+				Profiles: []*data.Profile{
+					{
+						Name:    "content-only",
+						Default: true,
+						Target:  target,
+						Type:    "files",
+					},
 				},
-			},
+			}
+		} else {
+			core.WarningLogger.Printf("disregarding specified target, using build file's instead\n")
 		}
 	}
 	b.buildFile = bf

@@ -1,3 +1,0 @@
-This is an "art" template for testing merge of variables.
-
-Hello {{ $ "VAR1" }}!

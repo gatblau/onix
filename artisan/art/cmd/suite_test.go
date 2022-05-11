@@ -48,13 +48,13 @@ func TestExe(t *testing.T) {
 		t.FailNow()
 	}
 	// launch a runtime to execute the function
-	builder.Execute(packageName, fxName, "admin:sss", false, "", false, false, "", false, env)
+	builder.Execute(packageName, fxName, "admin:sss", "", true, false, "", false, env, nil)
 }
 
 func TestBuild(t *testing.T) {
 	packageName, _ := core.ParseName("test")
 	builder := build.NewBuilder()
-	builder.Build("super", "", "", packageName, "", false, false, "", false)
+	builder.Build("test2", "", "", packageName, "", false, false, "")
 }
 
 func TestRunC(t *testing.T) {
