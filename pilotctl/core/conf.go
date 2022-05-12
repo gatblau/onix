@@ -9,6 +9,7 @@ package core
 */
 import (
 	"fmt"
+	"errors"
 	"log"
 	"os"
 	"strconv"
@@ -36,6 +37,8 @@ const (
 	ConfActPwd                   ConfKey = "OX_PILOTCTL_ACTIVATION_PWD"
 	ConfTenant                   ConfKey = "OX_PILOTCTL_TENANT"
 	ConfDbMaxConn                ConfKey = "OX_PILOTCTL_DB_MAXCONN"
+	ConfCorsOrigin               ConfKey = "OX_PILOTCTL_CORS_ORIGIN"
+	ConfCorsHeaders              ConfKey = "OX_PILOTCTL_CORS_HEADERS"
 )
 
 type Conf struct {
@@ -146,6 +149,16 @@ func (c *Conf) getValue(key ConfKey) string {
 	return value
 }
 
+func (c *Conf) getValueWithError(key ConfKey) (string, error) {
+	value := os.Getenv(string(key))
+	if len(value) == 0 {
+		error := fmt.Sprintf("WARNING: variable %s not definedg", key)
+		log.Printf(error)
+		return "", errors.New(error)
+	}
+	return value, nil
+}
+
 func (c *Conf) getOxWapiInsecureSkipVerify() bool {
 	b, err := strconv.ParseBool(c.getValue(ConfOxWapiInsecureSkipVerify))
 	if err != nil {
@@ -168,3 +181,21 @@ func (c *Conf) getDbMaxConn() int {
 	}
 	return maxConn
 }
+
+func (c *Conf) GetCorsOrigin() string {
+	value, err := c.getValueWithError(ConfCorsOrigin)
+	if err != nil {
+		log.Printf("WARNING: will not allow CORS")
+	}
+	return value
+}
+
+func (c *Conf) GetCorsHeaders() string {
+	value, err := c.getValueWithError(ConfCorsHeaders)
+	if err != nil {
+		log.Printf("WARNING: will block headers such as Authorization and Origin on CORS OPTIONS requests")
+	}
+	return value
+}
+
+

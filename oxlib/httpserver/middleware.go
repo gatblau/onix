@@ -13,15 +13,17 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/oxlib/oxc"
 	"log"
-	"net/http"
+	"net/http" 
 	"net/http/httputil"
 	"net/url"
 	"regexp"
+	"github.com/gorilla/mux"
 )
 
 // LoggingMiddleware log http requests to stdout
 func (s *Server) LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Request
 		path, _ := url.PathUnescape(r.URL.Path)
 		fmt.Printf("request from: %s %s %s\n", r.RemoteAddr, r.Method, path)
 		requestDump, err := httputil.DumpRequest(r, true)
@@ -29,6 +31,7 @@ func (s *Server) LoggingMiddleware(next http.Handler) http.Handler {
 			log.Println(err)
 		}
 		log.Println(string(requestDump))
+		
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 	})
@@ -80,6 +83,10 @@ func (s *Server) AuthenticationMiddleware(next http.Handler) http.Handler {
 			// the default authentication function if it has been defined
 			// if no function has been defined then do not authenticate the request
 			if s.DefaultAuth != nil {
+				// Don't need to authorize options
+				if r.Method == http.MethodOptions {
+					next.ServeHTTP(w, r)
+				}
 				// if no Authorization header is found
 				if r.Header.Get("Authorization") == "" {
 					// prompts a client to authenticate by setting WWW-Authenticate response header
@@ -119,6 +126,30 @@ func (s *Server) AuthorisationMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+func (s *Server) CorsMiddleware(origin string, headers string) mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("CorsMiddleware(): origin = %v", origin)
+			log.Printf("CorsMiddleware(): headers = %v", headers)
+
+			if(origin != "") {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+			}
+			
+			if r.Method == http.MethodOptions {
+				log.Printf("CorsMiddleware(): process OPTIONS")
+				if(headers != ""){
+					w.Header().Set("Access-Control-Allow-Headers", headers)
+					w.WriteHeader(200)
+				}
+			}
+			
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 
 // Authorise handler functions using user principal access control lists
 // wraps the authorization middleware to be used when wrapping specific handler functions
