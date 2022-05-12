@@ -30,7 +30,7 @@ func downloadFileRetry(downloadInfo interface{}, attempts int) error {
 	// adds jitter to the interval to prevent creating a Thundering Herd effect
 	if err := retry(attempts, startingInterval, downloadFile, downloadInfo); err != nil {
 		// if the retry failed returns the error
-		return fmt.Errorf("cannot download package after %d attempts", attempts)
+		return fmt.Errorf("cannot download package after %d attempts: %s", attempts, err)
 	}
 	return nil
 }
