@@ -60,7 +60,7 @@ func (r *RemoteRegistry) List(quiet bool) {
 		}
 	} else {
 		// get a table writer for the stdout
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
+		w = tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
 		// print the header row
 		_, err = fmt.Fprintln(w, i18n.String(i18n.LBL_LS_HEADER))
 		core.CheckErr(err, "failed to write table header")
