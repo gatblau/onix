@@ -315,8 +315,8 @@ func (r *Api) GetPackageInfo(group, name, id, user, pwd string, https bool) (*Pa
 	return pack, err
 }
 
-func (r *Api) Download(group, name, filename, user, pwd string, https bool) (string, error, int) {
-	req, err := http.NewRequest("GET", r.fileURI(group, name, filename, https), nil)
+func (r *Api) Download(group, name, filename, user, pwd string, isSeal, https bool) (string, error, int) {
+	req, err := http.NewRequest("GET", r.fileURI(group, name, filename, isSeal, https), nil)
 	if err != nil {
 		return "", err, 0
 	}
@@ -427,12 +427,19 @@ func (r *Api) packageInfoWithIdURI(group, name, id string, https bool) string {
 	return fmt.Sprintf("%s/id/%s", r.packageInfoURI(group, name, https), id)
 }
 
-func (r *Api) fileURI(group, name, filename string, https bool) string {
+func (r *Api) fileURI(group, name, filename string, isSeal, https bool) string {
 	scheme := "http"
 	if https {
 		scheme = fmt.Sprintf("%ss", scheme)
 	}
-	return fmt.Sprintf("%s://%s/file/%s/%s/%s", scheme, r.domain, Escape(group), name, filename)
+	var fileType string
+	if isSeal {
+		fileType = "seal"
+	} else {
+		fileType = "archive"
+	}
+	// /package/{fileType}/{repository-group}/{repository-name}/{ref}
+	return fmt.Sprintf("%s://%s/package/%s/%s/%s/%s", scheme, r.domain, fileType, Escape(group), name, fileNameWithoutExt(filename))
 }
 
 // add a field to a multipart form
@@ -464,4 +471,8 @@ func (r *Api) addFile(writer *multipart.Writer, fieldName, fileName string, file
 func Escape(path string) string {
 	// NOTE: not sure why but need to escape twice for the request to work properly!
 	return url.PathEscape(url.PathEscape(path))
+}
+
+func fileNameWithoutExt(fileName string) string {
+	return fileName[:len(fileName)-len(filepath.Ext(fileName))]
 }

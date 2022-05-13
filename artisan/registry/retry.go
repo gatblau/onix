@@ -42,7 +42,7 @@ func downloadFile(info interface{}) error {
 	if !ok {
 		return fmt.Errorf("input parameter should be of type downloadInfo")
 	}
-	downFilename, err, status := i.api.Download(i.name.Group, i.name.Name, i.filename, i.uname, i.pwd, i.tls)
+	downFilename, err, status := i.api.Download(i.name.Group, i.name.Name, i.filename, i.uname, i.pwd, strings.HasSuffix(i.filename, "json"), i.tls)
 	// if the error is not recoverable
 	if err != nil && status > 299 {
 		// stop the retry
