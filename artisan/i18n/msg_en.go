@@ -27,5 +27,5 @@ var msg_en = map[I18NKey]string{
 	INFO_NOTHING_TO_PUSH: "nothing to push\n",
 	INFO_TAGGED:          "tagged: %s\n",
 	// labels
-	LBL_LS_HEADER: "REPOSITORY\tTAG\tPACKAGE ID\tPACKAGE TYPE\tCREATED\tSIZE",
+	LBL_LS_HEADER: "REPOSITORY\t TAG\t PACKAGE ID\t PACKAGE TYPE\t CREATED\t SIZE\t",
 }

@@ -399,7 +399,7 @@ func (r *LocalRegistry) AllPackages() []string {
 // List packages to stdout
 func (r *LocalRegistry) List() {
 	// get a table writer for the stdout
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 12, ' ', 0)
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
 	// print the header row
 	_, err := fmt.Fprintln(w, i18n.String(i18n.LBL_LS_HEADER))
 	core.CheckErr(err, "failed to write table header")
@@ -408,7 +408,7 @@ func (r *LocalRegistry) List() {
 		for _, a := range repo.Packages {
 			// if the package is dangling (no tags)
 			if len(a.Tags) == 0 {
-				_, err := fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s",
+				_, err := fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t",
 					repo.Repository,
 					"<none>",
 					a.Id[0:12],
@@ -419,7 +419,7 @@ func (r *LocalRegistry) List() {
 				core.CheckErr(err, "failed to write output")
 			}
 			for _, tag := range a.Tags {
-				_, err := fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s",
+				_, err := fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t",
 					repo.Repository,
 					tag,
 					a.Id[0:12],
@@ -438,7 +438,7 @@ func (r *LocalRegistry) List() {
 // ListQ list (quiet) package IDs only
 func (r *LocalRegistry) ListQ() {
 	// get a table writer for the stdout
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 10, ' ', 0)
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 0, ' ', 0)
 	// repository, tag, package id, created, size
 	for _, repo := range r.Repositories {
 		for _, a := range repo.Packages {

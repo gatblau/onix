@@ -50,7 +50,7 @@ func (r *RemoteRegistry) List(quiet bool) {
 	var w *tabwriter.Writer
 	if quiet {
 		// get a table writer for the stdout
-		w = tabwriter.NewWriter(os.Stdout, 0, 0, 10, ' ', 0)
+		w = tabwriter.NewWriter(os.Stdout, 0, 0, 0, ' ', 0)
 		// repository, tag, package id, created, size
 		for _, repo := range repos {
 			for _, a := range repo.Packages {
@@ -60,7 +60,7 @@ func (r *RemoteRegistry) List(quiet bool) {
 		}
 	} else {
 		// get a table writer for the stdout
-		w = tabwriter.NewWriter(os.Stdout, 0, 0, 12, ' ', 0)
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
 		// print the header row
 		_, err = fmt.Fprintln(w, i18n.String(i18n.LBL_LS_HEADER))
 		core.CheckErr(err, "failed to write table header")
@@ -68,7 +68,7 @@ func (r *RemoteRegistry) List(quiet bool) {
 		for _, repo := range repos {
 			for _, a := range repo.Packages {
 				for _, tag := range a.Tags {
-					_, err = fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s",
+					_, err = fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t",
 						fmt.Sprintf("%s/%s", r.domain, repo.Repository),
 						tag,
 						a.Id[0:12],
