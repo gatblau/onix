@@ -572,7 +572,7 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 		core.RaiseErr("package '%s', does not exist", name)
 	}
 	// check the package is not in the local registry
-	localPackage := r.findPackageByRepoAndId(name, remoteArt.Id)
+	localPackage := r.findPackageById(remoteArt.Id)
 	// if the local registry does not have the package then download it
 	if localPackage == nil {
 		attempts := 5
@@ -632,19 +632,27 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 		err2 := r.Add(packageFilename, name, seal)
 		core.CheckErr(err2, "cannot add package to local registry")
 	} else {
-		// the local registry has the package
-		// if the local package does not have the tag
-		if !localPackage.HasTag(name.Tag) {
-			// find the local package coordinates
-			rIx, aIx := r.artCoords(name, localPackage)
-			// add the tag locally
-			r.Repositories[rIx].Packages[aIx].Tags = append(r.Repositories[rIx].Packages[aIx].Tags, name.Tag)
+		// if the remote package repository exists locally
+		if r.findPackageByRepoAndId(name, remoteArt.Id) != nil {
+			// check if the local package does not have the remote tag
+			if !localPackage.HasTag(name.Tag) {
+				// find the local package coordinates
+				repoIx, packageIx := r.artCoords(name, localPackage)
+				// add the tag locally
+				r.Repositories[repoIx].Packages[packageIx].Tags = append(r.Repositories[repoIx].Packages[packageIx].Tags, name.Tag)
+				// persist the changes
+				r.save()
+				fmt.Printf("tagged '%s' with '%s'\n", name.FullyQualifiedName(), name.Tag)
+			}
+		} else { // at this point the package exists locally but in a different repository or repositories
+			// it needs to create the repository metadata and link it to the package
+			r.Repositories = append(r.Repositories, &Repository{
+				Repository: name.FullyQualifiedName(), // the local registry needs the fully qualified name because is multi repository
+				Packages:   []*Package{remoteArt},
+			})
 			// persist the changes
 			r.save()
-			fmt.Printf("package already exist, tag '%s' has been added\n", name.Tag)
-		} else {
-			// the package exists and has the requested tag
-			fmt.Printf("package already exist, tag '%s' already exist, nothing to pull\n", name.Tag)
+			fmt.Printf("added package '%s' to repository '%s'\n", localPackage.Id, name.FullyQualifiedName())
 		}
 	}
 	return r.FindPackage(name)
@@ -1212,7 +1220,7 @@ func (r *LocalRegistry) regDirZipFilename(uniqueIdName string) string {
 	return fmt.Sprintf("%s/%s.zip", core.RegistryPath(), uniqueIdName)
 }
 
-// find the package specified by ist id
+// find the package specified by its id
 func (r *LocalRegistry) findPackageByRepoAndId(name *core.PackageName, id string) *Package {
 	for _, repository := range r.Repositories {
 		rep := fmt.Sprintf("%s/%s/%s", name.Domain, name.Group, name.Name)
@@ -1221,6 +1229,17 @@ func (r *LocalRegistry) findPackageByRepoAndId(name *core.PackageName, id string
 				if pack.Id == id {
 					return pack
 				}
+			}
+		}
+	}
+	return nil
+}
+
+func (r *LocalRegistry) findPackageById(id string) *Package {
+	for _, repository := range r.Repositories {
+		for _, pack := range repository.Packages {
+			if pack.Id == id {
+				return pack
 			}
 		}
 	}
@@ -1409,12 +1428,6 @@ func (r *LocalRegistry) moveDanglingToRepo(srcPackage *Package, targetName strin
 	srcPackage.Tags = []string{tgtName.Tag}
 	// add the package  to the target repo
 	tgtRepo.Packages = append(tgtRepo.Packages, srcPackage)
-	return nil
-}
-
-// moveToRepo move the passed in package to the repo specified by the target name
-func (r *LocalRegistry) moveToRepo(sourcePackage *Package, name string) error {
-
 	return nil
 }
 
