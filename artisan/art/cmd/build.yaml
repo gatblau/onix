@@ -1,9 +1,5 @@
 ---
 profiles:
-  - name: test1
-    type: lib/test
+  - name: default
     target: test
-
-  - name: pilot
-    target: pilot
 ...

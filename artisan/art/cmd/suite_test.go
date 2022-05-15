@@ -54,7 +54,7 @@ func TestExe(t *testing.T) {
 func TestBuild(t *testing.T) {
 	packageName, _ := core.ParseName("test")
 	builder := build.NewBuilder()
-	builder.Build("test2", "", "", packageName, "", false, false, "")
+	builder.Build(".", "", "", packageName, "", false, false, "")
 }
 
 func TestRunC(t *testing.T) {
@@ -83,6 +83,11 @@ func TestPull(t *testing.T) {
 		t.FailNow()
 	}
 	reg.Pull(name, "admin:admin")
+}
+
+func TestRLs(t *testing.T) {
+	reg, _ := registry.NewRemoteRegistry("localhost:8080", "admin", "adm1n")
+	reg.List(false)
 }
 
 func TestVars(t *testing.T) {

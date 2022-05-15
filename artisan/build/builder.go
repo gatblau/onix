@@ -80,15 +80,20 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 	buildProfile.MergedTarget = mergedTarget[0]
 	// wait for the target to be created in the file system
 	targetPath := filepath.Join(b.loadFrom, mergedTarget[0])
+	core.Debug("waiting for build process to complete\n")
 	waitForTargetToBeCreated(targetPath)
 	// compress the target defined in the build.yaml' profile
+	core.Debug("zipping target path '%s'\n", targetPath)
 	b.zipPackage(targetPath)
 	// creates a seal
+	core.Debug("creating package seal\n")
 	s, err := b.createSeal(buildProfile)
 	core.CheckErr(err, "cannot create package seal")
 	// add the package to the local repo
+	core.Debug("adding package to local registry\n")
 	b.localReg.Add(b.workDirZipFilename(), b.repoName, s)
 	// cleanup all relevant folders and move package to target location
+	core.Debug("performing cleanup\n")
 	b.cleanUp()
 }
 
@@ -122,15 +127,17 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 	var repo *git.Repository
 	b.repoName = tagName
 	// creates a temporary working directory
-	b.newWorkingDir()
+	b.workingDir = b.newWorkingDir()
+	core.Debug("creating temporary working directory '%s'\n", b.workingDir)
 	// if "from" is an http url
 	if strings.HasPrefix(strings.ToLower(from), "http") {
-		b.loadFrom = b.sourceDir()
+		b.loadFrom = b.sourceDir(b.workingDir)
 		// if a sub-folder was specified
 		if len(fromPath) > 0 {
 			// add it to the path
 			b.loadFrom = filepath.Join(b.loadFrom, fromPath)
 		}
+		core.Debug("cloning build source repository '%s'\n", from)
 		repo = b.cloneRepo(from, gitToken)
 	} else
 	// there is a local repo instead of a downloadable url
@@ -147,14 +154,14 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 		}
 		// if the user requested a copy of the project before building it
 		if copy {
-			b.loadFrom = b.sourceDir()
+			b.loadFrom = b.sourceDir(b.workingDir)
 			// if a sub-folder was specified
 			if len(fromPath) > 0 {
 				// add it to the path
 				b.loadFrom = filepath.Join(b.loadFrom, fromPath)
 			}
 			// copy the folder to the source directory
-			err := copyFolder(from, b.sourceDir())
+			err := copyFolder(from, b.sourceDir(b.workingDir))
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -168,14 +175,17 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 				b.loadFrom = filepath.Join(b.loadFrom, fromPath)
 			}
 		}
+		core.Debug("opening git repository '%s'", localPath)
 		repo = b.openRepo(localPath)
 	}
 	// read build.yaml
-	bf, err := data.LoadBuildFile(filepath.Join(b.loadFrom, "build.yaml"))
+	buildFilePath := filepath.Join(b.loadFrom, "build.yaml")
+	core.Debug("loading build file from %s\n", buildFilePath)
+	bf, err := data.LoadBuildFile(buildFilePath)
 	// if it cannot find the build file
 	if err != nil {
 		if len(target) > 0 {
-			core.WarningLogger.Printf("build file missing, packaging build target: %s\n", filepath.Join(b.loadFrom, target))
+			core.WarningLogger.Printf("build not found in '%s', building content only package\n", filepath.Join(b.loadFrom, target))
 			// dynamically creates one that packages anything on the build target
 			bf = &data.BuildFile{
 				Profiles: []*data.Profile{
@@ -188,7 +198,7 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 				},
 			}
 		} else {
-			core.WarningLogger.Printf("disregarding specified target, using build file's instead\n")
+			core.RaiseErr("cannot build package: no build profile exists or target folder has been specified instead")
 		}
 	}
 	b.buildFile = bf
@@ -252,7 +262,7 @@ func (b *Builder) cloneRepo(repoUrl string, gitToken string) *git.Repository {
 			Password: gitToken,
 		}
 	}
-	repo, err := git.PlainClone(b.sourceDir(), false, opts)
+	repo, err := git.PlainClone(b.sourceDir(b.workingDir), false, opts)
 	if err != nil {
 		_ = os.RemoveAll(b.workingDir)
 		log.Fatal(err)
@@ -277,7 +287,7 @@ func (b *Builder) cleanUp() {
 }
 
 // create a new working directory and return its path
-func (b *Builder) newWorkingDir() {
+func (b *Builder) newWorkingDir() string {
 	// the working directory will be a build folder within the registry directory
 	basePath := filepath.Join(core.RegistryPath(), "build")
 	uid := uuid.New()
@@ -288,12 +298,12 @@ func (b *Builder) newWorkingDir() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	b.workingDir = workingDirPath
 	// create a sub-folder to zip
-	err = os.MkdirAll(b.sourceDir(), os.ModePerm)
+	err = os.MkdirAll(b.sourceDir(workingDirPath), os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 	}
+	return workingDirPath
 }
 
 // construct a unique name for the package using the short HEAD commit hash and current time
@@ -313,6 +323,7 @@ func (b *Builder) setUniqueIdName(repo *git.Repository) {
 	t := time.Now()
 	timeStamp := fmt.Sprintf("%04s%02d%02d%02d%02d%02d%s", strconv.Itoa(t.Year()), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), strconv.Itoa(t.Nanosecond())[:3])
 	b.uniqueIdName = fmt.Sprintf("%s%s", timeStamp, hash)
+	core.Debug("package files name is '%s'\n", b.uniqueIdName)
 }
 
 // remove files in the source folder that are specified in the .buildignore file
@@ -410,6 +421,7 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 	for _, profile := range b.buildFile.Profiles {
 		// if a profile name has been provided then build it
 		if len(profileName) > 0 && profile.Name == profileName {
+			core.Debug("using build profile '%s'\n", profile.Name)
 			// get the profile environment and merge any subshell command
 			vars = b.evalSubshell(profile.GetEnv(), execDir, env, interactive)
 			// combine the current environment with the profile environment
@@ -418,6 +430,7 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 			buildEnv = buildEnv.Append(b.getBuildEnv())
 			// stores the build environment
 			b.env = buildEnv
+			core.Debug("profile variables:\n%s\n", buildEnv.String())
 			// for each run statement in the profile
 			for _, cmd := range profile.Run {
 				// execute the statement
@@ -427,6 +440,7 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 					// merges the output of the subshell in the original command
 					cmd = strings.Replace(cmd, expr, out, -1)
 					// execute the statement
+					core.Debug("executing profile command: %s; @ %s\n", cmd, execDir)
 					err = execute(cmd, execDir, buildEnv, interactive)
 					core.CheckErr(err, "cannot execute command: %s", cmd)
 				} else if ok, fx := core.HasFunction(cmd); ok {
@@ -434,6 +448,7 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 					b.runFunction(fx, execDir, interactive, env)
 				} else {
 					// execute the statement
+					core.Debug("executing profile command: %s; @ %s\n", cmd, execDir)
 					err := execute(cmd, execDir, buildEnv, interactive)
 					core.CheckErr(err, "cannot execute command: %s", cmd)
 				}
@@ -446,8 +461,10 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 			defaultProfile := b.buildFile.DefaultProfile()
 			// use the default profile
 			if defaultProfile != nil {
+				core.Debug("using default profile: %s\n", defaultProfile.Name)
 				return b.runProfile(defaultProfile.Name, execDir, interactive)
 			} else {
+				core.Debug("using first profile: %s\n", b.buildFile.Profiles[0].Name)
 				// there is no default profile defined so use the first profile
 				return b.runProfile(b.buildFile.Profiles[0].Name, execDir, interactive)
 			}
@@ -492,7 +509,7 @@ func (b *Builder) inWorkingDirectory(relativePath string) string {
 
 // return an absolute path using the source directory as base
 func (b *Builder) inSourceDirectory(relativePath string) string {
-	return filepath.Join(b.sourceDir(), relativePath)
+	return filepath.Join(b.sourceDir(b.workingDir), relativePath)
 }
 
 // create the package Seal
@@ -529,9 +546,11 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 	// check if target is a folder containing a build.yaml
 	innerBuildFilePath := path.Join(b.from, profile.MergedTarget, "build.yaml")
 	// load the build file
+	core.Debug("trying to load build file from target folder '%s'\n", innerBuildFilePath)
 	buildFile, err := data.LoadBuildFile(innerBuildFilePath)
 	// if it cannot load build file in target folder
 	if err != nil {
+		core.Debug("target %s does not contain a build.yaml, building content package only\n", innerBuildFilePath)
 		// then it is a content only package, so creates an empty build file so the process can continue
 		// without adding functions to package manifest
 		buildFile = &data.BuildFile{
@@ -546,6 +565,7 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 	// if the manifest contains exported functions then include the runtime
 	// image that should be used to execute such functions
 	if buildFile.ExportFxs() {
+		core.Debug("build file exports functions\n")
 		// pick the runtime at the build file level if exists
 		if len(buildFile.Runtime) > 0 {
 			s.Manifest.Runtime = buildFile.Runtime
@@ -555,7 +575,8 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 	for _, fx := range buildFile.Functions {
 		// if the function is exported
 		if fx.Export != nil && *fx.Export {
-			// then garb the required inputs
+			core.Debug("adding inputs to the manifest for exported function '%s'\n", fx.Name)
+			// then grab the required inputs
 			s.Manifest.Functions = append(s.Manifest.Functions, &data.FxInfo{
 				Name:        fx.Name,
 				Description: fx.Description,
@@ -567,6 +588,7 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 	// calculates the package digest
 	// the digest is used to check package integrity
 	_, digest := s.Checksum(b.workDirZipFilename())
+	core.Debug("the package digest is '%s'\n", digest)
 	// writes the digest to the seal
 	s.Digest = digest
 	// save the seal
@@ -574,8 +596,8 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 	return s, nil
 }
 
-func (b *Builder) sourceDir() string {
-	return filepath.Join(b.workingDir, core.AppName)
+func (b *Builder) sourceDir(workingDirectory string) string {
+	return filepath.Join(workingDirectory, core.AppName)
 }
 
 // the fully qualified name of the json Seal in the working directory
