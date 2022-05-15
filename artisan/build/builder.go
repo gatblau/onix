@@ -550,7 +550,7 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 	buildFile, err := data.LoadBuildFile(innerBuildFilePath)
 	// if it cannot load build file in target folder
 	if err != nil {
-		core.Debug("target %s does not contain a build.yaml, building content package only\n", innerBuildFilePath)
+		core.Debug("cannot load a build.yaml from the target %s, building content package only; the error was: %s\n", innerBuildFilePath, err)
 		// then it is a content only package, so creates an empty build file so the process can continue
 		// without adding functions to package manifest
 		buildFile = &data.BuildFile{
