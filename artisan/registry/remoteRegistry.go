@@ -47,10 +47,10 @@ func (r *RemoteRegistry) List(quiet bool) {
 	// get a reference to the remote registry
 	repos, err, _, _ := r.api.GetAllRepositoryInfo(r.user, r.pwd)
 	core.CheckErr(err, "cannot list remote registry packages")
-	var w *tabwriter.Writer
 	if quiet {
 		// get a table writer for the stdout
-		w = tabwriter.NewWriter(os.Stdout, 0, 0, 0, ' ', 0)
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 0, ' ', 0)
+		defer w.Flush()
 		// repository, tag, package id, created, size
 		for _, repo := range repos {
 			for _, a := range repo.Packages {
@@ -60,7 +60,8 @@ func (r *RemoteRegistry) List(quiet bool) {
 		}
 	} else {
 		// get a table writer for the stdout
-		w = tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
+		defer w.Flush()
 		// print the header row
 		_, err = fmt.Fprintln(w, i18n.String(i18n.LBL_LS_HEADER))
 		core.CheckErr(err, "failed to write table header")
@@ -81,8 +82,6 @@ func (r *RemoteRegistry) List(quiet bool) {
 			}
 		}
 	}
-	err = w.Flush()
-	core.CheckErr(err, "failed to flush output")
 }
 
 // Remove one or more packages from a remote registry
