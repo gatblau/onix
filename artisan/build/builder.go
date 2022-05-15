@@ -543,14 +543,12 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 	s := new(data.Seal)
 	// the seal needs the manifest to create a checksum
 	s.Manifest = info
+	var buildFile *data.BuildFile
 	// check if target is a folder containing a build.yaml
-	innerBuildFilePath := path.Join(b.from, profile.MergedTarget, "build.yaml")
-	// load the build file
-	core.Debug("trying to load build file from target folder '%s'\n", innerBuildFilePath)
-	buildFile, err := data.LoadBuildFile(innerBuildFilePath)
-	// if it cannot load build file in target folder
-	if err != nil {
-		core.Debug("cannot load a build.yaml from the target %s, building content package only; the error was: %s\n", innerBuildFilePath, err)
+	innerBuildFilePath, _ := filepath.Abs(path.Join(b.from, profile.MergedTarget, "build.yaml"))
+	// check if the inner build file exists
+	if _, statErr := os.Stat(innerBuildFilePath); os.IsNotExist(statErr) {
+		core.Debug("cannot find a build.yaml in the target folder '%s', building content package only\n", innerBuildFilePath)
 		// then it is a content only package, so creates an empty build file so the process can continue
 		// without adding functions to package manifest
 		buildFile = &data.BuildFile{
@@ -560,6 +558,11 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 			Profiles:  []*data.Profile{},
 			Functions: []*data.Function{},
 		}
+	} else {
+		// load the build file
+		core.Debug("loading build file from target folder '%s'\n", innerBuildFilePath)
+		buildFile, err = data.LoadBuildFile(innerBuildFilePath)
+		core.CheckErr(err, "cannot load build file from target folder")
 	}
 	// only export functions if the target contains a build.yaml
 	// if the manifest contains exported functions then include the runtime
