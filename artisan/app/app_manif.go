@@ -12,6 +12,8 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"path"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"sort"
@@ -36,8 +38,11 @@ type Manifest struct {
 	// specification for images and packages
 	Spec *export.Spec `yaml:"spec,omitempty"`
 
-	// internal use for git credentials if required
+	// internal use
+	// for git credentials if required
 	credentials string
+	// the location of this manifest
+	Root string
 }
 
 type Profile struct {
@@ -159,6 +164,8 @@ func NewAppMan(uri, profile, credentials string) (man *Manifest, err error) {
 	if man == nil {
 		return nil, fmt.Errorf("invalid URI value '%s': should start with either file://, http:// or https://\n", uri)
 	}
+	// set the location of the manifest for later file resolution
+	man.Root = filepath.Dir(uri)
 	// set any credentials if provided
 	man.credentials = credentials
 	// set spec
@@ -258,7 +265,13 @@ func (m *Manifest) explode() (*Manifest, error) {
 				return nil, fmt.Errorf("cannot load service manifest for '%s': %s\n", svc.Image, err)
 			}
 		} else if len(svc.URI) > 0 {
-			svcMan, err = loadSvcManFromURI(svc, m.credentials)
+			// work out the location of the
+			// if the URI is for the file system and is a relative path
+			if resx.IsFile(svc.URI) && !strings.HasPrefix(svc.URI, "/") {
+				svcUri, _ := filepath.Abs(path.Join(m.Root, svc.URI))
+				svc.URI = svcUri
+			}
+			svcMan, err = loadSvcManFromURI(&svc, m.credentials)
 			if err != nil {
 				return nil, fmt.Errorf("cannot load service manifest for '%s': %s\n", svc.Image, err)
 			}

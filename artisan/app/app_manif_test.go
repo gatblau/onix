@@ -28,3 +28,11 @@ func TestAppManifest_ExplodeHTTP(t *testing.T) {
 	}
 	fmt.Println(len(m.Services))
 }
+
+func TestNewAppMan(t *testing.T) {
+	m, err := NewAppMan("test2/app.yaml", "config-db", "")
+	if err != nil {
+		t.Fatalf("cannot create app manifest: %s\n", err)
+	}
+	fmt.Println(len(m.Services))
+}

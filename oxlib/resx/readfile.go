@@ -30,14 +30,23 @@ import (
 // - if prefix is ftp then returns a not supported error
 // credentials are valid for http and s3 URIs and follow the syntax "user:pwd"
 func ReadFile(uri, creds string) ([]byte, error) {
-	if strings.HasPrefix(uri, "http") {
-		return getHttpFile(uri, creds)
-	} else if strings.HasPrefix(uri, "s3") {
-		return getS3File(uri, creds)
-	} else if strings.HasPrefix(uri, "ftp") {
-		return getFtpFile(uri, creds)
-	} else {
+	switch ParseUriType(uri) {
+	case File:
 		return getFsFile(uri)
+	case Https:
+		return getHttpFile(uri, creds)
+	case Http:
+		return getHttpFile(uri, creds)
+	case S3:
+		return getS3File(uri, creds)
+	case S3S:
+		return getS3File(uri, creds)
+	case Ftps:
+		return getFtpFile(uri, creds)
+	case Ftp:
+		return getFtpFile(uri, creds)
+	case Unknown:
+		return nil, fmt.Errorf("unkknown URI type: %s", uri)
 	}
 	return nil, nil
 }

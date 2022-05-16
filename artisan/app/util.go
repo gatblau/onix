@@ -83,7 +83,7 @@ func loadSvcManFromImage(svcRef SvcRef) (*SvcManifest, error) {
 }
 
 // loadSvcManFromURI extracts the service manifest from a remote URI
-func loadSvcManFromURI(svc SvcRef, credentials string) (*SvcManifest, error) {
+func loadSvcManFromURI(svc *SvcRef, credentials string) (*SvcManifest, error) {
 	var (
 		content []byte
 		err     error

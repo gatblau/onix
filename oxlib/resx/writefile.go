@@ -15,7 +15,6 @@ import (
 	"github.com/minio/minio-go/v7"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 // WriteFile writes a file to a URI
@@ -26,14 +25,23 @@ import (
 // - if prefix is ftp then returns a not supported error
 // credentials are valid for s3 URIs and follow the syntax "user:pwd"
 func WriteFile(content []byte, uri, creds string) error {
-	if strings.HasPrefix(uri, "http") {
-		return writeHttpFile(content, uri, creds)
-	} else if strings.HasPrefix(uri, "s3") {
-		return writeS3File(content, uri, creds)
-	} else if strings.HasPrefix(uri, "ftp") {
-		return writeFtpFile(content, uri, creds)
-	} else {
+	switch ParseUriType(uri) {
+	case File:
 		return writeFsFile(content, uri)
+	case Https:
+		return writeHttpFile(content, uri, creds)
+	case Http:
+		return writeHttpFile(content, uri, creds)
+	case S3:
+		return writeS3File(content, uri, creds)
+	case S3S:
+		return writeS3File(content, uri, creds)
+	case Ftps:
+		return writeFtpFile(content, uri, creds)
+	case Ftp:
+		return writeFtpFile(content, uri, creds)
+	case Unknown:
+		return fmt.Errorf("unkknown URI type: %s", uri)
 	}
 	return nil
 }
