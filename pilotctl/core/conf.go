@@ -8,8 +8,8 @@ package core
   to be licensed under the same terms as the rest of the code.
 */
 import (
-	"fmt"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -152,9 +152,9 @@ func (c *Conf) getValue(key ConfKey) string {
 func (c *Conf) getValueWithError(key ConfKey) (string, error) {
 	value := os.Getenv(string(key))
 	if len(value) == 0 {
-		error := fmt.Sprintf("WARNING: variable %s not definedg", key)
-		log.Printf(error)
-		return "", errors.New(error)
+		err := fmt.Sprintf("WARNING: variable %s not defined", key)
+		log.Printf(err)
+		return "", errors.New(err)
 	}
 	return value, nil
 }
@@ -197,5 +197,3 @@ func (c *Conf) GetCorsHeaders() string {
 	}
 	return value
 }
-
-
