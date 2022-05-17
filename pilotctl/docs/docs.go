@@ -256,6 +256,143 @@ var doc = `{
                 }
             }
         },
+        "/dictionary": {
+            "get": {
+                "description": "Retrieve a list of available dictionaries",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dictionary"
+                ],
+                "summary": "Get a List of Dictionaries",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "a flag indicating if all dictionary values should be returned (true) or only key and description",
+                        "name": "values",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Creates or Update a dictionary using its natural key",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Dictionary"
+                ],
+                "summary": "Set a Dictionary",
+                "parameters": [
+                    {
+                        "description": "the dictionary to create or update",
+                        "name": "dictionary",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.Dictionary"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/dictionary/{key}": {
+            "get": {
+                "description": "Retrieve a dictionary using its natural key",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Dictionary"
+                ],
+                "summary": "Get a Dictionary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the unique key for the dictionary to get",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a dictionary using its natural key",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Dictionary"
+                ],
+                "summary": "Delete a Dictionary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the unique key for the dictionary to delete",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/events": {
             "get": {
                 "description": "Returns a list of syslog entries following the specified filter",
@@ -1172,6 +1309,21 @@ var doc = `{
                 "verbose": {
                     "description": "enables verbose output",
                     "type": "boolean"
+                }
+            }
+        },
+        "types.Dictionary": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "values": {
+                    "type": "object",
+                    "additionalProperties": true
                 }
             }
         },

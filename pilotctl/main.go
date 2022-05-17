@@ -27,7 +27,7 @@ func main() {
 		router.Use(s.LoggingMiddleware)
 		router.Use(s.AuthenticationMiddleware)
 		router.Use(mux.CORSMethodMiddleware(router))
-		
+
 		// we have to process cfg here and not pass it to
 		// CorsMiddlewhare because it will create
 		// circular dependency for now
@@ -37,35 +37,38 @@ func main() {
 		router.Use(s.CorsMiddleware(origin, headers))
 
 		// pilot http handlers
-		router.HandleFunc("/ping", pingHandler).Methods("POST")
-		router.HandleFunc("/register", registerHandler).Methods("POST")
+		router.HandleFunc("/ping", pingHandler).Methods(http.MethodPost)
+		router.HandleFunc("/register", registerHandler).Methods(http.MethodPost)
 
 		// apply authorisation to admin user http handlers
-		router.Handle("/info/sync", s.Authorise(syncInfoHandler)).Methods("POST")
-		router.Handle("/host", s.Authorise(hostQueryHandler)).Methods("GET")
-		router.Handle("/host/{host-uuid}", s.Authorise(hostDecommissionHandler)).Methods("DELETE")
+		router.Handle("/info/sync", s.Authorise(syncInfoHandler)).Methods(http.MethodPost)
+		router.Handle("/host", s.Authorise(hostQueryHandler)).Methods(http.MethodGet)
+		router.Handle("/host/{host-uuid}", s.Authorise(hostDecommissionHandler)).Methods(http.MethodDelete)
 		router.Handle("/cmd", s.Authorise(updateCmdHandler)).Methods("PUT")
-		router.Handle("/cmd", s.Authorise(getAllCmdHandler)).Methods("GET")
-		router.Handle("/cmd/{name}", s.Authorise(getCmdHandler)).Methods("GET")
-		router.Handle("/cmd/{name}", s.Authorise(deleteCmdHandler)).Methods("DELETE")
-		router.Handle("/org-group", s.Authorise(getOrgGroupsHandler)).Methods("GET")
-		router.Handle("/org-group/{org-group}/area", s.Authorise(getAreasHandler)).Methods("GET")
-		router.Handle("/org-group/{org-group}/org", s.Authorise(getOrgHandler)).Methods("GET")
-		router.Handle("/area/{area}/location", s.Authorise(getLocationsHandler)).Methods("GET")
-		router.Handle("/admission", s.Authorise(setAdmissionHandler)).Methods("PUT")
+		router.Handle("/cmd", s.Authorise(getAllCmdHandler)).Methods(http.MethodGet)
+		router.Handle("/cmd/{name}", s.Authorise(getCmdHandler)).Methods(http.MethodGet)
+		router.Handle("/cmd/{name}", s.Authorise(deleteCmdHandler)).Methods(http.MethodDelete)
+		router.Handle("/org-group", s.Authorise(getOrgGroupsHandler)).Methods(http.MethodGet)
+		router.Handle("/org-group/{org-group}/area", s.Authorise(getAreasHandler)).Methods(http.MethodGet)
+		router.Handle("/org-group/{org-group}/org", s.Authorise(getOrgHandler)).Methods(http.MethodGet)
+		router.Handle("/area/{area}/location", s.Authorise(getLocationsHandler)).Methods(http.MethodGet)
+		router.Handle("/admission", s.Authorise(setAdmissionHandler)).Methods(http.MethodPut)
 		router.Handle("/package", s.Authorise(getPackagesHandler)).Methods(http.MethodGet, http.MethodOptions)
-		router.Handle("/package/{name}/api", s.Authorise(getPackagesApiHandler)).Methods("GET")
-		router.Handle("/job", s.Authorise(newJobHandler)).Methods("POST")
-		router.Handle("/job", s.Authorise(getJobsHandler)).Methods("GET")
-		router.Handle("/job/batch", s.Authorise(getJobBatchHandler)).Methods("GET")
-		router.Handle("/user", s.Authorise(getUserHandler)).Methods("GET")
+		router.Handle("/package/{name}/api", s.Authorise(getPackagesApiHandler)).Methods(http.MethodGet)
+		router.Handle("/job", s.Authorise(newJobHandler)).Methods(http.MethodPost)
+		router.Handle("/job", s.Authorise(getJobsHandler)).Methods(http.MethodGet)
+		router.Handle("/job/batch", s.Authorise(getJobBatchHandler)).Methods(http.MethodGet)
+		router.Handle("/user", s.Authorise(getUserHandler)).Methods(http.MethodGet)
+		router.Handle("/dictionary/{key}", s.Authorise(getDictionaryHandler)).Methods(http.MethodGet)
+		router.Handle("/dictionary", s.Authorise(setDictionaryHandler)).Methods(http.MethodPut)
+		router.Handle("/dictionary/{key}", s.Authorise(deleteDictionaryHandler)).Methods(http.MethodDelete)
+		router.Handle("/dictionary", s.Authorise(getDictionaryListHandler)).Methods(http.MethodGet)
 
-		router.HandleFunc("/pub", getKeyHandler).Methods("GET")
+		router.HandleFunc("/pub", getKeyHandler).Methods(http.MethodGet)
 
-		router.HandleFunc("/activation/{macAddress}/{uuid}", activationHandler).Methods("POST")
+		router.HandleFunc("/activation/{macAddress}/{uuid}", activationHandler).Methods(http.MethodPost)
 		router.HandleFunc("/registration", registrationHandler).Methods("POST")
-		router.HandleFunc("/registration/{mac-address}", undoRegistrationHandler).Methods("DELETE")
-
+		router.HandleFunc("/registration/{mac-address}", undoRegistrationHandler).Methods(http.MethodDelete)
 	}
 	// set up specific authentication for host pilot agents
 	s.Auth = map[string]func(http.Request) *oxc.UserPrincipal{

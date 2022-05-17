@@ -745,6 +745,101 @@ func undoRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// @Summary Get a Dictionary
+// @Description Retrieve a dictionary using its natural key
+// @Tags Dictionary
+// @Router /dictionary/{key} [get]
+// @Param key path string true "the unique key for the dictionary to get"
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getDictionaryHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	key := vars["key"]
+	dict, err := core.Api().GetDictionary(key)
+	if err != nil {
+		log.Printf("can't query dictionary with key '%s': %v\n", key, err)
+		http.Error(w, fmt.Sprintf("can't query dictionary with key '%s': %v\n", key, err), http.StatusInternalServerError)
+		return
+	}
+	httpserver.Write(w, r, dict)
+}
+
+// @Summary Set a Dictionary
+// @Description Creates or Update a dictionary using its natural key
+// @Tags Dictionary
+// @Router /dictionary [put]
+// @Param dictionary body types.Dictionary true "the dictionary to create or update"
+// @Accepts json
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func setDictionaryHandler(w http.ResponseWriter, r *http.Request) {
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("failed to read request body: %s", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	dict := new(Dictionary)
+	err = json.Unmarshal(bytes, dict)
+	if err != nil {
+		log.Printf("failed to unmarshal request: %s", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	result, err := core.Api().SetDictionary(*dict)
+	if err != nil {
+		log.Printf("can't put dictionary with key '%s': %v\n", dict.Key, err)
+		http.Error(w, fmt.Sprintf("can't put dictionary with key '%s': %v\n", dict.Key, err), http.StatusInternalServerError)
+		return
+	}
+	httpserver.Write(w, r, result)
+}
+
+// @Summary Delete a Dictionary
+// @Description Delete a dictionary using its natural key
+// @Tags Dictionary
+// @Router /dictionary/{key} [delete]
+// @Param key path string true "the unique key for the dictionary to delete"
+// @Accepts plain
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func deleteDictionaryHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	key := vars["key"]
+	result, err := core.Api().DeleteDictionary(key)
+	if err != nil {
+		log.Printf("can't delete dictionary with key '%s': %v\n", key, err)
+		http.Error(w, fmt.Sprintf("can't delete dictionary with key '%s': %v\n", key, err), http.StatusInternalServerError)
+		return
+	}
+	httpserver.Write(w, r, result)
+}
+
+// @Summary Get a List of Dictionaries
+// @Description Retrieve a list of available dictionaries
+// @Tags Dictionary
+// @Router /dictionary [get]
+// @Param values query bool false "a flag indicating if all dictionary values should be returned (true) or only key and description"
+// @Accepts plain
+// @Produce json
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getDictionaryListHandler(w http.ResponseWriter, r *http.Request) {
+	values := false
+	values, _ = strconv.ParseBool(r.FormValue("values"))
+	result, err := core.Api().GetDictionaries(values)
+	if err != nil {
+		log.Printf("can't retrieve dictionaries: %v\n", err)
+		http.Error(w, fmt.Sprintf("can't retrieve dictionaries: %v\n", err), http.StatusInternalServerError)
+		return
+	}
+	httpserver.Write(w, r, result)
+}
+
 // activationHandler notifies PilotCtl of a Host Activation
 // used by the activation service to notify pilot control that a host has been issued with an activation key
 // not in swagger as it authenticates with activation service credentials

@@ -516,6 +516,61 @@ func (r *API) DeleteCommand(cmdName string) (string, error) {
 	return result.Operation, nil
 }
 
+func (r *API) SetDictionary(dictionary Dictionary) (string, error) {
+	result, err := r.ox.PutItem(&oxc.Item{
+		Key:         DKey(dictionary.Key),
+		Name:        fmt.Sprintf("%s Property Dictionary", strings.ToUpper(dictionary.Key)),
+		Description: fmt.Sprintf("a list of key value pairs identified by %s", strings.ToUpper(dictionary.Key)),
+		Type:        "U_DICTIONARY",
+		Meta:        dictionary.Values,
+	})
+	if result != nil && result.Error {
+		return result.Operation, fmt.Errorf("cannot set dictionary in Onix CMDB: %s\n", result.Message)
+	}
+	if err != nil {
+		return "", fmt.Errorf("cannot set dictionary in Onix CMDB: %s\n", err)
+	}
+	return result.Operation, nil
+}
+
+func (r *API) DeleteDictionary(key string) (string, error) {
+	result, err := r.ox.DeleteItem(&oxc.Item{Key: DKey(key)})
+	if err != nil {
+		return "", fmt.Errorf("cannot delete command with key '%s' from Onix CMDB: %s", DKey(key), err)
+	}
+	return result.Operation, nil
+}
+
+func (r *API) GetDictionary(key string) (*Dictionary, error) {
+	item, err := r.ox.GetItem(&oxc.Item{Key: DKey(key)})
+	if err != nil {
+		return nil, fmt.Errorf("cannot get dictionary with key '%s' from Onix CMDB: %s", DKey(key), err)
+	}
+	return &Dictionary{
+		Key:         key,
+		Description: item.Description,
+		Values:      item.Meta,
+	}, nil
+}
+
+func (r *API) GetDictionaries(values bool) ([]*Dictionary, error) {
+	items, err := r.ox.GetItemsByType("U_DICTIONARY")
+	if err != nil {
+		return nil, fmt.Errorf("cannot get dictionaries from Onix CMDB: %s", err)
+	}
+	result := make([]*Dictionary, len(items.Values))
+	for i, item := range items.Values {
+		result[i] = &Dictionary{
+			Key:         item.Key[5:],
+			Description: item.Description,
+		}
+		if values {
+			result[i].Values = item.Meta
+		}
+	}
+	return result, nil
+}
+
 func (r *API) CompleteJob(status *JobResult) error {
 	logMsg := status.Log
 	// if there was a failure, and we have an error message, add it to the log
@@ -846,4 +901,8 @@ func boolF(t sql.NullBool) bool {
 		return t.Bool
 	}
 	return false
+}
+
+func DKey(key string) string {
+	return fmt.Sprintf("DICT:%s", strings.ToUpper(key))
 }

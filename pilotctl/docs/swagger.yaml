@@ -141,6 +141,16 @@ definitions:
         description: enables verbose output
         type: boolean
     type: object
+  types.Dictionary:
+    properties:
+      description:
+        type: string
+      key:
+        type: string
+      values:
+        additionalProperties: true
+        type: object
+    type: object
   types.Event:
     properties:
       area:
@@ -401,6 +411,97 @@ paths:
       summary: Get a Command definition
       tags:
       - Command
+  /dictionary:
+    get:
+      description: Retrieve a list of available dictionaries
+      parameters:
+      - description: a flag indicating if all dictionary values should be returned
+          (true) or only key and description
+        in: query
+        name: values
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get a List of Dictionaries
+      tags:
+      - Dictionary
+    put:
+      description: Creates or Update a dictionary using its natural key
+      parameters:
+      - description: the dictionary to create or update
+        in: body
+        name: dictionary
+        required: true
+        schema:
+          $ref: '#/definitions/types.Dictionary'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Set a Dictionary
+      tags:
+      - Dictionary
+  /dictionary/{key}:
+    delete:
+      description: Delete a dictionary using its natural key
+      parameters:
+      - description: the unique key for the dictionary to delete
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete a Dictionary
+      tags:
+      - Dictionary
+    get:
+      description: Retrieve a dictionary using its natural key
+      parameters:
+      - description: the unique key for the dictionary to get
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get a Dictionary
+      tags:
+      - Dictionary
   /events:
     get:
       description: Returns a list of syslog entries following the specified filter
