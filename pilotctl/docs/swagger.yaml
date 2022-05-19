@@ -144,11 +144,24 @@ definitions:
   types.Dictionary:
     properties:
       description:
+        description: Description describe the purpose / content of the dictionary
         type: string
       key:
+        description: Key a natural key used to uniquely identify this dictionary for
+          the purpose of idempotent opeartions
         type: string
+      name:
+        description: Name a friendly name for the dictionary
+        type: string
+      tags:
+        description: Tags a list of string based tags used for categorising the dictionary
+        items:
+          type: object
+        type: array
       values:
         additionalProperties: true
+        description: Values a map containing key/value pairs that are the content
+          held by the dictionary
         type: object
     type: object
   types.Event:
@@ -422,6 +435,8 @@ paths:
         type: boolean
       produces:
       - application/json
+      - ' application/yaml'
+      - ' application/xml'
       responses:
         "200":
           description: OK
@@ -489,7 +504,9 @@ paths:
         required: true
         type: string
       produces:
-      - text/plain
+      - application/json
+      - ' application/yaml'
+      - ' application/xml'
       responses:
         "200":
           description: OK

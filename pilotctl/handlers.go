@@ -750,8 +750,7 @@ func undoRegistrationHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags Dictionary
 // @Router /dictionary/{key} [get]
 // @Param key path string true "the unique key for the dictionary to get"
-// @Accepts json
-// @Produce plain
+// @Produce application/json, application/yaml, application/xml
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func getDictionaryHandler(w http.ResponseWriter, r *http.Request) {
@@ -803,7 +802,6 @@ func setDictionaryHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags Dictionary
 // @Router /dictionary/{key} [delete]
 // @Param key path string true "the unique key for the dictionary to delete"
-// @Accepts plain
 // @Produce plain
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
@@ -824,8 +822,7 @@ func deleteDictionaryHandler(w http.ResponseWriter, r *http.Request) {
 // @Tags Dictionary
 // @Router /dictionary [get]
 // @Param values query bool false "a flag indicating if all dictionary values should be returned (true) or only key and description"
-// @Accepts plain
-// @Produce json
+// @Produce application/json, application/yaml, application/xml
 // @Failure 500 {string} there was an error in the server, check the server logs
 // @Success 200 {string} OK
 func getDictionaryListHandler(w http.ResponseWriter, r *http.Request) {

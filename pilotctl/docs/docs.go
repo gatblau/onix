@@ -260,7 +260,9 @@ var doc = `{
             "get": {
                 "description": "Retrieve a list of available dictionaries",
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
                 ],
                 "tags": [
                     "Dictionary"
@@ -329,7 +331,9 @@ var doc = `{
             "get": {
                 "description": "Retrieve a dictionary using its natural key",
                 "produces": [
-                    "text/plain"
+                    "application/json",
+                    " application/yaml",
+                    " application/xml"
                 ],
                 "tags": [
                     "Dictionary"
@@ -1316,12 +1320,26 @@ var doc = `{
             "type": "object",
             "properties": {
                 "description": {
+                    "description": "Description describe the purpose / content of the dictionary",
                     "type": "string"
                 },
                 "key": {
+                    "description": "Key a natural key used to uniquely identify this dictionary for the purpose of idempotent opeartions",
                     "type": "string"
                 },
+                "name": {
+                    "description": "Name a friendly name for the dictionary",
+                    "type": "string"
+                },
+                "tags": {
+                    "description": "Tags a list of string based tags used for categorising the dictionary",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
                 "values": {
+                    "description": "Values a map containing key/value pairs that are the content held by the dictionary",
                     "type": "object",
                     "additionalProperties": true
                 }

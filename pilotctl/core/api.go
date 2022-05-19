@@ -519,10 +519,11 @@ func (r *API) DeleteCommand(cmdName string) (string, error) {
 func (r *API) SetDictionary(dictionary Dictionary) (string, error) {
 	result, err := r.ox.PutItem(&oxc.Item{
 		Key:         DKey(dictionary.Key),
-		Name:        fmt.Sprintf("%s Property Dictionary", strings.ToUpper(dictionary.Key)),
-		Description: fmt.Sprintf("a list of key value pairs identified by %s", strings.ToUpper(dictionary.Key)),
+		Name:        dictionary.Name,
+		Description: dictionary.Description,
 		Type:        "U_DICTIONARY",
 		Meta:        dictionary.Values,
+		Tag:         dictionary.Tags,
 	})
 	if result != nil && result.Error {
 		return result.Operation, fmt.Errorf("cannot set dictionary in Onix CMDB: %s\n", result.Message)
@@ -546,11 +547,7 @@ func (r *API) GetDictionary(key string) (*Dictionary, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot get dictionary with key '%s' from Onix CMDB: %s", DKey(key), err)
 	}
-	return &Dictionary{
-		Key:         key,
-		Description: item.Description,
-		Values:      item.Meta,
-	}, nil
+	return dict(*item), nil
 }
 
 func (r *API) GetDictionaries(values bool) ([]*Dictionary, error) {
@@ -560,12 +557,11 @@ func (r *API) GetDictionaries(values bool) ([]*Dictionary, error) {
 	}
 	result := make([]*Dictionary, len(items.Values))
 	for i, item := range items.Values {
-		result[i] = &Dictionary{
-			Key:         item.Key[5:],
-			Description: item.Description,
-		}
-		if values {
-			result[i].Values = item.Meta
+		result[i] = dict(item)
+		// if no values are required
+		if !values {
+			// then ensure they are not set in the result
+			result[i].Values = nil
 		}
 	}
 	return result, nil
@@ -904,5 +900,15 @@ func boolF(t sql.NullBool) bool {
 }
 
 func DKey(key string) string {
-	return fmt.Sprintf("DICT:%s", strings.ToUpper(key))
+	return fmt.Sprintf("DC:%s", strings.ToUpper(key))
+}
+
+func dict(item oxc.Item) *Dictionary {
+	return &Dictionary{
+		Key:         item.Key[3:],
+		Name:        item.Name,
+		Description: item.Description,
+		Values:      item.Meta,
+		Tags:        item.Tag,
+	}
 }
