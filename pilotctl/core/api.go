@@ -523,7 +523,7 @@ func (r *API) SetDictionary(dictionary Dictionary) (string, error) {
 		Description: dictionary.Description,
 		Type:        "U_DICTIONARY",
 		Meta:        dictionary.Values,
-		Tag:         dictionary.Tags,
+		Tag:         toInterfaceSlice(dictionary.Tags),
 	})
 	if result != nil && result.Error {
 		return result.Operation, fmt.Errorf("cannot set dictionary in Onix CMDB: %s\n", result.Message)
@@ -532,6 +532,14 @@ func (r *API) SetDictionary(dictionary Dictionary) (string, error) {
 		return "", fmt.Errorf("cannot set dictionary in Onix CMDB: %s\n", err)
 	}
 	return result.Operation, nil
+}
+
+func toInterfaceSlice(tags []string) []interface{} {
+	var result = make([]interface{}, 0)
+	for _, tag := range tags {
+		result = append(result, tag)
+	}
+	return result
 }
 
 func (r *API) DeleteDictionary(key string) (string, error) {
@@ -909,6 +917,14 @@ func dict(item oxc.Item) *Dictionary {
 		Name:        item.Name,
 		Description: item.Description,
 		Values:      item.Meta,
-		Tags:        item.Tag,
+		Tags:        fromInterfaceSlice(item.Tag),
 	}
+}
+
+func fromInterfaceSlice(tags []interface{}) []string {
+	var result = make([]string, len(tags))
+	for i, tag := range tags {
+		result[i] = fmt.Sprint(tag)
+	}
+	return result
 }
