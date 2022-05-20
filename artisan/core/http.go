@@ -11,13 +11,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/gatblau/onix/oxlib/httpserver"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/gatblau/onix/oxlib/httpserver"
 )
 
 // Get make a GET HTTP request to the specified URL
@@ -33,6 +34,9 @@ func Get(url, user, pwd string) (*http.Response, error) {
 	}
 	// issue http request
 	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
 	// do we have a nil response?
 	if resp == nil {
 		return resp, errors.New(fmt.Sprintf("error: response was empty for resource: %s", url))

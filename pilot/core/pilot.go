@@ -12,13 +12,14 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/gatblau/oxc"
-	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/gatblau/oxc"
+	"github.com/rs/zerolog/log"
 )
 
 // pilot monitors and reloads application configuration
@@ -343,7 +344,9 @@ func (p *pilot) http(method string, url string, payload string, headers http.Hea
 
 	// submits the request
 	resp, err := http.DefaultClient.Do(req)
-
+	if err != nil {
+		return nil, err
+	}
 	// do we have a nil response?
 	if resp == nil {
 		return resp, errors.New(fmt.Sprintf("error: response was empty for resource: %s, check the service is up and running", url))
