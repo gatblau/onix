@@ -168,6 +168,9 @@ func (c *Client) Get(url string, processor HttpRequestProcessor) (*http.Response
 	}
 	// issue http request
 	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
 	// do we have a nil response?
 	if resp == nil {
 		return resp, errors.New(fmt.Sprintf("error: response was empty for resource: %s", url))

@@ -58,8 +58,8 @@ type HttpRequestProcessor func(req *http.Request, payload Serializable) error
 
 // Onix HTTP client
 type Client struct {
+	*http.Client
 	conf  *ClientConf
-	self  *http.Client
 	token string
 }
 
@@ -128,7 +128,7 @@ func NewClient(conf *ClientConf) (*Client, error) {
 		// the authentication token
 		token: token,
 		// the http client instance
-		self: &http.Client{
+		Client: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: conf.InsecureSkipVerify,
@@ -164,8 +164,10 @@ func (c *Client) MakeRequest(method string, url string, payload Serializable, pr
 	}
 
 	// submits the request
-	resp, err := http.DefaultClient.Do(req)
-
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
 	// do we have a nil response?
 	if resp == nil {
 		return resp, errors.New(fmt.Sprintf("error: response was empty for resource: %s, check the service is up and running", url))
@@ -207,7 +209,10 @@ func (c *Client) Get(url string, processor HttpRequestProcessor) (*http.Response
 		}
 	}
 	// issue http request
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
 	// do we have a nil response?
 	if resp == nil {
 		return resp, errors.New(fmt.Sprintf("error: response was empty for resource: %s", url))

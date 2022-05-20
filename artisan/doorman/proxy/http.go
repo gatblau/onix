@@ -10,8 +10,9 @@ package main
 
 import (
 	"fmt"
-	util "github.com/gatblau/onix/oxlib/httpserver"
 	"net/http"
+
+	util "github.com/gatblau/onix/oxlib/httpserver"
 )
 
 func newRequest(method, requestURI string) (*http.Response, error, int) {
@@ -29,6 +30,10 @@ func newRequest(method, requestURI string) (*http.Response, error, int) {
 	}
 	req.Header.Add("Authorization", util.BasicToken(user, pwd))
 	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err, http.StatusBadGateway
+	}
+
 	// do we have a nil response?
 	if resp == nil {
 		return nil, fmt.Errorf("response was empty for resource: %s", requestURI), http.StatusBadGateway

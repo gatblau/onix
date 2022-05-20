@@ -12,6 +12,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"time"
+
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/doorman/types"
@@ -19,12 +26,6 @@ import (
 	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/registry"
 	util "github.com/gatblau/onix/oxlib/httpserver"
-	"net/http"
-	"os"
-	"path/filepath"
-	"regexp"
-	"strings"
-	"time"
 )
 
 type Processor struct {
@@ -500,6 +501,9 @@ func postNotification(n NotificationMsg) error {
 	req.Header.Add("Authorization", util.BasicToken(user, pwd))
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
 	// do we have a nil response?
 	if resp == nil {
 		return fmt.Errorf("response was empty for resource: %s", requestURI)
