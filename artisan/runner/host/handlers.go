@@ -29,6 +29,7 @@ import (
 	"github.com/gatblau/onix/artisan/merge"
 	_ "github.com/gatblau/onix/artisan/runner/host/docs"
 	o "github.com/gatblau/onix/artisan/runner/host/onix"
+	"github.com/gatblau/onix/oxlib/resx"
 	"github.com/gorilla/mux"
 )
 
@@ -38,7 +39,6 @@ import (
 // @Router /host/{cmd-key} [post]
 // @Param cmd-key path string true "the key of the command to retrieve"
 // @Produce plain
-// @Param flow body flow.Flow true "the artisan flow to run"
 // @Failure 500 {string} there was an error in the server, error the server logs
 // @Failure 422 {string} command-key was not found in database, error the server logs
 // @Success 200 {string} OK
@@ -70,7 +70,7 @@ func executeCommandHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	d := path.Join(t, "context")
-	err = core.WriteFile(body, d, "")
+	err = resx.WriteFile(body, d, "")
 	if checkErr(w, fmt.Sprintf("%s: [ %s ]\n", "Error while writing request body to temp path ", d), err) {
 		return
 	}
