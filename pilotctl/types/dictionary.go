@@ -19,5 +19,5 @@ type Dictionary struct {
 	// Values a map containing key/value pairs that are the content held by the dictionary
 	Values map[string]interface{} `json:"values,omitempty" yaml:"values,omitempty"`
 	// Tags a list of string based tags used for categorising the dictionary
-	Tags []interface{} `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Tags []string `json:"tags,omitempty" yaml:"tags,omitempty"`
 }

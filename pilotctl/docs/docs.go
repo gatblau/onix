@@ -1335,7 +1335,7 @@ var doc = `{
                     "description": "Tags a list of string based tags used for categorising the dictionary",
                     "type": "array",
                     "items": {
-                        "type": "object"
+                        "type": "string"
                     }
                 },
                 "values": {

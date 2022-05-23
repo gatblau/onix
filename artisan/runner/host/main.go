@@ -21,7 +21,7 @@ func main() {
 	// add handlers
 	s.Http = func(router *mux.Router) {
 		router.HandleFunc("/host/{cmd-key}", executeCommandHandler).Methods("POST")
-		fmt.Printf("handler is registered...")
+		fmt.Printf("new handler is registered...")
 	}
 	s.Serve()
 }
