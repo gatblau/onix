@@ -9,8 +9,10 @@
 package onix
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/oxlib/oxc"
@@ -156,4 +158,23 @@ func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
 		}
 	}
 	return input, nil
+}
+
+func (r *API) GetFlow(flowkey string) (flow []byte, err error) {
+
+	item, err := r.ox.GetItem(&oxc.Item{Key: strings.TrimSpace(flowkey)})
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get flow spec with key '%s' from Onix: %s", flowkey, err)
+	}
+
+	flow, err = json.Marshal(item.Meta)
+	if err != nil {
+		return nil, fmt.Errorf("cannot marshal flow specification obtained by key '%s' : %s", flowkey, err)
+	}
+
+	if flow == nil {
+		return nil, fmt.Errorf("No flow spec item for item type ART_FX found in database with flow key [ %s ] , please check if this item exists ", flowkey)
+	}
+
+	return flow, nil
 }
