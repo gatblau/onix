@@ -398,6 +398,10 @@ func (p *Processor) cleanup() {
 }
 
 func (p *Processor) SendNotification(nType NotificationType) error {
+	// pipe must have a value
+	if p.pipe == nil {
+		return fmt.Errorf("cannot send notification, pipeline is not set")
+	}
 	var n *types.PipeNotification
 	switch nType {
 	case SuccessNotification:
