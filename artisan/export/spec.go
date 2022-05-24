@@ -49,7 +49,7 @@ func NewSpec(path, creds string) (*Spec, error) {
 	if strings.Contains(path, "://") {
 		content, err = resx.ReadFile(path, creds)
 		if err != nil {
-			return nil, fmt.Errorf("cannot read remote spec file: %s", err)
+			return nil, fmt.Errorf("cannot read remote spec file '%s': %s", path, err)
 		}
 	} else {
 		path, err = filepath.Abs(path)
