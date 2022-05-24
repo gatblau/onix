@@ -418,20 +418,24 @@ func (p *Processor) SendNotification(nType NotificationType) error {
 	// merges release-artefacts
 	buf := bytes.Buffer{}
 	count := 0
-	for _, pac := range p.spec.Packages {
-		if count == 0 {
-			buf.WriteString(fmt.Sprintf("packages:\n"))
+	if p.spec != nil {
+		for _, pac := range p.spec.Packages {
+			if count == 0 {
+				buf.WriteString(fmt.Sprintf("packages:\n"))
+			}
+			buf.WriteString(fmt.Sprintf("%s\n", pac))
+			count++
 		}
-		buf.WriteString(fmt.Sprintf("%s\n", pac))
-		count++
-	}
-	count = 0
-	for _, img := range p.spec.Images {
-		if count == 0 {
-			buf.WriteString(fmt.Sprintf("images:\n"))
+		count = 0
+		for _, img := range p.spec.Images {
+			if count == 0 {
+				buf.WriteString(fmt.Sprintf("images:\n"))
+			}
+			buf.WriteString(fmt.Sprintf("%s\n", img))
+			count++
 		}
-		buf.WriteString(fmt.Sprintf("%s\n", img))
-		count++
+	} else {
+		buf.WriteString(fmt.Sprintf("Spec file not available\n"))
 	}
 	content := n.Content
 	content = strings.ReplaceAll(content, "<<release-artefacts>>", buf.String())
