@@ -691,6 +691,12 @@ func (r *LocalRegistry) loadSeal(sealFilename string) (*data.Seal, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot unmarshal package seal file: %s", err)
 	}
+	if seal.Manifest.Labels == nil {
+		seal.Manifest.Labels = map[string]string{}
+	}
+	if seal.Manifest.Functions == nil {
+		seal.Manifest.Functions = []*data.FxInfo{}
+	}
 	return seal, nil
 }
 
