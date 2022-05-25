@@ -114,10 +114,10 @@ func pathExist(path string) bool {
 	return true
 }
 
-// FindPackage return the package that matches the specified:
+// FindPackageByName return the package that matches the specified:
 // - domain/group/name:tag
 // nil if not found in the LocalRegistry
-func (r *LocalRegistry) FindPackage(name *core.PackageName) *Package {
+func (r *LocalRegistry) FindPackageByName(name *core.PackageName) *Package {
 	// first gets the repository the package is in
 	for _, repository := range r.Repositories {
 		if repository.Repository == name.FullyQualifiedName() {
@@ -208,7 +208,7 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 		return fmt.Errorf("failed to move package seal file to the local registry: %s", err)
 	}
 	// check if a package with the same name:tag exists
-	old := r.FindPackage(name)
+	old := r.FindPackageByName(name)
 	// if a package was found
 	if old != nil {
 		// moves it to the dangling artefacts repository
@@ -249,7 +249,7 @@ func (r *LocalRegistry) moveToDangling(name *core.PackageName) {
 	// get the package repository
 	repo := r.findRepository(name)
 	// get the package in the repository
-	p := r.FindPackage(name)
+	p := r.FindPackageByName(name)
 	// get the dangling artefact repository
 	dangRepo := r.findDanglingRepo()
 	// remove the package from the original repository
@@ -305,7 +305,7 @@ func (r *LocalRegistry) Tag(srcName, tgtName string) error {
 		if err != nil {
 			return fmt.Errorf("invalid source package name %s; or it does not exist", srcName)
 		}
-		sourcePackage = r.FindPackage(sourceName)
+		sourcePackage = r.FindPackageByName(sourceName)
 		// if the package is not found by name the exit with error
 		if sourcePackage == nil {
 			return fmt.Errorf("source package %s does not exist", sourceName)
@@ -318,7 +318,7 @@ func (r *LocalRegistry) Tag(srcName, tgtName string) error {
 	if targetName.IsInTheSameRepositoryAs(sourceName) {
 		if !sourcePackage.HasTag(targetName.Tag) {
 			// if the source package has the target name tag
-			targetPackage := r.FindPackage(targetName)
+			targetPackage := r.FindPackageByName(targetName)
 			if targetPackage != nil && targetPackage.HasTag(targetName.Tag) {
 				// remove the tag
 				targetPackage.Tags = removeItem(targetPackage.Tags, targetName.Tag)
@@ -355,7 +355,7 @@ func (r *LocalRegistry) Tag(srcName, tgtName string) error {
 			r.save()
 			return nil
 		} else {
-			targetPackage := r.FindPackage(targetName)
+			targetPackage := r.FindPackageByName(targetName)
 			// if the package exists in the repository
 			if targetPackage != nil {
 				// check if the tag already exists
@@ -467,7 +467,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) error {
 	// get registry credentials
 	uname, pwd := core.RegUserPwd(credentials)
 	// fetch the package info from the local registry
-	localPackage := r.FindPackage(name)
+	localPackage := r.FindPackageByName(name)
 	if localPackage == nil {
 		return fmt.Errorf("package '%s' not found in the local registry\n", name)
 	}
@@ -666,7 +666,7 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 			fmt.Printf("added package '%s' to repository '%s'\n", localPackage.Id, name.FullyQualifiedName())
 		}
 	}
-	return r.FindPackage(name)
+	return r.FindPackageByName(name)
 }
 
 func (r *LocalRegistry) loadSeal(sealFilename string) (*data.Seal, error) {
@@ -708,7 +708,7 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetP
 		}
 	}
 	// fetch from local registry
-	artie := r.FindPackage(name)
+	artie := r.FindPackageByName(name)
 	// if not found locally
 	if artie == nil {
 		// pull it
@@ -822,7 +822,7 @@ func (r *LocalRegistry) removePkg(pkg *Package) error {
 }
 
 func (r *LocalRegistry) removeByName(name *core.PackageName) error {
-	pkg := r.FindPackage(name)
+	pkg := r.FindPackageByName(name)
 	if pkg == nil {
 		return fmt.Errorf("package %s does not exist", name.FullyQualifiedNameTag())
 	}
@@ -884,10 +884,12 @@ func (r *LocalRegistry) Remove(names []string) error {
 		if err != nil {
 			return fmt.Errorf("invalid package name: %s", err)
 		}
-		// remove the package name (if there is not more associated names then removes the package files)
-		err = r.removeByName(pkgName)
-		if err != nil {
-			return fmt.Errorf("cannot remove package: %s", err)
+		// try and find the package by name
+		pkg = r.FindPackageByName(pkgName)
+		// if a package with the name was found
+		if pkg != nil {
+			// remove the package name (if there is not more associated names then removes the package files)
+			return r.removeByName(pkgName)
 		}
 	}
 	return nil
@@ -941,7 +943,7 @@ func (r *LocalRegistry) ExportKey(keyPath string, isPrivate, isBackup bool, repo
 
 func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
 	// find the package in the local registry
-	a := r.FindPackage(name)
+	a := r.FindPackageByName(name)
 	if a == nil {
 		core.RaiseErr("package '%s' not found in the local registry, pull it from remote first", name)
 	}
@@ -969,7 +971,7 @@ func (r *LocalRegistry) ExportPackage(names []core.PackageName, sourceCreds, tar
 		if repo == nil {
 			pack = r.Pull(&name, sourceCreds)
 		} else {
-			pack = r.FindPackage(&name)
+			pack = r.FindPackageByName(&name)
 		}
 		// check if the package exists
 		if pack == nil {
@@ -1288,7 +1290,7 @@ func (r *LocalRegistry) unTagAll(name *core.PackageName) {
 
 // remove a given tag from an Package
 func (r *LocalRegistry) unTag(name *core.PackageName, tag string) {
-	pkg := r.FindPackage(name)
+	pkg := r.FindPackageByName(name)
 	if pkg != nil {
 		pkg.Tags = core.RemoveElement(pkg.Tags, tag)
 	}
@@ -1416,7 +1418,7 @@ func (r *LocalRegistry) moveDanglingToRepo(srcPackage *Package, targetName strin
 		return fmt.Errorf("invalid target package name %s", targetName)
 	}
 	// check if the target name already exists in the target repo
-	tgtPackage := r.FindPackage(tgtName)
+	tgtPackage := r.FindPackageByName(tgtName)
 	if tgtPackage != nil {
 		// cannot override this package with dangling
 		return fmt.Errorf("package name %s already exists, use a name that is not in use or re-tag or delete the existing package", targetName)
@@ -1474,7 +1476,7 @@ func (r *LocalRegistry) Sign(pac, pkPath, pubPath string, v Verifier) error {
 		return err
 	}
 	// find the package by name
-	pkg := r.FindPackage(packageName)
+	pkg := r.FindPackageByName(packageName)
 	if pkg == nil {
 		return fmt.Errorf("package %s not found", pac)
 	}

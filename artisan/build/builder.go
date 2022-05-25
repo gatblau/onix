@@ -653,7 +653,7 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 		certPath,
 		ignoreSignature,
 		v)
-	a := local.FindPackage(name)
+	a := local.FindPackageByName(name)
 	// get the package seal
 	seal, err := local.GetSeal(a)
 	core.CheckErr(err, "cannot get package seal")
