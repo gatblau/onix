@@ -251,23 +251,23 @@ func (p *Processor) processOutboundRoute(outRoute types.OutRoute) error {
 			// stores the public key in tmp folder
 			err := os.WriteFile(p.signKeyS3File(), []byte(privKey.Value), 0660)
 			if err != nil {
-				return p.Error("cannot persist signing key %s to working folder %s", outRoute.PackageRegistry.PrivateKey, p.tmp)
+				return p.Error("cannot persist signing key %s to working folder %s", outRoute.S3Store.PrivateKey, p.tmp)
 			}
 			// resign packages
-			p.Info("re-signing packages with key %s: started", outRoute.PackageRegistry.PrivateKey)
+			p.Info("re-signing packages with key %s: started", outRoute.S3Store.PrivateKey)
 			for _, pac := range p.spec.Packages {
 				err = p.reg.Sign(pac, p.signKeyS3File(), "", nil)
 				if err != nil {
-					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
+					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.S3Store.PrivateKey, err)
 				}
 			}
 			for _, pac := range p.spec.Images {
 				err = p.reg.Sign(pac, p.signKeyS3File(), "", nil)
 				if err != nil {
-					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
+					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.S3Store.PrivateKey, err)
 				}
 			}
-			p.Info("re-signing packages with key %s: completed", outRoute.PackageRegistry.PrivateKey)
+			p.Info("re-signing packages with key %s: completed", outRoute.S3Store.PrivateKey)
 		}
 		// export packages
 		p.Info("exporting re-signed packages: started")
