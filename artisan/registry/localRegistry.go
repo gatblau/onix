@@ -196,7 +196,7 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 	registryJsonFilename := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", basenameNoExt))
 	// if the zip or json files already exist in the local registry
 	if fileExists(registryZipFilename) || fileExists(registryJsonFilename) {
-		core.InfoLogger.Printf("package '%s:%s' already exists, skipping import", name.FullyQualifiedName(), name.Tag)
+		core.InfoLogger.Printf("package '%s' already exists, skipping import", name.FullyQualifiedNameTag())
 		return nil
 	}
 	// move the zip file to the localRepo folder
@@ -981,7 +981,19 @@ func (r *LocalRegistry) ExportPackage(names []core.PackageName, sourceCreds, tar
 		zipFile := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", pack.FileRef))
 		jsonFile := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", pack.FileRef))
 		// append the package index data
-		reg.Repositories = append(reg.Repositories, repo)
+		reg.Repositories = append(reg.Repositories, &Repository{
+			Repository: repo.Repository,
+			Packages: []*Package{ // only the exported package
+				{
+					Id:      pack.Id,
+					Type:    pack.Type,
+					FileRef: pack.FileRef,
+					Size:    pack.Size,
+					Created: pack.Created,
+					Tags:    []string{name.Tag}, // only the exported tag
+				},
+			},
+		})
 		// add the package files to the archive list
 		files = append(files, []core.TarFile{
 			// add package seal
@@ -1095,7 +1107,7 @@ func (r *LocalRegistry) importTar(uri, creds, pubKeyPath string, ignoreSignature
 					return err
 				}
 			}
-			core.InfoLogger.Printf("importing => %s:%s\n", packageName.FullyQualifiedName(), packageName.Tag)
+			core.InfoLogger.Printf("importing => %s\n", packageName.FullyQualifiedNameTag())
 			if err2 = r.Add(packageFilename, packageName, seal); err2 != nil {
 				// cleanup tmp folder
 				os.RemoveAll(tmp)
