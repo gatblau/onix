@@ -99,8 +99,19 @@ func (r *LocalRegistry) Prune() error {
 }
 
 func pathExist(path string) bool {
-	_, err := os.Stat(path)
-	return !os.IsNotExist(err)
+	// get the absolute path
+	abs, _ := filepath.Abs(path)
+	// stats the path
+	_, err := os.Stat(abs)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false
+		} else {
+			core.WarningLogger.Printf("cannot stat path '%s': %s\n", abs, err)
+			return false
+		}
+	}
+	return true
 }
 
 // FindPackage return the package that matches the specified:
