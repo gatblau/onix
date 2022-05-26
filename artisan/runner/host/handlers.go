@@ -41,7 +41,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type flowExecution func(path string, f *flow.Flow, w http.ResponseWriter) error
+type runFx func(path string, s *flow.Step, env *merge.Envar) error
 
 // @Summary Build patching artisan package
 // @Description Trigger a new build to create artisan package from the vulnerabilty scanned csv report passed in the payload.
@@ -147,7 +147,8 @@ func executeFlowFromPayloadHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	err = executeRunCFlow(path, f, w)
+
+	err = executeFlow(path, f, w)
 	if checkErr(w, "error while executing flow spec ", err) {
 		os.RemoveAll(path)
 		return
@@ -220,29 +221,38 @@ func executeWebhookFlowHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if *f.UseRuntimes == true {
-		err = executeRunCFlow(path, f, w)
-		if checkErr(w, "error while executing flow spec ", err) {
-			os.RemoveAll(path)
-			return
-		}
-	} else {
-		executeRunFlow(path, f, w)
+	executeFlow(path, f, w)
+	if checkErr(w, "error while executing flow spec ", err) {
+		os.RemoveAll(path)
+		return
 	}
-
 	os.RemoveAll(path)
 }
 
-func executeRunCFlow(path string, f *flow.Flow, w http.ResponseWriter) error {
-
-	var r *runner.Runner
-	var err error
-	if f.RequiresGitSource() {
-		r, err = runner.NewFromPath(path)
-		if checkErr(w, fmt.Sprintf("Error while creating runner using current path as [%s] for build file ", path), err) {
-			return err
+func getRunFx(useRuntime bool) runFx {
+	if useRuntime == true {
+		return func(path string, s *flow.Step, env *merge.Envar) error {
+			var r *runner.Runner
+			r, err := runner.NewFromPath(path)
+			if err != nil {
+				return err
+			}
+			err = r.RunC(s.Function, false, env, "host")
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	} else {
+		return func(path string, s *flow.Step, env *merge.Envar) error {
+			b := build.NewBuilder()
+			b.Run(s.Function, path, false, env)
+			return nil
 		}
 	}
+}
+
+func executeFlow(path string, f *flow.Flow, w http.ResponseWriter) error {
 
 	var env *merge.Envar
 	core.Debug("Executing steps ", len(f.Steps))
@@ -266,52 +276,13 @@ func executeRunCFlow(path string, f *flow.Flow, w http.ResponseWriter) error {
 				if checkErr(w, fmt.Sprintf("Error while opening artisan package [ %s ]", s.Package), err) {
 					return err
 				}
-
-				/*build new runner after art open so that new build.yaml is loaded into the runner*/
-				r, err = runner.NewFromPath(path)
-				if checkErr(w, fmt.Sprintf("Error while creating runner using current path as [%s] for build file ", path), err) {
-					return err
-				}
 			}
 
-			err := r.RunC(s.Function, false, env, "host")
+			rf := getRunFx(*f.UseRuntimes)
+			err := rf(path, s, env)
 			if checkErr(w, fmt.Sprintf("Error while executing function [%s] using runc command ", s.Function), err) {
 				return err
 			}
-		}
-	}
-	return nil
-}
-
-func executeRunFlow(path string, f *flow.Flow, w http.ResponseWriter) error {
-
-	b := build.NewBuilder()
-	var env *merge.Envar
-	core.Debug("Executing steps")
-	bl := false
-	if len(f.Steps) > 0 {
-		for _, s := range f.Steps {
-			i := s.Input
-			if i != nil {
-				env = i.Env(true)
-			}
-			// for surce type 'create' delete the folder contents
-			if strings.EqualFold(s.PackageSource, "create") {
-				err := deleteFolderContents(filepath.Join(path, "*"))
-				if checkErr(w, fmt.Sprintf("Error while deleting content of folder path [%s] ", path), err) {
-					return err
-				}
-			}
-
-			//for package source as create/merge, open the package at the give location
-			if strings.EqualFold(s.PackageSource, "create") || strings.EqualFold(s.PackageSource, "merge") {
-				err := openArtisanPackage(path, s)
-				if checkErr(w, fmt.Sprintf("Error while opening artisan package [ %s ]", s.Package), err) {
-					return err
-				}
-			}
-
-			b.Run(s.Function, path, bl, env)
 		}
 	}
 	return nil
