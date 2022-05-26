@@ -9,5 +9,74 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Artisan Host Runner
   version: 0.0.4
-paths: {}
+paths:
+  /flow:
+    post:
+      description: Execute a flow from the definition passed in the payload.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Execute an Artisan flow
+      tags:
+      - Runner
+  /host/{cmd-key}:
+    post:
+      description: Trigger a new build to create artisan package from the vulnerabilty
+        scanned csv report passed in the payload.
+      parameters:
+      - description: the unique key of the command to retrieve
+        in: path
+        name: cmd-key
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "422":
+          description: Unprocessable Entity
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Build patching artisan package
+      tags:
+      - Runner
+  /webhook/{flow-key}/push:
+    post:
+      description: Connect to CMDB and retrieves a flow using configuration item natural
+        key passed in flow-key from CMDB
+      parameters:
+      - description: the unique key of the flow specification in cmdb
+        in: path
+        name: flow-key
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Retrieve a configured flow from CMDB and execute it.
+      tags:
+      - Runner
 swagger: "2.0"

@@ -28,6 +28,7 @@ var (
 	api *API
 )
 
+//Api construct a new api with defaut configuration
 func Api() *API {
 	var (
 		err    error
@@ -61,6 +62,7 @@ func newAPI(cfg *Conf) (*API, error) {
 	}, nil
 }
 
+//GetCommand fetch command for given key from CMDB database
 func (r *API) GetCommand(cmdName string) (*Cmd, error) {
 
 	item, err := r.ox.GetItem(&oxc.Item{Key: cmdName})
@@ -160,6 +162,7 @@ func getInputFromMap(inputMap map[string]interface{}) (*data.Input, error) {
 	return input, nil
 }
 
+//GetFlow fetch flow for given key from CMDB database
 func (r *API) GetFlow(flowkey string) (flow []byte, err error) {
 
 	item, err := r.ox.GetItem(&oxc.Item{Key: strings.TrimSpace(flowkey)})
