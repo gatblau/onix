@@ -451,7 +451,7 @@ func (p *Processor) SendNotification(nType NotificationType) error {
 	content := n.Content
 	content = strings.ReplaceAll(content, "<<release-artefacts>>", buf.String())
 	content = strings.ReplaceAll(content, "<<issue-log>>", p.issueLog())
-	content = strings.ReplaceAll(content, "<<scan-log>>", p.cmdLog)
+	content = strings.ReplaceAll(content, "<<command-log>>", p.cmdLog)
 	return postNotification(NotificationMsg{
 		Recipient: n.Recipient,
 		Type:      n.Type,
