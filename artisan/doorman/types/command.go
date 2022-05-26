@@ -22,7 +22,7 @@ type Command struct {
 	// a regex used to determine if the command execution has errored
 	ErrorRegex string `bson:"error_regex" json:"error_regex" yaml:"error_regex" example:".*Infected files: [^0].*"`
 	// determines if the process should stop on a command execution error
-	StopOnError bool `bson:"stop_on_error" json:"stopOnError" yaml:"stop_on_error" example:"true"`
+	StopOnError bool `bson:"stop_on_error" json:"stop_on_error" yaml:"stop_on_error" example:"true"`
 }
 
 func (c Command) GetName() string {
