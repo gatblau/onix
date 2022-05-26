@@ -31,8 +31,10 @@ functions:
     env:
       GOOS: linux
     run:
+      - $(swagen)    
       - rm -f binary/host-runner     
       - go build -ldflags="-X 'github.com/gatblau/onix/artisan/core.Version=${BUILD_VERSION}'" -o binary/${APP_NAME} -v
+
 
   - name: set-version
     description: set new version reference

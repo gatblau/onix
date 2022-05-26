@@ -11,13 +11,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/data"
-	"github.com/gatblau/onix/artisan/merge"
-	"github.com/gatblau/onix/artisan/registry"
-	"github.com/gatblau/onix/oxlib/httpserver"
-	"github.com/gatblau/oxc"
-	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -25,7 +18,20 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/data"
+	"github.com/gatblau/onix/artisan/merge"
+	"github.com/gatblau/onix/artisan/registry"
+	"github.com/gatblau/onix/oxlib/httpserver"
+	"github.com/gatblau/oxc"
+	"gopkg.in/yaml.v2"
 )
+
+const GIT_URI_DESC = "the URI of the GIT repository"
+const GIT_BRANCH_DESC = "the branch to be used to clone the project from the GIT repository"
+const GIT_USER_DESC = "the user name to be used to authenticate with the GIT repository"
+const GIT_PASSWORD_DESC = "the password or token to be used to authenticate with the GIT repository"
 
 // Manager manages an Artisan flow
 // the pipeline generator requires at least the flow definition
@@ -59,10 +65,6 @@ func New(bareFlowPath, buildPath string) (*Manager, error) {
 		}
 		m.buildFile = buildFile
 	}
-	err = m.validate()
-	if err != nil {
-		return nil, fmt.Errorf("invalid generator: %s", err)
-	}
 	return m, nil
 }
 
@@ -79,23 +81,10 @@ func (m *Manager) Merge(interactive bool) error {
 		if m.buildFile == nil {
 			return fmt.Errorf("a build.yaml file is required to fill the flow")
 		}
-		// if git uri is not defined
-		if len(m.buildFile.GitURI) == 0 {
-			// survey its value
-			gitUri := &data.Var{
-				Name:        "GIT_URI",
-				Description: "the URI of the git repository for the project",
-				Required:    true,
-				Type:        "uri",
-			}
-			data.EvalVar(gitUri, interactive, m.env)
-			m.buildFile.GitURI = gitUri.Value
-		}
-		m.Flow.GitURI = m.buildFile.GitURI
+		m.populateGit(interactive)
 		m.Flow.AppIcon = m.buildFile.AppIcon
 	}
 	for _, step := range m.Flow.Steps {
-		step.Runtime = core.QualifyRuntime(step.Runtime)
 		// performs a healthcheck of the flow to determine if it can survey inputs
 		flowHealthCheck(m.Flow, step)
 		if step.surveyManifest() {
@@ -107,10 +96,11 @@ func (m *Manager) Merge(interactive bool) error {
 		} else if step.surveyBuildfile(m.Flow.RequiresGitSource()) {
 			// add exported inputs to the step
 			step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, interactive, false, m.env)
-		} else if step.surveyRuntime() {
-			// read input from from runtime_uri
-			step.Input = data.SurveyInputFromURI(step.RuntimeManifest, interactive, false, m.env)
 		}
+	}
+	err := m.Flow.IsValid()
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -151,6 +141,10 @@ func LoadFlow(path string) (*Flow, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot unmarshal flow definition %s: %s", path, err)
 	}
+	if flow.UseRuntimes == nil {
+		b := true
+		flow.UseRuntimes = &b
+	}
 	if flow.Labels == nil {
 		flow.Labels = make(map[string]string)
 	}
@@ -163,6 +157,12 @@ func NewFlow(flowJSONBytes []byte) (*Flow, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot unmarshal flow definition %s", err)
 	}
+
+	if flow.UseRuntimes == nil {
+		b := true
+		flow.UseRuntimes = &b
+	}
+
 	return flow, nil
 }
 
@@ -270,16 +270,6 @@ func (m *Manager) flowURI(runnerName string, https bool) string {
 	return fmt.Sprintf("%s://%s/flow", scheme, runnerName)
 }
 
-func (m *Manager) validate() error {
-	// check that the steps have the required attributes set
-	for _, step := range m.Flow.Steps {
-		if len(step.Runtime) == 0 {
-			return fmt.Errorf("invalid step %s, runtime is missing", step.Name)
-		}
-	}
-	return nil
-}
-
 // get the merged Flow path
 func (m *Manager) path(extension string) string {
 	dir, file := filepath.Split(m.bareFlowPath)
@@ -294,5 +284,42 @@ func (m *Manager) AddLabels(labels []string) {
 			core.RaiseErr("invalid labels")
 		}
 		m.Flow.Labels[parts[0]] = parts[1]
+	}
+}
+
+func (m *Manager) populateGit(interactive bool) {
+	gitUri := &data.Var{
+		Name:        "GIT_URI",
+		Description: GIT_URI_DESC,
+		Required:    true,
+		Type:        "uri",
+	}
+	data.EvalVar(gitUri, interactive, m.env)
+	branch := &data.Var{
+		Name:        "GIT_BRANCH",
+		Description: GIT_BRANCH_DESC,
+		Required:    false,
+		Type:        "string",
+	}
+	data.EvalVar(branch, interactive, m.env)
+	gitLogin := &data.Var{
+		Name:        "GIT_USER",
+		Description: GIT_USER_DESC,
+		Required:    false,
+		Type:        "string",
+	}
+	data.EvalVar(gitLogin, interactive, m.env)
+	pwd := &data.Var{
+		Name:        "GIT_PASSWORD",
+		Description: GIT_PASSWORD_DESC,
+		Required:    false,
+		Type:        "string",
+	}
+	data.EvalVar(pwd, interactive, m.env)
+	m.Flow.Git = &Git{
+		Uri:      gitUri.Value,
+		Branch:   branch.Value,
+		Login:    gitLogin.Value,
+		Password: pwd.Value,
 	}
 }

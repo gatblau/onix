@@ -9,7 +9,10 @@ package flow
 */
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/i18n"
@@ -29,11 +32,19 @@ type Flow struct {
 	Description string `yaml:"description"`
 	// a list of labels to document key aspects of the flow execution
 	// for example using a target namespace if running in Kubernetes
-	Labels  map[string]string `yaml:"labels" json:"labels"`
-	GitURI  string            `yaml:"git_uri,omitempty" json:"git_uri,omitempty"`
-	AppIcon string            `yaml:"app_icon,omitempty" json:"app_icon,omitempty"`
-	Steps   []*Step           `yaml:"steps" json:"steps"`
-	Input   *data.Input       `yaml:"input,omitempty" json:"input,omitempty"`
+	Labels      map[string]string `yaml:"labels" json:"labels"`
+	Git         *Git              `yaml:"git,omitempty" json:"git,omitempty"`
+	AppIcon     string            `yaml:"app_icon,omitempty" json:"app_icon,omitempty"`
+	Steps       []*Step           `yaml:"steps" json:"steps"`
+	Input       *data.Input       `yaml:"input,omitempty" json:"input,omitempty"`
+	UseRuntimes *bool             `yaml:"use_runtimes,omitempty" json:"use_runtimes,omitempty"`
+}
+
+type Git struct {
+	Uri      string `yaml:"git_uri" json:"git_uri"`
+	Branch   string `yaml:"git_branch" json:"git_branch"`
+	Login    string `yaml:"git_login,omitempty" json:"git_login,omitempty"`
+	Password string `yaml:"git_password,omitempty" json:"git_password,omitempty"`
 }
 
 // Map get the input in map format
@@ -121,15 +132,17 @@ func (f *Flow) GetInputDefinition(b *data.BuildFile, env *merge.Envar) *data.Inp
 			}
 			// surveys the build.yaml for variables
 			i := data.SurveyInputFromBuildFile(step.Function, b, false, true, env)
-			// add GIT_URI if not already added
-			if i == nil || !result.VarExist("GIT_URI") {
-				i.Var = append(i.Var, &data.Var{
-					Name:        "GIT_URI",
-					Description: "the URI of the project GIT repository",
-					Required:    true,
-					Type:        "url",
-				})
+			if i == nil {
+				i = &data.Input{
+					Key:    make([]*data.Key, 0),
+					Secret: make([]*data.Secret, 0),
+					Var:    make([]*data.Var, 0),
+					File:   make([]*data.File, 0),
+				}
 			}
+
+			// add GIT variables
+			addGitVariables(i)
 			result.Merge(i)
 		} else if step.surveyManifest() {
 			// surveys the package manifest for variables
@@ -141,10 +154,6 @@ func (f *Flow) GetInputDefinition(b *data.BuildFile, env *merge.Envar) *data.Inp
 			}
 			i := data.SurveyInputFromManifest(f.Name, step.Name, step.PackageSource, name.Domain, step.Function, manif, false, true, env)
 			i.SurveyRegistryCreds(f.Name, step.Name, step.PackageSource, name.Domain, false, true, env)
-			result.Merge(i)
-		} else if step.surveyRuntime() {
-			// surveys runtime manifest for variables
-			i := data.SurveyInputFromURI(step.RuntimeManifest, false, true, env)
 			result.Merge(i)
 		} else {
 			flowHealthCheck(f, step)
@@ -178,4 +187,92 @@ func (f *Flow) Step(name string) *Step {
 		}
 	}
 	return nil
+}
+
+func (f *Flow) IsValid() error {
+
+	if len(f.Steps) == 0 {
+		return errors.New("step is missing for this flow")
+	}
+
+	if f.RequiresGitSource() {
+		return f.validateGitSource()
+	} else {
+		return f.validateNonGitSource()
+	}
+
+	return nil
+}
+
+func (f *Flow) validateGitSource() error {
+
+	if f.Git == nil {
+		return errors.New("git env details [ 'GIT_URI', 'GIT_BRANCH' and optional 'GIT_LOGIN', 'GIT_PASSWORD' ]missing for flow with git source ")
+	}
+
+	if len(f.Git.Uri) == 0 {
+		return errors.New("git env 'GIT_URI' missing for flow with git source")
+	}
+
+	if len(f.Git.Branch) == 0 {
+		return errors.New("git env 'GIT_BRANCH' missing for flow with git source")
+	}
+
+	// if git source is requred then flow steps should not define a source attribute.
+	for _, s := range f.Steps {
+		if len(s.PackageSource) != 0 {
+			return errors.New("flow with git source must not define 'source' attribute in all the step")
+		}
+	}
+	return nil
+}
+
+func (f *Flow) validateNonGitSource() error {
+	step := f.Steps[0]
+
+	// if git source is not requred then first step in flow steps
+	// must have package source set to "create"
+	if !strings.EqualFold(step.PackageSource, "create") {
+		return errors.New("first step within a flow must have package source type as create")
+	}
+
+	// if the step is read, then the package name should be same as
+	// any previous create / merge package name.
+	previousPackage := ""
+	// merge should be done between different package source
+	for _, s := range f.Steps {
+		if strings.EqualFold(s.PackageSource, "create") || strings.EqualFold(s.PackageSource, "merge") {
+			previousPackage = s.Package
+		} else if strings.EqualFold(s.PackageSource, "read") && !strings.EqualFold(s.Package, previousPackage) {
+			return errors.New("when step has 'read' source type, then package name must match with package name defined in previous step with source type as 'create' or 'merge'")
+		}
+	}
+	return nil
+}
+
+func addGitVariables(i *data.Input) {
+	i.Var = append(i.Var, &data.Var{
+		Name:        "GIT_URI",
+		Description: GIT_URI_DESC,
+		Required:    true,
+		Type:        "url",
+	})
+	i.Var = append(i.Var, &data.Var{
+		Name:        "GIT_BRANCH",
+		Description: GIT_BRANCH_DESC,
+		Required:    false,
+		Type:        "string",
+	})
+	i.Var = append(i.Var, &data.Var{
+		Name:        "GIT_USER",
+		Description: GIT_USER_DESC,
+		Required:    false,
+		Type:        "string",
+	})
+	i.Var = append(i.Var, &data.Var{
+		Name:        "GIT_PASSWORD",
+		Description: GIT_PASSWORD_DESC,
+		Required:    false,
+		Type:        "string",
+	})
 }
