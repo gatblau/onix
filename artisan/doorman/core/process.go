@@ -206,17 +206,22 @@ func (p *Processor) processInboundRoute(pipe *types.Pipeline, route types.InRout
             return p.Error("execution failed: %s", err)
         }
         // use the regex in the command definition to decide if the command execution failed based on the content of the output
+        core.Debug("command: %s, error regex: %s", command.Name, command.ErrorRegex)
+        core.Debug("Command Output:")
+        core.Debug(out)
         matched, regexErr := regexp.MatchString(command.ErrorRegex, out)
         if regexErr != nil {
             return p.Error("invalid regex %s: %s", command.ErrorRegex, regexErr)
         }
+        core.Debug("Regex matched: %v", matched)
         // if the regex matched return error and content of command output
         if matched {
             cmdErr := fmt.Sprintf("command %s failed:\n%s", command.Name, out)
             p.cmdLog = cmdErr
             // and should stop on error
+            core.Debug("stop on error: %v", command.StopOnError)
             if command.StopOnError {
-				// stops and return
+                // stops and return
                 return p.Error(cmdErr)
             } else { // otherwise do not exit and adds warning to the log
                 p.cmdLog += fmt.Sprintf("WARNING: the process is set to continue after the error...\n")
