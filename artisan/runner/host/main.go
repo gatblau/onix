@@ -21,6 +21,8 @@ func main() {
 	// add handlers
 	s.Http = func(router *mux.Router) {
 		router.HandleFunc("/host/{cmd-key}", executeCommandHandler).Methods("POST")
+		router.HandleFunc("/flow", executeFlowFromPayloadHandler).Methods("POST")
+		router.HandleFunc("/webhook/{flow-key}/push", executeWebhookFlowHandler).Methods("POST")
 		fmt.Printf("new handler is registered...")
 	}
 	s.Serve()

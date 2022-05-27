@@ -23,7 +23,110 @@ const docTemplate = `{
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {}
+    "paths": {
+        "/flow": {
+            "post": {
+                "description": "Execute a flow from the definition passed in the payload.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Runner"
+                ],
+                "summary": "Execute an Artisan flow",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/host/{cmd-key}": {
+            "post": {
+                "description": "Trigger a new build to create artisan package from the vulnerabilty scanned csv report passed in the payload.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Runner"
+                ],
+                "summary": "Build patching artisan package",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the unique key of the command to retrieve",
+                        "name": "cmd-key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/webhook/{flow-key}/push": {
+            "post": {
+                "description": "Connect to CMDB and retrieves a flow using configuration item natural key passed in flow-key from CMDB",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Runner"
+                ],
+                "summary": "Retrieve a configured flow from CMDB and execute it.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the unique key of the flow specification in cmdb",
+                        "name": "flow-key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it

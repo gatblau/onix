@@ -11,10 +11,11 @@ package tkn
 import (
 	"bytes"
 	"fmt"
-	"github.com/gatblau/onix/artisan/crypto"
-	"github.com/gatblau/onix/artisan/flow"
 	"strings"
 	"time"
+
+	"github.com/gatblau/onix/artisan/crypto"
+	"github.com/gatblau/onix/artisan/flow"
 )
 
 const (
@@ -128,7 +129,6 @@ func (b *Builder) newSteps() []*Steps {
 	for _, step := range b.flow.Steps {
 		s := &Steps{
 			Name:       step.Name,
-			Image:      step.Runtime,
 			WorkingDir: "/workspace/source",
 		}
 		// if the step is marked a privileged in the Artisan flow
@@ -440,7 +440,7 @@ func (b *Builder) newPipelineResource() *PipelineResource {
 		Params: []*Params{
 			{
 				Name:  "url",
-				Value: b.flow.GitURI,
+				Value: b.flow.Git.Uri,
 			},
 		},
 	}

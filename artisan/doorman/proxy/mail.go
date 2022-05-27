@@ -9,49 +9,54 @@
 package main
 
 import (
-	"crypto/tls"
-	"github.com/gatblau/onix/artisan/doorman/core"
-	gomail "gopkg.in/mail.v2"
-	"strings"
+    "crypto/tls"
+    "github.com/gatblau/onix/artisan/doorman/core"
+    gomail "gopkg.in/mail.v2"
+    "strings"
 )
 
 func sendMail(notification core.NotificationMsg) error {
-	// gets the sender information
-	from, err := getEmailFrom()
-	if err != nil {
-		return err
-	}
-	password, err := getEmailFromPwd()
-	if err != nil {
-		return err
-	}
-	// gets the receiver email address
-	to := strings.Split(notification.Recipient, ",")
-	// gets smtp server configuration
-	smtpHost, err := getSmtpHost()
-	if err != nil {
-		return err
-	}
-	smtpPort, err := getSmtpPort()
-	if err != nil {
-		return err
-	}
-	m := gomail.NewMessage()
-	m.SetHeader("From", from)
-	m.SetHeader("To", to...)
-	m.SetHeader("Subject", notification.Subject)
-	if strings.Contains(notification.Content, "<html>") {
-		m.SetBody("text/html", notification.Content)
-	} else {
-		m.SetBody("text/plain", notification.Content)
-	}
-	d := gomail.NewDialer(smtpHost, smtpPort, from, password)
-	// This is only needed when SSL/TLS certificate is not valid on server.
-	// In production this should be set to false
-	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
-	// send email
-	if dialErr := d.DialAndSend(m); dialErr != nil {
-		return dialErr
-	}
-	return nil
+    // gets the sender information
+    from, err := getEmailFrom()
+    if err != nil {
+        return err
+    }
+    smtpUser, err := getSmtpUser()
+    if err != nil {
+        return err
+    }
+    smtpPwd, err := getSmtpPwd()
+    if err != nil {
+        return err
+    }
+    // gets the receiver email address
+    to := strings.Split(notification.Recipient, ",")
+    // gets smtp server configuration
+    smtpHost, err := getSmtpHost()
+    if err != nil {
+        return err
+    }
+    smtpPort, err := getSmtpPort()
+    if err != nil {
+        return err
+    }
+
+    m := gomail.NewMessage()
+    m.SetHeader("From", from)
+    m.SetHeader("To", to...)
+    m.SetHeader("Subject", notification.Subject)
+    if strings.Contains(notification.Content, "<html>") {
+        m.SetBody("text/html", notification.Content)
+    } else {
+        m.SetBody("text/plain", notification.Content)
+    }
+    d := gomail.NewDialer(smtpHost, smtpPort, smtpUser, smtpPwd)
+    // This is only needed when SSL/TLS certificate is not valid on server.
+    // In production this should be set to false
+    d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+    // send email
+    if dialErr := d.DialAndSend(m); dialErr != nil {
+        return dialErr
+    }
+    return nil
 }

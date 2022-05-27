@@ -86,11 +86,53 @@ func (p *Processor) Warn(format string, a ...interface{}) {
 
 // Start starts processing a pipeline asynchronously
 func (p *Processor) Start() {
-	go p.launch()
+	go p.process()
 }
 
-func (p *Processor) launch() {
-	err := p.process()
+func (p *Processor) process() {
+	p.Info("processing release Id=%s → %s/%s", p.serviceId, p.bucketName, p.folderName)
+	pipes, err := p.db.MatchPipelines(p.serviceId, p.bucketName)
+	if err != nil {
+		e := p.Error("cannot retrieve pipelines for bucket Id='%s' and bucket name='%s': %s\n", p.serviceId, p.bucketName, err)
+		fmt.Println(e)
+		p.notify(err)
+	}
+	if len(pipes) == 0 {
+		e := p.Error("no pipeline configuration found for release Id=%s and bucket name='%s': %s\n", p.serviceId, p.bucketName)
+		fmt.Println(e)
+		p.notify(err)
+	}
+	for i, pipe := range pipes {
+		// set the current pipeline
+		p.pipe = &pipes[i]
+		// record the start of a new job and obtains a new job number
+		jobNo, startTime, jobErr := p.db.StartJob(&pipe, p)
+		if jobErr != nil {
+			p.notify(jobErr)
+		}
+		p.jobNo = jobNo
+		// process the pipeline
+		err = p.processPipeline(&pipe)
+		// if there was an error
+		if err != nil {
+			// record the job as failed passing the logs
+			jobErr = p.db.FailJob(startTime, &pipe, p)
+			if jobErr != nil {
+				p.notify(jobErr)
+			}
+			p.notify(err)
+		}
+		// if no error, record the job as completed passing the logs
+		jobErr = p.db.CompleteJob(startTime, &pipe, p)
+		if jobErr != nil {
+			p.notify(jobErr)
+		}
+		// notify success
+		p.notify(nil)
+	}
+}
+
+func (p *Processor) notify(err error) {
 	if err != nil {
 		if len(p.cmdLog) == 0 {
 			if err = p.SendNotification(ErrorNotification); err != nil {
@@ -107,48 +149,6 @@ func (p *Processor) launch() {
 			fmt.Printf("cannot send success notification: %s\n", err)
 		}
 	}
-}
-
-func (p *Processor) process() error {
-	p.Info("processing release Id=%s → %s/%s", p.serviceId, p.bucketName, p.folderName)
-	pipes, err := p.db.MatchPipelines(p.serviceId, p.bucketName)
-	if err != nil {
-		e := p.Error("cannot retrieve pipelines for bucket Id='%s' and bucket name='%s': %s\n", p.serviceId, p.bucketName, err)
-		fmt.Println(e)
-		return e
-	}
-	if len(pipes) == 0 {
-		e := p.Error("no pipeline configuration found for release Id=%s and bucket name='%s': %s\n", p.serviceId, p.bucketName)
-		fmt.Println(e)
-		return e
-	}
-	for i, pipe := range pipes {
-		// set the current pipeline
-		p.pipe = &pipes[i]
-		// record the start of a new job and obtains a new job number
-		jobNo, startTime, jobErr := p.db.StartJob(&pipe, p)
-		if jobErr != nil {
-			return jobErr
-		}
-		p.jobNo = jobNo
-		// process the pipeline
-		err = p.processPipeline(&pipe)
-		// if there was an error
-		if err != nil {
-			// record the job as failed passing the logs
-			jobErr = p.db.FailJob(startTime, &pipe, p)
-			if jobErr != nil {
-				return jobErr
-			}
-			return err
-		}
-		// if no error, record the job as completed passing the logs
-		jobErr = p.db.CompleteJob(startTime, &pipe, p)
-		if jobErr != nil {
-			return jobErr
-		}
-	}
-	return nil
 }
 
 func (p *Processor) logs() []string {
@@ -206,15 +206,26 @@ func (p *Processor) processInboundRoute(pipe *types.Pipeline, route types.InRout
 			return p.Error("execution failed: %s", err)
 		}
 		// use the regex in the command definition to decide if the command execution failed based on the content of the output
+		core.Debug("command: %s, error regex: %s", command.Name, command.ErrorRegex)
+		core.Debug("Command Output:")
+		core.Debug(out)
 		matched, regexErr := regexp.MatchString(command.ErrorRegex, out)
 		if regexErr != nil {
 			return p.Error("invalid regex %s: %s", command.ErrorRegex, regexErr)
 		}
+		core.Debug("Regex matched: %v", matched)
 		// if the regex matched return error and content of command output
 		if matched {
 			cmdErr := fmt.Sprintf("command %s failed:\n%s", command.Name, out)
 			p.cmdLog = cmdErr
-			return p.Error(cmdErr)
+			// and should stop on error
+			core.Debug("stop on error: %v", command.StopOnError)
+			if command.StopOnError {
+				// stops and return
+				return p.Error(cmdErr)
+			} else { // otherwise do not exit and adds warning to the log
+				p.cmdLog += fmt.Sprintf("WARNING: the process is set to continue after the error...\n")
+			}
 		}
 	}
 	p.Info("verifying downloaded files: complete")
@@ -251,23 +262,23 @@ func (p *Processor) processOutboundRoute(outRoute types.OutRoute) error {
 			// stores the public key in tmp folder
 			err := os.WriteFile(p.signKeyS3File(), []byte(privKey.Value), 0660)
 			if err != nil {
-				return p.Error("cannot persist signing key %s to working folder %s", outRoute.PackageRegistry.PrivateKey, p.tmp)
+				return p.Error("cannot persist signing key %s to working folder %s", outRoute.S3Store.PrivateKey, p.tmp)
 			}
 			// resign packages
-			p.Info("re-signing packages with key %s: started", outRoute.PackageRegistry.PrivateKey)
+			p.Info("re-signing packages with key %s: started", outRoute.S3Store.PrivateKey)
 			for _, pac := range p.spec.Packages {
 				err = p.reg.Sign(pac, p.signKeyS3File(), "", nil)
 				if err != nil {
-					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
+					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.S3Store.PrivateKey, err)
 				}
 			}
 			for _, pac := range p.spec.Images {
 				err = p.reg.Sign(pac, p.signKeyS3File(), "", nil)
 				if err != nil {
-					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
+					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.S3Store.PrivateKey, err)
 				}
 			}
-			p.Info("re-signing packages with key %s: completed", outRoute.PackageRegistry.PrivateKey)
+			p.Info("re-signing packages with key %s: completed", outRoute.S3Store.PrivateKey)
 		}
 		// export packages
 		p.Info("exporting re-signed packages: started")
@@ -398,6 +409,10 @@ func (p *Processor) cleanup() {
 }
 
 func (p *Processor) SendNotification(nType NotificationType) error {
+	// pipe must have a value
+	if p.pipe == nil {
+		return fmt.Errorf("cannot send notification, pipeline is not set")
+	}
 	var n *types.PipeNotification
 	switch nType {
 	case SuccessNotification:
@@ -414,25 +429,29 @@ func (p *Processor) SendNotification(nType NotificationType) error {
 	// merges release-artefacts
 	buf := bytes.Buffer{}
 	count := 0
-	for _, pac := range p.spec.Packages {
-		if count == 0 {
-			buf.WriteString(fmt.Sprintf("packages:\n"))
+	if p.spec != nil {
+		for _, pac := range p.spec.Packages {
+			if count == 0 {
+				buf.WriteString(fmt.Sprintf("packages:\n"))
+			}
+			buf.WriteString(fmt.Sprintf("%s\n", pac))
+			count++
 		}
-		buf.WriteString(fmt.Sprintf("%s\n", pac))
-		count++
-	}
-	count = 0
-	for _, img := range p.spec.Images {
-		if count == 0 {
-			buf.WriteString(fmt.Sprintf("images:\n"))
+		count = 0
+		for _, img := range p.spec.Images {
+			if count == 0 {
+				buf.WriteString(fmt.Sprintf("images:\n"))
+			}
+			buf.WriteString(fmt.Sprintf("%s\n", img))
+			count++
 		}
-		buf.WriteString(fmt.Sprintf("%s\n", img))
-		count++
+	} else {
+		buf.WriteString(fmt.Sprintf("Spec file not available\n"))
 	}
 	content := n.Content
 	content = strings.ReplaceAll(content, "<<release-artefacts>>", buf.String())
 	content = strings.ReplaceAll(content, "<<issue-log>>", p.issueLog())
-	content = strings.ReplaceAll(content, "<<scan-log>>", p.cmdLog)
+	content = strings.ReplaceAll(content, "<<command-log>>", p.cmdLog)
 	return postNotification(NotificationMsg{
 		Recipient: n.Recipient,
 		Type:      n.Type,
