@@ -9,13 +9,24 @@ package main
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/oxlib/httpserver"
 	"github.com/gorilla/mux"
 )
 
 func main() {
 
+	fmt.Println(" setting port")
+	app_port := os.Getenv("OX_HTTP_PORT")
+	app_port1 := os.Getenv("HOST_RUNNER_PORT")
+	if len(app_port) > 0 {
+		os.Setenv("OX_HTTP_PORT", app_port)
+	}
+	core.Debug("host-runner listening at port ", app_port)
+	fmt.Println("host-runner listening at port ", app_port)
+	fmt.Println("host-runner listening at port1 ", app_port1)
 	// creates a generic http server
 	s := httpserver.New("art-host-runner")
 	// add handlers

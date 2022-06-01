@@ -1,0 +1,30 @@
+---
+name: ura-svc
+description: ultralight artisan registry
+port: "8082"
+var:
+  - name: OX_HTTP_UPLOAD_LIMIT
+    description: upload limit (in MB)
+    value: 250
+
+  - name: OX_HTTP_UPLOAD_IN_MEM_SIZE
+    description: amount of data held in memory on uploads (in MB)
+    value: 150
+
+  - name: OX_METRICS_ENABLED
+    description: enables Prometheus metrics endpoint
+    value: false
+
+  - name: OX_ADMIN_USER
+    description: the admin username; required by push operations
+    value: ${fx=name:99}
+
+  - name: OX_ADMIN_PWD
+    description: the admin password
+    value:  ${fx=pwd:16,false}
+    
+volume:
+  - name: data
+    description: storage volume for artisan packages
+    path: /data
+...

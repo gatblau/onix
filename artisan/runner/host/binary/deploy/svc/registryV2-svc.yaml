@@ -1,0 +1,31 @@
+---
+name: registryV2-svc
+description: Local docker registry service
+port: "5000"
+volume:
+  - name: reg-data
+    path: /data/registryv2
+file:
+  - path: registryv2/auth/registry.password
+    content: "actual value will be put by registry-credential-config.sh when function install-ci is called from build.yaml"
+var:
+  - name: REGISTRY_AUTH
+    description: Registry authentication mode
+    value: "htpasswd"
+  - name: REGISTRY_AUTH_HTPASSWD_REALM
+    description: The name of htpasswd realm
+    value: "Registry"
+  - name: REGISTRY_AUTH_HTPASSWD_PATH
+    description: The path of the authentication file
+    value: "/registryv2/registry.password"
+  - name: REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY
+    description: Path where data will be stored
+    value: "/data/registryv2"
+  - name: REG_PASSWORD
+    description: the password to login into registry
+    secret: true
+    value: ${fx=pwd:16,false}
+  - name: REG_USER
+    description: the username to login into registry
+    value: reg-user    
+...

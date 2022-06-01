@@ -1,0 +1,82 @@
+---
+name: Artisan Runner Application
+description: deploy various profiles required for different Artisan Runner use cases
+version: 1.0
+profiles:
+  - name: basic
+    description: deploys the minimum service required to use the Runner
+    services:
+      - name: db-svc
+      - name: ox-svc
+
+  - name: automation
+    description: deploys all services required to use the Runner for automation use cases
+    services:
+      - name: db-svc
+      - name: ox-svc
+      - name: minio-svc
+      - name: git-svc
+      - name: ura-svc
+
+  - name: ci
+    description: deploys all services required to use the Runner for CI use cases
+    services:
+      - name: db-svc
+      - name: ox-svc
+      - name: git-svc
+      - name: ura-svc
+      - name: registryV2-svc
+
+services:
+  - name: db-svc
+    description: PostgreSQL Database service
+    uri: svc/db-svc.yaml
+    image: IMAGE_POSTGRES
+    port: "5432"
+    is:
+      public: #TODO
+
+  - name: ura-svc
+    description: Artisan Registry
+    uri: svc/ura-svc.yaml
+    image: IMAGE_UAR
+    port: "8082"
+    is:
+      public: #TODO
+
+  - name: ox-svc
+    description: Onix Web API
+    uri: svc/ox-svc.yaml
+    schema_uri: https://raw.githubusercontent.com/gatblau/ox-db/e94e263989f959a4cfbd06c2af0232fdab94b709
+    image: IMAGE_ONIX_WAPI
+    port: "8080"
+    is:
+      public: #TODO
+
+  - name: git-svc
+    description: Git service
+    uri: svc/gitea-svc.yaml
+    image: IMAGE_GIT
+    port: "8084"
+    is:
+      public: TODO
+
+  - name: minio-svc
+    description: S3 minio service
+    uri: svc/minio-svc.yaml
+    image: IMAGE_S3
+    port: 
+      app: "9000"
+      ui : "9001"    
+    is:
+      public: TODO
+
+  - name: registryV2-svc
+    description: Docker registry service
+    uri: svc/registryV2-svc.yaml
+    image: IMAGE_DOCKER
+    port: "5000"
+    is:
+      public: TODO
+
+...

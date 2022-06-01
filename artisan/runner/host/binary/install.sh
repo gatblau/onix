@@ -28,14 +28,24 @@ cp host-runner ${RUNNER_HOME}
 # Set up service, replacing with variables
 echo "------------------------------------------------------------"
 echo "Configuring host-runner service ..."
+FILE="$SERVICE_HOME"/.env
+echo "env file is ..."$FILE
+if [ -f "$FILE" ]; then
+  set -a # automatically export all variables
+  source "$FILE"
+  set +a
+  export OX_WAPI_URI="localhost:8081"
+  export OX_WAPI_INSECURE_SKIP_VERIFY="true"
+  export OX_WAPI_USER="$OX_SVC_WAPI_ADMIN_USER"
+  export OX_WAPI_PWD="$OX_SVC_WAPI_ADMIN_PWD"
+fi
 art merge host-runner.service.tem
 sudo chown root:root host-runner.service && sudo chmod 644 host-runner.service
 sudo mv host-runner.service /lib/systemd/system/host-runner.service
 
 echo "------------------------------------------------------------"
-echo "Restarting service daemon and starting host-runner service ..."
+echo "Restarting service daemon"
 sudo systemctl daemon-reload
-sudo systemctl enable --now host-runner
 
 # Finish
 echo "------------------------------------------------------------"

@@ -73,3 +73,8 @@ functions:
       - rm -f ./manifest.md
       - art manifest ${ART_REG}/${ART_GROUP}/${APP_NAME}:$((cat ./version)) -o=mdf      
 ...
+
+10.0.0.24 docker.cmsee.stack
+10.0.0.24 git.cmsee.stack
+10.0.0.24 artisan.cmsee.stack
+10.0.0.24 onixwapi.cmsee.stack

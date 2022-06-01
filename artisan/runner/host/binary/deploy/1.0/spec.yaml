@@ -1,0 +1,21 @@
+---
+version: 1.0
+info: |
+  1.0 release notes:
+
+  - First release of integrated artisan host runner
+
+images:
+  IMAGE_UAR: quay.io/artisan/uar:latest
+  IMAGE_POSTGRES: docker.io/library/postgres:13
+  IMAGE_ONIX_WAPI: quay.io/gatblau/onix-snapshot:v0.0.4-1af14bb-021021131813  
+  IMAGE_ubi: "quay.io/artisan/ubi-min:latest"
+  IMAGE_dbman: "quay.io/artisan/dbman:latest"
+  IMAGE_GIT: "docker.io/gitea/gitea:latest"
+  IMAGE_S3: "docker.io/minio/minio:latest"
+  IMAGE_DOCKER: "docker.io/library/registry:2"
+  #TODO how traefik is used
+  IMAGE_traefik: "docker.io/library/traefik:v2.0"
+
+
+...
