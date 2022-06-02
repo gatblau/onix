@@ -1,0 +1,19 @@
+---
+name: Test
+description: test release specification
+info: no much so far
+version: 1.0
+images:
+  IMG_UAR: quay.io/artisan/uar:latest
+run:
+  - package: quay.io/artisan/uar:latest
+    function: run
+    input:
+      var:
+        - name: TEST
+          description: blah
+          value: nothing
+    event: "SETUP"
+
+
+...

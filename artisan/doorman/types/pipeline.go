@@ -20,6 +20,8 @@ type PipelineConf struct {
 	OutboundRoutes []string `json:"outbound_routes" yaml:"outbound_routes" bson:"outbound_routes"`
 	// Commands a list of the command names to be executed between inbound and outbound routes
 	Commands []string `json:"commands" yaml:"commands" bson:"commands"`
+	// CMDB the configuration of the configuration management database operations to be carried out on receipt of the spec
+	CMDB *CMDB `bson:"cmdb" json:"cmdb" yaml:"cmdb"`
 	// SuccessNotification notification to use in case of success
 	SuccessNotification string `json:"success_notification" yaml:"success_notification" bson:"success_notification"`
 	// ErrorNotification notification to use in case of errors
@@ -58,6 +60,8 @@ type Pipeline struct {
 	CmdFailedNotification *PipeNotification `bson:"cmd_failed_notification" json:"cmd_failed_notification" yaml:"cmd_failed_notification"`
 	// ErrorNotification the key of the notification sent in case of processing errors
 	ErrorNotification *PipeNotification `bson:"error_notification" json:"error_notification" yaml:"error_notification"`
+	// CMDB the configuration of the configuration management database operations to be carried out on receipt of the spec
+	CMDB *CMDB `bson:"cmdb" json:"cmdb" yaml:"cmdb"`
 }
 
 func (p Pipeline) Valid() error {
@@ -72,4 +76,14 @@ func (p Pipeline) Valid() error {
 		}
 	}
 	return nil
+}
+
+// CMDB the details of CMDB operations to be performed once the spec has been received
+type CMDB struct {
+	// Catalogue flag indicating if catalogue item should be created
+	Catalogue bool `bson:"catalogue" json:"catalogue" yaml:"catalogue"`
+	// Events that should be added to the CMDB once the spec has been received (e.g. SETUP, DEPLOY, DECOM)
+	Events []string `bson:"events" json:"events" yaml:"events"`
+	// Tag list of tags to be added to the catalogue
+	Tag []string `bson:"tag" json:"tag" yaml:"tag"`
 }

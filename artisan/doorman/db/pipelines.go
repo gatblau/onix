@@ -6,7 +6,7 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package core
+package db
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 	"net/http"
 )
 
-func (db *Db) FindPipeline(pipeName string) (*types.Pipeline, error) {
+func (db *Database) FindPipeline(pipeName string) (*types.Pipeline, error) {
 	result, err := db.FindByName(types.PipelineCollection, pipeName)
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve pipeline %s: %s", pipeName, err)
@@ -86,11 +86,12 @@ func (db *Db) FindPipeline(pipeName string) (*types.Pipeline, error) {
 		SuccessNotification:   successN,
 		CmdFailedNotification: cmdFailedN,
 		ErrorNotification:     errorN,
+		CMDB:                  pipeConf.CMDB,
 	}
 	return pipe, nil
 }
 
-func (db *Db) UpsertPipeline(pipe types.PipelineConf) (error, int) {
+func (db *Database) UpsertPipeline(pipe types.PipelineConf) (error, int) {
 	var err error
 	for _, route := range pipe.InboundRoutes {
 		_, err = db.FindByName(types.InRouteCollection, route)
@@ -112,7 +113,7 @@ func (db *Db) UpsertPipeline(pipe types.PipelineConf) (error, int) {
 	return nil, resultCode
 }
 
-func (db *Db) FindAllPipelines() ([]types.PipelineConf, error) {
+func (db *Database) FindAllPipelines() ([]types.PipelineConf, error) {
 	var pipelines []types.PipelineConf
 	if err := db.FindMany(types.PipelineCollection, nil, func(c *mongo.Cursor) error {
 		return c.All(context.Background(), &pipelines)
@@ -122,7 +123,7 @@ func (db *Db) FindAllPipelines() ([]types.PipelineConf, error) {
 	return pipelines, nil
 }
 
-func (db *Db) FindPipelinesByInboundURI(uri string) ([]types.Pipeline, error) {
+func (db *Database) FindPipelinesByInboundURI(uri string) ([]types.Pipeline, error) {
 	var (
 		pipes    []types.Pipeline
 		routes   []types.InRoute
@@ -153,7 +154,7 @@ func (db *Db) FindPipelinesByInboundURI(uri string) ([]types.Pipeline, error) {
 	return pipes, nil
 }
 
-func (db *Db) MatchPipelines(serviceId, bucketName string) ([]types.Pipeline, error) {
+func (db *Database) MatchPipelines(serviceId, bucketName string) ([]types.Pipeline, error) {
 	var (
 		pipes    []types.Pipeline
 		routes   []types.InRoute
@@ -163,6 +164,9 @@ func (db *Db) MatchPipelines(serviceId, bucketName string) ([]types.Pipeline, er
 	routes, err = db.MatchInboundRoutes(serviceId, bucketName)
 	if err != nil {
 		return nil, err
+	}
+	if routes == nil {
+		return nil, fmt.Errorf("no inbound routes for service id '%s' found in doorman configuration", serviceId)
 	}
 	var pipeConfs []types.PipelineConf
 	for _, route := range routes {

@@ -1,7 +1,6 @@
 ---
 name: TEST_PUB
 description: testing public pgp key
-is_private: false
 owner: TESTER
 value: |
   -----BEGIN PGP PUBLIC KEY BLOCK-----

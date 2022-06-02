@@ -10,7 +10,7 @@ package main
 
 // @title Artisan's Doorman
 // @version 0.0.4
-// @description Transfer (pull, verify, scan, resign and push) artefacts between repositories
+// @description Securely transfer artisan packages and container images between repositories
 // @contact.name gatblau
 // @contact.url http://onix.gatblau.org/
 // @contact.email onix@gatblau.org
@@ -19,14 +19,19 @@ package main
 
 import (
 	"fmt"
+	artCore "github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/doorman/core"
+	"github.com/gatblau/onix/artisan/doorman/db"
 	_ "github.com/gatblau/onix/artisan/doorman/docs"
 	"github.com/gatblau/onix/artisan/doorman/types"
 	util "github.com/gatblau/onix/oxlib/httpserver"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 // @Summary Creates or updates a cryptographic key
@@ -53,7 +58,7 @@ func upsertKeyHandler(w http.ResponseWriter, r *http.Request) {
 	if util.IsErr(w, key.Valid(), http.StatusBadRequest, "invalid key data") {
 		return
 	}
-	db := core.NewDb()
+	db := db.New()
 	var resultCode int
 	err, resultCode = db.UpsertKey(key)
 	if util.IsErr(w, err, resultCode, "cannot update key in database") {
@@ -88,7 +93,7 @@ func upsertCommandHandler(w http.ResponseWriter, r *http.Request) {
 	if util.IsErr(w, cmd.Valid(), http.StatusBadRequest, "invalid command data") {
 		return
 	}
-	db := core.NewDb()
+	db := db.New()
 	var resultCode int
 	_, err, resultCode = db.UpsertObject(types.CommandsCollection, cmd)
 	if util.IsErr(w, err, resultCode, "cannot update command in database") {
@@ -118,7 +123,7 @@ func upsertInboundRouteHandler(w http.ResponseWriter, r *http.Request) {
 	if util.IsErr(w, inRoute.Valid(), http.StatusBadRequest, "invalid inbound route data") {
 		return
 	}
-	db := core.NewDb()
+	db := db.New()
 	var resultCode int
 	_, err, resultCode = db.UpsertObject(types.InRouteCollection, inRoute)
 	if util.IsErr(w, err, resultCode, "cannot update inbound route in database") {
@@ -148,7 +153,7 @@ func upsertOutboundRouteHandler(w http.ResponseWriter, r *http.Request) {
 	if util.IsErr(w, outRoute.Valid(), http.StatusBadRequest, "invalid outbound route data") {
 		return
 	}
-	db := core.NewDb()
+	db := db.New()
 	var resultCode int
 	_, err, resultCode = db.UpsertObject(types.OutRouteCollection, outRoute)
 	if util.IsErr(w, err, resultCode, "cannot update outbound route in database") {
@@ -182,7 +187,7 @@ func upsertPipelineHandler(w http.ResponseWriter, r *http.Request) {
 	if util.IsErr(w, pipe.Valid(), http.StatusBadRequest, "invalid pipeline data") {
 		return
 	}
-	db := core.NewDb()
+	db := db.New()
 	err, code = db.UpsertPipeline(*pipe)
 	if util.IsErr(w, err, http.StatusBadRequest, "cannot create or update pipeline configuration") {
 		return
@@ -215,7 +220,7 @@ func upsertNotificationTemplateHandler(w http.ResponseWriter, r *http.Request) {
 	if util.IsErr(w, template.Valid(), http.StatusBadRequest, "invalid notification template data") {
 		return
 	}
-	db := core.NewDb()
+	db := db.New()
 	_, err, code = db.UpsertObject(types.NotificationTemplatesCollection, *template)
 	if util.IsErr(w, err, code, "cannot create or update notification template configuration") {
 		return
@@ -248,7 +253,7 @@ func upsertNotificationHandler(w http.ResponseWriter, r *http.Request) {
 	if util.IsErr(w, notification.Valid(), http.StatusBadRequest, "invalid notification data") {
 		return
 	}
-	db := core.NewDb()
+	db := db.New()
 	err, code = db.UpsertNotification(*notification)
 	if util.IsErr(w, err, code, "cannot create or update notification configuration") {
 		return
@@ -269,13 +274,10 @@ func upsertNotificationHandler(w http.ResponseWriter, r *http.Request) {
 func getPipelineHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pipeName := vars["name"]
-	db := core.NewDb()
+	db := db.New()
 	pipe, err := db.FindPipeline(pipeName)
 	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve pipeline %s: %s", pipeName, err)) {
 		return
-	}
-	for i := 0; i < len(pipe.OutboundRoutes); i++ {
-		pipe.OutboundRoutes[i].PackageRegistry.PrivateKey = "*******"
 	}
 	util.Write(w, r, pipe)
 }
@@ -290,7 +292,7 @@ func getPipelineHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 200 {string} success
 func getAllPipelinesHandler(w http.ResponseWriter, r *http.Request) {
-	db := core.NewDb()
+	db := db.New()
 	pipelines, err := db.FindAllPipelines()
 	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve pipelines: %s", err)) {
 		return
@@ -308,7 +310,7 @@ func getAllPipelinesHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 200 {string} success
 func getAllNotificationsHandler(w http.ResponseWriter, r *http.Request) {
-	db := core.NewDb()
+	db := db.New()
 	pipelines, err := db.FindAllNotifications()
 	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve notifications: %s", err)) {
 		return
@@ -326,7 +328,7 @@ func getAllNotificationsHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 200 {string} success
 func getAllNotificationTemplatesHandler(w http.ResponseWriter, r *http.Request) {
-	db := core.NewDb()
+	db := db.New()
 	notificationTemplates, err := db.FindAllNotificationTemplates()
 	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve notification templates: %s", err)) {
 		return
@@ -362,8 +364,18 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 	if util.IsErr(w, err, http.StatusInternalServerError, "cannot unescape folderName") {
 		return
 	}
-	processor := core.NewProcessor(id, bucketName, folderName)
-	processor.Start()
+	// creates a dedicated, randomly named artisan local registry home
+	artHome, artHomeErr := newArtHome()
+	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("%s", artHomeErr)) {
+		return
+	}
+	// creates a new process running using the dedicated registry
+	proc, err := D.Process.New(id, bucketName, folderName, artHome)
+	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot create pipeline processor: %s", err)) {
+		return
+	}
+	// starts the process asynchronously
+	proc.Start()
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -386,7 +398,7 @@ func getWebhookAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
 		util.Err(w, http.StatusBadRequest, "token is required")
 		return
 	}
-	db := core.NewDb()
+	db := db.New()
 	routes, err := db.FindInboundRoutesByWebHookToken(token)
 	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve inbound routes for token %s: %s", token, err)) {
 		return
@@ -420,7 +432,7 @@ func getWebhookAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} internal server error: the server encountered an unexpected condition that prevented it from fulfilling the request.
 // @Success 200 {string} success
 func getWebhookAllAuthInfoHandler(w http.ResponseWriter, r *http.Request) {
-	db := core.NewDb()
+	db := db.New()
 	routes, err := db.FindAllInRoutes()
 	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve inbound routes: %s", err)) {
 		return
@@ -460,10 +472,21 @@ func getTopJobsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	db := core.NewDb()
-	jobs, err := db.FindTopJobs(count)
+	db := db.New()
+	jobs, err := core.FindTopJobs(count, db)
 	if util.IsErr(w, err, http.StatusInternalServerError, fmt.Sprintf("cannot retrieve jobs: %s", err)) {
 		return
 	}
 	util.Write(w, r, jobs)
+}
+
+// newArtHome generates a new random path for the artisan home
+func newArtHome() (string, error) {
+	path := filepath.Join(artCore.HomeDir(), ".doorman", strings.Replace(uuid.NewString(), "-", "", -1)[:12])
+	err := artCore.EnsureRegistryPath(path)
+	if err != nil {
+		return "", err
+	}
+	artCore.Debug("the local registry home is: '%s'\n", path)
+	return path, nil
 }

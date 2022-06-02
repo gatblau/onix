@@ -10,20 +10,21 @@ package core
 
 import (
 	"context"
+	"github.com/gatblau/onix/artisan/doorman/db"
 	"github.com/gatblau/onix/artisan/doorman/types"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 )
 
-func (db *Db) StartJob(pipeline *types.Pipeline, processor *Processor) (string, *time.Time, error) {
+func StartJob(pipeline *types.Pipeline, process *Process) (string, *time.Time, error) {
 	jobNo := uuid.New().String()
 	startTime := time.Now().UTC()
-	_, err := db.InsertObject(types.JobsCollection, &types.Job{
+	_, err := process.db.InsertObject(types.JobsCollection, &types.Job{
 		Number:    jobNo,
-		ServiceId: processor.serviceId,
-		Bucket:    processor.bucketName,
-		Folder:    processor.folderName,
+		ServiceId: process.serviceId,
+		Bucket:    process.bucketName,
+		Folder:    process.folderName,
 		Pipeline:  pipeline,
 		Status:    "started",
 		Started:   &startTime,
@@ -34,39 +35,39 @@ func (db *Db) StartJob(pipeline *types.Pipeline, processor *Processor) (string, 
 	return jobNo, &startTime, nil
 }
 
-func (db *Db) CompleteJob(started *time.Time, pipeline *types.Pipeline, processor *Processor) error {
+func CompleteJob(started *time.Time, pipeline *types.Pipeline, process *Process) error {
 	completedTime := time.Now().UTC()
-	_, err, _ := db.UpsertObject(types.JobsCollection, &types.Job{
-		Number:    processor.jobNo,
-		ServiceId: processor.serviceId,
-		Bucket:    processor.bucketName,
-		Folder:    processor.folderName,
+	_, err, _ := process.db.UpsertObject(types.JobsCollection, &types.Job{
+		Number:    process.jobNo,
+		ServiceId: process.serviceId,
+		Bucket:    process.bucketName,
+		Folder:    process.folderName,
 		Status:    "completed",
 		Pipeline:  pipeline,
-		Log:       processor.logs(),
+		Log:       process.logs(),
 		Started:   started,
 		Completed: &completedTime,
 	})
 	return err
 }
 
-func (db *Db) FailJob(started *time.Time, pipeline *types.Pipeline, processor *Processor) error {
+func FailJob(started *time.Time, pipeline *types.Pipeline, process *Process) error {
 	completedTime := time.Now().UTC()
-	_, err, _ := db.UpsertObject(types.JobsCollection, &types.Job{
-		Number:    processor.jobNo,
-		ServiceId: processor.serviceId,
-		Bucket:    processor.bucketName,
-		Folder:    processor.folderName,
+	_, err, _ := process.db.UpsertObject(types.JobsCollection, &types.Job{
+		Number:    process.jobNo,
+		ServiceId: process.serviceId,
+		Bucket:    process.bucketName,
+		Folder:    process.folderName,
 		Status:    "failed",
 		Pipeline:  pipeline,
-		Log:       processor.logs(),
+		Log:       process.logs(),
 		Started:   started,
 		Completed: &completedTime,
 	})
 	return err
 }
 
-func (db *Db) FindTopJobs(count int) ([]types.Job, error) {
+func FindTopJobs(count int, db *db.Database) ([]types.Job, error) {
 	var jobs []types.Job
 	if err := db.FindMany(types.JobsCollection, nil, func(cursor *mongo.Cursor) error {
 		return cursor.All(context.TODO(), &jobs)
