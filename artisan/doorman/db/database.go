@@ -6,7 +6,7 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package core
+package db
 
 import (
 	"context"
@@ -21,20 +21,20 @@ import (
 	"time"
 )
 
-const DbName = "doorman"
+const Name = "doorman"
 
 var (
 	ErrDocumentAlreadyExists = errors.New("mongo: the document already exists")
 	ErrDocumentNotFound      = errors.New("mongo: the document was not found")
 )
 
-// Db manage MongoDb connections
-type Db struct {
+// Database manage MongoDb connections
+type Database struct {
 	options *options.ClientOptions
 }
 
-func NewDb() *Db {
-	return &Db{
+func New() *Database {
+	return &Database{
 		options: options.Client().ApplyURI(getDbConnString()),
 	}
 }
@@ -57,7 +57,7 @@ func getDbConnString() string {
 }
 
 // InsertObject insert a nameable object in the specified collection
-func (db *Db) InsertObject(collection types.Collection, obj types.Nameable) (interface{}, error) {
+func (db *Database) InsertObject(collection types.Collection, obj types.Nameable) (interface{}, error) {
 	item, err := db.FindByName(collection, obj.GetName())
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (db *Db) InsertObject(collection types.Collection, obj types.Nameable) (int
 		return nil, err
 	}
 	defer client.Disconnect(c)
-	coll := client.Database(DbName).Collection(string(collection))
+	coll := client.Database(Name).Collection(string(collection))
 	// insert the key
 	result, insertErr := coll.InsertOne(c, obj)
 	if insertErr != nil {
@@ -81,7 +81,7 @@ func (db *Db) InsertObject(collection types.Collection, obj types.Nameable) (int
 	return result.InsertedID, nil
 }
 
-func (db *Db) UpdateObject(collection types.Collection, obj types.Nameable) (interface{}, error) {
+func (db *Database) UpdateObject(collection types.Collection, obj types.Nameable) (interface{}, error) {
 	item, err := db.FindByName(collection, obj.GetName())
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (db *Db) UpdateObject(collection types.Collection, obj types.Nameable) (int
 		return nil, err
 	}
 	defer client.Disconnect(c)
-	coll := client.Database(DbName).Collection(string(collection))
+	coll := client.Database(Name).Collection(string(collection))
 	result, updateErr := coll.UpdateOne(c, bson.M{"_id": obj.GetName()}, bson.M{"$set": obj})
 	if updateErr != nil {
 		return nil, updateErr
@@ -104,7 +104,7 @@ func (db *Db) UpdateObject(collection types.Collection, obj types.Nameable) (int
 	return result, nil
 }
 
-func (db *Db) UpsertObject(collection types.Collection, obj types.Nameable) (result interface{}, err error, resultCode int) {
+func (db *Database) UpsertObject(collection types.Collection, obj types.Nameable) (result interface{}, err error, resultCode int) {
 	result, err = db.InsertObject(collection, obj)
 	if err == nil {
 		resultCode = 201
@@ -123,20 +123,20 @@ func (db *Db) UpsertObject(collection types.Collection, obj types.Nameable) (res
 }
 
 // FindByName find an object by name
-func (db *Db) FindByName(collection types.Collection, name string) (*mongo.SingleResult, error) {
+func (db *Database) FindByName(collection types.Collection, name string) (*mongo.SingleResult, error) {
 	c := ctx()
 	client, err := mongo.Connect(c, db.options)
 	if err != nil {
 		return nil, err
 	}
 	defer client.Disconnect(c)
-	coll := client.Database(DbName).Collection(string(collection))
+	coll := client.Database(Name).Collection(string(collection))
 	item := coll.FindOne(c, bson.M{"_id": name})
 	return item, nil
 }
 
 // FindMany find a number of objects matching the specified filter
-func (db *Db) FindMany(collection types.Collection, filter bson.M, query Query) error {
+func (db *Database) FindMany(collection types.Collection, filter bson.M, query Query) error {
 	if filter == nil {
 		filter = bson.M{}
 	}
@@ -145,7 +145,7 @@ func (db *Db) FindMany(collection types.Collection, filter bson.M, query Query) 
 		return err
 	}
 	defer client.Disconnect(context.Background())
-	coll := client.Database(DbName).Collection(string(collection))
+	coll := client.Database(Name).Collection(string(collection))
 	cursor, findErr := coll.Find(context.Background(), filter)
 	defer func() {
 		// only closes the cursor if it exists
@@ -161,14 +161,14 @@ func (db *Db) FindMany(collection types.Collection, filter bson.M, query Query) 
 
 type Query func(cursor *mongo.Cursor) error
 
-func (db *Db) FindAll(collection types.Collection, results interface{}) error {
+func (db *Database) FindAll(collection types.Collection, results interface{}) error {
 	c := ctx()
 	client, err := mongo.Connect(c, db.options)
 	if err != nil {
 		return err
 	}
 	defer client.Disconnect(c)
-	coll := client.Database(DbName).Collection(string(collection))
+	coll := client.Database(Name).Collection(string(collection))
 	cursor, err := coll.Find(c, make(map[string]interface{}))
 	defer cursor.Close(c)
 	if err != nil {
@@ -178,7 +178,7 @@ func (db *Db) FindAll(collection types.Collection, results interface{}) error {
 }
 
 // ObjectExists checks if an object exists in the specified collection
-func (db *Db) ObjectExists(collection types.Collection, name string) bool {
+func (db *Database) ObjectExists(collection types.Collection, name string) bool {
 	item, err := db.FindByName(collection, name)
 	if err != nil {
 		log.Printf("cannot retrieve item %s in collection %s: %s\n", name, collection, err)

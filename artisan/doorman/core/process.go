@@ -12,6 +12,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/gatblau/onix/artisan/data"
+	"github.com/gatblau/onix/artisan/doorman/db"
+	"github.com/gatblau/onix/artisan/release"
+	"github.com/gatblau/onix/oxlib/oxc"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -22,41 +26,87 @@ import (
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/doorman/types"
-	"github.com/gatblau/onix/artisan/export"
 	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/registry"
 	util "github.com/gatblau/onix/oxlib/httpserver"
 )
 
-type Processor struct {
+const (
+	DoormanLogging = "DOORMAN_LOGGING"
+	ArtSpecFxType  = "ART_SPEC_FX"
+	UCatalogueType = "U_CATALOGUE"
+)
+
+type Process struct {
 	serviceId  string
 	bucketName string
 	folderName string
 	tmp        string
 	log        *bytes.Buffer
-	db         Db
+	db         db.Database
 	reg        *registry.LocalRegistry
-	spec       *export.Spec
+	spec       *release.Spec
 	jobNo      string
 	cmdLog     string
 	pipe       *types.Pipeline
+	ox         *oxc.Client
 }
 
-func NewProcessor(serviceId, bucketPath, folderName string) Processor {
-	p := Processor{}
+func NewProcess(serviceId, bucketPath, folderName, artHome string) (Processor, error) {
+	p := new(Process)
 	p.serviceId = serviceId
 	p.bucketName = bucketPath
 	p.folderName = folderName
 	p.log = new(bytes.Buffer)
-	p.db = *NewDb()
-	p.reg = registry.NewLocalRegistry()
-	return p
+	p.db = *db.New()
+	p.reg = registry.NewLocalRegistry(artHome)
+	// if an Onix Web API is defined
+	if len(os.Getenv(OxWapiUri)) > 0 {
+		oxClient, err := newOxClient()
+		if err != nil {
+			return nil, err
+		}
+		p.ox = oxClient
+	}
+	return p, nil
 }
 
-func (p *Processor) Info(format string, a ...interface{}) {
+func newOxClient() (*oxc.Client, error) {
+	uri, err := GetOxWapiUri()
+	if err != nil {
+		return nil, err
+	}
+	user, err := GetOxWapiUser()
+	if err != nil {
+		return nil, err
+	}
+	pwd, err := GetOxWapiPwd()
+	if err != nil {
+		return nil, err
+	}
+	skip, err := GetOxWapiInsecureSkipVerify()
+	if err != nil {
+		return nil, err
+	}
+	oxcfg := &oxc.ClientConf{
+		BaseURI:            uri,
+		Username:           user,
+		Password:           pwd,
+		InsecureSkipVerify: skip,
+	}
+	oxcfg.SetAuthMode("basic")
+	ox, err := oxc.NewClient(oxcfg)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create onix http client: %s", err)
+	}
+	return ox, err
+}
+
+// Info logger
+func (p *Process) Info(format string, a ...interface{}) {
 	format = fmt.Sprintf("%s INFO %s\n", time.Now().Format("02-01-06 15:04:05"), format)
 	msg := fmt.Sprintf(format, a...)
-	if len(os.Getenv("DOORMAN_LOGGING")) > 0 {
+	if len(os.Getenv(DoormanLogging)) > 0 {
 		fmt.Println(msg)
 	}
 	_, err := p.log.WriteString(msg)
@@ -65,31 +115,39 @@ func (p *Processor) Info(format string, a ...interface{}) {
 	}
 }
 
-func (p *Processor) Error(format string, a ...interface{}) error {
+// Error logger
+func (p *Process) Error(format string, a ...interface{}) error {
 	format = fmt.Sprintf("%s ERROR %s", time.Now().Format("02-01-06 15:04:05"), format)
 	msg := fmt.Sprintf(format, a...)
-	if len(os.Getenv("DOORMAN_LOGGING")) > 0 {
+	if len(os.Getenv(DoormanLogging)) > 0 {
 		fmt.Println(msg)
 	}
 	p.log.WriteString(fmt.Sprintf("%s\n", msg))
 	return fmt.Errorf(msg)
 }
 
-func (p *Processor) Warn(format string, a ...interface{}) {
+// Warn logger
+func (p *Process) Warn(format string, a ...interface{}) {
 	format = fmt.Sprintf("%s WARN %s\n", time.Now().Format("02-01-06 15:04:05"), format)
 	msg := fmt.Sprintf(format, a...)
-	if len(os.Getenv("DOORMAN_LOGGING")) > 0 {
+	if len(os.Getenv(DoormanLogging)) > 0 {
 		fmt.Println(msg)
 	}
 	p.log.WriteString(msg)
 }
 
-// Start starts processing a pipeline asynchronously
-func (p *Processor) Start() {
-	go p.process()
+// Start processing a pipeline
+func (p *Process) Start() {
+	go p.run()
 }
 
-func (p *Processor) process() {
+func (p *Process) run() {
+	defer func() {
+		// remove the artisan home once the processing is complete
+		if err := os.RemoveAll(p.artHome()); err != nil {
+			core.WarningLogger.Printf("cannot cleanup artisan home @ '%s': %s", p.artHome(), err)
+		}
+	}()
 	p.Info("processing release Id=%s → %s/%s", p.serviceId, p.bucketName, p.folderName)
 	pipes, err := p.db.MatchPipelines(p.serviceId, p.bucketName)
 	if err != nil {
@@ -106,24 +164,24 @@ func (p *Processor) process() {
 		// set the current pipeline
 		p.pipe = &pipes[i]
 		// record the start of a new job and obtains a new job number
-		jobNo, startTime, jobErr := p.db.StartJob(&pipe, p)
+		jobNo, startTime, jobErr := StartJob(&pipe, p)
 		if jobErr != nil {
 			p.notify(jobErr)
 		}
 		p.jobNo = jobNo
 		// process the pipeline
-		err = p.processPipeline(&pipe)
+		err = p.Pipeline(&pipe)
 		// if there was an error
 		if err != nil {
 			// record the job as failed passing the logs
-			jobErr = p.db.FailJob(startTime, &pipe, p)
+			jobErr = FailJob(startTime, &pipe, p)
 			if jobErr != nil {
 				p.notify(jobErr)
 			}
 			p.notify(err)
 		}
 		// if no error, record the job as completed passing the logs
-		jobErr = p.db.CompleteJob(startTime, &pipe, p)
+		jobErr = CompleteJob(startTime, &pipe, p)
 		if jobErr != nil {
 			p.notify(jobErr)
 		}
@@ -132,35 +190,12 @@ func (p *Processor) process() {
 	}
 }
 
-func (p *Processor) notify(err error) {
-	if err != nil {
-		if len(p.cmdLog) == 0 {
-			if err = p.SendNotification(ErrorNotification); err != nil {
-				fmt.Printf("cannot send error notification: %s\n", err)
-			}
-		} else {
-			if err = p.SendNotification(CmdFailedNotification); err != nil {
-				fmt.Printf("cannot send command failed notification: %s\n", err)
-			}
-			p.cmdLog = ""
-		}
-	} else {
-		if err = p.SendNotification(SuccessNotification); err != nil {
-			fmt.Printf("cannot send success notification: %s\n", err)
-		}
-	}
-}
-
-func (p *Processor) logs() []string {
-	l := p.log.String()
-	lines := strings.Split(l, "\n")
-	return lines[:len(lines)-1]
-}
-
-func (p *Processor) processPipeline(pipe *types.Pipeline) error {
+// Pipeline process a pipeline
+func (p *Process) Pipeline(pipe *types.Pipeline) error {
 	defer p.cleanup()
-	// create a new temp folder for processing
-	tmp, err := core.NewTempDir()
+	// create a new temp folder for processing, uses the artisan home specified in the registry
+	// in order to be able to parallelize processes, the artisan home must be different for each instance of Process
+	tmp, err := core.NewTempDir(p.artHome())
 	if err != nil {
 		return p.Error("cannot create temporary folder: %s\n", err)
 	}
@@ -170,13 +205,13 @@ func (p *Processor) processPipeline(pipe *types.Pipeline) error {
 		// find the inbound route matching the bucket Id
 		if inRoute.ServiceId == p.serviceId {
 			// process the inbound route and run any specified commands
-			err = p.processInboundRoute(pipe, inRoute)
+			err = p.InboundRoute(pipe, inRoute)
 			if err != nil {
 				return err
 			}
 			// process the outbound route(s)
 			for _, outRoute := range pipe.OutboundRoutes {
-				err = p.processOutboundRoute(outRoute)
+				err = p.OutboundRoute(outRoute)
 				if err != nil {
 					return err
 				}
@@ -184,202 +219,198 @@ func (p *Processor) processPipeline(pipe *types.Pipeline) error {
 			break
 		}
 	}
-	return nil
+	return p.BeforeComplete(pipe)
 }
 
-func (p *Processor) processInboundRoute(pipe *types.Pipeline, route types.InRoute) error {
+// InboundRoute process an inbound route
+func (p *Process) InboundRoute(pipe *types.Pipeline, route types.InRoute) error {
 	// download spec
 	p.Info("downloading specification: started")
-	spec, err := export.DownloadSpec(fmt.Sprintf("%s/%s", route.ServiceHost, p.bucketPath()), route.Creds(), p.tmp)
+	spec, err := release.DownloadSpec(
+		release.UpDownOptions{
+			TargetUri:   fmt.Sprintf("%s/%s", route.ServiceHost, p.bucketPath()),
+			TargetCreds: route.Creds(),
+			LocalPath:   p.tmp,
+		})
 	if err != nil {
 		return p.Error("cannot download specification: %s\n", err)
 	}
 	p.spec = spec
 	p.Info("downloading specification: complete")
 	// execute commands
-	p.Info("verifying downloaded files: started")
+	if len(pipe.Commands) > 0 {
+		p.Info("running commands: started")
+	}
 	for _, command := range pipe.Commands {
-		c := strings.ReplaceAll(command.Value, "${path}", p.tmp)
-		p.Info("executing verification task: %s", c)
-		out, exeErr := build.ExeAsync(c, ".", merge.NewEnVarFromSlice([]string{}), false)
-		if exeErr != nil {
-			return p.Error("execution failed: %s", err)
-		}
-		// use the regex in the command definition to decide if the command execution failed based on the content of the output
-		core.Debug("command: %s, error regex: %s", command.Name, command.ErrorRegex)
-		core.Debug("Command Output:")
-		core.Debug(out)
-		matched, regexErr := regexp.MatchString(command.ErrorRegex, out)
-		if regexErr != nil {
-			return p.Error("invalid regex %s: %s", command.ErrorRegex, regexErr)
-		}
-		core.Debug("Regex matched: %v", matched)
-		// if the regex matched return error and content of command output
-		if matched {
-			cmdErr := fmt.Sprintf("command %s failed:\n%s", command.Name, out)
-			p.cmdLog = cmdErr
-			// and should stop on error
-			core.Debug("stop on error: %v", command.StopOnError)
-			if command.StopOnError {
-				// stops and return
-				return p.Error(cmdErr)
-			} else { // otherwise do not exit and adds warning to the log
-				p.cmdLog += fmt.Sprintf("WARNING: the process is set to continue after the error...\n")
-			}
+		if err = p.Command(command); err != nil {
+			return err
 		}
 	}
-	p.Info("verifying downloaded files: complete")
-	// load public key
-	p.Info("loading verification key %s", route.PublicKey)
-	pubKey, keyErr := p.db.FindKeyByName(route.PublicKey)
-	if keyErr != nil {
-		return p.Error("cannot load verification key %s", route.PublicKey)
+	if len(pipe.Commands) > 0 {
+		p.Info("running commands: complete")
 	}
-	// stores the public key in tmp folder
-	err = os.WriteFile(p.verifyKeyFile(), []byte(pubKey.Value), 0660)
+	err = p.PreImport(route, err)
 	if err != nil {
-		return p.Error("cannot persist verification key %s to working folder %s", route.PublicKey, p.tmp)
+		return err
+	}
+	return p.ImportFiles()
+}
+
+func (p *Process) PreImport(route types.InRoute, err error) error {
+	return nil
+}
+
+func (p *Process) Command(command types.Command) error {
+	c := strings.ReplaceAll(command.Value, "${path}", p.tmp)
+	p.Info("executing verification task: %s", c)
+	out, exeErr := build.ExeAsync(c, ".", merge.NewEnVarFromSlice([]string{}), false)
+	if exeErr != nil {
+		return p.Error("execution failed: %s", exeErr)
+	}
+	// use the regex in the command definition to decide if the command execution failed based on the content of the output
+	core.Debug("command: %s, error regex: %s", command.Name, command.ErrorRegex)
+	core.Debug("Command Output:")
+	core.Debug(out)
+	matched, regexErr := regexp.MatchString(command.ErrorRegex, out)
+	if regexErr != nil {
+		return p.Error("invalid regex %s: %s", command.ErrorRegex, regexErr)
+	}
+	core.Debug("Regex matched: %v", matched)
+	// if the regex matched return error and content of command output
+	if matched {
+		cmdErr := fmt.Sprintf("command %s failed:\n%s", command.Name, out)
+		p.cmdLog = cmdErr
+		// and should stop on error
+		core.Debug("stop on error: %v", command.StopOnError)
+		if command.StopOnError {
+			// stops and return
+			return p.Error(cmdErr)
+		} else { // otherwise does not exit and add a warning to the log
+			p.cmdLog += fmt.Sprintf("WARNING: the process is set to continue after the error...\n")
+		}
 	}
 	return nil
 }
 
-func (p *Processor) processOutboundRoute(outRoute types.OutRoute) error {
-	var userPwd string
+// OutboundRoute process an outbound route
+func (p *Process) OutboundRoute(outRoute types.OutRoute) error {
 	p.Info("processing outbound route %s: started", outRoute.Name)
 	if outRoute.S3Store != nil {
-		// import spec
-		if err := p.importSpec(); err != nil {
+		if err := p.ExportFiles(outRoute.S3Store); err != nil {
 			return err
 		}
-		// if S3 requires re-signing
-		if outRoute.S3Store.Sign {
-			// prepare the private key
-			p.Info("loading S3 store signing key %s", outRoute.S3Store.PrivateKey)
-			privKey, keyErr := p.db.FindKeyByName(outRoute.S3Store.PrivateKey)
-			if keyErr != nil {
-				return p.Error("cannot load signing key %s", outRoute.S3Store.PrivateKey)
-			}
-			// stores the public key in tmp folder
-			err := os.WriteFile(p.signKeyS3File(), []byte(privKey.Value), 0660)
-			if err != nil {
-				return p.Error("cannot persist signing key %s to working folder %s", outRoute.S3Store.PrivateKey, p.tmp)
-			}
-			// resign packages
-			p.Info("re-signing packages with key %s: started", outRoute.S3Store.PrivateKey)
-			for _, pac := range p.spec.Packages {
-				err = p.reg.Sign(pac, p.signKeyS3File(), "", nil)
-				if err != nil {
-					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.S3Store.PrivateKey, err)
-				}
-			}
-			for _, pac := range p.spec.Images {
-				err = p.reg.Sign(pac, p.signKeyS3File(), "", nil)
-				if err != nil {
-					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.S3Store.PrivateKey, err)
-				}
-			}
-			p.Info("re-signing packages with key %s: completed", outRoute.S3Store.PrivateKey)
-		}
-		// export packages
-		p.Info("exporting re-signed packages: started")
-		spec, err := export.NewSpec(p.tmp, "")
-		if err != nil {
-			return p.Error("cannot load spec.yaml from working folder: %s", err)
-		}
-		targetURI := fmt.Sprintf("%s/%s", outRoute.S3Store.BucketURI, p.folderName)
-		err = export.ExportSpec(*spec, targetURI, "", outRoute.S3Store.Creds(), "")
-		if err != nil {
-			return p.Error("cannot export spec to %s: %s", targetURI, err)
-		}
-		p.Info("exporting re-signed packages: completed")
-		userPwd = fmt.Sprintf("%s:%s", outRoute.S3Store.User, outRoute.S3Store.Pwd)
-		p.Info("uploading to S3 store %s: started", outRoute.S3Store.BucketURI)
-		err = export.UploadSpec(fmt.Sprintf("%s/%s", outRoute.S3Store.BucketURI, p.folderName), userPwd, p.tmp)
-		if err != nil {
-			return p.Error("cannot upload spec tarball files to S3 store %s: %s", outRoute.S3Store.BucketURI, err)
-		}
-		p.Info("uploading to S3 store %s: completed", outRoute.S3Store.BucketURI)
 	}
 	if outRoute.PackageRegistry != nil {
-		if err := p.importSpec(); err != nil {
+		if err := p.PushPackages(outRoute.PackageRegistry); err != nil {
 			return err
 		}
-		// if resigning of packages is required
-		if outRoute.PackageRegistry.Sign {
-			// prepare the private key
-			p.Info("loading package registry signing key %s", outRoute.PackageRegistry.PrivateKey)
-			privKey, keyErr := p.db.FindKeyByName(outRoute.PackageRegistry.PrivateKey)
-			if keyErr != nil {
-				return p.Error("cannot load signing key %s", outRoute.PackageRegistry.PrivateKey)
-			}
-			// stores the public key in tmp folder
-			err := os.WriteFile(p.signKeyArtFile(), []byte(privKey.Value), 0660)
-			if err != nil {
-				return p.Error("cannot persist signing key %s to working folder %s", outRoute.PackageRegistry.PrivateKey, p.tmp)
-			}
-			// resign packages
-			p.Info("re-signing packages with key %s: started", outRoute.PackageRegistry.PrivateKey)
-			for _, pac := range p.spec.Packages {
-				err = p.reg.Sign(pac, p.signKeyArtFile(), "", nil)
-				if err != nil {
-					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
-				}
-			}
-			for _, pac := range p.spec.Images {
-				err = p.reg.Sign(pac, p.signKeyArtFile(), "", nil)
-				if err != nil {
-					return p.Error("cannot re-sign spec artefacts with key %s: %s", outRoute.PackageRegistry.PrivateKey, err)
-				}
-			}
-			p.Info("re-signing packages with key %s: completed", outRoute.PackageRegistry.PrivateKey)
-		}
-		// tagging artefacts & pushing
-		p.Info("tagging and pushing artefacts to package registry: started")
-		userPwd = fmt.Sprintf("%s:%s", outRoute.PackageRegistry.User, outRoute.PackageRegistry.Pwd)
-		err := export.PushSpec(p.tmp, outRoute.PackageRegistry.Domain, outRoute.PackageRegistry.Group, userPwd, "", false, true, true)
-		if err != nil {
-			return p.Error("cannot push spec artefacts to package registry: %s", err)
-		}
-		p.Info("tagging and pushing artefacts to package registry: completed")
 	}
 	if outRoute.ImageRegistry != nil {
-		// tagging images & pushing
-		p.Info("tagging and pushing images to docker registry: started")
-		userPwd = fmt.Sprintf("%s:%s", outRoute.ImageRegistry.User, outRoute.ImageRegistry.Pwd)
-		err := export.PushSpec(p.tmp, outRoute.ImageRegistry.Domain, outRoute.ImageRegistry.Group, userPwd, "", true, true, true)
-		if err != nil {
-			return p.Error("cannot push spec artefacts to image registry: %s", err)
+		if err := p.PushImages(outRoute.ImageRegistry); err != nil {
+			return err
 		}
-		p.Info("tagging and pushing artefacts to image registry: completed")
-
 	}
 	p.Info("processing outbound route %s: completed", outRoute.Name)
 	return nil
 }
 
-func (p *Processor) verifyKeyFile() string {
-	return filepath.Join(p.tmp, "verify_key.pgp")
+// PushImages to a target container registry
+func (p *Process) PushImages(imageRegistry *types.ImageRegistry) error {
+	// tagging images & pushing
+	p.Info("tagging and pushing images to docker registry: started")
+	userPwd := fmt.Sprintf("%s:%s", imageRegistry.User, imageRegistry.Pwd)
+	err := release.PushSpec(
+		release.PushOptions{
+			SpecPath: p.tmp,
+			Host:     imageRegistry.Domain,
+			Group:    imageRegistry.Group,
+			User:     userPwd,
+			Image:    true,
+			Clean:    true,
+			Logout:   true,
+			ArtHome:  p.artHome(),
+		})
+	if err != nil {
+		return p.Error("cannot push spec artefacts to image registry: %s", err)
+	}
+	p.Info("tagging and pushing artefacts to image registry: completed")
+	return nil
 }
 
-func (p *Processor) signKeyS3File() string {
-	return filepath.Join(p.tmp, "sign_key_s3.pgp")
+// PushPackages packages to an Artisan registry
+func (p *Process) PushPackages(pkgRegistry *types.PackageRegistry) error {
+	// tagging artefacts & pushing
+	p.Info("tagging and pushing artefacts to package registry: started")
+	userPwd := fmt.Sprintf("%s:%s", pkgRegistry.User, pkgRegistry.Pwd)
+	err := release.PushSpec(
+		release.PushOptions{
+			SpecPath: p.tmp,
+			Host:     pkgRegistry.Domain,
+			Group:    pkgRegistry.Group,
+			User:     userPwd,
+			Clean:    true,
+			Logout:   true,
+			ArtHome:  p.artHome(),
+		})
+	if err != nil {
+		return p.Error("cannot push spec artefacts to package registry: %s", err)
+	}
+	p.Info("tagging and pushing artefacts to package registry: completed")
+	return nil
 }
 
-func (p *Processor) signKeyArtFile() string {
-	return filepath.Join(p.tmp, "sign_key_art.pgp")
+// ExportFiles a spec to S3
+func (p *Process) ExportFiles(s3Store *types.S3Store) error {
+	// export packages
+	p.Info("exporting packages: started")
+	spec, err := release.NewSpec(p.tmp, "")
+	if err != nil {
+		return p.Error("cannot load spec.yaml from working folder: %s", err)
+	}
+	targetURI := fmt.Sprintf("%s/%s", s3Store.BucketURI, p.folderName)
+	err = release.ExportSpec(
+		release.ExportOptions{
+			Specification: spec,
+			TargetUri:     targetURI,
+			TargetCreds:   s3Store.Creds(),
+			ArtHome:       p.artHome(),
+		})
+	if err != nil {
+		return p.Error("cannot export spec to %s: %s", targetURI, err)
+	}
+	p.Info("exporting packages: completed")
+	userPwd := fmt.Sprintf("%s:%s", s3Store.User, s3Store.Pwd)
+	p.Info("uploading to S3 store %s: started", s3Store.BucketURI)
+	err = release.UploadSpec(
+		release.UpDownOptions{
+			TargetUri:   fmt.Sprintf("%s/%s", s3Store.BucketURI, p.folderName),
+			TargetCreds: userPwd,
+			LocalPath:   p.tmp,
+		},
+	)
+	if err != nil {
+		return p.Error("cannot upload spec tarball files to S3 store %s: %s", s3Store.BucketURI, err)
+	}
+	p.Info("uploading to S3 store %s: completed", s3Store.BucketURI)
+	return nil
 }
 
-func (p Processor) importSpec() error {
+// ImportFiles from a specification
+func (p Process) ImportFiles() error {
 	// import artefacts
 	p.Info("importing specification files: started")
 	// remove spec specific artefacts from local registry
 	// NOTE: do not use prune() to avoid removing tmp folder!
 	err := p.cleanSpec()
 	if err != nil {
-		return p.Error("cannot prune local registry: %s", err)
+		return p.Error("cannot cleanup local registry: %s", err)
 	}
 	// import spec in tmp folder
-	err = export.ImportSpec(p.tmp, "", "", p.verifyKeyFile(), false)
+	_, err = release.ImportSpec(
+		release.ImportOptions{
+			TargetUri: p.tmp,
+			ArtHome:   p.artHome(),
+		})
 	if err != nil {
 		return p.Error("cannot import spec: %s", err)
 	}
@@ -389,37 +420,19 @@ func (p Processor) importSpec() error {
 	return nil
 }
 
-func (p Processor) bucketPath() string {
-	return fmt.Sprintf("%s/%s", p.bucketName, p.folderName)
-}
-
-func (p *Processor) cleanSpec() error {
-	var names []string
-	for _, name := range p.spec.Packages {
-		names = append(names, name)
-	}
-	for _, name := range p.spec.Images {
-		names = append(names, name)
-	}
-	return p.reg.Remove(names)
-}
-
-func (p *Processor) cleanup() {
-	os.RemoveAll(p.tmp)
-}
-
-func (p *Processor) SendNotification(nType NotificationType) error {
+// SendNotification send a notification
+func (p *Process) SendNotification(nType db.NotificationType) error {
 	// pipe must have a value
 	if p.pipe == nil {
 		return fmt.Errorf("cannot send notification, pipeline is not set")
 	}
 	var n *types.PipeNotification
 	switch nType {
-	case SuccessNotification:
+	case db.SuccessNotification:
 		n = p.pipe.SuccessNotification
-	case CmdFailedNotification:
+	case db.CmdFailedNotification:
 		n = p.pipe.CmdFailedNotification
-	case ErrorNotification:
+	case db.ErrorNotification:
 		n = p.pipe.ErrorNotification
 	default:
 		return fmt.Errorf("notification type %s is not supported", nType)
@@ -460,15 +473,29 @@ func (p *Processor) SendNotification(nType NotificationType) error {
 	})
 }
 
-func (p *Processor) issueLog() string {
-	var issue []string
-	log := strings.Split(p.log.String(), "\n")
-	for _, line := range log {
-		if strings.Contains(line, "ERROR") {
-			issue = append(issue, line)
+// BeforeComplete run any additional tasks before completing the processing of the pipeline
+func (p *Process) BeforeComplete(pipe *types.Pipeline) error {
+	// if doorman is configured to connect to the cmdb
+	if len(os.Getenv(OxWapiUri)) > 0 {
+		// if catalogue publication is enabled
+		if p.pipe.CMDB != nil && p.pipe.CMDB.Catalogue {
+			if err := p.submitSpec(pipe.CMDB); err != nil {
+				return fmt.Errorf("cannot submit spec '%s' version '%s' to the cmdb: %s", p.spec.Name, p.spec.Version, err)
+			}
+		}
+		// if the spec contains functions
+		if p.spec != nil && p.spec.Run != nil {
+			// if the pipeline has cmdb configuration
+			if p.pipe.CMDB != nil {
+				if err := p.submitSpecFx(pipe.CMDB); err != nil {
+					return fmt.Errorf("cannot submit function for spec '%s' version '%s' to the cmdb: %s", p.spec.Name, p.spec.Version, err)
+				}
+			} else {
+				p.Warn("spec contains functions but the pipeline is not configured to send them to the CMDB")
+			}
 		}
 	}
-	return strings.Join(issue, "\n")
+	return nil
 }
 
 type NotificationMsg struct {
@@ -493,6 +520,48 @@ func (m NotificationMsg) Valid() error {
 		return fmt.Errorf("recipient is required")
 	}
 	return nil
+}
+
+// utilities
+
+func (p *Process) issueLog() string {
+	var issue []string
+	log := strings.Split(p.log.String(), "\n")
+	for _, line := range log {
+		if strings.Contains(line, "ERROR") {
+			issue = append(issue, line)
+		}
+	}
+	return strings.Join(issue, "\n")
+}
+
+func (p *Process) logs() []string {
+	l := p.log.String()
+	lines := strings.Split(l, "\n")
+	return lines[:len(lines)-1]
+}
+
+func (p *Process) verifyKeyFile() string {
+	return filepath.Join(p.tmp, "verify_key.pgp")
+}
+
+func (p Process) bucketPath() string {
+	return fmt.Sprintf("%s/%s", p.bucketName, p.folderName)
+}
+
+func (p *Process) cleanSpec() error {
+	var names []string
+	for _, name := range p.spec.Packages {
+		names = append(names, name)
+	}
+	for _, name := range p.spec.Images {
+		names = append(names, name)
+	}
+	return p.reg.Remove(names)
+}
+
+func (p *Process) cleanup() {
+	os.RemoveAll(p.tmp)
 }
 
 func postNotification(n NotificationMsg) error {
@@ -532,4 +601,170 @@ func postNotification(n NotificationMsg) error {
 		return fmt.Errorf("response returned status: %s; resource: %s", resp.Status, requestURI)
 	}
 	return nil
+}
+
+// notify of an error
+func (p *Process) notify(err error) {
+	// if there is an error
+	if err != nil {
+		// if there is no command related log recorded
+		if len(p.cmdLog) == 0 {
+			// send an error notification
+			if err = p.SendNotification(db.ErrorNotification); err != nil {
+				fmt.Printf("cannot send error notification: %s\n", err)
+			}
+		} else {
+			// otherwise send a command failed notification
+			if err = p.SendNotification(db.CmdFailedNotification); err != nil {
+				fmt.Printf("cannot send command failed notification: %s\n", err)
+			}
+			p.cmdLog = ""
+		}
+	} else { // if there is not an error
+		// sends a success notification
+		if err = p.SendNotification(db.SuccessNotification); err != nil {
+			fmt.Printf("cannot send success notification: %s\n", err)
+		}
+	}
+}
+
+func (p *Process) artHome() string {
+	return p.reg.ArtHome
+}
+
+// submitSpec to cmdb
+func (p *Process) submitSpec(cmdb *types.CMDB) error {
+	p.Info("submit spec to cmdb: started")
+	defer p.Info("submit spec to cmdb: complete")
+	// prepares spec attributes
+	attrs := make(map[string]interface{})
+	attrs["VERSION"] = p.spec.Version
+	if len(p.spec.Author) > 0 {
+		attrs["AUTHOR"] = p.spec.Author
+	}
+	if len(p.spec.License) > 0 {
+		attrs["LICENSE"] = p.spec.License
+	}
+	// prepares the spec
+	var specMap map[string]interface{}
+	jsonBytes, err := json.Marshal(p.spec)
+	if err != nil {
+		p.Warn("cannot marshal spec to json: %s", err)
+	} else {
+		err = json.Unmarshal(jsonBytes, &specMap)
+		if err != nil {
+			p.Warn("cannot unmarshal spec to map: %s", err)
+		}
+	}
+	// send spec to cmdb
+	result, oxErr := p.ox.PutItem(&oxc.Item{
+		Key:         catalogueName(p.spec),
+		Name:        p.spec.Name,
+		Description: p.spec.Description,
+		Type:        UCatalogueType,
+		Tag:         toTags(cmdb.Tag),
+		Meta:        specMap,
+		Attribute:   attrs,
+	})
+	if oxErr != nil {
+		return p.Error("cannot put spec to cmdb: %s, %s", result.Message, oxErr)
+	}
+	p.Info("spec submitted to cmdb, operation was %s, changed: %t", result.Operation, result.Changed)
+	return nil
+}
+
+func (p *Process) submitSpecFx(cmdb *types.CMDB) error {
+	if cmdb.Events != nil && len(cmdb.Events) > 0 {
+		p.Info("submit spec functions to cmdb: started")
+		defer p.Info("submit spec functions to cmdb: complete")
+		artRegUser, err := GetArRegUser()
+		if err != nil {
+			return p.Error("missing %s variable: cannot submit spec function to cmdb", ArtRegUser)
+		}
+		artRegPwd, err := GetArRegPwd()
+		if err != nil {
+			return p.Error("missing %s variable: cannot submit spec function to cmdb", ArtRegPwd)
+		}
+		// if there is a mandate to record an event
+		for _, event := range cmdb.Events {
+			// check if  the event is in the spec
+			found := false
+			for _, run := range p.spec.Run {
+				// if the event is in the spec
+				if strings.EqualFold(run.Event, event) {
+					found = true
+					meta, metaErr := toMetaInput(run.Input)
+					if metaErr != nil {
+						return p.Error("cannot construct spec function input: cannot submit spec function to cmdb", metaErr)
+					}
+					result, oxErr := p.ox.PutItem(&oxc.Item{
+						Key:         runFxName(run),
+						Name:        run.Function,
+						Description: fmt.Sprintf("%s - %s - %s", run.Package, run.Function, run.Event),
+						Type:        ArtSpecFxType,
+						Tag:         toTags(cmdb.Tag),
+						Attribute: map[string]interface{}{
+							"PACKAGE": run.Package,
+							"FX":      run.Function,
+							"USER":    artRegUser,
+							"PWD":     artRegPwd,
+						},
+						Meta: meta,
+					})
+					if oxErr != nil {
+						return p.Error("cannot put spec function %s (%s) to cmdb: %s, %s", run.Function, run.Event, result.Message, oxErr)
+					}
+					p.Info("spec function %s (%s) submitted to cmdb, operation was %s, changed: %t", run.Function, run.Event, result.Operation, result.Changed)
+				}
+			}
+			if !found {
+				p.Warn("event '%s' was defined in the pipeline configuration but was not found in the specification, cannot put to cmdb", event)
+			}
+		}
+	}
+	return nil
+}
+
+func toMetaInput(input *data.Input) (map[string]interface{}, error) {
+	b, err := json.Marshal(input)
+	if err != nil {
+		return nil, fmt.Errorf("cannot marshal spec function input to json: %s", err)
+	}
+	m := make(map[string]interface{})
+	err = json.Unmarshal(b, &m)
+	if err != nil {
+		return nil, fmt.Errorf("cannot unmarshal spec function input from json: %s", err)
+	}
+	return m, nil
+}
+
+func catalogueName(spec *release.Spec) string {
+	return fmt.Sprintf("CA:%s:%s",
+		strings.ReplaceAll(
+			strings.ReplaceAll(
+				strings.ToUpper(spec.Name), " ", ""), "/", "_"),
+		strings.ReplaceAll(
+			strings.ReplaceAll(
+				strings.ToUpper(spec.Version), " ", ""), "/", "_"),
+	)
+}
+
+func runFxName(run release.Run) string {
+	return fmt.Sprintf("SF:%s:%s",
+		strings.ReplaceAll(
+			strings.ReplaceAll(
+				strings.ToUpper(run.Package), " ", ""), "/", "_"),
+		strings.ReplaceAll(
+			strings.ReplaceAll(
+				strings.ToUpper(run.Function), " ", ""), "/", "_"),
+	)
+}
+
+func toTags(m []string) []interface{} {
+	var tag []interface{}
+	tag = make([]interface{}, len(m))
+	for i, v := range m {
+		tag[i] = v
+	}
+	return tag
 }

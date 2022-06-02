@@ -2,7 +2,7 @@
 labels:
   author: onix@gatblau.org
   application: Artisan's Doorman
-  description: A secure gateway for transferring artisan packages.
+  description: Distribution agent for Artisan packages.
   architecture: amd64
 
 env:
@@ -11,7 +11,7 @@ env:
   REPO_NAME: quay.io/gatblau
   ART_DOORMAN: artisan-doorman
   APP_VERSION: 0.0.4
-  BUILD_VERSION: ${APP_VERSION}-${ARTISAN_REF}
+  BUILD_VERSION: "version: ${APP_VERSION}-${ARTISAN_REF} (community)"
 
 functions:
   - name: build-linux

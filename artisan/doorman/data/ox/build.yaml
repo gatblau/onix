@@ -1,0 +1,23 @@
+functions:
+- name: setup_db_onix
+  run:
+  - sh setup_db_onix.sh
+  runtime: dbman
+- name: reset_admin_pwd
+  run:
+  - sh reset_admin_pwd.sh
+  runtime: ubi-min
+- name: deploy
+  description: deploys the Onix Config Manager application using docker-compose
+  run:
+  - sh deploy.sh
+  - art runc -n onix_config_manager_network setup_db_onix
+  - art runc -n onix_config_manager_network reset_admin_pwd
+  export: true
+  runtime: ubi-min
+- name: dispose
+  description: disposes of all resources for the Onix Config Manager application
+  run:
+  - sh dispose.sh
+  export: true
+  runtime: ubi-min

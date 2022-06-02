@@ -89,7 +89,9 @@ func minioEventsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// checks if the release has been doen within a folder, if not it is not valid
 	if !strings.Contains(key, "/") {
-		util.Err(w, http.StatusBadRequest, "no release folder specified in bucket, cannot accept event")
+		util.Err(w, http.StatusBadRequest, "no release folder specified within bucket \n"+
+			"(i.e. format should be s3host://bucket-name/version-folder/ it it was s3host://bucket-name, cannot accept event; \n"+
+			"ensure you put objects in the bucket under a version folder\n")
 		return
 	}
 	cut := strings.LastIndex(key, "/")

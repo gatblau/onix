@@ -6,7 +6,7 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package core
+package db
 
 import (
 	"context"
@@ -24,7 +24,7 @@ const (
 	ErrorNotification     NotificationType = "ERROR"
 )
 
-func (db *Db) FindNotification(name string) (*types.PipeNotification, error) {
+func (db *Database) FindNotification(name string) (*types.PipeNotification, error) {
 	notif := new(types.Notification)
 	result, err := db.FindByName(types.NotificationsCollection, name)
 	if err != nil {
@@ -53,7 +53,7 @@ func (db *Db) FindNotification(name string) (*types.PipeNotification, error) {
 	}, nil
 }
 
-func (db *Db) UpsertNotification(notification types.Notification) (error, int) {
+func (db *Database) UpsertNotification(notification types.Notification) (error, int) {
 	_, err := db.FindByName(types.NotificationTemplatesCollection, notification.Template)
 	if err != nil {
 		return fmt.Errorf("cannot find notification template %s for notification %s: %s", notification.Template, notification.Name, err), http.StatusBadRequest
@@ -66,7 +66,7 @@ func (db *Db) UpsertNotification(notification types.Notification) (error, int) {
 	return nil, resultCode
 }
 
-func (db *Db) FindAllNotifications() ([]types.Notification, error) {
+func (db *Database) FindAllNotifications() ([]types.Notification, error) {
 	var notifications []types.Notification
 	if err := db.FindMany(types.NotificationsCollection, nil, func(c *mongo.Cursor) error {
 		return c.All(context.Background(), &notifications)
@@ -76,7 +76,7 @@ func (db *Db) FindAllNotifications() ([]types.Notification, error) {
 	return notifications, nil
 }
 
-func (db *Db) FindAllNotificationTemplates() ([]types.NotificationTemplate, error) {
+func (db *Database) FindAllNotificationTemplates() ([]types.NotificationTemplate, error) {
 	var notificationTemplates []types.NotificationTemplate
 	if err := db.FindMany(types.NotificationTemplatesCollection, nil, func(c *mongo.Cursor) error {
 		return c.All(context.Background(), &notificationTemplates)

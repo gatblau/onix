@@ -4,17 +4,13 @@ description: a testing outbound route
 image_registry:
   domain: localhost:5000
   user: admin
-  pwd: nCWXqYwqORTf5doc
+  pwd: admin
 package_registry:
   domain: localhost:8082
   user: admin
-  pwd: nCWXqYwqORTf5doc
-  sign: true
-  private_key: TEST_PK
+  pwd: admin
 s3_store:
   bucket_uri: s3://localhost:9000/onix2
   user: admin
   pwd: password
-  sign: true
-  private_key: TEST_PK
 ...
