@@ -1,5 +1,3 @@
-package cmd
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package cmd
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package cmd
+
 import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/flow"
@@ -49,9 +50,9 @@ func (c *FlowRunCmd) Run(cmd *cobra.Command, args []string) {
 		c.flowPath = core.ToAbsPath(args[0])
 		c.runnerName = args[1]
 	} else if len(args) < 1 {
-		i18n.Raise(i18n.ERR_INSUFFICIENT_ARGS)
+		i18n.Raise("", i18n.ERR_INSUFFICIENT_ARGS)
 	} else if len(args) > 1 {
-		i18n.Raise(i18n.ERR_TOO_MANY_ARGS)
+		i18n.Raise("", i18n.ERR_TOO_MANY_ARGS)
 	}
 	// add the build file level environment variables
 	env := merge.NewEnVarFromSlice(os.Environ())
@@ -61,7 +62,7 @@ func (c *FlowRunCmd) Run(cmd *cobra.Command, args []string) {
 	// merge with existing environment
 	env.Merge(env2)
 	// loads a flow from the path
-	f, err := flow.NewWithEnv(c.flowPath, c.buildFilePath, env)
+	f, err := flow.NewWithEnv(c.flowPath, c.buildFilePath, env, "")
 	core.CheckErr(err, "cannot load flow")
 	// add labels to the flow
 	f.AddLabels(c.labels)

@@ -10,7 +10,7 @@ package cmd
 
 import (
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/export"
+	. "github.com/gatblau/onix/artisan/release"
 	"github.com/spf13/cobra"
 	"strings"
 )
@@ -84,7 +84,14 @@ func (c *SpecExportCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("SPEC-FILE-PATH should point to a local folder, instead it was %s", path)
 	}
 	// load the spec file
-	spec, err := export.NewSpec(path, "")
+	spec, err := NewSpec(path, "")
 	core.CheckErr(err, "cannot load spec.yaml")
-	core.CheckErr(export.ExportSpec(*spec, c.output, c.srcCreds, c.targetCreds, c.filter), "cannot export spec")
+	core.CheckErr(ExportSpec(
+		ExportOptions{
+			Specification: spec,
+			TargetUri:     c.output,
+			SourceCreds:   c.srcCreds,
+			TargetCreds:   c.targetCreds,
+			Filter:        c.filter,
+		}), "cannot export spec")
 }

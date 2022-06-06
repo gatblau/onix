@@ -22,9 +22,10 @@ import (
 type Runner struct {
 	buildFile *data.BuildFile
 	path      string
+	artHome   string
 }
 
-func NewFromPath(path string) (*Runner, error) {
+func NewFromPath(path, artHome string) (*Runner, error) {
 	if len(path) == 0 {
 		path = "."
 	}
@@ -36,6 +37,7 @@ func NewFromPath(path string) (*Runner, error) {
 	return &Runner{
 		buildFile: bf,
 		path:      path,
+		artHome:   artHome,
 	}, nil
 }
 
@@ -61,12 +63,12 @@ func (r *Runner) RunC(fxName string, interactive bool, env *merge.Envar, network
 	// generate a unique name for the running container
 	containerName := fmt.Sprintf("art-runc-%s-%s", core.Encode(fxName), core.RandomString(8))
 	// if insputs are defined for the function then survey for data
-	i := data.SurveyInputFromBuildFile(fxName, r.buildFile, true, false, env)
+	i := data.SurveyInputFromBuildFile(fxName, r.buildFile, true, false, env, r.artHome)
 	// merge the collected input with the current environment
-	env.Merge(i.Env(false))
+	env.Merge(i.Env())
 	core.Debug(fmt.Sprintf("env vars passed to container:\n%s\n", env.String()))
 	// launch a container with a bind mount to the path where the build.yaml is located
-	err := runBuildFileFx(runtime, fxName, r.path, containerName, network, env)
+	err := runBuildFileFx(runtime, fxName, r.path, containerName, network, env, r.artHome)
 	if err != nil {
 		removeContainer(containerName)
 		return err
@@ -83,7 +85,7 @@ func (r *Runner) ExeC(packageName, fxName, credentials, network string, interact
 	var runtime string
 	name, _ := core.ParseName(packageName)
 	// get a local registry handle
-	local := registry.NewLocalRegistry()
+	local := registry.NewLocalRegistry(r.artHome)
 	// ensure the package is in the local registry
 	local.Pull(name, credentials)
 	// get the package manifest
@@ -104,15 +106,15 @@ func (r *Runner) ExeC(packageName, fxName, credentials, network string, interact
 		}
 		runtime = core.QualifyRuntime(runtime)
 		// interactively survey for required input via CLI
-		input := data.SurveyInputFromManifest(name.Group, name.Name, "", name.Domain, fxName, m, interactive, false, env)
+		input := data.SurveyInputFromManifest(name.Group, name.Name, "", name.Domain, fxName, m, interactive, false, env, r.artHome)
 		// merge the collected input with the current environment without adding the PGP keys (they must be present locally)
-		env.Merge(input.Env(false))
+		env.Merge(input.Env())
 		// get registry credentials
 		uname, pwd := core.RegUserPwd(credentials)
 		// create a random container name
 		containerName := fmt.Sprintf("art-exec-%s", core.RandomString(8))
 		// launch a container with a bind mount to the artisan registry only
-		err := runPackageFx(runtime, packageName, fxName, containerName, uname, pwd, network, env)
+		err := runPackageFx(runtime, packageName, fxName, containerName, uname, pwd, network, env, r.artHome)
 		if err != nil {
 			removeContainer(containerName)
 			return err

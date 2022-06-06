@@ -6,7 +6,7 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package export
+package release
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ import (
 	"strings"
 )
 
-func ExportImage(imgName, packName, targetUri, creds string) error {
+func ExportImage(imgName, packName, targetUri, creds, artHome string) error {
 	pName, err := core.ParseName(packName)
 	if err != nil {
 		return fmt.Errorf("invalid package name: %s, ensure the container image name fully specify host and user/group if from docker.io", err)
@@ -85,7 +85,7 @@ func ExportImage(imgName, packName, targetUri, creds string) error {
 		return fmt.Errorf("cannot marshall package build file: %s", err)
 	}
 
-	tmp, err := core.NewTempDir()
+	tmp, err := core.NewTempDir(artHome)
 	if err != nil {
 		return fmt.Errorf("cannot create temp folder for processing image archive: %s", err)
 	}
@@ -112,9 +112,9 @@ func ExportImage(imgName, packName, targetUri, creds string) error {
 		os.RemoveAll(tmp)
 		return fmt.Errorf("cannot save package build file: %s", err)
 	}
-	b := build.NewBuilder()
+	b := build.NewBuilder(artHome)
 	b.Build(tmp, "", "", pName, "", false, false, "")
-	r := registry.NewLocalRegistry()
+	r := registry.NewLocalRegistry(artHome)
 	// export package
 	core.InfoLogger.Printf("exporting image package to tarball file")
 	err = r.ExportPackage([]core.PackageName{*pName}, "", targetUri, creds)

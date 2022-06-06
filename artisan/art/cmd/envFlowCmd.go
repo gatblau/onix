@@ -1,5 +1,3 @@
-package cmd
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package cmd
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package cmd
+
 import (
 	"encoding/json"
 	"fmt"
@@ -56,7 +57,7 @@ func (c *EnvFlowCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("too many arguments: only need the path to the bare flow file")
 	}
 	// loads a bare flow from the path
-	f, err := flow.LoadFlow(c.flowPath)
+	f, err := flow.LoadFlow(c.flowPath, "")
 	core.CheckErr(err, "cannot load bare flow")
 
 	// loads the build.yaml

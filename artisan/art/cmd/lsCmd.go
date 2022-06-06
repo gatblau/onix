@@ -46,16 +46,16 @@ art ls -r localhost:8082 -u <user>:<pwd>
 
 func (c *ListCmd) Run(cmd *cobra.Command, args []string) {
 	if len(c.registry) == 0 {
-		local := registry.NewLocalRegistry()
+		local := registry.NewLocalRegistry("")
 		if c.quiet {
 			local.ListQ()
 		} else {
-			local.List()
+			local.List("")
 		}
 	}
 	if len(c.registry) > 0 {
 		uname, pwd := core.RegUserPwd(c.creds)
-		remote, err := registry.NewRemoteRegistry(c.registry, uname, pwd)
+		remote, err := registry.NewRemoteRegistry(c.registry, uname, pwd, "")
 		core.CheckErr(err, "invalid registry name")
 		remote.List(c.quiet)
 	}

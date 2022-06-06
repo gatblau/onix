@@ -1,5 +1,3 @@
-package data
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package data
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package data
+
 import (
 	"bytes"
 	"fmt"
@@ -18,18 +19,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
-	"reflect"
 	"sort"
 	"strings"
 )
 
 // Input describes exported input information required by functions or runtimes
 type Input struct {
-	// reguired by configuration files
+	// required by configuration files
 	File Files `yaml:"file,omitempty" json:"file,omitempty"`
-	// required PGP keys
-	Key Keys `yaml:"key,omitempty" json:"key,omitempty"`
 	// required string value secrets
 	Secret Secrets `yaml:"secret,omitempty" json:"secret,omitempty"`
 	// required variables
@@ -54,15 +51,6 @@ func (i *Input) HasSecretBinding(binding string) bool {
 	return false
 }
 
-func (i *Input) HasKeyBinding(binding string) bool {
-	for _, key := range i.Key {
-		if key.Name == binding {
-			return true
-		}
-	}
-	return false
-}
-
 func (i *Input) HasVar(name string) bool {
 	if i.Var != nil {
 		for _, v := range i.Var {
@@ -78,17 +66,6 @@ func (i *Input) HasSecret(name string) bool {
 	if i.Secret != nil {
 		for _, s := range i.Secret {
 			if s.Name == name {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (i *Input) HasKey(name string) bool {
-	if i.Key != nil {
-		for _, k := range i.Key {
-			if k.Name == name {
 				return true
 			}
 		}
@@ -126,23 +103,10 @@ func (i *Input) SurveyRegistryCreds(flowName, stepName, packageSource, domain st
 			}
 			i.Secret = append(i.Secret, pwdSecret)
 		}
-		// as we need to open this package a verification (public PGP) key is needed
-		keyName := fmt.Sprintf("%s_%s_OXART_VERIFICATION_KEY", NormInputName(flowName), NormInputName(stepName))
-		if !i.HasKey(keyName) {
-			key := &Key{
-				Name:        keyName,
-				Description: fmt.Sprintf("the public PGP key required to open the package %s", domain),
-				Private:     false,
-			}
-			if !defOnly {
-				EvalKey(key, prompt, env)
-			}
-			i.Key = append(i.Key, key)
-		}
 	}
 }
 
-func (i *Input) Env(includeKeys bool) *merge.Envar {
+func (i *Input) Env() *merge.Envar {
 	env := make(map[string]string)
 	for _, v := range i.Var {
 		env[v.Name] = v.Value
@@ -150,15 +114,10 @@ func (i *Input) Env(includeKeys bool) *merge.Envar {
 	for _, s := range i.Secret {
 		env[s.Name] = s.Value
 	}
-	if includeKeys {
-		for _, k := range i.Key {
-			env[k.Name] = k.Value
-		}
-	}
 	return merge.NewEnVarFromMap(env)
 }
 
-// merges the passed in input with the current input
+// Merge the passed in input with the current input
 func (i *Input) Merge(in *Input) {
 	if in == nil {
 		// nothing to merge
@@ -194,21 +153,6 @@ func (i *Input) Merge(in *Input) {
 		}
 	}
 	sort.Sort(i.Secret)
-	for _, k := range in.Key {
-		// dedup
-		found := false
-		for _, kV := range i.Key {
-			// if the key to be merged is already in the source
-			if kV.Name == k.Name {
-				found = true
-				break
-			}
-		}
-		if !found {
-			i.Key = append(i.Key, k)
-		}
-	}
-	sort.Sort(i.Key)
 }
 
 func (i *Input) VarExist(name string) bool {
@@ -229,8 +173,8 @@ func (i *Input) SecretExist(name string) bool {
 	return false
 }
 
-// extracts the build file Input that is relevant to a function (using its bindings)
-func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt, defOnly bool, env *merge.Envar) *Input {
+// SurveyInputFromBuildFile extracts the build file Input that is relevant to a function (using its bindings)
+func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt, defOnly bool, env *merge.Envar, artHome string) *Input {
 	if buildFile == nil {
 		core.RaiseErr("build file is required")
 	}
@@ -239,11 +183,11 @@ func SurveyInputFromBuildFile(fxName string, buildFile *BuildFile, prompt, defOn
 	if fx == nil {
 		core.RaiseErr("function '%s' cannot be found in build file", fxName)
 	}
-	return getBoundInput(fx.Input, buildFile.Input, prompt, defOnly, env)
+	return getBoundInput(fx.Input, buildFile.Input, prompt, defOnly, env, artHome)
 }
 
-// extracts the package manifest Input in an exported function
-func SurveyInputFromManifest(flowName, stepName, packageSource, domain string, fxName string, manifest *Manifest, prompt, defOnly bool, env *merge.Envar) *Input {
+// SurveyInputFromManifest extracts the package manifest Input in an exported function
+func SurveyInputFromManifest(flowName, stepName, packageSource, domain string, fxName string, manifest *Manifest, prompt, defOnly bool, env *merge.Envar, artHome string) *Input {
 	var input *Input
 	// get the function in the manifest
 	fx := manifest.Fx(fxName)
@@ -253,7 +197,6 @@ func SurveyInputFromManifest(flowName, stepName, packageSource, domain string, f
 		// this is the case of a package merge where there is not any need to survey inputs just perform a straight merge
 		// of source
 		input = &Input{
-			Key:    make([]*Key, 0),
 			Secret: make([]*Secret, 0),
 			Var:    make([]*Var, 0),
 			File:   make([]*File, 0),
@@ -263,13 +206,13 @@ func SurveyInputFromManifest(flowName, stepName, packageSource, domain string, f
 		core.RaiseErr("function '%s' does not exist in or has not been exported", fxName)
 	}
 	// first evaluates the existing inputs
-	input = evalInput(input, prompt, defOnly, env)
+	input = evalInput(input, prompt, defOnly, env, artHome)
 	// then add registry credential inputs
 	input.SurveyRegistryCreds(flowName, stepName, packageSource, domain, prompt, defOnly, env)
 	return input
 }
 
-// ensure the passed in name is formatted as a valid environment variable name
+// NormInputName ensure the passed in name is formatted as a valid environment variable name
 func NormInputName(name string) string {
 	result := strings.Replace(strings.ToUpper(name), "-", "_", -1)
 	result = strings.Replace(result, ".", "_", -1)
@@ -277,7 +220,7 @@ func NormInputName(name string) string {
 	return result
 }
 
-func SurveyInputFromURI(uri string, prompt, defOnly bool, env *merge.Envar) *Input {
+func SurveyInputFromURI(uri string, prompt, defOnly bool, env *merge.Envar, artHome string) *Input {
 	response, err := core.Get(uri, "", "")
 	core.CheckErr(err, "cannot fetch runtime manifest")
 	body, err := ioutil.ReadAll(response.Body)
@@ -285,10 +228,10 @@ func SurveyInputFromURI(uri string, prompt, defOnly bool, env *merge.Envar) *Inp
 	// need a wrapper object for the input for the unmarshaller to work so using buildfile
 	var buildFile = new(BuildFile)
 	err = yaml.Unmarshal(body, buildFile)
-	return evalInput(buildFile.Input, prompt, defOnly, env)
+	return evalInput(buildFile.Input, prompt, defOnly, env, artHome)
 }
 
-func evalInput(input *Input, interactive, defOnly bool, env *merge.Envar) *Input {
+func evalInput(input *Input, interactive, defOnly bool, env *merge.Envar, artHome string) *Input {
 	// makes a shallow copy of the input
 	result := *input
 	// collect values from command line interface
@@ -302,14 +245,9 @@ func evalInput(input *Input, interactive, defOnly bool, env *merge.Envar) *Input
 			EvalSecret(secret, interactive, env)
 		}
 	}
-	for _, key := range result.Key {
-		if !defOnly {
-			EvalKey(key, interactive, env)
-		}
-	}
 	for _, file := range result.File {
 		if !defOnly {
-			EvalFile(file, interactive, env)
+			EvalFile(file, interactive, env, artHome)
 		}
 	}
 	// return pointer to new object
@@ -356,25 +294,7 @@ func EvalSecret(inputSecret *Secret, prompt bool, env *merge.Envar) {
 	}
 }
 
-func EvalKey(inputKey *Key, prompt bool, env *merge.Envar) {
-	// do not evaluate it if there is already a value
-	if len(inputKey.Value) > 0 {
-		return
-	}
-	// check if there is an env variable
-	keyPath, ok := env.Vars[inputKey.Name]
-	// if so
-	if ok {
-		// load the correct key using the provided path
-		loadKeyFromPath(inputKey, keyPath)
-	} else if prompt {
-		surveyKey(inputKey)
-	} else {
-		core.RaiseErr("%s is required", inputKey.Name)
-	}
-}
-
-func EvalFile(inputFile *File, prompt bool, env *merge.Envar) {
+func EvalFile(inputFile *File, prompt bool, env *merge.Envar, artHome string) {
 	// do not evaluate it if there is already a value
 	if len(inputFile.Content) > 0 {
 		return
@@ -384,12 +304,12 @@ func EvalFile(inputFile *File, prompt bool, env *merge.Envar) {
 	// if so
 	if ok {
 		// load the correct key using the provided path
-		loadFileFromPath(inputFile, filePath)
+		loadFileFromPath(inputFile, filePath, artHome)
 	} else if len(inputFile.Path) > 0 {
 		// load the correct key using the provided path
-		loadFileFromPath(inputFile, inputFile.Path)
+		loadFileFromPath(inputFile, inputFile.Path, artHome)
 	} else if prompt {
-		surveyFile(inputFile)
+		surveyFile(inputFile, artHome)
 	} else {
 		core.RaiseErr("%s is required", inputFile.Name)
 	}
@@ -415,14 +335,6 @@ func (i *Input) ToEnvFile() []byte {
 		buf.WriteString(toEnvComments(s.Description))
 		buf.WriteString(fmt.Sprintf("%s=\n", s.Name))
 	}
-	buf.WriteString("\n# ===================================================\n")
-	buf.WriteString("# KEY PATHS\n")
-	buf.WriteString("# ===================================================\n")
-	for _, k := range i.Key {
-		buf.WriteString(fmt.Sprint("# the path of the key in the artisan registry as described below:\n"))
-		buf.WriteString(toEnvComments(k.Description))
-		buf.WriteString(fmt.Sprintf("%s=\n", k.Name))
-	}
 	return buf.Bytes()
 }
 
@@ -436,9 +348,8 @@ func toEnvComments(value string) string {
 }
 
 // extract any Input data from the source that have a binding
-func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt, defOnly bool, env *merge.Envar) *Input {
+func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt, defOnly bool, env *merge.Envar, artHome string) *Input {
 	result := &Input{
-		Key:    make([]*Key, 0),
 		Secret: make([]*Secret, 0),
 		Var:    make([]*Var, 0),
 		File:   make([]*File, 0),
@@ -471,25 +382,13 @@ func getBoundInput(fxInput *InputBinding, sourceInput *Input, prompt, defOnly bo
 			}
 		}
 	}
-	// collect exported keys
-	for _, keyBinding := range fxInput.Key {
-		for _, key := range sourceInput.Key {
-			if key.Name == keyBinding {
-				result.Key = append(result.Key, key)
-				// if not definition only it should evaluate the key
-				if !defOnly {
-					EvalKey(key, prompt, env)
-				}
-			}
-		}
-	}
 	for _, fileBinding := range fxInput.File {
 		for _, file := range sourceInput.File {
 			if file.Name == fileBinding {
 				result.File = append(result.File, file)
 				// if not definition only it should evaluate the file
 				if !defOnly {
-					EvalFile(file, prompt, env)
+					EvalFile(file, prompt, env, artHome)
 				}
 			}
 		}
@@ -506,11 +405,6 @@ func encryptInput(input *Input, encPubKey *crypto.PGP) {
 		// and encrypts the secret value
 		err := secret.Encrypt(encPubKey)
 		core.CheckErr(err, "cannot encrypt secret")
-	}
-	for _, key := range input.Key {
-		// and encrypts the key value
-		err := key.Encrypt(encPubKey)
-		core.CheckErr(err, "cannot encrypt PGP key %s: %s", key.Name, err)
 	}
 }
 
@@ -588,117 +482,18 @@ func surveySecret(secret *Secret) {
 	core.HandleCtrlC(survey.AskOne(prompt, &secret.Value, askOpts))
 }
 
-func surveyKey(key *Key) {
-	// check if an env var has been set
-	envVal := os.Getenv(key.Name)
-	// if so, skip survey
-	if len(envVal) > 0 {
-		// load the key using the env var path value specified
-		loadKeyFromPath(key, envVal)
-		return
-	}
-	desc := ""
-	// if a description is available use it
-	if len(key.Description) > 0 {
-		desc = key.Description
-	}
-	// takes default path from input
-	defaultPath := key.Path
-	// if not defined in input
-	if len(defaultPath) == 0 {
-		// defaults to root path
-		defaultPath = "/"
-	}
-	// prompt for the value
-	prompt := &survey.Input{
-		Message: fmt.Sprintf("PGP key => path to %s (%s):", key.Name, desc),
-		Default: defaultPath,
-		Help:    "/ indicates root keys; /group-name indicates group level keys; /group-name/package-name indicates package level keys",
-	}
-	var keyPath string
-	// survey the key path
-	core.HandleCtrlC(survey.AskOne(prompt, &keyPath, survey.WithValidator(keyPathExist)))
-	// load the keys
-	loadKeyFromPath(key, keyPath)
-}
-
-// load the PGP in the key object using the passed in key path
-func loadKeyFromPath(key *Key, keyPath string) {
-	var (
-		pk, pub  string
-		keyBytes []byte
-		err      error
-	)
-	parts := strings.Split(keyPath, "/")
-	switch len(parts) {
-	case 2:
-		// root level keys
-		if len(parts[1]) == 0 {
-			pk, pub = crypto.KeyNames(core.KeysPath(), "root", "pgp")
-			key.PackageGroup = ""
-			key.PackageName = ""
-		} else {
-			// group level keys
-			pk, pub = crypto.KeyNames(path.Join(core.KeysPath(), parts[1]), parts[1], "pgp")
-			key.PackageGroup = parts[1]
-			key.PackageName = ""
-		}
-	// package level keys
-	case 3:
-		pk, pub = crypto.KeyNames(path.Join(core.KeysPath(), parts[1], parts[2]), fmt.Sprintf("%s_%s", parts[1], parts[2]), "pgp")
-		key.PackageGroup = parts[1]
-		key.PackageName = parts[2]
-	// error
-	default:
-		core.RaiseErr("the provided path %s is invalid", keyPath)
-	}
-	if key.Private {
-		keyBytes, err = ioutil.ReadFile(pk)
-		core.CheckErr(err, "cannot read private key from registry")
-	} else {
-		keyBytes, err = ioutil.ReadFile(pub)
-		core.CheckErr(err, "cannot read public key from registry")
-	}
-	key.Value = string(keyBytes)
-}
-
-func keyPathExist(val interface{}) error {
-	// the reflect value of the result
-	value := reflect.ValueOf(val)
-
-	// if the value passed in is a string
-	if value.Kind() == reflect.String {
-		if len(value.String()) > 0 {
-			if !strings.HasPrefix(value.String(), "/") {
-				// it is not a valid package name
-				return fmt.Errorf("key path '%s' must start with a forward slash", value.String())
-			}
-			_, err := os.Stat(filepath.Join(core.KeysPath(), value.String()))
-			// if the path to the group does not exist
-			if os.IsNotExist(err) {
-				// it is not a valid package name
-				return fmt.Errorf("key path '%s' does not exist", value.String())
-			}
-		}
-	} else {
-		// if the value is not of a string type it cannot be a path
-		return fmt.Errorf("key group must be a string")
-	}
-	return nil
-}
-
-func surveyFile(file *File) {
+func surveyFile(file *File, artHome string) {
 	// check if an env var has been set
 	envVal := os.Getenv(file.Name)
 	// if so, skip survey
 	if len(envVal) > 0 {
 		// load the file using the env var path value specified
-		loadFileFromPath(file, envVal)
+		loadFileFromPath(file, envVal, artHome)
 		return
 	}
 	if len(file.Path) > 0 {
 		// load the file using the path value specified in the manifest / buildfile
-		loadFileFromPath(file, file.Path)
+		loadFileFromPath(file, file.Path, artHome)
 		return
 	}
 	desc := ""
@@ -714,20 +509,20 @@ func surveyFile(file *File) {
 		Default: defaultPath,
 		Help:    "the path to the file to load from the Artisan registry",
 	}
-	var keyPath string
+	var filePath string
 	// survey the key path
-	core.HandleCtrlC(survey.AskOne(prompt, &keyPath, survey.WithValidator(keyPathExist)))
+	core.HandleCtrlC(survey.AskOne(prompt, &filePath, nil))
 	// load the keys
-	loadFileFromPath(file, keyPath)
+	loadFileFromPath(file, filePath, artHome)
 }
 
 // load the file content in the file object using the passed in file path
-func loadFileFromPath(file *File, filePath string) {
+func loadFileFromPath(file *File, filePath, artHome string) {
 	var (
 		contentBytes []byte
 		err          error
 	)
-	contentBytes, err = ioutil.ReadFile(path.Join(core.FilesPath(), filePath))
+	contentBytes, err = ioutil.ReadFile(path.Join(core.FilesPath(artHome), filePath))
 	core.CheckErr(err, "cannot load file from registry")
 	file.Content = string(contentBytes)
 }

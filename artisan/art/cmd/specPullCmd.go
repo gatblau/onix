@@ -10,7 +10,7 @@ package cmd
 
 import (
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/export"
+	. "github.com/gatblau/onix/artisan/release"
 	"github.com/spf13/cobra"
 )
 
@@ -55,6 +55,10 @@ func (c *SpecPullCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("the URI of the specification is required")
 	}
 	// import the tar archive(s)
-	err := export.PullSpec(args[0], c.creds, c.user)
+	err := PullSpec(PullOptions{
+		TargetUri:   args[0],
+		SourceCreds: c.creds,
+		TargetCreds: c.user,
+	})
 	core.CheckErr(err, "cannot pull spec artefacts")
 }

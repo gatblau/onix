@@ -1,5 +1,3 @@
-package cmd
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,8 @@ package cmd
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package cmd
 
 import (
 	"fmt"
@@ -73,8 +73,7 @@ func (g *GitSyncCmd) Run(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println(" flag to preserve files ", g.preserveFiles)
-	sm, err := git.NewSyncManagerFromUri(g.repoURI, g.token, g.yamlFilePrefix, g.path4Files2BeSync,
-		g.repoPath, g.strictSync, g.recursive, g.tempPath, g.preserveFiles, g.branch)
+	sm, err := git.NewSyncManagerFromUri(g.repoURI, g.token, g.yamlFilePrefix, g.path4Files2BeSync, g.repoPath, g.strictSync, g.recursive, g.tempPath, g.preserveFiles, g.branch, "")
 	core.CheckErr(err, "Failed to initialise SyncManagerFromUri ")
 	err = sm.MergeAndSync()
 	core.CheckErr(err, "Failed to perform sync operation")

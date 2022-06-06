@@ -5,6 +5,7 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package cmd
 
 import (
@@ -51,7 +52,7 @@ func (b *TknGenCmd) Run(cmd *cobra.Command, args []string) {
 	if filepath.Ext(flowPath) != ".yaml" {
 		core.RaiseErr("the flow must be in yaml format (.yaml)")
 	}
-	f, err := flow.LoadFlow(flowPath)
+	f, err := flow.LoadFlow(flowPath, "")
 	core.CheckErr(err, "cannot load flow")
 	builder := tkn.NewBuilder(f)
 	buf := builder.BuildBuffer()

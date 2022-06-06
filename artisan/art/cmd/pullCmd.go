@@ -45,9 +45,9 @@ func (c *PullCmd) Run(cmd *cobra.Command, args []string) {
 	nameTag := args[0]
 	// validate the name
 	packageName, err := core.ParseName(nameTag)
-	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
+	i18n.Err("", err, i18n.ERR_INVALID_PACKAGE_NAME)
 	// create a local registry
-	local := registry.NewLocalRegistry()
+	local := registry.NewLocalRegistry("")
 	// attempt pull from remote registry
 	local.Pull(packageName, c.credentials)
 }

@@ -1,5 +1,3 @@
-package cmd
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package cmd
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package cmd
+
 import (
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
@@ -45,7 +46,7 @@ func (c *RunCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) > 1 {
 		path = args[1]
 	}
-	builder := build.NewBuilder()
+	builder := build.NewBuilder("")
 	// add the build file level environment variables
 	env := merge.NewEnVarFromSlice(os.Environ())
 	// load vars from file

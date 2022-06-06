@@ -41,6 +41,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const artHome = ""
+
 type runFx func(path string, s *flow.Step, env *merge.Envar) error
 
 // @Summary Build patching artisan package
@@ -73,7 +75,7 @@ func executeCommandHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := core.NewTempDir()
+	t, err := core.NewTempDir(artHome)
 	if checkErr(w, "Error while creating temp folder ", err) {
 		return
 	}
@@ -128,13 +130,13 @@ func executeFlowFromPayloadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// unmarshal the flow bytes
 	core.Debug("creating flow from request ....")
-	f, err := flow.NewFlow(body)
+	f, err := flow.NewFlow(body, artHome)
 	if checkErr(w, "cannot read flow ", err) {
 		return
 	}
 
 	core.Debug("creating new temp folder ....")
-	path, err := core.NewTempDir()
+	path, err := core.NewTempDir(artHome)
 	if checkErr(w, "Error while creating temp folder ", err) {
 		return
 	}
@@ -179,14 +181,14 @@ func executeWebhookFlowHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//get the flow spec json from cmdb using flow-key
+	// get the flow spec json from cmdb using flow-key
 	fl, err := api.GetFlow(flowkey)
 	if checkErr(w, fmt.Sprintf("%s: [ %s ]\n", "Error while getting flow spec using flow key ", flowkey), err) {
 		return
 	}
 
 	// build flow using flow spec json
-	f, err := flow.NewFlow(fl)
+	f, err := flow.NewFlow(fl, artHome)
 	if checkErr(w, fmt.Sprintf("failed to build flow using flow spec obtained by config item key %s ", flowkey), err) {
 		return
 	}
@@ -197,7 +199,7 @@ func executeWebhookFlowHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	core.Debug("creating new temp folder ....")
-	path, err := core.NewTempDir()
+	path, err := core.NewTempDir(artHome)
 	if checkErr(w, "Error while creating temp folder ", err) {
 		return
 	}
@@ -233,7 +235,7 @@ func getRunFx(useRuntime bool) runFx {
 	if useRuntime == true {
 		return func(path string, s *flow.Step, env *merge.Envar) error {
 			var r *runner.Runner
-			r, err := runner.NewFromPath(path)
+			r, err := runner.NewFromPath(path, artHome)
 			if err != nil {
 				return err
 			}
@@ -245,7 +247,7 @@ func getRunFx(useRuntime bool) runFx {
 		}
 	} else {
 		return func(path string, s *flow.Step, env *merge.Envar) error {
-			b := build.NewBuilder()
+			b := build.NewBuilder(artHome)
 			b.Run(s.Function, path, false, env)
 			return nil
 		}
@@ -260,7 +262,7 @@ func executeFlow(path string, f *flow.Flow, w http.ResponseWriter) error {
 		for _, s := range f.Steps {
 			i := s.Input
 			if i != nil {
-				env = i.Env(true)
+				env = i.Env()
 			}
 			// for surce type 'create' delete the folder contents
 			if strings.EqualFold(s.PackageSource, "create") {
@@ -270,7 +272,7 @@ func executeFlow(path string, f *flow.Flow, w http.ResponseWriter) error {
 				}
 			}
 
-			//for package source as create/merge, open the package at the give location
+			// for package source as create/merge, open the package at the give location
 			if strings.EqualFold(s.PackageSource, "create") || strings.EqualFold(s.PackageSource, "merge") {
 				err := openArtisanPackage(path, s)
 				if checkErr(w, fmt.Sprintf("Error while opening artisan package [ %s ]", s.Package), err) {
@@ -357,7 +359,7 @@ func openArtisanPackage(p string, s *flow.Step) error {
 	i := s.Input
 	var env *merge.Envar
 	if i != nil {
-		env = i.Env(true)
+		env = i.Env()
 	}
 	crd, err := getCredentials(env)
 

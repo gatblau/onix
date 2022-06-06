@@ -1,5 +1,3 @@
-package flow
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,10 +5,16 @@ package flow
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package flow
+
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"path/filepath"
 	"strings"
 
 	"github.com/gatblau/onix/artisan/core"
@@ -38,6 +42,8 @@ type Flow struct {
 	Steps       []*Step           `yaml:"steps" json:"steps"`
 	Input       *data.Input       `yaml:"input,omitempty" json:"input,omitempty"`
 	UseRuntimes *bool             `yaml:"use_runtimes,omitempty" json:"use_runtimes,omitempty"`
+
+	artHome string
 }
 
 type Git struct {
@@ -45,6 +51,52 @@ type Git struct {
 	Branch   string `yaml:"git_branch" json:"git_branch"`
 	Login    string `yaml:"git_login,omitempty" json:"git_login,omitempty"`
 	Password string `yaml:"git_password,omitempty" json:"git_password,omitempty"`
+}
+
+func LoadFlow(path, artHome string) (*Flow, error) {
+	var err error
+	if len(path) == 0 {
+		return nil, fmt.Errorf("flow definition is required")
+	}
+	if !filepath.IsAbs(path) {
+		path, err = filepath.Abs(path)
+		if err != nil {
+			return nil, fmt.Errorf("cannot get absolute path for %s: %s", path, err)
+		}
+	}
+	flowBytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read flow definition %s: %s", path, err)
+	}
+	flow := new(Flow)
+	err = yaml.Unmarshal(flowBytes, flow)
+	if err != nil {
+		return nil, fmt.Errorf("cannot unmarshal flow definition %s: %s", path, err)
+	}
+	if flow.UseRuntimes == nil {
+		b := true
+		flow.UseRuntimes = &b
+	}
+	if flow.Labels == nil {
+		flow.Labels = make(map[string]string)
+	}
+	flow.artHome = artHome
+	return flow, nil
+}
+
+func NewFlow(flowJSONBytes []byte, artHome string) (*Flow, error) {
+	flow := new(Flow)
+	err := json.Unmarshal(flowJSONBytes, flow)
+	if err != nil {
+		return nil, fmt.Errorf("cannot unmarshal flow definition %s", err)
+	}
+
+	if flow.UseRuntimes == nil {
+		b := true
+		flow.UseRuntimes = &b
+	}
+	flow.artHome = artHome
+	return flow, nil
 }
 
 // Map get the input in map format
@@ -86,15 +138,6 @@ func (f *Flow) RequiresGitSource() bool {
 	return useGitSource && !usePackageSource
 }
 
-func (f *Flow) RequiresKey() bool {
-	for _, step := range f.Steps {
-		if step.Input != nil && step.Input.Key != nil {
-			return true
-		}
-	}
-	return false
-}
-
 func (f *Flow) RequiresSecrets() bool {
 	for _, step := range f.Steps {
 		if step.Input != nil && step.Input.Secret != nil {
@@ -113,15 +156,14 @@ func (f *Flow) RequiresFile() bool {
 	return false
 }
 
-// retrieve all input data required by the flow without values
+// GetInputDefinition retrieve all input data required by the flow without values
 // interactive mode is off - gets definition only
 func (f *Flow) GetInputDefinition(b *data.BuildFile, env *merge.Envar) *data.Input {
 	result := &data.Input{
-		Key:    make([]*data.Key, 0),
 		Secret: make([]*data.Secret, 0),
 		Var:    make([]*data.Var, 0),
 	}
-	local := registry.NewLocalRegistry()
+	local := registry.NewLocalRegistry(f.artHome)
 
 	for _, step := range f.Steps {
 		// if a function is defined without a package and the source is not a package
@@ -131,10 +173,9 @@ func (f *Flow) GetInputDefinition(b *data.BuildFile, env *merge.Envar) *data.Inp
 				core.RaiseErr("flow '%s' requires a build.yaml", f.Name)
 			}
 			// surveys the build.yaml for variables
-			i := data.SurveyInputFromBuildFile(step.Function, b, false, true, env)
+			i := data.SurveyInputFromBuildFile(step.Function, b, false, true, env, f.artHome)
 			if i == nil {
 				i = &data.Input{
-					Key:    make([]*data.Key, 0),
 					Secret: make([]*data.Secret, 0),
 					Var:    make([]*data.Var, 0),
 					File:   make([]*data.File, 0),
@@ -147,12 +188,12 @@ func (f *Flow) GetInputDefinition(b *data.BuildFile, env *merge.Envar) *data.Inp
 		} else if step.surveyManifest() {
 			// surveys the package manifest for variables
 			name, err := core.ParseName(step.Package)
-			i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
+			i18n.Err(f.artHome, err, i18n.ERR_INVALID_PACKAGE_NAME)
 			manif := local.GetManifest(name)
 			if manif == nil {
 				core.RaiseErr("manifest for package '%s' not found", name)
 			}
-			i := data.SurveyInputFromManifest(f.Name, step.Name, step.PackageSource, name.Domain, step.Function, manif, false, true, env)
+			i := data.SurveyInputFromManifest(f.Name, step.Name, step.PackageSource, name.Domain, step.Function, manif, false, true, env, f.artHome)
 			i.SurveyRegistryCreds(f.Name, step.Name, step.PackageSource, name.Domain, false, true, env)
 			result.Merge(i)
 		} else {
