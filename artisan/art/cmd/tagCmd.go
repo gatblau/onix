@@ -5,6 +5,7 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package cmd
 
 import (
@@ -33,6 +34,6 @@ func (c *TagCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) != 2 {
 		core.RaiseErr("source and target package tags are required")
 	}
-	l := registry.NewLocalRegistry()
+	l := registry.NewLocalRegistry("")
 	core.CheckErr(l.Tag(args[0], args[1]), "cannot tag package")
 }

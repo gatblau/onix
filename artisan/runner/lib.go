@@ -24,15 +24,9 @@ import (
 
 // launch a container and mount the current directory on the host machine into the container
 // the current directory must contain a build.yaml file where fxName is defined
-func runBuildFileFx(runtimeName, fxName, dir, containerName, network string, env *merge.Envar) error {
-	// NOTE: below restriction no longer necessary as volume is now mounted with :Z option
-	// if the OS is linux and the user id is not 100,000,000, it cannot continue
-	// if isWrong, msg := core.WrongUserId(); isWrong {
-	// 	// print error
-	// 	core.RaiseErr("%s\n", msg)
-	// }
+func runBuildFileFx(runtimeName, fxName, dir, containerName, network string, env *merge.Envar, artHome string) error {
 	// check the local registry path has not been created by the root user othewise the runtime will error
-	registryPath := core.RegistryPath()
+	registryPath := core.RegistryPath(artHome)
 	if runtime.GOOS == "linux" && strings.HasPrefix(registryPath, "//") {
 		// in linux if the user is not root but the local registry folder is owned by the root user, then
 		// the registry path in a runtime will start with two consecutive forward slashes
@@ -54,7 +48,7 @@ func runBuildFileFx(runtimeName, fxName, dir, containerName, network string, env
 	// add runtime vars
 	env.Add("OXART_FX_NAME", fxName)
 	// get the docker run arguments
-	args := toContainerArgs(runtimeName, dir, containerName, network, env)
+	args := toContainerArgs(runtimeName, dir, containerName, network, env, artHome)
 	// launch the container with an art exec command
 	cmd := exec.Command(tool, args...)
 	core.Debug("! launching runtime: %s %s\n", tool, strings.Join(args, " "))
@@ -96,7 +90,7 @@ func runBuildFileFx(runtimeName, fxName, dir, containerName, network string, env
 }
 
 // launch a container and execute a package function
-func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUser, artRegistryPwd, network string, env *merge.Envar) error {
+func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUser, artRegistryPwd, network string, env *merge.Envar, artHome string) error {
 	// determine which container tool is available in the host
 	tool, err := containerCmd()
 	if err != nil {
@@ -112,7 +106,7 @@ func runPackageFx(runtimeName, packageName, fxName, containerName, artRegistryUs
 		env.Add("ARTISAN_DEBUG", "true")
 	}
 	// create a slice with docker run args
-	args := toContainerArgs(runtimeName, "", containerName, network, env)
+	args := toContainerArgs(runtimeName, "", containerName, network, env, artHome)
 	// launch the container with an art exec command
 	cmd := exec.Command(tool, args...)
 	core.Debug("! launching runtime: %s %s\n", tool, strings.Join(args, " "))
@@ -170,7 +164,7 @@ func isCmdAvailable(name string) bool {
 }
 
 // return an array of environment variable arguments to pass to docker
-func toContainerArgs(imageName, dir, containerName, network string, env *merge.Envar) []string {
+func toContainerArgs(imageName, dir, containerName, network string, env *merge.Envar, artHome string) []string {
 	var result = []string{"run", "--name", containerName}
 	vars := env.Slice()
 	for _, v := range vars {
@@ -195,7 +189,7 @@ func toContainerArgs(imageName, dir, containerName, network string, env *merge.E
 	// add a bind mount for the artisan registry folder
 	result = append(result, "-v")
 	// note: mind the location of the mount in the runtime must align with its user home!
-	result = append(result, fmt.Sprintf("%s:%s", core.RegistryPath(), "/home/runtime/.artisan:Z"))
+	result = append(result, fmt.Sprintf("%s:%s", core.RegistryPath(artHome), "/home/runtime/.artisan:Z"))
 	result = append(result, imageName)
 	return result
 }
@@ -237,7 +231,7 @@ func removeContainer(containerName string) {
 	}
 }
 
-// check the the specified function is in the manifest
+// check the specified function is in the manifest
 func isExported(m *data.Manifest, fx string) bool {
 	for _, function := range m.Functions {
 		if function.Name == fx {

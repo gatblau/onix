@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"github.com/gatblau/onix/artisan/release"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -22,7 +23,6 @@ import (
 	"text/template"
 
 	"github.com/gatblau/onix/artisan/app/behaviour"
-	"github.com/gatblau/onix/artisan/export"
 	"github.com/gatblau/onix/oxlib/resx"
 	"gopkg.in/yaml.v2"
 )
@@ -36,11 +36,12 @@ type Manifest struct {
 	Services    Services `yaml:"services"`
 	Var         Vars     `yaml:"var,omitempty"`
 	// specification for images and packages
-	Spec *export.Spec `yaml:"spec,omitempty"`
+	Spec *release.Spec `yaml:"spec,omitempty"`
 
 	// internal use
 	// for git credentials if required
 	credentials string
+	artHome     string
 	// the location of this manifest
 	Root string
 }
@@ -144,7 +145,7 @@ func (s *SvcRef) PortMap() (map[string]int, error) {
 }
 
 // NewAppMan creates a new application manifest from a URI (supported schemes are http(s)://, s3(s):// and file
-func NewAppMan(uri, profile, credentials string) (man *Manifest, err error) {
+func NewAppMan(uri, profile, credentials, artHome string) (man *Manifest, err error) {
 	// validate credentials
 	if len(credentials) > 0 {
 		if len(strings.Split(credentials, ":")) != 2 {
@@ -260,7 +261,7 @@ func (m *Manifest) explode() (*Manifest, error) {
 	for i, svc := range m.Services {
 		// image only
 		if len(svc.Image) > 0 && len(svc.URI) == 0 {
-			svcMan, err = loadSvcManFromImage(svc)
+			svcMan, err = loadSvcManFromImage(svc, m.artHome)
 			if err != nil {
 				return nil, fmt.Errorf("cannot load service manifest for '%s': %s\n", svc.Image, err)
 			}
@@ -964,7 +965,7 @@ func (m *Manifest) eval(t string) (string, error) {
 	return tpl.String(), nil
 }
 
-func (m *Manifest) loadSpec(uri string) (*export.Spec, error) {
+func (m *Manifest) loadSpec(uri string) (*release.Spec, error) {
 	if !strings.Contains(uri, "/") {
 		uri = fmt.Sprintf("./%s", uri)
 	}
@@ -973,7 +974,7 @@ func (m *Manifest) loadSpec(uri string) (*export.Spec, error) {
 	if err != nil {
 		return nil, err
 	}
-	spec := new(export.Spec)
+	spec := new(release.Spec)
 	err = yaml.Unmarshal(specBytes, spec)
 	if err != nil {
 		return nil, err

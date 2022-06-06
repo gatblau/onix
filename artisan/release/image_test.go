@@ -6,12 +6,12 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package export
+package release
 
 import "testing"
 
 func TestSaveImage(t *testing.T) {
-	if err := ExportImage("postgres:13", "postgres:13", "s3://localhost:9000/app1/v1", "user:pwd"); err != nil {
+	if err := ExportImage("postgres:13", "postgres:13", "s3://localhost:9000/app1/v1", "user:pwd", ""); err != nil {
 		t.Fatal(err)
 	}
 }

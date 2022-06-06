@@ -32,6 +32,6 @@ func NewPruneCmd() *PruneCmd {
 }
 
 func (b *PruneCmd) Run(cmd *cobra.Command, args []string) {
-	local := registry.NewLocalRegistry()
+	local := registry.NewLocalRegistry("")
 	core.CheckErr(local.Prune(), "")
 }

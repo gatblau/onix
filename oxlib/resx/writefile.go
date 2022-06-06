@@ -57,12 +57,26 @@ func writeFsFile(content []byte, uri string) error {
 
 // writeS3File write a file to an S3 bucket
 func writeS3File(content []byte, uri string, creds string) error {
+	ctx := context.Background()
 	s3Client, bucketName, objectName, err := newS3Client(uri, creds)
 	if err != nil {
 		return err
 	}
+	// Check to see if we already own this bucket (which happens if you run this twice)
+	var exists bool
+	exists, err = s3Client.BucketExists(ctx, bucketName)
+	if err != nil {
+		return fmt.Errorf("Failed to check if bucket exists: %s\n", err)
+	}
+	// if the bucket does not exist, attempts to create it
+	if !exists {
+		err = s3Client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: ""})
+		if err != nil {
+			return fmt.Errorf("Failed to create bucket: %s\n", err)
+		}
+	}
 	_, err = s3Client.PutObject(
-		context.Background(),
+		ctx,
 		bucketName,
 		objectName,
 		bytes.NewReader(content),

@@ -5,6 +5,7 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package cmd
 
 import (
@@ -49,9 +50,9 @@ func (b *ManifestCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("too many arguments")
 	}
 	// create a local registry
-	local := registry.NewLocalRegistry()
+	local := registry.NewLocalRegistry("")
 	name, err := core.ParseName(args[0])
-	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
+	i18n.Err("", err, i18n.ERR_INVALID_PACKAGE_NAME)
 	// get the package manifest
 	m := local.GetManifest(name)
 	if b.format == "json" {

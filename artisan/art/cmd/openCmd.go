@@ -36,7 +36,7 @@ func NewOpenCmd() *OpenCmd {
 }
 
 func (c *OpenCmd) Run(cmd *cobra.Command, args []string) {
-	// check an package name has been provided
+	// check a package name has been provided
 	if len(args) < 1 {
 		log.Fatal("name of the package to open is required")
 	}
@@ -48,9 +48,9 @@ func (c *OpenCmd) Run(cmd *cobra.Command, args []string) {
 	}
 	// validate the name
 	artie, err := core.ParseName(nameTag)
-	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
+	i18n.Err("", err, i18n.ERR_INVALID_PACKAGE_NAME)
 	// create a local registry
-	local := registry.NewLocalRegistry()
+	local := registry.NewLocalRegistry("")
 	// attempt to open from local registry
 	local.Open(artie, c.credentials, path, "", true, nil)
 }

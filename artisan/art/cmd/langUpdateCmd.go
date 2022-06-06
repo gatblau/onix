@@ -5,6 +5,7 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package cmd
 
 import (
@@ -12,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// list local packages
+// LangUpdateCmd add missing entries in language dictionary
 type LangUpdateCmd struct {
 	cmd *cobra.Command
 }
@@ -31,11 +32,11 @@ func NewLangUpdateCmd() *LangUpdateCmd {
 
 func (c *LangUpdateCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) == 0 {
-		i18n.Raise(i18n.ERR_INSUFFICIENT_ARGS)
+		i18n.Raise("", i18n.ERR_INSUFFICIENT_ARGS)
 	}
 	if len(args) > 1 {
-		i18n.Raise(i18n.ERR_TOO_MANY_ARGS)
+		i18n.Raise("", i18n.ERR_TOO_MANY_ARGS)
 	}
 	err := i18n.Update(args[0])
-	i18n.Err(err, i18n.ERR_CANT_UPDATE_LANG_FILE)
+	i18n.Err("", err, i18n.ERR_CANT_UPDATE_LANG_FILE)
 }

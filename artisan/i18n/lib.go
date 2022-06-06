@@ -18,31 +18,31 @@ import (
 	"strings"
 )
 
-func String(key I18NKey) string {
-	return get(key)
+func String(artHome string, key I18NKey) string {
+	return get(artHome, key)
 }
 
 // Printf prints a localised message
-func Printf(key I18NKey, a ...interface{}) {
-	fmt.Printf(get(key), a...)
+func Printf(artHome string, key I18NKey, a ...interface{}) {
+	fmt.Printf(get(artHome, key), a...)
 }
 
 // Sprintf formats according to a format specifier and returns the resulting string
-func Sprintf(key I18NKey, a ...interface{}) string {
-	return fmt.Sprintf(get(key), a...)
+func Sprintf(artHome string, key I18NKey, a ...interface{}) string {
+	return fmt.Sprintf(get(artHome, key), a...)
 }
 
 // Err checks for the  error and if it exists prints a localised error
-func Err(err error, key I18NKey, a ...interface{}) {
+func Err(artHome string, err error, key I18NKey, a ...interface{}) {
 	if err != nil {
-		fmt.Printf("%s - %s\n", fmt.Sprintf(get(key), a...), err)
+		fmt.Printf("%s - %s\n", fmt.Sprintf(get(artHome, key), a...), err)
 		os.Exit(1)
 	}
 }
 
 // raise an error
-func Raise(key I18NKey, a ...interface{}) {
-	fmt.Printf("%s\n", fmt.Sprintf(get(key), a...))
+func Raise(artHome string, key I18NKey, a ...interface{}) {
+	fmt.Printf("%s\n", fmt.Sprintf(get(artHome, key), a...))
 	os.Exit(1)
 }
 
@@ -65,7 +65,7 @@ func Update(i18nFile string) error {
 	return ioutil.WriteFile(file, data, os.ModePerm)
 }
 
-func get(key I18NKey) string {
+func get(artHome string, key I18NKey) string {
 	var language string
 	// check if internationalisation is enabled
 	inter := os.Getenv("ARTISAN_I18N")
@@ -85,7 +85,7 @@ func get(key I18NKey) string {
 		language = overrideLang
 	}
 	// load the dictionary from file
-	t, err := toml.LoadFile(path.Join(core.LangPath(), fmt.Sprintf("%s_i18n.toml", language)))
+	t, err := toml.LoadFile(path.Join(core.LangPath(artHome), fmt.Sprintf("%s_i18n.toml", language)))
 	var value interface{}
 	if err == nil {
 		value = t.Get(string(key))

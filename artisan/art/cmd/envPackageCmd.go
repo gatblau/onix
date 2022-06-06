@@ -1,5 +1,3 @@
-package cmd
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package cmd
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package cmd
+
 import (
 	"encoding/json"
 	"fmt"
@@ -22,7 +23,7 @@ import (
 	"strings"
 )
 
-// list local packages
+// EnvPackageCmd work out the variables required by a given package to run
 type EnvPackageCmd struct {
 	cmd           *cobra.Command
 	buildFilePath string
@@ -52,7 +53,7 @@ func (c *EnvPackageCmd) Run(cmd *cobra.Command, args []string) {
 	if len(args) > 0 && len(args) < 3 {
 		name, err := core.ParseName(args[0])
 		core.CheckErr(err, "invalid package name: %s", name)
-		local := registry.NewLocalRegistry()
+		local := registry.NewLocalRegistry("")
 		manifest := local.GetManifest(name)
 		if len(args) == 2 {
 			fxName := args[1]
@@ -70,9 +71,9 @@ func (c *EnvPackageCmd) Run(cmd *cobra.Command, args []string) {
 		// add the credentials to download the package
 		input.SurveyRegistryCreds(name.Group, name.Name, "", name.Domain, false, true, merge.NewEnVarFromSlice([]string{}))
 	} else if len(args) < 2 {
-		i18n.Raise(i18n.ERR_INSUFFICIENT_ARGS)
+		i18n.Raise("", i18n.ERR_INSUFFICIENT_ARGS)
 	} else if len(args) > 2 {
-		i18n.Raise(i18n.ERR_TOO_MANY_ARGS)
+		i18n.Raise("", i18n.ERR_TOO_MANY_ARGS)
 	}
 
 	var (

@@ -5,9 +5,10 @@ env:
   PWD: adm1n
 
 functions:
-  - name: configure
+  - name: up
     description: configure a testing pipeline in doorman
     run:
+      - bash -c "sh docker_up.sh"
       - art curl -X PUT ${DOORMAN_URI}/notification-template -H 'Content-Type:application/yaml' -f new_release_template.yaml -C 400 -u ${USER}:${PWD}
       - art curl -X PUT ${DOORMAN_URI}/notification-template -H 'Content-Type:application/yaml' -f issue_template.yaml -C 400 -u ${USER}:${PWD}
       - art curl -X PUT ${DOORMAN_URI}/notification-template -H 'Content-Type:application/yaml' -f quarantine_template.yaml -C 400 -u ${USER}:${PWD}
@@ -15,9 +16,17 @@ functions:
       - art curl -X PUT ${DOORMAN_URI}/notification -H 'Content-Type:application/yaml' -f fail_error_notification.yaml -C 400 -u ${USER}:${PWD}
       - art curl -X PUT ${DOORMAN_URI}/notification -H 'Content-Type:application/yaml' -f fail_scan_notification.yaml -C 400 -u ${USER}:${PWD}
       - art curl -X PUT ${DOORMAN_URI}/key -H 'Content-Type:application/yaml' -f pub_key.yaml -C 400 -u ${USER}:${PWD}
-      - art curl -X PUT ${DOORMAN_URI}/key -H 'Content-Type:application/yaml' -f pk_key.yaml -C 400 -u ${USER}:${PWD}
       - art curl -X PUT ${DOORMAN_URI}/route/in -H 'Content-Type:application/yaml' -f in_route.yaml -C 400 -u ${USER}:${PWD}
       - art curl -X PUT ${DOORMAN_URI}/route/out -H 'Content-Type:application/yaml' -f out_route.yaml -C 400 -u ${USER}:${PWD}
       - art curl -X PUT ${DOORMAN_URI}/command -H 'Content-Type:application/yaml' -f clam_cmd.yaml -C 400 -u ${USER}:${PWD}
       - art curl -X PUT ${DOORMAN_URI}/pipe -H 'Content-Type:application/yaml' -f pipe.yaml -C 400 -u ${USER}:${PWD}
+      - art run deploy ox
+      - bash -c "sh minio_up.sh"
+
+  - name: down
+    run:
+      - docker rm -f $((docker ps -qa))
+      - art run dispose ox
+      - sh minio_down.sh
+      - rm minio_down.sh 2> /dev/null
 ...

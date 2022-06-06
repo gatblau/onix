@@ -61,7 +61,7 @@ func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 	// if no remote specified then it is a local operation
 	if !c.registry {
 		//  create a local registry
-		local := registry.NewLocalRegistry()
+		local := registry.NewLocalRegistry("")
 		if c.all {
 			// prune dangling packages first
 			core.CheckErr(local.Prune(), "cannot prune packages")
@@ -72,7 +72,7 @@ func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 		}
 	} else {
 		uname, pwd := core.RegUserPwd(c.creds)
-		remote, err := registry.NewRemoteRegistry(domain(args[0]), uname, pwd)
+		remote, err := registry.NewRemoteRegistry(domain(args[0]), uname, pwd, "")
 		core.CheckErr(err, "invalid remote")
 		// otherwise, it is a remote operation
 		if c.all {
