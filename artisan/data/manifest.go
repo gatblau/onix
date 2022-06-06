@@ -92,14 +92,6 @@ func (m *Manifest) ToMarkDownBytes(name string) []byte {
 				b.WriteString(fmt.Sprintf("|%s|%s|\n", s.Name, format(s.Description)))
 			}
 		}
-		if len(fx.Input.Key) > 0 {
-			b.WriteString(fmt.Sprintf("### Keys:\n"))
-			b.WriteString(fmt.Sprintf("|name|description|private|\n"))
-			b.WriteString(fmt.Sprintf("|---|---|---|\n"))
-			for _, k := range fx.Input.Key {
-				b.WriteString(fmt.Sprintf("|%s|%s|%t|\n", k.Name, format(k.Description), k.Private))
-			}
-		}
 		if len(fx.Input.File) > 0 {
 			b.WriteString(fmt.Sprintf("### Files:\n"))
 			b.WriteString(fmt.Sprintf("|name|description|path|\n"))

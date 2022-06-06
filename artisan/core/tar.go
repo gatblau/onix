@@ -16,7 +16,7 @@ import (
 	"path/filepath"
 )
 
-func Tar(files []TarFile, buf io.Writer, preserveDirStruct bool) error {
+func Tar(files []TarFile, buf io.Writer, preserveDirStruct bool, artHome string) error {
 	// create a new Writer for tar; writing to the tar writer will write to the "buf" writer
 	// note: to additionally apply gzip can create gw := gzip.NewWriter(buf) and pass to "tw" instead of "buf"
 	tw := tar.NewWriter(buf)
@@ -30,7 +30,7 @@ func Tar(files []TarFile, buf io.Writer, preserveDirStruct bool) error {
 				return err
 			}
 		} else if len(file.Bytes) > 0 {
-			err := addBytesToTar(tw, file.Name, file.Bytes, false)
+			err := addBytesToTar(tw, file.Name, file.Bytes, false, artHome)
 			if err != nil {
 				return err
 			}
@@ -81,8 +81,8 @@ func addFileToTar(tw *tar.Writer, filename string, preserveDirStruct bool) error
 	return nil
 }
 
-func addBytesToTar(tw *tar.Writer, filename string, file []byte, preserveDirStruct bool) error {
-	tmp, err := NewTempDir()
+func addBytesToTar(tw *tar.Writer, filename string, file []byte, preserveDirStruct bool, artHome string) error {
+	tmp, err := NewTempDir(artHome)
 	if err != nil {
 		return err
 	}

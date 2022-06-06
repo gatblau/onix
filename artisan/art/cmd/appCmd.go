@@ -49,7 +49,7 @@ func (c *AppCmd) Run(cmd *cobra.Command, args []string) {
 	if len(uri) == 0 {
 		core.ErrorLogger.Fatalf("missing application manifest URI\n")
 	}
-	if err := app.GenerateResources(uri, c.format, c.profile, c.creds, c.path); err != nil {
+	if err := app.GenerateResources(uri, c.format, c.profile, c.creds, c.path, ""); err != nil {
 		core.ErrorLogger.Fatalf(err.Error())
 	}
 }

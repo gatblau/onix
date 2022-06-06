@@ -44,13 +44,13 @@ type SyncManager struct {
 // repoPath folder with in repo where the final files to be copied during sync operation
 // It will return initialised SyncManager or any error occurred
 func NewSyncManagerFromUri(repoURI, token, fileNamePrefix, path4Files2BeSync, repoPath string,
-	strictSync bool, recursive bool, tempPath string, preserveFiles bool, branch string) (*SyncManager, error) {
+	strictSync bool, recursive bool, tempPath string, preserveFiles bool, branch, artHome string) (*SyncManager, error) {
 
 	var err error
 	var workingDir string
 
 	if len(tempPath) == 0 {
-		workingDir, err = core.NewTempDir()
+		workingDir, err = core.NewTempDir(artHome)
 	} else {
 		err = os.MkdirAll(tempPath, os.ModePerm)
 		workingDir = tempPath

@@ -41,25 +41,28 @@ type Manager struct {
 	buildFile    *data.BuildFile
 	bareFlowPath string
 	env          *merge.Envar
+	artHome      string
 }
 
-func New(bareFlowPath, buildPath string) (*Manager, error) {
+func New(bareFlowPath, buildPath, artHome string) (*Manager, error) {
 	// check the flow path to see if bare flow is named correctly
 	if !strings.HasSuffix(bareFlowPath, "_bare.yaml") {
 		core.RaiseErr("a bare flow is required, the naming convention is [flow_name]_bare.yaml")
 	}
 	m := &Manager{
 		bareFlowPath: bareFlowPath,
+		artHome:      artHome,
 	}
-	flow, err := LoadFlow(bareFlowPath)
+	flow, err := LoadFlow(bareFlowPath, artHome)
 	if err != nil {
 		return nil, fmt.Errorf("cannot load flow definition from %s: %s", bareFlowPath, err)
 	}
 	m.Flow = flow
 	// if a build file is defined, then load it
 	if len(buildPath) > 0 {
+		var buildFile *data.BuildFile
 		buildPath = core.ToAbs(buildPath)
-		buildFile, err := data.LoadBuildFile(path.Join(buildPath, "build.yaml"))
+		buildFile, err = data.LoadBuildFile(path.Join(buildPath, "build.yaml"))
 		if err != nil {
 			return nil, fmt.Errorf("cannot load build file from %s: %s", buildPath, err)
 		}
@@ -68,15 +71,15 @@ func New(bareFlowPath, buildPath string) (*Manager, error) {
 	return m, nil
 }
 
-func NewWithEnv(bareFlowPath, buildPath string, env *merge.Envar) (*Manager, error) {
-	m, err := New(bareFlowPath, buildPath)
+func NewWithEnv(bareFlowPath, buildPath string, env *merge.Envar, artHome string) (*Manager, error) {
+	m, err := New(bareFlowPath, buildPath, artHome)
 	core.CheckErr(err, "cannot load flow")
 	m.env = env
 	return m, nil
 }
 
 func (m *Manager) Merge(interactive bool) error {
-	local := registry.NewLocalRegistry()
+	local := registry.NewLocalRegistry(m.artHome)
 	if m.Flow.RequiresGitSource() {
 		if m.buildFile == nil {
 			return fmt.Errorf("a build.yaml file is required to fill the flow")
@@ -92,10 +95,10 @@ func (m *Manager) Merge(interactive bool) error {
 			core.CheckErr(err, "invalid step %s package name %s", step.Name, step.Package)
 			// get the package manifest
 			manifest := local.GetManifest(name)
-			step.Input = data.SurveyInputFromManifest(m.Flow.Name, step.Name, step.PackageSource, name.Domain, step.Function, manifest, interactive, false, m.env)
+			step.Input = data.SurveyInputFromManifest(m.Flow.Name, step.Name, step.PackageSource, name.Domain, step.Function, manifest, interactive, false, m.env, m.artHome)
 		} else if step.surveyBuildfile(m.Flow.RequiresGitSource()) {
 			// add exported inputs to the step
-			step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, interactive, false, m.env)
+			step.Input = data.SurveyInputFromBuildFile(step.Function, m.buildFile, interactive, false, m.env, m.artHome)
 		}
 	}
 	err := m.Flow.IsValid()
@@ -119,51 +122,6 @@ func (m *Manager) JsonString() (string, error) {
 		return "", fmt.Errorf("cannot marshal execution flow: %s", err)
 	}
 	return string(b), nil
-}
-
-func LoadFlow(path string) (*Flow, error) {
-	var err error
-	if len(path) == 0 {
-		return nil, fmt.Errorf("flow definition is required")
-	}
-	if !filepath.IsAbs(path) {
-		path, err = filepath.Abs(path)
-		if err != nil {
-			return nil, fmt.Errorf("cannot get absolute path for %s: %s", path, err)
-		}
-	}
-	flowBytes, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read flow definition %s: %s", path, err)
-	}
-	flow := new(Flow)
-	err = yaml.Unmarshal(flowBytes, flow)
-	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal flow definition %s: %s", path, err)
-	}
-	if flow.UseRuntimes == nil {
-		b := true
-		flow.UseRuntimes = &b
-	}
-	if flow.Labels == nil {
-		flow.Labels = make(map[string]string)
-	}
-	return flow, nil
-}
-
-func NewFlow(flowJSONBytes []byte) (*Flow, error) {
-	flow := new(Flow)
-	err := json.Unmarshal(flowJSONBytes, flow)
-	if err != nil {
-		return nil, fmt.Errorf("cannot unmarshal flow definition %s", err)
-	}
-
-	if flow.UseRuntimes == nil {
-		b := true
-		flow.UseRuntimes = &b
-	}
-
-	return flow, nil
 }
 
 func (m *Manager) SaveYAML() error {

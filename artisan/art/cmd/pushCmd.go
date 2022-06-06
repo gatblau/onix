@@ -44,9 +44,9 @@ func (c *PushCmd) Run(cmd *cobra.Command, args []string) {
 	nameTag := args[0]
 	// validate the name
 	packageName, err := core.ParseName(nameTag)
-	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
+	i18n.Err("", err, i18n.ERR_INVALID_PACKAGE_NAME)
 	// create a local registry
-	local := registry.NewLocalRegistry()
+	local := registry.NewLocalRegistry("")
 	// attempt upload to remote repository
-	core.CheckErr(local.Push(packageName, c.credentials), i18n.Sprintf(i18n.ERR_CANT_PUSH_PACKAGE))
+	core.CheckErr(local.Push(packageName, c.credentials), i18n.Sprintf("", i18n.ERR_CANT_PUSH_PACKAGE))
 }

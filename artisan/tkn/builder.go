@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/flow"
 )
 
@@ -61,11 +60,6 @@ func (b *Builder) Build() ([][]byte, string, bool) {
 	secrets := b.newCredentialsSecret()
 	if secrets != nil {
 		result = append(result, ToYaml(secrets, "Secret"))
-	}
-	// write secrets with keys
-	keysSecret := b.newKeySecrets()
-	if keysSecret != nil {
-		result = append(result, ToYaml(keysSecret, "Keys Secret"))
 	}
 	// write secrets with files
 	filesSecret := b.newFileSecrets()
@@ -142,17 +136,8 @@ func (b *Builder) newSteps() []*Steps {
 		}
 		// if the step requires keys
 		if step.Input != nil {
-			if len(step.Input.Key) > 0 {
-				// add a volume mount for the keys
-				s.VolumeMounts = []*VolumeMounts{
-					{
-						Name:      "keys-volume",
-						MountPath: "/keys",
-					},
-				}
-			}
 			// if the step has vars or secrets or keys
-			if len(step.Input.Var)+len(step.Input.Secret)+len(step.Input.Key) > 0 {
+			if len(step.Input.Var)+len(step.Input.Secret) > 0 {
 				// add to env
 				s.Env = b.getEnv(step)
 			}
@@ -226,13 +211,6 @@ func (b *Builder) getEnv(step *flow.Step) []*Env {
 				})
 			}
 		}
-		// add keys
-		for _, key := range step.Input.Key {
-			env = append(env, &Env{
-				Name:  key.Name,
-				Value: key.Path,
-			})
-		}
 	}
 	return env
 }
@@ -261,17 +239,6 @@ func (b *Builder) addRuntimeInterfaceVars(flowName string, step *flow.Step, env 
 
 func (b *Builder) newVolumes() []*Volumes {
 	var vols []*Volumes = nil
-	if b.flow.RequiresKey() {
-		if vols == nil {
-			vols = make([]*Volumes, 0)
-		}
-		vols = append(vols, &Volumes{
-			Name: "keys-volume",
-			Secret: &Secret{
-				SecretName: b.keysSecretName(),
-			},
-		})
-	}
 	if b.flow.RequiresFile() {
 		if vols == nil {
 			vols = make([]*Volumes, 0)
@@ -313,38 +280,6 @@ func (b *Builder) newCredentialsSecret() *Secret {
 			}
 		}
 		s.StringData = &credentials
-		return s
-	}
-	return nil
-}
-
-func (b *Builder) newKeySecrets() *Secret {
-	if b.flow.RequiresKey() {
-		s := new(Secret)
-		s.APIVersion = ApiVersionSecret
-		s.Kind = "Secret"
-		s.Type = "Opaque"
-		s.Metadata = &Metadata{
-			Name:      b.keysSecretName(),
-			Namespace: b.namespace(),
-		}
-		keysDict := make(map[string]string)
-		var name string
-		for _, step := range b.flow.Steps {
-			if step.Input != nil {
-				keys := step.Input.Key
-				for _, key := range keys {
-					prefix := crypto.KeyNamePrefix(key.PackageGroup, key.PackageName)
-					if key.Private {
-						name = crypto.PrivateKeyName(prefix, "pgp")
-					} else {
-						name = crypto.PublicKeyName(prefix, "pgp")
-					}
-					keysDict[name] = key.Value
-				}
-			}
-		}
-		s.StringData = &keysDict
 		return s
 	}
 	return nil

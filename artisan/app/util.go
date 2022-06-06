@@ -26,7 +26,7 @@ import (
 )
 
 // loadSvcManFromImage extracts the service manifest from a docker image
-func loadSvcManFromImage(svcRef SvcRef) (*SvcManifest, error) {
+func loadSvcManFromImage(svcRef SvcRef, artHome string) (*SvcManifest, error) {
 	var cmd string
 	pathLabel := "artisan.svc.manifest"
 	containerName := fmt.Sprintf("%s-info", svcRef.Name)
@@ -37,7 +37,7 @@ func loadSvcManFromImage(svcRef SvcRef) (*SvcManifest, error) {
 		return nil, fmt.Errorf("cannot create docker container from image '%s': %s\n", svcRef.Image, err)
 	}
 	// create a random tmp folder
-	tmp, err := tmpPath()
+	tmp, err := tmpPath(artHome)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create tmp working folder: %s\n", err)
 	}
@@ -105,13 +105,13 @@ func isURL(uri string) bool {
 }
 
 // return a temporary path and create the tmp folder
-func tmpPath() (string, error) {
+func tmpPath(artHome string) (string, error) {
 	uuid.EnableRandPool()
 	id, err := uuid.NewUUID()
 	if err != nil {
 		return "", err
 	}
-	path := filepath.Join(core.TmpPath(), id.String())
+	path := filepath.Join(core.TmpPath(artHome), id.String())
 	err = os.MkdirAll(path, os.ModePerm)
 	if err != nil {
 		return "", err

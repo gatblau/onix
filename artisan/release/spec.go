@@ -6,10 +6,11 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package export
+package release
 
 import (
 	"fmt"
+	"github.com/gatblau/onix/artisan/data"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -25,12 +26,58 @@ import (
 
 // Spec the specification for artisan artefacts to be exported
 type Spec struct {
-	Version  string            `yaml:"version"`
-	Info     string            `yaml:"info,omitempty"`
-	Images   map[string]string `yaml:"images,omitempty"`
+	// Name of the released Application
+	Name string `yaml:"name,omitempty"`
+	// Description of the Application
+	Description string `yaml:"description,omitempty"`
+	// Author of the release
+	Author string `yaml:"author,omitempty"`
+	// License associated to the release
+	License string `yaml:"license,omitempty"`
+	// Version of the release
+	Version string `yaml:"version"`
+	// Info general release information
+	Info string `yaml:"info,omitempty"`
+	// Images the container images in the release
+	Images map[string]string `yaml:"images,omitempty"`
+	// Packages the artisan packages in the release
 	Packages map[string]string `yaml:"packages,omitempty"`
+	// Run commands
+	Run []Run
 
 	content []byte
+}
+
+// Run defines one or more package/function to run in specific cases
+type Run struct {
+	// Package name to run
+	Package string `yaml:"package"`
+	// Function in the package to run
+	Function string `yaml:"function"`
+	// Var list of variables to be passed to the function to run
+	Input *data.Input `yaml:"input,omitempty"`
+	// Event the lifecycle event that is associated to the function to run
+	Event string `yaml:"event"`
+}
+
+// LifecycleEvent the event in the lifecycle of the spec that
+type LifecycleEvent string
+
+const (
+	ReleaseSetup  string = "SETUP"
+	ReleaseDeploy        = "DEPLOY"
+	ReleaseDecom         = "DECOMMISSION"
+)
+
+func (e LifecycleEvent) String() string {
+	extensions := [...]string{"SETUP", "DEPLOY", "DECOMMISSION"}
+	x := string(e)
+	for _, v := range extensions {
+		if v == x {
+			return x
+		}
+	}
+	return ""
 }
 
 func NewSpec(path, creds string) (*Spec, error) {
@@ -70,14 +117,17 @@ func NewSpec(path, creds string) (*Spec, error) {
 	return spec, nil
 }
 
-func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds, filter string) error {
+func ExportSpec(opts ExportOptions) error {
+	if err := opts.Valid(); err != nil {
+		return fmt.Errorf("invalid export options: %s\n", err)
+	}
 	var skipArtefact bool
 	// save packages first
-	l := registry.NewLocalRegistry()
-	for _, value := range s.Packages {
-		if skipArtefact, filter = skip(filter, value); skipArtefact {
-			if len(filter) == 0 {
-				core.WarningLogger.Printf("invalid filter expression '%s'\n", filter)
+	l := registry.NewLocalRegistry(opts.ArtHome)
+	for _, value := range opts.Specification.Packages {
+		if skipArtefact, opts.Filter = skip(opts.Filter, value); skipArtefact {
+			if len(opts.Filter) == 0 {
+				core.WarningLogger.Printf("invalid filter expression '%s'\n", opts.Filter)
 			}
 			core.InfoLogger.Printf("skipping package %s\n", value)
 			continue
@@ -86,17 +136,17 @@ func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds, filter string) erro
 		if err != nil {
 			return fmt.Errorf("invalid package name: %s", err)
 		}
-		uri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(value))
-		err = l.ExportPackage([]core.PackageName{*name}, sourceCreds, uri, targetCreds)
+		uri := fmt.Sprintf("%s/%s.tar", opts.TargetUri, pkgName(value))
+		err = l.ExportPackage([]core.PackageName{*name}, opts.SourceCreds, uri, opts.TargetCreds)
 		if err != nil {
 			return fmt.Errorf("cannot save package %s: %s", value, err)
 		}
 	}
 	// save images
-	for _, value := range s.Images {
-		if skipArtefact, filter = skip(filter, value); skipArtefact {
-			if len(filter) == 0 {
-				core.WarningLogger.Printf("invalid filter expression '%s'\n", filter)
+	for _, value := range opts.Specification.Images {
+		if skipArtefact, opts.Filter = skip(opts.Filter, value); skipArtefact {
+			if len(opts.Filter) == 0 {
+				core.WarningLogger.Printf("invalid filter expression '%s'\n", opts.Filter)
 			}
 			core.InfoLogger.Printf("skipping image %s\n", value)
 			continue
@@ -104,7 +154,7 @@ func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds, filter string) erro
 		// note: the package is saved with a name exactly the same as the container image
 		// to avoid the art package name parsing from failing, any images with no host or user/group in the name should be avoided
 		// e.g. docker.io/mongo-express:latest will fail so use docker.io/library/mongo-express:latest instead
-		err := ExportImage(value, value, targetUri, targetCreds)
+		err := ExportImage(value, value, opts.TargetUri, opts.TargetCreds, opts.ArtHome)
 		if err != nil {
 			return fmt.Errorf("cannot save image %s: %s", value, err)
 		}
@@ -112,95 +162,101 @@ func ExportSpec(s Spec, targetUri, sourceCreds, targetCreds, filter string) erro
 	// finally, save the spec to the target location
 	// note: this is done last so that a minio notification can be triggered based on this file
 	// once all other artefacts have been exported
-	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
-	err := resx.WriteFile(s.content, uri, targetCreds)
+	uri := fmt.Sprintf("%s/spec.yaml", opts.TargetUri)
+	err := resx.WriteFile(opts.Specification.content, uri, opts.TargetCreds)
 	if err != nil {
 		return fmt.Errorf("cannot save spec file: %s", err)
 	}
-	core.InfoLogger.Printf("writing spec.yaml to %s", targetUri)
+	core.InfoLogger.Printf("writing spec.yaml to %s", opts.TargetUri)
 	return nil
 }
 
-func ImportSpec(targetUri, targetCreds, filter, pubKeyPath string, ignoreSignature bool) error {
+func ImportSpec(opts ImportOptions) (*Spec, error) {
+	if err := opts.Valid(); err != nil {
+		return nil, fmt.Errorf("invalid import options: %s\n", err)
+	}
 	// if it is not ignoring the package signature, then a public key path must be provided
-	if !ignoreSignature && len(pubKeyPath) == 0 {
-		return fmt.Errorf("the path to a public key must be provided to verify the package author, otherwise ignore signature")
+	if opts.Verifier != nil && len(opts.PubKeyPath) == 0 {
+		return nil, fmt.Errorf("the path to a public key must be provided to verify the package author, otherwise ignore signature")
 	}
 	var skipArtefact bool
-	r := registry.NewLocalRegistry()
-	uri := fmt.Sprintf("%s/spec.yaml", targetUri)
+	r := registry.NewLocalRegistry(opts.ArtHome)
+	uri := fmt.Sprintf("%s/spec.yaml", opts.TargetUri)
 	core.InfoLogger.Printf("retrieving %s\n", uri)
-	specBytes, err := resx.ReadFile(uri, targetCreds)
+	specBytes, err := resx.ReadFile(uri, opts.TargetCreds)
 	if err != nil {
-		return fmt.Errorf("cannot read spec.yaml: %s", err)
+		return nil, fmt.Errorf("cannot read spec.yaml: %s", err)
 	}
 	spec := new(Spec)
 	err = yaml.Unmarshal(specBytes, spec)
 	if err != nil {
-		return fmt.Errorf("cannot unmarshal spec.yaml: %s", err)
+		return nil, fmt.Errorf("cannot unmarshal spec.yaml: %s", err)
 	}
 	// import packages
 	for _, pkName := range spec.Packages {
-		if skipArtefact, filter = skip(filter, pkName); skipArtefact {
-			if len(filter) == 0 {
-				core.WarningLogger.Printf("invalid filter expression '%s'\n", filter)
+		if skipArtefact, opts.Filter = skip(opts.Filter, pkName); skipArtefact {
+			if len(opts.Filter) == 0 {
+				core.WarningLogger.Printf("invalid filter expression '%s'\n", opts.Filter)
 			}
 			core.InfoLogger.Printf("skipping image %s\n", pkName)
 			continue
 		}
-		name := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(pkName))
-		err2 := r.Import([]string{name}, targetCreds, pubKeyPath, ignoreSignature)
+		name := fmt.Sprintf("%s/%s.tar", opts.TargetUri, pkgName(pkName))
+		err2 := r.Import([]string{name}, opts.TargetCreds, opts.PubKeyPath, opts.Verifier)
 		if err2 != nil {
-			return fmt.Errorf("cannot read %s.tar: %s", pkgName(pkName), err2)
+			return spec, fmt.Errorf("cannot read %s.tar: %s", pkgName(pkName), err2)
 		}
 	}
 	// import images
 	for _, image := range spec.Images {
-		if skipArtefact, filter = skip(filter, image); skipArtefact {
-			if len(filter) == 0 {
-				core.WarningLogger.Printf("invalid filter expression '%s'\n", filter)
+		if skipArtefact, opts.Filter = skip(opts.Filter, image); skipArtefact {
+			if len(opts.Filter) == 0 {
+				core.WarningLogger.Printf("invalid filter expression '%s'\n", opts.Filter)
 			}
 			core.InfoLogger.Printf("skipping image %s\n", image)
 			continue
 		}
-		name := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(image))
-		err2 := r.Import([]string{name}, targetCreds, pubKeyPath, ignoreSignature)
+		name := fmt.Sprintf("%s/%s.tar", opts.TargetUri, pkgName(image))
+		err2 := r.Import([]string{name}, opts.TargetCreds, opts.PubKeyPath, opts.Verifier)
 		if err2 != nil {
-			return fmt.Errorf("cannot read %s.tar: %s", pkgName(image), err)
+			return spec, fmt.Errorf("cannot read %s.tar: %s", pkgName(image), err)
 		}
 		core.InfoLogger.Printf("loading => %s\n", image)
 		ignoreSigFlag := ""
-		if ignoreSignature {
+		if opts.Verifier == nil {
 			ignoreSigFlag = "-s"
 		}
 		_, err2 = build.Exe(fmt.Sprintf("art exe %s import %s", image, ignoreSigFlag), ".", merge.NewEnVarFromSlice([]string{}), false)
 		if err2 != nil {
-			return fmt.Errorf("cannot import image %s: %s", image, err2)
+			return spec, fmt.Errorf("cannot import image %s: %s", image, err2)
 		}
 	}
-	return nil
+	return spec, nil
 }
 
-func DownloadSpec(targetUri, targetCreds, localPath string) (*Spec, error) {
-	spec, err := NewSpec(targetUri, targetCreds)
+func DownloadSpec(opts UpDownOptions) (*Spec, error) {
+	if err := opts.Valid(); err != nil {
+		return nil, fmt.Errorf("invalid download options: %s\n", err)
+	}
+	spec, err := NewSpec(opts.TargetUri, opts.TargetCreds)
 	if err != nil {
 		return nil, fmt.Errorf("cannot load specification: %s", err)
 	}
-	if err = checkPath(localPath); err != nil {
+	if err = checkPath(opts.LocalPath); err != nil {
 		return nil, fmt.Errorf("cannot create local path: %s", err)
 	}
-	err = os.WriteFile(filepath.Join(localPath, "spec.yaml"), spec.content, 0755)
+	err = os.WriteFile(filepath.Join(opts.LocalPath, "spec.yaml"), spec.content, 0755)
 	if err != nil {
 		return nil, err
 	}
 	for _, pkg := range spec.Packages {
-		pkgUri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(pkg))
+		pkgUri := fmt.Sprintf("%s/%s.tar", opts.TargetUri, pkgName(pkg))
 		core.InfoLogger.Printf("downloading => %s\n", pkgUri)
-		tarBytes, err2 := resx.ReadFile(pkgUri, targetCreds)
+		tarBytes, err2 := resx.ReadFile(pkgUri, opts.TargetCreds)
 		if err2 != nil {
 			return nil, err2
 		}
-		pkgPath := filepath.Join(localPath, filepath.Base(pkgUri))
+		pkgPath := filepath.Join(opts.LocalPath, filepath.Base(pkgUri))
 		core.InfoLogger.Printf("writing => %s\n", pkgPath)
 		err = os.WriteFile(pkgPath, tarBytes, 0755)
 		if err != nil {
@@ -208,13 +264,13 @@ func DownloadSpec(targetUri, targetCreds, localPath string) (*Spec, error) {
 		}
 	}
 	for _, image := range spec.Images {
-		imageUri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(image))
+		imageUri := fmt.Sprintf("%s/%s.tar", opts.TargetUri, pkgName(image))
 		core.InfoLogger.Printf("downloading => %s\n", imageUri)
-		tarBytes, err2 := resx.ReadFile(imageUri, targetCreds)
+		tarBytes, err2 := resx.ReadFile(imageUri, opts.TargetCreds)
 		if err2 != nil {
 			return nil, err2
 		}
-		targetFile := filepath.Join(localPath, fmt.Sprintf("%s.tar", pkgName(image)))
+		targetFile := filepath.Join(opts.LocalPath, fmt.Sprintf("%s.tar", pkgName(image)))
 		core.InfoLogger.Printf("writing => %s\n", targetFile)
 		err = os.WriteFile(targetFile, tarBytes, 0755)
 		if err != nil {
@@ -224,40 +280,43 @@ func DownloadSpec(targetUri, targetCreds, localPath string) (*Spec, error) {
 	return spec, nil
 }
 
-func UploadSpec(targetUri, targetCreds, localPath string) error {
-	spec, err := NewSpec(localPath, targetCreds)
+func UploadSpec(opts UpDownOptions) error {
+	if err := opts.Valid(); err != nil {
+		return fmt.Errorf("invalid upload options: %s\n", err)
+	}
+	spec, err := NewSpec(opts.LocalPath, opts.TargetCreds)
 	if err != nil {
 		return fmt.Errorf("cannot load specification: %s", err)
 	}
-	if err = checkPath(localPath); err != nil {
+	if err = checkPath(opts.LocalPath); err != nil {
 		return fmt.Errorf("cannot create local path: %s", err)
 	}
-	err = resx.WriteFile(spec.content, fmt.Sprintf("%s/spec.yaml", targetUri), targetCreds)
+	err = resx.WriteFile(spec.content, fmt.Sprintf("%s/spec.yaml", opts.TargetUri), opts.TargetCreds)
 	if err != nil {
 		return err
 	}
 	for _, pkg := range spec.Packages {
-		localUri := fmt.Sprintf("%s/%s.tar", localPath, pkgName(pkg))
-		remoteUri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(pkg))
+		localUri := fmt.Sprintf("%s/%s.tar", opts.LocalPath, pkgName(pkg))
+		remoteUri := fmt.Sprintf("%s/%s.tar", opts.TargetUri, pkgName(pkg))
 		core.InfoLogger.Printf("uploading => %s\n", remoteUri)
 		content, readErr := os.ReadFile(localUri)
 		if readErr != nil {
 			return readErr
 		}
-		err = resx.WriteFile(content, remoteUri, targetCreds)
+		err = resx.WriteFile(content, remoteUri, opts.TargetCreds)
 		if err != nil {
 			return err
 		}
 	}
 	for _, image := range spec.Images {
-		localUri := fmt.Sprintf("%s/%s.tar", localPath, pkgName(image))
-		remoteUri := fmt.Sprintf("%s/%s.tar", targetUri, pkgName(image))
+		localUri := fmt.Sprintf("%s/%s.tar", opts.LocalPath, pkgName(image))
+		remoteUri := fmt.Sprintf("%s/%s.tar", opts.TargetUri, pkgName(image))
 		core.InfoLogger.Printf("uploading => %s\n", remoteUri)
 		content, readErr := os.ReadFile(localUri)
 		if readErr != nil {
 			return readErr
 		}
-		err = resx.WriteFile(content, remoteUri, targetCreds)
+		err = resx.WriteFile(content, remoteUri, opts.TargetCreds)
 		if err != nil {
 			return err
 		}
@@ -265,13 +324,16 @@ func UploadSpec(targetUri, targetCreds, localPath string) error {
 	return nil
 }
 
-func PullSpec(targetUri, targetCreds, sourceCreds string) error {
+func PullSpec(opts PullOptions) error {
+	if err := opts.Valid(); err != nil {
+		return fmt.Errorf("invalid pull options: %s\n", err)
+	}
 	cli, cmdErr := containerCmd()
 	if cmdErr != nil {
 		return cmdErr
 	}
-	local := registry.NewLocalRegistry()
-	spec, err := NewSpec(targetUri, targetCreds)
+	local := registry.NewLocalRegistry(opts.ArtHome)
+	spec, err := NewSpec(opts.TargetUri, opts.TargetCreds)
 	if err != nil {
 		return fmt.Errorf("cannot load specification: %s", err)
 	}
@@ -281,7 +343,7 @@ func PullSpec(targetUri, targetCreds, sourceCreds string) error {
 			return parseErr
 		}
 		core.InfoLogger.Printf("pulling => %s\n", pkg)
-		local.Pull(p, sourceCreds)
+		local.Pull(p, opts.SourceCreds)
 	}
 	for _, image := range spec.Images {
 		core.InfoLogger.Printf("pulling => %s\n", image)
@@ -293,38 +355,41 @@ func PullSpec(targetUri, targetCreds, sourceCreds string) error {
 	return nil
 }
 
-func PushSpec(specPath, host, group, user, creds string, image, clean, logout bool) error {
+func PushSpec(opts PushOptions) error {
+	if err := opts.Valid(); err != nil {
+		return fmt.Errorf("invalid push options: %s\n", err)
+	}
 	var (
 		cli, usr, pwd string
 		err           error
 	)
 	// if it needs to work with container images
-	if image {
+	if opts.Image {
 		// obtain docker command name
 		cli, err = containerCmd()
 		if err != nil {
 			return err
 		}
 		// if credentials have been provided to connect to registry
-		if len(user) > 0 {
+		if len(opts.User) > 0 {
 			core.InfoLogger.Printf("logging to docker registry")
 			// executes docker login --username=right-username --password=""
-			usr, pwd = core.UserPwd(user)
-			out, eErr := build.Exe(fmt.Sprintf("%s login %s --username=%s --password=%s", cli, host, usr, pwd), ".", merge.NewEnVarFromSlice([]string{}), false)
+			usr, pwd = core.UserPwd(opts.User)
+			out, eErr := build.Exe(fmt.Sprintf("%s login %s --username=%s --password=%s", cli, opts.Host, usr, pwd), ".", merge.NewEnVarFromSlice([]string{}), false)
 			if eErr != nil {
 				return eErr
 			}
 			core.InfoLogger.Printf("%s\n", out)
 		}
 	}
-	local := registry.NewLocalRegistry()
-	spec, err := NewSpec(specPath, creds)
+	local := registry.NewLocalRegistry(opts.ArtHome)
+	spec, err := NewSpec(opts.SpecPath, opts.Creds)
 	if err != nil {
 		return fmt.Errorf("cannot load spec.yaml: %s", err)
 	}
-	if !image {
+	if !opts.Image {
 		for _, pac := range spec.Packages {
-			tgtNameStr, tgtName, tgtNameErr := targetName(pac, group, host)
+			tgtNameStr, tgtName, tgtNameErr := targetName(pac, opts.Group, opts.Host)
 			if tgtNameErr != nil {
 				return fmt.Errorf("cannot work out target name: %s", tgtNameErr)
 			}
@@ -336,12 +401,12 @@ func PushSpec(specPath, host, group, user, creds string, image, clean, logout bo
 			}
 			// push to remote
 			core.InfoLogger.Printf("pushing => '%s'\n", tgtNameStr)
-			err = local.Push(tgtName, user)
+			err = local.Push(tgtName, opts.User)
 			if err != nil {
 				return err
 			}
 			// if cleaning has been specified
-			if clean {
+			if opts.Clean {
 				// remove the package from the local package registry
 				core.InfoLogger.Printf("removing => '%s'\n", tgtNameStr)
 				err = local.Remove([]string{tgtNameStr})
@@ -352,7 +417,7 @@ func PushSpec(specPath, host, group, user, creds string, image, clean, logout bo
 		}
 	} else {
 		for _, img := range spec.Images {
-			tgtNameStr, _, tgtNameErr := targetName(img, group, host)
+			tgtNameStr, _, tgtNameErr := targetName(img, opts.Group, opts.Host)
 			if tgtNameErr != nil {
 				return fmt.Errorf("cannot work out target name: %s", tgtNameErr)
 			}
@@ -370,7 +435,7 @@ func PushSpec(specPath, host, group, user, creds string, image, clean, logout bo
 				return err
 			}
 			// if cleaning has been specified
-			if clean {
+			if opts.Clean {
 				// remove the image from the local container registry
 				core.InfoLogger.Printf("removing => '%s'\n", tgtNameStr)
 				_, err = build.Exe(fmt.Sprintf("%s rmi --force %s", cli, tgtNameStr), ".", merge.NewEnVarFromSlice([]string{}), false)
@@ -380,8 +445,8 @@ func PushSpec(specPath, host, group, user, creds string, image, clean, logout bo
 			}
 		}
 		// if a logout was requested
-		if image && len(user) > 0 && logout {
-			_, err = build.Exe(fmt.Sprintf("%s logout %s", cli, host), ".", merge.NewEnVarFromSlice([]string{}), false)
+		if opts.Image && len(opts.User) > 0 && opts.Logout {
+			_, err = build.Exe(fmt.Sprintf("%s logout %s", cli, opts.Host), ".", merge.NewEnVarFromSlice([]string{}), false)
 			if err != nil {
 				return err
 			}

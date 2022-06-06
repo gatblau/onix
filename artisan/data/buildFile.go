@@ -182,13 +182,6 @@ func (b *BuildFile) validate() (bool, error) {
 					}
 				}
 			}
-			if fx.Input.Key != nil {
-				for _, k := range fx.Input.Key {
-					if !b.Input.HasKey(k) && !strings.Contains(k, "VERIFICATION_KEY") {
-						return false, fmt.Errorf("function '%s' in build file '%s' has a Key binding '%s' but not corresponding Key definition has been defined in the build file Input section.", fx.Name, b.path, k)
-					}
-				}
-			}
 		}
 	}
 	return true, nil

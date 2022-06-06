@@ -10,7 +10,7 @@ package cmd
 
 import (
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/export"
+	. "github.com/gatblau/onix/artisan/release"
 	"github.com/spf13/cobra"
 )
 
@@ -57,6 +57,11 @@ func (c *SpecDownCmd) Run(cmd *cobra.Command, args []string) {
 		core.RaiseErr("the URI of the specification is required")
 	}
 	// import the tar archive(s)
-	_, err := export.DownloadSpec(args[0], c.creds, c.localPath)
+	_, err := DownloadSpec(
+		UpDownOptions{
+			TargetUri:   args[0],
+			TargetCreds: c.creds,
+			LocalPath:   c.localPath,
+		})
 	core.CheckErr(err, "cannot download spec")
 }

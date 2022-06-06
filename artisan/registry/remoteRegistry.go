@@ -20,14 +20,15 @@ import (
 
 // RemoteRegistry enables admin operations on a remote registry
 type RemoteRegistry struct {
-	domain string
-	user   string
-	pwd    string
-	api    *Api
+	domain  string
+	user    string
+	pwd     string
+	api     *Api
+	ArtHome string
 }
 
 // NewRemoteRegistry creates an object to manage a remote registry
-func NewRemoteRegistry(domain, user, pwd string) (*RemoteRegistry, error) {
+func NewRemoteRegistry(domain, user, pwd, artHome string) (*RemoteRegistry, error) {
 	if strings.HasPrefix(domain, "http") {
 		return nil, fmt.Errorf("remote registry domain '%s' should not specify protocol scheme", domain)
 	}
@@ -35,10 +36,11 @@ func NewRemoteRegistry(domain, user, pwd string) (*RemoteRegistry, error) {
 		return nil, fmt.Errorf("remote registry domain '%s' should not contain slashes", domain)
 	}
 	return &RemoteRegistry{
-		domain: domain,
-		user:   user,
-		pwd:    pwd,
-		api:    newGenericAPI(domain),
+		domain:  domain,
+		user:    user,
+		pwd:     pwd,
+		api:     newGenericAPI(domain, artHome),
+		ArtHome: artHome,
 	}, nil
 }
 
@@ -63,7 +65,7 @@ func (r *RemoteRegistry) List(quiet bool) {
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
 		defer w.Flush()
 		// print the header row
-		_, err = fmt.Fprintln(w, i18n.String(i18n.LBL_LS_HEADER))
+		_, err = fmt.Fprintln(w, i18n.String(r.ArtHome, i18n.LBL_LS_HEADER))
 		core.CheckErr(err, "failed to write table header")
 		// repository, tag, package id, created, size
 		for _, repo := range repos {

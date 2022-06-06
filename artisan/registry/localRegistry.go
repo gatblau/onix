@@ -35,16 +35,18 @@ import (
 // LocalRegistry the default local registry implemented as a file system
 type LocalRegistry struct {
 	Repositories []*Repository `json:"repositories"`
+	ArtHome      string
 }
 
-func (r *LocalRegistry) api(domain string) *Api {
-	return newGenericAPI(domain)
+func (r *LocalRegistry) api(domain, artHome string) *Api {
+	return newGenericAPI(domain, artHome)
 }
 
 // NewLocalRegistry create a localRepo management structure
-func NewLocalRegistry() *LocalRegistry {
+func NewLocalRegistry(artHome string) *LocalRegistry {
 	r := &LocalRegistry{
 		Repositories: []*Repository{},
+		ArtHome:      artHome,
 	}
 	// load local registry
 	r.Load()
@@ -72,7 +74,7 @@ func (r *LocalRegistry) Prune() error {
 	danglingRepo := r.findDanglingRepo()
 	if len(danglingRepo.Packages) > 0 {
 		for _, p := range danglingRepo.Packages {
-			err := r.removeFiles(p)
+			err := r.removeFiles(p, r.ArtHome)
 			if err != nil {
 				return err
 			}
@@ -81,14 +83,14 @@ func (r *LocalRegistry) Prune() error {
 	danglingRepo.Packages = nil
 	r.save()
 	// clears the content of the tmp folder
-	if pathExist(core.TmpPath()) {
-		err := cleanFolder(core.TmpPath())
+	if pathExist(core.TmpPath(r.ArtHome)) {
+		err := cleanFolder(core.TmpPath(r.ArtHome))
 		if err != nil {
 			return fmt.Errorf("cannot clean tmp folder: %s", err)
 		}
 	}
 	// clears the content of the build folder
-	buildPath := path.Join(core.RegistryPath(), "build")
+	buildPath := path.Join(core.RegistryPath(r.ArtHome), "build")
 	if pathExist(buildPath) {
 		err := cleanFolder(buildPath)
 		if err != nil {
@@ -191,20 +193,20 @@ func (r *LocalRegistry) Add(filename string, name *core.PackageName, s *data.Sea
 		return errors.New(fmt.Sprintf("the localRepo can only accept zip files, the extension provided was %s", basenameExt))
 	}
 	// the fully qualified name of the zip package file in the local registry
-	registryZipFilename := filepath.Join(core.RegistryPath(), basename)
+	registryZipFilename := filepath.Join(core.RegistryPath(r.ArtHome), basename)
 	// the fully qualified name of the json seal file in the local registry
-	registryJsonFilename := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", basenameNoExt))
+	registryJsonFilename := filepath.Join(core.RegistryPath(r.ArtHome), fmt.Sprintf("%s.json", basenameNoExt))
 	// if the zip or json files already exist in the local registry
 	if fileExists(registryZipFilename) || fileExists(registryJsonFilename) {
 		core.InfoLogger.Printf("package '%s' already exists, skipping import", name.FullyQualifiedNameTag())
 		return nil
 	}
 	// move the zip file to the localRepo folder
-	if err := MoveFile(filename, filepath.Join(core.RegistryPath(), basename)); err != nil {
+	if err := MoveFile(filename, filepath.Join(core.RegistryPath(r.ArtHome), basename)); err != nil {
 		return fmt.Errorf("failed to move package zip file to the local registry: %s", err)
 	}
 	// now move the seal file to the localRepo folder
-	if err := MoveFile(filepath.Join(basenameDir, fmt.Sprintf("%s.json", basenameNoExt)), filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", basenameNoExt))); err != nil {
+	if err := MoveFile(filepath.Join(basenameDir, fmt.Sprintf("%s.json", basenameNoExt)), filepath.Join(core.RegistryPath(r.ArtHome), fmt.Sprintf("%s.json", basenameNoExt))); err != nil {
 		return fmt.Errorf("failed to move package seal file to the local registry: %s", err)
 	}
 	// check if a package with the same name:tag exists
@@ -408,11 +410,11 @@ func (r *LocalRegistry) AllPackages() []string {
 }
 
 // List packages to stdout
-func (r *LocalRegistry) List() {
+func (r *LocalRegistry) List(artHome string) {
 	// get a table writer for the stdout
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
 	// print the header row
-	_, err := fmt.Fprintln(w, i18n.String(i18n.LBL_LS_HEADER))
+	_, err := fmt.Fprintln(w, i18n.String(artHome, i18n.LBL_LS_HEADER))
 	core.CheckErr(err, "failed to write table header")
 	// repository, tag, package id, created, size
 	for _, repo := range r.Repositories {
@@ -463,7 +465,7 @@ func (r *LocalRegistry) ListQ() {
 
 func (r *LocalRegistry) Push(name *core.PackageName, credentials string) error {
 	// get a reference to the remote registry
-	api := r.api(name.Domain)
+	api := r.api(name.Domain, r.ArtHome)
 	// get registry credentials
 	uname, pwd := core.RegUserPwd(credentials)
 	// fetch the package info from the local registry
@@ -493,7 +495,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) error {
 		// if the tag is the same then nothing to do
 		if remotePackage.HasTag(name.Tag) {
 			// nothing to do, returns
-			i18n.Printf(i18n.INFO_NOTHING_TO_PUSH)
+			i18n.Printf(r.ArtHome, i18n.INFO_NOTHING_TO_PUSH)
 			return nil
 		} else {
 			// if the package has a different tag then the metadata has to be updated to include the new tag
@@ -502,7 +504,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) error {
 			if err != nil {
 				return fmt.Errorf("cannot update remote package tags: %s", err)
 			}
-			i18n.Printf(i18n.INFO_TAGGED, name.String())
+			i18n.Printf(r.ArtHome, i18n.INFO_TAGGED, name.String())
 			// once the new tag has been added to the remote repository, exits
 			return nil
 		}
@@ -534,18 +536,18 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) error {
 	// ==========================
 	// adds new package
 	// ==========================
-	zipfile := openFile(fmt.Sprintf("%s/%s.zip", core.RegistryPath(), localPackage.FileRef))
-	jsonfile := openFile(fmt.Sprintf("%s/%s.json", core.RegistryPath(), localPackage.FileRef))
+	zipfile := openFile(fmt.Sprintf("%s/%s.zip", core.RegistryPath(r.ArtHome), localPackage.FileRef))
+	jsonfile := openFile(fmt.Sprintf("%s/%s.json", core.RegistryPath(r.ArtHome), localPackage.FileRef))
 	// prepare the package to upload
 	pack := localPackage
 	pack.Tags = []string{name.Tag}
 	// execute the upload
-	return api.UploadPackage(name, localPackage.FileRef, zipfile, jsonfile, pack, uname, pwd, tls)
+	return api.UploadPackage(name, localPackage.FileRef, zipfile, jsonfile, pack, uname, pwd, tls, r.ArtHome)
 }
 
 func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Package {
 	// get a reference to the remote registry
-	api := r.api(name.Domain)
+	api := r.api(name.Domain, r.ArtHome)
 	// get registry credentials
 	uname, pwd := core.RegUserPwd(credentials)
 	// assume tls enabled
@@ -714,19 +716,19 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetP
 		}
 	}
 	// fetch from local registry
-	artie := r.FindPackageByName(name)
+	pkg := r.FindPackageByName(name)
 	// if not found locally
-	if artie == nil {
+	if pkg == nil {
 		// pull it
-		artie = r.Pull(name, credentials)
+		pkg = r.Pull(name, credentials)
 	}
 	// get the package seal
-	seal, err := r.GetSeal(artie)
+	seal, err := r.GetSeal(pkg)
 	core.CheckErr(err, "cannot read package seal")
 	if !ignoreSignature && v != nil {
 		// get the location of the package
-		zipFilename := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef))
-		core.CheckErr(v.Verify(name, pubKeyPath, seal, zipFilename), "invalid signature")
+		zipFilename := filepath.Join(core.RegistryPath(r.ArtHome), fmt.Sprintf("%s.zip", pkg.FileRef))
+		core.CheckErr(v.Verify(name, pubKeyPath, seal, zipFilename, r.ArtHome), "invalid signature")
 	}
 	// now we are ready to open it
 	// if the target was already compressed (e.g. jar file, etc) then it should not unzip it but rename it
@@ -737,14 +739,14 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetP
 			err = os.MkdirAll(targetPath, os.ModePerm)
 			core.CheckErr(err, "cannot create path to open package: %s", targetPath)
 		}
-		src := path.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef))
+		src := path.Join(core.RegistryPath(r.ArtHome), fmt.Sprintf("%s.zip", pkg.FileRef))
 		dst := path.Join(targetPath, filename)
 		err = CopyFile(src, dst)
-		core.CheckErr(err, "cannot rename package %s", fmt.Sprintf("%s.zip", artie.FileRef))
+		core.CheckErr(err, "cannot rename package %s", fmt.Sprintf("%s.zip", pkg.FileRef))
 	} else {
 		// otherwise, unzip the target
-		err = unzip(path.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", artie.FileRef)), targetPath)
-		core.CheckErr(err, "cannot unzip package %s", fmt.Sprintf("%s.zip", artie.FileRef))
+		err = unzip(path.Join(core.RegistryPath(r.ArtHome), fmt.Sprintf("%s.zip", pkg.FileRef)), targetPath)
+		core.CheckErr(err, "cannot unzip package %s", fmt.Sprintf("%s.zip", pkg.FileRef))
 		// check if the target path is a folder
 		var info os.FileInfo
 		info, err = os.Stat(targetPath)
@@ -764,7 +766,7 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetP
 	}
 }
 
-func (r *LocalRegistry) Verify(name *core.PackageName, pubKeyPath string, seal *data.Seal, zipFilename string) error {
+func (r *LocalRegistry) Verify(name *core.PackageName, pubKeyPath string, seal *data.Seal, zipFilename string, artHome string) error {
 	var (
 		primaryKey, backupKey *crypto.PGP
 		err                   error
@@ -775,7 +777,7 @@ func (r *LocalRegistry) Verify(name *core.PackageName, pubKeyPath string, seal *
 		core.CheckErr(err, "cannot load public key, cannot verify signature")
 	} else {
 		// otherwise, loads it from the registry store
-		primaryKey, backupKey, err = crypto.LoadKeys(*name, false)
+		primaryKey, backupKey, err = crypto.LoadKeys(*name, false, artHome)
 		core.CheckErr(err, "cannot load public key, cannot verify signature")
 	}
 	// get a slice to have the unencrypted signature
@@ -805,7 +807,7 @@ func (r *LocalRegistry) Verify(name *core.PackageName, pubKeyPath string, seal *
 	return err
 }
 
-func (r *LocalRegistry) removePkg(pkg *Package) error {
+func (r *LocalRegistry) removePkg(pkg *Package, artHome string) error {
 	repoIxList := r.findRepositoryIxByPackageId(pkg.Id)
 	for _, repoIx := range repoIxList {
 		// if the repository contains the package
@@ -819,7 +821,7 @@ func (r *LocalRegistry) removePkg(pkg *Package) error {
 			r.Repositories = r.removeRepo(r.Repositories, *r.Repositories[repoIx])
 		}
 	}
-	err := r.removeFiles(pkg)
+	err := r.removeFiles(pkg, artHome)
 	if err != nil {
 		return err
 	}
@@ -867,7 +869,7 @@ func (r *LocalRegistry) removeByName(name *core.PackageName) error {
 	// if not, then
 	if len(rIx) == 0 {
 		// remove the files
-		err := r.removeFiles(pkg)
+		err := r.removeFiles(pkg, r.ArtHome)
 		if err != nil {
 			return err
 		}
@@ -883,7 +885,7 @@ func (r *LocalRegistry) Remove(names []string) error {
 		// if the package was found
 		if pkg != nil {
 			// remove it completely including files and references in repositories
-			return r.removePkg(pkg)
+			return r.removePkg(pkg, r.ArtHome)
 		}
 		// the package was not found by its ID, so try by name
 		pkgName, err := core.ParseName(name)
@@ -902,7 +904,7 @@ func (r *LocalRegistry) Remove(names []string) error {
 }
 
 func (r *LocalRegistry) GetSeal(name *Package) (*data.Seal, error) {
-	sealFilename := path.Join(core.RegistryPath(), fmt.Sprintf("%s.json", name.FileRef))
+	sealFilename := path.Join(core.RegistryPath(r.ArtHome), fmt.Sprintf("%s.json", name.FileRef))
 	sealFile, err := os.Open(sealFilename)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open seal file %s: %s", sealFilename, err)
@@ -916,7 +918,7 @@ func (r *LocalRegistry) GetSeal(name *Package) (*data.Seal, error) {
 	return seal, err
 }
 
-func (r *LocalRegistry) ImportKey(keyPath string, isPrivate, isBackup bool, repoGroup string, repoName string) error {
+func (r *LocalRegistry) ImportKey(keyPath string, isPrivate, isBackup bool, repoGroup string, repoName string, artHome string) error {
 	var err error
 	if !filepath.IsAbs(keyPath) {
 		keyPath, err = filepath.Abs(keyPath)
@@ -925,7 +927,7 @@ func (r *LocalRegistry) ImportKey(keyPath string, isPrivate, isBackup bool, repo
 	// only check it can read the key
 	_, err = crypto.LoadPGP(keyPath, "")
 	core.CheckErr(err, "cannot read pgp key '%s'", keyPath)
-	destFile := crypto.KeyPath(repoGroup, repoName, isPrivate, isBackup)
+	destFile := crypto.KeyPath(repoGroup, repoName, isPrivate, isBackup, artHome)
 	destFolder := path.Dir(destFile)
 	// check if the target directory exists and if not creates it
 	if _, err = os.Stat(destFolder); os.IsNotExist(err) {
@@ -938,13 +940,13 @@ func (r *LocalRegistry) ImportKey(keyPath string, isPrivate, isBackup bool, repo
 	return CopyFile(keyPath, destFile)
 }
 
-func (r *LocalRegistry) ExportKey(keyPath string, isPrivate, isBackup bool, repoGroup string, repoName string) error {
+func (r *LocalRegistry) ExportKey(keyPath string, isPrivate, isBackup bool, repoGroup string, repoName string, artHome string) error {
 	var err error
 	if !filepath.IsAbs(keyPath) {
 		keyPath, err = filepath.Abs(keyPath)
 		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
 	}
-	return CopyFile(crypto.KeyPath(repoGroup, repoName, isPrivate, isBackup), keyPath)
+	return CopyFile(crypto.KeyPath(repoGroup, repoName, isPrivate, isBackup, artHome), keyPath)
 }
 
 func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
@@ -984,8 +986,8 @@ func (r *LocalRegistry) ExportPackage(names []core.PackageName, sourceCreds, tar
 			return fmt.Errorf("package %s does not exist", name)
 		}
 		// works out the path to the package files in the local registry
-		zipFile := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.zip", pack.FileRef))
-		jsonFile := filepath.Join(core.RegistryPath(), fmt.Sprintf("%s.json", pack.FileRef))
+		zipFile := filepath.Join(core.RegistryPath(r.ArtHome), fmt.Sprintf("%s.zip", pack.FileRef))
+		jsonFile := filepath.Join(core.RegistryPath(r.ArtHome), fmt.Sprintf("%s.json", pack.FileRef))
 		// append the package index data
 		reg.Repositories = append(reg.Repositories, &Repository{
 			Repository: repo.Repository,
@@ -1016,7 +1018,7 @@ func (r *LocalRegistry) ExportPackage(names []core.PackageName, sourceCreds, tar
 	// creates a bytes buffer to record content of tar
 	tar := &bytes.Buffer{}
 	// tar the package files without preserving directory structure
-	err := core.Tar(files, tar, false)
+	err := core.Tar(files, tar, false, r.ArtHome)
 	if err != nil {
 		return err
 	}
@@ -1055,22 +1057,22 @@ func (r *LocalRegistry) ExportPackage(names []core.PackageName, sourceCreds, tar
 // uri: the uri of the package to import (can be file path or S3 bucket uri)
 // creds: the credentials to connect to the endpoint if it is authenticated S3 in the format user:password
 // localPath: if specified, it downloads the remote files to a target folder
-func (r *LocalRegistry) Import(uri []string, creds, pubKeyPath string, ignoreSignature bool) error {
+func (r *LocalRegistry) Import(uri []string, creds, pubKeyPath string, v Verifier) error {
 	for _, path := range uri {
-		if err := r.importTar(path, creds, pubKeyPath, ignoreSignature, r); err != nil {
+		if err := r.importTar(path, creds, pubKeyPath, v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *LocalRegistry) importTar(uri, creds, pubKeyPath string, ignoreSignature bool, v Verifier) error {
+func (r *LocalRegistry) importTar(uri, creds, pubKeyPath string, v Verifier) error {
 	core.InfoLogger.Printf("reading => %s\n", uri)
 	tarBytes, err := resx.ReadFile(uri, creds)
 	if err != nil {
 		return err
 	}
-	tmp, err := core.NewTempDir()
+	tmp, err := core.NewTempDir(r.ArtHome)
 	if err != nil {
 		return err
 	}
@@ -1105,10 +1107,10 @@ func (r *LocalRegistry) importTar(uri, creds, pubKeyPath string, ignoreSignature
 			}
 			// works out the path to the package zip file
 			packageFilename := filepath.Join(tmp, fmt.Sprintf("%s.zip", seal.Manifest.Ref))
-			// if not ignoring signature verification
-			if !ignoreSignature {
+			// if a verifier has been provided
+			if v != nil {
 				// use it to check the package digital signature
-				err = v.Verify(packageName, pubKeyPath, seal, packageFilename)
+				err = v.Verify(packageName, pubKeyPath, seal, packageFilename, r.ArtHome)
 				if err != nil {
 					return err
 				}
@@ -1169,18 +1171,18 @@ func getPackageName(repoIx LocalRegistry, seal *data.Seal) (*core.PackageName, e
 }
 
 // works out the destination folder and prefix for the key
-func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string) (destPath string, prefix string) {
+func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string, artHome string) (destPath string, prefix string) {
 	if len(repoName) > 0 {
 		// use the repo name location
-		destPath = path.Join(core.RegistryPath(), "keys", repoGroup, repoName)
+		destPath = path.Join(core.RegistryPath(artHome), "keys", repoGroup, repoName)
 		prefix = fmt.Sprintf("%s_%s", repoGroup, repoName)
 	} else if len(repoGroup) > 0 {
 		// use the repo group location
-		destPath = path.Join(core.RegistryPath(), "keys", repoGroup)
+		destPath = path.Join(core.RegistryPath(artHome), "keys", repoGroup)
 		prefix = repoGroup
 	} else {
 		// use the registry root location
-		destPath = path.Join(core.RegistryPath(), "keys")
+		destPath = path.Join(core.RegistryPath(artHome), "keys")
 		prefix = "root"
 	}
 	_, err := os.Stat(destPath)
@@ -1192,14 +1194,14 @@ func (r *LocalRegistry) keyDestinationFolder(repoName string, repoGroup string) 
 }
 
 // remove the files associated with an Package
-func (r *LocalRegistry) removeFiles(pack *Package) error {
+func (r *LocalRegistry) removeFiles(pack *Package, artHome string) error {
 	// remove the zip file
-	err := os.Remove(fmt.Sprintf("%s/%s.zip", core.RegistryPath(), pack.FileRef))
+	err := os.Remove(fmt.Sprintf("%s/%s.zip", core.RegistryPath(artHome), pack.FileRef))
 	if err != nil {
 		return err
 	}
 	// remove the json file
-	return os.Remove(fmt.Sprintf("%s/%s.json", core.RegistryPath(), pack.FileRef))
+	return os.Remove(fmt.Sprintf("%s/%s.json", core.RegistryPath(artHome), pack.FileRef))
 }
 
 // returns the elapsed time until now in human friendly format
@@ -1243,12 +1245,12 @@ func plural(value int64, label string) string {
 
 // the fully qualified name of the json Seal file in the local localReg
 func (r *LocalRegistry) regDirJsonFilename(uniqueIdName string) string {
-	return fmt.Sprintf("%s/%s.json", core.RegistryPath(), uniqueIdName)
+	return fmt.Sprintf("%s/%s.json", core.RegistryPath(r.ArtHome), uniqueIdName)
 }
 
 // the fully qualified name of the zip file in the local localReg
 func (r *LocalRegistry) regDirZipFilename(uniqueIdName string) string {
-	return fmt.Sprintf("%s/%s.zip", core.RegistryPath(), uniqueIdName)
+	return fmt.Sprintf("%s/%s.zip", core.RegistryPath(r.ArtHome), uniqueIdName)
 }
 
 // find the package specified by its id
@@ -1373,7 +1375,7 @@ func (r *LocalRegistry) removeRepo(a []*Repository, repo Repository) []*Reposito
 
 // return the LocalRegistry full file name
 func (r *LocalRegistry) file() string {
-	return filepath.Join(core.RegistryPath(), "repository.json")
+	return filepath.Join(core.RegistryPath(r.ArtHome), "repository.json")
 }
 
 // save the state of the LocalRegistry
@@ -1384,13 +1386,17 @@ func (r *LocalRegistry) save() {
 
 // Load the content of the LocalRegistry
 func (r *LocalRegistry) Load() {
+	var (
+		regBytes []byte
+		err      error
+	)
 	// check if localRepo file exist
-	_, err := os.Stat(r.file())
+	_, err = os.Stat(r.file())
 	if err != nil {
 		// then assume localRepo.json is not there: try and create it
 		r.save()
 	} else {
-		regBytes, err := ioutil.ReadFile(r.file())
+		regBytes, err = ioutil.ReadFile(r.file())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -1509,7 +1515,7 @@ func (r *LocalRegistry) Sign(pac, pkPath, pubPath string, v Verifier) error {
 	}
 	// if a public key has been provided, use it to verify the package digital signature
 	if len(pubPath) > 0 && v != nil {
-		err = v.Verify(packageName, pubPath, s, zipFilename)
+		err = v.Verify(packageName, pubPath, s, zipFilename, r.ArtHome)
 		if err != nil {
 			return err
 		}
@@ -1526,7 +1532,7 @@ func (r *LocalRegistry) Sign(pac, pkPath, pubPath string, v Verifier) error {
 	// if no private key path has been provided
 	if len(pkPath) == 0 {
 		// load the key from the local registry
-		pk, _, err = crypto.LoadKeys(*packageName, true)
+		pk, _, err = crypto.LoadKeys(*packageName, true, r.ArtHome)
 		if err != nil {
 			return fmt.Errorf("cannot load signing key: %s", err)
 		}
@@ -1585,7 +1591,7 @@ func rmPackage(a []*Package, value *Package) []*Package {
 }
 
 type Verifier interface {
-	Verify(name *core.PackageName, pubKeyPath string, seal *data.Seal, zipFilename string) error
+	Verify(name *core.PackageName, pubKeyPath string, seal *data.Seal, zipFilename, artHome string) error
 }
 
 type Signer interface {
