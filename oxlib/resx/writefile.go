@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/notification"
 	"os"
 	"path/filepath"
 )
@@ -52,28 +53,26 @@ func writeFsFile(content []byte, uri string) error {
 	if err != nil {
 		return err
 	}
+	// get the directory part of the path
+	dir := filepath.Dir(path)
+	// if it does not exist
+	_, err = os.Stat(dir)
+	if err != nil && os.IsNotExist(err) {
+		// creates target directory
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return err
+		}
+	}
 	return os.WriteFile(path, content, 0755)
 }
 
 // writeS3File write a file to an S3 bucket
 func writeS3File(content []byte, uri string, creds string) error {
 	ctx := context.Background()
-	s3Client, bucketName, objectName, err := newS3Client(uri, creds)
+	s3Client, bucketName, objectName, err := NewS3Client(uri, creds)
 	if err != nil {
 		return err
-	}
-	// Check to see if we already own this bucket (which happens if you run this twice)
-	var exists bool
-	exists, err = s3Client.BucketExists(ctx, bucketName)
-	if err != nil {
-		return fmt.Errorf("Failed to check if bucket exists: %s\n", err)
-	}
-	// if the bucket does not exist, attempts to create it
-	if !exists {
-		err = s3Client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: ""})
-		if err != nil {
-			return fmt.Errorf("Failed to create bucket: %s\n", err)
-		}
 	}
 	_, err = s3Client.PutObject(
 		ctx,
@@ -93,4 +92,41 @@ func writeFtpFile(content []byte, uri string, creds string) error {
 
 func writeHttpFile(content []byte, uri string, creds string) error {
 	return fmt.Errorf("http scheme is not currently supported")
+}
+
+// EnsureBucketNotification check that a bucket exists and if not it creates it
+// If a bucket is created, and notification information is provided then creates a bucket notification
+func EnsureBucketNotification(uri, creds, filterSuffix string, arn *notification.Arn) (*minio.Client, error) {
+	ctx := context.Background()
+	s3Client, bucketName, _, err := NewS3Client(uri, creds)
+	if err != nil {
+		return nil, err
+	}
+	// Check to see if we already own this bucket (which happens if you run this twice)
+	var exists bool
+	exists, err = s3Client.BucketExists(ctx, bucketName)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to check if bucket exists: %s\n", err)
+	}
+	// if the bucket does not exist, attempts to create it
+	if !exists {
+		err = s3Client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: ""})
+		if err != nil {
+			return nil, fmt.Errorf("Failed to create bucket: %s\n", err)
+		}
+		if arn != nil {
+			// creates the notification configuration
+			cfg := notification.NewConfig(*arn)
+			cfg.AddEvents(notification.ObjectCreatedPut)
+			cfg.AddFilterSuffix(filterSuffix)
+			config := notification.Configuration{}
+			config.AddQueue(cfg)
+			// set the bucket notification
+			err = s3Client.SetBucketNotification(ctx, bucketName, config)
+			if err != nil {
+				return nil, fmt.Errorf("Failed to set bucket notification: %s\n", err)
+			}
+		}
+	}
+	return s3Client, nil
 }

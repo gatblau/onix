@@ -117,7 +117,7 @@ func addCredsToHttpURI(uri string, creds string) (string, error) {
 
 // getS3File reads a file from an S3 bucket
 func getS3File(uri, creds string) ([]byte, error) {
-	s3Client, bucketName, objectName, err := newS3Client(uri, creds)
+	s3Client, bucketName, objectName, err := NewS3Client(uri, creds)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func getS3File(uri, creds string) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func newS3Client(uri, creds string) (client *minio.Client, bucketName, objectName string, err error) {
+func NewS3Client(uri, creds string) (client *minio.Client, bucketName, objectName string, err error) {
 	var (
 		endpoint string
 		useSSL   bool
