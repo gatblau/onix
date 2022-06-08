@@ -106,3 +106,21 @@ functions:
     description: create proper folder for runner setup and change the permission and ownership of folder.
     run:
       - sh -c './deploy/pre-install.sh'
+
+  - name: create-bucket
+    description: this function will create S3 type bucket with in minio.
+    export: true
+    run:
+      - sh -c './deploy/create-bucket.sh'
+
+  - name: create-s3-webhook
+    description: this function will create s3 webhook which connects to runner and attach the webhook to bucket with environment variable BUCKET_NAME.
+    export: true
+    run:
+      - sh -c './deploy/create-s3-webhook.sh'
+
+  - name: create-git-webhook
+    description: this function will create git webhook which connects to runner.
+    export: true
+    run:
+      - sh -c './deploy/create-git-webhook.sh'      
