@@ -547,3 +547,16 @@ func TrimNewline(s string) string {
 	}
 	return s
 }
+
+// Extract up to a maximum of "n" occurrences of a string that has a "prefix" and a "suffix" in "content"
+// prefix and suffix can be golang regex, for example using suffix = "$" means match up to the end of the line
+func Extract(content, prefix, suffix string, n int) []string {
+	expression := fmt.Sprintf(`(?m)%s(.*?)%s`, prefix, suffix)
+	r := regexp.MustCompile(expression)
+	subMatches := r.FindAllStringSubmatch(content, n)
+	var result []string
+	for _, subMatch := range subMatches {
+		result = append(result, subMatch[1])
+	}
+	return result
+}
