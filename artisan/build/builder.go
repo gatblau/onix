@@ -392,6 +392,8 @@ func (b *Builder) runFunction(function string, path string, interactive bool, en
 		if ok, expr, shell := core.HasShell(cmd); ok {
 			out, err := Exe(shell, path, buildEnv, interactive)
 			core.CheckErr(err, "cannot execute subshell command: %s", cmd)
+			// ensure the subshell output does not end with newline
+			out = core.TrimNewline(out)
 			// merges the output of the subshell in the original command
 			cmd = strings.Replace(cmd, expr, out, -1)
 			// execute the statement
@@ -497,6 +499,8 @@ func (b *Builder) evalSubshell(vars map[string]string, execDir string, env *merg
 		if ok, expr, shell := core.HasShell(v); ok {
 			out, err := Exe(shell, execDir, env, interactive)
 			core.CheckErr(err, "cannot execute subshell command: %s", v)
+			// ensure the subshell output does not end with newline
+			out = core.TrimNewline(out)
 			// merges the output of the subshell in the original variable
 			vars[k] = strings.Replace(v, expr, out, -1)
 		}

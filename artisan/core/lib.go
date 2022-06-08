@@ -540,3 +540,10 @@ func FindFiles(root, extPattern string) ([]string, error) {
 	})
 	return files, err
 }
+
+func TrimNewline(s string) string {
+	if strings.HasSuffix(s, "\n") {
+		s = s[0 : len(s)-1]
+	}
+	return s
+}

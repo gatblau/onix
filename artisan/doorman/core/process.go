@@ -16,6 +16,8 @@ import (
 	"github.com/gatblau/onix/artisan/doorman/db"
 	"github.com/gatblau/onix/artisan/release"
 	"github.com/gatblau/onix/oxlib/oxc"
+	"github.com/gatblau/onix/oxlib/resx"
+	"github.com/minio/minio-go/v7/pkg/notification"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -368,6 +370,11 @@ func (p *Process) ExportFiles(s3Store *types.S3Store) error {
 		return p.Error("cannot load spec.yaml from working folder: %s", err)
 	}
 	targetURI := fmt.Sprintf("%s/%s", s3Store.BucketURI, p.folderName)
+	// ensure bucket exists and a notification is set up if bucket is being created
+	_, err = resx.EnsureBucketNotification(targetURI, s3Store.Creds(), "spec.yaml", getARN(s3Store))
+	if err != nil {
+		return p.Error("cannot ensure bucket existence for %s: %s", targetURI, err)
+	}
 	err = release.ExportSpec(
 		release.ExportOptions{
 			Specification: spec,
@@ -379,19 +386,6 @@ func (p *Process) ExportFiles(s3Store *types.S3Store) error {
 		return p.Error("cannot export spec to %s: %s", targetURI, err)
 	}
 	p.Info("exporting packages: completed")
-	userPwd := fmt.Sprintf("%s:%s", s3Store.User, s3Store.Pwd)
-	p.Info("uploading to S3 store %s: started", s3Store.BucketURI)
-	err = release.UploadSpec(
-		release.UpDownOptions{
-			TargetUri:   fmt.Sprintf("%s/%s", s3Store.BucketURI, p.folderName),
-			TargetCreds: userPwd,
-			LocalPath:   p.tmp,
-		},
-	)
-	if err != nil {
-		return p.Error("cannot upload spec tarball files to S3 store %s: %s", s3Store.BucketURI, err)
-	}
-	p.Info("uploading to S3 store %s: completed", s3Store.BucketURI)
 	return nil
 }
 
@@ -767,4 +761,32 @@ func toTags(m []string) []interface{} {
 		tag[i] = v
 	}
 	return tag
+}
+
+func getARN(s3Store *types.S3Store) *notification.Arn {
+	// work out default values for ARN
+	partition := s3Store.Partition
+	if len(partition) == 0 {
+		partition = "minio"
+	}
+	service := s3Store.Service
+	if len(service) == 0 {
+		service = "sqs"
+	}
+	region := s3Store.Region
+	accountId := s3Store.AccountID
+	if len(accountId) == 0 {
+		accountId = "_"
+	}
+	resource := s3Store.Resource
+	if len(resource) == 0 {
+		resource = "webhook"
+	}
+	return &notification.Arn{
+		Partition: partition,
+		Service:   service,
+		Region:    region,
+		AccountID: accountId,
+		Resource:  resource,
+	}
 }

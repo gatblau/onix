@@ -13,4 +13,11 @@ s3_store:
   bucket_uri: s3://localhost:9000/onix2
   user: admin
   pwd: password
+  # for automatic notification creation an ARN previously configured in S3 is required
+  # note: if not providing any of the values below, the shown defaults are applied
+  partition: "minio",
+  service: "sqs",
+  region: "",
+  account_id: "_",
+  resource: "webhook",
 ...

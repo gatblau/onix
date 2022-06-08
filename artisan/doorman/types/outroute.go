@@ -91,6 +91,19 @@ type S3Store struct {
 	User string `bson:"user" json:"user" yaml:"user"`
 	// Pwd the password of the outbound S3 bucket
 	Pwd string `bson:"pwd" json:"pwd" yaml:"pwd"`
+
+	// ARN parts required to create a bucket notification
+	// Partition
+	Partition string `bson:"partition,omitempty" json:"partition,omitempty" yaml:"partition,omitempty"`
+	// Service the service namespace that identifies the AWS product (e.g. minio for standard minio implementations)
+	Service string `bson:",omitempty" json:"service,omitempty" yaml:"service,omitempty"`
+	// Region the Region code (e.g. empty for standard minio implementations)
+	Region string `bson:"region,omitempty" json:"region,omitempty" yaml:"region,omitempty"`
+	// AccountID the ID of the AWS account that owns the resource, without the hyphens
+	AccountID string `bson:"account_id,omitempty" json:"account_id,omitempty" yaml:"account_id,omitempty"`
+	// Resource The resource identifier. This part of the ARN can be the name or ID of the resource or a resource path
+	// (e.g. "webhook" for standard minio webhooks)
+	Resource string `bson:"resource,omitempty" json:"resource,omitempty" yaml:"resource,omitempty"`
 }
 
 func (s S3Store) Creds() string {
