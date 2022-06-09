@@ -1,0 +1,44 @@
+---
+name: git-svc
+description: Local Git service
+port: "3000"
+init:
+  - builder: compose
+    scripts:
+      - git_init
+volume:
+  - name: git-data
+    path: /data/git
+var:
+  - name: ADMIN_USERNAME
+    description: Administrator user name (must not be called admin)
+    value: "localadmin"
+  - name: ADMIN_EMAIL
+    description: Administrator email (NB. this will go to local email catcher)
+    value: "localadmin@local.com"
+  - name: ADMIN_PASSWORD
+    description: Administrator password
+    value: ${fx=pwd:16,false}
+  - name: GITEA__DATABASE__DB_TYPE
+    value: "sqlite3"
+  - name: GITEA__DATABASE__PATH
+    value: "/data/gitea/gitea.db"
+  - name: GITEA__SERVER__START_SSH_SERVER
+    value: "false"
+  - name: GITEA__SERVICE__DISABLE_REGISTRATION
+    value: "true"
+  - name: GITEA__SERVICE__SHOW_REGISTRATION_BUTTON
+    value: "false"
+  - name: GITEA__REPOSITORY__DEFAULT_BRANCH
+    value: "main"
+  - name: GITEA__SECURITY__INSTALL_LOCK
+    value: "true"
+scripts:
+  - name: git_init
+    description: initialise the local Git instance
+    content: |
+      # populate database
+      docker exec --user git git-svc gitea migrate
+      # add initial admin user
+      docker exec --user git git-svc gitea admin user create --username=${bind=git-svc:var:ADMIN_USERNAME} --password=${bind=git-svc:var:ADMIN_PASSWORD} --email=${bind=git-svc:var:ADMIN_EMAIL} --admin --must-change-password=false
+...

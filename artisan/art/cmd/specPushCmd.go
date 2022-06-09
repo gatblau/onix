@@ -10,7 +10,7 @@ package cmd
 
 import (
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/export"
+	. "github.com/gatblau/onix/artisan/release"
 	"github.com/spf13/cobra"
 	"strings"
 )
@@ -67,5 +67,15 @@ func (c *SpecPushCmd) Run(cmd *cobra.Command, args []string) {
 	if len(tagParts) > 0 {
 		group = strings.Join(tagParts[1:], "/")
 	}
-	core.CheckErr(export.PushSpec(args[0], host, group, c.user, c.creds, c.images, c.clean, c.logout), "cannot push spec")
+	core.CheckErr(PushSpec(
+		PushOptions{
+			SpecPath: args[0],
+			Host:     host,
+			Group:    group,
+			User:     c.user,
+			Creds:    c.creds,
+			Image:    c.images,
+			Clean:    c.clean,
+			Logout:   c.logout,
+		}), "cannot push spec")
 }

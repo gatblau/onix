@@ -1,8 +1,8 @@
 ---
 name: QUARANTINE_TEMPLATE
-subject: New Release <<release>> has been quarantined
+subject: New Release <<release-name>> has been quarantined
 content: |
    A new release has been published and but has been quarantined.
    Error log:
-   <<scan-log>>
+   <<command-log>>
 ...

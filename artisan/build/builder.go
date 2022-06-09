@@ -42,13 +42,15 @@ type Builder struct {
 	loadFrom         string
 	env              *merge.Envar
 	zip              bool // if the target is already zipped before packaging (e.g. jar, zip files, etc)
+	artHome          string
 }
 
-func NewBuilder() *Builder {
+func NewBuilder(artHome string) *Builder {
 	// create the builder instance
 	builder := new(Builder)
+	builder.artHome = artHome
 	// check the localRepo directory is there
-	builder.localReg = registry.NewLocalRegistry()
+	builder.localReg = registry.NewLocalRegistry(artHome)
 	return builder
 }
 
@@ -289,7 +291,7 @@ func (b *Builder) cleanUp() {
 // create a new working directory and return its path
 func (b *Builder) newWorkingDir() string {
 	// the working directory will be a build folder within the registry directory
-	basePath := filepath.Join(core.RegistryPath(), "build")
+	basePath := filepath.Join(core.RegistryPath(b.artHome), "build")
 	uid := uuid.New()
 	folder := strings.Replace(uid.String(), "-", "", -1)[:12]
 	workingDirPath := filepath.Join(basePath, folder)
@@ -358,9 +360,9 @@ func (b *Builder) runFunction(function string, path string, interactive bool, en
 	// if in debug mode, print environment variables
 	env.Debug(fmt.Sprintf("executing function: %s\n", function))
 	// if inputs are defined for the function then survey for data
-	i := data.SurveyInputFromBuildFile(function, b.buildFile, interactive, false, env)
+	i := data.SurveyInputFromBuildFile(function, b.buildFile, interactive, false, env, b.artHome)
 	// merge the collected input with the current environment
-	env.Merge(i.Env(false))
+	env.Merge(i.Env())
 	// gets the function to run
 	fx := b.buildFile.Fx(function)
 	if fx == nil {
@@ -390,6 +392,8 @@ func (b *Builder) runFunction(function string, path string, interactive bool, en
 		if ok, expr, shell := core.HasShell(cmd); ok {
 			out, err := Exe(shell, path, buildEnv, interactive)
 			core.CheckErr(err, "cannot execute subshell command: %s", cmd)
+			// ensure the subshell output does not end with newline
+			out = core.TrimNewline(out)
 			// merges the output of the subshell in the original command
 			cmd = strings.Replace(cmd, expr, out, -1)
 			// execute the statement
@@ -495,6 +499,8 @@ func (b *Builder) evalSubshell(vars map[string]string, execDir string, env *merg
 		if ok, expr, shell := core.HasShell(v); ok {
 			out, err := Exe(shell, execDir, env, interactive)
 			core.CheckErr(err, "cannot execute subshell command: %s", v)
+			// ensure the subshell output does not end with newline
+			out = core.TrimNewline(out)
 			// merges the output of the subshell in the original variable
 			vars[k] = strings.Replace(v, expr, out, -1)
 		}
@@ -583,7 +589,7 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 			s.Manifest.Functions = append(s.Manifest.Functions, &data.FxInfo{
 				Name:        fx.Name,
 				Description: fx.Description,
-				Input:       data.SurveyInputFromBuildFile(fx.Name, buildFile, false, true, merge.NewEnVarFromSlice(os.Environ())),
+				Input:       data.SurveyInputFromBuildFile(fx.Name, buildFile, false, true, merge.NewEnVarFromSlice(os.Environ()), b.artHome),
 				Runtime:     fx.Runtime,
 			})
 		}
@@ -634,13 +640,13 @@ func (b *Builder) getBuildEnv() map[string]string {
 // Execute an exported function in a package
 func (b *Builder) Execute(name *core.PackageName, function string, credentials string, certPath string, ignoreSignature bool, interactive bool, path string, preserveFiles bool, env *merge.Envar, v registry.Verifier) {
 	// get a local registry handle
-	local := registry.NewLocalRegistry()
+	local := registry.NewLocalRegistry(b.artHome)
 	// check the run path exist
-	core.RunPathExists()
+	core.RunPathExists(b.artHome)
 	// if no path is specified
 	if len(path) == 0 {
 		// create a temp random path to open the package
-		path = filepath.Join(core.RunPath(), core.RandomString(10))
+		path = filepath.Join(core.RunPath(b.artHome), core.RandomString(10))
 	} else {
 		// otherwise make sure the path is absolute
 		path = core.ToAbs(path)

@@ -1,0 +1,13 @@
+---
+name: db-svc
+description: postgresql database used by the various Onix services
+port: "5432"
+var:
+  - name: POSTGRES_PASSWORD
+    description: the postgresql admin password
+    secret: true
+    value: ${fx=pwd:16,false}
+volume:
+  - name: db
+    path: /var/lib/postgresql/data
+...

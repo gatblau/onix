@@ -511,7 +511,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.Notification"
+                            "$ref": "#/definitions/core.NotificationMsg"
                         }
                     }
                 ],
@@ -874,6 +874,31 @@ var doc = `{
         }
     },
     "definitions": {
+        "core.NotificationMsg": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Content of the template",
+                    "type": "string",
+                    "example": "A new event has been received."
+                },
+                "recipient": {
+                    "description": "Recipient of the notification if type is email",
+                    "type": "string",
+                    "example": "info@email.com"
+                },
+                "subject": {
+                    "description": "Subject of the notification",
+                    "type": "string",
+                    "example": "New Notification"
+                },
+                "type": {
+                    "description": "Type of the notification (e.g. email, snow, etc.)",
+                    "type": "string",
+                    "example": "email"
+                }
+            }
+        },
         "main.Bucket": {
             "type": "object",
             "properties": {
@@ -902,31 +927,6 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/main.Records"
                     }
-                }
-            }
-        },
-        "main.Notification": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "description": "Content of the template",
-                    "type": "string",
-                    "example": "A new event has been received."
-                },
-                "recipient": {
-                    "description": "Recipient of the notification if type is email",
-                    "type": "string",
-                    "example": "info@email.com"
-                },
-                "subject": {
-                    "description": "Subject of the notification",
-                    "type": "string",
-                    "example": "New Notification"
-                },
-                "type": {
-                    "description": "Type of the notification (e.g. email, snow, etc.)",
-                    "type": "string",
-                    "example": "email"
                 }
             }
         },
@@ -1095,7 +1095,7 @@ var doc = `{
                     "type": "string",
                     "example": "clamscan"
                 },
-                "stopOnError": {
+                "stop_on_error": {
                     "description": "determines if the process should stop on a command execution error",
                     "type": "boolean",
                     "example": true
@@ -1197,10 +1197,6 @@ var doc = `{
                     "description": "a description of the intended use of the key",
                     "type": "string"
                 },
-                "is_private": {
-                    "description": "indicates if the key is private, otherwise public",
-                    "type": "boolean"
-                },
                 "name": {
                     "description": "a unique identifier for the digital key",
                     "type": "string"
@@ -1293,20 +1289,10 @@ var doc = `{
                     "type": "string",
                     "example": "test/groupA"
                 },
-                "private_key": {
-                    "description": "PrivateKey the name of the private PGP key used to re-sign the packages",
-                    "type": "string",
-                    "example": "SIGNING_KEY_01"
-                },
                 "pwd": {
                     "description": "Pwd the password to authenticate with the package registry",
                     "type": "string",
                     "example": "d8y2b9fc97y23!$^"
-                },
-                "sign": {
-                    "description": "Sign a flag indicating whether packages pushed to the registry should be resigned",
-                    "type": "boolean",
-                    "example": true
                 },
                 "user": {
                     "description": "User the username to authenticate with the package registry",
@@ -1365,19 +1351,9 @@ var doc = `{
                     "description": "BucketURI the URI of the folder where to upload the spec tar files",
                     "type": "string"
                 },
-                "private_key": {
-                    "description": "PrivateKey the name of the private PGP key used to re-sign the packages in the tarball files",
-                    "type": "string",
-                    "example": "SIGNING_KEY_01"
-                },
                 "pwd": {
                     "description": "Pwd the password of the outbound S3 bucket",
                     "type": "string"
-                },
-                "sign": {
-                    "description": "Sign a flag indicating whether packages pushed to the S3 service should be resigned",
-                    "type": "boolean",
-                    "example": true
                 },
                 "user": {
                     "description": "User the username of the outbound S3 bucket",
@@ -1404,7 +1380,7 @@ var SwaggerInfo = swaggerInfo{
 	BasePath:    "",
 	Schemes:     []string{},
 	Title:       "Artisan's Doorman",
-	Description: "Transfer (pull, verify, scan, resign and push) artefacts between repositories",
+	Description: "Securely transfer artisan packages and container images between repositories",
 }
 
 type s struct{}

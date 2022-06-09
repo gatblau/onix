@@ -86,14 +86,14 @@ func ToJsonBytes(s interface{}) []byte {
 	return dest.Bytes()
 }
 
-func ToJsonFile(obj interface{}) (*os.File, error) {
+func ToJsonFile(obj interface{}, artHome string) (*os.File, error) {
 	// create an UUId
 	uuid, err := uuid.GenerateUUID()
 	if err != nil {
 		return nil, err
 	}
 	// generate an internal random and transient name based on the UUId
-	name := path.Join(TmpPath(), fmt.Sprintf("%s.json", uuid))
+	name := path.Join(TmpPath(artHome), fmt.Sprintf("%s.json", uuid))
 	// marshals the object into Json bytes
 	b, err := json.Marshal(obj)
 	if err != nil {
@@ -502,11 +502,11 @@ func IsPackageName(val interface{}) error {
 /*
 NewTempDir will create a temp folder with a random name and return the path
 */
-func NewTempDir() (string, error) {
+func NewTempDir(artHome string) (string, error) {
 	// the working directory will be a build folder within the registry directory
 	uid := t.New()
 	folder := strings.Replace(uid.String(), "-", "", -1)[:12]
-	tempDirPath := filepath.Join(TmpPath(), folder)
+	tempDirPath := filepath.Join(TmpPath(artHome), folder)
 	// creates a temporary working directory
 	err := os.MkdirAll(tempDirPath, os.ModePerm)
 	if err != nil {
@@ -539,4 +539,24 @@ func FindFiles(root, extPattern string) ([]string, error) {
 		return nil
 	})
 	return files, err
+}
+
+func TrimNewline(s string) string {
+	if strings.HasSuffix(s, "\n") {
+		s = s[0 : len(s)-1]
+	}
+	return s
+}
+
+// Extract up to a maximum of "n" occurrences of a string that has a "prefix" and a "suffix" in "content"
+// prefix and suffix can be golang regex, for example using suffix = "$" means match up to the end of the line
+func Extract(content, prefix, suffix string, n int) []string {
+	expression := fmt.Sprintf(`(?m)%s(.*?)%s`, prefix, suffix)
+	r := regexp.MustCompile(expression)
+	subMatches := r.FindAllStringSubmatch(content, n)
+	var result []string
+	for _, subMatch := range subMatches {
+		result = append(result, subMatch[1])
+	}
+	return result
 }

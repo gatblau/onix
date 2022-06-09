@@ -9,20 +9,16 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/crypto"
-	"github.com/gatblau/onix/artisan/export"
+	. "github.com/gatblau/onix/artisan/release"
 	"github.com/spf13/cobra"
 )
 
 // SpecImportCmd Import the contents from a tarball to create an artisan package in the local registry
 type SpecImportCmd struct {
-	cmd             *cobra.Command
-	creds           string
-	ignoreSignature *bool
-	pubPath         string
-	filter          string
+	cmd    *cobra.Command
+	creds  string
+	filter string
 }
 
 func NewSpecImportCmd() *SpecImportCmd {
@@ -45,8 +41,6 @@ Examples:
 	}
 	c.cmd.Run = c.Run
 	c.cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials used to retrieve the specification from an endpoint")
-	c.ignoreSignature = c.cmd.Flags().BoolP("ignore-sig", "s", false, "ignore signature verification on import")
-	c.cmd.Flags().StringVarP(&c.pubPath, "pub", "p", "", "-p=/path/to/public/key or --pub=/path/to/public/key to load a public PGP key to verify the imported packages digital signature")
 	c.cmd.Flags().StringVarP(&c.filter, "filter", "f", "", "a regular expression used to select spec artefacts to be imported; any artefacts not matched by the filter are skipped (e.g. -f \"^quay.*$\")")
 	return c
 }
@@ -56,14 +50,11 @@ func (c *SpecImportCmd) Run(cmd *cobra.Command, args []string) {
 	if args != nil && len(args) < 1 {
 		core.RaiseErr("the URI of the specification is required")
 	}
-	// if not ignoring signature and public key path is not provided, then uses the local registry default public key
-	if len(c.pubPath) == 0 && !*c.ignoreSignature {
-		// works out the FQN of the public root key
-		_, pub := crypto.KeyNames(core.KeysPath(), "root", "pgp")
-		c.pubPath = pub
-		fmt.Printf("verifying signatures with local root public key: %s\n", pub)
-	}
 	// import the tar archive(s)
-	err := export.ImportSpec(args[0], c.creds, c.filter, c.pubPath, *c.ignoreSignature)
+	_, err := ImportSpec(ImportOptions{
+		TargetUri:   args[0],
+		TargetCreds: c.creds,
+		Filter:      c.filter,
+	})
 	core.CheckErr(err, "cannot import spec")
 }

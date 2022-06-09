@@ -62,9 +62,9 @@ const (
 // profile: the application profile name, that describes the services to generate from the application manifest
 // creds: credentials to get the app manifest from git service in the format uname:pwd - if not required pass empty string
 // path: the file path where the resources should be saved
-func GenerateResources(uri, format, profile, creds, path string) error {
+func GenerateResources(uri, format, profile, creds, path, artHome string) error {
 	// create an application manifest
-	manifest, err := NewAppMan(uri, profile, creds)
+	manifest, err := NewAppMan(uri, profile, creds, artHome)
 	if err != nil {
 		return err
 	}

@@ -11,7 +11,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/export"
+	"github.com/gatblau/onix/artisan/release"
 	"github.com/spf13/cobra"
 )
 
@@ -65,7 +65,7 @@ func (c *SpecInfoCmd) Run(cmd *cobra.Command, args []string) {
 		// assume current path
 		args = []string{"."}
 	}
-	spec, err := export.NewSpec(args[0], c.creds)
+	spec, err := release.NewSpec(args[0], c.creds)
 	core.CheckErr(err, "cannot load spec")
 	if len(spec.Version) > 0 {
 		fmt.Printf("version: %s\n", spec.Version)

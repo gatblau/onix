@@ -1,0 +1,64 @@
+---
+name: ox-svc
+description: the Onix configuration management database Restful API
+port: "8080"
+var:
+  - name: DB_HOST
+    description: the name of the database service host used by Onix WebAPI to store its configuration management data
+    value: ${bind=db-svc}
+  - name: DB_USER
+    description: the username to authenticate with the database services
+    value: "onix"
+  - name: DB_PWD
+    description: the password to authenticate with the database service
+    secret: true
+    value: ${fx=pwd:16,false}123
+  - name: DB_ADMIN_USER
+    description: the username to authenticate with the database services
+    value: "postgres"
+  - name: DB_ADMIN_PWD
+    description: the password to authenticate with the database service
+    secret: true
+    value: ${bind=db-svc:var:POSTGRES_PASSWORD}
+  - name: WAPI_AUTH_MODE
+    description: the way the API authenticate http client requests
+    value: "Basic"
+  - name: WAPI_ADMIN_USER
+    description: the username to authenticate with the web api as admin
+    value: admin
+  - name: WAPI_ADMIN_PWD
+    description: the password to authenticate with the web api as admin
+    secret: true
+    value: ${fx=pwd:16,false}123
+  - name: WAPI_EVENTS_ENABLED
+    description: whether sending of mqtt messages is enabled for changes to configuration data
+    value: "false"
+init:
+  - builder: compose
+    scripts:
+      - reset_admin_pwd
+db:
+  name: onix
+  app_version: 0.0.4
+  host: ${bind=db-svc}
+  provider: _pgsql
+  port: 5432
+  user: ${bind=ox-svc:var:DB_USER}
+  pwd: ${bind=ox-svc:var:DB_PWD}
+  admin_user: postgres
+  admin_pwd: ${bind=db-svc:var:POSTGRES_PASSWORD}
+  schema_uri: ${bind=ox-svc:schema_uri}
+scripts:
+  - name: reset_admin_pwd
+    description: |
+      updates the default admin password with the auto generated password provided by this manifest
+    runtime: ubi-min
+    content: |
+      echo "updating Onix admin password from default ..."
+      art curl -X PUT \
+        -a 25 \
+        -u "admin:0n1x" \
+        -H "Content-Type: application/json" \
+        "http://${bind=ox-svc}":"${bind=ox-svc:port}"/user/"${bind=ox-svc:var:WAPI_ADMIN_USER}"/pwd \
+        -d "{\"pwd\":\"${bind=ox-svc:var:WAPI_ADMIN_PWD}\"}"
+...

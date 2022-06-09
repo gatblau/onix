@@ -14,7 +14,8 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/joho/godotenv v1.4.0
-	github.com/schollz/progressbar/v3 v3.8.6 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/minio/minio-go/v7 v7.0.27 // indirect
 	github.com/swaggo/swag v1.7.9
 	go.mongodb.org/mongo-driver v1.8.3
 )

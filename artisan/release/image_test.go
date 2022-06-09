@@ -6,21 +6,12 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package core
+package release
 
-import (
-	"fmt"
-	"os"
-	"testing"
-)
+import "testing"
 
-func TestWriteS3(t *testing.T) {
-	content, err := os.ReadFile("writefile_test.go")
-	if err != nil {
+func TestSaveImage(t *testing.T) {
+	if err := ExportImage("postgres:13", "postgres:13", "s3://localhost:9000/app1/v1", "user:pwd", ""); err != nil {
 		t.Fatal(err)
 	}
-	if err = WriteFile(content, "s3://127.0.0.1:9000/test/writefile_test.go", "abcdefgh:12345678"); err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println("file uploaded successfully")
 }

@@ -149,7 +149,7 @@ func (r *API) Ping() (jobId int64, fxKey string, fxVersion int64, err error) {
 func (r *API) GetHosts(oGroup, or, ar, loc string, label []string) ([]Host, error) {
 	hosts := make([]Host, 0)
 	pingInterval := r.PingInterval().Seconds()
-	rows, err := r.db.Query("select * from pilotctl_get_host($1, $2, $3, $4, $5, $6)", fmt.Sprintf("%.0f secs", pingInterval+5), oGroup, or, ar, loc, label)
+	rows, err := r.db.Query("select * from pilotctl_get_hosts($1, $2, $3, $4, $5, $6)", fmt.Sprintf("%.0f secs", pingInterval+5), oGroup, or, ar, loc, label)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get hosts: %s\n", err)
 	}

@@ -37,11 +37,11 @@ type Api struct {
 	tmp    string
 }
 
-func newGenericAPI(domain string) *Api {
-	core.TmpExists()
+func newGenericAPI(domain string, artHome string) *Api {
+	core.TmpExists(artHome)
 	return &Api{
 		domain: domain,
-		tmp:    core.TmpPath(),
+		tmp:    core.TmpPath(artHome),
 		client: &http.Client{
 			Timeout: time.Minute * 10,
 			Transport: &http.Transport{
@@ -53,7 +53,7 @@ func newGenericAPI(domain string) *Api {
 	}
 }
 
-func (r *Api) UploadPackage(name *core.PackageName, packageRef string, zipfile multipart.File, jsonFile multipart.File, metaInfo *Package, user string, pwd string, https bool) error {
+func (r *Api) UploadPackage(name *core.PackageName, packageRef string, zipfile multipart.File, jsonFile multipart.File, metaInfo *Package, user string, pwd string, https bool, artHome string) error {
 	// ensure files are properly closed
 	defer zipfile.Close()
 	defer jsonFile.Close()
@@ -92,9 +92,9 @@ func (r *Api) UploadPackage(name *core.PackageName, packageRef string, zipfile m
 	core.CheckErr(err, "cannot post to backend")
 	switch res.StatusCode {
 	case http.StatusCreated:
-		i18n.Printf(i18n.INFO_PUSHED, name.String())
+		i18n.Printf(artHome, i18n.INFO_PUSHED, name.String())
 	case http.StatusOK:
-		i18n.Printf(i18n.INFO_NOTHING_TO_PUSH)
+		i18n.Printf(artHome, i18n.INFO_NOTHING_TO_PUSH)
 	default:
 		if res.StatusCode > 299 {
 			return fmt.Errorf("failed to push, the remote server responded with status code %d: %s", res.StatusCode, res.Status)

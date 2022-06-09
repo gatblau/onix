@@ -1,0 +1,18 @@
+---
+name: minio-svc
+description: Local minio S3 service
+port: 
+  app: "9000"
+  ui: "9001"
+
+volume:
+  - name: minio-data
+    path: /data/minio
+var:
+  - name: MINIO_ROOT_USER
+    description: Administrator user name (must not be called admin)
+    value: "minioadmin"
+  - name: MINIO_ROOT_PASSWORD
+    description: Administrator password
+    value: ${fx=pwd:16,false}
+...

@@ -1,5 +1,3 @@
-package cmd
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package cmd
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package cmd
+
 import (
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/merge"
@@ -47,7 +48,7 @@ func (c *RunCCmd) Run(cmd *cobra.Command, args []string) {
 		path = args[1]
 	}
 	// create an instance of the runner
-	run, err := runner.NewFromPath(path)
+	run, err := runner.NewFromPath(path, "")
 	core.CheckErr(err, "cannot initialise runner")
 	// load environment variables from file
 	// NOTE: do not pass any vars from the host to avoid clashing issues

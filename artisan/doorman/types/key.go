@@ -24,13 +24,11 @@ type Key struct {
 	Description string `bson:"description" json:"description" yaml:"description"`
 	// the actual content of the key
 	Value string `bson:"value" json:"value" yaml:"value"`
-	// indicates if the key is private, otherwise public
-	IsPrivate bool `bson:"is_private" json:"is_private" yaml:"is_private"`
 }
 
 func (k Key) Valid() error {
 	if len(k.Name) == 0 {
-		return fmt.Errorf("name attribute must be prodided")
+		return fmt.Errorf("name attribute must be provided")
 	}
 	// ensure name has no blank spaces and is in uppercase
 	k.Name = strings.ReplaceAll(strings.ToUpper(k.Name), " ", "_")

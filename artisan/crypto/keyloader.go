@@ -20,8 +20,8 @@ import (
 )
 
 // LoadKeys load primary and backup keys to use for a given package name
-func LoadKeys(name core.PackageName, isPrivate bool) (primaryKey, backupKey *PGP, err error) {
-	primaryKeyPath, backupKeyPath := resolveKeyPath(name, isPrivate)
+func LoadKeys(name core.PackageName, isPrivate bool, artHome string) (primaryKey, backupKey *PGP, err error) {
+	primaryKeyPath, backupKeyPath := resolveKeyPath(name, isPrivate, artHome)
 	// if the primary key does not exist
 	if !pathExists(primaryKeyPath) {
 		// cannot continue
@@ -48,8 +48,8 @@ func LoadKeys(name core.PackageName, isPrivate bool) (primaryKey, backupKey *PGP
 }
 
 // resolveKeyPath returns the primary and backup key paths to use for a given package name and keys deployed in the local artisan registry
-func resolveKeyPath(name core.PackageName, isPrivate bool) (primary, backup string) {
-	keyPaths := getAllKeyPaths()
+func resolveKeyPath(name core.PackageName, isPrivate bool, artHome string) (primary, backup string) {
+	keyPaths := getAllKeyPaths(artHome)
 	var path string
 	for _, s := range keyPaths {
 		if strings.HasPrefix(name.Repository(), s) {
@@ -58,11 +58,11 @@ func resolveKeyPath(name core.PackageName, isPrivate bool) (primary, backup stri
 		}
 	}
 	if len(path) == 0 {
-		primary = filepath.Join(core.KeysPath(), fmt.Sprintf("root%s", keySuffix(isPrivate)))
-		backup = filepath.Join(core.KeysPath(), fmt.Sprintf("root_backup%s", keySuffix(isPrivate)))
+		primary = filepath.Join(core.KeysPath(artHome), fmt.Sprintf("root%s", keySuffix(isPrivate)))
+		backup = filepath.Join(core.KeysPath(artHome), fmt.Sprintf("root_backup%s", keySuffix(isPrivate)))
 	} else {
-		primary = filepath.Join(core.KeysPath(), path, fmt.Sprintf("%s%s", strings.ReplaceAll(path, "/", "_"), keySuffix(isPrivate)))
-		backup = filepath.Join(core.KeysPath(), path, fmt.Sprintf("%s_backup%s", strings.ReplaceAll(path, "/", "_"), keySuffix(isPrivate)))
+		primary = filepath.Join(core.KeysPath(artHome), path, fmt.Sprintf("%s%s", strings.ReplaceAll(path, "/", "_"), keySuffix(isPrivate)))
+		backup = filepath.Join(core.KeysPath(artHome), path, fmt.Sprintf("%s_backup%s", strings.ReplaceAll(path, "/", "_"), keySuffix(isPrivate)))
 	}
 	return primary, backup
 }
@@ -71,27 +71,27 @@ func resolveKeyPath(name core.PackageName, isPrivate bool) (primary, backup stri
 // isPrivate: is it private or public key?
 // isBackup: is it a primary or a backup key?
 // if no group and name are specified then it produces a root key
-func KeyPath(group, name string, isPrivate, isBackup bool) string {
+func KeyPath(group, name string, isPrivate, isBackup bool, artHome string) string {
 	backupTag := ""
 	if isBackup {
 		backupTag = "_backup"
 	}
 	// if no group / name were provided it produces a root key name
 	if len(group) == 0 && len(name) == 0 {
-		return path.Join(core.KeysPath(), fmt.Sprintf("root%s%s", backupTag, keySuffix(isPrivate)))
+		return path.Join(core.KeysPath(artHome), fmt.Sprintf("root%s%s", backupTag, keySuffix(isPrivate)))
 	}
 	groupForName := strings.ReplaceAll(group, "/", "_")
 	// if no name was specified produces a key for the group
 	if len(name) == 0 {
-		return path.Join(core.KeysPath(), group, fmt.Sprintf("%s%s%s", groupForName, backupTag, keySuffix(isPrivate)))
+		return path.Join(core.KeysPath(artHome), group, fmt.Sprintf("%s%s%s", groupForName, backupTag, keySuffix(isPrivate)))
 	}
 	// otherwise, it produces a key for the full name
-	return path.Join(core.KeysPath(), group, name, fmt.Sprintf("%s_%s%s%s", groupForName, name, backupTag, keySuffix(isPrivate)))
+	return path.Join(core.KeysPath(artHome), group, name, fmt.Sprintf("%s_%s%s%s", groupForName, name, backupTag, keySuffix(isPrivate)))
 }
 
 // getAllKeyPaths returns a list of all possible key paths in the priority they should be used
 // it is driven from the existence of keys in the keys folder hierarchy
-func getAllKeyPaths() (paths []string) {
+func getAllKeyPaths(artHome string) (paths []string) {
 	// defines a function to check if a slice slice contains a given element
 	var contains = func(elems []string, v string) bool {
 		for _, s := range elems {
@@ -102,7 +102,7 @@ func getAllKeyPaths() (paths []string) {
 		return false
 	}
 	// create a file system instance with root in the folder where keys are stored in the artisan local registry
-	fSys := os.DirFS(core.KeysPath())
+	fSys := os.DirFS(core.KeysPath(artHome))
 	// variable to track walked path without its last element (the folder without filename)
 	var folder string
 	// walks the keys' root folder tree to collect a list of sub folders that contain keys

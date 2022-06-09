@@ -53,9 +53,9 @@ func (c *ExeCmd) Run(cmd *cobra.Command, args []string) {
 		function = args[1]
 	)
 	// get a builder handle
-	builder := build.NewBuilder()
+	builder := build.NewBuilder("")
 	name, err := core.ParseName(pack)
-	i18n.Err(err, i18n.ERR_INVALID_PACKAGE_NAME)
+	i18n.Err("", err, i18n.ERR_INVALID_PACKAGE_NAME)
 	// add the build file level environment variables
 	env := merge.NewEnVarFromSlice(os.Environ())
 	// load vars from file

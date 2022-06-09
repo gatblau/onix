@@ -10,11 +10,11 @@ package cmd
 
 import (
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/export"
+	. "github.com/gatblau/onix/artisan/release"
 	"github.com/spf13/cobra"
 )
 
-// SpecDownCmd downloads the contents of a spec from a remote source
+// SpecUpCmd uploads the contents of a spec from a remote source
 type SpecUpCmd struct {
 	cmd    *cobra.Command
 	creds  string
@@ -48,6 +48,10 @@ func (c *SpecUpCmd) Run(cmd *cobra.Command, args []string) {
 	if args != nil && len(args) < 1 {
 		core.RaiseErr("the path to the local spec files is required")
 	}
-	err := export.UploadSpec(c.output, c.creds, args[0])
+	err := UploadSpec(UpDownOptions{
+		TargetUri:   c.output,
+		TargetCreds: c.creds,
+		LocalPath:   args[0],
+	})
 	core.CheckErr(err, "cannot upload spec")
 }

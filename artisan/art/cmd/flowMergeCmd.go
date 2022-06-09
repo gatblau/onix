@@ -1,5 +1,3 @@
-package cmd
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package cmd
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package cmd
+
 import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
@@ -70,7 +71,7 @@ func (c *FlowMergeCmd) Run(_ *cobra.Command, args []string) {
 	// merge with existing environment
 	env.Merge(env2)
 	// loads a bare flow from the path
-	f, err := flow.NewWithEnv(flowPath, c.buildFilePath, env)
+	f, err := flow.NewWithEnv(flowPath, c.buildFilePath, env, "")
 	core.CheckErr(err, "cannot load bare flow")
 	// add labels to the flow
 	f.AddLabels(c.labels)

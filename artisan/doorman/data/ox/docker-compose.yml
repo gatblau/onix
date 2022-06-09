@@ -1,0 +1,42 @@
+version: '3'
+
+services:
+  db:
+    container_name: db
+    environment:
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+    image: ${IMAGE_POSTGRES}
+    restart: always
+    ports:
+    - target: 5432
+      published: 5432
+    volumes:
+    - type: volume
+      source: db
+      target: /var/lib/postgresql/data
+  ox-app:
+    container_name: ox-app
+    depends_on:
+      db:
+        condition: service_started
+    environment:
+      DB_ADMIN_PWD: ${DB_POSTGRES_PASSWORD}
+      DB_ADMIN_USER: ${OX_APP_DB_ADMIN_USER}
+      DB_HOST: ${OX_APP_DB_HOST}
+      DB_PWD: ${OX_APP_DB_PWD}
+      DB_USER: ${OX_APP_DB_USER}
+      WAPI_ADMIN_PWD: ${OX_APP_WAPI_ADMIN_PWD}
+      WAPI_ADMIN_USER: ${OX_APP_WAPI_ADMIN_USER}
+      WAPI_AUTH_MODE: ${OX_APP_WAPI_AUTH_MODE}
+      WAPI_EVENTS_ENABLED: ${OX_APP_WAPI_EVENTS_ENABLED}
+    image: ${IMAGE_ONIX_WAPI}
+    ports:
+    - target: 8080
+      published: 8080
+    restart: always
+networks:
+  default:
+    name: onix_config_manager_network
+volumes:
+  db:
+    external: true

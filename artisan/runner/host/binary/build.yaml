@@ -1,4 +1,11 @@
 ---
+env:
+  SERVICE_HOME: /opt/runner
+  #host runner app will listen at port OX_HTTP_PORT, but we configure using HOST_RUNNER_PORT
+  #because if onix is running on same host then setting OX_HTTP_PORT will change the port of
+  # both host runner and onix
+  HOST_RUNNER_PORT: 8079
+
 input:
   var:
     - name: OX_WAPI_URI
@@ -20,8 +27,8 @@ input:
       required: true
       type: string      
 functions:
-  - name: install
-    description: Start the host-runner application
+  - name: install-standalone
+    description: install standalone host-runner application.
     export: true
     run:
       - sh -c './install.sh'
@@ -32,8 +39,70 @@ functions:
       secret:
         - OX_WAPI_USER
         - OX_WAPI_PWD
-  - name: uninstall
-    description: Stop the host-runner application
+
+  - name: install-basic
+    description: install host-runner with basic profile.
     export: true
     run:
-      - sh -c './uninstall.sh'
+      - $(pre-install)
+      - art app -r basic --path ${SERVICE_HOME} deploy/runner.yaml
+      - sh -c './install.sh'
+
+  - name: install-ci
+    description: install host-runner with ci profile.
+    export: true
+    run:
+      - $(pre-install)
+      - art app -r ci --path ${SERVICE_HOME} deploy/runner.yaml
+      - sh -c './install.sh'
+      - sh -c './deploy/registry-credential-config.sh'      
+
+  - name: install-automation
+    description: install host-runner with automation profile.
+    export: true
+    run:
+      - $(pre-install)
+      - art app -r automation --path ${SERVICE_HOME} deploy/runner.yaml
+      # below step is required to start minio server, this step will append 
+      # "command: server --address ":9099" --console-address ":9000" /data/minio" 
+      # under the tag minio-svc: in ${SERVICE_HOME}/docker-compose.yml
+      - sh -c 'sed -i "/minio-svc:/a \    "command:" server --address \":9000\" --console-address \":9001\" /data/minio" ${SERVICE_HOME}/docker-compose.yml'
+      - sh -c './install.sh'
+
+  - name: start-standalone
+    description: start the stand alone service and also enable the service to start automatically when host is booted up.
+    export: true
+    run:
+      - sh -c 'sudo systemctl enable --now host-runner'
+
+  - name: start
+    description: start the host-runner service along with additional services like cmdb, git, docker registry, basic aritsan regisrty application.
+    export: true
+    run:
+      - art run deploy ${SERVICE_HOME}
+      - sh -c 'sudo systemctl start host-runner'
+
+  - name: stop
+    description: stop the host-runner service along with additional services like cmdb, git, docker registry, basic aritsan regisrty application.
+    export: true
+    run:
+      - art run dispose ${SERVICE_HOME}
+      - sh -c 'sudo systemctl stop host-runner'
+
+  - name: uninstall
+    description: delete the host-runner service along with additional services if any are there.
+    export: true
+    run:
+      - sh -c './uninstall.sh'    
+      - art run dispose ${SERVICE_HOME}
+
+  - name: show-env
+    description: display the content of .env files used for docker compose.
+    export: true
+    run:
+      - sh -c 'cat ${SERVICE_HOME}/.env' 
+
+  - name: pre-install
+    description: create proper folder for runner setup and change the permission and ownership of folder.
+    run:
+      - sh -c './deploy/pre-install.sh'
