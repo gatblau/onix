@@ -9,24 +9,22 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/oxlib/httpserver"
+	m "github.com/gatblau/onix/oxlib/msgclient"
 	"github.com/gorilla/mux"
 )
 
 func main() {
 
-	fmt.Println(" setting port")
-	app_port := os.Getenv("OX_HTTP_PORT")
-	app_port1 := os.Getenv("HOST_RUNNER_PORT")
+	app_port := os.Getenv("HOST_RUNNER_PORT")
 	if len(app_port) > 0 {
 		os.Setenv("OX_HTTP_PORT", app_port)
 	}
-	core.Debug("host-runner listening at port ", app_port)
-	fmt.Println("host-runner listening at port ", app_port)
-	fmt.Println("host-runner listening at port1 ", app_port1)
+
 	// creates a generic http server
 	s := httpserver.New("art-host-runner")
 	// add handlers
@@ -34,7 +32,54 @@ func main() {
 		router.HandleFunc("/host/{cmd-key}", executeCommandHandler).Methods("POST")
 		router.HandleFunc("/flow", executeFlowFromPayloadHandler).Methods("POST")
 		router.HandleFunc("/webhook/{flow-key}/push", executeWebhookFlowHandler).Methods("POST")
-		fmt.Printf("new handler is registered...")
+		core.Debug("new handler is registered...")
 	}
+
+	connstatus := make(chan error, 1)
+	go func() {
+		fmt.Println("launching broker")
+		er := launchBroker()
+		connstatus <- er
+	}()
+	/*
+		go func() {
+			fmt.Println("launching broker")
+			connstatus <- true
+		}()*/
+	/*
+		s.Jobs = func() error {
+			go func() {
+				fmt.Println("launching broker")
+				_, er := launchBroker()
+				connstatus <- true
+				//TODO need to fix this dead lock problem
+				if er != nil {
+					core.Debug("conn failed .....")
+					log.Fatalf("ERROR: mqtt client failed to connect broker : %s \n", er)
+				}
+			}()
+			return nil
+		}*/
+
+	//fmt.Println("2 am here")
+	select {
+	case err := <-connstatus:
+		{
+			if err != nil {
+				log.Fatalf("ERROR: mqtt client failed to connect broker : %s \n", err)
+			}
+		}
+	}
+	core.Debug("starting http server")
 	s.Serve()
+}
+
+func launchBroker() error {
+	mqc := m.Client()
+	err := mqc.Start(30)
+	if err != nil {
+		return err
+	}
+	mqc.Subscribe(eventMessageHandler)
+	return err
 }

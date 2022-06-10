@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/flow"
@@ -57,19 +58,7 @@ type runFx func(path string, s *flow.Step, env *merge.Envar) error
 func executeCommandHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	api := o.Api()
 	cmdkey := vars["cmd-key"]
-	cmd, err := api.GetCommand(cmdkey)
-	if checkErr(w, fmt.Sprintf("%s: [ %s ]\n", "Error while getting command using cmd key ", cmdkey), err) {
-		return
-	}
-	if cmd == nil {
-		msg := fmt.Sprintf("No command item for item type ART_FX found in database for cmd key [ %s ] , please check if this item exists ", cmdkey)
-		fmt.Printf(msg)
-		http.Error(w, msg, http.StatusUnprocessableEntity)
-		return
-	}
-
 	body, err := ioutil.ReadAll(r.Body)
 	if checkErr(w, "Error while reading http request body ", err) {
 		return
@@ -87,31 +76,11 @@ func executeCommandHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get the variables in the host environment
-	hostEnv := merge.NewEnVarFromSlice(os.Environ())
-	// get the variables in the command
-	cmdEnv := merge.NewEnVarFromSlice(cmd.Env())
-	// if not containerised add PATH to execution environment
-	hostEnv.Merge(cmdEnv)
-	cmdEnv = hostEnv
-	// if running in verbose mode
-	if cmd.Verbose {
-		// add ARTISAN_DEBUG to execution environment
-		cmdEnv.Vars["ARTISAN_DEBUG"] = "true"
-	}
-
-	cmdString := fmt.Sprintf("art %s -u %s:%s %s %s --path=%s", "exe", cmd.User, cmd.Pwd, cmd.Package, cmd.Function, t)
-	// run and return
-	out, err := build.ExeAsync(cmdString, ".", cmdEnv, false)
-	if checkErr(w, fmt.Sprintf("Error while executing artisan package function using command [ %s ]", cmdString), err) {
+	err = executeCommand(cmdkey, t)
+	if checkErr(w, fmt.Sprintf("%s: [ %s ]\n", "Error while executing command for command key ", cmdkey), err) {
 		os.RemoveAll(t)
 		return
-	} else {
-		msg := fmt.Sprintf("%s [%s %s ] : [ %s ] \n", "Result of executing artisan package function using command", cmd.Package, cmd.Function, out)
-		fmt.Printf(msg)
 	}
-
-	os.RemoveAll(t)
 }
 
 // @Summary Execute an Artisan flow
@@ -231,6 +200,24 @@ func executeWebhookFlowHandler(w http.ResponseWriter, r *http.Request) {
 	os.RemoveAll(path)
 }
 
+//TODO documentation
+func eventMessageHandler(c mqtt.Client, m mqtt.Message) {
+	k := getItemKey(m)
+	t, err := core.NewTempDir(artHome)
+	err = executeCommand(k, t)
+	if err != nil {
+		fmt.Printf("failed to process event with item key [%s] : \n [%s] \n", k, err)
+	}
+	os.RemoveAll(t)
+}
+
+func getItemKey(m mqtt.Message) string {
+	p := string(m.Payload())
+	key := p[strings.LastIndex(p, ",")+1:]
+
+	return key
+
+}
 func getRunFx(useRuntime bool) runFx {
 	if useRuntime == true {
 		return func(path string, s *flow.Step, env *merge.Envar) error {
@@ -373,5 +360,46 @@ func openArtisanPackage(p string, s *flow.Step) error {
 	cmdStringErr := fmt.Sprintf("art %s %s -u %s ", "open", s.Package, "******:******")
 	msg := fmt.Sprintf("opened package using command [%s] at path [%s] with message", cmdStringErr, p, out)
 	fmt.Printf(msg)
+	return nil
+}
+
+func executeCommand(cmdkey, path4Artisan string) error {
+	fmt.Println("creating Api instance.....")
+	api := o.Api()
+	cmd, err := api.GetCommand(cmdkey)
+	if err != nil {
+		core.Debug("Error while getting command using cmd key : [%s]", cmdkey)
+		return err
+	}
+	if cmd == nil {
+		return fmt.Errorf("No command item for item type ART_FX found in database for cmd key [ %s ] , please check if this item exists ", cmdkey)
+	}
+
+	// get the variables in the host environment
+	hostEnv := merge.NewEnVarFromSlice(os.Environ())
+	// get the variables in the command
+	cmdEnv := merge.NewEnVarFromSlice(cmd.Env())
+	// if not containerised add PATH to execution environment
+	hostEnv.Merge(cmdEnv)
+	cmdEnv = hostEnv
+	// if running in verbose mode
+	if cmd.Verbose {
+		// add ARTISAN_DEBUG to execution environment
+		cmdEnv.Vars["ARTISAN_DEBUG"] = "true"
+	}
+
+	cmdString := fmt.Sprintf("art %s -u %s:%s %s %s --path=%s", "exe", cmd.User, cmd.Pwd, cmd.Package, cmd.Function, path4Artisan)
+	// run and return
+	out, err := build.ExeAsync(cmdString, ".", cmdEnv, false)
+	if err != nil {
+		core.Debug("Error while executing artisan package function using command [ %s ] \n [%s ] \n", cmdString, err)
+		os.RemoveAll(path4Artisan)
+		return err
+	} else {
+		msg := fmt.Sprintf("%s [%s %s ] : [ %s ] \n", "Result of executing artisan package function using command", cmd.Package, cmd.Function, out)
+		fmt.Printf(msg)
+	}
+
+	os.RemoveAll(path4Artisan)
 	return nil
 }
