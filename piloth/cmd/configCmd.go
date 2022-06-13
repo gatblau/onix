@@ -48,7 +48,7 @@ func (c *ConfigCmd) Run(cmd *cobra.Command, args []string) {
         // prints the all host information
         i, _ := json.MarshalIndent(hostInfo, "", "  ")
         // prints the host information
-        fmt.Printf("%s\n", i)
+        fmt.Printf("%s", i)
     case 1:
         if strings.ToUpper(args[0]) == "ALL" {
             i, _ := json.MarshalIndent(hostInfo, "", "  ")
