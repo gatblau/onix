@@ -53,7 +53,7 @@ func (c *ConfigCmd) Run(cmd *cobra.Command, args []string) {
         if strings.ToUpper(args[0]) == "ALL" {
             i, _ := json.MarshalIndent(hostInfo, "", "  ")
             // prints the host information
-            fmt.Printf("%s\n", i)
+            fmt.Printf("%s", i)
         } else if args[0] == "host-uuid" {
             fmt.Printf("%s\n", hostInfo.HostUUID)
         } else if args[0] == "mac-addr" {
@@ -90,7 +90,7 @@ func hostUUID() string {
     // prints the host UUID
     ak, err = core2.LoadActivationKey()
     if err != nil {
-        core.InfoLogger.Printf("Host UUID is unknown: %s\n")
+        core.InfoLogger.Printf("Host UUID is unknown: %s\n", err)
         return "unknown"
     }
     return ak.HostUUID
