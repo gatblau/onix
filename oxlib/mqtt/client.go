@@ -1,4 +1,4 @@
-package msgclient
+package mqtt
 
 import (
 	"crypto/tls"
@@ -17,13 +17,13 @@ import (
 
 //type OnMessageReceived (client mqtt.Client, message mqtt.Message) func
 // Msg client client wrapper
-type MsgClient struct {
+type Client struct {
 	conf *Conf
 	mq   mqtt.Client
 }
 
 var (
-	mqc *MsgClient
+	mqc *Client
 )
 
 type connstatus struct {
@@ -32,10 +32,10 @@ type connstatus struct {
 }
 
 //MsgClient construct a new MsgClient with defaut configuration
-func Client() *MsgClient {
+func BuildClient() *Client {
 	var (
 		err    error
-		newmqc *MsgClient
+		newmqc *Client
 	)
 	if newmqc == nil {
 		newmqc, err = newMsgClient(new(Conf))
@@ -74,18 +74,18 @@ func buildClientOptions(c *Conf) *mqtt.ClientOptions {
 }
 
 //func newMsgClient(c *Conf, f OnMessageReceived) (*MsgClient, error) {
-func newMsgClient(c *Conf) (*MsgClient, error) {
+func newMsgClient(c *Conf) (*Client, error) {
 	connOpts := buildClientOptions(c)
 	core.Debug("build client option for mqtt client ")
 	client := mqtt.NewClient(connOpts)
 	core.Debug("new mqtt client created")
-	return &MsgClient{
+	return &Client{
 		conf: c,
 		mq:   client,
 	}, nil
 }
 
-func (mqc *MsgClient) Publish(topic, msg string) error {
+func (mqc *Client) Publish(topic, msg string) error {
 	//TODO boolean retain or not to be fixed
 	qos := mqc.conf.getConfOxMsgBrokerQoS()
 	q := &qos
@@ -98,7 +98,7 @@ func (mqc *MsgClient) Publish(topic, msg string) error {
 	}
 }
 
-func (mqc *MsgClient) Subscribe(handler mqtt.MessageHandler) error {
+func (mqc *Client) Subscribe(handler mqtt.MessageHandler) error {
 	qos := mqc.conf.getConfOxMsgBrokerQoS()
 	q := &qos
 	topic := mqc.conf.getConfOxMsgBrokerTopic()
@@ -110,7 +110,7 @@ func (mqc *MsgClient) Subscribe(handler mqtt.MessageHandler) error {
 	return nil
 }
 
-func (mqc *MsgClient) Start(waitInSeconds int) error {
+func (mqc *Client) Start(waitInSeconds int) error {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
@@ -157,6 +157,6 @@ func (mqc *MsgClient) Start(waitInSeconds int) error {
 	return nil
 }
 
-func (mqc *MsgClient) IsConnected() bool {
+func (mqc *Client) IsConnected() bool {
 	return mqc.mq.IsConnected()
 }

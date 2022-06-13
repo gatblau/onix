@@ -14,7 +14,7 @@ import (
 
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/oxlib/httpserver"
-	m "github.com/gatblau/onix/oxlib/msgclient"
+	m "github.com/gatblau/onix/oxlib/mqtt"
 	"github.com/gorilla/mux"
 )
 
@@ -41,27 +41,11 @@ func main() {
 		er := launchBroker()
 		connstatus <- er
 	}()
-	/*
-		go func() {
-			fmt.Println("launching broker")
-			connstatus <- true
-		}()*/
-	/*
-		s.Jobs = func() error {
-			go func() {
-				fmt.Println("launching broker")
-				_, er := launchBroker()
-				connstatus <- true
-				//TODO need to fix this dead lock problem
-				if er != nil {
-					core.Debug("conn failed .....")
-					log.Fatalf("ERROR: mqtt client failed to connect broker : %s \n", er)
-				}
-			}()
-			return nil
-		}*/
+	// not using s.Jobs to executive above go routine, because it gets into deadlock condition
+	// why because, below select statement wait for data from connstatus channel and data in
+	// connstatus channel is set when above function is called from s.Jobs, and s.Jobs is called
+	// from s.Serve(), where the code never reached
 
-	//fmt.Println("2 am here")
 	select {
 	case err := <-connstatus:
 		{
@@ -75,7 +59,7 @@ func main() {
 }
 
 func launchBroker() error {
-	mqc := m.Client()
+	mqc := m.BuildClient()
 	err := mqc.Start(30)
 	if err != nil {
 		return err

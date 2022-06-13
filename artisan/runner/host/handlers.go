@@ -200,7 +200,9 @@ func executeWebhookFlowHandler(w http.ResponseWriter, r *http.Request) {
 	os.RemoveAll(path)
 }
 
-//TODO documentation
+//eventMessageHandler handle the message received from mqtt broker process it by
+// retrieving the comman spec in cmdb using the key from message and execute that
+// command.
 func eventMessageHandler(c mqtt.Client, m mqtt.Message) {
 	k := getItemKey(m)
 	t, err := core.NewTempDir(artHome)
@@ -211,6 +213,8 @@ func eventMessageHandler(c mqtt.Client, m mqtt.Message) {
 	os.RemoveAll(t)
 }
 
+//getItemKey will extract the command key from the message received.
+//message content will be of the format notifyType, changeType, itemKey
 func getItemKey(m mqtt.Message) string {
 	p := string(m.Payload())
 	key := p[strings.LastIndex(p, ",")+1:]
@@ -218,6 +222,9 @@ func getItemKey(m mqtt.Message) string {
 	return key
 
 }
+
+//getRunFx will return implementation of runFx type based of whether run time has to be used or
+//not while executing the artisan function
 func getRunFx(useRuntime bool) runFx {
 	if useRuntime == true {
 		return func(path string, s *flow.Step, env *merge.Envar) error {
@@ -241,6 +248,9 @@ func getRunFx(useRuntime bool) runFx {
 	}
 }
 
+//executeFlow will execute the input flow using the path where artisan package is
+//opened. Any error occurred is returned by the function and also posted into the
+// http response writer
 func executeFlow(path string, f *flow.Flow, w http.ResponseWriter) error {
 
 	var env *merge.Envar
@@ -277,6 +287,7 @@ func executeFlow(path string, f *flow.Flow, w http.ResponseWriter) error {
 	return nil
 }
 
+//deleteFolderContents will delete execution path where artisan package is opened and executed
 func deleteFolderContents(path string) error {
 	contents, err := filepath.Glob(path)
 	if err != nil {
@@ -291,6 +302,7 @@ func deleteFolderContents(path string) error {
 	return nil
 }
 
+//getCredentials retrieve the credentials from environment and return it in username:password format
 func getCredentials(e *merge.Envar) (string, error) {
 	usr := e.Vars["ART_REG_USER"]
 	pwd := e.Vars["ART_REG_PWD"]
@@ -305,6 +317,8 @@ func getCredentials(e *merge.Envar) (string, error) {
 	}
 }
 
+//gitClone will close the repository into the temporary execution path, during the
+// process if any error occured is returned by the function
 func gitClone(path string, g *flow.Git) error {
 	fmt.Printf("git struts content is \n %+v\n", g)
 	var opts *git.CloneOptions
@@ -342,6 +356,8 @@ func gitClone(path string, g *flow.Git) error {
 	return err
 }
 
+//openArtisanPackage will open the artisan package for given Step at given temporary
+// execution path
 func openArtisanPackage(p string, s *flow.Step) error {
 	i := s.Input
 	var env *merge.Envar
@@ -363,7 +379,11 @@ func openArtisanPackage(p string, s *flow.Step) error {
 	return nil
 }
 
-func executeCommand(cmdkey, path4Artisan string) error {
+//executeCommand execute the command spec retrived from cmdb based on command key provided with in the
+// input parameter, if command execution is unsuccessful an error is returned. The executionPath is
+//provided where the artisan package is temporarly is extracted and then command is executed. In a special
+// case the execution path may contain context folder which is used to share data between artisan packages.
+func executeCommand(cmdkey, executionPath string) error {
 	fmt.Println("creating Api instance.....")
 	api := o.Api()
 	cmd, err := api.GetCommand(cmdkey)
@@ -388,18 +408,18 @@ func executeCommand(cmdkey, path4Artisan string) error {
 		cmdEnv.Vars["ARTISAN_DEBUG"] = "true"
 	}
 
-	cmdString := fmt.Sprintf("art %s -u %s:%s %s %s --path=%s", "exe", cmd.User, cmd.Pwd, cmd.Package, cmd.Function, path4Artisan)
+	cmdString := fmt.Sprintf("art %s -u %s:%s %s %s --path=%s", "exe", cmd.User, cmd.Pwd, cmd.Package, cmd.Function, executionPath)
 	// run and return
 	out, err := build.ExeAsync(cmdString, ".", cmdEnv, false)
 	if err != nil {
 		core.Debug("Error while executing artisan package function using command [ %s ] \n [%s ] \n", cmdString, err)
-		os.RemoveAll(path4Artisan)
+		os.RemoveAll(executionPath)
 		return err
 	} else {
 		msg := fmt.Sprintf("%s [%s %s ] : [ %s ] \n", "Result of executing artisan package function using command", cmd.Package, cmd.Function, out)
 		fmt.Printf(msg)
 	}
 
-	os.RemoveAll(path4Artisan)
+	os.RemoveAll(executionPath)
 	return nil
 }
