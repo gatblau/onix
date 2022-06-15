@@ -343,7 +343,7 @@ func PullSpec(opts PullOptions) error {
 			return parseErr
 		}
 		core.InfoLogger.Printf("pulling => %s\n", pkg)
-		local.Pull(p, opts.SourceCreds)
+		local.Pull(p, opts.SourceCreds, false)
 	}
 	for _, image := range spec.Images {
 		core.InfoLogger.Printf("pulling => %s\n", image)
@@ -401,7 +401,7 @@ func PushSpec(opts PushOptions) error {
 			}
 			// push to remote
 			core.InfoLogger.Printf("pushing => '%s'\n", tgtNameStr)
-			err = local.Push(tgtName, opts.User)
+			err = local.Push(tgtName, opts.User, false)
 			if err != nil {
 				return err
 			}

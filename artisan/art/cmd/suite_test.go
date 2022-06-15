@@ -69,7 +69,7 @@ func TestPush(t *testing.T) {
 	if err != nil {
 		t.FailNow()
 	}
-	err = reg.Push(name, "admin:nCWXqYwqORTf5doc")
+	err = reg.Push(name, "admin:nCWXqYwqORTf5doc", false)
 	if err != nil {
 		t.Errorf(err.Error())
 		t.FailNow()
@@ -82,7 +82,7 @@ func TestPull(t *testing.T) {
 	if err != nil {
 		t.FailNow()
 	}
-	reg.Pull(name, "admin:admin")
+	reg.Pull(name, "admin:admin", false)
 }
 
 func TestRLs(t *testing.T) {
@@ -184,6 +184,14 @@ func TestRemove(t *testing.T) {
 		fmt.Println(s)
 	}
 	err := r.Remove(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRemoveRemote(t *testing.T) {
+	r, _ := registry.NewRemoteRegistry("localhost:8080", "admin", "admin", "")
+	err := r.RemoveByNameOrId([]string{"cfe1761845c7", "fb7d78733eaf"})
 	if err != nil {
 		t.Fatal(err)
 	}

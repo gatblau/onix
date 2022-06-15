@@ -463,7 +463,7 @@ func (r *LocalRegistry) ListQ() {
 	core.CheckErr(err, "failed to flush output")
 }
 
-func (r *LocalRegistry) Push(name *core.PackageName, credentials string) error {
+func (r *LocalRegistry) Push(name *core.PackageName, credentials string, showWarnings bool) error {
 	// get a reference to the remote registry
 	api := r.api(name.Domain, r.ArtHome)
 	// get registry credentials
@@ -483,7 +483,9 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) error {
 		remotePackage, err2 = api.GetPackageInfo(name.Group, name.Name, localPackage.Id, uname, pwd, false)
 		if err2 == nil {
 			tls = false
-			core.WarningLogger.Printf("the connection to the registry is not secure, consider connecting to a TLS enabled registry\n")
+			if showWarnings {
+				core.WarningLogger.Printf("the connection to the registry is not secure, consider connecting to a TLS enabled registry\n")
+			}
 		} else {
 			if err2 != nil {
 				return fmt.Errorf("art push '%s' cannot retrieve remote package information: %s", name.String(), err2)
@@ -545,7 +547,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string) error {
 	return api.UploadPackage(name, localPackage.FileRef, zipfile, jsonfile, pack, uname, pwd, tls, r.ArtHome)
 }
 
-func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Package {
+func (r *LocalRegistry) Pull(name *core.PackageName, credentials string, showWarnings bool) *Package {
 	// get a reference to the remote registry
 	api := r.api(name.Domain, r.ArtHome)
 	// get registry credentials
@@ -573,7 +575,9 @@ func (r *LocalRegistry) Pull(name *core.PackageName, credentials string) *Packag
 			// switches tls off
 			tls = false
 			// issue warning
-			core.WarningLogger.Printf("artisan registry does not use TLS: the connection to the registry is not secure\n")
+			if showWarnings {
+				core.WarningLogger.Printf("the connection to the registry is not secure, consider connecting to a TLS enabled registry\n")
+			}
 		} else {
 			core.CheckErr(err2, "art pull '%s' cannot retrieve repository information from registry", name.String())
 		}
@@ -720,7 +724,7 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetP
 	// if not found locally
 	if pkg == nil {
 		// pull it
-		pkg = r.Pull(name, credentials)
+		pkg = r.Pull(name, credentials, true)
 	}
 	// get the package seal
 	seal, err := r.GetSeal(pkg)
@@ -980,7 +984,7 @@ func (r *LocalRegistry) ExportPackage(names []core.PackageName, sourceCreds, tar
 		repo = r.findRepository(&name)
 		// if not found locally, pull the package from remote (needs credentials)
 		if repo == nil {
-			pack = r.Pull(&name, sourceCreds)
+			pack = r.Pull(&name, sourceCreds, true)
 		} else {
 			pack = r.FindPackageByName(&name)
 		}
