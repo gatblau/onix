@@ -34,13 +34,13 @@ func TestExeC(t *testing.T) {
 	}
 	// launch a runtime to execute the function
 	err = run.ExeC(packageName, fxName, "admin:sss", "", false, env)
-	i18n.Err(err, i18n.ERR_CANT_EXEC_FUNC_IN_PACKAGE, fxName, packageName)
+	i18n.Err("", err, i18n.ERR_CANT_EXEC_FUNC_IN_PACKAGE, fxName, packageName)
 }
 
 func TestExe(t *testing.T) {
 	packageName, err := core.ParseName("test")
 	fxName := "t1"
-	builder := build.NewBuilder()
+	builder := build.NewBuilder(ArtHome)
 	core.CheckErr(err, "cannot initialise builder")
 	env, err := merge.NewEnVarFromFile(".env")
 	if err != nil {
@@ -53,18 +53,18 @@ func TestExe(t *testing.T) {
 
 func TestBuild(t *testing.T) {
 	packageName, _ := core.ParseName("test")
-	builder := build.NewBuilder()
+	builder := build.NewBuilder(ArtHome)
 	builder.Build(".", "", "", packageName, "", false, false, "")
 }
 
 func TestRunC(t *testing.T) {
-	run, err := runner.NewFromPath(".")
+	run, err := runner.NewFromPath(".", ArtHome)
 	core.CheckErr(err, "cannot initialise runner")
 	err = run.RunC("deploy", false, merge.NewEnVarFromSlice([]string{}), "")
 }
 
 func TestPush(t *testing.T) {
-	reg := registry.NewLocalRegistry()
+	reg := registry.NewLocalRegistry(ArtHome)
 	name, err := core.ParseName("localhost:8082/test/testpk")
 	if err != nil {
 		t.FailNow()
@@ -77,7 +77,7 @@ func TestPush(t *testing.T) {
 }
 
 func TestPull(t *testing.T) {
-	reg := registry.NewLocalRegistry()
+	reg := registry.NewLocalRegistry(ArtHome)
 	name, err := core.ParseName("localhost:8082/gatblau/tools/artisan")
 	if err != nil {
 		t.FailNow()
@@ -86,13 +86,13 @@ func TestPull(t *testing.T) {
 }
 
 func TestRLs(t *testing.T) {
-	reg, _ := registry.NewRemoteRegistry("localhost:8080", "admin", "adm1n")
+	reg, _ := registry.NewRemoteRegistry("localhost:8080", "admin", "adm1n", ArtHome)
 	reg.List(false)
 }
 
 func TestVars(t *testing.T) {
 	env, _ := merge.NewEnVarFromFile(".env")
-	builder := build.NewBuilder()
+	builder := build.NewBuilder(ArtHome)
 	builder.Run("test", ".", false, env)
 }
 
@@ -134,7 +134,7 @@ func checkErr(err error, t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	builder := build.NewBuilder()
+	builder := build.NewBuilder(ArtHome)
 	// add the build file level environment variables
 	env := merge.NewEnVarFromSlice(os.Environ())
 	// execute the function
@@ -160,7 +160,7 @@ func TestSave(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	r := registry.NewLocalRegistry()
+	r := registry.NewLocalRegistry(ArtHome)
 	err = r.ExportPackage(names, "", "./export", "")
 	if err != nil {
 		t.Error(err)
@@ -169,16 +169,16 @@ func TestSave(t *testing.T) {
 
 func TestImport(t *testing.T) {
 	// create a local registry
-	r := registry.NewLocalRegistry()
+	r := registry.NewLocalRegistry(ArtHome)
 	// import the tar archive(s)
-	err := r.Import([]string{"../archive.tar"}, "", "", true)
+	err := r.Import([]string{"../archive.tar"}, "", "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestRemove(t *testing.T) {
-	r := registry.NewLocalRegistry()
+	r := registry.NewLocalRegistry(ArtHome)
 	p := r.AllPackages()
 	for _, s := range p {
 		fmt.Println(s)

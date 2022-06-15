@@ -897,7 +897,10 @@ func (r *LocalRegistry) Remove(names []string) error {
 		// if a package with the name was found
 		if pkg != nil {
 			// remove the package name (if there is not more associated names then removes the package files)
-			return r.removeByName(pkgName)
+			err = r.removeByName(pkgName)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
