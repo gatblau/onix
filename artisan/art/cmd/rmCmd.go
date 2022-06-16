@@ -58,7 +58,8 @@ art rm -r localhost:8081 -u <user>:<pwd> $(art ls -r localhost:8081 -u <user>:<p
 
 func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 	// check one or more package names have been provided if remove all is not specified
-	if len(args) == 0 && !c.all || len(args) == 0 && len(c.filter) == 0 {
+	if len(args) == 0 && !c.all || // local or remote registry, specific package deletion but no args (packages defined)
+		len(args) == 0 && len(c.filter) == 0 && len(c.registry) > 0 { // remote registry, no filter and no packages
 		core.RaiseErr("missing name(s) of the package(s) to remove")
 	}
 	// cannot provide all flag and package name
