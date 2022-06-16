@@ -500,6 +500,21 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, showWar
 			i18n.Printf(r.ArtHome, i18n.INFO_NOTHING_TO_PUSH)
 			return nil
 		} else {
+			// check if another package has the same tag
+			repo, err2, code := api.GetRepositoryInfo(name.Group, name.Name, uname, pwd, false)
+			if err2 != nil {
+				return fmt.Errorf("cannot get remote repository information, the remote registry responsed with HTTP status %d: %s", code, err)
+			}
+			// is the tag in the repo already?
+			if pkg, exists := repo.GetTag(name.Tag); exists {
+				// then remove the tag from the package
+				pkg.Tags = removeItem(pkg.Tags, name.Tag)
+				// update remote package info
+				err3 := api.UpsertPackageInfo(name, pkg, uname, pwd, false)
+				if err3 != nil {
+					return fmt.Errorf("cannot untag remote package: %s", err3)
+				}
+			}
 			// if the package has a different tag then the metadata has to be updated to include the new tag
 			remotePackage.Tags = append(remotePackage.Tags, name.Tag)
 			err = api.UpsertPackageInfo(name, remotePackage, uname, pwd, tls)

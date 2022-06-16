@@ -65,11 +65,11 @@ func TestRunC(t *testing.T) {
 
 func TestPush(t *testing.T) {
 	reg := registry.NewLocalRegistry(ArtHome)
-	name, err := core.ParseName("localhost:8082/test/testpk")
+	name, err := core.ParseName("localhost:8080/lib/test1")
 	if err != nil {
 		t.FailNow()
 	}
-	err = reg.Push(name, "admin:nCWXqYwqORTf5doc", false)
+	err = reg.Push(name, "admin:admin", false)
 	if err != nil {
 		t.Errorf(err.Error())
 		t.FailNow()
