@@ -164,6 +164,7 @@ func (t *TemplMerger) mergeART(path string, temp []byte, env Envar) ([]byte, err
 		"item":   ctx.Item,
 		"var":    ctx.Var,
 		"having": ctx.GroupExists,
+		"exists": ctx.Exists,
 	}).Parse(string(temp))
 	if err != nil {
 		return nil, err

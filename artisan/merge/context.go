@@ -14,6 +14,7 @@ import (
 
 // Context the merge context for artisan templates .art
 type Context struct {
+	env    Envar
 	loader loader
 	// the selected variable group for a range
 	currentGroup string
@@ -23,10 +24,16 @@ type Context struct {
 
 func NewContext(env Envar) (*Context, error) {
 	ctx := &Context{
+		env:    env,
 		loader: NewLoader(env),
 		Items:  []Set{},
 	}
 	return ctx, nil
+}
+
+func (c *Context) Exists(variableName reflect.Value) reflect.Value {
+	_, exists := c.env.Vars[variableName.String()]
+	return reflect.ValueOf(exists)
 }
 
 // Var return the value of a variable
