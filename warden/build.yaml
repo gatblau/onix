@@ -1,21 +1,36 @@
 ---
 labels:
   author: onix@gatblau.org
-  application: Onix Warden Proxy
-  description: A traffic proxy providing traffic control and store and forward.
-  architecture: amd64
+  application: Onix Warden HTTP Proxy
+  description: An http traffic proxy providing traffic proxying and inspection.
 
 env:
   CGO_ENABLED: 0
-  GOARCH: amd64
   REPO_NAME: quay.io/gatblau
   APP_VERSION: 0.0.4
-  LIFECYCLE_STAGE: alpha
-  ART_RUNNER: warden
+  BUILD_VERSION: ${APP_VERSION}-${ARTISAN_REF}
+  APP_NAME: warden
 
 functions:
-  - name: set-version
-    description: set-version on the parent build, updating global version
+  - name: build
+    description: build the proxy
     run:
-      - art run set-version ../
+      - go build -ldflags="-X 'github.com/gatblau/onix/warden/lib.Version=${BUILD_VERSION} (community)'" -o bin/${GOOS}/${GOARCH}/${APP_NAME} -v
+
+
+  - name: build-mac
+    description: build for MacOSX
+    env:
+      GOOS: darwin
+      GOARCH: amd64
+    run:
+      - $(build)
+
+  - name: build-linux
+    description: build for Linux
+    env:
+      GOOS: linux
+      GOARCH: amd64
+    run:
+      - $(build)
 ...

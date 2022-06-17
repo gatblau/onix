@@ -7,16 +7,12 @@
 */
 package main
 
-import (
-	"github.com/gatblau/onix/warden/server"
-	"github.com/gorilla/mux"
-)
+import "github.com/gatblau/onix/warden/cmd"
 
 func main() {
-	// creates a generic http server
-	s := server.New("onix/warden")
-	// add handlers
-	s.Serve(func(router *mux.Router) {
-		router.HandleFunc("/list", listHandler).Methods("GET")
-	})
+	rootCmd := cmd.InitialiseRootCmd()
+
+	// Execute adds all child commands to the root command and sets flags appropriately.
+	// This is called by main.main(). It only needs to happen once to the rootCmd.
+	rootCmd.Cmd.Execute()
 }
