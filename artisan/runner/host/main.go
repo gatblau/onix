@@ -35,24 +35,27 @@ func main() {
 		core.Debug("new handler is registered...")
 	}
 
-	connstatus := make(chan error, 1)
-	go func() {
+	s.jobs = func() {
 		fmt.Println("launching broker")
-		er := launchBroker()
-		connstatus <- er
-	}()
-	// not using s.Jobs to executive above go routine, because it gets into deadlock condition
-	// why because, below select statement wait for data from connstatus channel and data in
-	// connstatus channel is set when above function is called from s.Jobs, and s.Jobs is called
-	// from s.Serve(), where the code never reached
+	}
 
-	select {
-	case err := <-connstatus:
-		{
-			if err != nil {
-				log.Fatalf("ERROR: mqtt client failed to connect broker : %s \n", err)
-			}
+	if m.IsMqttConfigAvailable() {
+		connstatus := make(chan error, 1)
+		go func() {
+			fmt.Println("launching broker")
+			er := launchBroker()
+			connstatus <- er
+		}()
+		// not using s.Jobs to executive above go routine, because it gets into deadlock condition
+		// why because, below select statement wait for data from connstatus channel and data in
+		// connstatus channel is set when above function is called from s.Jobs, and s.Jobs is called
+		// from s.Serve(), where the code never reached
+		err := <-connstatus
+		if err != nil {
+			log.Fatalf("ERROR: mqtt client failed to connect broker : %s \n", err)
 		}
+	} else {
+		core.WarningLogger.Printf("MQTT broker url is missing so skipping MQTT client setup")
 	}
 	core.Debug("starting http server")
 	s.Serve()

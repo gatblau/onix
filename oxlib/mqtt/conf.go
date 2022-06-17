@@ -102,3 +102,10 @@ func (c *Conf) getValue(key ConfKey) string {
 	}
 	return value
 }
+
+func IsMqttConfigAvailable() bool {
+	if len(os.Getenv(string(ConfOxMsgBrokerUri))) > 0 {
+		return true
+	}
+	return false
+}
