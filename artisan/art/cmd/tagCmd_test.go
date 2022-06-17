@@ -19,7 +19,7 @@ import (
 // and the existing tag is renamed so that there is no dangling packages
 func TestTagV1ToLatestExist(t *testing.T) {
 	// pre-conditions
-	reg := registry.NewLocalRegistry()
+	reg := registry.NewLocalRegistry(ArtHome)
 	// cleanup
 	testLatest, _ := core.ParseName("test:latest")
 	testV1, _ := core.ParseName("test:V1")
@@ -27,14 +27,14 @@ func TestTagV1ToLatestExist(t *testing.T) {
 	// TODO: ensure all packages are removed
 	reg.Remove([]string{"test:latest", "test:V1"})
 	// build latest
-	builder := build.NewBuilder()
+	builder := build.NewBuilder(ArtHome)
 	builder.Build(".", "", "", testLatest, "test1", false, false, "")
 	// build V1
 	builder.Build(".", "", "", testV1, "test1", false, false, "")
 	// reload the registry
 	reg.Load()
-	testV1PId := reg.FindPackage(testV1).Id
-	testLatestPId := reg.FindPackage(testLatest).Id
+	testV1PId := reg.FindPackageByName(testV1).Id
+	testLatestPId := reg.FindPackageByName(testLatest).Id
 	// execute action tag
 	reg.Tag("test:V1", "test:latest")
 	// reload the registry
@@ -57,13 +57,13 @@ func TestTagV1ToLatestExist(t *testing.T) {
 
 // TestTagV1ToLatest test that a package with a V1 tag can be tagged to latest when a previous latest tag does not exist
 func TestTagV1ToLatest(t *testing.T) {
-	reg := registry.NewLocalRegistry()
+	reg := registry.NewLocalRegistry(ArtHome)
 	// cleanup
 	testLatest, _ := core.ParseName("test:latest")
 	testV1, _ := core.ParseName("test:V1")
 	reg.Remove([]string{"test:latest", "test:V1"})
 	// build latest
-	builder := build.NewBuilder()
+	builder := build.NewBuilder(ArtHome)
 	// build V1
 	builder.Build(".", "", "", testV1, "test1", false, false, "")
 	// reload the registry
@@ -71,10 +71,10 @@ func TestTagV1ToLatest(t *testing.T) {
 	// tag
 	reg.Tag("test:V1", "test:latest")
 	// check post-conditions
-	if reg.FindPackage(testLatest) == nil {
+	if reg.FindPackageByName(testLatest) == nil {
 		t.Fatalf("test:latest package not found")
 	}
-	if reg.FindPackage(testV1) == nil {
+	if reg.FindPackageByName(testV1) == nil {
 		t.Fatalf("test:V1 package not found")
 	}
 }

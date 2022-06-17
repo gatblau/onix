@@ -87,7 +87,7 @@ func (r *Runner) ExeC(packageName, fxName, credentials, network string, interact
 	// get a local registry handle
 	local := registry.NewLocalRegistry(r.artHome)
 	// ensure the package is in the local registry
-	local.Pull(name, credentials)
+	local.Pull(name, credentials, false)
 	// get the package manifest
 	m := local.GetManifest(name)
 	// if the manifest exports the function

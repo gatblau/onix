@@ -261,7 +261,7 @@ func (r *Api) getAllRepositoryInfo(user, pwd string, tls bool) ([]Repository, er
 	return repo, err, resp.StatusCode
 }
 
-func (r *Api) GetAllRepositoryInfo(user, pwd string) ([]Repository, error, int, bool) {
+func (r *Api) GetAllRepositoryInfo(user, pwd string, showWarnings bool) ([]Repository, error, int, bool) {
 	tls := true
 	repo, err, code := r.getAllRepositoryInfo(user, pwd, tls)
 	if err != nil {
@@ -270,7 +270,9 @@ func (r *Api) GetAllRepositoryInfo(user, pwd string) ([]Repository, error, int, 
 		repo, err2, code = r.getAllRepositoryInfo(user, pwd, false)
 		if err2 == nil {
 			tls = false
-			core.WarningLogger.Printf("the connection to the registry is not secure, consider connecting to a TLS enabled registry\n")
+			if showWarnings {
+				core.WarningLogger.Printf("the connection to the registry is not secure, consider connecting to a TLS enabled registry\n")
+			}
 		} else {
 			if err2 != nil {
 				return nil, fmt.Errorf("cannot retrieve remote registry information: %s", err2), http.StatusInternalServerError, tls

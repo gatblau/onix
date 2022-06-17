@@ -46,8 +46,9 @@ func NewRemoteRegistry(domain, user, pwd, artHome string) (*RemoteRegistry, erro
 
 // List all packages in the remote registry
 func (r *RemoteRegistry) List(quiet bool) {
+	showWarnings := !quiet
 	// get a reference to the remote registry
-	repos, err, _, _ := r.api.GetAllRepositoryInfo(r.user, r.pwd)
+	repos, err, _, _ := r.api.GetAllRepositoryInfo(r.user, r.pwd, showWarnings)
 	core.CheckErr(err, "cannot list remote registry packages")
 	if quiet {
 		// get a table writer for the stdout
@@ -86,9 +87,9 @@ func (r *RemoteRegistry) List(quiet bool) {
 	}
 }
 
-// Remove one or more packages from a remote registry
-func (r *RemoteRegistry) Remove(filter string) error {
-	repos, err, _, tls := r.api.GetAllRepositoryInfo(r.user, r.pwd)
+// RemoveByNameFilter remove one or more packages whose name matches the filter regex
+func (r *RemoteRegistry) RemoveByNameFilter(filter string) error {
+	repos, err, _, tls := r.api.GetAllRepositoryInfo(r.user, r.pwd, true)
 	if err != nil {
 		return err
 	}
@@ -131,6 +132,75 @@ func (r *RemoteRegistry) Remove(filter string) error {
 						}
 					}
 					tagCount--
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// RemoveByNameOrId remove any package matching the passed in name or id
+func (r *RemoteRegistry) RemoveByNameOrId(nameOrId []string) error {
+	repos, err, _, tls := r.api.GetAllRepositoryInfo(r.user, r.pwd, true)
+	if err != nil {
+		return err
+	}
+	for _, repo := range repos {
+		for _, p := range repo.Packages {
+			var tagCount = len(p.Tags)
+			// for each name or Id provided
+			for _, nameId := range nameOrId {
+				for _, tag := range p.Tags {
+					// construct a package name:tag
+					name, err1 := core.ParseName(fmt.Sprintf("%s/%s:%s", r.domain, repo.Repository, tag))
+					if err1 != nil {
+						return err1
+					}
+					// check a match for package Id first
+					if strings.Contains(p.Id, nameId) {
+						// remove the package files by package Id
+						if err = r.api.DeletePackage(name.Group, name.Name, name.Tag, r.user, r.pwd, tls); err != nil {
+							return err
+						}
+						// this would delete any tags with the package
+						if err = r.api.DeletePackageInfo(name.Group, name.Name, p.Id, r.user, r.pwd, tls); err != nil {
+							return err
+						}
+						// so if more than 1 tag exist, no need to loop again
+						if len(p.Tags) > 1 {
+							break
+						}
+					} else { // check for a match on package name:tag
+						if nameId == name.FullyQualifiedNameTag() {
+							// delete by name:tag here
+							// if more than one tag exist, remove the tag
+							if tagCount > 1 {
+								// get the package metadata
+								pInfo, err3 := r.api.GetPackageInfo(name.Group, name.Name, p.Id, r.user, r.pwd, tls)
+								if err3 != nil {
+									return err3
+								}
+								// remove the tag
+								pInfo.RemoveTag(tag)
+								// push the metadata back to the remote
+								err3 = r.api.UpsertPackageInfo(name, pInfo, r.user, r.pwd, tls)
+								if err3 != nil {
+									return err3
+								}
+							}
+							// if we are hitting the last tag
+							if tagCount == 1 {
+								// remove the package files
+								if err = r.api.DeletePackage(name.Group, name.Name, tag, r.user, r.pwd, tls); err != nil {
+									return err
+								}
+								if err = r.api.DeletePackageInfo(name.Group, name.Name, p.Id, r.user, r.pwd, tls); err != nil {
+									return err
+								}
+							}
+							tagCount--
+						}
+					}
 				}
 			}
 		}
