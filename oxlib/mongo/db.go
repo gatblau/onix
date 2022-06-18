@@ -16,7 +16,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
-	"os"
 	"time"
 )
 
@@ -30,9 +29,9 @@ type Database struct {
 	options *options.ClientOptions
 }
 
-func New() *Database {
+func New(connString string) *Database {
 	return &Database{
-		options: options.Client().ApplyURI(getDbConnString()),
+		options: options.Client().ApplyURI(connString),
 	}
 }
 
@@ -40,17 +39,6 @@ func New() *Database {
 func ctx() (context.Context, context.CancelFunc) {
 	c, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	return c, cancel
-}
-
-// getDbConnString get the connection string to the MongoDb database
-// e.g. mongodb://localhost:27017
-// e.g. mongodb://user:password@127.0.0.1:27017/dbname?keepAlive=true&poolSize=30&autoReconnect=true&socketTimeoutMS=360000&connectTimeoutMS=360000
-func getDbConnString() string {
-	value := os.Getenv("DOORMAN_DB_CONN")
-	if len(value) == 0 {
-		panic("DOORMAN_DB_CONN not defined")
-	}
-	return value
 }
 
 // InsertObject insert a nameable object in the specified collection
