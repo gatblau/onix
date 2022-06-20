@@ -35,10 +35,6 @@ func main() {
 		core.Debug("new handler is registered...")
 	}
 
-	s.jobs = func() {
-		fmt.Println("launching broker")
-	}
-
 	if m.IsMqttConfigAvailable() {
 		connstatus := make(chan error, 1)
 		go func() {

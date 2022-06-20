@@ -17,6 +17,23 @@ input:
       default: true
       required: true
       type: string
+    - name: OX_MSGBROKER_INSECURE_SKIP_VERIFY
+      description: Whether to skip SSL insecure access to MQTT broker.
+      default: true
+      required: false
+      type: string  
+    - name: OX_MSGBROKER_TOPIC
+      description: MQTT topic to which the runner should listen for events/messages.
+      required: false
+      type: string
+    - name: OX_MSGBROKER_QoS
+      description: quality of service with respect to message delivery, valid values are 0 :- At most once, 1 :-At least once, 2 :-Exactly once.
+      required: false
+      type: string
+    - name: OX_MSGBROKER_URI
+      description: uri to connect to MQTT broker.
+      required: false
+      type: string              
   secret:
     - name: OX_WAPI_USER
       description: Onix wapi user name.
@@ -39,6 +56,24 @@ functions:
       secret:
         - OX_WAPI_USER
         - OX_WAPI_PWD
+
+  - name: start-standalone
+    description: start the stand alone service and also configure the service to start automatically when host is booted up.
+    export: true
+    run:
+      - sh -c 'sudo systemctl enable --now host-runner'
+
+  - name: stop-standalone
+    description: stop the host-runner service.
+    export: true
+    run:
+      - sh -c 'sudo systemctl stop host-runner'
+
+  - name: uninstall-standalone
+    description: delete the host-runner service.
+    export: true
+    run:
+      - sh -c './uninstall.sh'
 
   - name: install-basic
     description: install host-runner with basic profile.
@@ -68,12 +103,6 @@ functions:
       # under the tag minio-svc: in ${SERVICE_HOME}/docker-compose.yml
       - sh -c 'sed -i "/minio-svc:/a \    "command:" server --address \":9000\" --console-address \":9001\" /data/minio" ${SERVICE_HOME}/docker-compose.yml'
       - sh -c './install.sh'
-
-  - name: start-standalone
-    description: start the stand alone service and also enable the service to start automatically when host is booted up.
-    export: true
-    run:
-      - sh -c 'sudo systemctl enable --now host-runner'
 
   - name: start
     description: start the host-runner service along with additional services like cmdb, git, docker registry, basic aritsan regisrty application.
@@ -106,3 +135,4 @@ functions:
     description: create proper folder for runner setup and change the permission and ownership of folder.
     run:
       - sh -c './deploy/pre-install.sh'
+
