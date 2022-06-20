@@ -39,7 +39,7 @@ if [ -f "$FILE" ]; then
   export OX_WAPI_USER="$OX_SVC_WAPI_ADMIN_USER"
   export OX_WAPI_PWD="$OX_SVC_WAPI_ADMIN_PWD"
 fi
-art merge host-runner.service.tem
+art merge host-runner.service.art
 sudo chown root:root host-runner.service && sudo chmod 644 host-runner.service
 sudo mv host-runner.service /lib/systemd/system/host-runner.service
 
