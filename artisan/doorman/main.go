@@ -8,10 +8,24 @@
 
 package main
 
+import (
+	artCore "github.com/gatblau/onix/artisan/core"
+	"log"
+	"path/filepath"
+)
+
 var D *Doorman
 
 func main() {
+	if err := checkDoormanHome(); err != nil {
+		log.Fatalf("cannot launch  doorman, cannot write to file system: %s", err)
+	}
 	D = NewDoorman(NewDefaultProcFactory())
 	D.RegisterHandlers()
 	D.Start()
+}
+
+func checkDoormanHome() error {
+	path := filepath.Join(artCore.HomeDir(), ".doorman")
+	return artCore.EnsureRegistryPath(path)
 }
