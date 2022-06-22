@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	artCore "github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/doorman/db"
 	"github.com/gatblau/onix/artisan/release"
@@ -140,6 +141,10 @@ func (p *Process) Warn(format string, a ...interface{}) {
 
 // Start processing a pipeline
 func (p *Process) Start() {
+	if err := checkDoormanHome(); err != nil {
+		p.Error("cannot launch  doorman, cannot write to file system", err)
+		os.Exit(1)
+	}
 	go p.run()
 }
 
@@ -790,4 +795,9 @@ func getARN(s3Store *types.S3Store) *notification.Arn {
 		AccountID: accountId,
 		Resource:  resource,
 	}
+}
+
+func checkDoormanHome() error {
+	path := filepath.Join(artCore.HomeDir(), ".doorman")
+	return artCore.EnsureRegistryPath(path)
 }
