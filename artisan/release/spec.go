@@ -227,8 +227,7 @@ func ImportSpec(opts ImportOptions) (*Spec, error) {
 		if parseErr != nil {
 			return nil, err
 		}
-		err2 = builder.Execute(pkg, "import", "", "", opts.Verifier == nil, false, ".", false, merge.NewEnVarFromSlice([]string{}), opts.Verifier)
-		// _, err2 = build.Exe(fmt.Sprintf("art exe %s import", image), ".", merge.NewEnVarFromSlice([]string{}), false)
+		err2 = builder.Execute(pkg, "import", "", "", opts.Verifier == nil, false, "", false, merge.NewEnVarFromSlice([]string{}), opts.Verifier)
 		if err2 != nil {
 			return spec, fmt.Errorf("cannot import image %s: %s", image, err2)
 		}
