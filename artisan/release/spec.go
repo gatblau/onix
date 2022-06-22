@@ -222,11 +222,13 @@ func ImportSpec(opts ImportOptions) (*Spec, error) {
 			return spec, fmt.Errorf("cannot read %s.tar: %s", pkgName(image), err)
 		}
 		core.InfoLogger.Printf("loading => %s\n", image)
-		ignoreSigFlag := ""
-		if opts.Verifier == nil {
-			ignoreSigFlag = "-s"
+		builder := build.NewBuilder(opts.ArtHome)
+		pkg, parseErr := core.ParseName(image)
+		if parseErr != nil {
+			return nil, err
 		}
-		_, err2 = build.Exe(fmt.Sprintf("art exe %s import %s", image, ignoreSigFlag), ".", merge.NewEnVarFromSlice([]string{}), false)
+		err2 = builder.Execute(pkg, "import", "", "", opts.Verifier == nil, false, ".", false, merge.NewEnVarFromSlice([]string{}), opts.Verifier)
+		// _, err2 = build.Exe(fmt.Sprintf("art exe %s import", image), ".", merge.NewEnVarFromSlice([]string{}), false)
 		if err2 != nil {
 			return spec, fmt.Errorf("cannot import image %s: %s", image, err2)
 		}
