@@ -10,19 +10,14 @@ package app
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
-
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/oxlib/resx"
 	"github.com/google/uuid"
 	"gopkg.in/yaml.v2"
+	"os"
+	"path/filepath"
 )
 
 // loadSvcManFromImage extracts the service manifest from a docker image
@@ -100,10 +95,6 @@ func loadSvcManFromURI(svc *SvcRef, credentials string) (*SvcManifest, error) {
 	return m, nil
 }
 
-func isURL(uri string) bool {
-	return strings.HasPrefix(uri, "http://") || strings.HasPrefix(uri, "https://")
-}
-
 // return a temporary path and create the tmp folder
 func tmpPath(artHome string) (string, error) {
 	uuid.EnableRandPool()
@@ -117,25 +108,4 @@ func tmpPath(artHome string) (string, error) {
 		return "", err
 	}
 	return path, nil
-}
-
-// fetchFile fetches a file content from an url
-// authentication is done via uri scheme (i.e. https://username:password@domain/.../...)
-func fetchFile(uri string) ([]byte, error) {
-	client := http.Client{
-		Timeout: 60 * time.Second,
-	}
-	req, err := http.NewRequest("GET", uri, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := client.Do(req)
-	defer resp.Body.Close()
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode > 299 {
-		return nil, fmt.Errorf("cannot fetch '%s': %s\n", uri, resp.Status)
-	}
-	return ioutil.ReadAll(resp.Body)
 }
