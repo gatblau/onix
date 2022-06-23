@@ -555,6 +555,7 @@ func (p *Process) cleanSpec() error {
 }
 
 func (p *Process) cleanup() {
+	p.Info("cleaning up path %s", p.tmp)
 	os.RemoveAll(p.tmp)
 }
 

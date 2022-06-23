@@ -48,5 +48,5 @@ func (c *PushCmd) Run(cmd *cobra.Command, args []string) {
 	// create a local registry
 	local := registry.NewLocalRegistry("")
 	// attempt upload to remote repository
-	core.CheckErr(local.Push(packageName, c.credentials), i18n.Sprintf("", i18n.ERR_CANT_PUSH_PACKAGE))
+	core.CheckErr(local.Push(packageName, c.credentials, true), i18n.Sprintf("", i18n.ERR_CANT_PUSH_PACKAGE))
 }

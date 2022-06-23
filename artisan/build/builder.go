@@ -638,7 +638,7 @@ func (b *Builder) getBuildEnv() map[string]string {
 }
 
 // Execute an exported function in a package
-func (b *Builder) Execute(name *core.PackageName, function string, credentials string, certPath string, ignoreSignature bool, interactive bool, path string, preserveFiles bool, env *merge.Envar, v registry.Verifier) {
+func (b *Builder) Execute(name *core.PackageName, function string, credentials string, certPath string, ignoreSignature bool, interactive bool, path string, preserveFiles bool, env *merge.Envar, v registry.Verifier) error {
 	// get a local registry handle
 	local := registry.NewLocalRegistry(b.artHome)
 	// check the run path exist
@@ -662,7 +662,9 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 	a := local.FindPackageByName(name)
 	// get the package seal
 	seal, err := local.GetSeal(a)
-	core.CheckErr(err, "cannot get package seal")
+	if err != nil {
+		return fmt.Errorf("cannot get package seal: %s", err)
+	}
 	m := seal.Manifest
 	// stop execution if the package was built in an OS different from the executing OS
 	if runtime.GOOS == "windows" && m.OS != "windows" {
@@ -676,11 +678,15 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 		// if there is no instruction to preserve the open files
 		if !preserveFiles {
 			// remove the package files
-			os.RemoveAll(path)
+			err = os.RemoveAll(path)
+			if err != nil {
+				return fmt.Errorf("cannot cleanup build path: %s", err)
+			}
 		}
 	} else {
-		core.RaiseErr("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile\n", function)
+		return fmt.Errorf("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile\n", function)
 	}
+	return nil
 }
 
 type Signer interface {

@@ -1,0 +1,29 @@
+[Unit]
+Description=Host runner
+ConditionPathExists={{ var "RUNNER_HOME" }}
+After=network.target
+
+[Service]
+Type=simple
+User={{ var "RUNNER_UID" }}
+Group={{ var "RUNNER_GID" }}
+LimitNOFILE=1024
+
+Restart=on-failure
+RestartSec=10
+Environment="OX_WAPI_URI={{ var "OX_WAPI_URI" }}"
+Environment="OX_WAPI_PWD={{ var "OX_WAPI_PWD" }}"
+Environment="OX_WAPI_USER={{ var "OX_WAPI_USER" }}"
+Environment="OX_WAPI_INSECURE_SKIP_VERIFY={{ var "OX_WAPI_INSECURE_SKIP_VERIFY" }}"
+Environment="OX_HTTP_PORT={{ var "HOST_RUNNER_PORT" }}"
+{{ if exists "OX_MSGBROKER_URI" }}
+Environment="OX_MSGBROKER_INSECURE_SKIP_VERIFY={{ var "OX_MSGBROKER_INSECURE_SKIP_VERIFY" }}"
+Environment="OX_MSGBROKER_TOPIC={{ var "OX_MSGBROKER_TOPIC" }}"
+Environment="OX_MSGBROKER_QoS={{ var "OX_MSGBROKER_QoS" }}"
+Environment="OX_MSGBROKER_URI={{ var "OX_MSGBROKER_URI" }}"
+{{end}}
+WorkingDirectory={{ var "RUNNER_HOME" }}
+ExecStart={{ var "RUNNER_HOME" }}/host-runner
+
+[Install]
+WantedBy=multi-user.target

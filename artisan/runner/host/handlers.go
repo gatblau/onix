@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/flow"
@@ -57,19 +58,7 @@ type runFx func(path string, s *flow.Step, env *merge.Envar) error
 func executeCommandHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	api := o.Api()
 	cmdkey := vars["cmd-key"]
-	cmd, err := api.GetCommand(cmdkey)
-	if checkErr(w, fmt.Sprintf("%s: [ %s ]\n", "Error while getting command using cmd key ", cmdkey), err) {
-		return
-	}
-	if cmd == nil {
-		msg := fmt.Sprintf("No command item for item type ART_FX found in database for cmd key [ %s ] , please check if this item exists ", cmdkey)
-		fmt.Printf(msg)
-		http.Error(w, msg, http.StatusUnprocessableEntity)
-		return
-	}
-
 	body, err := ioutil.ReadAll(r.Body)
 	if checkErr(w, "Error while reading http request body ", err) {
 		return
@@ -87,31 +76,11 @@ func executeCommandHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get the variables in the host environment
-	hostEnv := merge.NewEnVarFromSlice(os.Environ())
-	// get the variables in the command
-	cmdEnv := merge.NewEnVarFromSlice(cmd.Env())
-	// if not containerised add PATH to execution environment
-	hostEnv.Merge(cmdEnv)
-	cmdEnv = hostEnv
-	// if running in verbose mode
-	if cmd.Verbose {
-		// add ARTISAN_DEBUG to execution environment
-		cmdEnv.Vars["ARTISAN_DEBUG"] = "true"
-	}
-
-	cmdString := fmt.Sprintf("art %s -u %s:%s %s %s --path=%s", "exe", cmd.User, cmd.Pwd, cmd.Package, cmd.Function, t)
-	// run and return
-	out, err := build.ExeAsync(cmdString, ".", cmdEnv, false)
-	if checkErr(w, fmt.Sprintf("Error while executing artisan package function using command [ %s ]", cmdString), err) {
+	err = executeCommand(cmdkey, t)
+	if checkErr(w, fmt.Sprintf("%s: [ %s ]\n", "Error while executing command for command key ", cmdkey), err) {
 		os.RemoveAll(t)
 		return
-	} else {
-		msg := fmt.Sprintf("%s [%s %s ] : [ %s ] \n", "Result of executing artisan package function using command", cmd.Package, cmd.Function, out)
-		fmt.Printf(msg)
 	}
-
-	os.RemoveAll(t)
 }
 
 // @Summary Execute an Artisan flow
@@ -231,6 +200,31 @@ func executeWebhookFlowHandler(w http.ResponseWriter, r *http.Request) {
 	os.RemoveAll(path)
 }
 
+//eventMessageHandler handle the message received from mqtt broker process it by
+// retrieving the comman spec in cmdb using the key from message and execute that
+// command.
+func eventMessageHandler(c mqtt.Client, m mqtt.Message) {
+	k := getItemKey(m)
+	t, err := core.NewTempDir(artHome)
+	err = executeCommand(k, t)
+	if err != nil {
+		fmt.Printf("failed to process event with item key [%s] : \n [%s] \n", k, err)
+	}
+	os.RemoveAll(t)
+}
+
+//getItemKey will extract the command key from the message received.
+//message content will be of the format notifyType, changeType, itemKey
+func getItemKey(m mqtt.Message) string {
+	p := string(m.Payload())
+	key := p[strings.LastIndex(p, ",")+1:]
+
+	return key
+
+}
+
+//getRunFx will return implementation of runFx type based of whether run time has to be used or
+//not while executing the artisan function
 func getRunFx(useRuntime bool) runFx {
 	if useRuntime == true {
 		return func(path string, s *flow.Step, env *merge.Envar) error {
@@ -254,6 +248,9 @@ func getRunFx(useRuntime bool) runFx {
 	}
 }
 
+//executeFlow will execute the input flow using the path where artisan package is
+//opened. Any error occurred is returned by the function and also posted into the
+// http response writer
 func executeFlow(path string, f *flow.Flow, w http.ResponseWriter) error {
 
 	var env *merge.Envar
@@ -290,6 +287,7 @@ func executeFlow(path string, f *flow.Flow, w http.ResponseWriter) error {
 	return nil
 }
 
+//deleteFolderContents will delete execution path where artisan package is opened and executed
 func deleteFolderContents(path string) error {
 	contents, err := filepath.Glob(path)
 	if err != nil {
@@ -304,6 +302,7 @@ func deleteFolderContents(path string) error {
 	return nil
 }
 
+//getCredentials retrieve the credentials from environment and return it in username:password format
 func getCredentials(e *merge.Envar) (string, error) {
 	usr := e.Vars["ART_REG_USER"]
 	pwd := e.Vars["ART_REG_PWD"]
@@ -318,6 +317,8 @@ func getCredentials(e *merge.Envar) (string, error) {
 	}
 }
 
+//gitClone will close the repository into the temporary execution path, during the
+// process if any error occured is returned by the function
 func gitClone(path string, g *flow.Git) error {
 	fmt.Printf("git struts content is \n %+v\n", g)
 	var opts *git.CloneOptions
@@ -355,6 +356,8 @@ func gitClone(path string, g *flow.Git) error {
 	return err
 }
 
+//openArtisanPackage will open the artisan package for given Step at given temporary
+// execution path
 func openArtisanPackage(p string, s *flow.Step) error {
 	i := s.Input
 	var env *merge.Envar
@@ -373,5 +376,50 @@ func openArtisanPackage(p string, s *flow.Step) error {
 	cmdStringErr := fmt.Sprintf("art %s %s -u %s ", "open", s.Package, "******:******")
 	msg := fmt.Sprintf("opened package using command [%s] at path [%s] with message", cmdStringErr, p, out)
 	fmt.Printf(msg)
+	return nil
+}
+
+//executeCommand execute the command spec retrived from cmdb based on command key provided with in the
+// input parameter, if command execution is unsuccessful an error is returned. The executionPath is
+//provided where the artisan package is temporarly is extracted and then command is executed. In a special
+// case the execution path may contain context folder which is used to share data between artisan packages.
+func executeCommand(cmdkey, executionPath string) error {
+	fmt.Println("creating Api instance.....")
+	api := o.Api()
+	cmd, err := api.GetCommand(cmdkey)
+	if err != nil {
+		core.Debug("Error while getting command using cmd key : [%s]", cmdkey)
+		return err
+	}
+	if cmd == nil {
+		return fmt.Errorf("No command item for item type ART_FX found in database for cmd key [ %s ] , please check if this item exists ", cmdkey)
+	}
+
+	// get the variables in the host environment
+	hostEnv := merge.NewEnVarFromSlice(os.Environ())
+	// get the variables in the command
+	cmdEnv := merge.NewEnVarFromSlice(cmd.Env())
+	// if not containerised add PATH to execution environment
+	hostEnv.Merge(cmdEnv)
+	cmdEnv = hostEnv
+	// if running in verbose mode
+	if cmd.Verbose {
+		// add ARTISAN_DEBUG to execution environment
+		cmdEnv.Vars["ARTISAN_DEBUG"] = "true"
+	}
+
+	cmdString := fmt.Sprintf("art %s -u %s:%s %s %s --path=%s", "exe", cmd.User, cmd.Pwd, cmd.Package, cmd.Function, executionPath)
+	// run and return
+	out, err := build.ExeAsync(cmdString, ".", cmdEnv, false)
+	if err != nil {
+		core.Debug("Error while executing artisan package function using command [ %s ] \n [%s ] \n", cmdString, err)
+		os.RemoveAll(executionPath)
+		return err
+	} else {
+		msg := fmt.Sprintf("%s [%s %s ] : [ %s ] \n", "Result of executing artisan package function using command", cmd.Package, cmd.Function, out)
+		fmt.Printf(msg)
+	}
+
+	os.RemoveAll(executionPath)
 	return nil
 }

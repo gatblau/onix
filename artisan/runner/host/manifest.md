@@ -12,14 +12,18 @@ install standalone host-runner application.
 |---|---|
 |OX_WAPI_USER|Onix wapi user name.|
 |OX_WAPI_PWD|Onix wapi password.|
+## Function: start-standalone
+start the stand alone service and also enable the service to start automatically when host is booted up.
+## Function: stop-standalone
+stop the host-runner service.
+## Function: uninstall-standalone
+delete the host-runner service.
 ## Function: install-basic
 install host-runner with basic profile.
 ## Function: install-ci
 install host-runner with ci profile.
 ## Function: install-automation
 install host-runner with automation profile.
-## Function: start-standalone
-start the stand alone service and also enable the service to start automatically when host is booted up.
 ## Function: start
 start the host-runner service along with additional services like cmdb, git, docker registry, basic aritsan regisrty application.
 ## Function: stop

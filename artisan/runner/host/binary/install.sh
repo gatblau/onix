@@ -34,12 +34,12 @@ if [ -f "$FILE" ]; then
   set -a # automatically export all variables
   source "$FILE"
   set +a
-  export OX_WAPI_URI="localhost:8081"
+  export OX_WAPI_URI="http://localhost:8080"
   export OX_WAPI_INSECURE_SKIP_VERIFY="true"
   export OX_WAPI_USER="$OX_SVC_WAPI_ADMIN_USER"
   export OX_WAPI_PWD="$OX_SVC_WAPI_ADMIN_PWD"
 fi
-art merge host-runner.service.tem
+art merge host-runner.service.art
 sudo chown root:root host-runner.service && sudo chmod 644 host-runner.service
 sudo mv host-runner.service /lib/systemd/system/host-runner.service
 

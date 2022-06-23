@@ -13,9 +13,11 @@ import (
 	"log"
 )
 
+const ArtHome = ""
+
 func init() {
 	// ensure the registry folder structure is in place
-	if err := core.EnsureRegistryPath(""); err != nil {
+	if err := core.EnsureRegistryPath(ArtHome); err != nil {
 		log.Fatal("cannot run artisan without a local registry, its creation failed: %", err)
 	}
 }

@@ -9,20 +9,16 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/crypto"
 	. "github.com/gatblau/onix/artisan/release"
 	"github.com/spf13/cobra"
 )
 
 // SpecImportCmd Import the contents from a tarball to create an artisan package in the local registry
 type SpecImportCmd struct {
-	cmd             *cobra.Command
-	creds           string
-	ignoreSignature *bool
-	pubPath         string
-	filter          string
+	cmd    *cobra.Command
+	creds  string
+	filter string
 }
 
 func NewSpecImportCmd() *SpecImportCmd {
@@ -53,13 +49,6 @@ func (c *SpecImportCmd) Run(cmd *cobra.Command, args []string) {
 	// check a package name has been provided
 	if args != nil && len(args) < 1 {
 		core.RaiseErr("the URI of the specification is required")
-	}
-	// if not ignoring signature and public key path is not provided, then uses the local registry default public key
-	if len(c.pubPath) == 0 && !*c.ignoreSignature {
-		// works out the FQN of the public root key
-		_, pub := crypto.KeyNames(core.KeysPath(""), "root", "pgp")
-		c.pubPath = pub
-		fmt.Printf("verifying signatures with local root public key: %s\n", pub)
 	}
 	// import the tar archive(s)
 	_, err := ImportSpec(ImportOptions{
