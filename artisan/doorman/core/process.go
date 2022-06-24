@@ -106,7 +106,8 @@ func newOxClient() (*oxc.Client, error) {
 
 // Info logger
 func (p *Process) Info(format string, a ...interface{}) {
-	format = fmt.Sprintf("%s INFO %s\n", time.Now().Format("02-01-06 15:04:05"), format)
+	// align format with ART logger
+	format = fmt.Sprintf("%s ART INFO %s\n", time.Now().Format("2006/01/02 15:04:05"), format)
 	msg := fmt.Sprintf(format, a...)
 	if len(os.Getenv(DoormanLogging)) > 0 {
 		fmt.Println(msg)
@@ -119,7 +120,8 @@ func (p *Process) Info(format string, a ...interface{}) {
 
 // Error logger
 func (p *Process) Error(format string, a ...interface{}) error {
-	format = fmt.Sprintf("%s ERROR %s", time.Now().Format("02-01-06 15:04:05"), format)
+	// align format with ART logger
+	format = fmt.Sprintf("%s ART ERROR %s", time.Now().Format("2006/01/02 15:04:05"), format)
 	msg := fmt.Sprintf(format, a...)
 	if len(os.Getenv(DoormanLogging)) > 0 {
 		fmt.Println(msg)
@@ -130,7 +132,8 @@ func (p *Process) Error(format string, a ...interface{}) error {
 
 // Warn logger
 func (p *Process) Warn(format string, a ...interface{}) {
-	format = fmt.Sprintf("%s WARN %s\n", time.Now().Format("02-01-06 15:04:05"), format)
+	// align format with ART logger
+	format = fmt.Sprintf("%s ART WARN %s\n", time.Now().Format("2006/01/02 15:04:05"), format)
 	msg := fmt.Sprintf(format, a...)
 	if len(os.Getenv(DoormanLogging)) > 0 {
 		fmt.Println(msg)
