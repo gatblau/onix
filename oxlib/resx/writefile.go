@@ -124,7 +124,7 @@ func EnsureBucketNotification(uri, creds, filterSuffix string, arn *notification
 			// set the bucket notification
 			err = s3Client.SetBucketNotification(ctx, bucketName, config)
 			if err != nil {
-				return nil, fmt.Errorf("Failed to set bucket notification: %s\n", err)
+				return nil, fmt.Errorf("Failed to set bucket notification for ARN '%s': %s\n", arn.String(), err)
 			}
 		}
 	}
