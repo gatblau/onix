@@ -11,7 +11,7 @@ volume:
 var:
   - name: MINIO_ROOT_USER
     description: Administrator user name (must not be called admin)
-    value: "minioadmin"
+    value: minioadmin
   - name: MINIO_ROOT_PASSWORD
     description: Administrator password
     value: ${fx=pwd:16,false}
