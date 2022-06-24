@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/release"
 	"path"
 	"path/filepath"
@@ -348,7 +349,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 						Name:        vName,
 						Description: v.Description,
 						// preserves prefix and suffix for a fx to generate password
-						Value:   v.Value[0:startAt-len("${fx=")] + RandomPwd(length, symbols) + v.Value[endsAt+1:],
+						Value:   v.Value[0:startAt-len("${fx=")] + core.RandomPwd(length, symbols) + v.Value[endsAt+1:],
 						Secret:  true,
 						Service: strings.ToUpper(service.Name),
 					})
@@ -359,7 +360,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 					appMan.Var.Items = append(appMan.Var.Items, AppVar{
 						Name:        vName,
 						Description: v.Description,
-						Value:       RandomName(number),
+						Value:       core.RandomName(number),
 						Secret:      false,
 						Service:     strings.ToUpper(service.Name),
 					})
@@ -685,7 +686,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 					appMan.Var.Items = append(appMan.Var.Items, AppVar{
 						Name:        varKey,
 						Description: fmt.Sprintf("The administrator password to connect to database host '%s'", appMan.Services[six].Info.Db.Host),
-						Value:       RandomPwd(length, symbols),
+						Value:       core.RandomPwd(length, symbols),
 						Secret:      true,
 						Service:     strings.ToUpper(appMan.Services[six].Name),
 					})
@@ -709,7 +710,7 @@ func (m *Manifest) wire() (*Manifest, error) {
 					appMan.Var.Items = append(appMan.Var.Items, AppVar{
 						Name:        varKey,
 						Description: fmt.Sprintf("The administrator password to connect to database host '%s'\n", appMan.Services[six].Info.Db.Host),
-						Value:       RandomPwd(length, symbols),
+						Value:       core.RandomPwd(length, symbols),
 						Secret:      true,
 						Service:     strings.ToUpper(appMan.Services[six].Name),
 					})

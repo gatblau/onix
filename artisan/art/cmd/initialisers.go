@@ -70,9 +70,13 @@ func InitialiseRootCmd() *RootCmd {
 func InitialiseUtilCommand() *UtilCmd {
 	utilCmd := NewUtilCmd()
 	utilPwdCmd := NewUtilPwdCmd()
+	utilNameCmd := NewUtilNameCmd()
 	utilExtractCmd := NewUtilExtractCmd()
+	utilB64Cmd := NewUtilBase64Cmd()
 	utilCmd.cmd.AddCommand(utilPwdCmd.cmd)
 	utilCmd.cmd.AddCommand(utilExtractCmd.cmd)
+	utilCmd.cmd.AddCommand(utilNameCmd.cmd)
+	utilCmd.cmd.AddCommand(utilB64Cmd.cmd)
 	return utilCmd
 }
 

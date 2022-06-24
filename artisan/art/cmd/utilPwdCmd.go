@@ -35,6 +35,6 @@ func NewUtilPwdCmd() *UtilPwdCmd {
 	return c
 }
 
-func (c *UtilPwdCmd) Run(cmd *cobra.Command, args []string) {
-	fmt.Printf("%s", core.NewPwd(*c.len, *c.specialChars))
+func (c *UtilPwdCmd) Run(_ *cobra.Command, _ []string) {
+	fmt.Printf("%s", core.RandomPwd(*c.len, *c.specialChars))
 }
