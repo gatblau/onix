@@ -44,7 +44,7 @@ type Spec struct {
 	// Packages the artisan packages in the release
 	Packages map[string]string `yaml:"packages,omitempty"`
 	// OsPackages operating system packages that are part of the release
-	OsPackages map[string]map[string]string `yaml:"ospackages,omitempty"`
+	OsPackages map[string]map[string]string `yaml:"os_packages,omitempty"`
 	// Run commands
 	Run []Run
 
@@ -117,7 +117,8 @@ func NewSpec(path, creds string) (*Spec, error) {
 		return nil, fmt.Errorf("cannot unmarshal spec file: %s", err)
 	}
 	spec.content = content
-	return spec, nil
+
+	return spec, spec.Valid()
 }
 
 func ExportSpec(opts ExportOptions) error {
@@ -560,4 +561,19 @@ func skip(filter, value string) (bool, string) {
 		return !matched, filter
 	}
 	return false, filter
+}
+
+func (s *Spec) Valid() error {
+
+	if len(s.Name) == 0 || len(s.Description) == 0 || len(s.Author) == 0 ||
+		len(s.License) == 0 || len(s.Version) == 0 || len(s.Info) == 0 {
+
+		return fmt.Errorf(" spec file must have 'name', 'description', 'author', 'license', 'version', 'info'")
+	}
+
+	if s.Packages == nil || s.Images == nil || s.OsPackages == nil {
+		return fmt.Errorf(" spec file has no details of  'packages' or 'images' or 'os_packages'")
+	}
+
+	return nil
 }
