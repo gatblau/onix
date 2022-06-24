@@ -35,6 +35,7 @@ import (
 	t "github.com/google/uuid"
 	"github.com/hashicorp/go-uuid"
 	"github.com/ohler55/ojg/jp"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -559,4 +560,14 @@ func Extract(content, prefix, suffix string, n int) []string {
 		result = append(result, subMatch[1])
 	}
 	return result
+}
+
+// ToYamlBytes convert the passed in parameter to a Yaml Byte Array
+func ToYamlBytes(s interface{}) ([]byte, error) {
+	// serialise the seal to json
+	data, err := yaml.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

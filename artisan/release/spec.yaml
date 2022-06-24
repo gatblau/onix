@@ -7,4 +7,10 @@ packages:
 images:
   QUAY_MINIO_LATEST: quay.io/minio/minio:latest
   POSTGRES: postgres:13
+
+ospackages:
+  apt:
+    PACKAGE_dnsutils: "liblwres160"
+    PACKAGE_libicu60: "libicu60"
+    PACKAGE_bind9-host: "bind9-host"
 ...
