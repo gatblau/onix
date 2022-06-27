@@ -161,7 +161,7 @@ func (p *Process) run() {
 		p.notify(err)
 	}
 	if len(pipes) == 0 {
-		e := p.Error("no pipeline configuration found for release Id=%s and bucket name='%s': %s\n", p.serviceId, p.bucketName)
+		e := p.Error("no pipeline configuration found for release Id=%s and bucket name='%s'\n", p.serviceId, p.bucketName)
 		fmt.Println(e)
 		p.notify(err)
 	}
