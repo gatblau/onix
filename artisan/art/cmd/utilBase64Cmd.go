@@ -11,27 +11,36 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
 	"github.com/spf13/cobra"
 )
 
 // UtilBase64Cmd generates passwords
 type UtilBase64Cmd struct {
-	cmd *cobra.Command
+	cmd    *cobra.Command
+	decode *bool
 }
 
 func NewUtilBase64Cmd() *UtilBase64Cmd {
 	c := &UtilBase64Cmd{
 		cmd: &cobra.Command{
-			Use:   "b64 [flags] STRING-TO-ENCODE",
-			Short: "base 64 encode a string",
-			Long:  `base 64 encode a string`,
+			Use:   "b64 [flags] STRING",
+			Short: "base 64 encode (or alternatively decode) a string",
+			Long:  `base 64 encode (or alternatively decode) a string`,
 			Args:  cobra.ExactArgs(1),
 		},
 	}
 	c.cmd.Run = c.Run
+	c.decode = c.cmd.Flags().BoolP("decode", "d", false, "if sets, decodes the string instead of encoding it")
 	return c
 }
 
 func (c *UtilBase64Cmd) Run(_ *cobra.Command, args []string) {
-	fmt.Printf("%s", base64.StdEncoding.EncodeToString([]byte(args[0])))
+	if *c.decode {
+		decoded, err := base64.StdEncoding.DecodeString(args[0])
+		core.CheckErr(err, "cannot decode string")
+		fmt.Printf("%s", string(decoded[:]))
+	} else {
+		fmt.Printf("%s", base64.StdEncoding.EncodeToString([]byte(args[0])))
+	}
 }
