@@ -171,6 +171,13 @@ func (r *RemoteRegistry) RemoveByNameOrId(nameOrId []string) error {
 							break
 						}
 					} else { // check for a match on package name:tag
+						// parses the nameId string so that it can check for not present latest tag
+						n, e := core.ParseName(nameId)
+						if e == nil {
+							// puts the package name back together from structured name object so that if there is a
+							// not present latest tag, it is made explicit
+							nameId = n.FullyQualifiedNameTag()
+						}
 						if nameId == name.FullyQualifiedNameTag() {
 							// delete by name:tag here
 							// if more than one tag exist, remove the tag
