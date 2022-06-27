@@ -378,7 +378,8 @@ func PushSpec(opts PushOptions) error {
 			usr, pwd = core.UserPwd(opts.User)
 			out, eErr := build.Exe(fmt.Sprintf("%s login %s --username=%s --password=%s", cli, opts.Host, usr, pwd), ".", merge.NewEnVarFromSlice([]string{}), false)
 			if eErr != nil {
-				return eErr
+				// do not return original error as it can contain sensitive info (e.g. password)
+				return fmt.Errorf("docker login failed")
 			}
 			core.InfoLogger.Printf("%s\n", out)
 		}
