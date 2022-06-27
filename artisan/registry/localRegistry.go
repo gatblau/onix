@@ -503,7 +503,7 @@ func (r *LocalRegistry) Push(name *core.PackageName, credentials string, showWar
 			// check if another package has the same tag
 			repo, err2, code := api.GetRepositoryInfo(name.Group, name.Name, uname, pwd, false)
 			if err2 != nil {
-				return fmt.Errorf("cannot get remote repository information, the remote registry responsed with HTTP status %d: %s", code, err)
+				return fmt.Errorf("cannot get remote repository information, the remote registry responsed with HTTP status %d: %s", code, err2)
 			}
 			// is the tag in the repo already?
 			if pkg, exists := repo.GetTag(name.Tag); exists {
