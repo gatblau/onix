@@ -10,11 +10,12 @@ package release
 
 import (
 	"fmt"
-	"github.com/gatblau/onix/artisan/data"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/gatblau/onix/artisan/data"
 
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
@@ -42,6 +43,8 @@ type Spec struct {
 	Images map[string]string `yaml:"images,omitempty"`
 	// Packages the artisan packages in the release
 	Packages map[string]string `yaml:"packages,omitempty"`
+	// OsPackages operating system packages that are part of the release
+	OsPackages map[string]map[string]string `yaml:"os_packages,omitempty"`
 	// Run commands
 	Run []Run
 
@@ -114,7 +117,8 @@ func NewSpec(path, creds string) (*Spec, error) {
 		return nil, fmt.Errorf("cannot unmarshal spec file: %s", err)
 	}
 	spec.content = content
-	return spec, nil
+
+	return spec, spec.Valid()
 }
 
 func ExportSpec(opts ExportOptions) error {
@@ -157,6 +161,47 @@ func ExportSpec(opts ExportOptions) error {
 		err := ExportImage(value, value, opts.TargetUri, opts.TargetCreds, opts.ArtHome)
 		if err != nil {
 			return fmt.Errorf("cannot save image %s: %s", value, err)
+		}
+	}
+
+	// download linux packages
+	for key, value := range opts.Specification.OsPackages {
+		if len(value) == 0 {
+			return fmt.Errorf("missing package names in the spec file for type %s", value)
+		}
+		if strings.ToLower(key) == "apt" {
+			cmd := "apt-get -v"
+			res, err := build.Exe(cmd, opts.ArtHome, merge.NewEnVarFromSlice([]string{}), false)
+			if err != nil {
+				return fmt.Errorf("failed to get the apt-get version number %s", err)
+			}
+			re := regexp.MustCompile(`\d+\.(\d)*`)
+			if len(res) == 0 || len(re.FindString(res)) == 0 {
+				return fmt.Errorf("the host is not a debian distribution or apt-get package is missing")
+			}
+
+			core.InfoLogger.Printf("performing %s exporting \n", key)
+			//collect all package names into slice
+			var pkges []string
+			for _, v := range value {
+				if skipArtefact, opts.Filter = skip(opts.Filter, v); skipArtefact {
+					if len(opts.Filter) == 0 {
+						core.WarningLogger.Printf("invalid filter expression for Os_Packages '%s'\n", opts.Filter)
+					}
+					core.InfoLogger.Printf("skipping Os_Package filtering %s\n", value)
+					continue
+				}
+				pkges = append(pkges, v)
+			}
+			//export all debian packages into a single artisan package
+			err = ExportDebianPackage(pkges, opts)
+			if err != nil {
+				return fmt.Errorf("failed to export debian package %s: %s", value, err)
+			}
+		} else if strings.ToLower(key) == "rpm" {
+			return fmt.Errorf("rpm packages are currently not support")
+		} else {
+			return fmt.Errorf("%s is invalid packaging option, valid values are apt, rpm", key)
 		}
 	}
 	// finally, save the spec to the target location
@@ -222,12 +267,11 @@ func ImportSpec(opts ImportOptions) (*Spec, error) {
 			return spec, fmt.Errorf("cannot read %s.tar: %s", pkgName(image), err)
 		}
 		core.InfoLogger.Printf("loading => %s\n", image)
-		builder := build.NewBuilder(opts.ArtHome)
-		pkg, parseErr := core.ParseName(image)
-		if parseErr != nil {
-			return nil, err
+		ignoreSigFlag := ""
+		if opts.Verifier == nil {
+			ignoreSigFlag = "-s"
 		}
-		err2 = builder.Execute(pkg, "import", "", "", opts.Verifier == nil, false, "", false, merge.NewEnVarFromSlice([]string{}), opts.Verifier)
+		_, err2 = build.Exe(fmt.Sprintf("art exe %s import %s", image, ignoreSigFlag), ".", merge.NewEnVarFromSlice([]string{}), false)
 		if err2 != nil {
 			return spec, fmt.Errorf("cannot import image %s: %s", image, err2)
 		}
@@ -518,4 +562,19 @@ func skip(filter, value string) (bool, string) {
 		return !matched, filter
 	}
 	return false, filter
+}
+
+func (s *Spec) Valid() error {
+
+	if len(s.Name) == 0 || len(s.Description) == 0 || len(s.Author) == 0 ||
+		len(s.License) == 0 || len(s.Version) == 0 || len(s.Info) == 0 {
+
+		return fmt.Errorf(" spec file must have 'name', 'description', 'author', 'license', 'version', 'info'")
+	}
+
+	if s.Packages == nil || s.Images == nil || s.OsPackages == nil {
+		return fmt.Errorf(" spec file has no details of  'packages' or 'images' or 'os_packages'")
+	}
+
+	return nil
 }

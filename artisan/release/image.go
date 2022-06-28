@@ -10,16 +10,17 @@ package release
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/merge"
 	"github.com/gatblau/onix/artisan/registry"
 	"gopkg.in/yaml.v2"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 )
 
 func ExportImage(imgName, packName, targetUri, creds, artHome string) error {
@@ -45,7 +46,6 @@ func ExportImage(imgName, packName, targetUri, creds, artHome string) error {
 	}
 	// create a build file to build the package containing the image tar
 	pbf := data.BuildFile{
-		Runtime: "ubi-min",
 		Labels: map[string]string{
 			"image": imgName,
 		},
@@ -53,7 +53,7 @@ func ExportImage(imgName, packName, targetUri, creds, artHome string) error {
 			{
 				Name:   "package-image",
 				Target: "./build",
-				Type:   "image",
+				Type:   "content/image",
 			},
 		},
 	}
@@ -64,7 +64,6 @@ func ExportImage(imgName, packName, targetUri, creds, artHome string) error {
 	// create a build file to import image tar in package
 	export := true
 	bf := data.BuildFile{
-		Runtime: "ubi-min",
 		Labels: map[string]string{
 			"image": imgName,
 		},
@@ -73,7 +72,6 @@ func ExportImage(imgName, packName, targetUri, creds, artHome string) error {
 				Name:        "import",
 				Description: "imports docker image in local docker registry",
 				Export:      &export,
-				Runtime:     "ubi-min",
 				Run: []string{
 					fmt.Sprintf("%s load -i %s.tar", containerCli, pkgName(imgName)),
 				},
