@@ -136,6 +136,30 @@ func (db *Database) FindByName(dbName string, collection Collection, name string
 	return item, nil
 }
 
+// FindOne object using the specified filter, examples of filter expressions below"
+// filtering using  a slice
+//   filter := bson.D{{"attribute_name1", "attribute_value1"}, {"attribute_name2", "attribute_value2"}, ...}
+// filtering using a map
+//   filter := bson.M{"attribute_name1": "attribute_value1", "attribute_name2": "attribute_value2", ...}
+func (db *Database) FindOne(dbName string, collection Collection, filter interface{}) (*mongo.SingleResult, error) {
+	if filter == nil {
+		return nil, fmt.Errorf("filter is required")
+	}
+	client, err := mongo.Connect(context.Background(), db.options)
+	if err != nil {
+		return nil, err
+	}
+	defer func(client *mongo.Client, ctx context.Context) {
+		err = client.Disconnect(ctx)
+		if err != nil {
+			log.Println(err.Error())
+		}
+	}(client, context.Background())
+	coll := client.Database(dbName).Collection(string(collection))
+	result := coll.FindOne(context.Background(), filter)
+	return result, nil
+}
+
 // FindMany find a number of objects matching the specified filter
 func (db *Database) FindMany(dbName string, collection Collection, filter bson.M, query Query) error {
 	if filter == nil {
