@@ -161,7 +161,7 @@ func (p *Process) run() {
 		p.notify(err)
 	}
 	if len(pipes) == 0 {
-		e := p.Error("no pipeline configuration found for release Id=%s and bucket name='%s': %s\n", p.serviceId, p.bucketName)
+		e := p.Error("no pipeline configuration found for release Id=%s and bucket name='%s'\n", p.serviceId, p.bucketName)
 		fmt.Println(e)
 		p.notify(err)
 	}
@@ -475,9 +475,14 @@ func (p *Process) BeforeComplete(pipe *types.Pipeline) error {
 	// if doorman is configured to connect to the cmdb
 	if len(os.Getenv(OxWapiUri)) > 0 {
 		// if catalogue publication is enabled
-		if p.pipe.CMDB != nil && p.pipe.CMDB.Catalogue {
-			if err := p.submitSpec(pipe.CMDB); err != nil {
-				return fmt.Errorf("cannot submit spec '%s' version '%s' to the cmdb: %s", p.spec.Name, p.spec.Version, err)
+		if p.pipe.CMDB.Catalogue {
+			// if Doorman has a valid cmdb endpoint
+			if p.pipe.CMDB != nil {
+				if err := p.submitSpec(pipe.CMDB); err != nil {
+					return fmt.Errorf("cannot submit spec '%s' version '%s' to the cmdb: %s", p.spec.Name, p.spec.Version, err)
+				}
+			} else { // if not, issue a warning
+				p.Warn("cannot submit release %s %s to catalogue, OX_WAPI_URI is not defined", p.spec.Name, p.spec.Version)
 			}
 		}
 		// if the spec contains functions

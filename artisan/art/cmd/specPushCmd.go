@@ -61,6 +61,9 @@ func (c *SpecPushCmd) Run(cmd *cobra.Command, args []string) {
 	if args != nil && len(args) < 1 {
 		core.RaiseErr("the URI of the specification is required")
 	}
+	if len(c.tag) == 0 {
+		core.RaiseErr("a tag value must be provided")
+	}
 	tagParts := strings.Split(c.tag, "/")
 	host := tagParts[0]
 	group := ""

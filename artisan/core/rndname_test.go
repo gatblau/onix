@@ -6,14 +6,20 @@
   to be licensed under the same terms as the rest of the code.
 */
 
-package app
+package core
 
 import (
 	"fmt"
 	"testing"
 )
 
-func TestNewPwd(t *testing.T) {
-	fmt.Println(RandomPwd(55, false))
-	fmt.Println(RandomPwd(36, true))
+func TestName(t *testing.T) {
+	// names with numbers
+	for i := 0; i < 20; i++ {
+		fmt.Println(RandomName(99))
+	}
+	// names with no numbers
+	for i := 0; i < 20; i++ {
+		fmt.Println(RandomName(0))
+	}
 }

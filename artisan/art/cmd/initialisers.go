@@ -10,7 +10,8 @@ package cmd
 
 func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
-	extractCmd := NewExtractCmd()
+	utilCmd := InitialiseUtilCommand()
+	extractCmd := NewUtilExtractCmd()
 	appCmd := NewAppCmd()
 	serveCmd := NewServeCmd()
 	specCmd := InitialiseSpecCommand()
@@ -36,6 +37,7 @@ func InitialiseRootCmd() *RootCmd {
 	gitSyncCmd := NewGitSyncCmd()
 	pruneCmd := NewPruneCmd()
 	rootCmd.Cmd.AddCommand(
+		utilCmd.cmd,
 		extractCmd.cmd,
 		appCmd.cmd,
 		specCmd.cmd,
@@ -63,6 +65,19 @@ func InitialiseRootCmd() *RootCmd {
 		pruneCmd.cmd,
 	)
 	return rootCmd
+}
+
+func InitialiseUtilCommand() *UtilCmd {
+	utilCmd := NewUtilCmd()
+	utilPwdCmd := NewUtilPwdCmd()
+	utilNameCmd := NewUtilNameCmd()
+	utilExtractCmd := NewUtilExtractCmd()
+	utilB64Cmd := NewUtilBase64Cmd()
+	utilCmd.cmd.AddCommand(utilPwdCmd.cmd)
+	utilCmd.cmd.AddCommand(utilExtractCmd.cmd)
+	utilCmd.cmd.AddCommand(utilNameCmd.cmd)
+	utilCmd.cmd.AddCommand(utilB64Cmd.cmd)
+	return utilCmd
 }
 
 func InitialiseSpecCommand() *SpecCmd {

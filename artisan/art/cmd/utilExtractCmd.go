@@ -17,16 +17,16 @@ import (
 	"strings"
 )
 
-// ExtractCmd client url issues http requests within a retry framework
-type ExtractCmd struct {
+// UtilExtractCmd client url issues http requests within a retry framework
+type UtilExtractCmd struct {
 	cmd     *cobra.Command
 	matches int
 	prefix  string
 	suffix  string
 }
 
-func NewExtractCmd() *ExtractCmd {
-	c := &ExtractCmd{
+func NewUtilExtractCmd() *UtilExtractCmd {
+	c := &UtilExtractCmd{
 		cmd: &cobra.Command{
 			Use:     "extract [flags]",
 			Short:   "extracts text between specified prefix and suffix, it should be used only with pipes",
@@ -42,7 +42,7 @@ func NewExtractCmd() *ExtractCmd {
 	return c
 }
 
-func (c *ExtractCmd) Run(cmd *cobra.Command, args []string) {
+func (c *UtilExtractCmd) Run(cmd *cobra.Command, args []string) {
 	// captures information from the standard input
 	info, _ := os.Stdin.Stat()
 	// check that the standard input is not a character device file - i.e. one with which the Driver communicates
