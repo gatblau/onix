@@ -35,6 +35,8 @@ if [[ -z "${REPO_NAME}" ]] || [[ -z "${FLOW_KEY}" ]]; then
   exit 100
 fi
 
+LOCAL_IP=$(ip route get 1.2.3.4 | awk '{print $7}')
+GURL=http://"$LOCAL_IP":"${HOST_RUNNER_PORT}"/webhook/"${FLOW_KEY}"/push
 curl --location --request POST 'http://localhost:8084/api/v1/repos/'${GIT_SVC_ADMIN_USERNAME}'/'${REPO_NAME}'/hooks' \
 --header 'Content-Type: application/json' \
 --user "${GIT_SVC_ADMIN_USERNAME}:${GIT_SVC_ADMIN_PASSWORD}" \
@@ -44,7 +46,7 @@ curl --location --request POST 'http://localhost:8084/api/v1/repos/'${GIT_SVC_AD
   "branch_filter": "*",
   "config": {
     "content_type": "json",
-    "url": "http://localhost:${HOST_RUNNER_PORT}/webhook/${FLOW_KEY}/push",
+    "url": "'"$GURL"'",
     "http_method": "post"
   },
   "events": [
