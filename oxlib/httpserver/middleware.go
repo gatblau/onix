@@ -12,12 +12,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/gatblau/onix/oxlib/oxc"
+	"github.com/gorilla/mux"
 	"log"
-	"net/http" 
+	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"regexp"
-	"github.com/gorilla/mux"
 )
 
 // LoggingMiddleware log http requests to stdout
@@ -31,7 +31,7 @@ func (s *Server) LoggingMiddleware(next http.Handler) http.Handler {
 			log.Println(err)
 		}
 		log.Println(string(requestDump))
-		
+
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 	})
@@ -133,23 +133,22 @@ func (s *Server) CorsMiddleware(origin string, headers string) mux.MiddlewareFun
 			log.Printf("CorsMiddleware(): origin = %v", origin)
 			log.Printf("CorsMiddleware(): headers = %v", headers)
 
-			if(origin != "") {
+			if len(origin) > 0 {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 			}
-			
+
 			if r.Method == http.MethodOptions {
 				log.Printf("CorsMiddleware(): process OPTIONS")
-				if(headers != ""){
+				if len(headers) > 0 {
 					w.Header().Set("Access-Control-Allow-Headers", headers)
 					w.WriteHeader(200)
 				}
 			}
-			
+
 			next.ServeHTTP(w, r)
 		})
 	}
 }
-
 
 // Authorise handler functions using user principal access control lists
 // wraps the authorization middleware to be used when wrapping specific handler functions
