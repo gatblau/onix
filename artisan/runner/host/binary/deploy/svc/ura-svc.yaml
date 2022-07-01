@@ -1,7 +1,7 @@
 ---
 name: ura-svc
 description: ultralight artisan registry
-port: "8082"
+port: "8080"
 var:
   - name: OX_HTTP_UPLOAD_LIMIT
     description: upload limit (in MB)

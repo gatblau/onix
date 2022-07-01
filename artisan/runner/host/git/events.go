@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -57,7 +58,17 @@ func (p *Push) IsValidUri(uri string) error {
 		return errors.New("invalid git push event, git uri is missing from push event")
 	}
 
-	if uri != r {
+	u1, err := url.Parse(r)
+	if err != nil {
+		panic(err)
+	}
+
+	u2, err := url.Parse(uri)
+	if err != nil {
+		panic(err)
+	}
+
+	if u1.Path != u2.Path {
 		msg := fmt.Sprintf("git uri in flow spec is not same as git uri received in push event [ %s ] , [ %s ]", uri, r)
 		return errors.New(msg)
 
