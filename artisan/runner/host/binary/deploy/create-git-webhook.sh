@@ -50,7 +50,7 @@ curl --location --request POST 'http://localhost:8084/api/v1/repos/'${GIT_SVC_AD
     "http_method": "post"
   },
   "events": [
-    "push_only"
+    "push"
   ],
   "type": "gitea"
 }'
