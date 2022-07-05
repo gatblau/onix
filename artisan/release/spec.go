@@ -572,7 +572,7 @@ func (s *Spec) Valid() error {
 		return fmt.Errorf(" spec file must have 'name', 'description', 'author', 'license', 'version', 'info'")
 	}
 
-	if s.Packages == nil || s.Images == nil || s.OsPackages == nil {
+	if s.Packages == nil && s.Images == nil && s.OsPackages == nil {
 		return fmt.Errorf(" spec file has no details of  'packages' or 'images' or 'os_packages'")
 	}
 
