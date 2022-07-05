@@ -201,12 +201,17 @@ func (f *Flow) GetInputDefinition(b *data.BuildFile, env *merge.Envar) *data.Inp
 		}
 		// try augment the result with default values in the build.yaml
 		if b != nil {
-			for _, v := range b.Input.Var {
-				for _, v2 := range result.Var {
-					if v.Name == v2.Name && len(v.Default) > 0 {
-						v2.Default = v.Default
+			// do we have an input section?
+			if b.Input != nil && b.Input.Var != nil {
+				for _, v := range b.Input.Var {
+					for _, v2 := range result.Var {
+						if v.Name == v2.Name && len(v.Default) > 0 {
+							v2.Default = v.Default
+						}
 					}
 				}
+			} else {
+				core.WarningLogger.Printf("cannot survey build file: no input section found\n")
 			}
 		}
 	}
