@@ -221,7 +221,6 @@ func aptPkgTarFileName() string {
 	r := strings.NewReplacer(
 		"/", "_",
 		".", "_",
-		":", "_",
 	)
 	fileWithExt := fmt.Sprintf("%s.%s", r.Replace(aptPkgName()), "tar")
 	return fileWithExt

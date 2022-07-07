@@ -576,5 +576,18 @@ func (s *Spec) Valid() error {
 		return fmt.Errorf(" spec file has no details of  'packages' or 'images' or 'os_packages'")
 	}
 
+	if len(s.Images) > 0 {
+		invalidImgs := []string{}
+		for _, v := range s.Images {
+			if !(len(v) > 0 && len(strings.Split(v, "/")) > 2) {
+				invalidImgs = append(invalidImgs, v)
+			}
+		}
+		if len(invalidImgs) > 0 {
+			return fmt.Errorf(" invalid format of container image name for following images [ %s ]"+
+				"\n valid format is <host|domain>/<group>/<image-name> ", strings.Join(invalidImgs, ", "))
+		}
+	}
+
 	return nil
 }

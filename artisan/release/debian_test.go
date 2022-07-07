@@ -26,9 +26,15 @@ func TestExportPackage(t *testing.T) {
 	}
 }
 
-/*
+func TestSpecImportSpec(t *testing.T) {
+	_, err := ImportSpec(ImportOptions{"/tmp/spec-test", "", "", "", nil, ""})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExportSpec4Package(t *testing.T) {
-	s, err := NewSpec("spec.yaml", "")
+	s, err := NewSpec("/home/ubuntu/deb-pkgs/just_pkgs/spec.yaml", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,4 +42,4 @@ func TestExportSpec4Package(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-}*/
+}
