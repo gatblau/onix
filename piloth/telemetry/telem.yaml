@@ -1,0 +1,47 @@
+---
+receivers:
+  hostmetrics:
+    collection_interval: 60s
+    scrapers:
+      cpu:
+      disk:
+      load:
+      filesystem:
+      memory:
+      network:
+      paging:
+      processes:
+
+processors:
+  resourcedetection/system:
+    detectors: [ "system" ]
+    system:
+      hostname_sources: [ "os" ]
+
+  resourceattributetransposer:
+    operations:
+    - from: "host.name"
+      to: "hostname"
+    - from: "process.pid"
+      to: "pid"
+    - from: "process.executable.name"
+      to: "binary"
+
+  batch:
+
+exporters:
+  prometheus:
+    endpoint: "1.2.3.4:1234"
+    namespace: test-space
+    send_timestamps: true
+    metric_expiration: 180m
+    resource_to_telemetry_conversion:
+      enabled: true
+
+service:
+  pipelines:
+    metrics:
+      receivers: [hostmetrics]
+      processors: [resourcedetection/system, resourceattributetransposer, batch]
+      exporters: [prometheus]
+...
