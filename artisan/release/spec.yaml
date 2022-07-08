@@ -1,16 +1,21 @@
 ---
 # this is an example of a spec.yaml file used by the art save spec command to export artefacts
 version: 1.0
+author: test
+name: for test
+description: spec for testing purpose
+license: GPL
+version: 20220704060337539-076b105d64
+info: |
+  used for testing purpose
 packages:
   TEST_TESTPK: localhost:8082/test/testpk:v3
-
 images:
   QUAY_MINIO_LATEST: quay.io/minio/minio:latest
-  POSTGRES: postgres:13
-
-ospackages:
-  apt:
-    PACKAGE_dnsutils: "liblwres160"
-    PACKAGE_libicu60: "libicu60"
-    PACKAGE_bind9-host: "bind9-host"
+  POSTGRES: docker.io/library/postgres:13
+#os_packages:
+#  apt:
+#    PACKAGE_dnsutils: "liblwres160"
+#    PACKAGE_libicu60: "libicu60"
+#    PACKAGE_bind9-host: "bind9-host"
 ...

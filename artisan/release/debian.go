@@ -221,7 +221,6 @@ func aptPkgTarFileName() string {
 	r := strings.NewReplacer(
 		"/", "_",
 		".", "_",
-		":", "_",
 	)
 	fileWithExt := fmt.Sprintf("%s.%s", r.Replace(aptPkgName()), "tar")
 	return fileWithExt
@@ -235,9 +234,9 @@ func generateBuildFunctions(bckupCmds []string) ([]byte, error) {
 	export_yes := true
 	export_no := false
 	patchCmd := "(cd patch && echo \"\" && echo \"************ patching started ***************\"" +
-		" && sudo dpkg --force-all -i * && echo \"************ patch completed ***************\" && echo \"\")"
+		" && sudo DEBIAN_FRONTEND=noninteractive dpkg --force-all -i * && echo \"************ patch completed ***************\" && echo \"\")"
 	rollbackCmd := "(cd backup && echo \"\" && echo \"************ patching failed, rollback started ***************\"" +
-		" && sudo dpkg --force-all -i * && echo \"************ rollback completed ***************\" && echo \"\")"
+		" && sudo DEBIAN_FRONTEND=noninteractive dpkg --force-all -i * && echo \"************ rollback completed ***************\" && echo \"\")"
 	combinedCmd := "bash -c '" + patchCmd + " || " + rollbackCmd + "'"
 	bf := data.BuildFile{
 		Runtime: "ubi-min",
