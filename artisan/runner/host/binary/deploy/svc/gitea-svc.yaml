@@ -33,6 +33,8 @@ var:
     value: "main"
   - name: GITEA__SECURITY__INSTALL_LOCK
     value: "true"
+  - name: GITEA__WEBHOOK__ALLOWED_HOST_LIST
+    value: "*"    
 scripts:
   - name: git_init
     description: initialise the local Git instance
