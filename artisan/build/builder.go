@@ -690,6 +690,10 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 	return nil
 }
 
+func (b *Builder) SetSealPostProcess(p func(b *Builder, s *data.Seal) error) {
+	b.sealPostProcess = p
+}
+
 type Signer interface {
 	Sign(data []byte) ([]byte, error)
 }
