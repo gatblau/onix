@@ -14,12 +14,12 @@ import (
 
 // UtilCmd miscellaneous utilities
 type UtilCmd struct {
-	cmd *cobra.Command
+	Cmd *cobra.Command
 }
 
 func NewUtilCmd() *UtilCmd {
 	c := &UtilCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "util",
 			Short: "provides access to various miscellaneous utilities",
 			Long:  `provides access to various miscellaneous utilities`,

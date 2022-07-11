@@ -43,6 +43,7 @@ type Builder struct {
 	env              *merge.Envar
 	zip              bool // if the target is already zipped before packaging (e.g. jar, zip files, etc)
 	artHome          string
+	sealPostProcess  func(b *Builder, s *data.Seal) error
 }
 
 func NewBuilder(artHome string) *Builder {
@@ -51,6 +52,7 @@ func NewBuilder(artHome string) *Builder {
 	builder.artHome = artHome
 	// check the localRepo directory is there
 	builder.localReg = registry.NewLocalRegistry(artHome)
+	builder.sealPostProcess = defaultSealPostProcessor
 	return builder
 }
 
@@ -91,6 +93,10 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 	core.Debug("creating package seal\n")
 	s, err := b.createSeal(buildProfile)
 	core.CheckErr(err, "cannot create package seal")
+	err = b.sealPostProcess(b, s)
+	core.CheckErr(err, "cannot post process package")
+	// save the seal
+	core.CheckErr(ioutil.WriteFile(b.workDirJsonFilename(), core.ToJsonBytes(s), os.ModePerm), "failed to write package seal file")
 	// add the package to the local repo
 	core.Debug("adding package to local registry\n")
 	b.localReg.Add(b.workDirZipFilename(), b.repoName, s)
@@ -181,6 +187,9 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 		repo = b.openRepo(localPath)
 	}
 	// read build.yaml
+	if len(target) == 0 {
+
+	}
 	buildFilePath := filepath.Join(b.loadFrom, "build.yaml")
 	core.Debug("loading build file from %s\n", buildFilePath)
 	bf, err := data.LoadBuildFile(buildFilePath)
@@ -195,7 +204,7 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 						Name:    "content-only",
 						Default: true,
 						Target:  target,
-						Type:    "files",
+						Type:    "content/file",
 					},
 				},
 			}
@@ -594,14 +603,6 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 			})
 		}
 	}
-	// calculates the package digest
-	// the digest is used to check package integrity
-	_, digest := s.Checksum(b.workDirZipFilename())
-	core.Debug("the package digest is '%s'\n", digest)
-	// writes the digest to the seal
-	s.Digest = digest
-	// save the seal
-	core.CheckErr(ioutil.WriteFile(b.workDirJsonFilename(), core.ToJsonBytes(s), os.ModePerm), "failed to write package seal file")
 	return s, nil
 }
 
@@ -691,4 +692,16 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 
 type Signer interface {
 	Sign(data []byte) ([]byte, error)
+}
+
+func defaultSealPostProcessor(b *Builder, s *data.Seal) error {
+	// no signing authority
+	s.Manifest.Author = "unknown"
+	s.Manifest.Authority = "not applicable"
+	// calculates the package digest used to check its integrity
+	_, digest := s.Checksum(b.workDirZipFilename())
+	core.Debug("the package digest is '%s'\n", digest)
+	// writes the digest to the seal
+	s.Digest = digest
+	return nil
 }

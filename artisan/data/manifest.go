@@ -15,6 +15,10 @@ import (
 )
 
 type Manifest struct {
+	// the author of the package
+	Author string `json:"author,omitempty"`
+	// the signing and verification authority for the package
+	Authority string `json:"authority,omitempty"`
 	// the package type
 	Type string `json:"type,omitempty"`
 	// the license associated to the package

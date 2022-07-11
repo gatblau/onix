@@ -37,7 +37,7 @@ func InitialiseRootCmd() *RootCmd {
 	gitSyncCmd := NewGitSyncCmd()
 	pruneCmd := NewPruneCmd()
 	rootCmd.Cmd.AddCommand(
-		utilCmd.cmd,
+		utilCmd.Cmd,
 		extractCmd.cmd,
 		appCmd.cmd,
 		specCmd.cmd,
@@ -73,10 +73,10 @@ func InitialiseUtilCommand() *UtilCmd {
 	utilNameCmd := NewUtilNameCmd()
 	utilExtractCmd := NewUtilExtractCmd()
 	utilB64Cmd := NewUtilBase64Cmd()
-	utilCmd.cmd.AddCommand(utilPwdCmd.cmd)
-	utilCmd.cmd.AddCommand(utilExtractCmd.cmd)
-	utilCmd.cmd.AddCommand(utilNameCmd.cmd)
-	utilCmd.cmd.AddCommand(utilB64Cmd.cmd)
+	utilCmd.Cmd.AddCommand(utilPwdCmd.cmd)
+	utilCmd.Cmd.AddCommand(utilExtractCmd.cmd)
+	utilCmd.Cmd.AddCommand(utilNameCmd.cmd)
+	utilCmd.Cmd.AddCommand(utilB64Cmd.cmd)
 	return utilCmd
 }
 
