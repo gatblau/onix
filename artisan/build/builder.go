@@ -44,6 +44,7 @@ type Builder struct {
 	artHome          string
 	sProc            func(b *Builder, s *data.Seal) error
 	vProc            func(n *core.PackageName, s *data.Seal, p string) error
+	rProc            func(name *core.PackageName, f string, seal *data.Seal) error
 }
 
 func NewBuilder(artHome string) *Builder {
@@ -668,6 +669,12 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 				return fmt.Errorf("cannot cleanup build path: %s", err)
 			}
 		}
+		if b.rProc != nil {
+			err = b.rProc(name, function, seal)
+			if err != nil {
+				return err
+			}
+		}
 	} else {
 		return fmt.Errorf("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile\n", function)
 	}
@@ -689,4 +696,8 @@ func sProcessor(b *Builder, s *data.Seal) error {
 
 func (b *Builder) SetVProc(p func(n *core.PackageName, s *data.Seal, p string) error) {
 	b.vProc = p
+}
+
+func (b *Builder) SetRProc(p func(name *core.PackageName, f string, seal *data.Seal) error) {
+	b.rProc = p
 }
