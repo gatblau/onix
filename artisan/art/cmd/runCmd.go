@@ -18,22 +18,22 @@ import (
 
 // RunCmd runs the function specified in the project's build.yaml file
 type RunCmd struct {
-	cmd         *cobra.Command
+	Cmd         *cobra.Command
 	envFilename string
 	interactive *bool
 }
 
 func NewRunCmd() *RunCmd {
 	c := &RunCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "run [function name] [project path]",
 			Short: "runs the function commands specified in the project's build.yaml file",
 			Long:  ``,
 		},
 	}
-	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env; the path to a file containing environment variables to use")
-	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
-	c.cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env; the path to a file containing environment variables to use")
+	c.interactive = c.Cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
+	c.Cmd.Run = c.Run
 	return c
 }
 

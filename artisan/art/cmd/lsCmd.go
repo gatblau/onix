@@ -16,7 +16,7 @@ import (
 
 // ListCmd list packages
 type ListCmd struct {
-	cmd      *cobra.Command
+	Cmd      *cobra.Command
 	quiet    bool
 	registry string
 	creds    string
@@ -24,7 +24,7 @@ type ListCmd struct {
 
 func NewListCmd() *ListCmd {
 	c := &ListCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "ls [FLAGS]",
 			Short: "list packages in the local or a remote registry",
 			Long:  `list packages in the local or a remote registry`,
@@ -37,10 +37,10 @@ art ls -r localhost:8082 -u <user>:<pwd>
 `,
 		},
 	}
-	c.cmd.Flags().BoolVarP(&c.quiet, "quiet", "q", false, "only show numeric IDs")
-	c.cmd.Flags().StringVarP(&c.registry, "registry", "r", "", "the domain name or IP of the remote registry (e.g. my-remote-registry); port can also be specified using a colon syntax")
-	c.cmd.Flags().StringVarP(&c.creds, "user", "u", "", "the credentials used to retrieve the information from the remote registry")
-	c.cmd.Run = c.Run
+	c.Cmd.Flags().BoolVarP(&c.quiet, "quiet", "q", false, "only show numeric IDs")
+	c.Cmd.Flags().StringVarP(&c.registry, "registry", "r", "", "the domain name or IP of the remote registry (e.g. my-remote-registry); port can also be specified using a colon syntax")
+	c.Cmd.Flags().StringVarP(&c.creds, "user", "u", "", "the credentials used to retrieve the information from the remote registry")
+	c.Cmd.Run = c.Run
 	return c
 }
 

@@ -22,7 +22,7 @@ import (
 
 // FlowMergeCmd merge a flow with env variables
 type FlowMergeCmd struct {
-	cmd           *cobra.Command
+	Cmd           *cobra.Command
 	envFilename   string
 	buildFilePath string
 	stdout        *bool
@@ -34,23 +34,23 @@ type FlowMergeCmd struct {
 
 func NewFlowMergeCmd() *FlowMergeCmd {
 	c := &FlowMergeCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "merge [flags] [/path/to/flow_bare.yaml]",
 			Short: "fills in a bare flow by adding the required variables, secrets and keys",
 			Long:  `fills in a bare flow by adding the required variables, secrets and keys`,
 		},
 	}
-	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env; the path to a file containing environment variables to use")
-	c.cmd.Flags().StringVarP(&c.buildFilePath, "build-file-path", "b", "", "--build-file-path=. or -b=.; the path to an artisan build.yaml file from which to pick required inputs")
-	c.stdout = c.cmd.Flags().Bool("stdout", false, "prints the output to the console")
-	c.tkn = c.cmd.Flags().Bool("tkn", false, "generates a tekton resources file")
-	c.cmd.Flags().StringVarP(&c.out, "output", "o", "yaml", "--output json or -o json; the output format for the written flow; available formats are:\n"+
+	c.Cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env; the path to a file containing environment variables to use")
+	c.Cmd.Flags().StringVarP(&c.buildFilePath, "build-file-path", "b", "", "--build-file-path=. or -b=.; the path to an artisan build.yaml file from which to pick required inputs")
+	c.stdout = c.Cmd.Flags().Bool("stdout", false, "prints the output to the console")
+	c.tkn = c.Cmd.Flags().Bool("tkn", false, "generates a tekton resources file")
+	c.Cmd.Flags().StringVarP(&c.out, "output", "o", "yaml", "--output json or -o json; the output format for the written flow; available formats are:\n"+
 		"yaml: output in YAML format\n"+
 		"json: output in JSON format\n"+
 		"ojason: output as an Onix configuration item format\n")
-	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
-	c.cmd.Flags().StringSliceVarP(&c.labels, "label", "l", []string{}, "add one or more labels to the flow; -l label1=value1 -l label2=value2")
-	c.cmd.Run = c.Run
+	c.interactive = c.Cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
+	c.Cmd.Flags().StringSliceVarP(&c.labels, "label", "l", []string{}, "add one or more labels to the flow; -l label1=value1 -l label2=value2")
+	c.Cmd.Run = c.Run
 	return c
 }
 

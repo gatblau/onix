@@ -16,7 +16,7 @@ import (
 
 // RmCmd remove local packages
 type RmCmd struct {
-	cmd      *cobra.Command
+	Cmd      *cobra.Command
 	all      bool
 	registry string
 	filter   string
@@ -25,7 +25,7 @@ type RmCmd struct {
 
 func NewRmCmd() *RmCmd {
 	c := &RmCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "rm PACKAGE [PACKAGE...]",
 			Short: "removes one or more packages from the local package registry or a remote registry",
 			Long:  `removes one or more packages from the local package registry or a remote registry`,
@@ -48,11 +48,11 @@ art rm -r localhost:8081 -u <user>:<pwd> $(art ls -r localhost:8081 -u <user>:<p
 `,
 		},
 	}
-	c.cmd.Flags().BoolVarP(&c.all, "all", "a", false, "remove all packages")
-	c.cmd.Flags().StringVarP(&c.registry, "registry", "r", "", "the domain of the remote artisan registry to use")
-	c.cmd.Flags().StringVarP(&c.creds, "user", "u", "", "the credentials used to retrieve the information from the remote registry")
-	c.cmd.Flags().StringVarP(&c.filter, "filter", "f", "", "the regular expression used to find the packages to remove, only used if the remove operation if for a remote registry")
-	c.cmd.Run = c.Run
+	c.Cmd.Flags().BoolVarP(&c.all, "all", "a", false, "remove all packages")
+	c.Cmd.Flags().StringVarP(&c.registry, "registry", "r", "", "the domain of the remote artisan registry to use")
+	c.Cmd.Flags().StringVarP(&c.creds, "user", "u", "", "the credentials used to retrieve the information from the remote registry")
+	c.Cmd.Flags().StringVarP(&c.filter, "filter", "f", "", "the regular expression used to find the packages to remove, only used if the remove operation if for a remote registry")
+	c.Cmd.Run = c.Run
 	return c
 }
 

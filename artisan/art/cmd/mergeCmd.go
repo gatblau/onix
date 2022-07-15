@@ -16,13 +16,13 @@ import (
 
 // MergeCmd merges environment variables into one or more files
 type MergeCmd struct {
-	cmd         *cobra.Command
+	Cmd         *cobra.Command
 	envFilename string
 }
 
 func NewMergeCmd() *MergeCmd {
 	c := &MergeCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "merge [flags] [template1 template2 template3 ...]",
 			Short: "merges environment variables in the specified template files",
 			Long: `
@@ -31,8 +31,8 @@ func NewMergeCmd() *MergeCmd {
 	merge creates new merged files after the name of the templates without their extension`,
 		},
 	}
-	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env")
+	c.Cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env")
 	return c
 }
 

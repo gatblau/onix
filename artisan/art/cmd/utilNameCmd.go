@@ -16,21 +16,21 @@ import (
 
 // UtilNameCmd generates passwords
 type UtilNameCmd struct {
-	cmd          *cobra.Command
+	Cmd          *cobra.Command
 	number       *int
 	specialChars *bool
 }
 
 func NewUtilNameCmd() *UtilNameCmd {
 	c := &UtilNameCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "name [flags]",
 			Short: "generates a random name",
 			Long:  `generates a random name`,
 		},
 	}
-	c.number = c.cmd.Flags().IntP("max-number", "n", 0, "adds a random number at the end of the name ranging from 0 to max-number")
-	c.cmd.Run = c.Run
+	c.number = c.Cmd.Flags().IntP("max-number", "n", 0, "adds a random number at the end of the name ranging from 0 to max-number")
+	c.Cmd.Run = c.Run
 	return c
 }
 

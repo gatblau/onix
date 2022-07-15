@@ -17,7 +17,7 @@ import (
 
 // SpecPushCmd downloads the contents of a spec from a remote source
 type SpecPushCmd struct {
-	cmd    *cobra.Command
+	Cmd    *cobra.Command
 	images bool
 	tag    string
 	clean  bool
@@ -28,7 +28,7 @@ type SpecPushCmd struct {
 
 func NewSpecPushCmd() *SpecPushCmd {
 	c := &SpecPushCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "push [FLAGS] SPEC-FILE",
 			Short: "tag and pushes packages or images defined in the spec file to the tagged registry",
 			Long: `tag and pushes packages or images defined in the spec file to the tagged registry
@@ -43,14 +43,14 @@ Example:
 `,
 		},
 	}
-	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.user, "user", "u", "", "the credentials used to push to the artisan registry (or docker registry if -i is used)")
-	c.cmd.Flags().StringVarP(&c.tag, "tag", "t", "", "the target registry host and optionally user/group (e.g. <host>/<group>)")
-	c.cmd.Flags().BoolVarP(&c.images, "images", "i", false, "if defined, the command applies to images instead of packages")
-	c.cmd.Flags().BoolVar(&c.logout, "logout", false, "if defined, logs out the docker login session")
-	c.cmd.Flags().BoolVar(&c.clean, "clean", false, "if defined, remove packages / images from local registries")
-	c.cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials to retrieve the spec file from a remote destination")
-	c.cmd.MarkFlagRequired("tag")
+	c.Cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.user, "user", "u", "", "the credentials used to push to the artisan registry (or docker registry if -i is used)")
+	c.Cmd.Flags().StringVarP(&c.tag, "tag", "t", "", "the target registry host and optionally user/group (e.g. <host>/<group>)")
+	c.Cmd.Flags().BoolVarP(&c.images, "images", "i", false, "if defined, the command applies to images instead of packages")
+	c.Cmd.Flags().BoolVar(&c.logout, "logout", false, "if defined, logs out the docker login session")
+	c.Cmd.Flags().BoolVar(&c.clean, "clean", false, "if defined, remove packages / images from local registries")
+	c.Cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials to retrieve the spec file from a remote destination")
+	c.Cmd.MarkFlagRequired("tag")
 	return c
 }
 

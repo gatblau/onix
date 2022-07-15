@@ -16,7 +16,7 @@ import (
 
 // AppCmd creates deployment config files for a target platform
 type AppCmd struct {
-	cmd     *cobra.Command
+	Cmd     *cobra.Command
 	creds   string
 	path    string
 	format  string
@@ -25,7 +25,7 @@ type AppCmd struct {
 
 func NewAppCmd() *AppCmd {
 	c := &AppCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "app [flags] [app manifest URI]",
 			Short: "generates application deployment configuration files for a target platform",
 			Long: `generates application deployment configuration files for a target platform\n
@@ -33,13 +33,13 @@ the URI can be either http(s):// or file://`,
 			Args: cobra.ExactArgs(1),
 		},
 	}
-	c.cmd.Flags().StringVarP(&c.creds, "creds", "u", "", "-u user:password; the credentials for git authentication")
-	c.cmd.Flags().StringVarP(&c.format, "format", "f", "compose", "the target format for the configuration files (i.e. compose or k8s)")
-	c.cmd.Flags().StringVarP(&c.path, "path", "p", ".", "the output path where the configuration files will be written")
-	c.cmd.Flags().StringVarP(&c.profile, "profile", "r", "", "the application profile to use, "+
+	c.Cmd.Flags().StringVarP(&c.creds, "creds", "u", "", "-u user:password; the credentials for git authentication")
+	c.Cmd.Flags().StringVarP(&c.format, "format", "f", "compose", "the target format for the configuration files (i.e. compose or k8s)")
+	c.Cmd.Flags().StringVarP(&c.path, "path", "p", ".", "the output path where the configuration files will be written")
+	c.Cmd.Flags().StringVarP(&c.profile, "profile", "r", "", "the application profile to use, "+
 		"if not specified, and profiles have been defined in the application manifest, the first profile is used\n"+
 		"if not specified, and profiles have not been defined in the application manifest, all services in the manifest are included ")
-	c.cmd.Run = c.Run
+	c.Cmd.Run = c.Run
 	return c
 }
 

@@ -38,31 +38,31 @@ func InitialiseRootCmd() *RootCmd {
 	pruneCmd := NewPruneCmd()
 	rootCmd.Cmd.AddCommand(
 		utilCmd.Cmd,
-		extractCmd.cmd,
-		appCmd.cmd,
-		specCmd.cmd,
-		serveCmd.cmd,
-		buildCmd.cmd,
-		lsCmd.cmd,
-		pushCmd.cmd,
-		rmCmd.cmd,
-		tagCmd.cmd,
-		runCmd.cmd,
-		runCCmd.cmd,
-		mergeCmd.cmd,
-		pullCmd.cmd,
+		extractCmd.Cmd,
+		appCmd.Cmd,
+		specCmd.Cmd,
+		serveCmd.Cmd,
+		buildCmd.Cmd,
+		lsCmd.Cmd,
+		pushCmd.Cmd,
+		rmCmd.Cmd,
+		tagCmd.Cmd,
+		runCmd.Cmd,
+		runCCmd.Cmd,
+		mergeCmd.Cmd,
+		pullCmd.Cmd,
 		openCmd.cmd,
-		flowCmd.cmd,
-		manifCmd.cmd,
+		flowCmd.Cmd,
+		manifCmd.Cmd,
 		exeCmd.cmd,
-		exeCCmd.cmd,
-		tknCmd.cmd,
-		waitCmd.cmd,
-		curlCmd.cmd,
-		langCmd.cmd,
-		envCmd.cmd,
-		gitSyncCmd.cmd,
-		pruneCmd.cmd,
+		exeCCmd.Cmd,
+		tknCmd.Cmd,
+		waitCmd.Cmd,
+		curlCmd.Cmd,
+		langCmd.Cmd,
+		envCmd.Cmd,
+		gitSyncCmd.Cmd,
+		pruneCmd.Cmd,
 	)
 	return rootCmd
 }
@@ -73,10 +73,10 @@ func InitialiseUtilCommand() *UtilCmd {
 	utilNameCmd := NewUtilNameCmd()
 	utilExtractCmd := NewUtilExtractCmd()
 	utilB64Cmd := NewUtilBase64Cmd()
-	utilCmd.Cmd.AddCommand(utilPwdCmd.cmd)
-	utilCmd.Cmd.AddCommand(utilExtractCmd.cmd)
-	utilCmd.Cmd.AddCommand(utilNameCmd.cmd)
-	utilCmd.Cmd.AddCommand(utilB64Cmd.cmd)
+	utilCmd.Cmd.AddCommand(utilPwdCmd.Cmd)
+	utilCmd.Cmd.AddCommand(utilExtractCmd.Cmd)
+	utilCmd.Cmd.AddCommand(utilNameCmd.Cmd)
+	utilCmd.Cmd.AddCommand(utilB64Cmd.Cmd)
 	return utilCmd
 }
 
@@ -89,13 +89,13 @@ func InitialiseSpecCommand() *SpecCmd {
 	specPushCmd := NewSpecPushCmd()
 	specInfoCmd := NewSpecInfoCmd()
 	specPullCmd := NewSpecPullCmd()
-	specCmd.cmd.AddCommand(specExportCmd.cmd)
-	specCmd.cmd.AddCommand(specImportCmd.cmd)
-	specCmd.cmd.AddCommand(specDownCmd.cmd)
-	specCmd.cmd.AddCommand(specUpCmd.cmd)
-	specCmd.cmd.AddCommand(specPushCmd.cmd)
-	specCmd.cmd.AddCommand(specInfoCmd.cmd)
-	specCmd.cmd.AddCommand(specPullCmd.cmd)
+	specCmd.Cmd.AddCommand(specExportCmd.Cmd)
+	specCmd.Cmd.AddCommand(specImportCmd.Cmd)
+	specCmd.Cmd.AddCommand(specDownCmd.Cmd)
+	specCmd.Cmd.AddCommand(specUpCmd.Cmd)
+	specCmd.Cmd.AddCommand(specPushCmd.Cmd)
+	specCmd.Cmd.AddCommand(specInfoCmd.Cmd)
+	specCmd.Cmd.AddCommand(specPullCmd.Cmd)
 	return specCmd
 }
 
@@ -103,7 +103,7 @@ func InitialiseEnvCommand() *EnvCmd {
 	envCmd := NewEnvCmd()
 	envPackageCmd := NewEnvPackageCmd()
 	envFlowCmd := NewEnvFlowCmd()
-	envCmd.cmd.AddCommand(envFlowCmd.cmd, envPackageCmd.cmd)
+	envCmd.Cmd.AddCommand(envFlowCmd.Cmd, envPackageCmd.Cmd)
 	return envCmd
 }
 
@@ -111,7 +111,7 @@ func InitialiseLangCommand() *LangCmd {
 	langCmd := NewLangCmd()
 	langFetchCmd := NewLangFetchCmd()
 	langUpdateCmd := NewLangUpdateCmd()
-	langCmd.cmd.AddCommand(langFetchCmd.cmd, langUpdateCmd.cmd)
+	langCmd.Cmd.AddCommand(langFetchCmd.Cmd, langUpdateCmd.Cmd)
 	return langCmd
 }
 
@@ -119,13 +119,13 @@ func InitialiseFlowCommand() *FlowCmd {
 	flowCmd := NewFlowCmd()
 	flowMergeCmd := NewFlowMergeCmd()
 	flowRunCmd := NewFlowRunCmd()
-	flowCmd.cmd.AddCommand(flowMergeCmd.cmd, flowRunCmd.cmd)
+	flowCmd.Cmd.AddCommand(flowMergeCmd.Cmd, flowRunCmd.Cmd)
 	return flowCmd
 }
 
 func InitialiseTknCommand() *TknCmd {
 	tknCmd := NewTknCmd()
 	tknGenCmd := NewTknGenCmd()
-	tknCmd.cmd.AddCommand(tknGenCmd.cmd)
+	tknCmd.Cmd.AddCommand(tknGenCmd.Cmd)
 	return tknCmd
 }

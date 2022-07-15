@@ -48,7 +48,7 @@ func TestExe(t *testing.T) {
 		t.FailNow()
 	}
 	// launch a runtime to execute the function
-	builder.Execute(packageName, fxName, "admin:sss", "", true, false, "", false, env, nil)
+	builder.Execute(packageName, fxName, "admin:sss", true, "", false, env)
 }
 
 func TestBuild(t *testing.T) {
@@ -171,7 +171,7 @@ func TestImport(t *testing.T) {
 	// create a local registry
 	r := registry.NewLocalRegistry(ArtHome)
 	// import the tar archive(s)
-	err := r.Import([]string{"../archive.tar"}, "", "", nil)
+	err := r.Import([]string{"../archive.tar"}, "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

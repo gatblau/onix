@@ -18,7 +18,7 @@ import (
 )
 
 type FlowRunCmd struct {
-	cmd           *cobra.Command
+	Cmd           *cobra.Command
 	envFilename   string
 	credentials   string
 	interactive   *bool
@@ -30,18 +30,18 @@ type FlowRunCmd struct {
 
 func NewFlowRunCmd() *FlowRunCmd {
 	c := &FlowRunCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "run [flags] [/path/to/flow.yaml] [runner name]",
 			Short: "merge and send a flow to a runner for execution",
 			Long:  `merge and send a flow to a runner for execution`,
 		},
 	}
-	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env; the path to a file containing environment variables to use")
-	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
-	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
-	c.cmd.Flags().StringVarP(&c.buildFilePath, "build-file-path", "b", ".", "--build-file-path=. or -b=.; the path to an artisan build.yaml file from which to pick required inputs")
-	c.cmd.Flags().StringSliceVarP(&c.labels, "label", "l", []string{}, "add one or more labels to the flow; -l label1=value1 -l label2=value2")
-	c.cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "--env=.env or -e=.env; the path to a file containing environment variables to use")
+	c.Cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
+	c.interactive = c.Cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
+	c.Cmd.Flags().StringVarP(&c.buildFilePath, "build-file-path", "b", ".", "--build-file-path=. or -b=.; the path to an artisan build.yaml file from which to pick required inputs")
+	c.Cmd.Flags().StringSliceVarP(&c.labels, "label", "l", []string{}, "add one or more labels to the flow; -l label1=value1 -l label2=value2")
+	c.Cmd.Run = c.Run
 	return c
 }
 

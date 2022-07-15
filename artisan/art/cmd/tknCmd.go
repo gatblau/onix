@@ -5,6 +5,7 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package cmd
 
 import (
@@ -12,12 +13,12 @@ import (
 )
 
 type TknCmd struct {
-	cmd *cobra.Command
+	Cmd *cobra.Command
 }
 
 func NewTknCmd() *TknCmd {
 	c := &TknCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "tkn",
 			Short: "provides functions to manage Tekton pipelines",
 			Long:  `provides functions to manage Tekton pipelines`,

@@ -22,7 +22,7 @@ type Manifest struct {
 	// the package type
 	Type string `json:"type,omitempty"`
 	// the license associated to the package
-	License string `json:"license"`
+	License string `json:"license,omitempty"`
 	// the target OS for the package
 	OS string `json:"os"`
 	// the name of the package file
@@ -30,7 +30,7 @@ type Manifest struct {
 	// the build profile used
 	Profile string `json:"profile"`
 	// runtime image that should be used to execute exported functions in the package
-	Runtime string `json:"runtime"`
+	Runtime string `json:"runtime,omitempty"`
 	// the labels assigned to the package
 	Labels map[string]string `json:"labels,omitempty"`
 	// the URI of the package source
@@ -49,8 +49,6 @@ type Manifest struct {
 	Time string `json:"time"`
 	// the size of the package
 	Size string `json:"size"`
-	// true if the target was zipped previous to packaging (e.g. jar files)
-	Zip bool `json:"zip"`
 	// what functions are available to call?
 	Functions []*FxInfo `json:"functions,omitempty"`
 }
@@ -64,13 +62,13 @@ func (m Manifest) Fx(name string) *FxInfo {
 	return nil
 }
 
-// exported function list
+// FxInfo exported function list
 type FxInfo struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Input       *Input `json:"input,omitempty"`
-	// runtime image that should be used to execute functions in the package
-	Runtime string `json:"runtime,omitempty"`
+	Credits     int    `json:"credits,omitempty"`
+	Runtime     string `json:"runtime,omitempty"` // runtime image that should be used to execute functions in the package
 }
 
 func (m *Manifest) ToMarkDownBytes(name string) []byte {

@@ -25,7 +25,7 @@ import (
 
 // EnvPackageCmd work out the variables required by a given package to run
 type EnvPackageCmd struct {
-	cmd           *cobra.Command
+	Cmd           *cobra.Command
 	buildFilePath string
 	stdout        *bool
 	out           string
@@ -33,7 +33,7 @@ type EnvPackageCmd struct {
 
 func NewEnvPackageCmd() *EnvPackageCmd {
 	c := &EnvPackageCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use: "package [flags] [package name] [function-name (optional)]",
 			Short: "return the variables required by a given package to run\n " +
 				"if a function name is not specified then variables for all functions are retrieved",
@@ -41,10 +41,10 @@ func NewEnvPackageCmd() *EnvPackageCmd {
 				"if a function name is not specified then variables for all functions are retrieved",
 		},
 	}
-	c.cmd.Flags().StringVarP(&c.buildFilePath, "build-file-path", "b", "", "--build-file-path=. or -b=.; the path to an artisan build.yaml file from which to pick required inputs")
-	c.cmd.Flags().StringVarP(&c.out, "output", "o", "env", "--output yaml or -o yaml; the output format (e.g. env, json, yaml)")
-	c.stdout = c.cmd.Flags().Bool("stdout", false, "prints the output to the console")
-	c.cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.buildFilePath, "build-file-path", "b", "", "--build-file-path=. or -b=.; the path to an artisan build.yaml file from which to pick required inputs")
+	c.Cmd.Flags().StringVarP(&c.out, "output", "o", "env", "--output yaml or -o yaml; the output format (e.g. env, json, yaml)")
+	c.stdout = c.Cmd.Flags().Bool("stdout", false, "prints the output to the console")
+	c.Cmd.Run = c.Run
 	return c
 }
 

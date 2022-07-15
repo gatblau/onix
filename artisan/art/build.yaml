@@ -26,7 +26,7 @@ profiles:
       GOOS: linux
     run:
       - $(build-linux)
-    target: bin/linux/amd64/art
+    target: bin/linux/amd64
 
   - name: mac
     application: artisan

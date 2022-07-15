@@ -16,14 +16,14 @@ import (
 
 // SpecDownCmd downloads the contents of a spec from a remote source
 type SpecDownCmd struct {
-	cmd       *cobra.Command
+	Cmd       *cobra.Command
 	creds     string
 	localPath string
 }
 
 func NewSpecDownCmd() *SpecDownCmd {
 	c := &SpecDownCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use: "down [FLAGS] URI",
 			Short: "downloads a specification (tarball files) from a remote URI to a file system folder but does not " +
 				"actually perform the import",
@@ -45,9 +45,9 @@ Example:
 `,
 		},
 	}
-	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials used to retrieve the specification from an endpoint")
-	c.cmd.Flags().StringVarP(&c.localPath, "path", "p", "", "if specified, download the spec tarball files to the path")
+	c.Cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials used to retrieve the specification from an endpoint")
+	c.Cmd.Flags().StringVarP(&c.localPath, "path", "p", "", "if specified, download the spec tarball files to the path")
 	return c
 }
 

@@ -17,21 +17,21 @@ import (
 
 // UtilBase64Cmd generates passwords
 type UtilBase64Cmd struct {
-	cmd    *cobra.Command
+	Cmd    *cobra.Command
 	decode *bool
 }
 
 func NewUtilBase64Cmd() *UtilBase64Cmd {
 	c := &UtilBase64Cmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "b64 [flags] STRING",
 			Short: "base 64 encode (or alternatively decode) a string",
 			Long:  `base 64 encode (or alternatively decode) a string`,
 			Args:  cobra.ExactArgs(1),
 		},
 	}
-	c.cmd.Run = c.Run
-	c.decode = c.cmd.Flags().BoolP("decode", "d", false, "if sets, decodes the string instead of encoding it")
+	c.Cmd.Run = c.Run
+	c.decode = c.Cmd.Flags().BoolP("decode", "d", false, "if sets, decodes the string instead of encoding it")
 	return c
 }
 

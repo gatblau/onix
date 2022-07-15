@@ -14,12 +14,12 @@ import (
 
 // SpecCmd provide commands to manage application release specifications
 type SpecCmd struct {
-	cmd *cobra.Command
+	Cmd *cobra.Command
 }
 
 func NewSpecCmd() *SpecCmd {
 	c := &SpecCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "spec",
 			Short: "provide commands to manage application release specifications",
 			Long:  `provide commands to manage application release specifications`,

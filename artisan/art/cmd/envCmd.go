@@ -5,20 +5,21 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package cmd
 
 import (
 	"github.com/spf13/cobra"
 )
 
-// list local packages
+// EnvCmd access environment file functions
 type EnvCmd struct {
-	cmd *cobra.Command
+	Cmd *cobra.Command
 }
 
 func NewEnvCmd() *EnvCmd {
 	c := &EnvCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "env",
 			Short: "extract environment information from packages and flows",
 			Long:  `extract environment information from packages and flows`,

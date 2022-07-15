@@ -181,7 +181,7 @@ func ExportSpec(opts ExportOptions) error {
 			}
 
 			core.InfoLogger.Printf("performing %s exporting \n", key)
-			//collect all package names into slice
+			// collect all package names into slice
 			var pkges []string
 			for _, v := range value {
 				if skipArtefact, opts.Filter = skip(opts.Filter, v); skipArtefact {
@@ -220,10 +220,6 @@ func ImportSpec(opts ImportOptions) (*Spec, error) {
 	if err := opts.Valid(); err != nil {
 		return nil, fmt.Errorf("invalid import options: %s\n", err)
 	}
-	// if it is not ignoring the package signature, then a public key path must be provided
-	if opts.Verifier != nil && len(opts.PubKeyPath) == 0 {
-		return nil, fmt.Errorf("the path to a public key must be provided to verify the package author, otherwise ignore signature")
-	}
 	var skipArtefact bool
 	r := registry.NewLocalRegistry(opts.ArtHome)
 	uri := fmt.Sprintf("%s/spec.yaml", opts.TargetUri)
@@ -247,7 +243,7 @@ func ImportSpec(opts ImportOptions) (*Spec, error) {
 			continue
 		}
 		name := fmt.Sprintf("%s/%s.tar", opts.TargetUri, pkgName(pkName))
-		err2 := r.Import([]string{name}, opts.TargetCreds, opts.PubKeyPath, opts.Verifier)
+		err2 := r.Import([]string{name}, opts.TargetCreds, opts.VProc)
 		if err2 != nil {
 			return spec, fmt.Errorf("cannot read %s.tar: %s", pkgName(pkName), err2)
 		}
@@ -262,16 +258,12 @@ func ImportSpec(opts ImportOptions) (*Spec, error) {
 			continue
 		}
 		name := fmt.Sprintf("%s/%s.tar", opts.TargetUri, pkgName(image))
-		err2 := r.Import([]string{name}, opts.TargetCreds, opts.PubKeyPath, opts.Verifier)
+		err2 := r.Import([]string{name}, opts.TargetCreds, opts.VProc)
 		if err2 != nil {
 			return spec, fmt.Errorf("cannot read %s.tar: %s", pkgName(image), err)
 		}
 		core.InfoLogger.Printf("loading => %s\n", image)
-		ignoreSigFlag := ""
-		if opts.Verifier == nil {
-			ignoreSigFlag = "-s"
-		}
-		_, err2 = build.Exe(fmt.Sprintf("art exe %s import %s", image, ignoreSigFlag), ".", merge.NewEnVarFromSlice([]string{}), false)
+		_, err2 = build.Exe(fmt.Sprintf("art exe %s import", image), ".", merge.NewEnVarFromSlice([]string{}), false)
 		if err2 != nil {
 			return spec, fmt.Errorf("cannot import image %s: %s", image, err2)
 		}

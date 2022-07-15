@@ -15,18 +15,18 @@ import (
 )
 
 type TagCmd struct {
-	cmd *cobra.Command
+	Cmd *cobra.Command
 }
 
 func NewTagCmd() *TagCmd {
 	c := &TagCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:     "tag",
 			Short:   "add a tag to an existing package",
 			Long:    `create a tag TARGET_PACKAGE that refers to SOURCE_PACKAGE`,
 			Example: `art tag SOURCE_PACKAGE[:TAG] TARGET_PACKAGE[:TAG]`,
 		}}
-	c.cmd.Run = c.Run
+	c.Cmd.Run = c.Run
 	return c
 }
 

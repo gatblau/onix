@@ -18,21 +18,21 @@ import (
 
 // PullCmd pull a package from a remote registry
 type PullCmd struct {
-	cmd         *cobra.Command
+	Cmd         *cobra.Command
 	credentials string
 	path        string
 }
 
 func NewPullCmd() *PullCmd {
 	c := &PullCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "pull [FLAGS] NAME[:TAG]",
 			Short: "downloads an package from the package registry",
 			Long:  ``,
 		},
 	}
-	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
+	c.Cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
 	return c
 }
 
