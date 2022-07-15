@@ -472,29 +472,26 @@ func (p *Process) SendNotification(nType db.NotificationType) error {
 
 // BeforeComplete run any additional tasks before completing the processing of the pipeline
 func (p *Process) BeforeComplete(pipe *types.Pipeline) error {
-	// if doorman is configured to connect to the cmdb
-	if len(os.Getenv(OxWapiUri)) > 0 {
-		// if catalogue publication is enabled
+	// catalogue submission
+	if p.pipe.CMDB != nil {
 		if p.pipe.CMDB.Catalogue {
-			// if Doorman has a valid cmdb endpoint
-			if p.pipe.CMDB != nil {
-				if err := p.submitSpec(pipe.CMDB); err != nil {
-					return fmt.Errorf("cannot submit spec '%s' version '%s' to the cmdb: %s", p.spec.Name, p.spec.Version, err)
-				}
-			} else { // if not, issue a warning
-				p.Warn("cannot submit release %s %s to catalogue, OX_WAPI_URI is not defined", p.spec.Name, p.spec.Version)
+			if len(os.Getenv(OxWapiUri)) == 0 {
+				return fmt.Errorf("cannot submit release %s %s to catalogue, OX_WAPI_URI is not defined", p.spec.Name, p.spec.Version)
+			}
+			if err := p.submitSpec(pipe.CMDB); err != nil {
+				return fmt.Errorf("cannot submit spec '%s' version '%s' to the cmdb: %s", p.spec.Name, p.spec.Version, err)
 			}
 		}
-		// if the spec contains functions
-		if p.spec != nil && p.spec.Run != nil {
-			// if the pipeline has cmdb configuration
-			if p.pipe.CMDB != nil {
-				if err := p.submitSpecFx(pipe.CMDB); err != nil {
-					return fmt.Errorf("cannot submit function for spec '%s' version '%s' to the cmdb: %s", p.spec.Name, p.spec.Version, err)
-				}
-			} else {
-				p.Warn("spec contains functions but the pipeline is not configured to send them to the CMDB")
+	}
+	// if the spec contains functions
+	if p.spec != nil && p.spec.Run != nil {
+		// if the pipeline has cmdb configuration
+		if p.pipe.CMDB != nil {
+			if err := p.submitSpecFx(pipe.CMDB); err != nil {
+				return fmt.Errorf("cannot submit function for spec '%s' version '%s' to the cmdb: %s", p.spec.Name, p.spec.Version, err)
 			}
+		} else {
+			p.Warn("spec contains functions but the pipeline is not configured to send them to the CMDB")
 		}
 	}
 	return nil
