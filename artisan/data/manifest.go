@@ -50,7 +50,10 @@ type Manifest struct {
 	// the size of the package
 	Size string `json:"size"`
 	// what functions are available to call?
-	Functions []*FxInfo `json:"functions,omitempty"`
+	Functions  []*FxInfo `json:"functions,omitempty"`
+	OpenPolicy string    `json:"open_policy,omitempty"`
+	RunPolicy  string    `json:"run_policy,omitempty"`
+	SignPolicy string    `json:"sign_policy,omitempty"`
 }
 
 func (m Manifest) Fx(name string) *FxInfo {
