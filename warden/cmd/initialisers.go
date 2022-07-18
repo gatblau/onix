@@ -10,9 +10,17 @@ package cmd
 
 func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
-	launchCmd := NewLaunchCmd()
+	launchCmd := InitialiseLaunchCommand()
 	rootCmd.Cmd.AddCommand(
 		launchCmd.cmd,
 	)
 	return rootCmd
+}
+
+func InitialiseLaunchCommand() *LaunchCmd {
+	launchCmd := NewLaunchCmd()
+	basicCmd := NewBasicCmd()
+	tapCmd := NewTapCmd()
+	launchCmd.cmd.AddCommand(basicCmd.cmd, tapCmd.cmd)
+	return launchCmd
 }
