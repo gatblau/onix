@@ -27,6 +27,7 @@ const (
 	TapUserName           ConfKey = "TAP_USERNAME"
 	TapPassword           ConfKey = "TAP_PWD"
 	TapInsecureSkipVerify ConfKey = "TAP_INSECURE_SKIP_VERIFY"
+	TapBearerToken        ConfKey = "TAP_BEARER_TOKEN"
 )
 
 type RequestDetails struct {
@@ -48,6 +49,14 @@ func NewRequestHandler() *RequestHandler {
 }
 
 func (m *RequestDetails) send() {
+
+	if len(os.Getenv(string(TapBearerToken))) > 0 {
+		bearer := "Bearer " + os.Getenv(string(TapBearerToken))
+		m.req.Header.Add("Authorization", bearer)
+	} else if len(os.Getenv(string(TapUserName))) > 0 && len(os.Getenv(string(TapPassword))) > 0 {
+		m.req.SetBasicAuth(os.Getenv(string(TapUserName)), os.Getenv(string(TapPassword)))
+	}
+
 	resp, err := http.DefaultClient.Do(m.req)
 	if err != nil {
 		log.Println(" failed to send request ", err)

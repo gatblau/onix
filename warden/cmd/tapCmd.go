@@ -20,6 +20,7 @@ type TapCmd struct {
 	address            string // port number
 	uri                string
 	credential         string
+	bearertoken        string
 	insecureskipverify bool
 }
 
@@ -32,14 +33,15 @@ func NewTapCmd() *TapCmd {
 		},
 	}
 	c.cmd.Flags().BoolVarP(&c.verbose, "verbose", "v", false, "enables verbose output")
-	c.cmd.Flags().StringVarP(&c.address, "port", "a", ":8080", "port at which proxy should listen, expected format is :port_number")
-	c.cmd.Flags().StringVarP(&c.uri, "uri", "r", "", "uri to which request body has to be forwarded")
-	c.cmd.Flags().StringVarP(&c.credential, "credential", "u", "", "credentials, username:password or token to connect to uri")
-	c.cmd.Flags().BoolVarP(&c.insecureskipverify, "insecureskipverify", "k", false, "skip insecure ssl certificate verification when connecting to uri")
+	c.cmd.Flags().StringVarP(&c.address, "port", "p", ":8080", "port at which proxy should listen, expected format is :port_number")
+	c.cmd.Flags().StringVarP(&c.uri, "uri", "l", "", "uri to which request body has to be forwarded")
+	c.cmd.Flags().StringVarP(&c.credential, "credential", "c", "", "credentials, username:password to connect to uri")
+	c.cmd.Flags().StringVarP(&c.bearertoken, "bearertoken", "t", "", "token to connect to uri")
+	c.cmd.Flags().BoolVarP(&c.insecureskipverify, "insecureskipverify", "i", false, "skip insecure ssl certificate verification when connecting to uri")
 	c.cmd.Run = c.Run
 	return c
 }
 
 func (c *TapCmd) Run(_ *cobra.Command, _ []string) {
-	mode.Tap(c.uri, c.credential, c.address, c.verbose, c.insecureskipverify)
+	mode.Tap(c.uri, c.credential, c.address, c.bearertoken, c.verbose, c.insecureskipverify)
 }

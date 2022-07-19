@@ -53,7 +53,7 @@ func (sc *stoppableConn) Close() error {
 	return sc.Conn.Close()
 }
 
-func Tap(uri, credential, address string, verbose, insecureskipverify bool) {
+func Tap(uri, credential, address, token string, verbose, insecureskipverify bool) {
 	if len(uri) == 0 {
 		panic("URI is mandatory when running warden in a tap mode")
 	}
@@ -72,6 +72,10 @@ func Tap(uri, credential, address string, verbose, insecureskipverify bool) {
 		} else {
 			panic("Invalid credentials, valid format of credentials is username:password")
 		}
+	}
+
+	if len(token) > 0 {
+		os.Setenv(string(handler.TapBearerToken), token)
 	}
 
 	proxy := goproxy.NewProxyHttpServer()
