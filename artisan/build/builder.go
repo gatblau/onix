@@ -64,32 +64,29 @@ func NewBuilder(artHome string) *Builder {
 // profileName: the name of the profile to be built. If empty then the default profile is built. If no default profile exists, the first profile is built.
 // copy: indicates whether a copy should be made of the project files before packaging (only valid for from location in the file system)
 // interactive: true if the console should survey for missing variables
-// target: a specific target without relying on a build file
+// target: a specific target without relying on a build file (can be either relative or absolute)
 func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName, profileName string, copy bool, interactive bool, target string) {
+	// if we have a target then turn it into absolute path
+	if len(target) > 0 {
+		target, _ = filepath.Abs(target)
+	}
 	b.from = from
 	// prepare the source ready for the build
 	repo := b.prepareSource(from, fromPath, gitToken, name, copy, target)
 	// set the unique identifier name for both the zip file and the seal file
 	b.setUniqueIdName(repo)
 	// run commands
-	// set the command execution directory
-	execDir := b.loadFrom
-	buildProfile := b.runProfile(profileName, execDir, interactive)
-	// if the build target is a file or subdirectory in current folder
-	if buildProfile.Target == "." || strings.HasPrefix(buildProfile.MergedTarget, "..") || strings.HasPrefix(buildProfile.MergedTarget, "/") {
-		core.RaiseErr("invalid build target, target must be a file or folder under the build file\n")
-	}
+	buildProfile := b.runProfile(profileName, b.loadFrom, interactive)
 	// merge env with target
 	mergedTarget, _ := core.MergeEnvironmentVars([]string{buildProfile.Target}, b.env.Vars, interactive)
 	// set the merged target for later use
 	buildProfile.MergedTarget = mergedTarget[0]
 	// wait for the target to be created in the file system
-	targetPath := filepath.Join(b.loadFrom, mergedTarget[0])
 	core.Debug("waiting for build process to complete\n")
-	waitForTargetToBeCreated(targetPath)
+	waitForTargetToBeCreated(mergedTarget[0])
 	// compress the target defined in the build.yaml' profile
-	core.Debug("zipping target path '%s'\n", targetPath)
-	b.zipPackage(targetPath)
+	core.Debug("zipping target path '%s'\n", mergedTarget[0])
+	b.zipPackage(mergedTarget[0])
 	// creates a seal
 	core.Debug("creating package seal\n")
 	s, err := b.createSeal(buildProfile)
@@ -185,17 +182,22 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 		core.Debug("opening git repository '%s'", localPath)
 		repo = b.openRepo(localPath)
 	}
-	// read build.yaml
+	var (
+		bf  *data.BuildFile
+		err error
+	)
 	if len(target) == 0 {
-
-	}
-	buildFilePath := filepath.Join(b.loadFrom, "build.yaml")
-	core.Debug("loading build file from %s\n", buildFilePath)
-	bf, err := data.LoadBuildFile(buildFilePath)
-	// if it cannot find the build file
-	if err != nil {
-		if len(target) > 0 {
-			core.WarningLogger.Printf("build not found in '%s', building content only package\n", filepath.Join(b.loadFrom, target))
+		buildFilePath := filepath.Join(b.loadFrom, "build.yaml")
+		core.Debug("loading build file from %s\n", buildFilePath)
+		bf, err = data.LoadBuildFile(buildFilePath)
+		core.CheckErr(err, "no build file found at %s and no --target flag has been specified", buildFilePath)
+	} else {
+		// check that a build file exist in the target
+		buildFilePath := filepath.Join(target, "build.yaml")
+		core.Debug("loading build file from %s\n", target)
+		bf, err = data.LoadBuildFile(buildFilePath)
+		if err != nil {
+			core.WarningLogger.Printf("no build file found at target %s, building a content only package\n", target)
 			// dynamically creates one that packages anything on the build target
 			bf = &data.BuildFile{
 				Profiles: []*data.Profile{
@@ -207,8 +209,6 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 					},
 				},
 			}
-		} else {
-			core.RaiseErr("cannot build package: no build profile exists or target folder has been specified instead")
 		}
 	}
 	b.buildFile = bf
