@@ -17,6 +17,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.55.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.55.0
 	github.com/pkg/profile v1.6.0
+	github.com/radovskyb/watcher v1.0.7
 	github.com/rs/zerolog v1.24.0
 	github.com/spf13/cobra v1.5.0
 	go.opentelemetry.io/collector v0.55.0

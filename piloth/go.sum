@@ -938,6 +938,8 @@ github.com/prometheus/prometheus v0.36.2 h1:ZMqiEKdamv/YgI/7V5WtQGWbwEerCsXJ26CZ
 github.com/prometheus/statsd_exporter v0.21.0/go.mod h1:rbT83sZq2V+p73lHhPZfMc3MLCHmSHelCh9hSGYNLTQ=
 github.com/prometheus/statsd_exporter v0.22.5 h1:BUlQKc9TOw6uTmYgGMgKA4mT3+xSvygB3jLC1ms8sPQ=
 github.com/prometheus/statsd_exporter v0.22.5/go.mod h1:ZRQ6wIdLcUGkVv1JUzypTWEveGNIua59wtFF0ESTJxc=
+github.com/radovskyb/watcher v1.0.7 h1:AYePLih6dpmS32vlHfhCeli8127LzkIgwJGcwwe8tUE=
+github.com/radovskyb/watcher v1.0.7/go.mod h1:78okwvY5wPdzcb1UYnip1pvrZNIVEIh/Cm+ZuvsUYIg=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/rhnvrm/simples3 v0.6.1/go.mod h1:Y+3vYm2V7Y4VijFoJHHTrja6OgPrJ2cBti8dPGkC3sA=
 github.com/richardlehane/mscfb v1.0.3 h1:rD8TBkYWkObWO0oLDFCbwMeZ4KoalxQy+QgniCj3nKI=
