@@ -88,10 +88,13 @@ func (r *RemoteRegistry) List(quiet bool) {
 }
 
 // RemoveByNameFilter remove one or more packages whose name matches the filter regex
-func (r *RemoteRegistry) RemoveByNameFilter(filter string) error {
+func (r *RemoteRegistry) RemoveByNameFilter(filter string, dryRun bool) error {
 	repos, err, _, tls := r.api.GetAllRepositoryInfo(r.user, r.pwd, true)
 	if err != nil {
 		return err
+	}
+	if dryRun {
+		core.InfoLogger.Printf("searching candidates for removal:\n")
 	}
 	for _, repo := range repos {
 		for _, p := range repo.Packages {
@@ -106,6 +109,10 @@ func (r *RemoteRegistry) RemoveByNameFilter(filter string) error {
 					return fmt.Errorf("invalid filter expression '%s': %s", filter, err2)
 				}
 				if matched {
+					if dryRun {
+						core.InfoLogger.Printf("=> %s\n", name.FullyQualifiedNameTag())
+						continue
+					}
 					// if more than one tag exist, remove the tag
 					if tagCount > 1 {
 						// get the package metadata
@@ -213,4 +220,11 @@ func (r *RemoteRegistry) RemoveByNameOrId(nameOrId []string) error {
 		}
 	}
 	return nil
+}
+
+func printPackages(name []string) {
+	core.InfoLogger.Printf("dry-run found %d candidates for removal:\n", len(name))
+	for i, n := range name {
+		core.InfoLogger.Printf("%d => %s\n", i, n)
+	}
 }
