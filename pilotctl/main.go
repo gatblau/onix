@@ -39,6 +39,7 @@ func main() {
 		// pilot http handlers
 		router.HandleFunc("/ping", pingHandler).Methods(http.MethodPost)
 		router.HandleFunc("/register", registerHandler).Methods(http.MethodPost)
+		router.HandleFunc("/cve/upload", cveReportExportHandler).Methods(http.MethodPost)
 
 		// apply authorisation to admin user http handlers
 		router.Handle("/info/sync", s.Authorise(syncInfoHandler)).Methods(http.MethodPost)
@@ -63,6 +64,7 @@ func main() {
 		router.Handle("/dictionary", s.Authorise(setDictionaryHandler)).Methods(http.MethodPut)
 		router.Handle("/dictionary/{key}", s.Authorise(deleteDictionaryHandler)).Methods(http.MethodDelete)
 		router.Handle("/dictionary", s.Authorise(getDictionaryListHandler)).Methods(http.MethodGet)
+		router.Handle("/cve/baseline", s.Authorise(getCVEBaselineHandler)).Methods(http.MethodGet)
 
 		router.HandleFunc("/pub", getKeyHandler).Methods(http.MethodGet)
 
@@ -74,6 +76,7 @@ func main() {
 	s.Auth = map[string]func(http.Request) *oxc.UserPrincipal{
 		"^/register":         pilotAuth,
 		"^/ping":             pilotAuth,
+		"^/cve/upload":       pilotAuth,
 		"^/activation/.*/.*": activationSvc,
 		"^/pub":              nil,
 		"^/$":                nil,

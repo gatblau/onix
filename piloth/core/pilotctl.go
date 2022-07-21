@@ -186,11 +186,11 @@ func (r *PilotCtl) addToken(req *http.Request, payload ctlCore.Serializable) err
 
 func (r *PilotCtl) SubmitCveReport(report []byte) error {
 	var payload ctlCore.Serializable
-	payload = &ctl.CveReportRequest{
+	payload = &ctl.CveRequest{
 		HostUUID: r.host.HostUUID,
 		Report:   report,
 	}
-	uri := fmt.Sprintf("%s/upload/cve", r.cfg.BaseURI)
+	uri := fmt.Sprintf("%s/cve/upload", r.cfg.BaseURI)
 	resp, err := r.client.Post(uri, payload, r.addToken)
 	if err != nil {
 		return fmt.Errorf("cannot submit CVE report: %s", err)

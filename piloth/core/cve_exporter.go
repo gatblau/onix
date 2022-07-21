@@ -9,10 +9,10 @@
 package core
 
 import (
+	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/radovskyb/watcher"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -62,24 +62,30 @@ func (r *CVEExporter) Start() error {
 	}()
 	if _, err := os.Stat(r.pathToWatch); os.IsNotExist(err) {
 		if err = os.MkdirAll(r.pathToWatch, 0755); err != nil {
-			core.RaiseErr("cannot create cve folder: %s", err)
+			return fmt.Errorf("cannot create cve folder: %s", err)
 		}
 	}
 	// watch this folder for changes
 	if err := r.w.Add(r.pathToWatch); err != nil {
-		log.Fatalln(err)
+		return fmt.Errorf(err.Error())
 	}
 	files, err := ioutil.ReadDir(r.pathToWatch)
 	core.CheckErr(err, "cannot read CVE path")
 	for _, file := range files {
-		err = r.submit(file.Name(), time.Duration(0), r.ctl)
+		err = r.submit(filepath.Join(r.pathToWatch, file.Name()), time.Duration(0), r.ctl)
 		if err != nil {
 			core.ErrorLogger.Printf("cannot submit CVE report: %s\n", err)
 		}
 	}
 	core.InfoLogger.Printf("watching for new CVE (*.json) reports at %s\n", r.pathToWatch)
 	// Start the watching process - it'll check for changes every 15 secs.
-	return r.w.Start(time.Second * 15)
+	go func() {
+		err = r.w.Start(time.Second * 15)
+		if err != nil {
+			core.ErrorLogger.Printf(err.Error())
+		}
+	}()
+	return nil
 }
 
 func (r *CVEExporter) Close() {

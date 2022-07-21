@@ -15,26 +15,6 @@
         "version": "0.0.4"
     },
     "paths": {
-        "/": {
-            "get": {
-                "description": "Checks that the HTTP server is listening on the required port.\nUse a liveliness probe.\nIt does not guarantee the server is ready to accept calls.",
-                "produces": [
-                    "text/plain"
-                ],
-                "tags": [
-                    "General"
-                ],
-                "summary": "Check that the HTTP API is live",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/admission": {
             "put": {
                 "description": "inform pilotctl to accept management connections coming from a host pilot agent\nadmitting a host also requires associating the relevant logistic information such as org, area and location for the host",
@@ -221,6 +201,46 @@
                         "name": "name",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/cve/baseline": {
+            "get": {
+                "description": "Returns a list of packages that must be updated to fix CVEs across hosts",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Report"
+                ],
+                "summary": "Get CVE Baseline",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the minimum CVSS score to include in the baseline",
+                        "name": "score",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "a pipe | separated list of labels associated to the host(s) to include in the baseline",
+                        "name": "label",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1122,17 +1142,10 @@
             "type": "object",
             "properties": {
                 "file": {
-                    "description": "reguired by configuration files",
+                    "description": "required by configuration files",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/data.File"
-                    }
-                },
-                "key": {
-                    "description": "required PGP keys",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/data.Key"
                     }
                 },
                 "secret": {
@@ -1148,43 +1161,6 @@
                     "items": {
                         "$ref": "#/definitions/data.Var"
                     }
-                }
-            }
-        },
-        "data.Key": {
-            "type": "object",
-            "properties": {
-                "aggregate": {
-                    "description": "indicates if this key should be aggregated with other keys",
-                    "type": "boolean"
-                },
-                "description": {
-                    "description": "a description of the intended use of this key",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "the unique reference for the PGP key",
-                    "type": "string"
-                },
-                "package_group": {
-                    "description": "the artisan package group used to select the key",
-                    "type": "string"
-                },
-                "package_name": {
-                    "description": "the artisan package name used to select the key",
-                    "type": "string"
-                },
-                "path": {
-                    "description": "the path to the key in the Artisan registry",
-                    "type": "string"
-                },
-                "private": {
-                    "description": "indicates if the referred key is private or public",
-                    "type": "boolean"
-                },
-                "value": {
-                    "description": "the key content",
-                    "type": "string"
                 }
             }
         },

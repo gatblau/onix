@@ -17,14 +17,9 @@ definitions:
   data.Input:
     properties:
       file:
-        description: reguired by configuration files
+        description: required by configuration files
         items:
           $ref: '#/definitions/data.File'
-        type: array
-      key:
-        description: required PGP keys
-        items:
-          $ref: '#/definitions/data.Key'
         type: array
       secret:
         description: required string value secrets
@@ -36,33 +31,6 @@ definitions:
         items:
           $ref: '#/definitions/data.Var'
         type: array
-    type: object
-  data.Key:
-    properties:
-      aggregate:
-        description: indicates if this key should be aggregated with other keys
-        type: boolean
-      description:
-        description: a description of the intended use of this key
-        type: string
-      name:
-        description: the unique reference for the PGP key
-        type: string
-      package_group:
-        description: the artisan package group used to select the key
-        type: string
-      package_name:
-        description: the artisan package name used to select the key
-        type: string
-      path:
-        description: the path to the key in the Artisan registry
-        type: string
-      private:
-        description: indicates if the referred key is private or public
-        type: boolean
-      value:
-        description: the key content
-        type: string
     type: object
   data.Secret:
     properties:
@@ -272,22 +240,6 @@ info:
   title: Pilot Control
   version: 0.0.4
 paths:
-  /:
-    get:
-      description: |-
-        Checks that the HTTP server is listening on the required port.
-        Use a liveliness probe.
-        It does not guarantee the server is ready to accept calls.
-      produces:
-      - text/plain
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-      summary: Check that the HTTP API is live
-      tags:
-      - General
   /admission:
     put:
       description: |-
@@ -424,6 +376,34 @@ paths:
       summary: Get a Command definition
       tags:
       - Command
+  /cve/baseline:
+    get:
+      description: Returns a list of packages that must be updated to fix CVEs across
+        hosts
+      parameters:
+      - description: the minimum CVSS score to include in the baseline
+        in: query
+        name: score
+        type: string
+      - description: a pipe | separated list of labels associated to the host(s) to
+          include in the baseline
+        in: query
+        name: label
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get CVE Baseline
+      tags:
+      - Report
   /dictionary:
     get:
       description: Retrieve a list of available dictionaries

@@ -26,7 +26,7 @@ functions:
   - name: swagen
     description: generates/refreshes the OpenAPI specifications for PilotCtl's HTTP API
     run:
-      - swag init -d ./ -g ./handlers.go  --parseDependency types/*.go
+      - swag init -d "./,types,../artisan/data" -g handlers.go
 
   - name: release
     description: builds and publishes the Pilot Control image

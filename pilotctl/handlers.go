@@ -114,6 +114,70 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(bytes)
 }
 
+func cveReportExportHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("cannot read CVE export payload: %s\n", err)
+		http.Error(w, "cannot read CVE export payload, check the server logs\n", http.StatusBadRequest)
+		return
+	}
+	cveRequest := new(CveRequest)
+	err = json.Unmarshal(body, cveRequest)
+	if err != nil {
+		log.Printf("cannot unmarshal CVE export payload: %s\n", err)
+		http.Error(w, "cannot unmarshal CVE export payload, check the server logs\n", http.StatusBadRequest)
+		return
+	}
+	report, err := NewCveReport(cveRequest.Report)
+	if err != nil {
+		log.Printf("cannot load CVE report: %s\n", err)
+		http.Error(w, "cannot load CVE report, check the server logs\n", http.StatusBadRequest)
+		return
+	}
+	err = core.Api().UpsertCVE(cveRequest.HostUUID, report)
+	if err != nil {
+		log.Printf("cannot update CVE information: %s\n", err)
+		http.Error(w, "cannot update CVE information, check the server logs\n", http.StatusBadRequest)
+		return
+	}
+}
+
+// @Summary Get CVE Baseline
+// @Description Returns a list of packages that must be updated to fix CVEs across hosts
+// @Tags Report
+// @Router /cve/baseline [get]
+// @Param score query string false "the minimum CVSS score to include in the baseline"
+// @Param label query string false "a pipe | separated list of labels associated to the host(s) to include in the baseline"
+// @Produce plain
+// @Failure 500 {string} there was an error in the server, check the server logs
+// @Success 200 {string} OK
+func getCVEBaselineHandler(w http.ResponseWriter, r *http.Request) {
+	minScore := r.FormValue("score")
+	labels := r.FormValue("label")
+	var label []string
+	if len(labels) > 0 {
+		label = strings.Split(labels, "|")
+	}
+	score, err := strconv.ParseFloat(minScore, 32)
+	list, err := core.Api().GetCVEBaseline(score, label)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	tracker := make(map[string]bool)
+	b := strings.Builder{}
+	b.WriteString("CVE-ID,CVSS-SCORE,PACKAGE,FIXED-IN\n")
+	for _, p := range list {
+		// dedup packages
+		if !tracker[p.PackageName] {
+			tracker[p.PackageName] = true
+			b.WriteString(fmt.Sprintf("%s,%v,%s,%s\n", p.CveID, p.CvssScore, p.PackageName, p.FixedIn))
+		}
+	}
+	httpserver.Write(w, r, b.String())
+}
+
 // @Summary Get All Hosts
 // @Description Returns a list of remote hosts
 // @Tags Host

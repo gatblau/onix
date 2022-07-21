@@ -21,4 +21,8 @@ type Host struct {
 	Since          int      `json:"since"`
 	SinceType      string   `json:"since_type"`
 	Label          []string `json:"label"`
+	Critical       int      `json:"critical"`
+	High           int      `json:"high"`
+	Medium         int      `json:"medium"`
+	Low            int      `json:"low"`
 }
