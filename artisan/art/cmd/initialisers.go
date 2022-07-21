@@ -72,7 +72,7 @@ func InitialiseUtilCommand() *UtilCmd {
 	utilPwdCmd := NewUtilPwdCmd()
 	utilNameCmd := NewUtilNameCmd()
 	utilExtractCmd := NewUtilExtractCmd()
-	utilB64Cmd := NewUtilStampCmd()
+	utilB64Cmd := NewUtilBase64Cmd()
 	utilStampCmd := NewUtilStampCmd()
 	utilCmd.Cmd.AddCommand(utilPwdCmd.Cmd)
 	utilCmd.Cmd.AddCommand(utilExtractCmd.Cmd)
