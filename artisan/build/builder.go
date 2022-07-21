@@ -79,14 +79,18 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 	buildProfile := b.runProfile(profileName, b.loadFrom, interactive)
 	// merge env with target
 	mergedTarget, _ := core.MergeEnvironmentVars([]string{buildProfile.Target}, b.env.Vars, interactive)
+	t := mergedTarget[0]
+	if strings.HasPrefix(t, "./") || t[0] != '/' {
+		t = filepath.Join(b.loadFrom, t)
+	}
 	// set the merged target for later use
-	buildProfile.MergedTarget = mergedTarget[0]
+	buildProfile.MergedTarget = t
 	// wait for the target to be created in the file system
 	core.Debug("waiting for build process to complete\n")
-	waitForTargetToBeCreated(mergedTarget[0])
+	waitForTargetToBeCreated(t)
 	// compress the target defined in the build.yaml' profile
-	core.Debug("zipping target path '%s'\n", mergedTarget[0])
-	b.zipPackage(mergedTarget[0])
+	core.Debug("zipping target path '%s'\n", t)
+	b.zipPackage(t)
 	// creates a seal
 	core.Debug("creating package seal\n")
 	s, err := b.createSeal(buildProfile)
