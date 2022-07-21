@@ -28,7 +28,7 @@ func TestSpec_SaveSpec(t *testing.T) {
 }
 
 func TestSpec_ImportSpec(t *testing.T) {
-	_, err := ImportSpec(ImportOptions{"s3://localhost:9000/app1/v1", "minioadmin:minioadmin", "", "", nil, ""})
+	_, err := ImportSpec(ImportOptions{"s3://localhost:9000/app1/v1", "minioadmin:minioadmin", "", "", nil})
 	if err != nil {
 		t.Fatal(err)
 	}
