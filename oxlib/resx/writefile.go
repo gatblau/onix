@@ -123,7 +123,7 @@ func EnsureBucketNotification(uri, creds, filterSuffix string, arn *notification
 	// if it does not exist creates it
 	// NOTE! it does not couple the creation of the notification with the bucket creation to avoid case where the bucket exists
 	// but the notification does not, and then the notification is not created
-	if arn != nil && len(notif.QueueConfigs) == 0 {
+	if arn != nil && notif.QueueConfigs == nil {
 		Debug("bucket %s notification: not set", bucketName)
 		// creates the notification configuration
 		cfg := notification.NewConfig(*arn)
