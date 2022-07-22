@@ -119,12 +119,12 @@ func EnsureBucketNotification(uri, creds, filterSuffix string, arn *notification
 		Debug("bucket %s: created", bucketName)
 	}
 	// Check to see if the notification exists
-	notif, err := s3Client.GetBucketNotification(ctx, bucketName)
+	_, err = s3Client.GetBucketNotification(ctx, bucketName)
 	// if it does not exist creates it
 	// NOTE! it does not couple the creation of the notification with the bucket creation to avoid case where the bucket exists
 	// but the notification does not, and then the notification is not created
-	if arn != nil && notif.QueueConfigs == nil {
-		Debug("bucket %s notification: not set", bucketName)
+	if arn != nil {
+		Debug("setting bucket %s notification", bucketName)
 		// creates the notification configuration
 		cfg := notification.NewConfig(*arn)
 		cfg.AddEvents(notification.ObjectCreatedPut)
@@ -134,7 +134,7 @@ func EnsureBucketNotification(uri, creds, filterSuffix string, arn *notification
 		// set the bucket notification
 		err = s3Client.SetBucketNotification(ctx, bucketName, config)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to set bucket notification for ARN '%s': %s\n", arn.String(), err)
+			log.Printf(fmt.Errorf("Failed to set bucket notification for ARN '%s': %s\n", arn.String(), err).Error())
 		}
 		Debug("bucket %s notification: created", bucketName)
 	}
