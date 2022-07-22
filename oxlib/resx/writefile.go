@@ -118,11 +118,10 @@ func EnsureBucketNotification(uri, creds, filterSuffix string, arn *notification
 		}
 		Debug("bucket %s: created", bucketName)
 	}
-	// Check to see if the notification exists
+	// gets the bucket notification
 	_, err = s3Client.GetBucketNotification(ctx, bucketName)
-	// if it does not exist creates it
-	// NOTE! it does not couple the creation of the notification with the bucket creation to avoid case where the bucket exists
-	// but the notification does not, and then the notification is not created
+	// if an ARN has been defined in the configuration, ensures that a queue configuration exists of the PUT event
+	// of the bucket
 	if arn != nil {
 		Debug("setting bucket %s notification", bucketName)
 		// creates the notification configuration
