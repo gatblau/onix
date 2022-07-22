@@ -268,9 +268,15 @@ func ImportSpec(opts ImportOptions) (*Spec, error) {
 			return spec, fmt.Errorf("cannot read %s.tar: %s", pkgName(image), err)
 		}
 		core.InfoLogger.Printf("loading => %s\n", image)
-		out, err2 := build.Exe(fmt.Sprintf("art exe %s import", image), ".", merge.NewEnVarFromSlice([]string{}), false)
+		builder := build.NewBuilder("")
+		pkg, err3 := core.ParseName(image)
+		if err3 != nil {
+			return spec, fmt.Errorf("cannot parse package name %s: %s", name, err)
+		}
+		// run the function on the open package
+		core.Debug("executing art run %s import", image)
+		err2 = builder.Execute(pkg, "import", "", false, "", false, merge.NewEnVarFromSlice([]string{}))
 		if err2 != nil {
-			core.Debug("shell command output: %s", out)
 			return spec, fmt.Errorf("cannot import image %s: %s", image, err2)
 		}
 	}
