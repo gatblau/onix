@@ -270,7 +270,7 @@ func ImportSpec(opts ImportOptions) (*Spec, error) {
 		core.InfoLogger.Printf("loading => %s\n", image)
 		out, err2 := build.Exe(fmt.Sprintf("art exe %s import", image), ".", merge.NewEnVarFromSlice([]string{}), false)
 		if err2 != nil {
-			core.Debug("shell command output:", out)
+			core.Debug("shell command output: %s", out)
 			return spec, fmt.Errorf("cannot import image %s: %s", image, err2)
 		}
 	}
