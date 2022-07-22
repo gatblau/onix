@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/notification"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -108,12 +109,14 @@ func EnsureBucketNotification(uri, creds, filterSuffix string, arn *notification
 	if err != nil {
 		return nil, fmt.Errorf("Failed to check if bucket exists: %s\n", err)
 	}
+	Debug("bucket %s exists = %t", bucketName, exists)
 	// if the bucket does not exist, attempts to create it
 	if !exists {
 		err = s3Client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: ""})
 		if err != nil {
 			return nil, fmt.Errorf("Failed to create bucket: %s\n", err)
 		}
+		Debug("bucket %s: created", bucketName)
 	}
 	// Check to see if the notification exists
 	_, err = s3Client.GetBucketNotification(ctx, bucketName)
@@ -121,6 +124,7 @@ func EnsureBucketNotification(uri, creds, filterSuffix string, arn *notification
 	// NOTE! it does not couple the creation of the notification with the bucket creation to avoid case where the bucket exists
 	// but the notification does not, and then the notification is not created
 	if arn != nil && err != nil {
+		Debug("bucket %s notification: not set", bucketName)
 		// creates the notification configuration
 		cfg := notification.NewConfig(*arn)
 		cfg.AddEvents(notification.ObjectCreatedPut)
@@ -132,6 +136,27 @@ func EnsureBucketNotification(uri, creds, filterSuffix string, arn *notification
 		if err != nil {
 			return nil, fmt.Errorf("Failed to set bucket notification for ARN '%s': %s\n", arn.String(), err)
 		}
+		Debug("bucket %s notification: created")
 	}
 	return s3Client, nil
+}
+
+// Debug writes a debug message to the console
+func Debug(msg string, a ...interface{}) {
+	if InDebugMode() {
+		DebugLogger.Printf("%s\n", fmt.Sprintf(msg, a...))
+	}
+}
+
+// InDebugMode check for a ARTISAN_DEBUG variable set
+func InDebugMode() bool {
+	return len(os.Getenv("ARTISAN_DEBUG")) > 0
+}
+
+var (
+	DebugLogger *log.Logger
+)
+
+func init() {
+	DebugLogger = log.New(os.Stdout, "ART DEBUG: ", log.Ldate|log.Ltime|log.Lmsgprefix|log.LUTC|log.Lmicroseconds)
 }
