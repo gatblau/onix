@@ -148,9 +148,13 @@ func (p *Process) Start() {
 
 func (p *Process) run() {
 	defer func() {
-		// remove the artisan home once the processing is complete
-		if err := os.RemoveAll(p.artHome()); err != nil {
-			core.WarningLogger.Printf("cannot cleanup artisan home @ '%s': %s", p.artHome(), err)
+		if core.InDebugMode() {
+			core.Debug("local artisan registry: %s", p.artHome())
+		} else {
+			// remove the artisan home once the processing is complete
+			if err := os.RemoveAll(p.artHome()); err != nil {
+				core.WarningLogger.Printf("cannot cleanup artisan home @ '%s': %s", p.artHome(), err)
+			}
 		}
 	}()
 	p.Info("processing release Id=%s → %s/%s", p.serviceId, p.bucketName, p.folderName)
