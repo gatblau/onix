@@ -217,22 +217,26 @@ func ExportSpec(opts ExportOptions) error {
 }
 
 func ImportSpec(opts ImportOptions) (*Spec, error) {
+	core.Debug("validating import options")
 	if err := opts.Valid(); err != nil {
 		return nil, fmt.Errorf("invalid import options: %s\n", err)
 	}
 	var skipArtefact bool
 	r := registry.NewLocalRegistry(opts.ArtHome)
+	core.Debug("target URI: %s", opts.TargetUri)
 	uri := fmt.Sprintf("%s/spec.yaml", opts.TargetUri)
 	core.InfoLogger.Printf("retrieving %s\n", uri)
 	specBytes, err := resx.ReadFile(uri, opts.TargetCreds)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read spec.yaml: %s", err)
 	}
+	core.Debug("unmarshalling spec")
 	spec := new(Spec)
 	err = yaml.Unmarshal(specBytes, spec)
 	if err != nil {
 		return nil, fmt.Errorf("cannot unmarshal spec.yaml: %s", err)
 	}
+	core.Debug("processing packages")
 	// import packages
 	for _, pkName := range spec.Packages {
 		if skipArtefact, opts.Filter = skip(opts.Filter, pkName); skipArtefact {
@@ -248,6 +252,7 @@ func ImportSpec(opts ImportOptions) (*Spec, error) {
 			return spec, fmt.Errorf("cannot read %s.tar: %s", pkgName(pkName), err2)
 		}
 	}
+	core.Debug("processing images")
 	// import images
 	for _, image := range spec.Images {
 		if skipArtefact, opts.Filter = skip(opts.Filter, image); skipArtefact {
@@ -263,8 +268,9 @@ func ImportSpec(opts ImportOptions) (*Spec, error) {
 			return spec, fmt.Errorf("cannot read %s.tar: %s", pkgName(image), err)
 		}
 		core.InfoLogger.Printf("loading => %s\n", image)
-		_, err2 = build.Exe(fmt.Sprintf("art exe %s import", image), ".", merge.NewEnVarFromSlice([]string{}), false)
+		out, err2 := build.Exe(fmt.Sprintf("art exe %s import", image), ".", merge.NewEnVarFromSlice([]string{}), false)
 		if err2 != nil {
+			core.Debug("shell command output:", out)
 			return spec, fmt.Errorf("cannot import image %s: %s", image, err2)
 		}
 	}
