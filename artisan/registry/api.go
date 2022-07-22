@@ -192,7 +192,7 @@ func (r *Api) GetRepositoryInfo(group, name, user, pwd string, https bool) (*Rep
 	switch resp.StatusCode {
 	case http.StatusNotFound:
 		// if repository is nil then the client is not talking to the proper package registry
-		return nil, fmt.Errorf("\"%s\" does not conform to the Package Registry API, are you sure the package domain is correct? not found %s", r.domain, req.RequestURI), resp.StatusCode
+		return nil, fmt.Errorf("\"%s\" does not conform to the Package Registry API, are you sure the package domain is correct? not found '%s'", r.domain, req.RequestURI), resp.StatusCode
 	case http.StatusForbidden:
 		return nil, fmt.Errorf("access to the registry is forbidden"), resp.StatusCode
 	case http.StatusUnauthorized:
@@ -242,7 +242,7 @@ func (r *Api) getAllRepositoryInfo(user, pwd string, tls bool) ([]Repository, er
 	switch resp.StatusCode {
 	case http.StatusNotFound:
 		// if repository is nil then the client is not talking to the proper package registry
-		return nil, fmt.Errorf("\"%s\" does not conform to the Package Registry API, are you sure the package domain is correct?: not found %s", r.domain, req.RequestURI), resp.StatusCode
+		return nil, fmt.Errorf("\"%s\" does not conform to the Package Registry API, are you sure the package domain is correct?: not found '%s'", r.domain, req.RequestURI), resp.StatusCode
 	case http.StatusForbidden:
 		return nil, fmt.Errorf("access to the registry is forbidden"), resp.StatusCode
 	case http.StatusUnauthorized:
