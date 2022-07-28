@@ -35,15 +35,16 @@ type Builder struct {
 	repoURI          string
 	commit           string
 	from             string
-	repoName         *core.PackageName
+	RepoName         *core.PackageName
 	buildFile        *data.BuildFile
 	localReg         *registry.LocalRegistry
 	shouldCopySource bool
 	loadFrom         string
 	env              *merge.Envar
-	zip              bool // if the target is already zipped before packaging (e.g. jar, zip files, etc)
 	artHome          string
-	sealPostProcess  func(b *Builder, s *data.Seal) error
+	sProc            func(b *Builder, s *data.Seal) error
+	vProc            func(n *core.PackageName, s *data.Seal, p string) error
+	rProc            func(name *core.PackageName, f string, seal *data.Seal) error
 }
 
 func NewBuilder(artHome string) *Builder {
@@ -52,7 +53,7 @@ func NewBuilder(artHome string) *Builder {
 	builder.artHome = artHome
 	// check the localRepo directory is there
 	builder.localReg = registry.NewLocalRegistry(artHome)
-	builder.sealPostProcess = defaultSealPostProcessor
+	builder.sProc = sProcessor
 	return builder
 }
 
@@ -63,43 +64,42 @@ func NewBuilder(artHome string) *Builder {
 // profileName: the name of the profile to be built. If empty then the default profile is built. If no default profile exists, the first profile is built.
 // copy: indicates whether a copy should be made of the project files before packaging (only valid for from location in the file system)
 // interactive: true if the console should survey for missing variables
-// target: a specific target without relying on a build file
+// target: a specific target without relying on a build file (can be either relative or absolute)
 func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName, profileName string, copy bool, interactive bool, target string) {
+	// if we have a target then turn it into absolute path
+	if len(target) > 0 {
+		target, _ = filepath.Abs(target)
+	}
 	b.from = from
 	// prepare the source ready for the build
 	repo := b.prepareSource(from, fromPath, gitToken, name, copy, target)
 	// set the unique identifier name for both the zip file and the seal file
 	b.setUniqueIdName(repo)
 	// run commands
-	// set the command execution directory
-	execDir := b.loadFrom
-	buildProfile := b.runProfile(profileName, execDir, interactive)
-	// if the build target is a file or subdirectory in current folder
-	if buildProfile.Target == "." || strings.HasPrefix(buildProfile.MergedTarget, "..") || strings.HasPrefix(buildProfile.MergedTarget, "/") {
-		core.RaiseErr("invalid build target, target must be a file or folder under the build file\n")
-	}
+	buildProfile := b.runProfile(profileName, b.loadFrom, interactive)
 	// merge env with target
 	mergedTarget, _ := core.MergeEnvironmentVars([]string{buildProfile.Target}, b.env.Vars, interactive)
 	// set the merged target for later use
 	buildProfile.MergedTarget = mergedTarget[0]
 	// wait for the target to be created in the file system
-	targetPath := filepath.Join(b.loadFrom, mergedTarget[0])
 	core.Debug("waiting for build process to complete\n")
-	waitForTargetToBeCreated(targetPath)
+	workingTarget := mergedTarget[0]
+	if strings.HasPrefix(workingTarget, "./") || workingTarget[0] != '/' {
+		workingTarget = filepath.Join(b.loadFrom, workingTarget)
+	}
+	waitForTargetToBeCreated(workingTarget)
 	// compress the target defined in the build.yaml' profile
-	core.Debug("zipping target path '%s'\n", targetPath)
-	b.zipPackage(targetPath)
+	core.Debug("zipping target path '%s'\n", workingTarget)
+	b.zipPackage(workingTarget)
 	// creates a seal
 	core.Debug("creating package seal\n")
 	s, err := b.createSeal(buildProfile)
 	core.CheckErr(err, "cannot create package seal")
-	err = b.sealPostProcess(b, s)
-	core.CheckErr(err, "cannot post process package")
 	// save the seal
 	core.CheckErr(ioutil.WriteFile(b.workDirJsonFilename(), core.ToJsonBytes(s), os.ModePerm), "failed to write package seal file")
 	// add the package to the local repo
 	core.Debug("adding package to local registry\n")
-	b.localReg.Add(b.workDirZipFilename(), b.repoName, s)
+	b.localReg.Add(b.WorkDirPackageFilename(), b.RepoName, s)
 	// cleanup all relevant folders and move package to target location
 	core.Debug("performing cleanup\n")
 	b.cleanUp()
@@ -133,7 +133,7 @@ func (b *Builder) Run(function string, path string, interactive bool, env *merge
 // either clone a remote git repo or copy a local one onto the source folder
 func (b *Builder) prepareSource(from string, fromPath string, gitToken string, tagName *core.PackageName, copy bool, target string) *git.Repository {
 	var repo *git.Repository
-	b.repoName = tagName
+	b.RepoName = tagName
 	// creates a temporary working directory
 	b.workingDir = b.newWorkingDir()
 	core.Debug("creating temporary working directory '%s'\n", b.workingDir)
@@ -186,17 +186,22 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 		core.Debug("opening git repository '%s'", localPath)
 		repo = b.openRepo(localPath)
 	}
-	// read build.yaml
+	var (
+		bf  *data.BuildFile
+		err error
+	)
 	if len(target) == 0 {
-
-	}
-	buildFilePath := filepath.Join(b.loadFrom, "build.yaml")
-	core.Debug("loading build file from %s\n", buildFilePath)
-	bf, err := data.LoadBuildFile(buildFilePath)
-	// if it cannot find the build file
-	if err != nil {
-		if len(target) > 0 {
-			core.WarningLogger.Printf("build not found in '%s', building content only package\n", filepath.Join(b.loadFrom, target))
+		buildFilePath := filepath.Join(b.loadFrom, "build.yaml")
+		core.Debug("loading build file from %s\n", buildFilePath)
+		bf, err = data.LoadBuildFile(buildFilePath)
+		core.CheckErr(err, "no build file found at %s and no --target flag has been specified", buildFilePath)
+	} else {
+		// check that a build file exist in the target
+		buildFilePath := filepath.Join(target, "build.yaml")
+		core.Debug("loading build file from %s\n", target)
+		bf, err = data.LoadBuildFile(buildFilePath)
+		if err != nil {
+			core.WarningLogger.Printf("no build file found at target %s, building a content only package\n", target)
 			// dynamically creates one that packages anything on the build target
 			bf = &data.BuildFile{
 				Profiles: []*data.Profile{
@@ -208,8 +213,6 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 					},
 				},
 			}
-		} else {
-			core.RaiseErr("cannot build package: no build profile exists or target folder has been specified instead")
 		}
 	}
 	b.buildFile = bf
@@ -225,32 +228,9 @@ func (b *Builder) zipPackage(targetPath string) {
 	// if the target is a directory
 	if info.IsDir() {
 		// then zip it
-		core.CheckErr(zipSource(targetPath, b.workDirZipFilename(), ignored), "failed to compress folder")
+		core.CheckErr(zipSource(targetPath, b.WorkDirPackageFilename(), ignored), "failed to compress folder")
 	} else {
-		// if it is a file open it to check its type
-		file, err := os.Open(targetPath)
-		core.CheckErr(err, "failed to open target: %s", targetPath)
-		// find the content type
-		contentType, err := findContentType(file)
-		core.CheckErr(err, "failed to find target content type")
-		// if the file is not a zip file
-		if contentType != "application/zip" {
-			b.zip = false
-			// the zip it
-			core.CheckErr(zipSource(targetPath, b.workDirZipFilename(), ignored), "failed to compress file target")
-			return
-		} else {
-			b.zip = true
-			// find the file extension
-			ext := filepath.Ext(targetPath)
-			// if the extension is not zip (e.g. jar files)
-			if ext != ".zip" {
-				// rename the file to .zip - do not use os.Rename to avoid "invalid cross-device link" error if running in kubernetes
-				core.CheckErr(renameFile(targetPath, b.workDirZipFilename()), "failed to rename file target to .zip extension")
-				return
-			}
-			return
-		}
+		core.RaiseErr("build target %s must be a folder", targetPath)
 	}
 }
 
@@ -331,7 +311,7 @@ func (b *Builder) setUniqueIdName(repo *git.Repository) {
 		hash = fmt.Sprintf("-%s", ref.Hash().String()[:10])
 	}
 	// get the current time
-	t := time.Now()
+	t := time.Now().UTC()
 	timeStamp := fmt.Sprintf("%04s%02d%02d%02d%02d%02d%s", strconv.Itoa(t.Year()), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), strconv.Itoa(t.Nanosecond())[:3])
 	b.uniqueIdName = fmt.Sprintf("%s%s", timeStamp, hash)
 	core.Debug("package files name is '%s'\n", b.uniqueIdName)
@@ -533,7 +513,7 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 	// merge the labels in the profile with the ones at the build file level
 	labels := mergeMaps(b.buildFile.Labels, profile.Labels)
 	// gets the size of the package
-	zipInfo, err := os.Stat(b.workDirZipFilename())
+	zipInfo, err := os.Stat(b.WorkDirPackageFilename())
 	if err != nil {
 		return nil, err
 	}
@@ -552,18 +532,25 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 		Target:  filepath.Base(profile.MergedTarget),
 		Time:    time.Now().Format(time.RFC850),
 		Size:    bytesToLabel(zipInfo.Size()),
-		Zip:     b.zip,
 	}
 	// take the hash of the zip file and seal info combined
 	s := new(data.Seal)
 	// the seal needs the manifest to create a checksum
 	s.Manifest = info
 	var buildFile *data.BuildFile
+	// gets the absolute path  to the target folder
+	targetFolder, _ := filepath.Abs(path.Join(b.from, profile.MergedTarget))
+	// check the target folder is not a file
+	f, statErr := os.Stat(targetFolder)
+	if statErr == nil && !f.IsDir() {
+		core.RaiseErr("the build target must be a folder, if you are packaging a single file ensure it is place in a target folder on its own")
+	}
 	// check if target is a folder containing a build.yaml
-	innerBuildFilePath, _ := filepath.Abs(path.Join(b.from, profile.MergedTarget, "build.yaml"))
-	// check if the inner build file exists
-	if _, statErr := os.Stat(innerBuildFilePath); os.IsNotExist(statErr) {
-		core.Debug("cannot find a build.yaml in the target folder '%s', building content package only\n", innerBuildFilePath)
+	packageBuildFilePath := path.Join(targetFolder, "build.yaml")
+	// if the package build file does not exist
+	_, statErr = os.Stat(packageBuildFilePath)
+	if os.IsNotExist(statErr) {
+		core.Debug("cannot find a build.yaml in the target folder '%s', building content package only\n", packageBuildFilePath)
 		// then it is a content only package, so creates an empty build file so the process can continue
 		// without adding functions to package manifest
 		buildFile = &data.BuildFile{
@@ -575,8 +562,8 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 		}
 	} else {
 		// load the build file
-		core.Debug("loading build file from target folder '%s'\n", innerBuildFilePath)
-		buildFile, err = data.LoadBuildFile(innerBuildFilePath)
+		core.Debug("loading build file from target folder '%s'\n", packageBuildFilePath)
+		buildFile, err = data.LoadBuildFile(packageBuildFilePath)
 		core.CheckErr(err, "cannot load build file from target folder")
 	}
 	// only export functions if the target contains a build.yaml
@@ -603,6 +590,10 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 			})
 		}
 	}
+	err = b.sProc(b, s)
+	if err != nil {
+		return nil, fmt.Errorf("cannot post process package: %s", err)
+	}
 	return s, nil
 }
 
@@ -615,8 +606,8 @@ func (b *Builder) workDirJsonFilename() string {
 	return filepath.Join(b.workingDir, fmt.Sprintf("%s.json", b.uniqueIdName))
 }
 
-// the fully qualified name of the zip file in the working directory
-func (b *Builder) workDirZipFilename() string {
+// WorkDirPackageFilename the fully qualified name of the zip file in the working directory
+func (b *Builder) WorkDirPackageFilename() string {
 	return filepath.Join(b.workingDir, fmt.Sprintf("%s.zip", b.uniqueIdName))
 }
 
@@ -639,7 +630,7 @@ func (b *Builder) getBuildEnv() map[string]string {
 }
 
 // Execute an exported function in a package
-func (b *Builder) Execute(name *core.PackageName, function string, credentials string, certPath string, ignoreSignature bool, interactive bool, path string, preserveFiles bool, env *merge.Envar, v registry.Verifier) error {
+func (b *Builder) Execute(name *core.PackageName, function string, credentials string, interactive bool, path string, preserveFiles bool, env *merge.Envar) error {
 	// get a local registry handle
 	local := registry.NewLocalRegistry(b.artHome)
 	// check the run path exist
@@ -657,9 +648,7 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 		name,
 		credentials,
 		path,
-		certPath,
-		ignoreSignature,
-		v)
+		b.vProc)
 	a := local.FindPackageByName(name)
 	// get the package seal
 	seal, err := local.GetSeal(a)
@@ -684,28 +673,35 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 				return fmt.Errorf("cannot cleanup build path: %s", err)
 			}
 		}
+		if b.rProc != nil {
+			err = b.rProc(name, function, seal)
+			if err != nil {
+				return err
+			}
+		}
 	} else {
 		return fmt.Errorf("the function '%s' is not defined in the package manifest, check that it has been exported in the build profile\n", function)
 	}
 	return nil
 }
 
-func (b *Builder) SetSealPostProcess(p func(b *Builder, s *data.Seal) error) {
-	b.sealPostProcess = p
+func (b *Builder) SetSProc(p func(b *Builder, s *data.Seal) error) {
+	b.sProc = p
 }
 
-type Signer interface {
-	Sign(data []byte) ([]byte, error)
-}
-
-func defaultSealPostProcessor(b *Builder, s *data.Seal) error {
-	// no signing authority
-	s.Manifest.Author = "unknown"
-	s.Manifest.Authority = "not applicable"
+func sProcessor(b *Builder, s *data.Seal) error {
 	// calculates the package digest used to check its integrity
-	_, digest := s.Checksum(b.workDirZipFilename())
+	digest := s.DSha256(b.WorkDirPackageFilename())
 	core.Debug("the package digest is '%s'\n", digest)
 	// writes the digest to the seal
 	s.Digest = digest
 	return nil
+}
+
+func (b *Builder) SetVProc(p func(n *core.PackageName, s *data.Seal, p string) error) {
+	b.vProc = p
+}
+
+func (b *Builder) SetRProc(p func(name *core.PackageName, f string, seal *data.Seal) error) {
+	b.rProc = p
 }

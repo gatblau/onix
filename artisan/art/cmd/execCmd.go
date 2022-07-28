@@ -17,7 +17,7 @@ import (
 )
 
 type ExeCCmd struct {
-	cmd         *cobra.Command
+	Cmd         *cobra.Command
 	interactive *bool
 	credentials string
 	path        string
@@ -27,7 +27,7 @@ type ExeCCmd struct {
 
 func NewExeCCmd() *ExeCCmd {
 	c := &ExeCCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "exec [flags] [package-name] [function-name]",
 			Short: "runs a function within a package using an artisan runtime",
 			Long: `runs a function within a package using an artisan runtime
@@ -44,11 +44,11 @@ NOTE: exec always pulls the package from its registry as it is done within the r
 `,
 		},
 	}
-	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
-	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "the artisan registry user and password; e.g. -u USER:PASSWORD or -u USER")
-	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "the environment file to load; e.g. --env=.env or -e=.env")
-	c.cmd.Flags().StringVarP(&c.network, "network", "n", "", "attaches the container to the specified docker network; by default it is not specified so the container is not attached to any docker network; usage: --network my-net")
-	c.cmd.Run = c.Run
+	c.interactive = c.Cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
+	c.Cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "the artisan registry user and password; e.g. -u USER:PASSWORD or -u USER")
+	c.Cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "the environment file to load; e.g. --env=.env or -e=.env")
+	c.Cmd.Flags().StringVarP(&c.network, "network", "n", "", "attaches the container to the specified docker network; by default it is not specified so the container is not attached to any docker network; usage: --network my-net")
+	c.Cmd.Run = c.Run
 	return c
 }
 

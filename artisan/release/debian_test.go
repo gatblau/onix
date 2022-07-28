@@ -27,7 +27,7 @@ func TestExportPackage(t *testing.T) {
 }
 
 func TestSpecImportSpec(t *testing.T) {
-	_, err := ImportSpec(ImportOptions{"/tmp/spec-test", "", "", "", nil, ""})
+	_, err := ImportSpec(ImportOptions{"/tmp/spec-test", "", "", "", nil})
 	if err != nil {
 		t.Fatal(err)
 	}

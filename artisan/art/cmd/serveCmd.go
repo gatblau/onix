@@ -18,7 +18,7 @@ import (
 
 // ServeCmd serve static files over http
 type ServeCmd struct {
-	cmd         *cobra.Command
+	Cmd         *cobra.Command
 	port        int
 	defaultRoot string // the site default root
 	defaultPage string // the default file in a path if not specified
@@ -27,17 +27,17 @@ type ServeCmd struct {
 
 func NewServeCmd() *ServeCmd {
 	c := &ServeCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "serve [flags] PATH",
 			Short: "serves static files over an http endpoint",
 			Long:  `serves static files over an http endpoint`,
 		},
 	}
-	c.cmd.Flags().BoolVarP(&c.fileListing, "file-listing", "l", false, "if set, enables file listing")
-	c.cmd.Flags().StringVar(&c.defaultRoot, "default-root", "/", "the default web site root, does not include page (e.g. '/'")
-	c.cmd.Flags().StringVar(&c.defaultPage, "default-page", "index.html", "the default web page to render if the URL does not define a page")
-	c.cmd.Flags().IntVarP(&c.port, "port", "p", 8100, "the http port on which the server listens for connections")
-	c.cmd.Run = c.Run
+	c.Cmd.Flags().BoolVarP(&c.fileListing, "file-listing", "l", false, "if set, enables file listing")
+	c.Cmd.Flags().StringVar(&c.defaultRoot, "default-root", "/", "the default web site root, does not include page (e.g. '/'")
+	c.Cmd.Flags().StringVar(&c.defaultPage, "default-page", "index.html", "the default web page to render if the URL does not define a page")
+	c.Cmd.Flags().IntVarP(&c.port, "port", "p", 8100, "the http port on which the server listens for connections")
+	c.Cmd.Run = c.Run
 	return c
 }
 

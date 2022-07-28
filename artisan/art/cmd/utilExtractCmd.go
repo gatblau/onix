@@ -19,7 +19,7 @@ import (
 
 // UtilExtractCmd client url issues http requests within a retry framework
 type UtilExtractCmd struct {
-	cmd     *cobra.Command
+	Cmd     *cobra.Command
 	matches int
 	prefix  string
 	suffix  string
@@ -27,7 +27,7 @@ type UtilExtractCmd struct {
 
 func NewUtilExtractCmd() *UtilExtractCmd {
 	c := &UtilExtractCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:     "extract [flags]",
 			Short:   "extracts text between specified prefix and suffix, it should be used only with pipes",
 			Long:    `extracts text between specified prefix and suffix, it should be used only with pipes`,
@@ -35,10 +35,10 @@ func NewUtilExtractCmd() *UtilExtractCmd {
 			Args:    cobra.ExactArgs(0),
 		},
 	}
-	c.cmd.Flags().StringVarP(&c.prefix, "prefix", "p", "", "-p \"the prefix\"")
-	c.cmd.Flags().StringVarP(&c.suffix, "suffix", "s", "$", "-s \"the suffix\", if not specified an end of line marker is assumed")
-	c.cmd.Flags().IntVarP(&c.matches, "matches", "n", -1, "the maximum number of matches to retrieve")
-	c.cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.prefix, "prefix", "p", "", "-p \"the prefix\"")
+	c.Cmd.Flags().StringVarP(&c.suffix, "suffix", "s", "$", "-s \"the suffix\", if not specified an end of line marker is assumed")
+	c.Cmd.Flags().IntVarP(&c.matches, "matches", "n", -1, "the maximum number of matches to retrieve")
+	c.Cmd.Run = c.Run
 	return c
 }
 

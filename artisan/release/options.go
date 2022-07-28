@@ -10,6 +10,8 @@ package release
 
 import (
 	"fmt"
+	"github.com/gatblau/onix/artisan/core"
+	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/registry"
 )
 
@@ -17,9 +19,8 @@ type ImportOptions struct {
 	TargetUri   string
 	TargetCreds string
 	Filter      string
-	PubKeyPath  string
-	Verifier    registry.Verifier
 	ArtHome     string
+	VProc       func(n *core.PackageName, s *data.Seal, r *registry.LocalRegistry) error
 }
 
 func (o ImportOptions) Valid() error {

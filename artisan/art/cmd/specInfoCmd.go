@@ -17,13 +17,13 @@ import (
 
 // SpecInfoCmd show spec information
 type SpecInfoCmd struct {
-	cmd   *cobra.Command
+	Cmd   *cobra.Command
 	creds string
 }
 
 func NewSpecInfoCmd() *SpecInfoCmd {
 	c := &SpecInfoCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "info [OPTIONS] SPEC-FILE-PATH",
 			Short: "displays release information defined in a spec file",
 			Long: `displays release information defined in a spec file
@@ -54,8 +54,8 @@ More info here...
 `,
 		},
 	}
-	c.cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials used to retrieve the specification from an endpoint")
-	c.cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials used to retrieve the specification from an endpoint")
+	c.Cmd.Run = c.Run
 	return c
 }
 

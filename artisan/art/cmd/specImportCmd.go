@@ -16,14 +16,14 @@ import (
 
 // SpecImportCmd Import the contents from a tarball to create an artisan package in the local registry
 type SpecImportCmd struct {
-	cmd    *cobra.Command
+	Cmd    *cobra.Command
 	creds  string
 	filter string
 }
 
 func NewSpecImportCmd() *SpecImportCmd {
 	c := &SpecImportCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "import [FLAGS] URI",
 			Short: "imports an application release specification (e.g. one or more tarball files) into the local registry",
 			Long: `Usage: art spec import [FLAGS] URI
@@ -39,9 +39,9 @@ Examples:
 `,
 		},
 	}
-	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials used to retrieve the specification from an endpoint")
-	c.cmd.Flags().StringVarP(&c.filter, "filter", "f", "", "a regular expression used to select spec artefacts to be imported; any artefacts not matched by the filter are skipped (e.g. -f \"^quay.*$\")")
+	c.Cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials used to retrieve the specification from an endpoint")
+	c.Cmd.Flags().StringVarP(&c.filter, "filter", "f", "", "a regular expression used to select spec artefacts to be imported; any artefacts not matched by the filter are skipped (e.g. -f \"^quay.*$\")")
 	return c
 }
 

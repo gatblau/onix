@@ -26,7 +26,7 @@ import (
 
 // EnvFlowCmd collects variables required by a flow
 type EnvFlowCmd struct {
-	cmd           *cobra.Command
+	Cmd           *cobra.Command
 	buildFilePath string
 	stdout        *bool
 	out           string
@@ -35,16 +35,16 @@ type EnvFlowCmd struct {
 
 func NewEnvFlowCmd() *EnvFlowCmd {
 	c := &EnvFlowCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "flow [flags] [/path/to/flow_bare.yaml]",
 			Short: "return the variables required by a given flow and can include a build.yaml",
 			Long:  `return the variables required by a given flow and can include a build.yaml`,
 		},
 	}
-	c.cmd.Flags().StringVarP(&c.buildFilePath, "build-file-path", "b", "", "--build-file-path=. or -b=.; the path to an artisan build.yaml file from which to pick required inputs")
-	c.cmd.Flags().StringVarP(&c.out, "output", "o", "env", "--output yaml or -o yaml; the output format (e.g. env, json, yaml)")
-	c.stdout = c.cmd.Flags().Bool("stdout", false, "prints the output to the console")
-	c.cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.buildFilePath, "build-file-path", "b", "", "--build-file-path=. or -b=.; the path to an artisan build.yaml file from which to pick required inputs")
+	c.Cmd.Flags().StringVarP(&c.out, "output", "o", "env", "--output yaml or -o yaml; the output format (e.g. env, json, yaml)")
+	c.stdout = c.Cmd.Flags().Bool("stdout", false, "prints the output to the console")
+	c.Cmd.Run = c.Run
 	return c
 }
 

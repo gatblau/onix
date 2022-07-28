@@ -18,7 +18,7 @@ import (
 
 // GitSyncCmd sync git resources.
 type GitSyncCmd struct {
-	cmd               *cobra.Command
+	Cmd               *cobra.Command
 	repoPath          string
 	repoURI           string
 	token             string
@@ -34,7 +34,7 @@ type GitSyncCmd struct {
 // NewGitSyncCmd create a new GitSyncCmd.
 func NewGitSyncCmd() *GitSyncCmd {
 	c := &GitSyncCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use: "sync [flags] [path/to/template/files]\n" +
 				"  the path to the *.tem or *.art files is optional, if no path is specified, the current path [.] is used",
 			Short: "synchronise a remote git repository with the content of a local folder containing files and/or merged Artisan templates",
@@ -46,16 +46,16 @@ func NewGitSyncCmd() *GitSyncCmd {
 		},
 	}
 
-	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.repoPath, "repo-path", "p", "", "the path within the git repository to be synchronised")
-	c.cmd.Flags().StringVarP(&c.repoURI, "uri", "u", "", "the URI of the git repository to synchronise")
-	c.cmd.Flags().StringVarP(&c.token, "token", "t", "", "the token to authenticate with the git repository")
-	c.cmd.Flags().StringVarP(&c.yamlFilePrefix, "yaml-file-prefix", "x", "", "The prefix to be added to yaml file name after merge")
-	c.cmd.Flags().BoolVarP(&c.strictSync, "strict", "s", false, "whether strict synchronisation to be followed, by delete existing repo path and create new folder with same name")
-	c.cmd.Flags().BoolVarP(&c.recursive, "recursive", "r", false, "whether to perform recursive sync, true or false, default is false ")
-	c.cmd.Flags().StringVarP(&c.tempPath, "temp-path", "m", "", "the temp path where art sync will clone the repo")
-	c.cmd.Flags().BoolVarP(&c.preserveFiles, "preserve-files", "f", true, "whether the files in temp folder to be preserved or to be deleted, default is true ")
-	c.cmd.Flags().StringVarP(&c.branch, "branch", "b", "", "the branch which art sync will clone and push the change, default is origin/main")
+	c.Cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.repoPath, "repo-path", "p", "", "the path within the git repository to be synchronised")
+	c.Cmd.Flags().StringVarP(&c.repoURI, "uri", "u", "", "the URI of the git repository to synchronise")
+	c.Cmd.Flags().StringVarP(&c.token, "token", "t", "", "the token to authenticate with the git repository")
+	c.Cmd.Flags().StringVarP(&c.yamlFilePrefix, "yaml-file-prefix", "x", "", "The prefix to be added to yaml file name after merge")
+	c.Cmd.Flags().BoolVarP(&c.strictSync, "strict", "s", false, "whether strict synchronisation to be followed, by delete existing repo path and create new folder with same name")
+	c.Cmd.Flags().BoolVarP(&c.recursive, "recursive", "r", false, "whether to perform recursive sync, true or false, default is false ")
+	c.Cmd.Flags().StringVarP(&c.tempPath, "temp-path", "m", "", "the temp path where art sync will clone the repo")
+	c.Cmd.Flags().BoolVarP(&c.preserveFiles, "preserve-files", "f", true, "whether the files in temp folder to be preserved or to be deleted, default is true ")
+	c.Cmd.Flags().StringVarP(&c.branch, "branch", "b", "", "the branch which art sync will clone and push the change, default is origin/main")
 
 	return c
 }

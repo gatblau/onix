@@ -154,19 +154,23 @@ func (r *API) GetHosts(oGroup, or, ar, loc string, label []string) ([]Host, erro
 		return nil, fmt.Errorf("cannot get hosts: %s\n", err)
 	}
 	var (
-		uuId       string
-		macAddress string
-		connected  bool
-		lastSeen   sql.NullTime
-		orgGroup   sql.NullString
-		org        sql.NullString
-		area       sql.NullString
-		location   sql.NullString
-		inService  bool
-		labels     []string
+		uuId          string
+		macAddress    string
+		connected     bool
+		lastSeen      sql.NullTime
+		orgGroup      sql.NullString
+		org           sql.NullString
+		area          sql.NullString
+		location      sql.NullString
+		inService     bool
+		labels        []string
+		scoreCritical sql.NullInt32
+		scoreHigh     sql.NullInt32
+		scoreMedium   sql.NullInt32
+		scoreLow      sql.NullInt32
 	)
 	for rows.Next() {
-		err = rows.Scan(&uuId, &macAddress, &connected, &lastSeen, &orgGroup, &org, &area, &location, &inService, &labels)
+		err = rows.Scan(&uuId, &macAddress, &connected, &lastSeen, &orgGroup, &org, &area, &location, &inService, &labels, &scoreCritical, &scoreHigh, &scoreMedium, &scoreLow)
 		if err != nil {
 			return nil, err
 		}
@@ -194,6 +198,10 @@ func (r *API) GetHosts(oGroup, or, ar, loc string, label []string) ([]Host, erro
 			Since:          since,
 			SinceType:      sinceType,
 			Label:          labels,
+			Critical:       int(scoreCritical.Int32),
+			High:           int(scoreHigh.Int32),
+			Medium:         int(scoreMedium.Int32),
+			Low:            int(scoreLow.Int32),
 		})
 	}
 	return hosts, rows.Err()
@@ -877,6 +885,89 @@ func (r *API) DecommissionHost(hostUUID string) error {
 	// delete host from cmdb
 	_, err = r.ox.DeleteItem(&oxc.Item{Key: strings.ToUpper(fmt.Sprintf("HOST:%s", hostUUID))})
 	return err
+}
+
+func (r *API) UpsertCVE(hostUUID string, rep *CveReport) error {
+	scanDate := time.Now().UTC()
+	for _, cve := range rep.Cves {
+		err := r.db.RunCommand("select pilotctl_unlink_cve($1, $2)", hostUUID, cve.Id)
+		if err != nil {
+			return fmt.Errorf("cannot unlink cve %s from host %s: %s", cve.Id, hostUUID, err)
+		}
+		err = r.db.RunCommand("select pilotctl_set_cve($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+			cve.Id,
+			cve.Summary,
+			cve.Fixed(),
+			cve.CVSSScore,
+			cve.CVSSType,
+			cve.CVSSSeverity,
+			cve.CVSSVector,
+			cve.PrimarySrc,
+			cve.Mitigations,
+			cve.PatchURLs,
+			cve.Confidence,
+			cve.CPE,
+			cve.References)
+		if err != nil {
+			return fmt.Errorf("cannot update cve %s: %s", cve.Id, err)
+		}
+		for _, affectedPackage := range cve.AffectedPackages {
+			err = r.db.RunCommand("select pilotctl_set_cve_package($1, $2, $3, $4)",
+				cve.Id,
+				affectedPackage.Name,
+				!affectedPackage.NotFixedYet,
+				affectedPackage.FixedIn,
+			)
+			if err != nil {
+				return fmt.Errorf("cannot update package %s for cve %s: %s", affectedPackage.Name, cve.Id, err)
+			}
+		}
+		err = r.db.RunCommand("select pilotctl_link_cve($1, $2, $3)",
+			hostUUID,
+			cve.Id,
+			scanDate,
+		)
+		if err != nil {
+			return fmt.Errorf("cannot link cve %s to host %s: %s", cve.Id, hostUUID, err)
+		}
+	}
+	err := r.db.RunCommand("select pilotctl_set_host_cve($1, $2, $3, $4, $5)",
+		hostUUID,
+		rep.Critical(),
+		rep.High(),
+		rep.Medium(),
+		rep.Low(),
+	)
+	if err != nil {
+		return fmt.Errorf("cannot update cve stats on host %s: %s", hostUUID, err)
+	}
+	return nil
+}
+
+func (r *API) GetCVEBaseline(score float64, label []string) ([]CvePackage, error) {
+	rows, err := r.db.Query("select * from pilotctl_get_cve_baseline($1, $2)", score, label)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get CVE baseline: %s\n", err)
+	}
+	var (
+		hostUUID, cveID, packageName, fixedIn string
+		cvssScore                             float64
+	)
+	var list []CvePackage
+	for rows.Next() {
+		err = rows.Scan(&hostUUID, &cveID, &packageName, &fixedIn, &cvssScore)
+		if err != nil {
+			return nil, fmt.Errorf("cannot scan CVE baseline row: %e\n", err)
+		}
+		list = append(list, CvePackage{
+			HostUUID:    hostUUID,
+			CveID:       cveID,
+			PackageName: packageName,
+			FixedIn:     fixedIn,
+			CvssScore:   cvssScore,
+		})
+	}
+	return list, nil
 }
 
 func reverse(str string) (result string) {

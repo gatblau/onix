@@ -18,20 +18,20 @@ import (
 
 // PushCmd push a package to a remote registry
 type PushCmd struct {
-	cmd         *cobra.Command
+	Cmd         *cobra.Command
 	credentials string
 }
 
 func NewPushCmd() *PushCmd {
 	c := &PushCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "push [FLAGS] NAME[:TAG]",
 			Short: "uploads an package to a remote package store",
 			Long:  ``,
 		},
 	}
-	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
+	c.Cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.credentials, "user", "u", "", "USER:PASSWORD server user and password")
 	return c
 }
 

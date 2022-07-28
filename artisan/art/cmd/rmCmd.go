@@ -16,16 +16,17 @@ import (
 
 // RmCmd remove local packages
 type RmCmd struct {
-	cmd      *cobra.Command
+	Cmd      *cobra.Command
 	all      bool
 	registry string
 	filter   string
 	creds    string
+	dry      bool
 }
 
 func NewRmCmd() *RmCmd {
 	c := &RmCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "rm PACKAGE [PACKAGE...]",
 			Short: "removes one or more packages from the local package registry or a remote registry",
 			Long:  `removes one or more packages from the local package registry or a remote registry`,
@@ -36,9 +37,13 @@ art rm -a
 # delete specific packages from the local registry
 art rm package-1 package-2
 
-# delete all packages in the remote registry at localhost:8082
-# note the use of the wildcard "*" - any other valid regular expressions are acceptable
-art rm -r localhost:8081 -u <user>:<pwd> "*"
+# dry-run delete all packages in the remote registry at localhost:8082
+# note: filter expression must be double quoted
+art rm -r localhost:8082 -u admin:adm1n -xf ".*"
+
+# actual delete all packages in the remote registry at localhost:8082
+# note: filter expression must be double quoted
+art rm -r localhost:8082 -u admin:adm1n -f ".*"
 
 # remove two packages by their id
 art rm -r localhost:8081 -u <user>:<pwd> 4562fr 76dt54
@@ -48,18 +53,19 @@ art rm -r localhost:8081 -u <user>:<pwd> $(art ls -r localhost:8081 -u <user>:<p
 `,
 		},
 	}
-	c.cmd.Flags().BoolVarP(&c.all, "all", "a", false, "remove all packages")
-	c.cmd.Flags().StringVarP(&c.registry, "registry", "r", "", "the domain of the remote artisan registry to use")
-	c.cmd.Flags().StringVarP(&c.creds, "user", "u", "", "the credentials used to retrieve the information from the remote registry")
-	c.cmd.Flags().StringVarP(&c.filter, "filter", "f", "", "the regular expression used to find the packages to remove, only used if the remove operation if for a remote registry")
-	c.cmd.Run = c.Run
+	c.Cmd.Flags().BoolVarP(&c.dry, "dry-run", "x", false, "when using a filter on a remote registry, shows a list of packages that would be deleted without actually deleting them, use it to test remove operations before actually performing the delete")
+	c.Cmd.Flags().BoolVarP(&c.all, "all", "a", false, "remove all packages")
+	c.Cmd.Flags().StringVarP(&c.registry, "registry", "r", "", "the domain of the remote artisan registry to use")
+	c.Cmd.Flags().StringVarP(&c.creds, "user", "u", "", "the credentials used to retrieve the information from the remote registry")
+	c.Cmd.Flags().StringVarP(&c.filter, "filter", "f", "", "the regular expression used to find the packages to remove, only used if the remove operation if for a remote registry")
+	c.Cmd.Run = c.Run
 	return c
 }
 
 func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 	// check one or more package names have been provided if remove all is not specified
-	if len(args) == 0 && !c.all || // local or remote registry, specific package deletion but no args (packages defined)
-		len(args) == 0 && len(c.filter) == 0 && len(c.registry) > 0 { // remote registry, no filter and no packages
+	if len(args) == 0 && !c.all && len(c.filter) == 0 || // local or remote registry, specific package deletion but no args (packages defined)
+		len(args) == 0 && len(c.filter) == 0 && len(c.registry) > 0 && !c.all { // remote registry, no filter and no packages
 		core.RaiseErr("missing name(s) of the package(s) to remove")
 	}
 	// cannot provide all flag and package name
@@ -90,7 +96,7 @@ func (c *RmCmd) Run(cmd *cobra.Command, args []string) {
 			core.RaiseErr("--all flag is not valid for remote registries, use a filter expression instead")
 		}
 		if len(c.filter) > 0 {
-			core.CheckErr(remote.RemoveByNameFilter(c.filter), "cannot remove packages from remote registry using filter")
+			core.CheckErr(remote.RemoveByNameFilter(c.filter, c.dry), "cannot remove packages from remote registry using filter")
 		} else {
 			// creates a remote picking the domain from the filter expression
 			core.CheckErr(remote.RemoveByNameOrId(args), "cannot remove packages from remote registry")

@@ -16,7 +16,7 @@ import (
 
 // WaitCmd wait until the response payload contains a specific value
 type WaitCmd struct {
-	cmd      *cobra.Command
+	Cmd      *cobra.Command
 	attempts int
 	filter   string
 	creds    string
@@ -24,17 +24,17 @@ type WaitCmd struct {
 
 func NewWaitCmd() *WaitCmd {
 	c := &WaitCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "wait [flags] URI",
 			Short: "wait until either the an HTTP GET returns a value or the maximum attempts have been reached",
 			Long:  `wait until either the an HTTP GET returns a value or the maximum attempts have been reached`,
 			Args:  cobra.ExactArgs(1),
 		},
 	}
-	c.cmd.Flags().StringVarP(&c.filter, "filter", "f", "", "-f json/path/expression")
-	c.cmd.Flags().StringVarP(&c.creds, "creds", "u", "", "-u user:password")
-	c.cmd.Flags().IntVarP(&c.attempts, "attempts", "a", 5, "-a 10 (number of attempts before it fails)")
-	c.cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.filter, "filter", "f", "", "-f json/path/expression")
+	c.Cmd.Flags().StringVarP(&c.creds, "creds", "u", "", "-u user:password")
+	c.Cmd.Flags().IntVarP(&c.attempts, "attempts", "a", 5, "-a 10 (number of attempts before it fails)")
+	c.Cmd.Run = c.Run
 	return c
 }
 

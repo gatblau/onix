@@ -18,12 +18,13 @@ import (
 // LaunchCmd launches host pilot
 type LaunchCmd struct {
 	cmd                *cobra.Command
-	useHwId            bool // use hardware uuid to identify device (instead of primary mac address)
-	tracing            bool // enables tracing
-	logCollector       bool // enables log collector
-	cpu                bool // enables cpu profiling
-	mem                bool // enables memory profiling
-	insecureSkipVerify bool // if true, crypto/tls accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to machine-in-the-middle attacks unless custom verification is used.
+	useHwId            bool   // use hardware uuid to identify device (instead of primary mac address)
+	tracing            bool   // enables tracing
+	logCollector       bool   // enables log collector
+	cpu                bool   // enables cpu profiling
+	mem                bool   // enables memory profiling
+	insecureSkipVerify bool   // if true, crypto/tls accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to machine-in-the-middle attacks unless custom verification is used.
+	cvePath            string // the  path used to collect CVE reports to export
 }
 
 func NewLaunchCmd() *LaunchCmd {
@@ -40,6 +41,7 @@ func NewLaunchCmd() *LaunchCmd {
 	c.cpu = *c.cmd.Flags().Bool("cpu", false, "enables cpu profiling only; cannot profile memory")
 	c.mem = *c.cmd.Flags().Bool("mem", false, "enables memory profiling only; cannot profile cpu")
 	c.insecureSkipVerify = *c.cmd.Flags().Bool("insecureSkipVerify", false, "disables verification of certificates presented by the server and host name in that certificate; in this mode, TLS is susceptible to machine-in-the-middle attacks unless custom verification is used.")
+	c.cmd.Flags().StringVar(&c.cvePath, "cve-path", "", "if set, enables export of CVE reports from specified path")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -59,6 +61,7 @@ func (c *LaunchCmd) Run(cmd *cobra.Command, args []string) {
 		CPU:                c.cpu,
 		MEM:                c.mem,
 		InsecureSkipVerify: c.insecureSkipVerify,
+		CVEPath:            c.cvePath,
 	})
 	core.CheckErr(err, "cannot start pilot")
 	// start the pilot

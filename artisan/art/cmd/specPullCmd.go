@@ -16,14 +16,14 @@ import (
 
 // SpecPullCmd pulls all artefacts defined in a spec
 type SpecPullCmd struct {
-	cmd   *cobra.Command
+	Cmd   *cobra.Command
 	creds string
 	user  string
 }
 
 func NewSpecPullCmd() *SpecPullCmd {
 	c := &SpecPullCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "pull [FLAGS] URI",
 			Short: "pull all artefacts in a specification to the localhost ",
 			Long: `Usage: art spec pull [FLAGS] URI
@@ -43,9 +43,9 @@ Example:
 `,
 		},
 	}
-	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials used to retrieve the specification from an endpoint")
-	c.cmd.Flags().StringVarP(&c.creds, "user", "u", "", "the credentials used to retrieve packages from a remote artisan registry; for container images you should already be logged in (e.g. docker login)")
+	c.Cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials used to retrieve the specification from an endpoint")
+	c.Cmd.Flags().StringVarP(&c.creds, "user", "u", "", "the credentials used to retrieve packages from a remote artisan registry; for container images you should already be logged in (e.g. docker login)")
 	return c
 }
 

@@ -16,14 +16,14 @@ import (
 
 // SpecUpCmd uploads the contents of a spec from a remote source
 type SpecUpCmd struct {
-	cmd    *cobra.Command
+	Cmd    *cobra.Command
 	creds  string
 	output string
 }
 
 func NewSpecUpCmd() *SpecUpCmd {
 	c := &SpecUpCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "up [FLAGS] SPEC-FOLDER",
 			Short: "uploads a specification (tarball files) to a remote URI from a file system folder",
 			Long: `Usage: art spec up [FLAGS] URI
@@ -36,10 +36,10 @@ Example:
 `,
 		},
 	}
-	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials used to authenticate with the upload endpoint")
-	c.cmd.Flags().StringVarP(&c.output, "output", "o", "", "the URI where the tar archive(s) will be uploaded; URI can be s3 bucket (s3:// or s3s:// using TLS)")
-	c.cmd.MarkFlagRequired("output")
+	c.Cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.creds, "creds", "c", "", "the credentials used to authenticate with the upload endpoint")
+	c.Cmd.Flags().StringVarP(&c.output, "output", "o", "", "the URI where the tar archive(s) will be uploaded; URI can be s3 bucket (s3:// or s3s:// using TLS)")
+	c.Cmd.MarkFlagRequired("output")
 	return c
 }
 

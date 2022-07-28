@@ -17,6 +17,7 @@ import (
 	"github.com/gatblau/onix/artisan/core"
 	"io"
 	"io/ioutil"
+	"path"
 )
 
 // Seal the digital Seal for a package
@@ -27,21 +28,16 @@ type Seal struct {
 	Manifest *Manifest `json:"manifest"`
 	// the combined checksum of the package and its metadata
 	Digest string `json:"digest"`
-	// the cryptographic signature for:
-	// - package & seal authentication:
-	//     When the verifier validates the digital signature using public key of the package author, he is assured that signature has been created only by author who possess the corresponding secret private key and no one else.
-	// - package & seal data integrity:
-	//     In case an attacker has access to the package & seal and modifies them, the digital signature verification at receiver end fails.
-	//     The hash of modified package and seal and the output provided by the verification algorithm will not match. Hence, receiver can safely deny the package & seal content assuming that data integrity has been breached.
-	//     The seal is broken.
-	// - non-repudiation:
-	//     Since it is assumed that only the author (signer) has the knowledge of the signature key, they can only create unique signature on a given package.
-	//     Thus, the receiver can present the package and the digital signature to a third party as evidence if any dispute arises in the future.
-	Signature string `json:"signature,omitempty"`
+	// the cryptographic seal for:
+	// - author authentication: verify the author of the package
+	// - data integrity: recognise if the package files differ from the original files at the time the package was built
+	// - non-repudiation: since only the author (signer) can create the seal, any user of the package can present the package
+	//      seal information to a third party as evidence if any dispute arises in the future
+	Seal string `json:"seal,omitempty"`
 }
 
-// Checksum takes the combined checksum of the Seal information and the compressed file
-func (seal *Seal) Checksum(path string) (checksum []byte, digest string) {
+// DSha256 calculates the package SHA-256 digest by taking the combined checksum of the Seal information and the compressed file
+func (seal *Seal) DSha256(path string) string {
 	// precondition: the manifest is required
 	if seal.Manifest == nil {
 		core.RaiseErr("seal has no manifest, cannot create checksum")
@@ -59,10 +55,17 @@ func (seal *Seal) Checksum(path string) (checksum []byte, digest string) {
 	written, err = hash.Write(info)
 	core.CheckErr(err, "cannot write manifest to hash")
 	core.Debug("%d bytes from manifest written to hash", written)
-	checksum = hash.Sum(nil)
+	checksum := hash.Sum(nil)
 	core.Debug("seal calculated base64 encoded checksum:\n>> start on next line\n%s\n>> ended on previous line", base64.StdEncoding.EncodeToString(checksum))
-	digest = fmt.Sprintf("sha256:%s", base64.StdEncoding.EncodeToString(checksum))
-	return checksum, digest
+	return fmt.Sprintf("sha256:%s", base64.StdEncoding.EncodeToString(checksum))
+}
+
+func (seal *Seal) ZipFile(registryRoot string) string {
+	return path.Join(core.RegistryPath(""), fmt.Sprintf("%s.zip", seal.Manifest.Ref))
+}
+
+func (seal *Seal) SealFile(registryRoot string) string {
+	return path.Join(core.RegistryPath(""), fmt.Sprintf("%s.json", seal.Manifest.Ref))
 }
 
 // PackageId the package id calculated as the hex encoded SHA-256 digest of the artefact Seal
@@ -82,7 +85,7 @@ func (seal *Seal) PackageId() (string, error) {
 // path: the path to the package zip file to validate
 func (seal *Seal) Valid(path string) (valid bool, err error) {
 	// calculates the digest using the zip file
-	_, digest := seal.Checksum(path)
+	digest := seal.DSha256(path)
 	// compare to the digest stored in the seal
 	if seal.Digest == digest {
 		return true, nil

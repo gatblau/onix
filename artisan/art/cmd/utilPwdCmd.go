@@ -16,22 +16,22 @@ import (
 
 // UtilPwdCmd generates passwords
 type UtilPwdCmd struct {
-	cmd          *cobra.Command
+	Cmd          *cobra.Command
 	len          *int
 	specialChars *bool
 }
 
 func NewUtilPwdCmd() *UtilPwdCmd {
 	c := &UtilPwdCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "pwd [flags]",
 			Short: "generates a random password",
 			Long:  `generates a random password`,
 		},
 	}
-	c.len = c.cmd.Flags().IntP("length", "l", 16, "length of the generated password")
-	c.specialChars = c.cmd.Flags().BoolP("special-chars", "s", false, "use special characters in the generated password")
-	c.cmd.Run = c.Run
+	c.len = c.Cmd.Flags().IntP("length", "l", 16, "length of the generated password")
+	c.specialChars = c.Cmd.Flags().BoolP("special-chars", "s", false, "use special characters in the generated password")
+	c.Cmd.Run = c.Run
 	return c
 }
 

@@ -64,6 +64,6 @@ func (c *ExeCmd) Run(cmd *cobra.Command, args []string) {
 	// merge with existing environment
 	env.Merge(env2)
 	// run the function on the open package
-	err = builder.Execute(name, function, c.credentials, "", true, *c.interactive, c.path, *c.preserveFiles, env, nil)
+	err = builder.Execute(name, function, c.credentials, *c.interactive, c.path, *c.preserveFiles, env)
 	core.CheckErr(err, "failed to execute function")
 }

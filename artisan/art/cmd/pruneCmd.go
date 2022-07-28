@@ -16,18 +16,18 @@ import (
 
 // PruneCmd remove all dangling packages
 type PruneCmd struct {
-	cmd *cobra.Command
+	Cmd *cobra.Command
 }
 
 func NewPruneCmd() *PruneCmd {
 	c := &PruneCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "prune",
 			Short: "remove all dangling packages",
 			Long:  `remove all dangling packages`,
 		},
 	}
-	c.cmd.Run = c.Run
+	c.Cmd.Run = c.Run
 	return c
 }
 

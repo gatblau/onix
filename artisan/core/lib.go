@@ -157,6 +157,10 @@ func Infof(msg string, a ...interface{}) {
 
 func CheckErr(err error, msg string, a ...interface{}) {
 	if err != nil {
+		if len(msg) == 0 {
+			ErrorLogger.Printf("%s\n", err)
+			os.Exit(1)
+		}
 		ErrorLogger.Printf("%s - %s\n", fmt.Sprintf(msg, a...), err)
 		os.Exit(1)
 	}

@@ -15,18 +15,18 @@ import (
 
 // LangUpdateCmd add missing entries in language dictionary
 type LangUpdateCmd struct {
-	cmd *cobra.Command
+	Cmd *cobra.Command
 }
 
 func NewLangUpdateCmd() *LangUpdateCmd {
 	c := &LangUpdateCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "update [path/to/lang/file]",
 			Short: "add missing entries in language dictionary, added values in english",
 			Long:  `add missing entries in language dictionary, added values in english`,
 		},
 	}
-	c.cmd.Run = c.Run
+	c.Cmd.Run = c.Run
 	return c
 }
 

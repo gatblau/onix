@@ -23,23 +23,23 @@ import (
 
 // ManifestCmd return package's manifest
 type ManifestCmd struct {
-	cmd    *cobra.Command
+	Cmd    *cobra.Command
 	filter string
 	format string
 }
 
 func NewManifestCmd() *ManifestCmd {
 	c := &ManifestCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "manifest [flags] name:tag",
 			Short: "returns the package manifest",
 			Long:  ``,
 		},
 	}
-	c.cmd.Flags().StringVarP(&c.filter, "filter", "f", "", "--filter=JSONPath or -f=JSONPath")
-	c.cmd.Flags().StringVarP(&c.format, "format", "o", "json", "--format=mdf or -o=mdf\n"+
+	c.Cmd.Flags().StringVarP(&c.filter, "filter", "f", "", "--filter=JSONPath or -f=JSONPath")
+	c.Cmd.Flags().StringVarP(&c.format, "format", "o", "json", "--format=mdf or -o=mdf\n"+
 		"available formats are 'json' (in std output) or 'mdf' (creates a markdown file)\n")
-	c.cmd.Run = c.Run
+	c.Cmd.Run = c.Run
 	return c
 }
 

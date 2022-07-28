@@ -181,7 +181,7 @@ func ExportSpec(opts ExportOptions) error {
 			}
 
 			core.InfoLogger.Printf("performing %s exporting \n", key)
-			//collect all package names into slice
+			// collect all package names into slice
 			var pkges []string
 			for _, v := range value {
 				if skipArtefact, opts.Filter = skip(opts.Filter, v); skipArtefact {
@@ -217,26 +217,26 @@ func ExportSpec(opts ExportOptions) error {
 }
 
 func ImportSpec(opts ImportOptions) (*Spec, error) {
+	core.Debug("validating import options")
 	if err := opts.Valid(); err != nil {
 		return nil, fmt.Errorf("invalid import options: %s\n", err)
 	}
-	// if it is not ignoring the package signature, then a public key path must be provided
-	if opts.Verifier != nil && len(opts.PubKeyPath) == 0 {
-		return nil, fmt.Errorf("the path to a public key must be provided to verify the package author, otherwise ignore signature")
-	}
 	var skipArtefact bool
 	r := registry.NewLocalRegistry(opts.ArtHome)
+	core.Debug("target URI: %s", opts.TargetUri)
 	uri := fmt.Sprintf("%s/spec.yaml", opts.TargetUri)
 	core.InfoLogger.Printf("retrieving %s\n", uri)
 	specBytes, err := resx.ReadFile(uri, opts.TargetCreds)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read spec.yaml: %s", err)
 	}
+	core.Debug("unmarshalling spec")
 	spec := new(Spec)
 	err = yaml.Unmarshal(specBytes, spec)
 	if err != nil {
 		return nil, fmt.Errorf("cannot unmarshal spec.yaml: %s", err)
 	}
+	core.Debug("processing packages")
 	// import packages
 	for _, pkName := range spec.Packages {
 		if skipArtefact, opts.Filter = skip(opts.Filter, pkName); skipArtefact {
@@ -247,11 +247,12 @@ func ImportSpec(opts ImportOptions) (*Spec, error) {
 			continue
 		}
 		name := fmt.Sprintf("%s/%s.tar", opts.TargetUri, pkgName(pkName))
-		err2 := r.Import([]string{name}, opts.TargetCreds, opts.PubKeyPath, opts.Verifier)
+		err2 := r.Import([]string{name}, opts.TargetCreds, opts.VProc)
 		if err2 != nil {
 			return spec, fmt.Errorf("cannot read %s.tar: %s", pkgName(pkName), err2)
 		}
 	}
+	core.Debug("processing images")
 	// import images
 	for _, image := range spec.Images {
 		if skipArtefact, opts.Filter = skip(opts.Filter, image); skipArtefact {
@@ -262,16 +263,19 @@ func ImportSpec(opts ImportOptions) (*Spec, error) {
 			continue
 		}
 		name := fmt.Sprintf("%s/%s.tar", opts.TargetUri, pkgName(image))
-		err2 := r.Import([]string{name}, opts.TargetCreds, opts.PubKeyPath, opts.Verifier)
+		err2 := r.Import([]string{name}, opts.TargetCreds, opts.VProc)
 		if err2 != nil {
 			return spec, fmt.Errorf("cannot read %s.tar: %s", pkgName(image), err)
 		}
 		core.InfoLogger.Printf("loading => %s\n", image)
-		ignoreSigFlag := ""
-		if opts.Verifier == nil {
-			ignoreSigFlag = "-s"
+		builder := build.NewBuilder(opts.ArtHome)
+		pkg, err3 := core.ParseName(image)
+		if err3 != nil {
+			return spec, fmt.Errorf("cannot parse package name %s: %s", name, err)
 		}
-		_, err2 = build.Exe(fmt.Sprintf("art exe %s import %s", image, ignoreSigFlag), ".", merge.NewEnVarFromSlice([]string{}), false)
+		// run the function on the open package
+		core.Debug("executing art run %s import", image)
+		err2 = builder.Execute(pkg, "import", "", false, "", false, merge.NewEnVarFromSlice([]string{}))
 		if err2 != nil {
 			return spec, fmt.Errorf("cannot import image %s: %s", image, err2)
 		}

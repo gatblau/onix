@@ -10,7 +10,6 @@ package registry
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,7 +19,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -721,11 +719,8 @@ func (r *LocalRegistry) loadSeal(sealFilename string) (*data.Seal, error) {
 	return seal, nil
 }
 
-func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetPath string, certPath string, ignoreSignature bool, v Verifier) {
-	var (
-		pubKeyPath = certPath
-		err        error
-	)
+func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetPath string, v func(n *core.PackageName, s *data.Seal, p string) error) {
+	var err error
 	if len(targetPath) == 0 {
 		targetPath = core.WorkDir()
 	} else {
@@ -744,86 +739,42 @@ func (r *LocalRegistry) Open(name *core.PackageName, credentials string, targetP
 	// get the package seal
 	seal, err := r.GetSeal(pkg)
 	core.CheckErr(err, "cannot read package seal")
-	if !ignoreSignature && v != nil {
-		// get the location of the package
-		zipFilename := filepath.Join(core.RegistryPath(r.ArtHome), fmt.Sprintf("%s.zip", pkg.FileRef))
-		core.CheckErr(v.Verify(name, pubKeyPath, seal, zipFilename, r.ArtHome), "invalid signature")
-	}
 	// now we are ready to open it
-	// if the target was already compressed (e.g. jar file, etc) then it should not unzip it but rename it
+	// if the target was already compressed (e.g. jar file, etc.) then it should not unzip it but rename it
 	// to ist original file extension
-	if seal.Manifest.Zip {
-		_, filename := filepath.Split(seal.Manifest.Target)
-		if _, err = os.Stat(targetPath); os.IsNotExist(err) {
-			err = os.MkdirAll(targetPath, os.ModePerm)
-			core.CheckErr(err, "cannot create path to open package: %s", targetPath)
-		}
-		src := path.Join(core.RegistryPath(r.ArtHome), fmt.Sprintf("%s.zip", pkg.FileRef))
-		dst := path.Join(targetPath, filename)
-		err = CopyFile(src, dst)
-		core.CheckErr(err, "cannot rename package %s", fmt.Sprintf("%s.zip", pkg.FileRef))
-	} else {
-		// otherwise, unzip the target
-		err = unzip(path.Join(core.RegistryPath(r.ArtHome), fmt.Sprintf("%s.zip", pkg.FileRef)), targetPath)
-		core.CheckErr(err, "cannot unzip package %s", fmt.Sprintf("%s.zip", pkg.FileRef))
-		// check if the target path is a folder
-		var info os.FileInfo
-		info, err = os.Stat(targetPath)
-		core.CheckErr(err, "cannot stat target path %s", targetPath)
-		// only get rid of the target folder if there is one
+	src := path.Join(core.RegistryPath(r.ArtHome), fmt.Sprintf("%s.zip", pkg.FileRef))
+	if _, err = os.Stat(targetPath); os.IsNotExist(err) {
+		err = os.MkdirAll(targetPath, os.ModePerm)
+		core.CheckErr(err, "cannot create path to open package: %s", targetPath)
+	}
+	zipTempFilePath := path.Join(targetPath, fmt.Sprintf("%s.zip", pkg.FileRef))
+	err = CopyFile(src, zipTempFilePath)
+	core.CheckErr(err, "cannot copy package to working folder")
+	defer func() {
+		_ = os.RemoveAll(zipTempFilePath)
+	}()
+	if v != nil {
+		core.CheckErr(v(name, seal, zipTempFilePath), "")
+	}
+	// otherwise, unzip the target
+	err = unzip(zipTempFilePath, targetPath)
+	core.CheckErr(err, "cannot unzip package %s", fmt.Sprintf("%s.zip", pkg.FileRef))
+	// check if the target path is a folder
+	var info os.FileInfo
+	info, err = os.Stat(targetPath)
+	core.CheckErr(err, "cannot stat target path %s", targetPath)
+	// only get rid of the target folder if there is one
+	if info.IsDir() {
+		srcPath := path.Join(targetPath, seal.Manifest.Target)
+		info, err = os.Stat(srcPath)
+		core.CheckErr(err, "cannot stat source path %s", srcPath)
+		// if the source path is a folder
 		if info.IsDir() {
-			srcPath := path.Join(targetPath, seal.Manifest.Target)
-			info, err = os.Stat(srcPath)
-			core.CheckErr(err, "cannot stat source path %s", srcPath)
-			// if the source path is a folder
-			if info.IsDir() {
-				// unwrap the folder
-				err = MoveFolderContent(srcPath, targetPath)
-				core.CheckErr(err, "cannot move target folder content")
-			}
+			// unwrap the folder
+			err = MoveFolderContent(srcPath, targetPath)
+			core.CheckErr(err, "cannot move target folder content")
 		}
 	}
-}
-
-func (r *LocalRegistry) Verify(name *core.PackageName, pubKeyPath string, seal *data.Seal, zipFilename string, artHome string) error {
-	var (
-		primaryKey, backupKey *crypto.PGP
-		err                   error
-	)
-	if len(pubKeyPath) > 0 {
-		// retrieve the verification key from the specified location
-		primaryKey, err = crypto.LoadPGP(pubKeyPath, "")
-		core.CheckErr(err, "cannot load public key, cannot verify signature")
-	} else {
-		// otherwise, loads it from the registry store
-		primaryKey, backupKey, err = crypto.LoadKeys(*name, false, artHome)
-		core.CheckErr(err, "cannot load public key, cannot verify signature")
-	}
-	// get a slice to have the unencrypted signature
-	sum, _ := seal.Checksum(zipFilename)
-	// if in debug mode prints out signature
-	core.Debug("seal stored base64 encoded signature:\n>> start on next line\n%s\n>> ended on previous line\n", seal.Signature)
-	// decode the signature in the seal
-	sig, err := base64.StdEncoding.DecodeString(seal.Signature)
-	core.CheckErr(err, "cannot decode signature in the seal")
-	// if in debug mode prints out base64 decoded signature
-	core.Debug("seal stored signature:\n>> start on next line\n%s\n>> ended on previous line\n", string(sig))
-	// verify the signature using the primary key
-	err = primaryKey.Verify(sum, sig)
-	// if the verification failed
-	if err != nil {
-		// if a backup key exists
-		if backupKey != nil {
-			core.InfoLogger.Printf("invalid digital signature using primary key, attempting verification using backup key")
-			// verify the signature using the backup key
-			err = backupKey.Verify(sum, sig)
-			core.CheckErr(err, "invalid digital signature (used both, primary and backup keys)")
-		} else {
-			// raise the error as no backup key exists
-			core.CheckErr(err, "invalid digital signature (used primary key)")
-		}
-	}
-	return err
 }
 
 func (r *LocalRegistry) removePkg(pkg *Package, artHome string) error {
@@ -1079,16 +1030,16 @@ func (r *LocalRegistry) ExportPackage(names []core.PackageName, sourceCreds, tar
 // uri: the uri of the package to import (can be file path or S3 bucket uri)
 // creds: the credentials to connect to the endpoint if it is authenticated S3 in the format user:password
 // localPath: if specified, it downloads the remote files to a target folder
-func (r *LocalRegistry) Import(uri []string, creds, pubKeyPath string, v Verifier) error {
+func (r *LocalRegistry) Import(uri []string, creds string, v func(n *core.PackageName, s *data.Seal, r *LocalRegistry) error) error {
 	for _, path := range uri {
-		if err := r.importTar(path, creds, pubKeyPath, v); err != nil {
+		if err := r.importTar(path, creds, v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *LocalRegistry) importTar(uri, creds, pubKeyPath string, v Verifier) error {
+func (r *LocalRegistry) importTar(uri, creds string, v func(n *core.PackageName, s *data.Seal, r *LocalRegistry) error) error {
 	core.InfoLogger.Printf("reading => %s\n", uri)
 	tarBytes, err := resx.ReadFile(uri, creds)
 	if err != nil {
@@ -1129,11 +1080,10 @@ func (r *LocalRegistry) importTar(uri, creds, pubKeyPath string, v Verifier) err
 			}
 			// works out the path to the package zip file
 			packageFilename := filepath.Join(tmp, fmt.Sprintf("%s.zip", seal.Manifest.Ref))
-			// if a verifier has been provided
+			// if a validation function has been provided
 			if v != nil {
-				// use it to check the package digital signature
-				err = v.Verify(packageName, pubKeyPath, seal, packageFilename, r.ArtHome)
-				if err != nil {
+				// validate package before importing it
+				if err = v(packageName, seal, r); err != nil {
 					return err
 				}
 			}
@@ -1515,77 +1465,6 @@ func (r *LocalRegistry) findRepositoryIxByPackageId(id string) []int {
 	return ix
 }
 
-func (r *LocalRegistry) Sign(pac, pkPath, pubPath string, v Verifier) error {
-	// parses the package name
-	packageName, err := core.ParseName(pac)
-	if err != nil {
-		return err
-	}
-	// find the package by name
-	pkg := r.FindPackageByName(packageName)
-	if pkg == nil {
-		return fmt.Errorf("package %s not found", pac)
-	}
-	// works out the seal filename
-	sealFilename := r.regDirJsonFilename(pkg.FileRef)
-	// works out the zip filename
-	zipFilename := r.regDirZipFilename(pkg.FileRef)
-	// load the package seal
-	s, sealErr := r.loadSeal(sealFilename)
-	if sealErr != nil {
-		return sealErr
-	}
-	// if a public key has been provided, use it to verify the package digital signature
-	if len(pubPath) > 0 && v != nil {
-		err = v.Verify(packageName, pubPath, s, zipFilename, r.ArtHome)
-		if err != nil {
-			return err
-		}
-	}
-	// gets a timestamp
-	t := time.Now()
-	timeStamp := fmt.Sprintf("%04s%02d%02d%02d%02d%02d%s", strconv.Itoa(t.Year()), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), strconv.Itoa(t.Nanosecond())[:3])
-	// add labels to the manifest to keep an audit trail of the re-signing operation
-	s.Manifest.Labels[fmt.Sprintf("source-signature:%s", timeStamp)] = s.Signature
-	// gets the combined checksum of the manifest and the package
-	sum, _ := s.Checksum(zipFilename)
-	// load private key
-	var pk *crypto.PGP
-	// if no private key path has been provided
-	if len(pkPath) == 0 {
-		// load the key from the local registry
-		pk, _, err = crypto.LoadKeys(*packageName, true, r.ArtHome)
-		if err != nil {
-			return fmt.Errorf("cannot load signing key: %s", err)
-		}
-	} else {
-		// uses the path provided
-		path, absErr := filepath.Abs(pkPath)
-		if absErr != nil {
-			return absErr
-		}
-		pk, err = crypto.LoadPGP(path, "")
-		if err != nil {
-			return fmt.Errorf("cannot load signing key: %s", err)
-		}
-	}
-	// create a PGP cryptographic signature
-	signature, err := pk.Sign(sum)
-	if err != nil {
-		return fmt.Errorf("cannot create cryptographic signature: %s", err)
-	}
-	// replace the signature
-	s.Signature = base64.StdEncoding.EncodeToString(signature)
-	// convert the seal to Json
-	dest := core.ToJsonBytes(s)
-	// save the seal
-	err = ioutil.WriteFile(sealFilename, dest, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("cannot update package seal file: %s", err)
-	}
-	return nil
-}
-
 // checks if a file exists
 func fileExists(filename string) bool {
 	_, err := os.Stat(filename)
@@ -1610,12 +1489,4 @@ func rmPackage(a []*Package, value *Package) []*Package {
 	a[len(a)-1] = nil  // Erase last element (write zero value).
 	a = a[:len(a)-1]   // Truncate slice.
 	return a
-}
-
-type Verifier interface {
-	Verify(name *core.PackageName, pubKeyPath string, seal *data.Seal, zipFilename, artHome string) error
-}
-
-type Signer interface {
-	Verify(name *core.PackageName, pubKeyPath string, seal *data.Seal, zipFilename string) error
 }

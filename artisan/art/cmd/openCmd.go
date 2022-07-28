@@ -47,10 +47,10 @@ func (c *OpenCmd) Run(cmd *cobra.Command, args []string) {
 		path = args[1]
 	}
 	// validate the name
-	artie, err := core.ParseName(nameTag)
+	name, err := core.ParseName(nameTag)
 	i18n.Err("", err, i18n.ERR_INVALID_PACKAGE_NAME)
 	// create a local registry
 	local := registry.NewLocalRegistry("")
 	// attempt to open from local registry
-	local.Open(artie, c.credentials, path, "", true, nil)
+	local.Open(name, c.credentials, path, nil)
 }

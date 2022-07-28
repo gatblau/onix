@@ -21,18 +21,18 @@ import (
 
 // LangFetchCmd installs it in the local registry
 type LangFetchCmd struct {
-	cmd *cobra.Command
+	Cmd *cobra.Command
 }
 
 func NewLangFetchCmd() *LangFetchCmd {
 	c := &LangFetchCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "fetch [language code]",
 			Short: "fetches a language dictionary and installs it in the local registry",
 			Long:  `fetches a language dictionary and installs it in the local registry`,
 		},
 	}
-	c.cmd.Run = c.Run
+	c.Cmd.Run = c.Run
 	return c
 }
 

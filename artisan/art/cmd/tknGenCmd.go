@@ -19,18 +19,18 @@ import (
 )
 
 type TknGenCmd struct {
-	cmd *cobra.Command
+	Cmd *cobra.Command
 }
 
 func NewTknGenCmd() *TknGenCmd {
 	c := &TknGenCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "gen [flags] [/path/to/flow.yaml]",
 			Short: "generates a tekton pipeline",
 			Long:  `generates a tekton pipeline`,
 		},
 	}
-	c.cmd.Run = c.Run
+	c.Cmd.Run = c.Run
 	return c
 }
 

@@ -17,7 +17,7 @@ import (
 
 // BuildCmd builds an artisan package
 type BuildCmd struct {
-	cmd         *cobra.Command
+	Cmd         *cobra.Command
 	branch      string
 	gitTag      string
 	packageName string
@@ -32,7 +32,7 @@ type BuildCmd struct {
 
 func NewBuildCmd() *BuildCmd {
 	c := &BuildCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "build [flags] /build/file/path or https://build/file/git/uri or /path/to/folder (without build file)",
 			Short: "builds a package",
 			Long: `
@@ -92,14 +92,14 @@ In order to create a content package do the following:
 `,
 		},
 	}
-	c.cmd.Run = c.Run
-	c.cmd.Flags().StringVarP(&c.gitToken, "token", "k", "", "the git access token to use to read a build file remotely stored in a protected git repository")
-	c.cmd.Flags().StringVarP(&c.packageName, "package-name", "t", "", "package name and optionally a tag in the 'name:tag' format")
-	c.cmd.Flags().StringVarP(&c.fromPath, "path", "f", "", "if a git repository is specified as the location to the build file, it defines the path within the git repository where the build file is")
-	c.cmd.Flags().StringVar(&c.target, "target", "", "if a explicit target folder is defined, then build the package without relying on a build file")
-	c.cmd.Flags().StringVarP(&c.profile, "profile", "p", "", "the build profile to use. if not provided, the default profile defined in the build file is used. if no default profile is found, then the first profile in the build file is used.")
-	c.cmd.Flags().BoolVarP(&c.interactive, "interactive", "i", false, "if true, it prompts the user for information if not provided")
-	c.cmd.Flags().BoolVarP(&c.copySource, "copy", "c", false, "indicates if a copy should be made of the project files before building the package. it is only applicable if the source is in the file system.")
+	c.Cmd.Run = c.Run
+	c.Cmd.Flags().StringVarP(&c.gitToken, "token", "k", "", "the git access token to use to read a build file remotely stored in a protected git repository")
+	c.Cmd.Flags().StringVarP(&c.packageName, "package-name", "t", "", "package name and optionally a tag in the 'name:tag' format")
+	c.Cmd.Flags().StringVarP(&c.fromPath, "path", "f", "", "if a git repository is specified as the location to the build file, it defines the path within the git repository where the build file is")
+	c.Cmd.Flags().StringVar(&c.target, "target", "", "if a explicit target folder is defined, then build the package without relying on a build file")
+	c.Cmd.Flags().StringVarP(&c.profile, "profile", "p", "", "the build profile to use. if not provided, the default profile defined in the build file is used. if no default profile is found, then the first profile in the build file is used.")
+	c.Cmd.Flags().BoolVarP(&c.interactive, "interactive", "i", false, "if true, it prompts the user for information if not provided")
+	c.Cmd.Flags().BoolVarP(&c.copySource, "copy", "c", false, "indicates if a copy should be made of the project files before building the package. it is only applicable if the source is in the file system.")
 	return c
 }
 

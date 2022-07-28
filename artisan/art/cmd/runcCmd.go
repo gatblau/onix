@@ -17,7 +17,7 @@ import (
 
 // RunCCmd runs a function specified in the project's build.yaml file within an artisan runtime
 type RunCCmd struct {
-	cmd         *cobra.Command
+	Cmd         *cobra.Command
 	interactive *bool
 	envFilename string
 	network     string
@@ -25,16 +25,16 @@ type RunCCmd struct {
 
 func NewRunCCmd() *RunCCmd {
 	c := &RunCCmd{
-		cmd: &cobra.Command{
+		Cmd: &cobra.Command{
 			Use:   "runc [function name] [project path]",
 			Short: "runs the function commands specified in the project's build.yaml file within an artisan runtime container",
 			Long:  ``,
 		},
 	}
-	c.interactive = c.cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
-	c.cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "the environment file to load; e.g. --env=.env or -e=.env")
-	c.cmd.Flags().StringVarP(&c.network, "network", "n", "", "attaches the container to the specified docker network; by default it is not specified so the container is not attached to any docker network; usage: --network my-net")
-	c.cmd.Run = c.Run
+	c.interactive = c.Cmd.Flags().BoolP("interactive", "i", false, "switches on interactive mode which prompts the user for information if not provided")
+	c.Cmd.Flags().StringVarP(&c.envFilename, "env", "e", ".env", "the environment file to load; e.g. --env=.env or -e=.env")
+	c.Cmd.Flags().StringVarP(&c.network, "network", "n", "", "attaches the container to the specified docker network; by default it is not specified so the container is not attached to any docker network; usage: --network my-net")
+	c.Cmd.Run = c.Run
 	return c
 }
 

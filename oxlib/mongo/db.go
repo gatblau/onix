@@ -41,6 +41,23 @@ func ctx() (context.Context, context.CancelFunc) {
 	return c, cancel
 }
 
+func (db *Database) Count(dbName string, collection Collection, filter interface{}) (int64, error) {
+	c, cancel := ctx()
+	defer cancel()
+	client, err := mongo.Connect(c, db.options)
+	if err != nil {
+		return 0, err
+	}
+	defer func(client *mongo.Client, ctx context.Context) {
+		err = client.Disconnect(ctx)
+		if err != nil {
+			log.Println(err.Error())
+		}
+	}(client, c)
+	coll := client.Database(dbName).Collection(string(collection))
+	return coll.CountDocuments(c, filter)
+}
+
 // InsertObject insert a nameable object in the specified collection
 func (db *Database) InsertObject(dbName string, collection Collection, obj Nameable) (interface{}, error) {
 	item, err := db.FindByName(dbName, collection, obj.GetName())
@@ -115,6 +132,23 @@ func (db *Database) UpsertObject(dbName string, collection Collection, obj Namea
 		resultCode = 500
 	}
 	return
+}
+
+func (db *Database) DeleteByName(dbName string, collection Collection, name string) (interface{}, error) {
+	c, cancel := ctx()
+	defer cancel()
+	client, err := mongo.Connect(c, db.options)
+	if err != nil {
+		return nil, err
+	}
+	defer func(client *mongo.Client, ctx context.Context) {
+		err = client.Disconnect(ctx)
+		if err != nil {
+			log.Println(err.Error())
+		}
+	}(client, c)
+	coll := client.Database(dbName).Collection(string(collection))
+	return coll.DeleteOne(c, bson.M{"_id": name})
 }
 
 // FindByName find an object by name
