@@ -122,7 +122,7 @@ func (p *Pilot) Start() {
 		os.Exit(127)
 	}
 	if len(p.options.CVEPath) > 0 {
-		err := p.cveExporter.Start()
+		err := p.cveExporter.Start(p.cfg.GetIntDefault(PilotCVEUploadDelayWindow, 5))
 		if err != nil {
 			ErrorLogger.Printf("cannot start CVE exporter: %s\n", err)
 			os.Exit(1)
