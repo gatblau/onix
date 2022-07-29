@@ -28,6 +28,8 @@ func InitialiseRootCmd() *RootCmd {
 	exeCCmd := NewExeCCmd()
 	envCmd := InitialiseEnvCommand()
 	pruneCmd := NewPruneCmd()
+	// NOTE: will be deprecated and moved under utilities in a near future
+	curlCmd := NewCurlCmd()
 	rootCmd.Cmd.AddCommand(
 		utilCmd.Cmd,
 		specCmd.Cmd,
@@ -47,6 +49,7 @@ func InitialiseRootCmd() *RootCmd {
 		exeCCmd.Cmd,
 		envCmd.Cmd,
 		pruneCmd.Cmd,
+		curlCmd.Cmd,
 	)
 	return rootCmd
 }
