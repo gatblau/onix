@@ -11,7 +11,6 @@ package i18n
 type I18NKey string
 
 const (
-	// error messages
 	ERR_CANT_CREATE_REGISTRY_FOLDER I18NKey = "ERR_CANT_CREATE_REGISTRY_FOLDER"
 	ERR_CANT_DOWNLOAD_LANG                  = "ERR_CANT_DOWNLOAD_LANG"
 	ERR_CANT_EXEC_FUNC_IN_PACKAGE           = "ERR_CANT_EXEC_FUNC_IN_PACKAGE"
@@ -23,10 +22,9 @@ const (
 	ERR_INSUFFICIENT_ARGS                   = "ERR_INSUFFICIENT_ARGS"
 	ERR_INVALID_PACKAGE_NAME                = "ERR_INVALID_PACKAGE_NAME"
 	ERR_TOO_MANY_ARGS                       = "ERR_TOO_MANY_ARGS"
-	// information messages
-	INFO_PUSHED          = "INFO_PUSHED"
-	INFO_NOTHING_TO_PUSH = "INFO_NOTHING_TO_PUSH"
-	INFO_TAGGED          = "INFO_TAGGED"
-	// labels
-	LBL_LS_HEADER = "LBL_LS_HEADER"
+	INFO_PUSHED                             = "INFO_PUSHED"
+	INFO_NOTHING_TO_PUSH                    = "INFO_NOTHING_TO_PUSH"
+	INFO_TAGGED                             = "INFO_TAGGED"
+	LBL_LS_HEADER                           = "LBL_LS_HEADER"
+	LBL_LS_HEADER_PLUS                      = "LBL_LS_HEADER_PLUS"
 )
