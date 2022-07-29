@@ -181,7 +181,7 @@ func (p *Pilot) ping() {
 		resp, err := p.ctl.Ping()
 		if err != nil {
 			// write to the console output
-			InfoLogger.Printf("ping failed: %s\n", err)
+			WarningLogger.Printf("ping failed: %s\n", err)
 			p.connected = false
 		} else {
 			if !p.connected {
