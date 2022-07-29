@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -72,9 +73,25 @@ func (r *CVEExporter) Start() error {
 	files, err := ioutil.ReadDir(r.pathToWatch)
 	core.CheckErr(err, "cannot read CVE path")
 	for _, file := range files {
-		err = r.submit(filepath.Join(r.pathToWatch, file.Name()), time.Duration(0), r.ctl)
-		if err != nil {
-			core.ErrorLogger.Printf("cannot submit CVE report: %s\n", err)
+		// if the file is not a directory and is a json file
+		if !file.IsDir() && strings.HasSuffix(file.Name(), ".json") {
+			// works out the FQN of the cve file
+			cveFile := filepath.Join(r.pathToWatch, file.Name())
+			// submits it to pilot control
+			err = r.submit(cveFile, time.Duration(0), r.ctl)
+			// if there was an error
+			if err != nil {
+				// log the error
+				core.ErrorLogger.Printf("cannot submit CVE report: %s\n", err)
+			} else {
+				// if the report was submitted successfully, removes it
+				err = os.Remove(cveFile)
+				// if failed to remove the file
+				if err != nil {
+					// issue a warning
+					core.WarningLogger.Printf("cannot remove CVE report '%s' after successful submission: %s\n", file.Name(), err)
+				}
+			}
 		}
 	}
 	core.InfoLogger.Printf("watching for new CVE (*.json) reports at %s\n", r.pathToWatch)
@@ -103,7 +120,15 @@ func postReport(cveReportFile string, delay time.Duration, ctl *PilotCtl) error 
 	err = ctl.SubmitCveReport(content)
 	if err != nil {
 		return err
+	} else {
+		core.InfoLogger.Printf("CVE report %s posted successfully\n", cveReportFile)
+		// if the report was submitted successfully, removes it
+		err = os.Remove(cveReportFile)
+		// if failed to remove the file
+		if err != nil {
+			// issue a warning
+			core.WarningLogger.Printf("cannot remove CVE report '%s' after successful submission: %s\n", cveReportFile, err)
+		}
 	}
-	core.InfoLogger.Printf("CVE report %s posted successfully\n", cveReportFile)
 	return nil
 }
