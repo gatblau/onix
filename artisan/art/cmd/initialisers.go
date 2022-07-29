@@ -11,7 +11,6 @@ package cmd
 func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
 	utilCmd := InitialiseUtilCommand()
-	extractCmd := NewUtilExtractCmd()
 	appCmd := NewAppCmd()
 	serveCmd := NewServeCmd()
 	specCmd := InitialiseSpecCommand()
@@ -38,7 +37,6 @@ func InitialiseRootCmd() *RootCmd {
 	pruneCmd := NewPruneCmd()
 	rootCmd.Cmd.AddCommand(
 		utilCmd.Cmd,
-		extractCmd.Cmd,
 		appCmd.Cmd,
 		specCmd.Cmd,
 		serveCmd.Cmd,
