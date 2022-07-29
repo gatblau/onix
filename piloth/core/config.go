@@ -42,6 +42,8 @@ func (k ConfigKey) String() string {
 		return "PILOT_DEBUG"
 	case PilotCVEPath:
 		return "PILOT_CVE_PATH"
+	case PilotCVEUploadDelayWindow:
+		return "PILOT_CVE_UPLOAD_DELAY_WINDOW"
 	}
 	return ""
 }
@@ -53,6 +55,7 @@ const (
 	PilotUserKey
 	PilotDebug
 	PilotCVEPath
+	PilotCVEUploadDelayWindow
 )
 
 func (c *Config) getSyslogPort() string {
@@ -68,6 +71,22 @@ func (c *Config) getSyslogPort() string {
 func (c *Config) Get(key ConfigKey) string {
 	defer TRA(CE())
 	return os.Getenv(key.String())
+}
+
+func (c *Config) GetIntDefault(key ConfigKey, defValue int) int {
+	var (
+		i   = defValue
+		err error
+	)
+	defer TRA(CE())
+	value := os.Getenv(key.String())
+	if len(value) > 0 {
+		i, err = strconv.Atoi(value)
+		if err != nil {
+			core.WarningLogger.Printf("cannot get default value for '%s': %s\n", key, err)
+		}
+	}
+	return i
 }
 
 func (c *Config) GetBool(key ConfigKey) bool {

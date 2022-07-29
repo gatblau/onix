@@ -43,24 +43,7 @@ func NewCVEExporter(ctl *PilotCtl, pathToWatch string) *CVEExporter {
 	}
 }
 
-func (r *CVEExporter) Start() error {
-	core.InfoLogger.Printf("starting CVE exporter, listening for reports at %s\n", r.pathToWatch)
-	go func() {
-		for {
-			select {
-			case event := <-r.w.Event:
-				// randomise the post over a 5-minute window to prevent all pilots hitting pilot-ctl at the same time
-				err := r.submit(event.Path, time.Duration(int64(rand.Intn(5*60)))*time.Second, r.ctl)
-				if err != nil {
-					core.ErrorLogger.Printf("cannot submit CVE report: %s\n", err)
-				}
-			case err := <-r.w.Error:
-				core.WarningLogger.Println(err.Error())
-			case <-r.w.Closed:
-				return
-			}
-		}
-	}()
+func (r *CVEExporter) Start(minutes int) error {
 	if _, err := os.Stat(r.pathToWatch); os.IsNotExist(err) {
 		if err = os.MkdirAll(r.pathToWatch, 0755); err != nil {
 			return fmt.Errorf("cannot create cve folder: %s", err)
@@ -70,6 +53,7 @@ func (r *CVEExporter) Start() error {
 	if err := r.w.Add(r.pathToWatch); err != nil {
 		return fmt.Errorf(err.Error())
 	}
+	core.InfoLogger.Printf("inspecting CVE path for existing reports\n")
 	files, err := ioutil.ReadDir(r.pathToWatch)
 	core.CheckErr(err, "cannot read CVE path")
 	for _, file := range files {
@@ -94,10 +78,27 @@ func (r *CVEExporter) Start() error {
 			}
 		}
 	}
+	core.InfoLogger.Printf("starting CVE exporter, listening for reports at %s\n", r.pathToWatch)
+	go func() {
+		for {
+			select {
+			case event := <-r.w.Event:
+				// randomise the post over a 5-minute window to prevent all pilots hitting pilot-ctl at the same time
+				err := r.submit(event.Path, time.Duration(int64(rand.Intn(minutes*60)))*time.Second, r.ctl)
+				if err != nil {
+					core.ErrorLogger.Printf("cannot submit CVE report: %s\n", err)
+				}
+			case err := <-r.w.Error:
+				core.WarningLogger.Println(err.Error())
+			case <-r.w.Closed:
+				return
+			}
+		}
+	}()
 	core.InfoLogger.Printf("watching for new CVE (*.json) reports at %s\n", r.pathToWatch)
 	// Start the watching process - it'll check for changes every 15 secs.
 	go func() {
-		err = r.w.Start(time.Second * 15)
+		err := r.w.Start(time.Second * 15)
 		if err != nil {
 			core.ErrorLogger.Printf(err.Error())
 		}
