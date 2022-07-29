@@ -41,7 +41,7 @@ func NewLaunchCmd() *LaunchCmd {
 	c.cpu = *c.cmd.Flags().Bool("cpu", false, "enables cpu profiling only; cannot profile memory")
 	c.mem = *c.cmd.Flags().Bool("mem", false, "enables memory profiling only; cannot profile cpu")
 	c.insecureSkipVerify = *c.cmd.Flags().Bool("insecureSkipVerify", false, "disables verification of certificates presented by the server and host name in that certificate; in this mode, TLS is susceptible to machine-in-the-middle attacks unless custom verification is used.")
-	c.cmd.Flags().StringVar(&c.cvePath, "cve-path", "", "if set, enables export of CVE reports from specified path")
+	c.cmd.Flags().StringVar(&c.cvePath, "cve-path", "", "if set, uploads CVE reports in the specified path to pilot control")
 	c.cmd.Run = c.Run
 	return c
 }
