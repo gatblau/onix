@@ -92,7 +92,7 @@ func (r *CVEExporter) Start(minutes int) error {
 	core.InfoLogger.Printf("watching for new CVE (*.json) reports at %s\n", r.pathToWatch)
 	// Start the watching process - it'll check for changes every 15 secs.
 	go func() {
-		err := r.w.Start(time.Second * 15)
+		err = r.w.Start(time.Second * 15)
 		if err != nil {
 			core.ErrorLogger.Printf(err.Error())
 		}
