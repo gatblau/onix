@@ -25,6 +25,7 @@ type LaunchCmd struct {
 	mem                bool   // enables memory profiling
 	insecureSkipVerify bool   // if true, crypto/tls accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to machine-in-the-middle attacks unless custom verification is used.
 	cvePath            string // the  path used to collect CVE reports to export
+	cveUploadDelayMins int    // the maximum delay in minutes for CVE report uploads
 }
 
 func NewLaunchCmd() *LaunchCmd {
@@ -42,6 +43,7 @@ func NewLaunchCmd() *LaunchCmd {
 	c.mem = *c.cmd.Flags().Bool("mem", false, "enables memory profiling only; cannot profile cpu")
 	c.insecureSkipVerify = *c.cmd.Flags().Bool("insecureSkipVerify", false, "disables verification of certificates presented by the server and host name in that certificate; in this mode, TLS is susceptible to machine-in-the-middle attacks unless custom verification is used.")
 	c.cmd.Flags().StringVar(&c.cvePath, "cve-path", "", "if set, uploads CVE reports in the specified path to pilot control")
+	c.cveUploadDelayMins = *c.cmd.Flags().Int("cve-up-delay", 5, "the maximum upload delay (in minutes) which pilot can apply before uploading a CVE report")
 	c.cmd.Run = c.Run
 	return c
 }
@@ -62,6 +64,7 @@ func (c *LaunchCmd) Run(cmd *cobra.Command, args []string) {
 		MEM:                c.mem,
 		InsecureSkipVerify: c.insecureSkipVerify,
 		CVEPath:            c.cvePath,
+		CVEUploadDelay:     c.cveUploadDelayMins,
 	})
 	core.CheckErr(err, "cannot start pilot")
 	// start the pilot

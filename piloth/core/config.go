@@ -42,8 +42,6 @@ func (k ConfigKey) String() string {
 		return "PILOT_DEBUG"
 	case PilotCVEPath:
 		return "PILOT_CVE_PATH"
-	case PilotCVEUploadDelayWindow:
-		return "PILOT_CVE_UPLOAD_DELAY_WINDOW"
 	}
 	return ""
 }
@@ -55,7 +53,6 @@ const (
 	PilotUserKey
 	PilotDebug
 	PilotCVEPath
-	PilotCVEUploadDelayWindow
 )
 
 func (c *Config) getSyslogPort() string {
