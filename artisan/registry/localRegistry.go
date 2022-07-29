@@ -407,36 +407,75 @@ func (r *LocalRegistry) AllPackages() []string {
 }
 
 // List packages to stdout
-func (r *LocalRegistry) List(artHome string) {
+func (r *LocalRegistry) List(artHome string, extended bool) {
 	// get a table writer for the stdout
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
 	// print the header row
-	_, err := fmt.Fprintln(w, i18n.String(artHome, i18n.LBL_LS_HEADER))
+	var err error
+	if extended {
+		_, err = fmt.Fprintln(w, i18n.String(artHome, i18n.LBL_LS_HEADER_PLUS))
+	} else {
+		_, err = fmt.Fprintln(w, i18n.String(artHome, i18n.LBL_LS_HEADER))
+	}
 	core.CheckErr(err, "failed to write table header")
+	var (
+		s      *data.Seal
+		author string
+	)
 	// repository, tag, package id, created, size
 	for _, repo := range r.Repositories {
 		for _, a := range repo.Packages {
+			s, err = r.GetSeal(a)
+			if err != nil {
+				author = "unknown"
+			} else {
+				author = s.Manifest.Author
+			}
 			// if the package is dangling (no tags)
 			if len(a.Tags) == 0 {
-				_, err := fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t",
-					repo.Repository,
-					"<none>",
-					a.Id[0:12],
-					a.Type,
-					toElapsedLabel(a.Created),
-					a.Size),
-				)
+				if extended {
+					_, err = fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t %s\t",
+						repo.Repository,
+						"<none>",
+						a.Id[0:12],
+						a.Type,
+						toElapsedLabel(a.Created),
+						a.Size,
+						author),
+					)
+				} else {
+					_, err = fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t",
+						repo.Repository,
+						"<none>",
+						a.Id[0:12],
+						a.Type,
+						toElapsedLabel(a.Created),
+						a.Size),
+					)
+				}
 				core.CheckErr(err, "failed to write output")
 			}
 			for _, tag := range a.Tags {
-				_, err := fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t",
-					repo.Repository,
-					tag,
-					a.Id[0:12],
-					a.Type,
-					toElapsedLabel(a.Created),
-					a.Size),
-				)
+				if extended {
+					_, err = fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t %s\t",
+						repo.Repository,
+						tag,
+						a.Id[0:12],
+						a.Type,
+						toElapsedLabel(a.Created),
+						a.Size,
+						author),
+					)
+				} else {
+					_, err = fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t",
+						repo.Repository,
+						tag,
+						a.Id[0:12],
+						a.Type,
+						toElapsedLabel(a.Created),
+						a.Size),
+					)
+				}
 				core.CheckErr(err, "failed to write output")
 			}
 		}
