@@ -68,27 +68,21 @@ func (r *CVEExporter) Start(minutes int) error {
 				// log the error
 				core.ErrorLogger.Printf("cannot submit CVE report: %s\n", err)
 			} else {
-				// if the report was submitted successfully, removes it
-				err = os.Remove(cveFile)
-				// if failed to remove the file
-				if err != nil {
-					// issue a warning
-					core.WarningLogger.Printf("cannot remove CVE report '%s' after successful submission: %s\n", file.Name(), err)
-				}
+				_ = os.Remove(cveFile)
 			}
 		}
 	}
-	core.InfoLogger.Printf("starting CVE exporter, listening for reports at %s\n", r.pathToWatch)
+	core.InfoLogger.Printf("starting CVE exporter, listening for reports at %s, a delay of up to %v minutes will be applied before uploading a file\n", r.pathToWatch, minutes)
 	go func() {
 		for {
 			select {
 			case event := <-r.w.Event:
 				// randomise the post over a 5-minute window to prevent all pilots hitting pilot-ctl at the same time
-				err := r.submit(event.Path, time.Duration(int64(rand.Intn(minutes*60)))*time.Second, r.ctl)
+				err = r.submit(event.Path, time.Duration(int64(rand.Intn(minutes*60)))*time.Second, r.ctl)
 				if err != nil {
 					core.ErrorLogger.Printf("cannot submit CVE report: %s\n", err)
 				}
-			case err := <-r.w.Error:
+			case err = <-r.w.Error:
 				core.WarningLogger.Println(err.Error())
 			case <-r.w.Closed:
 				return
@@ -124,12 +118,7 @@ func postReport(cveReportFile string, delay time.Duration, ctl *PilotCtl) error 
 	} else {
 		core.InfoLogger.Printf("CVE report %s posted successfully\n", cveReportFile)
 		// if the report was submitted successfully, removes it
-		err = os.Remove(cveReportFile)
-		// if failed to remove the file
-		if err != nil {
-			// issue a warning
-			core.WarningLogger.Printf("cannot remove CVE report '%s' after successful submission: %s\n", cveReportFile, err)
-		}
+		_ = os.Remove(cveReportFile)
 	}
 	return nil
 }
