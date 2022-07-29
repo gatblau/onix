@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/gatblau/onix/oxlib/resx"
@@ -889,37 +888,6 @@ func (r *LocalRegistry) GetSeal(name *Package) (*data.Seal, error) {
 	seal := new(data.Seal)
 	err = json.Unmarshal(sealBytes, seal)
 	return seal, err
-}
-
-func (r *LocalRegistry) ImportKey(keyPath string, isPrivate, isBackup bool, repoGroup string, repoName string, artHome string) error {
-	var err error
-	if !filepath.IsAbs(keyPath) {
-		keyPath, err = filepath.Abs(keyPath)
-		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
-	}
-	// only check it can read the key
-	_, err = crypto.LoadPGP(keyPath, "")
-	core.CheckErr(err, "cannot read pgp key '%s'", keyPath)
-	destFile := crypto.KeyPath(repoGroup, repoName, isPrivate, isBackup, artHome)
-	destFolder := path.Dir(destFile)
-	// check if the target directory exists and if not creates it
-	if _, err = os.Stat(destFolder); os.IsNotExist(err) {
-		err = os.MkdirAll(destFolder, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("cannot create key directory '%s': %s", destFolder, err)
-		}
-	}
-	// if so, then move the key to the correct location to preserve PEM block data
-	return CopyFile(keyPath, destFile)
-}
-
-func (r *LocalRegistry) ExportKey(keyPath string, isPrivate, isBackup bool, repoGroup string, repoName string, artHome string) error {
-	var err error
-	if !filepath.IsAbs(keyPath) {
-		keyPath, err = filepath.Abs(keyPath)
-		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
-	}
-	return CopyFile(crypto.KeyPath(repoGroup, repoName, isPrivate, isBackup, artHome), keyPath)
 }
 
 func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {
