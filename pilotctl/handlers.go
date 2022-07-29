@@ -175,7 +175,7 @@ func getCVEBaselineHandler(w http.ResponseWriter, r *http.Request) {
 			b.WriteString(fmt.Sprintf("%s,%v,%s,%s\n", p.CveID, p.CvssScore, p.PackageName, p.FixedIn))
 		}
 	}
-	httpserver.Write(w, r, b.String())
+	w.Write([]byte(b.String()))
 }
 
 // @Summary Get All Hosts
