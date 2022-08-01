@@ -1,14 +1,3 @@
-package oxc
-
-import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strings"
-	"time"
-)
-
 /*
    Onix Configuration Manager - HTTP Client
    Copyright (c) 2018-2021 by www.gatblau.org
@@ -24,6 +13,19 @@ import (
    Contributors to this project, hereby assign copyright in this code to the project,
    to be licensed under the same terms as the rest of the code.
 */
+
+package oxc
+
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"regexp"
+	"strings"
+	"time"
+)
 
 // Login check that the user is authenticated using the CMDB as user store
 // and returns a list of access controls for the user
@@ -86,13 +88,53 @@ func (c *Control) hasMethod(method string) bool {
 	return false
 }
 
+func (c *Control) equal(ctl Control) bool {
+	return strings.EqualFold(ctl.Realm, c.Realm) && ctl.URI == c.URI && equalMethods(c.Method, ctl.Method)
+}
+
+func equalMethods(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 type Controls []Control
+
+func (controls Controls) Add(ctl ...Control) Controls {
+	var (
+		found bool
+		r     = controls
+	)
+	for _, c := range ctl {
+		found = false
+		for _, control := range controls {
+			if control.equal(c) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			r = append(r, c)
+		}
+	}
+	return r
+}
 
 // Allowed returns true if the specified control matches one of the controls granted to the user
 func (controls Controls) allowed(realm, uri, method string) bool {
 	for _, c := range controls {
+		matched, err := regexp.MatchString(c.URI, uri)
+		if err != nil {
+			log.Printf("WARNING: cannot match URI path, %s\n", err)
+		}
 		if (c.Realm == realm || c.Realm == "*") &&
-			(c.URI == uri || c.URI == "*") &&
+			(matched || c.URI == "*") &&
 			(c.hasMethod(method) || c.hasMethod("*")) {
 			return true
 		}
