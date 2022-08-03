@@ -105,6 +105,55 @@ func (r *Repository) FindPackageByRef(ref string) *Package {
 	return nil
 }
 
+func (r *Repository) Diff(repo *Repository) (*RepoDiff, error) {
+	if !strings.EqualFold(r.Repository, repo.Repository) {
+		return nil, fmt.Errorf("cannot diff two different repositories %s and %s", r.Repository, repo.Repository)
+	}
+	diff := new(RepoDiff)
+	// work out added
+	// loops through the source repo packages
+	for _, source := range r.Packages {
+		var found bool
+		// for each source package, loops through the target repo packages
+		for _, target := range repo.Packages {
+			// if the target repo contains the source package
+			if source.Id == target.Id {
+				// track it was found
+				found = true
+				break
+			}
+		}
+		// if the source package is not in the target repo, it means it is "added" in the source
+		if !found {
+			diff.Added = append(diff.Added, source)
+		}
+	}
+	// work out removed
+	// loops through the target repo packages
+	for _, target := range repo.Packages {
+		var found bool
+		// for each target package, loops through the source repo packages
+		for _, source := range r.Packages {
+			// if the target repo contains the source package
+			if target.Id == source.Id {
+				// track it was found
+				found = true
+				break
+			}
+		}
+		// if the target package is not in the source repo, it means it is "removed" in the source
+		if !found {
+			diff.Removed = append(diff.Removed, target)
+		}
+	}
+	return diff, nil
+}
+
+type RepoDiff struct {
+	Added   []*Package
+	Removed []*Package
+}
+
 // Package metadata for an Artisan package
 type Package struct {
 	// a unique identifier for the package calculated as the checksum of the complete seal
