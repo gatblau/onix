@@ -133,7 +133,11 @@ func (r *Repository) Diff(repo *Repository) (*RepoDiff, error) {
 				removedTags := difference(target.Tags, source.Tags)
 				if len(addedTags) > 0 || len(removedTags) > 0 {
 					// the package has been updated
-					diff.Updated = append(diff.Updated, source)
+					diff.Updated = append(diff.Updated, &UpdatedPackage{
+						Package:     source,
+						TagsAdded:   addedTags,
+						TagsRemoved: removedTags,
+					})
 				}
 				break
 			}
@@ -164,10 +168,33 @@ func (r *Repository) Diff(repo *Repository) (*RepoDiff, error) {
 	return diff, nil
 }
 
+// DeepCopy creates a copy that is totally unrelated to the original entity
+func (r *Repository) DeepCopy() *Repository {
+	repo := new(Repository)
+	repo.Repository = r.Repository
+	for _, p := range r.Packages {
+		repo.Packages = append(repo.Packages, &Package{
+			Id:      p.Id,
+			Type:    p.Type,
+			FileRef: p.FileRef,
+			Tags:    p.Tags,
+			Size:    p.Size,
+			Created: p.Created,
+		})
+	}
+	return repo
+}
+
 type RepoDiff struct {
 	Added   []*Package
 	Removed []*Package
-	Updated []*Package
+	Updated []*UpdatedPackage
+}
+
+type UpdatedPackage struct {
+	Package     *Package
+	TagsAdded   []string
+	TagsRemoved []string
 }
 
 // difference returns the elements in `a` that aren't in `b`.
