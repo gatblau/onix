@@ -108,7 +108,7 @@ func (r *Repository) FindPackageByRef(ref string) *Package {
 func (r *Repository) Diff(repo *Repository) (*RepoDiff, error) {
 	diff := new(RepoDiff)
 	// if the original repository is empty
-	if len(repo.Repository) == 0 && len(r.Repository) > 0 {
+	if len(repo.Repository) == 0 && len(repo.Packages) == 0 && len(r.Repository) > 0 {
 		// then the new repository packages should be added to the diff result
 		for _, p := range r.Packages {
 			diff.Added = append(diff.Added, p)
