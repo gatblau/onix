@@ -120,6 +120,13 @@ func (r *Repository) Diff(repo *Repository) (*RepoDiff, error) {
 			if source.Id == target.Id {
 				// track it was found
 				found = true
+				// check for tags difference
+				addedTags := difference(source.Tags, target.Tags)
+				removedTags := difference(target.Tags, source.Tags)
+				if len(addedTags) > 0 || len(removedTags) > 0 {
+					// the package has been updated
+					diff.Updated = append(diff.Updated, source)
+				}
 				break
 			}
 		}
@@ -152,6 +159,22 @@ func (r *Repository) Diff(repo *Repository) (*RepoDiff, error) {
 type RepoDiff struct {
 	Added   []*Package
 	Removed []*Package
+	Updated []*Package
+}
+
+// difference returns the elements in `a` that aren't in `b`.
+func difference(a, b []string) []string {
+	mb := make(map[string]struct{}, len(b))
+	for _, x := range b {
+		mb[x] = struct{}{}
+	}
+	var diff []string
+	for _, x := range a {
+		if _, found := mb[x]; !found {
+			diff = append(diff, x)
+		}
+	}
+	return diff
 }
 
 // Package metadata for an Artisan package

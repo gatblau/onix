@@ -34,7 +34,7 @@ func TestRepoDiff(t *testing.T) {
 				Id:      "1",
 				Type:    "file",
 				FileRef: "123456",
-				Tags:    []string{"v1", "v2"},
+				Tags:    []string{"v1", "v2", "v3"},
 				Size:    "343B",
 				Created: time.Now().UTC().String(),
 			},
