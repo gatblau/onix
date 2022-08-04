@@ -1,5 +1,3 @@
-package httpserver
-
 /*
   Onix Config Manager - Http Client
   Copyright (c) 2018-2021 by www.gatblau.org
@@ -7,6 +5,9 @@ package httpserver
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package httpserver
+
 import (
 	"encoding/base64"
 	"fmt"
@@ -26,12 +27,20 @@ const (
 	VarHTTPUploadInMemSize    = "OX_HTTP_UPLOAD_IN_MEM_SIZE"
 )
 
-type ServerConfig struct{}
+type ServerConfig struct {
+	includeOpenAPI bool
+}
+
+// IncludeOpenAPI add swagger capability
+func (c *ServerConfig) IncludeOpenAPI(value bool) {
+	c.includeOpenAPI = value
+}
 
 func (c *ServerConfig) MetricsEnabled() bool {
 	return c.getBoolean(VarMetricsEnabled, true)
 }
 
+// SwaggerEnabled if swagger cabaility exists then enable or disable it based on configuration
 func (c *ServerConfig) SwaggerEnabled() bool {
 	return c.getBoolean(VarSwaggerEnabled, true)
 }
