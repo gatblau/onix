@@ -23,7 +23,9 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func ExportImage(imgName, packName, targetUri, creds, artHome string) error {
+// BuildImagePackage build a package containing a docker image
+// If a targetUri is specified, then the package is also exported to s3 or the file system
+func BuildImagePackage(imgName, packName, targetUri, creds, artHome string) error {
 	pName, err := core.ParseName(packName)
 	if err != nil {
 		return fmt.Errorf("invalid package name: %s, ensure the container image name fully specify host and user/group if from docker.io", err)
@@ -36,8 +38,6 @@ func ExportImage(imgName, packName, targetUri, creds, artHome string) error {
 		}
 		// automatically adds a tar filename to the URI based on the package name:tag
 		targetUri = fmt.Sprintf("%s%s", targetUri, pkgFilename(*pName))
-	} else {
-		return fmt.Errorf("a destination URI must be specified to export the image")
 	}
 	// should we use docker or podman?
 	containerCli, err := containerCmd()
@@ -115,10 +115,12 @@ func ExportImage(imgName, packName, targetUri, creds, artHome string) error {
 	r := registry.NewLocalRegistry(artHome)
 	// export package
 	core.InfoLogger.Printf("exporting image package to tarball file")
-	err = r.ExportPackage([]core.PackageName{*pName}, "", targetUri, creds)
-	if err != nil {
-		os.RemoveAll(tmp)
-		return fmt.Errorf("cannot save package to destination: %s", err)
+	if len(targetUri) > 0 {
+		err = r.ExportPackage([]core.PackageName{*pName}, "", targetUri, creds)
+		if err != nil {
+			os.RemoveAll(tmp)
+			return fmt.Errorf("cannot save package to destination: %s", err)
+		}
 	}
 	return nil
 }

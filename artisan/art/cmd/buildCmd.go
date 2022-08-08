@@ -12,6 +12,7 @@ import (
 	"github.com/gatblau/onix/artisan/build"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/gatblau/onix/artisan/i18n"
+	"github.com/gatblau/onix/artisan/release"
 	"github.com/spf13/cobra"
 )
 
@@ -28,6 +29,7 @@ type BuildCmd struct {
 	copySource  bool
 	interactive bool
 	target      string
+	image       string
 }
 
 func NewBuildCmd() *BuildCmd {
@@ -89,11 +91,18 @@ In order to create a content package do the following:
 1. create a folder and add any files you would like to package (note that a build file is not needed in the folder)
 2. run the build command with the --target flag as follows:
   $ art build -t my-registry.com/repository-group/repository-name:tag --target ./folder/to/package
+
+Packaging Container Images:
+It is possible to package any container imge in the local container registry of the host where the artisan is running.
+Use the --image flag to specify which image to package as follows:
+
+  $ art build --image docker.io/mongo:5 -t localhost:8080/images/mongo:5
 `,
 		},
 	}
 	c.Cmd.Run = c.Run
 	c.Cmd.Flags().StringVarP(&c.gitToken, "token", "k", "", "the git access token to use to read a build file remotely stored in a protected git repository")
+	c.Cmd.Flags().StringVar(&c.image, "image", "", "builds a package with an embedded container image specified by this name")
 	c.Cmd.Flags().StringVarP(&c.packageName, "package-name", "t", "", "package name and optionally a tag in the 'name:tag' format")
 	c.Cmd.Flags().StringVarP(&c.fromPath, "path", "f", "", "if a git repository is specified as the location to the build file, it defines the path within the git repository where the build file is")
 	c.Cmd.Flags().StringVar(&c.target, "target", "", "if a explicit target folder is defined, then build the package without relying on a build file")
@@ -116,5 +125,10 @@ func (b *BuildCmd) Run(_ *cobra.Command, args []string) {
 	builder := build.NewBuilder("")
 	name, err := core.ParseName(b.packageName)
 	i18n.Err("", err, i18n.ERR_INVALID_PACKAGE_NAME)
-	builder.Build(b.from, b.fromPath, b.gitToken, name, b.profile, b.copySource, b.interactive, b.target)
+	// if an image option as been specified uses the image builder
+	if len(b.image) > 0 {
+		core.CheckErr(release.BuildImagePackage(b.image, b.packageName, "", "", ""), "cannot build image package")
+	} else {
+		builder.Build(b.from, b.fromPath, b.gitToken, name, b.profile, b.copySource, b.interactive, b.target)
+	}
 }
