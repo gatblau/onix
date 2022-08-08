@@ -100,7 +100,7 @@ func Tap(uri, credential, address, token string, verbose, insecureskipverify boo
 		csl.Done()
 	}()
 
-	log.Println("going to start proxy server")
+	log.Println("proxy server started")
 	http.Serve(csl, proxy)
 	csl.Wait()
 	log.Println("exiting after closing connection")
