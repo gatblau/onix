@@ -10,6 +10,7 @@ package types
 
 // Host monitoring information
 type Host struct {
+	Id             int64    `json:"id"`
 	HostUUID       string   `json:"host_uuid"`
 	HostMacAddress string   `json:"host_mac_address"`
 	OrgGroup       string   `json:"org_group"`
