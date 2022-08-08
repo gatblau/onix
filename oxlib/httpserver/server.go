@@ -46,7 +46,7 @@ type Server struct {
 }
 
 func New(realm string) *Server {
-	conf := new(ServerConfig)
+	conf := &ServerConfig{includeOpenAPI: true}
 	return &Server{
 		// the server configuration
 		Conf:  conf,
@@ -82,7 +82,7 @@ func (s *Server) Serve() {
 	router.HandleFunc("/", s.liveHandler).Methods("GET")
 
 	// swagger configuration
-	if s.Conf.SwaggerEnabled() {
+	if s.Conf.includeOpenAPI && s.Conf.SwaggerEnabled() {
 		fmt.Printf("? OpenAPI available at /api\n")
 		router.PathPrefix("/api").Handler(httpSwagger.WrapHandler)
 	}

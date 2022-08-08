@@ -22,10 +22,9 @@ var msg_en = map[I18NKey]string{
 	ERR_INSUFFICIENT_ARGS:           "insufficient arguments",
 	ERR_INVALID_PACKAGE_NAME:        "invalid package name",
 	ERR_TOO_MANY_ARGS:               "too many arguments",
-	// information messages
-	INFO_PUSHED:          "pushed: %s\n",
-	INFO_NOTHING_TO_PUSH: "nothing to push\n",
-	INFO_TAGGED:          "tagged: %s\n",
-	// labels
-	LBL_LS_HEADER: "REPOSITORY\t TAG\t PACKAGE ID\t PACKAGE TYPE\t CREATED\t SIZE\t",
+	INFO_PUSHED:                     "pushed: %s\n",
+	INFO_NOTHING_TO_PUSH:            "nothing to push\n",
+	INFO_TAGGED:                     "tagged: %s\n",
+	LBL_LS_HEADER:                   "REPOSITORY\t TAG\t PACKAGE ID\t PACKAGE TYPE\t CREATED\t SIZE\t",
+	LBL_LS_HEADER_PLUS:              "REPOSITORY\t TAG\t PACKAGE ID\t PACKAGE TYPE\t CREATED\t SIZE\t AUTHOR\t",
 }

@@ -9,6 +9,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	ctl "github.com/gatblau/onix/pilotctl/types"
 	pilotCore "github.com/gatblau/onix/piloth/core"
@@ -21,10 +22,11 @@ type LaunchCmd struct {
 	useHwId            bool   // use hardware uuid to identify device (instead of primary mac address)
 	tracing            bool   // enables tracing
 	logCollector       bool   // enables log collector
-	cpu                bool   // enables cpu profiling
-	mem                bool   // enables memory profiling
+	cpu                *bool  // enables cpu profiling
+	mem                *bool  // enables memory profiling
 	insecureSkipVerify bool   // if true, crypto/tls accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to machine-in-the-middle attacks unless custom verification is used.
 	cvePath            string // the  path used to collect CVE reports to export
+	cveUploadDelayMins *int   // the maximum delay in minutes for CVE report uploads
 }
 
 func NewLaunchCmd() *LaunchCmd {
@@ -38,15 +40,17 @@ func NewLaunchCmd() *LaunchCmd {
 	c.cmd.Flags().BoolVarP(&c.useHwId, "hw-id", "w", false, "use hardware uuid to identify device(instead of primary mac address)")
 	c.cmd.Flags().BoolVarP(&c.tracing, "trace", "t", false, "enables tracing")
 	c.cmd.Flags().BoolVarP(&c.logCollector, "syslog-collector", "s", false, "enables the syslog collector")
-	c.cpu = *c.cmd.Flags().Bool("cpu", false, "enables cpu profiling only; cannot profile memory")
-	c.mem = *c.cmd.Flags().Bool("mem", false, "enables memory profiling only; cannot profile cpu")
+	c.cpu = c.cmd.Flags().Bool("cpu", false, "enables cpu profiling only; cannot profile memory")
+	c.mem = c.cmd.Flags().Bool("mem", false, "enables memory profiling only; cannot profile cpu")
 	c.insecureSkipVerify = *c.cmd.Flags().Bool("insecureSkipVerify", false, "disables verification of certificates presented by the server and host name in that certificate; in this mode, TLS is susceptible to machine-in-the-middle attacks unless custom verification is used.")
-	c.cmd.Flags().StringVar(&c.cvePath, "cve-path", "", "if set, enables export of CVE reports from specified path")
+	c.cmd.Flags().StringVar(&c.cvePath, "cve-path", "", "if set, uploads CVE reports in the specified path to pilot control")
+	c.cveUploadDelayMins = c.cmd.Flags().Int("cve-up-delay", 5, "the maximum upload delay (in minutes) which pilot can apply before uploading a CVE report")
 	c.cmd.Run = c.Run
 	return c
 }
 
-func (c *LaunchCmd) Run(cmd *cobra.Command, args []string) {
+func (c *LaunchCmd) Run(_ *cobra.Command, _ []string) {
+	fmt.Println(*c.cveUploadDelayMins)
 	// collects device/host information
 	hostInfo, err := ctl.NewHostInfo()
 	if err != nil {
@@ -58,10 +62,11 @@ func (c *LaunchCmd) Run(cmd *cobra.Command, args []string) {
 		Logs:               c.logCollector,
 		Tracing:            c.tracing,
 		Info:               hostInfo,
-		CPU:                c.cpu,
-		MEM:                c.mem,
+		CPU:                *c.cpu,
+		MEM:                *c.mem,
 		InsecureSkipVerify: c.insecureSkipVerify,
 		CVEPath:            c.cvePath,
+		CVEUploadDelay:     *c.cveUploadDelayMins,
 	})
 	core.CheckErr(err, "cannot start pilot")
 	// start the pilot

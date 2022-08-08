@@ -41,8 +41,6 @@ type Manifest struct {
 	Commit string `json:"commit,omitempty"`
 	// repo branch
 	Branch string `json:"branch,omitempty"`
-	// repo tag
-	Tag string `json:"tag,omitempty"`
 	// the name of the file or folder that has been packaged
 	Target string `json:"target,omitempty"`
 	// the timestamp

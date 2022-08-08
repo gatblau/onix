@@ -11,9 +11,6 @@ package cmd
 func InitialiseRootCmd() *RootCmd {
 	rootCmd := NewRootCmd()
 	utilCmd := InitialiseUtilCommand()
-	extractCmd := NewUtilExtractCmd()
-	appCmd := NewAppCmd()
-	serveCmd := NewServeCmd()
 	specCmd := InitialiseSpecCommand()
 	buildCmd := NewBuildCmd()
 	lsCmd := NewListCmd()
@@ -26,22 +23,16 @@ func InitialiseRootCmd() *RootCmd {
 	pullCmd := NewPullCmd()
 	openCmd := NewOpenCmd()
 	flowCmd := InitialiseFlowCommand()
-	tknCmd := InitialiseTknCommand()
 	manifCmd := NewManifestCmd()
 	exeCmd := NewExeCmd()
 	exeCCmd := NewExeCCmd()
-	waitCmd := NewWaitCmd()
-	curlCmd := NewCurlCmd()
-	langCmd := InitialiseLangCommand()
 	envCmd := InitialiseEnvCommand()
-	gitSyncCmd := NewGitSyncCmd()
 	pruneCmd := NewPruneCmd()
+	// NOTE: will be deprecated and moved under utilities in a near future
+	curlCmd := NewCurlCmd()
 	rootCmd.Cmd.AddCommand(
 		utilCmd.Cmd,
-		extractCmd.Cmd,
-		appCmd.Cmd,
 		specCmd.Cmd,
-		serveCmd.Cmd,
 		buildCmd.Cmd,
 		lsCmd.Cmd,
 		pushCmd.Cmd,
@@ -56,13 +47,9 @@ func InitialiseRootCmd() *RootCmd {
 		manifCmd.Cmd,
 		exeCmd.cmd,
 		exeCCmd.Cmd,
-		tknCmd.Cmd,
-		waitCmd.Cmd,
-		curlCmd.Cmd,
-		langCmd.Cmd,
 		envCmd.Cmd,
-		gitSyncCmd.Cmd,
 		pruneCmd.Cmd,
+		curlCmd.Cmd,
 	)
 	return rootCmd
 }
@@ -74,11 +61,27 @@ func InitialiseUtilCommand() *UtilCmd {
 	utilExtractCmd := NewUtilExtractCmd()
 	utilB64Cmd := NewUtilBase64Cmd()
 	utilStampCmd := NewUtilStampCmd()
-	utilCmd.Cmd.AddCommand(utilPwdCmd.Cmd)
-	utilCmd.Cmd.AddCommand(utilExtractCmd.Cmd)
-	utilCmd.Cmd.AddCommand(utilNameCmd.Cmd)
-	utilCmd.Cmd.AddCommand(utilB64Cmd.Cmd)
-	utilCmd.Cmd.AddCommand(utilStampCmd.Cmd)
+	curlCmd := NewCurlCmd()
+	waitCmd := NewWaitCmd()
+	tknCmd := InitialiseTknCommand()
+	langCmd := InitialiseLangCommand()
+	gitSyncCmd := NewGitSyncCmd()
+	serveCmd := NewServeCmd()
+	appCmd := NewAppCmd()
+	utilCmd.Cmd.AddCommand(
+		utilPwdCmd.Cmd,
+		utilExtractCmd.Cmd,
+		utilNameCmd.Cmd,
+		utilB64Cmd.Cmd,
+		utilStampCmd.Cmd,
+		waitCmd.Cmd,
+		curlCmd.Cmd,
+		tknCmd.Cmd,
+		langCmd.Cmd,
+		gitSyncCmd.Cmd,
+		serveCmd.Cmd,
+		appCmd.Cmd,
+	)
 	return utilCmd
 }
 

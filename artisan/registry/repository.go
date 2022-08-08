@@ -105,6 +105,113 @@ func (r *Repository) FindPackageByRef(ref string) *Package {
 	return nil
 }
 
+func (r *Repository) Diff(repo *Repository) (*RepoDiff, error) {
+	diff := new(RepoDiff)
+	// if the original repository is empty
+	if len(repo.Repository) == 0 && len(repo.Packages) == 0 && len(r.Repository) > 0 {
+		// then the new repository packages should be added to the diff result
+		for _, p := range r.Packages {
+			diff.Added = append(diff.Added, p)
+		}
+		return diff, nil
+	}
+	if !strings.EqualFold(r.Repository, repo.Repository) {
+		return nil, fmt.Errorf("cannot diff two different repositories %s and %s", r.Repository, repo.Repository)
+	}
+	// work out added
+	// loops through the source repo packages
+	for _, source := range r.Packages {
+		var found bool
+		// for each source package, loops through the target repo packages
+		for _, target := range repo.Packages {
+			// if the target repo contains the source package
+			if source.Id == target.Id {
+				// track it was found
+				found = true
+				// check for tags difference
+				addedTags := difference(source.Tags, target.Tags)
+				removedTags := difference(target.Tags, source.Tags)
+				if len(addedTags) > 0 || len(removedTags) > 0 {
+					// the package has been updated
+					diff.Updated = append(diff.Updated, &UpdatedPackage{
+						Package:     source,
+						TagsAdded:   addedTags,
+						TagsRemoved: removedTags,
+					})
+				}
+				break
+			}
+		}
+		// if the source package is not in the target repo, it means it is "added" in the source
+		if !found {
+			diff.Added = append(diff.Added, source)
+		}
+	}
+	// work out removed
+	// loops through the target repo packages
+	for _, target := range repo.Packages {
+		var found bool
+		// for each target package, loops through the source repo packages
+		for _, source := range r.Packages {
+			// if the target repo contains the source package
+			if target.Id == source.Id {
+				// track it was found
+				found = true
+				break
+			}
+		}
+		// if the target package is not in the source repo, it means it is "removed" in the source
+		if !found {
+			diff.Removed = append(diff.Removed, target)
+		}
+	}
+	return diff, nil
+}
+
+// DeepCopy creates a copy that is totally unrelated to the original entity
+func (r *Repository) DeepCopy() *Repository {
+	repo := new(Repository)
+	repo.Repository = r.Repository
+	for _, p := range r.Packages {
+		repo.Packages = append(repo.Packages, &Package{
+			Id:      p.Id,
+			Type:    p.Type,
+			FileRef: p.FileRef,
+			Tags:    p.Tags,
+			Size:    p.Size,
+			Created: p.Created,
+		})
+	}
+	return repo
+}
+
+type RepoDiff struct {
+	Added   []*Package
+	Removed []*Package
+	Updated []*UpdatedPackage
+}
+
+type UpdatedPackage struct {
+	Package     *Package
+	TagsAdded   []string
+	TagsRemoved []string
+}
+
+// difference returns the elements in `a` that aren't in `b`.
+func difference(a, b []string) []string {
+	mb := make(map[string]struct{}, len(b))
+	for _, x := range b {
+		mb[x] = struct{}{}
+	}
+	var diff []string
+	for _, x := range a {
+		if _, found := mb[x]; !found {
+			diff = append(diff, x)
+		}
+	}
+	return diff
+}
+
 // Package metadata for an Artisan package
 type Package struct {
 	// a unique identifier for the package calculated as the checksum of the complete seal

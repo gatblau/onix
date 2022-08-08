@@ -145,7 +145,7 @@ func (r *PilotCtl) Ping() (ctl.PingResponse, error) {
 	uri := fmt.Sprintf("%s/ping", r.cfg.BaseURI)
 	resp, err := r.client.Post(uri, payload, r.addToken)
 	if err != nil {
-		return ctl.PingResponse{}, fmt.Errorf("ping failed ping: %s", err)
+		return ctl.PingResponse{}, err
 	}
 	if resp.StatusCode > 299 {
 		return ctl.PingResponse{}, fmt.Errorf("call to the remote service failed: %d - %s", resp.StatusCode, resp.Status)

@@ -528,7 +528,6 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 		Source:  b.repoURI,
 		Commit:  b.commit,
 		Branch:  "",
-		Tag:     "",
 		Target:  filepath.Base(profile.MergedTarget),
 		Time:    time.Now().Format(time.RFC850),
 		Size:    bytesToLabel(zipInfo.Size()),

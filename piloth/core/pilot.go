@@ -43,6 +43,7 @@ type PilotOptions struct {
 	MEM                bool
 	InsecureSkipVerify bool
 	CVEPath            string
+	CVEUploadDelay     int
 }
 
 func NewPilot(options PilotOptions) (*Pilot, error) {
@@ -122,7 +123,7 @@ func (p *Pilot) Start() {
 		os.Exit(127)
 	}
 	if len(p.options.CVEPath) > 0 {
-		err := p.cveExporter.Start()
+		err := p.cveExporter.Start(p.options.CVEUploadDelay)
 		if err != nil {
 			ErrorLogger.Printf("cannot start CVE exporter: %s\n", err)
 			os.Exit(1)
@@ -181,7 +182,7 @@ func (p *Pilot) ping() {
 		resp, err := p.ctl.Ping()
 		if err != nil {
 			// write to the console output
-			InfoLogger.Printf("ping failed: %s\n", err)
+			WarningLogger.Printf("ping failed: %s\n", err)
 			p.connected = false
 		} else {
 			if !p.connected {

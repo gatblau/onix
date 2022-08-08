@@ -44,13 +44,13 @@ art ls -r localhost:8082 -u <user>:<pwd>
 	return c
 }
 
-func (c *ListCmd) Run(cmd *cobra.Command, args []string) {
+func (c *ListCmd) Run(_ *cobra.Command, _ []string) {
 	if len(c.registry) == 0 {
 		local := registry.NewLocalRegistry("")
 		if c.quiet {
 			local.ListQ()
 		} else {
-			local.List("")
+			local.List("", false)
 		}
 	}
 	if len(c.registry) > 0 {

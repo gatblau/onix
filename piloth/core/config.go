@@ -70,6 +70,22 @@ func (c *Config) Get(key ConfigKey) string {
 	return os.Getenv(key.String())
 }
 
+func (c *Config) GetIntDefault(key ConfigKey, defValue int) int {
+	var (
+		i   = defValue
+		err error
+	)
+	defer TRA(CE())
+	value := os.Getenv(key.String())
+	if len(value) > 0 {
+		i, err = strconv.Atoi(value)
+		if err != nil {
+			core.WarningLogger.Printf("cannot get default value for '%s': %s\n", key, err)
+		}
+	}
+	return i
+}
+
 func (c *Config) GetBool(key ConfigKey) bool {
 	defer TRA(CE())
 	b, _ := strconv.ParseBool(c.Get(key))

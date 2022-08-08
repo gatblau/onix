@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/gatblau/onix/artisan/core"
-	"github.com/gatblau/onix/artisan/crypto"
 	"github.com/gatblau/onix/artisan/data"
 	"github.com/gatblau/onix/artisan/i18n"
 	"github.com/gatblau/onix/oxlib/resx"
@@ -408,36 +407,75 @@ func (r *LocalRegistry) AllPackages() []string {
 }
 
 // List packages to stdout
-func (r *LocalRegistry) List(artHome string) {
+func (r *LocalRegistry) List(artHome string, extended bool) {
 	// get a table writer for the stdout
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
 	// print the header row
-	_, err := fmt.Fprintln(w, i18n.String(artHome, i18n.LBL_LS_HEADER))
+	var err error
+	if extended {
+		_, err = fmt.Fprintln(w, i18n.String(artHome, i18n.LBL_LS_HEADER_PLUS))
+	} else {
+		_, err = fmt.Fprintln(w, i18n.String(artHome, i18n.LBL_LS_HEADER))
+	}
 	core.CheckErr(err, "failed to write table header")
+	var (
+		s      *data.Seal
+		author string
+	)
 	// repository, tag, package id, created, size
 	for _, repo := range r.Repositories {
 		for _, a := range repo.Packages {
+			s, err = r.GetSeal(a)
+			if err != nil {
+				author = "unknown"
+			} else {
+				author = s.Manifest.Author
+			}
 			// if the package is dangling (no tags)
 			if len(a.Tags) == 0 {
-				_, err := fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t",
-					repo.Repository,
-					"<none>",
-					a.Id[0:12],
-					a.Type,
-					toElapsedLabel(a.Created),
-					a.Size),
-				)
+				if extended {
+					_, err = fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t %s\t",
+						repo.Repository,
+						"<none>",
+						a.Id[0:12],
+						a.Type,
+						toElapsedLabel(a.Created),
+						a.Size,
+						author),
+					)
+				} else {
+					_, err = fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t",
+						repo.Repository,
+						"<none>",
+						a.Id[0:12],
+						a.Type,
+						toElapsedLabel(a.Created),
+						a.Size),
+					)
+				}
 				core.CheckErr(err, "failed to write output")
 			}
 			for _, tag := range a.Tags {
-				_, err := fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t",
-					repo.Repository,
-					tag,
-					a.Id[0:12],
-					a.Type,
-					toElapsedLabel(a.Created),
-					a.Size),
-				)
+				if extended {
+					_, err = fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t %s\t",
+						repo.Repository,
+						tag,
+						a.Id[0:12],
+						a.Type,
+						toElapsedLabel(a.Created),
+						a.Size,
+						author),
+					)
+				} else {
+					_, err = fmt.Fprintln(w, fmt.Sprintf("%s\t %s\t %s\t %s\t %s\t %s\t",
+						repo.Repository,
+						tag,
+						a.Id[0:12],
+						a.Type,
+						toElapsedLabel(a.Created),
+						a.Size),
+					)
+				}
 				core.CheckErr(err, "failed to write output")
 			}
 		}
@@ -889,37 +927,6 @@ func (r *LocalRegistry) GetSeal(name *Package) (*data.Seal, error) {
 	seal := new(data.Seal)
 	err = json.Unmarshal(sealBytes, seal)
 	return seal, err
-}
-
-func (r *LocalRegistry) ImportKey(keyPath string, isPrivate, isBackup bool, repoGroup string, repoName string, artHome string) error {
-	var err error
-	if !filepath.IsAbs(keyPath) {
-		keyPath, err = filepath.Abs(keyPath)
-		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
-	}
-	// only check it can read the key
-	_, err = crypto.LoadPGP(keyPath, "")
-	core.CheckErr(err, "cannot read pgp key '%s'", keyPath)
-	destFile := crypto.KeyPath(repoGroup, repoName, isPrivate, isBackup, artHome)
-	destFolder := path.Dir(destFile)
-	// check if the target directory exists and if not creates it
-	if _, err = os.Stat(destFolder); os.IsNotExist(err) {
-		err = os.MkdirAll(destFolder, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("cannot create key directory '%s': %s", destFolder, err)
-		}
-	}
-	// if so, then move the key to the correct location to preserve PEM block data
-	return CopyFile(keyPath, destFile)
-}
-
-func (r *LocalRegistry) ExportKey(keyPath string, isPrivate, isBackup bool, repoGroup string, repoName string, artHome string) error {
-	var err error
-	if !filepath.IsAbs(keyPath) {
-		keyPath, err = filepath.Abs(keyPath)
-		core.CheckErr(err, "cannot get an absolute representation of path '%s'", keyPath)
-	}
-	return CopyFile(crypto.KeyPath(repoGroup, repoName, isPrivate, isBackup, artHome), keyPath)
 }
 
 func (r *LocalRegistry) GetManifest(name *core.PackageName) *data.Manifest {

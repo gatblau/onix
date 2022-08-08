@@ -20,7 +20,7 @@ type UtilCmd struct {
 func NewUtilCmd() *UtilCmd {
 	c := &UtilCmd{
 		Cmd: &cobra.Command{
-			Use:   "util",
+			Use:   "u",
 			Short: "provides access to various miscellaneous utilities",
 			Long:  `provides access to various miscellaneous utilities`,
 		},

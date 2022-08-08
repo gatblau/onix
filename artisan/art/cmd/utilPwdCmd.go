@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/gatblau/onix/artisan/core"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // UtilPwdCmd generates passwords
@@ -19,6 +20,7 @@ type UtilPwdCmd struct {
 	Cmd          *cobra.Command
 	len          *int
 	specialChars *bool
+	bcrypt       *bool
 }
 
 func NewUtilPwdCmd() *UtilPwdCmd {
@@ -31,10 +33,25 @@ func NewUtilPwdCmd() *UtilPwdCmd {
 	}
 	c.len = c.Cmd.Flags().IntP("length", "l", 16, "length of the generated password")
 	c.specialChars = c.Cmd.Flags().BoolP("special-chars", "s", false, "use special characters in the generated password")
+	c.bcrypt = c.Cmd.Flags().BoolP("bcrypt", "b", false, "hash it using bcrypt algorithm")
 	c.Cmd.Run = c.Run
 	return c
 }
 
 func (c *UtilPwdCmd) Run(_ *cobra.Command, _ []string) {
-	fmt.Printf("%s", core.RandomPwd(*c.len, *c.specialChars))
+	pwd := core.RandomPwd(*c.len, *c.specialChars)
+	fmt.Printf("%s", pwd)
+	if *c.bcrypt {
+		hash, err := pwdHash([]byte(pwd))
+		core.CheckErr(err, "cannot hash password")
+		fmt.Printf("\nbcrypt:%s\n", hash)
+	}
+}
+
+func pwdHash(pwd []byte) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword(pwd, bcrypt.MinCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
 }
