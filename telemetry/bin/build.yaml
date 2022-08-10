@@ -1,0 +1,22 @@
+functions:
+  - name: install
+    description: install host telemetry.
+    export: true
+    run:
+      - sh -c './install.sh'
+  - name: uninstall
+    description: uninstall host telemetry.
+    export: true
+    run:
+      - sh -c './uninstall.sh'
+  - name: start
+    description: start the telemetry service.
+    export: true
+    run:
+      - sh -c 'sudo systemctl enable --now telemetry'
+
+  - name: stop
+    description: stop the telemetry service.
+    export: true
+    run:
+      - sh -c 'sudo systemctl stop telemetry'      
