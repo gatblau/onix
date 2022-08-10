@@ -28,6 +28,7 @@ type CurlCmd struct {
 	timeoutSecs   int
 	headers       []string
 	outFile       string
+	response      bool
 }
 
 func NewCurlCmd() *CurlCmd {
@@ -50,6 +51,7 @@ func NewCurlCmd() *CurlCmd {
 	c.Cmd.Flags().StringSliceVarP(&c.headers, "headers", "H", nil, "a comma separated list of http headers (format 'key1:value1','key2:value2,...,'keyN:valueN')")
 	c.Cmd.Flags().IntVarP(&c.delaySecs, "delay", "r", 5, "the retry delay (in seconds)")
 	c.Cmd.Flags().IntVarP(&c.timeoutSecs, "timeout", "t", 30, "the period (in seconds) after which the http request will timeout if not response is received from the server")
+	c.Cmd.Flags().BoolVarP(&c.response, "response", "v", false, "if set, shows additional response information such as status code and headers")
 	c.Cmd.Run = c.Run
 	return c
 }
@@ -61,5 +63,5 @@ func (c *CurlCmd) Run(cmd *cobra.Command, args []string) {
 		uname, pwd := core.UserPwd(c.creds)
 		token = httpserver.BasicToken(uname, pwd)
 	}
-	core.Curl(uri, c.method, token, append(c.validCodes, c.addValidCodes...), c.payload, c.file, c.maxAttempts, c.delaySecs, c.timeoutSecs, c.headers, c.outFile)
+	core.Curl(uri, c.method, token, append(c.validCodes, c.addValidCodes...), c.payload, c.file, c.maxAttempts, c.delaySecs, c.timeoutSecs, c.headers, c.outFile, c.response)
 }

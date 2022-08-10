@@ -10,7 +10,7 @@ env:
   GOARCH: amd64
   REPO_NAME: quay.io/gatblau
   # the application version
-  APP_VERSION: 0.0.4
+  APP_VERSION: 1.0.0
   # a unique build number
   BUILD_VERSION: ${APP_VERSION}-${ARTISAN_REF}
 
