@@ -16,3 +16,5 @@ version
 artisan/art/art
 artisan/runner/host/env
 artisan/runner/host/binary/host-runner
+warden/warden
+warden/warden
