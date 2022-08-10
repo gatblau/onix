@@ -1,5 +1,3 @@
-package release
-
 /*
   Onix Config Manager - Artisan
   Copyright (c) 2018-Present by www.gatblau.org
@@ -7,6 +5,9 @@ package release
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
+package release
+
 import (
 	"fmt"
 	"io/ioutil"
@@ -25,8 +26,9 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func ExportDebianPackage(pkgNames []string, opts ExportOptions) error {
-
+// BuildDebianPackage build a package containing debian packages
+// If export options are specified, it also exports the package
+func BuildDebianPackage(pkgNames []string, opts *ExportOptions) error {
 	targetUri := opts.TargetUri
 	creds := opts.TargetCreds
 	artHome := opts.ArtHome
@@ -66,7 +68,7 @@ func ExportDebianPackage(pkgNames []string, opts ExportOptions) error {
 		os.RemoveAll(tmp)
 		return fmt.Errorf("failed to create build folder : %s", err)
 	}
-	//create a patch folder where packages to be used for patching will be downloaded
+	// create a patch folder where packages to be used for patching will be downloaded
 	patchFolder := filepath.Join(targetFolder, "patch")
 	err = os.MkdirAll(patchFolder, 0755)
 	if err != nil {
@@ -74,7 +76,7 @@ func ExportDebianPackage(pkgNames []string, opts ExportOptions) error {
 		return fmt.Errorf("failed to create patch folder : %s", err)
 	}
 
-	//get the debian packages either locally or from remote
+	// get the debian packages either locally or from remote
 	err = getPackages(pkgNames, patchFolder)
 	if err != nil {
 		os.RemoveAll(tmp)
@@ -101,7 +103,7 @@ func ExportDebianPackage(pkgNames []string, opts ExportOptions) error {
 		return fmt.Errorf("failed to marshall debian packaging build file: %s", err)
 	}
 
-	//save package build and function build file
+	// save package build and function build file
 	core.InfoLogger.Println("packaging debian packages tarball file")
 	err = os.WriteFile(filepath.Join(tmp, "build.yaml"), pbfBytes, 0755)
 	if err != nil {
@@ -117,34 +119,33 @@ func ExportDebianPackage(pkgNames []string, opts ExportOptions) error {
 	b := build.NewBuilder(artHome)
 	b.Build(tmp, "", "", pName, "", false, false, "")
 	r := registry.NewLocalRegistry(artHome)
-	// export package
-	core.InfoLogger.Printf("exporting debian package to tarball file")
-	err = r.ExportPackage([]core.PackageName{*pName}, "", targetUri, creds)
-	if err != nil {
-		os.RemoveAll(tmp)
-		return fmt.Errorf("cannot save debian package to destination: %s", err)
+	if opts != nil {
+		// export package
+		core.InfoLogger.Printf("exporting debian package to tarball file")
+		err = r.ExportPackage([]core.PackageName{*pName}, "", targetUri, creds)
+		if err != nil {
+			os.RemoveAll(tmp)
+			return fmt.Errorf("cannot save debian package to destination: %s", err)
+		}
+		// append package name to the spec file
+		spec := new(Spec)
+		err = yaml.Unmarshal(opts.Specification.content, spec)
+		if err != nil {
+			os.RemoveAll(tmp)
+			return fmt.Errorf("failed unmarshal spec file's content part: %s", err)
+		}
+		m := spec.Packages
+		if m == nil {
+			m = make(map[string]string)
+			spec.Packages = m
+		}
+		m["PACKAGE_APT"] = pName.String()
+		contents, err := core.ToYamlBytes(spec)
+		if err != nil {
+			return fmt.Errorf("failed to marshal the spec file's content part: %s", err)
+		}
+		opts.Specification.content = contents
 	}
-
-	//append package name to the spec file
-	spec := new(Spec)
-	err = yaml.Unmarshal(opts.Specification.content, spec)
-	if err != nil {
-		os.RemoveAll(tmp)
-		return fmt.Errorf("failed unmarshal spec file's content part: %s", err)
-	}
-
-	m := spec.Packages
-	if m == nil {
-		m = make(map[string]string)
-		spec.Packages = m
-	}
-	m["PACKAGE_APT"] = pName.String()
-	contents, err := core.ToYamlBytes(spec)
-	if err != nil {
-		return fmt.Errorf("failed to marshal the spec file's content part: %s", err)
-	}
-	opts.Specification.content = contents
-
 	return nil
 }
 
@@ -273,7 +274,7 @@ func buildBackupCmds(patchFolder string) ([]string, error) {
 	exp := regexp.MustCompile(`\r?\n`)
 	for _, file := range files {
 		if filepath.Ext(file.Name()) == ".deb" {
-			//go to patch folder and get the debian package name
+			// go to patch folder and get the debian package name
 			cmd := fmt.Sprintf("bash -c 'cd %s && dpkg -f %s Package'", patchFolder, file.Name())
 			pname, er := build.Exe(cmd, patchFolder, merge.NewEnVarFromSlice([]string{}), false)
 			pname = exp.ReplaceAllString(pname, " ")
@@ -322,10 +323,10 @@ func getDependencies(pkgNames, executionPath string) (string, error) {
 	core.DebugLogger.Printf("querying debian package [%s] dependencies using command :\n %s\n ", pkgNames, qryDependencies)
 	// execute the command synchronously
 	core.InfoLogger.Printf("querying dependencies of package %s", pkgNames)
-	//using async because when using sync occassionally it been observed that return list contains
-	//status messages key word also like "processing" along with the dependent package names
+	// using async because when using sync occassionally it been observed that return list contains
+	// status messages key word also like "processing" along with the dependent package names
 	dep, err := build.ExeAsync(qryDependencies, executionPath, merge.NewEnVarFromSlice([]string{}), false)
-	//note: the dep list will contain the parent package name also for which we looked dependencies
+	// note: the dep list will contain the parent package name also for which we looked dependencies
 	if err != nil {
 		return "", err
 	}
@@ -341,7 +342,7 @@ func dedup(dep string) (string, error) {
 	words := strings.Split(dep, " ")
 
 	for _, word := range words {
-		//find exact match for the word in the string builder
+		// find exact match for the word in the string builder
 		w := strings.Replace(fmt.Sprintf("\b%s\b", word), "+", "\\+", -1)
 		x, err := regexp.MatchString(w, b.String())
 		if err != nil {

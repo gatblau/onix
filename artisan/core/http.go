@@ -9,6 +9,7 @@ package core
 */
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -48,7 +49,7 @@ func Get(url, user, pwd string) (*http.Response, error) {
 	return resp, err
 }
 
-func Curl(uri string, method string, token string, validCodes []int, payload string, file string, maxAttempts int, delaySecs int, timeoutSecs int, headers []string, outputFile string) {
+func Curl(uri string, method string, token string, validCodes []int, payload string, file string, maxAttempts int, delaySecs int, timeoutSecs int, headers []string, outputFile string, responseHeaders bool) {
 	var (
 		bodyBytes []byte    = nil
 		body      io.Reader = nil
@@ -138,11 +139,34 @@ func Curl(uri string, method string, token string, validCodes []int, payload str
 					RaiseErr("cannot save response body to %s: %s\n", abs, err)
 				}
 			} else {
-				// prints the response to sdt out
-				fmt.Println(string(b[:]))
+				if responseHeaders {
+					r := curlResponse{
+						StatusCode: resp.StatusCode,
+						Status:     resp.Status,
+						Headers:    map[string]string{},
+						Body:       string(b[:]),
+					}
+					// add headers
+					for key, values := range resp.Header {
+						r.Headers[key] = values[0]
+					}
+					js, _ := json.MarshalIndent(r, "", "  ")
+					// prints the response envelope to sdt out
+					fmt.Println(string(js[:]))
+				} else {
+					// prints the response to sdt out
+					fmt.Println(string(b[:]))
+				}
 			}
 		}
 	}
+}
+
+type curlResponse struct {
+	StatusCode int               `json:"status_code"`
+	Status     string            `json:"status"`
+	Headers    map[string]string `json:"headers"`
+	Body       string            `json:"body"`
 }
 
 func validResponse(responseCode int, validCodes []int) bool {
