@@ -9,8 +9,8 @@
 package release
 
 import (
-	//"fmt"
-	//"os/exec"
+	// "fmt"
+	// "os/exec"
 	"testing"
 )
 
@@ -19,9 +19,9 @@ func TestExportPackage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	opt := ExportOptions{s, "/tmp/spec-test", "", "", "", ""}
+	opt := &ExportOptions{s, "/tmp/spec-test", "", "", "", ""}
 	pkgs := []string{"dnsutils"}
-	if err := ExportDebianPackage(pkgs, opt); err != nil {
+	if err := BuildDebianPackage(pkgs, opt); err != nil {
 		t.Fatal(err)
 	}
 }
