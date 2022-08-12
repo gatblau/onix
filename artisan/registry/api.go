@@ -345,7 +345,8 @@ func (r *Api) Download(group, name, filename, user, pwd string, isSeal, https bo
 	// retrieve the content length to download from the http reader
 	limit, err := strconv.ParseInt(res.Header.Get("Content-Length"), 0, 64)
 	if err != nil {
-		return "", err, status
+		// if no content length is provided then the progress bar does not update
+		limit = 0
 	}
 	// start simple new progress bar
 	bar := pb.Simple.Start64(limit)
