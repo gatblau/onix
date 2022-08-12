@@ -294,6 +294,10 @@ func (r *Api) GetPackageInfo(group, name, id, user, pwd string, https bool) (*Pa
 	// Submit the request
 	resp, err := r.client.Do(req)
 	if err != nil {
+		// if the error is a network connection error
+		if _, isNetworkError := err.(*url.Error); isNetworkError {
+			return nil, fmt.Errorf("the registry is not running")
+		}
 		return nil, err
 	}
 	defer resp.Body.Close()
