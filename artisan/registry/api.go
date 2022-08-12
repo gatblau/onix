@@ -300,8 +300,8 @@ func (r *Api) GetPackageInfo(group, name, id, user, pwd string, https bool) (*Pa
 	switch resp.StatusCode {
 	case http.StatusNotFound:
 		return nil, nil
-	case http.StatusForbidden:
-		return nil, fmt.Errorf("invalid credentials, access to the registry is forbidden")
+	case http.StatusUnauthorized:
+		return nil, fmt.Errorf("invalid credentials, access to the registry is unauthorised")
 	case http.StatusInternalServerError:
 		return nil, fmt.Errorf("the remote registry responded with an internal error, check the registry logs for more information")
 	}
