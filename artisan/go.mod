@@ -1,6 +1,6 @@
 module github.com/gatblau/onix/artisan
 
-go 1.16
+go 1.18
 
 replace github.com/gatblau/onix/oxlib => ../oxlib
 
@@ -28,5 +28,6 @@ require (
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.1 // indirect
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
+	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
 	gopkg.in/yaml.v2 v2.4.0
 )
