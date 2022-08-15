@@ -284,6 +284,17 @@ func (r *LocalRegistry) Tag(srcName, tgtName string) error {
         if err = r.moveDanglingToRepo(sourcePackage, tgtName); err != nil {
             return fmt.Errorf("cannot tag dangling package: %s", err)
         }
+        // clean any nil package reference
+        for _, repository := range r.Repositories {
+            if repository.Repository == "<none>" {
+                for i, _ := range repository.Packages {
+                    // remove any nil package references to prevent errors in repository.json after saving it
+                    if repository.Packages[i] == nil {
+                        repository.Packages, _ = deletePackage(repository.Packages, i)
+                    }
+                }
+            }
+        }
         // persist changes
         r.save()
         // return
@@ -382,6 +393,14 @@ func (r *LocalRegistry) Tag(srcName, tgtName string) error {
         }
     }
     return nil
+}
+
+func deletePackage(orig []*Package, index int) ([]*Package, error) {
+    if index < 0 || index >= len(orig) {
+        return nil, errors.New("index cannot be less than 0")
+    }
+    orig = append(orig[:index], orig[index+1:]...)
+    return orig, nil
 }
 
 func (r *LocalRegistry) AllPackages() []string {
