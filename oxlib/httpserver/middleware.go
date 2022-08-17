@@ -18,6 +18,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"regexp"
+	"strings"
 )
 
 // LoggingMiddleware log http requests to stdout
@@ -87,8 +88,8 @@ func (s *Server) AuthenticationMiddleware(next http.Handler) http.Handler {
 				if r.Method == http.MethodOptions {
 					next.ServeHTTP(w, r)
 				}
-				// if no Authorization header is found
-				if r.Header.Get("Authorization") == "" {
+				// if no Authorization header is found and the user agent is a browser
+				if r.Header.Get("Authorization") == "" && isBrowser(r.Header.Get("User-Agent")) {
 					// prompts a client to authenticate by setting WWW-Authenticate response header
 					w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, s.realm))
 					w.WriteHeader(http.StatusUnauthorized)
@@ -154,4 +155,13 @@ func (s *Server) CorsMiddleware(origin string, headers string) mux.MiddlewareFun
 // wraps the authorization middleware to be used when wrapping specific handler functions
 func (s *Server) Authorise(handler http.HandlerFunc) http.Handler {
 	return handler
+}
+
+func isBrowser(userAgent string) bool {
+	safari := strings.Contains(userAgent, "Safari")
+	opera := strings.Contains(userAgent, "OP")
+	edge := strings.Contains(userAgent, "MSIE") || strings.Contains(userAgent, "Edge")
+	firefox := strings.Contains(userAgent, "Firefox")
+	chrome := strings.Contains(userAgent, "Chrome")
+	return safari || opera || edge || firefox || chrome
 }
