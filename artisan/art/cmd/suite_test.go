@@ -65,7 +65,7 @@ func TestRunC(t *testing.T) {
 
 func TestPush(t *testing.T) {
 	reg := registry.NewLocalRegistry(ArtHome)
-	name, err := core.ParseName("localhost:8080/lib/test1")
+	name, err := core.ParseName("localhost:8080/lib/test")
 	if err != nil {
 		t.FailNow()
 	}
@@ -152,7 +152,7 @@ func TestCurl(t *testing.T) {
 		5,
 		5,
 		[]string{"Content-Type: application/json"},
-		"")
+		"", false)
 }
 
 func TestSave(t *testing.T) {
