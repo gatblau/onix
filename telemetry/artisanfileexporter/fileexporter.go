@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -29,22 +30,23 @@ import (
 )
 
 const (
-	timeformat  = "2006_01_02_15_04_05_000000000"
-	maxfilesize = int64(60) //60kb
-	ext         = "inprocess"
-	final       = "processed"
+	timeformat = "2006_01_02_15_04_05_999999999"
+	ext        = "inproc"
+	json       = "json"
+	protobuf   = "pb"
 )
 
 // Marshaler configuration used for marhsaling Protobuf to JSON.
-var tracesMarshaler = ptrace.NewJSONMarshaler()
-var metricsMarshaler = pmetric.NewJSONMarshaler()
-var logsMarshaler = plog.NewJSONMarshaler()
+var pbtracesMarshaler = ptrace.NewProtoMarshaler()
+var pbmetricsMarshaler = pmetric.NewProtoMarshaler()
+var pblogsMarshaler = plog.NewProtoMarshaler()
 
 // fileExporter is the implementation of file exporter that writes telemetry data to a file
 // in Protobuf-JSON format.
 type fileExporter struct {
-	path  string
-	mutex sync.Mutex
+	path       string
+	mutex      sync.Mutex
+	filesizekb string
 }
 
 func (e *fileExporter) Capabilities() consumer.Capabilities {
@@ -52,7 +54,7 @@ func (e *fileExporter) Capabilities() consumer.Capabilities {
 }
 
 func (e *fileExporter) ConsumeTraces(_ context.Context, td ptrace.Traces) error {
-	buf, err := tracesMarshaler.MarshalTraces(td)
+	buf, err := pbtracesMarshaler.MarshalTraces(td)
 	if err != nil {
 		return err
 	}
@@ -60,7 +62,8 @@ func (e *fileExporter) ConsumeTraces(_ context.Context, td ptrace.Traces) error 
 }
 
 func (e *fileExporter) ConsumeMetrics(_ context.Context, md pmetric.Metrics) error {
-	buf, err := metricsMarshaler.MarshalMetrics(md)
+
+	buf, err := pbmetricsMarshaler.MarshalMetrics(md) //metricsMarshaler.MarshalMetrics(md)
 	if err != nil {
 		return err
 	}
@@ -68,7 +71,7 @@ func (e *fileExporter) ConsumeMetrics(_ context.Context, md pmetric.Metrics) err
 }
 
 func (e *fileExporter) ConsumeLogs(_ context.Context, ld plog.Logs) error {
-	buf, err := logsMarshaler.MarshalLogs(ld)
+	buf, err := pblogsMarshaler.MarshalLogs(ld)
 	if err != nil {
 		return err
 	}
@@ -76,6 +79,7 @@ func (e *fileExporter) ConsumeLogs(_ context.Context, ld plog.Logs) error {
 }
 
 func exportAsLine(e *fileExporter, buf []byte, exporttype string) error {
+
 	// Ensure only one write operation happens at a time.
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
@@ -87,7 +91,7 @@ func exportAsLine(e *fileExporter, buf []byte, exporttype string) error {
 		}
 	}
 	//check if there is already a file with extension .inprocess, if yes use it else create new
-	files, err := filepath.Glob(filepath.Join(path, fmt.Sprintf("*.%s", ext)))
+	files, err := filepath.Glob(filepath.Join(path, fmt.Sprintf(".%s", ext)))
 	if err != nil {
 		core.ErrorLogger.Printf("failed to find inprocess file at path %s, error %s \n", path, err)
 		return err
@@ -119,7 +123,11 @@ func exportAsLine(e *fileExporter, buf []byte, exporttype string) error {
 		// the maxfilesize, then close the current inprocess file and delete the extension .inprocess
 		// so it will be treated as completed and ready for upload, and the current data will be written
 		//to new inprocess file
-		if total > maxfilesize {
+		size, err := strconv.ParseInt(e.filesizekb, 10, 64)
+		if err != nil {
+			return err
+		}
+		if total > size {
 			core.DebugLogger.Printf("closing the current inprocess file ")
 			err = file.Close()
 			if err != nil {
@@ -127,7 +135,11 @@ func exportAsLine(e *fileExporter, buf []byte, exporttype string) error {
 				return err
 			}
 
-			fnew := strings.Replace(f, ext, final, 1)
+			currentTime := time.Now().UTC()
+			t := currentTime.Format(timeformat)
+			fnew := fmt.Sprintf("%s.%s", t, protobuf)
+			fnew = strings.Replace(f, fmt.Sprintf(".%s", ext), fnew, 1)
+			core.DebugLogger.Printf("old fine name is %s new file name is %s", f, fnew)
 			err = os.Rename(f, fnew)
 			if err != nil {
 				core.ErrorLogger.Printf("failed to rename inprocess file, %s \n to new file name %s \n", f, fnew)
@@ -158,9 +170,10 @@ func exportAsLine(e *fileExporter, buf []byte, exporttype string) error {
 
 func writeToNewFile(path string, buf []byte) error {
 	core.InfoLogger.Printf("current inprocess file not found, so creating one \n")
-	currentTime := time.Now().UTC()
-	t := currentTime.Format(timeformat)
-	filename := fmt.Sprintf("%s.%s", t, ext)
+	//currentTime := time.Now().UTC()
+	//t := currentTime.Format(timeformat)
+	//filename := fmt.Sprintf("%s.%s", t, ext)
+	filename := fmt.Sprintf(".%s", ext)
 	path = filepath.Join(path, filename)
 	err := resx.WriteFile(buf, path, "")
 	if err != nil {

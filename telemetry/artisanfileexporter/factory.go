@@ -11,7 +11,6 @@ package artisanfileexporter
 import (
 	"context"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
@@ -35,7 +34,7 @@ func NewFactory() component.ExporterFactory {
 }
 
 func createDefaultConfig() config.Exporter {
-	return &fileexporter.Config{
+	return &Config{
 		ExporterSettings: config.NewExporterSettings(config.NewComponentID(typeStr)),
 	}
 }
@@ -46,7 +45,7 @@ func createTracesExporter(
 	cfg config.Exporter,
 ) (component.TracesExporter, error) {
 	fe := exporters.GetOrAdd(cfg, func() component.Component {
-		return &fileExporter{path: cfg.(*fileexporter.Config).Path}
+		return &fileExporter{path: cfg.(*Config).Path, filesizekb: cfg.(*Config).FileSizeKb}
 	})
 	return exporterhelper.NewTracesExporter(
 		cfg,
@@ -63,7 +62,7 @@ func createMetricsExporter(
 	cfg config.Exporter,
 ) (component.MetricsExporter, error) {
 	fe := exporters.GetOrAdd(cfg, func() component.Component {
-		return &fileExporter{path: cfg.(*fileexporter.Config).Path}
+		return &fileExporter{path: cfg.(*Config).Path, filesizekb: cfg.(*Config).FileSizeKb}
 	})
 	return exporterhelper.NewMetricsExporter(
 		cfg,
@@ -80,7 +79,7 @@ func createLogsExporter(
 	cfg config.Exporter,
 ) (component.LogsExporter, error) {
 	fe := exporters.GetOrAdd(cfg, func() component.Component {
-		return &fileExporter{path: cfg.(*fileexporter.Config).Path}
+		return &fileExporter{path: cfg.(*Config).Path, filesizekb: cfg.(*Config).FileSizeKb}
 	})
 	return exporterhelper.NewLogsExporter(
 		cfg,

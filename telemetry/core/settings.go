@@ -49,14 +49,6 @@ func NewSettings(configPaths []string, version string, loggingOpts []zap.Option)
 		return nil, err
 	}
 	// configure exporters
-	/*exporterMap, err := component.MakeExporterFactoryMap(
-		prometheusexporter.NewFactory(),
-	)*/
-	/*
-		exporterMap, err := component.MakeExporterFactoryMap(
-			fileexporter.NewFactory(),
-		)*/
-
 	exporterMap, err := component.MakeExporterFactoryMap(
 		artisanfileexporter.NewFactory(),
 	)
