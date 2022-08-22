@@ -14,7 +14,7 @@ import (
 )
 
 func TestAppManifest_Explode(t *testing.T) {
-	m, err := NewAppMan("./test/onix.yaml", "", "")
+	m, err := NewAppMan("./test/onix.yaml", "", "", "")
 	if err != nil {
 		t.Fatalf("cannot create app manifest: %s\n", err)
 	}
@@ -22,7 +22,7 @@ func TestAppManifest_Explode(t *testing.T) {
 }
 
 func TestAppManifest_ExplodeHTTP(t *testing.T) {
-	m, err := NewAppMan("https://raw.githubusercontent.com/gatblau/onix/dev/deploy/onix.yaml", "full", "")
+	m, err := NewAppMan("https://raw.githubusercontent.com/gatblau/onix/dev/deploy/onix.yaml", "full", "", "")
 	if err != nil {
 		t.Fatalf("cannot create app manifest: %s\n", err)
 	}
@@ -30,7 +30,7 @@ func TestAppManifest_ExplodeHTTP(t *testing.T) {
 }
 
 func TestNewAppMan(t *testing.T) {
-	m, err := NewAppMan("test2/app.yaml", "config-db", "")
+	m, err := NewAppMan("test2/app.yaml", "config-db", "", "")
 	if err != nil {
 		t.Fatalf("cannot create app manifest: %s\n", err)
 	}
