@@ -7,6 +7,6 @@ import (
 
 func Test(t *testing.T) {
 	e, _ := core.NewEnVarFromFile(".env")
-	f, _ := NewWithEnv("ci_flow_bare.yaml", ".", e)
+	f, _ := NewWithEnv("ci_flow_bare.yaml", ".", e, "")
 	f.SaveOnixJSON()
 }
