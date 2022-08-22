@@ -1234,7 +1234,7 @@ func toElapsedLabel(rfc850time string) string {
     if err != nil {
         log.Fatal(err)
     }
-    elapsed := time.Since(created)
+    elapsed := time.Now().UTC().Sub(created.UTC())
     seconds := elapsed.Seconds()
     minutes := elapsed.Minutes()
     hours := elapsed.Hours()
