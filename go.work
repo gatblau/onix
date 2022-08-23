@@ -1,0 +1,15 @@
+go 1.18
+
+use (
+	./artisan
+	./artisan/art
+	./artisan/doorman
+	./artisan/runner/host
+	./artisan/runner/tkn
+	./dbman
+	./oxlib
+	./oxlib/mongo
+	./pilotctl
+	./piloth
+	./warden
+)

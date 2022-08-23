@@ -10,11 +10,6 @@ require (
 )
 
 require (
-	github.com/eclipse/paho.mqtt.golang v1.2.0 // indirect
-	github.com/gatblau/onix/oxlib v0.0.0-20220714130721-b7218c92b820 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/rs/zerolog v1.18.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
 )

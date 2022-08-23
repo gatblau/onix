@@ -16,7 +16,7 @@ import (
 
 func TestLoadPrivate(t *testing.T) {
 	name, _ := core.ParseName("localhost:8082/test/testpk/aabb:latest")
-	primaryKey, backupKey, err := LoadKeys(*name, false)
+	primaryKey, backupKey, err := LoadKeys(*name, false, "")
 	if err != nil {
 		t.Errorf(err.Error())
 	}

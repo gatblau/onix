@@ -14,7 +14,7 @@ import (
 )
 
 func TestComposeBuilder(t *testing.T) {
-	m, err := NewAppMan("./test/onix.yaml", "full", "")
+	m, err := NewAppMan("./test/onix.yaml", "full", "", "")
 	if err != nil {
 		t.Fatalf("cannot create app manifest: %s\n", err)
 	}

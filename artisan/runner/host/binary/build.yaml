@@ -88,7 +88,7 @@ functions:
     export: true
     run:
       - $(pre-install)
-      - art app -r ci --path ${SERVICE_HOME} deploy/runner.yaml
+      - art u app -r ci --path ${SERVICE_HOME} deploy/runner.yaml
       - sh -c './install.sh'
       - sh -c './deploy/registry-credential-config.sh'      
 
@@ -97,7 +97,7 @@ functions:
     export: true
     run:
       - $(pre-install)
-      - art app -r automation --path ${SERVICE_HOME} deploy/runner.yaml
+      - art u app -r automation --path ${SERVICE_HOME} deploy/runner.yaml
       # below step is required to start minio server, this step will append 
       # "command: server --address ":9099" --console-address ":9000" /data/minio" 
       # under the tag minio-svc: in ${SERVICE_HOME}/docker-compose.yml
