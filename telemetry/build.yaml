@@ -1,0 +1,49 @@
+---
+env:
+  # the application version
+  APP_VERSION: 0.0.4
+  # a unique build number
+  BUILD_VERSION: ${APP_VERSION}-${ARTISAN_REF}
+  ART_GROUP: aps
+  APP_NAME: telemetry
+  CGO_ENABLED: 0
+  GOARCH: amd64
+  ART_REG: artisan.cmsee.live  
+
+labels:
+  author: gatblau.org
+  application: Pilot
+  product: Onix Configuration Manager
+  description: Onix agent for managing remote host configuration
+  architecture: AMD64
+
+functions:
+  - name: set-version
+    description: set new version reference
+    run:
+      - bash -c "echo ${ARTISAN_REF} > ${PWD}/version"
+
+  - name: build
+    description: builds the host telemetry for the linux platform
+    env:
+      GOOS: linux
+    run:
+      - rm -rf bin/telemetry && bin/telem.yaml
+      - cp telem.yaml bin/
+      - go build -ldflags="-X 'github.com/gatblau/onix/piloth/core.Version=${BUILD_VERSION}'" -o bin/telemetry -v
+      - art build . -t ${ART_REG}/${ART_GROUP}/${APP_NAME}:$((cat ./version)) -p linux
+      - art tag ${ART_REG}/${ART_GROUP}/${APP_NAME}:$((cat ./version)) ${ART_REG}/${ART_GROUP}/${APP_NAME}:latest
+
+  - name: push
+    description: push to Artisan registry
+    run:
+      - art push ${ART_REG}/${ART_GROUP}/${APP_NAME}:$((cat ./version))
+      - art push ${ART_REG}/${ART_GROUP}/${APP_NAME}:latest
+
+profiles:
+  - name: linux
+    default: true
+    type: content/binary
+    license: Apache Version 2
+    target: bin
+...

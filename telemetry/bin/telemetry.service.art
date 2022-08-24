@@ -1,0 +1,18 @@
+[Unit]
+Description=Host telemetry
+ConditionPathExists={{ var "TELEMETRY_HOME" }}
+After=network.target
+
+[Service]
+Type=simple
+User={{ var "TELEMETRY_UID" }}
+Group={{ var "TELEMETRY_GID" }}
+LimitNOFILE=1024
+
+Restart=on-failure
+RestartSec=10
+WorkingDirectory={{ var "TELEMETRY_HOME" }}
+ExecStart={{ var "TELEMETRY_HOME" }}/telemetry launch -c {{ var "TELEMETRY_HOME" }}/telem.yaml
+
+[Install]
+WantedBy=multi-user.target

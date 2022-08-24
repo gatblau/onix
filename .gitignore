@@ -18,3 +18,6 @@ artisan/runner/host/env
 artisan/runner/host/binary/host-runner
 warden/warden
 warden/warden
+telemetry/telemetry
+telemetry/bin/telem.yaml
+telemetry/bin/telemetry
