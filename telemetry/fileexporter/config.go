@@ -1,12 +1,12 @@
 /*
-  Onix Config Manager - Pilot
+  Onix Config Manager - Onix file exporter for OpenTelemetry
   Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
 
-package artisanfileexporter
+package fileexporter
 
 import (
 	"errors"
@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	maxfilesize = int64(100) //100kb
+	maxfilesize = int64(100) // 100kb
 )
 
 // Config defines configuration for file exporter.

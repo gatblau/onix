@@ -1,12 +1,12 @@
 /*
-  Onix Config Manager - Pilot
+  Onix Config Manager - OpenTelemetry collector for managed hosts
   Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
 
-package opentelemetry
+package collector
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 )
 
 func TestCollectorRun(t *testing.T) {
-	collector := NewOpenTelemetry([]string{"./telem.yaml"}, "0.0.0", nil)
+	collector := NewCollector([]string{"./telem.yaml"}, "0.0.0", nil)
 	err := collector.Run(context.Background())
 	if err != nil {
 		t.Fatal(err.Error())

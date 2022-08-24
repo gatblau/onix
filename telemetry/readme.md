@@ -1,10 +1,11 @@
 # Open Telemetry Collector for Pilot
 
-This section contains an experimental collector for Pilot using OpenTelemetry.
+This section contains a telemetry collector for Pilot using OpenTelemetry.
 
-Currently not integrated, implements the following  pipeline:
+It implements the following  pipeline:
 
-[hostmetrics] --> [prometheus]
+[hostmetrics] --> [fileexporter]
+[syslogs]     --> [fileexporter]
 
-- [Entry point for testing](opentelem_test.go)
+- [Entry point for testing](collector/collector_test.go)
 - [Sample configuration](telem.yaml)

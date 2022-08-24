@@ -32,7 +32,7 @@ processors:
 exporters:
   file:
     path: /tmp/telemetry
-    filesizekb: 50
+    fileSizeKb: 50
 service:
   pipelines:
     metrics:

@@ -1,12 +1,12 @@
 /*
-  Onix Config Manager - Pilot
+  Onix Config Manager - Onix file exporter for OpenTelemetry
   Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
 
-package artisanfileexporter
+package fileexporter
 
 import (
 	"context"
@@ -45,7 +45,7 @@ func createTracesExporter(
 	cfg config.Exporter,
 ) (component.TracesExporter, error) {
 	fe := exporters.GetOrAdd(cfg, func() component.Component {
-		return &fileExporter{path: cfg.(*Config).Path, filesizekb: cfg.(*Config).FileSizeKb}
+		return &fileExporter{path: cfg.(*Config).Path, fileSizeKb: cfg.(*Config).FileSizeKb}
 	})
 	return exporterhelper.NewTracesExporter(
 		cfg,
@@ -62,7 +62,7 @@ func createMetricsExporter(
 	cfg config.Exporter,
 ) (component.MetricsExporter, error) {
 	fe := exporters.GetOrAdd(cfg, func() component.Component {
-		return &fileExporter{path: cfg.(*Config).Path, filesizekb: cfg.(*Config).FileSizeKb}
+		return &fileExporter{path: cfg.(*Config).Path, fileSizeKb: cfg.(*Config).FileSizeKb}
 	})
 	return exporterhelper.NewMetricsExporter(
 		cfg,
@@ -79,7 +79,7 @@ func createLogsExporter(
 	cfg config.Exporter,
 ) (component.LogsExporter, error) {
 	fe := exporters.GetOrAdd(cfg, func() component.Component {
-		return &fileExporter{path: cfg.(*Config).Path, filesizekb: cfg.(*Config).FileSizeKb}
+		return &fileExporter{path: cfg.(*Config).Path, fileSizeKb: cfg.(*Config).FileSizeKb}
 	})
 	return exporterhelper.NewLogsExporter(
 		cfg,

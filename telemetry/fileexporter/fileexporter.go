@@ -1,12 +1,12 @@
 /*
-  Onix Config Manager - Pilot
+  Onix Config Manager - Onix file exporter for OpenTelemetry
   Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
 
-package artisanfileexporter
+package fileexporter
 
 import (
 	"context"
@@ -30,23 +30,23 @@ import (
 )
 
 const (
-	timeformat = "2006_01_02_15_04_05_999999999"
+	timeFormat = "2006_01_02_15_04_05_999999999"
 	ext        = "inproc"
 	json       = "json"
 	protobuf   = "pb"
 )
 
-// Marshaler configuration used for marhsaling Protobuf to JSON.
-var pbtracesMarshaler = ptrace.NewProtoMarshaler()
-var pbmetricsMarshaler = pmetric.NewProtoMarshaler()
-var pblogsMarshaler = plog.NewProtoMarshaler()
+// Marshaller configuration used for marshaling Protobuf to JSON.
+var pbTracesMarshaller = ptrace.NewProtoMarshaler()
+var pbMetricsMarshaller = pmetric.NewProtoMarshaler()
+var pbLogsMarshaller = plog.NewProtoMarshaler()
 
 // fileExporter is the implementation of file exporter that writes telemetry data to a file
 // in Protobuf-JSON format.
 type fileExporter struct {
 	path       string
 	mutex      sync.Mutex
-	filesizekb string
+	fileSizeKb string
 }
 
 func (e *fileExporter) Capabilities() consumer.Capabilities {
@@ -54,7 +54,7 @@ func (e *fileExporter) Capabilities() consumer.Capabilities {
 }
 
 func (e *fileExporter) ConsumeTraces(_ context.Context, td ptrace.Traces) error {
-	buf, err := pbtracesMarshaler.MarshalTraces(td)
+	buf, err := pbTracesMarshaller.MarshalTraces(td)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (e *fileExporter) ConsumeTraces(_ context.Context, td ptrace.Traces) error 
 
 func (e *fileExporter) ConsumeMetrics(_ context.Context, md pmetric.Metrics) error {
 
-	buf, err := pbmetricsMarshaler.MarshalMetrics(md) //metricsMarshaler.MarshalMetrics(md)
+	buf, err := pbMetricsMarshaller.MarshalMetrics(md) // metricsMarshaler.MarshalMetrics(md)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (e *fileExporter) ConsumeMetrics(_ context.Context, md pmetric.Metrics) err
 }
 
 func (e *fileExporter) ConsumeLogs(_ context.Context, ld plog.Logs) error {
-	buf, err := pblogsMarshaler.MarshalLogs(ld)
+	buf, err := pbLogsMarshaller.MarshalLogs(ld)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func exportAsLine(e *fileExporter, buf []byte, exporttype string) error {
 			core.ErrorLogger.Printf("failed to create path %s, error %s \n", path, err)
 		}
 	}
-	//check if there is already a file with extension .inprocess, if yes use it else create new
+	// check if there is already a file with extension .inprocess, if yes use it else create new
 	files, err := filepath.Glob(filepath.Join(path, fmt.Sprintf(".%s", ext)))
 	if err != nil {
 		core.ErrorLogger.Printf("failed to find inprocess file at path %s, error %s \n", path, err)
@@ -101,7 +101,7 @@ func exportAsLine(e *fileExporter, buf []byte, exporttype string) error {
 		err = writeToNewFile(path, buf)
 		return err
 	} else {
-		//get the size of .inprocess file
+		// get the size of .inprocess file
 		f := files[0]
 		core.InfoLogger.Printf("current inprocess file found, %s \n", f)
 		file, err := os.OpenFile(f, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -122,8 +122,8 @@ func exportAsLine(e *fileExporter, buf []byte, exporttype string) error {
 		// after adding current data to existing inprocess file, if the size of in process file exceeds
 		// the maxfilesize, then close the current inprocess file and delete the extension .inprocess
 		// so it will be treated as completed and ready for upload, and the current data will be written
-		//to new inprocess file
-		size, err := strconv.ParseInt(e.filesizekb, 10, 64)
+		// to new inprocess file
+		size, err := strconv.ParseInt(e.fileSizeKb, 10, 64)
 		if err != nil {
 			return err
 		}
@@ -136,7 +136,7 @@ func exportAsLine(e *fileExporter, buf []byte, exporttype string) error {
 			}
 
 			currentTime := time.Now().UTC()
-			t := currentTime.Format(timeformat)
+			t := currentTime.Format(timeFormat)
 			fnew := fmt.Sprintf("%s.%s", t, protobuf)
 			fnew = strings.Replace(f, fmt.Sprintf(".%s", ext), fnew, 1)
 			core.DebugLogger.Printf("old fine name is %s new file name is %s", f, fnew)
@@ -170,9 +170,9 @@ func exportAsLine(e *fileExporter, buf []byte, exporttype string) error {
 
 func writeToNewFile(path string, buf []byte) error {
 	core.InfoLogger.Printf("current inprocess file not found, so creating one \n")
-	//currentTime := time.Now().UTC()
-	//t := currentTime.Format(timeformat)
-	//filename := fmt.Sprintf("%s.%s", t, ext)
+	// currentTime := time.Now().UTC()
+	// t := currentTime.Format(timeformat)
+	// filename := fmt.Sprintf("%s.%s", t, ext)
 	filename := fmt.Sprintf(".%s", ext)
 	path = filepath.Join(path, filename)
 	err := resx.WriteFile(buf, path, "")
@@ -184,9 +184,9 @@ func writeToNewFile(path string, buf []byte) error {
 }
 
 func (e *fileExporter) Start(context.Context, component.Host) error {
-	//var err error
-	//e.file, err = os.OpenFile(e.path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	//return err
+	// var err error
+	// e.file, err = os.OpenFile(e.path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	// return err
 	return nil
 }
 

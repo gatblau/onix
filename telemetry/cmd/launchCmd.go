@@ -10,10 +10,10 @@ package cmd
 
 import (
 	"context"
+	"github.com/gatblau/onix/telemetry/collector"
 	"log"
 	"strings"
 
-	"github.com/gatblau/onix/telemetry/opentelemetry"
 	"github.com/spf13/cobra"
 )
 
@@ -48,7 +48,7 @@ func (c *LaunchCmd) Run(cmd *cobra.Command, args []string) {
 		cfg = append(cfg, defaultpath)
 	}
 
-	collector := opentelemetry.NewOpenTelemetry(cfg, c.version, nil)
+	collector := collector.NewCollector(cfg, c.version, nil)
 	err := collector.Run(context.Background())
 	if err != nil {
 		log.Fatal(err.Error())

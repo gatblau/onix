@@ -1,19 +1,18 @@
 /*
-  Onix Config Manager - Pilot
+  Onix Config Manager - OpenTelemetry collector for managed hosts
   Copyright (c) 2018-Present by www.gatblau.org
   Licensed under the Apache License, Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
 
-package opentelemetry
+package collector
 
 import (
+	"github.com/gatblau/onix/telemetry/fileexporter"
 	"os"
 
 	"github.com/observiq/observiq-otel-collector/processor/resourceattributetransposerprocessor"
-	//"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter"
-	"github.com/gatblau/onix/telemetry/artisanfileexporter"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
@@ -50,7 +49,7 @@ func NewSettings(configPaths []string, version string, loggingOpts []zap.Option)
 	}
 	// configure exporters
 	exporterMap, err := component.MakeExporterFactoryMap(
-		artisanfileexporter.NewFactory(),
+		fileexporter.NewFactory(),
 	)
 
 	if err != nil {
