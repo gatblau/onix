@@ -106,7 +106,7 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 }
 
 // Run execute the specified function
-func (b *Builder) Run(function string, path string, interactive bool, env *merge.Envar) {
+func (b *Builder) Run(function string, path string, interactive bool, env *merge.Envar) error {
 	// if no path is specified use .
 	if len(path) == 0 {
 		path = "."
@@ -114,20 +114,23 @@ func (b *Builder) Run(function string, path string, interactive bool, env *merge
 	var localPath = path
 	// if a relative path is passed
 	if strings.HasPrefix(path, "http") {
-		core.RaiseErr("the path must not be an http resource")
+		return fmt.Errorf("the path must not be an http resource")
 	}
 	if strings.HasPrefix(path, "./") || strings.HasPrefix(path, "../") || (!strings.HasPrefix(path, "/")) {
 		// turn it into an absolute path
 		absPath, err := filepath.Abs(path)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		localPath = absPath
 	}
 	bf, err := data.LoadBuildFile(filepath.Join(localPath, "build.yaml"))
-	core.CheckErr(err, "cannot load build file")
+	if err != nil {
+		return fmt.Errorf("cannot load build file")
+	}
 	b.buildFile = bf
 	b.runFunction(function, localPath, interactive, env)
+	return nil
 }
 
 // either clone a remote git repo or copy a local one onto the source folder
@@ -663,7 +666,10 @@ func (b *Builder) Execute(name *core.PackageName, function string, credentials s
 	// check the function is exported
 	if isExported(m, function) {
 		// run the function on the open package
-		b.Run(function, path, interactive, env)
+		err := b.Run(function, path, interactive, env)
+		if err != nil {
+			return err
+		}
 		// if there is no instruction to preserve the open files
 		if !preserveFiles {
 			// remove the package files
