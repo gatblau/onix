@@ -7,12 +7,14 @@ package core
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
-import "testing"
+import (
+	"testing"
+)
 
 func TestParseName(t *testing.T) {
 	data := map[string]bool{
 		// correct
-		"localhost/my-group/my-name":           true,
+		"localhost/my-group/my-name":           false,
 		"localhost:8082/my-group/my-name":      true,
 		"localhost:8082/my-group/my-name:v1-0": true,
 		"my-group/my-name":                     true,
@@ -22,7 +24,7 @@ func TestParseName(t *testing.T) {
 		"loc%$alhost/my-group/my-name": false,
 		// domain cannot start with hyphen
 		"-localhost/my-group/my-name": false,
-		"localhost/my-group/:ggd":     true,
+		"localhost/my-group/:ggd":     false,
 		":ggd":                        true,
 		// domain cannot start with colon
 		":localhost/my-group/:ggd": false,
@@ -47,8 +49,4 @@ func TestParseName(t *testing.T) {
 			t.Errorf("name %s should be invalid", name)
 		}
 	}
-}
-
-func TestParseName2(t *testing.T) {
-	_, _ = ParseName("quay.io/gatblau/pilotctl-evr-mongodb:0.0.4-300921174051295-11aab8b6cc")
 }
