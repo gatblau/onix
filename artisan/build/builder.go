@@ -36,7 +36,7 @@ type Builder struct {
 	commit           string
 	from             string
 	RepoName         *core.PackageName
-	buildFile        *data.BuildFile
+	buildFile        *data.BuildFile // the build file for building the package
 	localReg         *registry.LocalRegistry
 	shouldCopySource bool
 	loadFrom         string
@@ -66,10 +66,6 @@ func NewBuilder(artHome string) *Builder {
 // interactive: true if the console should survey for missing variables
 // target: a specific target without relying on a build file (can be either relative or absolute)
 func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName, profileName string, copy bool, interactive bool, target string) {
-	// if we have a target then turn it into absolute path
-	if len(target) > 0 {
-		target, _ = filepath.Abs(target)
-	}
 	b.from = from
 	// prepare the source ready for the build
 	repo := b.prepareSource(from, fromPath, gitToken, name, copy, target)
@@ -88,7 +84,7 @@ func (b *Builder) Build(from, fromPath, gitToken string, name *core.PackageName,
 		workingTarget = filepath.Join(b.loadFrom, workingTarget)
 	}
 	waitForTargetToBeCreated(workingTarget)
-	// compress the target defined in the build.yaml' profile
+	// compress the target defined in the build.yaml profile
 	core.Debug("zipping target path '%s'\n", workingTarget)
 	b.zipPackage(workingTarget)
 	// creates a seal
@@ -134,7 +130,7 @@ func (b *Builder) Run(function string, path string, interactive bool, env *merge
 }
 
 // either clone a remote git repo or copy a local one onto the source folder
-func (b *Builder) prepareSource(from string, fromPath string, gitToken string, tagName *core.PackageName, copy bool, target string) *git.Repository {
+func (b *Builder) prepareSource(from string, fromPath string, gitToken string, tagName *core.PackageName, copy bool, targetFromFlag string) *git.Repository {
 	var repo *git.Repository
 	b.RepoName = tagName
 	// creates a temporary working directory
@@ -190,35 +186,35 @@ func (b *Builder) prepareSource(from string, fromPath string, gitToken string, t
 		repo = b.openRepo(localPath)
 	}
 	var (
-		bf  *data.BuildFile
-		err error
+		targetBf *data.BuildFile
+		err      error
 	)
-	if len(target) == 0 {
+	// if a specific target has not been set via flag, this is the case of a target being specified in the build file
+	if len(targetFromFlag) == 0 {
 		buildFilePath := filepath.Join(b.loadFrom, "build.yaml")
 		core.Debug("loading build file from %s\n", buildFilePath)
-		bf, err = data.LoadBuildFile(buildFilePath)
-		core.CheckErr(err, "no build file found at %s and no --target flag has been specified", buildFilePath)
+		targetBf, err = data.LoadBuildFile(buildFilePath)
+		core.CheckErr(err, "failed to get target build file")
+		b.buildFile = targetBf
 	} else {
-		// check that a build file exist in the target
-		buildFilePath := filepath.Join(target, "build.yaml")
-		core.Debug("loading build file from %s\n", target)
-		bf, err = data.LoadBuildFile(buildFilePath)
-		if err != nil {
-			core.WarningLogger.Printf("no build file found at target %s, building a content only package\n", target)
-			// dynamically creates one that packages anything on the build target
-			bf = &data.BuildFile{
-				Profiles: []*data.Profile{
-					{
-						Name:    "content-only",
-						Default: true,
-						Target:  target,
-						Type:    "content/file",
-					},
+		// there is no build file as the target has been set via flag, so it creates one dynamically for the builder to work
+		core.WarningLogger.Printf("no build file found at target %s, building a content only package\n", targetFromFlag)
+		// dynamically creates one that packages anything on the build target
+		bf := &data.BuildFile{
+			Profiles: []*data.Profile{
+				{
+					Name:    "content-only",
+					Default: true,
+					Target:  targetFromFlag,
+					Type:    "content/file",
 				},
-			}
+			},
 		}
+		if ok, validationErr := bf.Validate(); !ok {
+			core.RaiseErr(validationErr.Error())
+		}
+		b.buildFile = bf
 	}
-	b.buildFile = bf
 	return repo
 }
 
@@ -413,6 +409,9 @@ func (b *Builder) runProfile(profileName string, execDir string, interactive boo
 	vars := b.evalSubshell(b.buildFile.GetEnv(), execDir, env, interactive)
 	// add the merged vars to the env
 	env = env.Append(vars)
+	if b.buildFile.Profiles == nil {
+		core.RaiseErr("cannot build without at least one profile in the build file")
+	}
 	// for each build profile
 	for _, profile := range b.buildFile.Profiles {
 		// if a profile name has been provided then build it
