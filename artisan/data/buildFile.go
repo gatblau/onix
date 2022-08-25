@@ -157,13 +157,13 @@ func LoadBuildFile(path string) (*BuildFile, error) {
 	if err != nil {
 		return nil, fmt.Errorf("syntax error in build file %s: %s", path, err)
 	}
-	if ok, validErr := buildFile.validate(); !ok {
+	if ok, validErr := buildFile.Validate(); !ok {
 		return buildFile, validErr
 	}
 	return buildFile, nil
 }
 
-func (b *BuildFile) validate() (bool, error) {
+func (b *BuildFile) Validate() (bool, error) {
 	// checks any binding has a corresponding input
 	for _, fx := range b.Functions {
 		if fx.Input != nil {
@@ -182,6 +182,13 @@ func (b *BuildFile) validate() (bool, error) {
 					}
 				}
 			}
+		}
+	}
+	// check that any profiles do not have targets using "."
+	for _, profile := range b.Profiles {
+		if profile.Target == "." {
+			return false, fmt.Errorf("invalid target for profile '%s': it cannot point to the same location of the build file: "+
+				"the build file you use to build the package must not be the same as the one embedded in the package", profile.Name)
 		}
 	}
 	return true, nil
