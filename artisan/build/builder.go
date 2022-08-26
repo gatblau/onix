@@ -555,6 +555,12 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 		Time:    time.Now().Format(time.RFC850),
 		Size:    bytesToLabel(zipInfo.Size()),
 	}
+	if profile.X != nil {
+		info.X = profile.X
+	}
+	if profile.Network != nil {
+		info.Network = profile.Network
+	}
 	// take the hash of the zip file and seal info combined
 	s := new(data.Seal)
 	// the seal needs the manifest to create a checksum
@@ -604,12 +610,16 @@ func (b *Builder) createSeal(profile *data.Profile) (*data.Seal, error) {
 		if fx.Export != nil && *fx.Export {
 			core.Debug("adding inputs to the manifest for exported function '%s'\n", fx.Name)
 			// then grab the required inputs
-			s.Manifest.Functions = append(s.Manifest.Functions, &data.FxInfo{
+			f := &data.FxInfo{
 				Name:        fx.Name,
 				Description: fx.Description,
 				Input:       data.SurveyInputFromBuildFile(fx.Name, buildFile, false, true, merge.NewEnVarFromSlice(os.Environ()), b.artHome),
 				Runtime:     fx.Runtime,
-			})
+			}
+			if fx.Credits > 0 {
+				f.Credits = fx.Credits
+			}
+			s.Manifest.Functions = append(s.Manifest.Functions, f)
 		}
 	}
 	err = b.sProc(b, s)

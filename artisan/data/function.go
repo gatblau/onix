@@ -5,6 +5,7 @@
   Contributors to this project, hereby assign copyright in this code to the project,
   to be licensed under the same terms as the rest of the code.
 */
+
 package data
 
 import (
@@ -26,6 +27,7 @@ type Function struct {
 	Input *InputBinding `yaml:"input,omitempty"`
 	// the runtime to run this function
 	Runtime string `yaml:"runtime,omitempty"`
+	Credits int    `yaml:"credits,omitempty"`
 }
 
 // list the names of the inputs required by a function

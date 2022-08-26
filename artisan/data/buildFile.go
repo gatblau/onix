@@ -101,6 +101,8 @@ type Profile struct {
 	Target string `yaml:"target"`
 	// merged target if exist, internal use only
 	MergedTarget string
+	X            []string `json:"x,omitempty"`
+	Network      *Network `json:"net,omitempty"`
 }
 
 // GetEnv gets a slice of string with each element containing key=value

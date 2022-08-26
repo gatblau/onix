@@ -52,6 +52,8 @@ type Manifest struct {
 	OpenPolicy string    `json:"open_policy,omitempty"`
 	RunPolicy  string    `json:"run_policy,omitempty"`
 	SignPolicy string    `json:"sign_policy,omitempty"`
+	X          []string  `json:"x,omitempty"`
+	Network    *Network  `json:"net,omitempty"`
 }
 
 func (m Manifest) Fx(name string) *FxInfo {
@@ -61,6 +63,27 @@ func (m Manifest) Fx(name string) *FxInfo {
 		}
 	}
 	return nil
+}
+
+type Network struct {
+	VendorId string `yaml:"vendor_id"`
+	Role     []Role `yaml:"role,omitempty"`
+	Overlap  bool   `yaml:"overlap,omitempty"`
+	Min      int    `yaml:"min,omitempty"`
+	Max      int    `yaml:"max,omitempty"`
+}
+
+type Role struct {
+	Name string `yaml:"name"`
+	Min  int    `yaml:"min,omitempty"`
+	Max  int    `yaml:"max,omitempty"`
+	Tag  []Tag  `yaml:"tag,omitempty"`
+}
+
+type Tag struct {
+	Name string `yaml:"name"`
+	Min  int    `yaml:"min,omitempty"`
+	Max  int    `yaml:"max,omitempty"`
 }
 
 // FxInfo exported function list
