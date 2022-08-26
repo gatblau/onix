@@ -130,6 +130,6 @@ func (b *BuildCmd) Run(_ *cobra.Command, args []string) {
 	if len(b.image) > 0 {
 		core.CheckErr(release.BuildImagePackage(b.image, b.packageName, "", "", ""), "cannot build image package")
 	} else {
-		builder.Build(b.from, b.fromPath, b.gitToken, name, b.profile, b.copySource, b.interactive, b.target)
+		core.CheckErr(builder.Build(b.from, b.fromPath, b.gitToken, name, b.profile, b.copySource, b.interactive, b.target), "cannot build package")
 	}
 }

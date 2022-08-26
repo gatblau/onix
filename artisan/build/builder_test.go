@@ -8,5 +8,5 @@ import (
 func TestBuildContentOnly(t *testing.T) {
 	builder := NewBuilder("")
 	name, _ := core.ParseName("localhost:8080/lib/test1:1")
-	builder.Build("", "", "", name, "", false, false, "test/test")
+	_ = builder.Build("", "", "", name, "", false, false, "test/test")
 }
