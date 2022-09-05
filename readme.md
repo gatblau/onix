@@ -4,9 +4,9 @@
 
 After 4 years of development, what started as a small java based configuration management database turned into a comprehensive set of golang services to deal with remote configuration of applications and hosts.
 
-The repository grew with more and more sub-projects, and it now needs a breath of fresh air.
+The repository grew with more and more subprojects, and it now needs a breath of fresh air.
 As I do not have the bandwidth to continue its support, I am handing it over to [SouthWinds Tech](https://github.com/southwinds-io) who will be
-breaking it down into individual repositories to improve their manageability. 
+breaking it down into individual repositories to improve their manageability and ease of use. 
 
 They will also provide support models, consultancy and documentation for those interested in using them in Enterprise environments.
 
@@ -17,6 +17,8 @@ The key projects are:
 - [piloth](https://github.com/southwinds-io/piloth): remote host management agent
 - [dbman](https://github.com/southwinds-io/dbman): database manager
 - [doorman](https://github.com/southwinds-io/doorman): application release, software distribution gateway
+
+Please help by starring the above projects if you find them useful.
 
 For an article discussing the future architecture of Onix [see here](https://southwinds.io/article/1).
 
