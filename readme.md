@@ -1,3 +1,25 @@
+:exclamation: _This repository is now archived. Its future development and support will continue to be open source under the care of [SouthWinds here](https://github.com/southwinds-io)._
+
+## TLDR;
+
+After 4 years of development, what started as a small java based configuration management database turned into a comprehensive set of golang services to deal with remote configuration of applications and hosts.
+
+The repository grew with more and more sub-projects, and it now needs a breath of fresh air.
+As I do not have the bandwidth to continue its support, I am handing it over to [SouthWinds Tech](https://github.com/southwinds-io) who will be
+breaking it down into individual repositories to improve their manageability. 
+
+They will also provide support models, consultancy and documentation for those interested in using them in Enterprise environments.
+
+The key projects are:
+- [interlink](https://github.com/southwinds-io/interlink) (the new name for the Onix Web API)
+- [artisan](https://github.com/southwinds-io/artisan): devops package manager
+- [pilotctl](https://github.com/southwinds-io/pilotctl): remote management of hosts and apps
+- [piloth](https://github.com/southwinds-io/piloth): remote host management agent
+- [dbman](https://github.com/southwinds-io/dbman): database manager
+- [doorman](https://github.com/southwinds-io/doorman): application release, software distribution gateway
+
+For an article discussing the future architecture of Onix [see here](https://southwinds.io/article/1).
+
 # Onix Configuration Manager 
 
 Onix is a lightweight configuration manager system  designed to support [Infrastructure as a Code](https://en.wikipedia.org/wiki/Infrastructure_as_code) provisioning to ultimately provide a [single source of truth](https://en.wikipedia.org/wiki/Single_source_of_truth) across [multi-cloud](https://en.wikipedia.org/wiki/Multicloud) environments.
