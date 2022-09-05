@@ -1,22 +1,22 @@
 functions:
   - name: install
-    description: install host telemetry.
+    description: install OpenTelemetry collector for managed hosts.
     export: true
     run:
       - sh -c './install.sh'
   - name: uninstall
-    description: uninstall host telemetry.
+    description: uninstall OpenTelemetry collector for managed hosts.
     export: true
     run:
       - sh -c './uninstall.sh'
   - name: start
-    description: start the telemetry service.
+    description: start the OpenTelemetry service for managed hosts.
     export: true
     run:
       - sh -c 'sudo systemctl enable --now telemetry'
 
   - name: stop
-    description: stop the telemetry service.
+    description: stop the OpenTelemetry service for managed hosts.
     export: true
     run:
       - sh -c 'sudo systemctl stop telemetry'      

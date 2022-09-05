@@ -12,4 +12,5 @@ use (
 	./pilotctl
 	./piloth
 	./warden
+	./telemetry
 )
