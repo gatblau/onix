@@ -21,3 +21,4 @@ warden/warden
 telemetry/telemetry
 telemetry/bin/telem.yaml
 telemetry/bin/telemetry
+telemetry/install/telem.yaml

@@ -31,7 +31,7 @@ functions:
       - $(set-version)
       - rm -rf install/telemetry && install/telem.yaml
       - cp telem.yaml install/
-      - go build -ldflags="-X 'github.com/gatblau/onix/piloth/core.Version=${BUILD_VERSION}'" -o install/telemetry -v
+      - go build -ldflags="-X 'github.com/gatblau/onix/telemetry/collector.Version=${BUILD_VERSION}'" -o install/telemetry -v
       - art build . -t ${ART_REG}/${ART_GROUP}/${APP_NAME}:$((cat ./version)) -p linux
       - art tag ${ART_REG}/${ART_GROUP}/${APP_NAME}:$((cat ./version)) ${ART_REG}/${ART_GROUP}/${APP_NAME}:latest
 
@@ -40,6 +40,19 @@ functions:
     run:
       - art push ${ART_REG}/${ART_GROUP}/${APP_NAME}:$((cat ./version))
       - art push ${ART_REG}/${ART_GROUP}/${APP_NAME}:latest
+
+  - name: manifest
+    run:
+      - rm -f ./manifest.md
+      - art manifest ${ART_REG}/${ART_GROUP}/${APP_NAME}:$((cat ./version)) -o=mdf
+
+  - name: all
+    description: run new version, build and push
+    run:
+      - $(set-version)
+      - $(build)
+      - $(manifest)
+      - $(push)
 
 profiles:
   - name: linux
