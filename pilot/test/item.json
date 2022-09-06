@@ -1,6 +1,0 @@
-{
-  "name": "Probare 01",
-  "description": "Probare instance number 1 for Pilot testing",
-  "type": "U_APPLICATION",
-  "txt": "+++toml\nType = \"http\"\nPath = \"/Users/andresalos/go/src/github.com/gatblau/onix/probare/app.toml\" \nUri = \"http://localhost:3000/cfg/app/reload\"\nTrigger = \"get\"\nContentType = \"text/plain\"\n\n+++\n[Log]\n   Level = \"trace\"\n[Banner]\n   Type = \"warning\"\n   Message = \"hello probare\"\n\n+++toml\nType = \"file\"\nPath = \"/Users/andresalos/go/src/github.com/gatblau/onix/probare/secrets.toml\"\nUri = \"http://localhost:3000/cfg/secrets/reload\"\nTrigger = \"get\"\nContentType = \"text/plain\"\n+++\nUser = \"gatblau\"\nPwd = \"FMy2nNzh\"\n"
-}
